@@ -46,19 +46,23 @@ export function Card({
   children,
   style,
   span,
+  onClick,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   span?: number;
+  onClick?: () => void;
 }) {
   return (
     <div
+      onClick={onClick}
       style={{
         background: CARD,
         border: `1px solid ${LINE}`,
         borderRadius: 16,
         padding: 20,
         gridColumn: span ? `span ${span}` : undefined,
+        cursor: onClick ? "pointer" : undefined,
         ...style,
       }}
     >

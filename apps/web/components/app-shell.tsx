@@ -27,6 +27,8 @@ import {
   RolesScreen,
 } from "./screens";
 import Logger from "./logger";
+import PlansScreen from "./plans";
+import SportScreen from "./sports";
 import { useSessions } from "@/lib/use-sessions";
 
 const NAV: [string, string, string][] = [
@@ -35,6 +37,7 @@ const NAV: [string, string, string][] = [
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
   ["plans", "Plans", "▤"],
+  ["sport", "Sport", "◎"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
   ["roles", "Roles & access", "⚿"],
@@ -269,6 +272,10 @@ export default function AppShell() {
 
         {screen === "periodize" && <PeriodizeScreen />}
 
+        {screen === "plans" && <PlansScreen />}
+
+        {screen === "sport" && <SportScreen />}
+
         {screen === "log" && (
           <Logger
             sessions={sessions}
@@ -286,6 +293,8 @@ export default function AppShell() {
         {screen !== "analytics" &&
           screen !== "dashboard" &&
           screen !== "periodize" &&
+          screen !== "plans" &&
+          screen !== "sport" &&
           screen !== "log" &&
           screen !== "history" &&
           screen !== "roles" && (
