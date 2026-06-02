@@ -203,7 +203,7 @@ export default function AppShell() {
               app.hybrid.app
             </Mono>
             <h1 style={{ ...disp, fontWeight: 900, fontSize: 30, letterSpacing: "-.03em", marginTop: 2, textTransform: "capitalize" }}>
-              {screen}
+              {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
             </h1>
           </div>
           <select

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
+import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
 
 export default function Sport() {
+  const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
 
@@ -13,7 +15,7 @@ export default function Sport() {
   return (
     <Screen>
       <Kicker>Sport</Kicker>
-      <Mono style={{ marginTop: 6, marginBottom: 12 }}>The S&C that transfers to your sport.</Mono>
+      <Mono style={{ marginTop: 6, marginBottom: 12 }}>{t("sport.intro")}</Mono>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
         {SPORT_NAMES.map((s) => {

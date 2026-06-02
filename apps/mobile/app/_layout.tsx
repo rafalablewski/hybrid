@@ -11,6 +11,7 @@ import {
 } from "@expo-google-fonts/archivo";
 import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { SessionProvider } from "../lib/session";
+import { LanguageProvider } from "../lib/i18n";
 import { C } from "../lib/ui";
 
 export default function RootLayout() {
@@ -27,10 +28,12 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SessionProvider>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.ink } }}
-        />
+        <LanguageProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.ink } }}
+          />
+        </LanguageProvider>
       </SessionProvider>
     </SafeAreaProvider>
   );

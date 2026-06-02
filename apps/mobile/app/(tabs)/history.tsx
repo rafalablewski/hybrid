@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { sessionVolume, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -13,6 +14,7 @@ function summary(b: SessionBlock): string {
 }
 
 export default function History() {
+  const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
 
   // Refetch whenever the tab regains focus (e.g. right after logging).
@@ -27,7 +29,7 @@ export default function History() {
       <Kicker>History</Kicker>
       {sessions.length === 0 ? (
         <Card style={{ marginTop: 10, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>No sessions yet</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{t("history.none")}</Text>
           <Mono style={{ marginTop: 8, textAlign: "center" }}>Log a workout — it appears here and on the web.</Mono>
         </Card>
       ) : (

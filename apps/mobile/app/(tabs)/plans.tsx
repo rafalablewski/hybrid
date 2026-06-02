@@ -2,9 +2,11 @@ import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { GOAL_TREE, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Button, C, F } from "../../lib/ui";
 
 export default function Plans() {
+  const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
 
@@ -27,7 +29,7 @@ export default function Plans() {
   return (
     <Screen>
       <Kicker>Plans</Kicker>
-      <Mono style={{ marginTop: 6, marginBottom: 14 }}>Start with your goal.</Mono>
+      <Mono style={{ marginTop: 6, marginBottom: 14 }}>{t("plans.chooseGoal")}</Mono>
       {GOAL_TREE.map((g) => (
         <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
           <Card style={{ borderLeftWidth: 3, borderLeftColor: g.color }}>
