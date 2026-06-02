@@ -43,3 +43,92 @@ export async function createSession(payload: NewSession): Promise<boolean> {
     return false;
   }
 }
+
+export async function enrollPlan(goal: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/macrocycles`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ goal }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ---- coach layer ----
+export type Person = { id: string; name: string | null; email: string };
+export type CoachLink = { id: string; status: "PENDING" | "ACTIVE" | "ENDED"; client?: Person; coach?: Person };
+export type Note = { id: string; body: string; private: boolean; createdAt: string };
+
+export async function getCoachLinks(): Promise<{ asCoach: CoachLink[]; asClient: CoachLink[] }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
+    if (!res.ok) return { asCoach: [], asClient: [] };
+    return (await res.json()) as { asCoach: CoachLink[]; asClient: CoachLink[] };
+  } catch {
+    return { asCoach: [], asClient: [] };
+  }
+}
+
+export async function inviteClient(email: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ email }),
+    });
+    if (res.ok) return { ok: true };
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, error: j.error };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
+export async function actOnLink(id: string, action: "accept" | "end"): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ action }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function getClientSessions(linkId: string): Promise<LoggedSession[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/sessions`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { sessions?: LoggedSession[] }).sessions ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getNotes(linkId: string): Promise<Note[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/notes`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { notes?: Note[] }).notes ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addNote(linkId: string, body: string, isPrivate: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ body, private: isPrivate }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

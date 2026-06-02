@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { GOAL_TREE, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
-import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
+import { enrollPlan } from "../../lib/api";
+import { Screen, Card, Kicker, Mono, Chip, Button, C, F } from "../../lib/ui";
 
 export default function Plans() {
   const [goalId, setGoalId] = useState<string | null>(null);
@@ -74,6 +75,11 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
 
 function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: () => void }) {
   const d = planDetail(plan.id, plan);
+  const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const enroll = async () => {
+    setEnrolled("busy");
+    setEnrolled((await enrollPlan(goal.name)) ? "done" : "error");
+  };
   return (
     <Screen>
       <Back onPress={back} label={goal.name} />
@@ -111,6 +117,26 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
       </Card>
 
       <Field label="Progression" value={d.progression} />
+
+      <View style={{ marginTop: 8 }}>
+        <Button
+          label={
+            enrolled === "done"
+              ? "✓ Enrolled"
+              : enrolled === "busy"
+                ? "Enrolling…"
+                : `Enroll in ${plan.name}`
+          }
+          color={C.lime}
+          onPress={enroll}
+          disabled={enrolled === "busy" || enrolled === "done"}
+        />
+        {enrolled === "error" && (
+          <Mono color={C.amber} style={{ marginTop: 8 }}>
+            Couldn&apos;t enroll — check your connection.
+          </Mono>
+        )}
+      </View>
     </Screen>
   );
 }

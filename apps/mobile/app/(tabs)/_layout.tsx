@@ -26,6 +26,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="sport" options={{ title: "Sport", tabBarIcon: icon("◎") }} />
       <Tabs.Screen name="log" options={{ title: "Log", tabBarIcon: icon("✎") }} />
       <Tabs.Screen name="history" options={{ title: "History", tabBarIcon: icon("≣") }} />
+      <Tabs.Screen name="coach" options={{ title: "Coach", tabBarIcon: icon("✦") }} />
     </Tabs>
   );
 }
