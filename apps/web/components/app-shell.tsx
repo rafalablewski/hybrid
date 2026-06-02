@@ -37,6 +37,7 @@ import Org from "./org";
 import VideoScreen from "./video-screen";
 import Competition from "./competition";
 import Talent from "./talent";
+import DataNet from "./datanet";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -60,8 +61,12 @@ const NAV: [string, string, string][] = [
   ["talent", "Talent", "✸"],
   ["connections", "Connections", "⌁"],
   ["roles", "Roles & access", "⚿"],
+  ["datanet", "Data network", "⊟"],
   ["capabilities", "Capabilities", "⊞"],
 ];
+
+// admin-only screens
+const ADMIN_ONLY = new Set(["capabilities", "datanet"]);
 
 type Scope = "athlete" | "coach" | "operator";
 
@@ -136,7 +141,7 @@ export default function AppShell() {
         <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px" }}>
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
-        {NAV.filter(([id]) => id !== "capabilities" || session.role === "admin").map(([id, l, ic]) => (
+        {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
           <button
             key={id}
             onClick={() => setScreen(id)}
@@ -353,6 +358,8 @@ export default function AppShell() {
         {screen === "talent" && <Talent />}
 
         {screen === "roles" && <RolesScreen />}
+
+        {screen === "datanet" && session.role === "admin" && <DataNet />}
 
         {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
 
