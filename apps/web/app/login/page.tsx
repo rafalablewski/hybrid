@@ -20,9 +20,12 @@ export default function LoginPage() {
   const { login } = useSession();
   const live = isSupabaseConfigured();
   const [role, setRole] = useState<Role>("admin");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
   // --- DEMO entry (no backend): set a local session and go ---
@@ -59,10 +62,36 @@ export default function LoginPage() {
     }
   };
 
-  const emailSignIn = async () => {
+  const emailSubmit = async () => {
     setBusy(true);
     setError("");
+    setNotice("");
     const supabase = createClient();
+
+    if (mode === "signup") {
+      // New users start as CLIENT. Elevate to admin/coach server-side
+      // (see reference/SETUP_SPRINT1.md) — never self-assign privileged roles.
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name: name.trim() || email.split("@")[0], role: "client" } },
+      });
+      if (error) {
+        setError(error.message);
+        setBusy(false);
+        return;
+      }
+      if (data.session) {
+        router.push("/app");
+        return;
+      }
+      // Email confirmation is on — no session yet.
+      setNotice("Account created. Check your email to confirm, then sign in.");
+      setMode("signin");
+      setBusy(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
@@ -173,6 +202,15 @@ export default function LoginPage() {
           <Mono s={{ fontSize: 13 }}>or sign in with email</Mono>
         </div>
 
+        {live && mode === "signup" && (
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="name"
+            style={inputStyle}
+          />
+        )}
         <input
           type="email"
           value={email}
@@ -195,10 +233,15 @@ export default function LoginPage() {
             {error}
           </Mono>
         )}
+        {notice && (
+          <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={LIME}>
+            {notice}
+          </Mono>
+        )}
 
         <button
           disabled={busy}
-          onClick={() => (live ? emailSignIn() : demoEnter("email"))}
+          onClick={() => (live ? emailSubmit() : demoEnter("email"))}
           style={{
             ...disp,
             fontWeight: 800,
@@ -213,8 +256,28 @@ export default function LoginPage() {
             color: "#0c0d0c",
           }}
         >
-          {busy ? "…" : "Sign in →"}
+          {busy ? "…" : mode === "signup" ? "Create account →" : "Sign in →"}
         </button>
+
+        {live && (
+          <div style={{ textAlign: "center", marginTop: 14 }}>
+            <button
+              onClick={() => {
+                setMode((m) => (m === "signin" ? "signup" : "signin"));
+                setError("");
+                setNotice("");
+              }}
+              style={{ background: "none", border: "none", cursor: "pointer" }}
+            >
+              <Mono s={{ fontSize: 12 }} c={ASH}>
+                {mode === "signin" ? "Need an account? " : "Have an account? "}
+                <span style={{ color: LIME }}>
+                  {mode === "signin" ? "Create one →" : "Sign in →"}
+                </span>
+              </Mono>
+            </button>
+          </div>
+        )}
 
         <div style={{ textAlign: "center", marginTop: 22 }}>
           <button onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
