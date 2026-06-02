@@ -35,6 +35,7 @@ import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
 import { useLang } from "@/lib/i18n";
+import { useBiometrics } from "@/lib/use-biometrics";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
@@ -66,6 +67,7 @@ export default function AppShell() {
   const { macro, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
+  const { bio, refresh: refreshBio } = useBiometrics();
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(
@@ -286,7 +288,9 @@ export default function AppShell() {
           </>
         )}
 
-        {screen === "dashboard" && <DashboardMirror />}
+        {screen === "dashboard" && (
+          <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
+        )}
 
         {screen === "periodize" && <PeriodizeScreen macro={macro} />}
 

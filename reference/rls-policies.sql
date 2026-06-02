@@ -12,7 +12,7 @@
 -- ---- helpers -------------------------------------------------------------
 create or replace function public.app_user_id() returns text
   language sql stable security definer set search_path = public as $$
-  select id from "User" where "authId" = auth.uid()
+  select id from "User" where "authId" = auth.uid()::text
 $$;
 
 create or replace function public.is_active_coach(client_id text) returns boolean
@@ -28,10 +28,10 @@ $$;
 -- ---- User ----------------------------------------------------------------
 drop policy if exists user_self_select on "User";
 create policy user_self_select on "User" for select
-  using ("authId" = auth.uid() or id = public.app_user_id());
+  using ("authId" = auth.uid()::text or id = public.app_user_id());
 drop policy if exists user_self_update on "User";
 create policy user_self_update on "User" for update
-  using ("authId" = auth.uid());
+  using ("authId" = auth.uid()::text);
 
 -- ---- Session -------------------------------------------------------------
 drop policy if exists session_own on "Session";

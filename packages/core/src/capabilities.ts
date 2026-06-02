@@ -57,7 +57,8 @@ export const CAPABILITIES: Capability[] = [
 
   // ---- AI / Integrations ----
   { id: "ai-coach", area: "AI", status: "blocked", title: "AI coach (server-side Anthropic)", detail: "The rules-based prescription engine is live; the LLM coach is not wired.", blockedBy: "ANTHROPIC_API_KEY set server-side (never called from a client)." },
-  { id: "wearables", area: "Integrations", status: "planned", title: "Wearables (HealthKit / WHOOP)", detail: "Readiness already accepts biometrics; no device sync yet. HealthKit (native) + WHOOP OAuth feed real HRV/sleep into readiness." },
+  { id: "biometrics-manual", area: "Data", status: "shipped", title: "Readiness check-in (manual biometrics)", detail: "Enter HRV / resting HR / sleep; persisted to the Biometric table and fed into the readiness engine (today vs. rolling baseline). Web dashboard." },
+  { id: "wearables", area: "Integrations", status: "planned", title: "Wearable sync (HealthKit / WHOOP)", detail: "Manual check-in already feeds readiness; automatic sync is next. HealthKit (native) + WHOOP OAuth replace the manual inputs without changing the engine." },
 
   // ---- Planned features ----
   { id: "coach-layer", area: "Web", status: "shipped", title: "Coach layer", detail: "CoachLink mutual-consent invites (accept/decline), roster, per-client sessions, and coaching notes incl. private (never shown to the client). Coach analytics dashboard computes from the real roster. Authorized by the relationship in the API. On web + mobile (the mobile Coach tab + plan enrollment hit the same API)." },

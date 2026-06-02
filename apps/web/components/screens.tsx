@@ -36,6 +36,7 @@ import {
   buildMacrocycle,
   currentPhase,
   prescribeSession,
+  toTrainingLog,
   totalVolume,
   sessionVolume,
   bestE1rmByLift,
@@ -46,8 +47,10 @@ import {
   type LoggedSession,
   type SessionBlock,
   type Macrocycle,
+  type Biometrics,
 } from "@hybrid/core";
 import type { RosterRow } from "@/lib/use-roster";
+import BioCheckin from "./biocheckin";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -603,10 +606,21 @@ export function OperatorAnalytics() {
 // Real engine output from @hybrid/core — not mock copy.
 const SEASON_WEEK = 5;
 
-export function DashboardMirror() {
+export function DashboardMirror({
+  sessions = [],
+  bio,
+  onCheckin,
+}: {
+  sessions?: LoggedSession[];
+  bio?: Biometrics | null;
+  onCheckin?: () => void;
+}) {
   const macro = buildMacrocycle("Hybrid");
   const { block: phase, micro } = currentPhase(macro, SEASON_WEEK);
-  const rx = prescribeSession(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
+  const rx = prescribeSession(
+    sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG,
+    bio ?? SAMPLE_BIOMETRICS,
+  );
   const primaryName = rx.blocks[0]!.name;
 
   return (
@@ -661,6 +675,9 @@ export function DashboardMirror() {
           confidence {Math.round(rx.confidence * 100)}% · grows as you log
         </Mono>
       </Card>
+
+      {onCheckin && <BioCheckin onSaved={onCheckin} />}
+
       <Card span={2}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>This week</Mono>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 10, marginTop: 14 }}>
