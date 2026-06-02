@@ -9,6 +9,7 @@ import {
   type SessionBlock,
   type Signal,
 } from "@hybrid/core";
+import { activeCalibration } from "@/lib/calibration";
 
 /**
  * Compute an athlete's Performance State + injury risk from their stored
@@ -42,6 +43,7 @@ export async function athleteState(userId: string) {
   const log = toTrainingLog(sessions);
   const bio = toBiometrics(signals) ?? (sessions.length ? undefined : SAMPLE_BIOMETRICS);
   const state = computePerformanceState(log, bio);
-  const risk = computeInjuryRisk(log, bio);
+  const { coeffs } = await activeCalibration();
+  const risk = computeInjuryRisk(log, bio, coeffs);
   return { state, risk, sessionCount: sessions.length };
 }

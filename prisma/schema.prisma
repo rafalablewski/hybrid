@@ -49,6 +49,7 @@ model User {
   videos        VideoAnalysis[]
   events        Event[]
   talentProfile TalentProfile?
+  riskOutcomes  RiskOutcome[]
   coachLinks    CoachLink[]     @relation("asClient")
   clientLinks   CoachLink[]     @relation("asCoach")
 }
@@ -235,6 +236,34 @@ model TalentProfile {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([visibility])
+}
+
+// A labeled risk outcome — the training signal for the injury calibration.
+// Captured when an injury occurs (RTP opened) or fed in from medical records.
+model RiskOutcome {
+  id      String   @id @default(cuid())
+  user    User     @relation(fields: [userId], references: [id])
+  userId  String
+  tissue  String?
+  score   Float // the heuristic risk score at the time
+  injured Boolean
+  ts      DateTime @default(now())
+
+  @@index([userId])
+}
+
+// The active fitted model coefficients (e.g. injury calibration). Latest row
+// per `key` is live; computeInjuryRisk applies it. Refit via the data network.
+model ModelFit {
+  id        String   @id @default(cuid())
+  key       String // "injury-calibration"
+  intercept Float
+  slope     Float
+  n         Int
+  version   String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
 }
 
 // A pending invitation to join an org by email, for people who don't have an

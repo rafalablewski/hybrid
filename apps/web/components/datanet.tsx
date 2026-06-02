@@ -6,22 +6,38 @@ import { METRIC_LABEL, K_ANON, type BenchmarkMetric } from "@hybrid/core";
 
 type Norm = { cohortKey: string; sport: string; sex: string; ageBand: string; metric: BenchmarkMetric; n: number; mean: number; sd: number; p10: number; p50: number; p90: number };
 type Stats = { observations: number; athletes: number; cohorts: number; releasableCohorts: number };
+type Calibration = { version: string; n: number; outcomes: number; coeffs: { intercept: number; slope: number } };
 
 // Admin-only benchmarking-intelligence view — the data product. Aggregates over
 // consented (discoverable) profiles, suppressing cohorts below K athletes.
 export default function DataNet() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [norms, setNorms] = useState<Norm[]>([]);
+  const [cal, setCal] = useState<Calibration | null>(null);
+  const [refitMsg, setRefitMsg] = useState("");
 
-  useEffect(() => {
+  const load = () =>
     fetch("/api/datanet").then(async (res) => {
       if (res.ok) {
-        const d = (await res.json()) as { stats: Stats; norms: Norm[] };
+        const d = (await res.json()) as { stats: Stats; norms: Norm[]; calibration: Calibration };
         setStats(d.stats);
         setNorms(d.norms);
+        setCal(d.calibration);
       }
     });
+  useEffect(() => {
+    load();
   }, []);
+
+  const refit = async () => {
+    setRefitMsg("Refitting…");
+    const res = await fetch("/api/datanet/refit", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    if (res.ok) {
+      const d = (await res.json()) as { persisted: boolean; sampleCount: number; fit: { n: number } };
+      setRefitMsg(d.persisted ? `Refit on ${d.fit.n} samples — now live.` : `${d.sampleCount} labeled outcome(s) — need ≥30 to refit (still on prior).`);
+      load();
+    } else setRefitMsg("refit failed");
+  };
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -43,6 +59,26 @@ export default function DataNet() {
           <Stat label="Cohorts" value={stats.cohorts} c={CHALK} />
           <Stat label={`Releasable (≥${K_ANON})`} value={stats.releasableCohorts} c={VIOLET} />
         </div>
+      )}
+
+      {cal && (
+        <Card style={{ borderLeft: `3px solid ${cal.n > 0 ? LIME : ASH}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Injury calibration</Mono>
+              <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>
+                model {cal.version} · {cal.n > 0 ? `refit on ${cal.n} outcomes` : "synthetic prior"} · {cal.outcomes} labeled outcome(s) captured
+              </Mono>
+              <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>
+                σ(a + b·score): a={cal.coeffs.intercept.toFixed(2)}, b={cal.coeffs.slope.toFixed(2)}
+              </Mono>
+            </div>
+            <button onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
+              Refit now
+            </button>
+          </div>
+          {refitMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={AMBER}>{refitMsg}</Mono>}
+        </Card>
       )}
 
       <Card>

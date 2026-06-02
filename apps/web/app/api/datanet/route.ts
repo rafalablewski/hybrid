@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { aggregate, datasetStats, BENCHMARK_METRICS, type BenchmarkMetric, type Observation, type Sex } from "@hybrid/core";
+import { activeCalibration } from "@/lib/calibration";
 
 // Benchmarking-intelligence aggregate over the CONSENTED population (profiles
 // opted in as discoverable). De-identified: only cohort aggregates with ≥ K
@@ -26,8 +27,11 @@ export async function GET(request: Request) {
     }
   }
 
+  const [cal, outcomes] = await Promise.all([activeCalibration(), prisma.riskOutcome.count()]);
+
   return NextResponse.json({
     stats: datasetStats(obs, profiles.length),
     norms: aggregate(obs),
+    calibration: { ...cal, outcomes },
   });
 }

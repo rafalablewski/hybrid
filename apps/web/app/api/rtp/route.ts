@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
+import { athleteState } from "@/lib/athlete-state";
 
 // Return-to-play protocols for the signed-in athlete.
 export async function GET(request: Request) {
@@ -26,5 +27,19 @@ export async function POST(request: Request) {
   const protocol = await prisma.rtpProtocol.create({
     data: { userId: user.id, tissue: b.tissue, injuryDate, stage: "acute", completed: [], status: "active" },
   });
+
+  // Capture a labeled outcome: opening a protocol IS an injury event. Record
+  // the tissue's risk score at this moment — the positive training signal the
+  // calibration refits on.
+  try {
+    const { risk } = await athleteState(user.id);
+    const t = risk.tissues.find((x) => x.tissue === b.tissue);
+    await prisma.riskOutcome.create({
+      data: { userId: user.id, tissue: b.tissue, score: t?.risk ?? risk.overall, injured: true },
+    });
+  } catch {
+    // outcome capture is best-effort; never block opening a protocol
+  }
+
   return NextResponse.json({ protocol }, { status: 201 });
 }

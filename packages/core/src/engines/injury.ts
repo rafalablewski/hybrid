@@ -26,9 +26,16 @@ export type RiskBand = "low" | "moderate" | "elevated" | "high";
  */
 export const RISK_MODEL_VERSION = "heuristic-cal-v0";
 
-export function calibrateRisk(score: number): number {
+/** Logistic coefficients; the prior is overridden by a refit (see datanet). */
+export interface CalibrationCoeffs {
+  intercept: number;
+  slope: number;
+}
+export const PRIOR_COEFFS: CalibrationCoeffs = { intercept: -4.83, slope: 5.26 };
+
+export function calibrateRisk(score: number, coeffs: CalibrationCoeffs = PRIOR_COEFFS): number {
   const x = Math.max(0, Math.min(100, score)) / 100;
-  const z = -4.83 + 5.26 * x;
+  const z = coeffs.intercept + coeffs.slope * x;
   return 1 / (1 + Math.exp(-z));
 }
 
@@ -102,7 +109,7 @@ function ramp(x: number, lo: number, hi: number): number {
  *   • detraining     — very low ACWR (<0.8) carries a small spike-on-return risk
  *   • recovery       — suppressed HRV/sleep / elevated resting HR raises all tissues
  */
-export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics): InjuryRisk {
+export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics, coeffs: CalibrationCoeffs = PRIOR_COEFFS): InjuryRisk {
   const fatigue = computeFatigue(log);
   const acute = tissueLoadWindow(log, 7);
   const chronic28 = tissueLoadWindow(log, 28);
@@ -140,13 +147,13 @@ export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics): InjuryRis
     );
 
     drivers.sort((a, b) => b.contribution - a.contribution);
-    return { tissue, risk, prob: calibrateRisk(risk), band: band(risk), acwr, drivers, enoughHistory };
+    return { tissue, risk, prob: calibrateRisk(risk, coeffs), band: band(risk), acwr, drivers, enoughHistory };
   }).sort((a, b) => b.risk - a.risk);
 
   const overall = tissues.length ? Math.max(...tissues.map((t) => t.risk)) : 0;
   return {
     overall,
-    prob: calibrateRisk(overall),
+    prob: calibrateRisk(overall, coeffs),
     band: band(overall),
     modelVersion: RISK_MODEL_VERSION,
     tissues,
