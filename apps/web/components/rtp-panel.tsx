@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { evaluateRtp, STAGE_LABEL, type RtpStage } from "@hybrid/core";
 
-type Protocol = { id: string; tissue: string; injuryDate: string; stage: RtpStage; completed: string[]; status: string };
+type AuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
+type Protocol = { id: string; tissue: string; injuryDate: string; stage: RtpStage; completed: string[]; status: string; audit?: AuditEntry[] };
 
 const TISSUES = ["quads", "glutes", "posterior", "back", "chest", "shoulders", "triceps"];
 
@@ -13,12 +14,14 @@ const TISSUES = ["quads", "glutes", "posterior", "back", "chest", "shoulders", "
 export default function RtpPanel() {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [tissue, setTissue] = useState("posterior");
+  const [overrideFor, setOverrideFor] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
 
   const refresh = async () => {
     const res = await fetch("/api/rtp");
     if (res.ok) {
       const d = (await res.json()) as { protocols: Protocol[] };
-      setProtocols(d.protocols.map((p) => ({ ...p, completed: (p.completed as string[]) ?? [] })));
+      setProtocols(d.protocols.map((p) => ({ ...p, completed: (p.completed as string[]) ?? [], audit: (p.audit as AuditEntry[]) ?? [] })));
     }
   };
   useEffect(() => {
@@ -36,6 +39,12 @@ export default function RtpPanel() {
   const mutate = async (id: string, body: object) => {
     const res = await fetch(`/api/rtp/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) refresh();
+  };
+  const doOverride = async (id: string) => {
+    if (!reason.trim()) return;
+    await mutate(id, { action: "override", reason });
+    setOverrideFor(null);
+    setReason("");
   };
 
   const active = protocols.filter((p) => p.status !== "abandoned");
@@ -75,13 +84,36 @@ export default function RtpPanel() {
                       <Mono s={{ fontSize: 13 }} c={g.done ? LIME : ASH}>{g.label}</Mono>
                     </label>
                   ))}
-                  <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <button onClick={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} style={{ ...btn, opacity: ev.canAdvance ? 1 : 0.4 }}>
                       Advance → {ev.nextStage ? STAGE_LABEL[ev.nextStage] : ""}
                     </button>
-                    {!ev.canAdvance && <Mono s={{ fontSize: 11 }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>}
+                    {!ev.canAdvance && (
+                      <>
+                        <Mono s={{ fontSize: 11 }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>
+                        <button onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: RED, border: `1px solid ${RED}` }}>
+                          Override
+                        </button>
+                      </>
+                    )}
                   </div>
+                  {overrideFor === p.id && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
+                      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (logged to audit)" style={{ ...input, flex: 1, textTransform: "none" }} />
+                      <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: "#0c0d0c" }}>Force advance</button>
+                    </div>
+                  )}
                 </>
+              )}
+              {p.audit && p.audit.length > 0 && (
+                <div style={{ marginTop: 12, borderTop: `1px solid ${LINE}`, paddingTop: 10 }}>
+                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Audit trail</Mono>
+                  {p.audit.slice(-5).reverse().map((a, i) => (
+                    <Mono key={i} s={{ fontSize: 11, display: "block", marginTop: 4 }} c={a.action === "override" ? RED : ASH}>
+                      {new Date(a.ts).toLocaleDateString()} · {a.by} ({a.role.toLowerCase()}) · {auditText(a)}
+                    </Mono>
+                  ))}
+                </div>
               )}
             </div>
           );
@@ -89,6 +121,17 @@ export default function RtpPanel() {
       </div>
     </Card>
   );
+}
+
+function auditText(a: AuditEntry): string {
+  switch (a.action) {
+    case "attest": return `attested "${a.gate}"`;
+    case "retract": return `retracted "${a.gate}"`;
+    case "advance": return `advanced ${a.from} → ${a.to}`;
+    case "override": return `OVERRODE ${a.from} → ${a.to}: ${a.reason}`;
+    case "abandon": return "abandoned protocol";
+    default: return a.action;
+  }
 }
 
 const input: React.CSSProperties = { ...mono, fontSize: 13, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, textTransform: "capitalize" };

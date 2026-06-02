@@ -189,6 +189,7 @@ model RtpProtocol {
   stage      String   @default("acute")
   completed  Json // string[] of gate keys met in the current stage
   status     String   @default("active") // "active" | "cleared" | "abandoned"
+  audit      Json     @default("[]") // append-only: who attested gates / advanced / overrode
   createdAt  DateTime @default(now())
 
   @@index([userId])
