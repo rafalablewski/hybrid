@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, type Role } from "@/lib/session";
 import {
@@ -36,6 +36,7 @@ import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
 import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
+import { useSignals } from "@/lib/use-signals";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
@@ -67,7 +68,15 @@ export default function AppShell() {
   const { macro, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
-  const { bio, refresh: refreshBio } = useBiometrics();
+  const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
+  const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
+  // Prefer the Signal ontology when it has recovery data; fall back to the
+  // legacy biometrics path so historical readings still drive the Twin.
+  const bio = bioFromSignals ?? bioFromBiometrics;
+  const refreshBio = useCallback(() => {
+    refreshBiometrics();
+    refreshSignals();
+  }, [refreshBiometrics, refreshSignals]);
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(

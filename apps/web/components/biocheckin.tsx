@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, disp, mono, Mono, Card } from "@/lib/ui";
 
-// Manual readiness check-in. Feeds HRV / resting HR / sleep into the Biometric
-// table; readiness recomputes from it. Wearable sync (HealthKit/WHOOP) replaces
-// the inputs later without changing the engine.
+// Manual readiness check-in. Writes HRV / resting HR / sleep to the Biometric
+// table AND the Signal ontology (the path wearable sync will feed); readiness +
+// the Athlete Twin recompute from it.
 const FIELDS = [
-  { key: "hrv", label: "HRV", unit: "ms", ph: "62", color: LIME },
-  { key: "restingHr", label: "Resting HR", unit: "bpm", ph: "54", color: BLUE },
-  { key: "sleepH", label: "Sleep", unit: "h", ph: "7.5", color: AMBER },
+  { key: "hrv", signal: "hrv", label: "HRV", unit: "ms", ph: "62", color: LIME },
+  { key: "restingHr", signal: "restingHr", label: "Resting HR", unit: "bpm", ph: "54", color: BLUE },
+  { key: "sleepH", signal: "sleep", label: "Sleep", unit: "h", ph: "7.5", color: AMBER },
 ] as const;
 
 export default function BioCheckin({ onSaved }: { onSaved: () => void }) {
@@ -21,15 +21,29 @@ export default function BioCheckin({ onSaved }: { onSaved: () => void }) {
     setSaving(true);
     setDone(false);
     const payload: Record<string, number> = {};
+    const signals: { key: string; signal: string; unit: string; value: number }[] = [];
     for (const f of FIELDS) {
       const n = parseFloat(vals[f.key] ?? "");
-      if (Number.isFinite(n)) payload[f.key] = n;
+      if (Number.isFinite(n)) {
+        payload[f.key] = n;
+        signals.push({ key: f.key, signal: f.signal, unit: f.unit, value: n });
+      }
     }
     const res = await fetch("/api/biometrics", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    // Mirror each reading into the Signal ontology (best-effort).
+    await Promise.allSettled(
+      signals.map((s) =>
+        fetch("/api/signals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: s.signal, value: s.value, unit: s.unit, source: "manual" }),
+        }),
+      ),
+    );
     setSaving(false);
     if (res.ok) {
       setDone(true);
