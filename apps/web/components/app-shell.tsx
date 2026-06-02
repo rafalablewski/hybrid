@@ -29,6 +29,7 @@ import {
 import Logger from "./logger";
 import PlansScreen from "./plans";
 import SportScreen from "./sports";
+import CoachScreen from "./coach";
 import CapabilitiesScreen from "./capabilities";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
@@ -299,6 +300,8 @@ export default function AppShell() {
 
         {screen === "history" && <HistoryScreen sessions={sessions} />}
 
+        {screen === "coach" && <CoachScreen />}
+
         {screen === "roles" && <RolesScreen />}
 
         {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
@@ -310,6 +313,7 @@ export default function AppShell() {
           screen !== "sport" &&
           screen !== "log" &&
           screen !== "history" &&
+          screen !== "coach" &&
           screen !== "roles" &&
           screen !== "capabilities" && (
           <Card style={{ textAlign: "center", padding: 60 }}>
