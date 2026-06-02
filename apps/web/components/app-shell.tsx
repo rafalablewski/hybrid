@@ -38,6 +38,7 @@ import VideoScreen from "./video-screen";
 import Competition from "./competition";
 import Talent from "./talent";
 import DataNet from "./datanet";
+import Tactical from "./tactical";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -59,6 +60,7 @@ const NAV: [string, string, string][] = [
   ["coach", "Coach", "✦"],
   ["org", "Organization", "⬡"],
   ["talent", "Talent", "✸"],
+  ["tactical", "Tactical", "▰"],
   ["connections", "Connections", "⌁"],
   ["roles", "Roles & access", "⚿"],
   ["datanet", "Data network", "⊟"],
@@ -356,6 +358,8 @@ export default function AppShell() {
         {screen === "org" && <Org />}
 
         {screen === "talent" && <Talent />}
+
+        {screen === "tactical" && <Tactical />}
 
         {screen === "roles" && <RolesScreen />}
 

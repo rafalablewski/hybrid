@@ -17,6 +17,7 @@ export * from "./connectors";
 export * from "./org";
 export * from "./benchmarks";
 export * from "./datanet";
+export * from "./tactical";
 
 /** Sprint marker so both clients can show what's wired up. */
 export const CORE_VERSION = "0.1.0-sprint2";
