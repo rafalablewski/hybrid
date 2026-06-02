@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, type Role } from "@/lib/session";
 import {
@@ -31,24 +31,46 @@ import PlansScreen from "./plans";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import CapabilitiesScreen from "./capabilities";
+import Connections from "./connections";
+import Performance from "./performance";
+import Org from "./org";
+import VideoScreen from "./video-screen";
+import Competition from "./competition";
+import Talent from "./talent";
+import DataNet from "./datanet";
+import Tactical from "./tactical";
+import Longevity from "./longevity";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
 import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
+import { useSignals } from "@/lib/use-signals";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
+  ["performance", "Performance", "◈"],
   ["log", "Log session", "✎"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
+  ["competition", "Competition", "▲"],
   ["plans", "Plans", "▤"],
   ["sport", "Sport", "◎"],
+  ["video", "Video", "▷"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
+  ["org", "Organization", "⬡"],
+  ["talent", "Talent", "✸"],
+  ["tactical", "Tactical", "▰"],
+  ["longevity", "Longevity", "❤"],
+  ["connections", "Connections", "⌁"],
   ["roles", "Roles & access", "⚿"],
+  ["datanet", "Data network", "⊟"],
   ["capabilities", "Capabilities", "⊞"],
 ];
+
+// admin-only screens
+const ADMIN_ONLY = new Set(["capabilities", "datanet"]);
 
 type Scope = "athlete" | "coach" | "operator";
 
@@ -67,7 +89,15 @@ export default function AppShell() {
   const { macro, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
-  const { bio, refresh: refreshBio } = useBiometrics();
+  const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
+  const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
+  // Prefer the Signal ontology when it has recovery data; fall back to the
+  // legacy biometrics path so historical readings still drive the Twin.
+  const bio = bioFromSignals ?? bioFromBiometrics;
+  const refreshBio = useCallback(() => {
+    refreshBiometrics();
+    refreshSignals();
+  }, [refreshBiometrics, refreshSignals]);
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(
@@ -115,7 +145,7 @@ export default function AppShell() {
         <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px" }}>
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
-        {NAV.filter(([id]) => id !== "capabilities" || session.role === "admin").map(([id, l, ic]) => (
+        {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
           <button
             key={id}
             onClick={() => setScreen(id)}
@@ -292,7 +322,11 @@ export default function AppShell() {
           <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
         )}
 
+        {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
+
         {screen === "periodize" && <PeriodizeScreen macro={macro} />}
+
+        {screen === "competition" && <Competition />}
 
         {screen === "plans" && (
           <PlansScreen
@@ -304,6 +338,8 @@ export default function AppShell() {
         )}
 
         {screen === "sport" && <SportScreen />}
+
+        {screen === "video" && <VideoScreen />}
 
         {screen === "log" && (
           <Logger
@@ -319,30 +355,21 @@ export default function AppShell() {
 
         {screen === "coach" && <CoachScreen />}
 
+        {screen === "connections" && <Connections />}
+
+        {screen === "org" && <Org />}
+
+        {screen === "talent" && <Talent />}
+
+        {screen === "tactical" && <Tactical />}
+
+        {screen === "longevity" && <Longevity />}
+
         {screen === "roles" && <RolesScreen />}
 
-        {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
+        {screen === "datanet" && session.role === "admin" && <DataNet />}
 
-        {screen !== "analytics" &&
-          screen !== "dashboard" &&
-          screen !== "periodize" &&
-          screen !== "plans" &&
-          screen !== "sport" &&
-          screen !== "log" &&
-          screen !== "history" &&
-          screen !== "coach" &&
-          screen !== "roles" &&
-          screen !== "capabilities" && (
-          <Card style={{ textAlign: "center", padding: 60 }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>
-              {screen[0]!.toUpperCase() + screen.slice(1)}
-            </div>
-            <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
-              Desktop mirror of the mobile {screen} screen — wider, multi-column layout. Wired up in
-              a later sprint; the mobile app is the source of truth.
-            </Mono>
-          </Card>
-        )}
+        {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
       </main>
     </div>
   );

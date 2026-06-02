@@ -76,6 +76,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
     <span
       style={{
         ...cond,
+        display: "inline-block",
         fontSize: 12,
         fontWeight: 600,
         letterSpacing: ".05em",
@@ -85,6 +86,9 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
         padding: "3px 9px",
         borderRadius: 5,
         whiteSpace: "nowrap",
+        // self-spacing so adjacent chips never touch (and wrap cleanly)
+        marginRight: 6,
+        marginBottom: 4,
       }}
     >
       {children}

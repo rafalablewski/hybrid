@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   prescribeSession,
+  computePerformanceState,
+  computeInjuryRisk,
+  toBiometrics,
   toTrainingLog,
   sessionVolume,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
+  type Signal,
 } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
@@ -17,8 +21,8 @@ import { prisma } from "@/lib/db";
 // Falls back to the engine's own rationale when no API key is configured —
 // so it's useful today and upgrades the moment ANTHROPIC_API_KEY is set.
 const SYSTEM_PROMPT = `You are HYBRID's strength & conditioning coach for hybrid athletes (people who lift heavy AND build their engine).
-Given an athlete's readiness, today's engine-prescribed session, and recent training, write a short, specific, motivating coaching note.
-Rules: 2–4 sentences. Be concrete about load/intensity and recovery. Reference their actual data. No emojis, no preamble, no headings — just the note.`;
+Given an athlete's HPI (Hybrid Performance Index) and its limiting pillar, their readiness, today's engine-prescribed session, recent training, and their tissue-level injury risk, write a short, specific, motivating coaching note.
+Rules: 2–4 sentences. Lead from the HPI and its limiter. Be concrete about load/intensity and recovery. If any tissue is flagged for injury risk, name it and advise accordingly. Reference their actual data. No emojis, no preamble, no headings — just the note.`;
 
 export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
@@ -38,13 +42,39 @@ export async function POST(request: Request) {
     readiness: r.readiness,
   }));
 
+  // Recovery from the Signal ontology (manual check-in + wearables write here).
+  const sigRows = await prisma.signal.findMany({
+    where: { userId: user.id },
+    orderBy: { ts: "desc" },
+    take: 200,
+  });
+  const coreSignals: Signal[] = sigRows.map((r) => ({
+    athleteId: r.userId,
+    kind: r.kind as Signal["kind"],
+    value: r.value,
+    unit: r.unit,
+    source: r.source,
+    ts: r.ts.toISOString(),
+  }));
+  const bio = toBiometrics(coreSignals) ?? SAMPLE_BIOMETRICS;
+
   const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
-  const rx = prescribeSession(log, SAMPLE_BIOMETRICS);
+  const rx = prescribeSession(log, bio);
+  const state = computePerformanceState(log, bio);
+  const risk = computeInjuryRisk(log, bio);
+  const riskNote = risk.flagged.length
+    ? ` Watch ${risk.flagged[0]!.tissue} — ${risk.flagged[0]!.drivers[0]?.label ?? "elevated risk"}.`
+    : "";
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    // Engine fallback — already real and specific.
-    return NextResponse.json({ source: "engine", text: rx.why, readiness: rx.readiness });
+    // Engine fallback — already real and specific, now Twin-aware.
+    return NextResponse.json({
+      source: "engine",
+      text: state.summary + riskNote,
+      readiness: rx.readiness,
+      hpi: state.hpi.score,
+    });
   }
 
   const recent = sessions
@@ -55,7 +85,18 @@ export async function POST(request: Request) {
     .map((b) => (b.kind === "strength" ? `${b.name} ${b.sets.length}×${b.sets[0]?.reps ?? ""} @ ${b.sets[0]?.load ?? ""}kg` : `${b.name} (${b.format})`))
     .join("; ");
 
-  const userMsg = `Readiness: ${rx.readiness}/100 (confidence ${Math.round(rx.confidence * 100)}%).
+  const drivers = state.drivers
+    .map((d) => `${d.impact === "positive" ? "+" : "−"}${d.factor} (${d.detail})`)
+    .join("; ");
+  const flagged = risk.flagged.length
+    ? risk.flagged.map((t) => `${t.tissue} ${t.risk}/100 [${t.drivers[0]?.label ?? ""}]`).join(", ")
+    : "none";
+
+  const userMsg = `HPI: ${state.hpi.score}/100 (${state.hpi.band}), limiting pillar: ${state.hpi.limiter}.
+Pillars — strength ${state.hpi.components.strength}, endurance ${state.hpi.components.endurance}, recovery ${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}.
+State drivers: ${drivers || "(none notable)"}.
+Injury risk: overall ${risk.overall}/100 (${risk.band}); flagged tissues: ${flagged}.
+Readiness: ${rx.readiness}/100 (confidence ${Math.round(rx.confidence * 100)}%).
 Engine prescription for today: ${prescribed}.
 Engine rationale: ${rx.why}
 Recent sessions:\n${recent || "(none logged yet)"}
@@ -75,8 +116,8 @@ Write today's coaching note.`;
       .map((b) => (b.type === "text" ? b.text : ""))
       .join("")
       .trim();
-    return NextResponse.json({ source: "ai", text: text || rx.why, readiness: rx.readiness });
+    return NextResponse.json({ source: "ai", text: text || state.summary, readiness: rx.readiness, hpi: state.hpi.score });
   } catch {
-    return NextResponse.json({ source: "engine", text: rx.why, readiness: rx.readiness });
+    return NextResponse.json({ source: "engine", text: state.summary + riskNote, readiness: rx.readiness, hpi: state.hpi.score });
   }
 }

@@ -27,7 +27,7 @@ export async function getOrCreateDbUser(req?: Request) {
   if (!user) return null;
 
   const meta = user.user_metadata ?? {};
-  return prisma.user.upsert({
+  const dbUser = await prisma.user.upsert({
     where: { authId: user.id },
     update: { email: user.email ?? "" },
     create: {
@@ -37,4 +37,24 @@ export async function getOrCreateDbUser(req?: Request) {
       role: toDbRole(meta.role),
     },
   });
+
+  return dbUser;
+}
+
+/**
+ * Materialize any pending org invitations addressed to this user's email into
+ * real memberships. Called from /api/me (app load), NOT on every request, so it
+ * doesn't add a query to every authenticated endpoint.
+ */
+export async function claimPendingInvites(userId: string, email: string) {
+  if (!email) return;
+  const invites = await prisma.orgInvite.findMany({ where: { email, status: "pending" } });
+  for (const inv of invites) {
+    await prisma.membership.upsert({
+      where: { orgId_userId: { orgId: inv.orgId, userId } },
+      update: {},
+      create: { orgId: inv.orgId, userId, role: inv.role, teamId: inv.teamId },
+    });
+    await prisma.orgInvite.update({ where: { id: inv.id }, data: { status: "accepted" } });
+  }
 }
