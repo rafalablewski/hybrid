@@ -370,27 +370,6 @@ export default function AppShell() {
         {screen === "datanet" && session.role === "admin" && <DataNet />}
 
         {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
-
-        {screen !== "analytics" &&
-          screen !== "dashboard" &&
-          screen !== "periodize" &&
-          screen !== "plans" &&
-          screen !== "sport" &&
-          screen !== "log" &&
-          screen !== "history" &&
-          screen !== "coach" &&
-          screen !== "roles" &&
-          screen !== "capabilities" && (
-          <Card style={{ textAlign: "center", padding: 60 }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>
-              {screen[0]!.toUpperCase() + screen.slice(1)}
-            </div>
-            <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
-              Desktop mirror of the mobile {screen} screen — wider, multi-column layout. Wired up in
-              a later sprint; the mobile app is the source of truth.
-            </Mono>
-          </Card>
-        )}
       </main>
     </div>
   );
