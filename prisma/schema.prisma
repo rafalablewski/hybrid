@@ -44,6 +44,7 @@ model User {
   biometrics  Biometric[]
   signals     Signal[]
   connections Connection[]
+  memberships Membership[]
   coachLinks  CoachLink[]  @relation("asClient")
   clientLinks CoachLink[]  @relation("asCoach")
 }
@@ -129,6 +130,47 @@ model Signal {
   ts     DateTime
 
   @@index([userId, kind, ts])
+}
+
+// ---- Org Graph (Team Operating System) ----------------------------------
+// A club/federation as one governed org: a team hierarchy + staff with roles.
+// Access is scoped by role + data sensitivity in @hybrid/core (org.ts) and
+// enforced in the API; org membership gates org-level reads in RLS.
+model Organization {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  teams       Team[]
+  memberships Membership[]
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  org       Organization @relation(fields: [orgId], references: [id])
+  orgId     String
+  name      String
+  parent    Team?        @relation("TeamTree", fields: [parentId], references: [id])
+  parentId  String?
+  children  Team[]       @relation("TeamTree")
+  createdAt DateTime     @default(now())
+
+  @@index([orgId])
+  @@index([parentId])
+}
+
+model Membership {
+  id        String       @id @default(cuid())
+  org       Organization @relation(fields: [orgId], references: [id])
+  orgId     String
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  role      String // OrgRole: OWNER | DIRECTOR | COACH | MEDICAL | ANALYST | ATHLETE
+  teamId    String? // optional: scope this member to a team subtree
+  createdAt DateTime     @default(now())
+
+  @@unique([orgId, userId])
+  @@index([orgId])
+  @@index([userId])
 }
 
 // A connected wearable/sensor account. Tokens let the server sync provider
