@@ -43,6 +43,7 @@ model User {
   macrocycles Macrocycle[]
   biometrics  Biometric[]
   signals     Signal[]
+  connections Connection[]
   coachLinks  CoachLink[]  @relation("asClient")
   clientLinks CoachLink[]  @relation("asCoach")
 }
@@ -128,6 +129,26 @@ model Signal {
   ts     DateTime
 
   @@index([userId, kind, ts])
+}
+
+// A connected wearable/sensor account. Tokens let the server sync provider
+// data into the Signal ontology. Own-rows RLS (see reference SQL). Tokens
+// should be encrypted at rest in production.
+model Connection {
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  provider     String // "whoop" | "oura" | "garmin" | "apple" | ...
+  status       String    @default("active") // "active" | "revoked" | "error"
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  scope        String?
+  lastSyncAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, provider])
+  @@index([userId])
 }
 
 // Pre-built plan library (admin-managed).

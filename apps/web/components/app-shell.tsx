@@ -31,6 +31,7 @@ import PlansScreen from "./plans";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import CapabilitiesScreen from "./capabilities";
+import Connections from "./connections";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -47,6 +48,7 @@ const NAV: [string, string, string][] = [
   ["sport", "Sport", "◎"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
+  ["connections", "Connections", "⌁"],
   ["roles", "Roles & access", "⚿"],
   ["capabilities", "Capabilities", "⊞"],
 ];
@@ -327,6 +329,8 @@ export default function AppShell() {
         {screen === "history" && <HistoryScreen sessions={sessions} />}
 
         {screen === "coach" && <CoachScreen />}
+
+        {screen === "connections" && <Connections />}
 
         {screen === "roles" && <RolesScreen />}
 
