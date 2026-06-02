@@ -11,4 +11,5 @@ export * from "./hpi";
 export * from "./twin";
 export * from "./injury";
 export * from "./rtp";
+export * from "./video";
 export * from "./session";

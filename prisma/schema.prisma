@@ -46,8 +46,9 @@ model User {
   connections  Connection[]
   memberships  Membership[]
   rtpProtocols RtpProtocol[]
-  coachLinks   CoachLink[]   @relation("asClient")
-  clientLinks  CoachLink[]   @relation("asCoach")
+  videos       VideoAnalysis[]
+  coachLinks   CoachLink[]     @relation("asClient")
+  clientLinks  CoachLink[]     @relation("asCoach")
 }
 
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
@@ -186,6 +187,20 @@ model RtpProtocol {
   completed  Json // string[] of gate keys met in the current stage
   status     String   @default("active") // "active" | "cleared" | "abandoned"
   createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A markerless motion-analysis result (pose capture is client/native; this
+// stores the metrics from @hybrid/core video.ts). Derived asymmetry also lands
+// in the Signal ontology.
+model VideoAnalysis {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  movement  String
+  metrics   Json // MotionAnalysis shape
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }

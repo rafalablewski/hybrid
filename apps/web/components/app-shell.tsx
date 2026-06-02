@@ -34,6 +34,7 @@ import CapabilitiesScreen from "./capabilities";
 import Connections from "./connections";
 import Performance from "./performance";
 import Org from "./org";
+import VideoScreen from "./video-screen";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -49,6 +50,7 @@ const NAV: [string, string, string][] = [
   ["periodize", "Periodize", "◰"],
   ["plans", "Plans", "▤"],
   ["sport", "Sport", "◎"],
+  ["video", "Video", "▷"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
   ["org", "Organization", "⬡"],
@@ -321,6 +323,8 @@ export default function AppShell() {
         )}
 
         {screen === "sport" && <SportScreen />}
+
+        {screen === "video" && <VideoScreen />}
 
         {screen === "log" && (
           <Logger
