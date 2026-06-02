@@ -33,6 +33,7 @@ import CoachScreen from "./coach";
 import CapabilitiesScreen from "./capabilities";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
+import { useRoster } from "@/lib/use-roster";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
@@ -62,6 +63,7 @@ export default function AppShell() {
   const { session, ready, logout } = useSession();
   const { sessions, refresh } = useSessions();
   const { macro, refresh: refreshMacro } = useMacrocycle();
+  const { roster } = useRoster();
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(
@@ -268,7 +270,7 @@ export default function AppShell() {
               );
             })()}
             {scope === "athlete" && <AthleteAnalytics sessions={sessions} />}
-            {scope === "coach" && <CoachAnalytics />}
+            {scope === "coach" && <CoachAnalytics roster={roster} />}
             {scope === "operator" && <OperatorAnalytics />}
           </>
         )}

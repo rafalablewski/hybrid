@@ -47,6 +47,7 @@ import {
   type SessionBlock,
   type Macrocycle,
 } from "@hybrid/core";
+import type { RosterRow } from "@/lib/use-roster";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -358,7 +359,70 @@ function SampleAthlete() {
 }
 
 // ---------- ANALYTICS: COACH ----------
-export function CoachAnalytics() {
+// Real roster data when the coach has active clients; sample otherwise.
+export function CoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) {
+  if (roster.length === 0) return <SampleCoach />;
+  return <RealCoach roster={roster} />;
+}
+
+function RealCoach({ roster }: { roster: RosterRow[] }) {
+  const avgAdh = Math.round(roster.reduce((s, c) => s + c.adherence, 0) / roster.length);
+  const reads = roster.filter((c) => typeof c.readiness === "number");
+  const avgRead = reads.length
+    ? Math.round(reads.reduce((s, c) => s + (c.readiness ?? 0), 0) / reads.length)
+    : null;
+  const totalVol = roster.reduce((s, c) => s + c.volume, 0);
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <Stat label="Clients" value={roster.length} c={VIOLET} />
+      <Stat label="Avg adherence" value={avgAdh + "%"} c={LIME} />
+      <Stat label="Avg readiness" value={avgRead ?? "—"} c={BLUE} />
+      <Stat label="Roster volume" value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
+
+      <ChartFrame span={4} title="Adherence by client" kicker="Last 7 days">
+        <ResponsiveContainer width="100%" height={Math.max(120, roster.length * 44)}>
+          <BarChart data={roster} layout="vertical" margin={{ left: 20 }}>
+            <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+            <XAxis type="number" domain={[0, 100]} stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+            <YAxis type="category" dataKey="name" stroke={ASH} width={90} style={{ ...mono, fontSize: 10 }} />
+            <Tooltip contentStyle={tip} />
+            <Bar dataKey="adherence" fill={LIME} radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <ChartFrame span={4} title="Client roster" kicker="Your consented athletes" c={VIOLET}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {["Athlete", "Readiness", "Adherence", "Sessions", "Last"].map((h) => (
+                <th key={h} style={{ ...mono, fontSize: 11, color: ASH, textTransform: "uppercase", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {roster.map((c) => (
+              <tr key={c.linkId}>
+                <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.name}</td>
+                <td style={{ ...mono, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}`, color: c.readiness == null ? ASH : c.readiness > 70 ? LIME : c.readiness > 50 ? AMBER : RED }}>
+                  {c.readiness ?? "—"}
+                </td>
+                <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.adherence}%</td>
+                <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.sessions}</td>
+                <td style={{ ...mono, fontSize: 13, color: ASH, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.lastSession ? fmtDate(c.lastSession) : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </ChartFrame>
+    </div>
+  );
+}
+
+function SampleCoach() {
   const flagged = ROSTER.filter((c) => c.injury).length;
   const avgAdh = Math.round(ROSTER.reduce((s, c) => s + c.adherence, 0) / ROSTER.length);
   return (
