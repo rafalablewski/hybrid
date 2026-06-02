@@ -29,6 +29,12 @@ cp .env.example apps/web/.env         # then fill in the values
 pnpm install                          # generates the Prisma client
 pnpm --filter @hybrid/web db:migrate  # prisma migrate dev (prompts for a name)
 ```
+If `db:migrate` fails with **P3014 (cannot create the shadow database)** — a
+common Supabase limitation — use a plain schema push for first-time setup
+instead (no shadow DB, no migration history):
+```bash
+pnpm --filter @hybrid/web db:push
+```
 This creates the `User`, `CoachLink`, `CoachNote`, `Session`, `Macrocycle`,
 `Biometric`, `Plan` tables from `prisma/schema.prisma`. `DIRECT_URL` (port 5432)
 must be set for migrations; `DATABASE_URL` (pooled) is what the app uses.
