@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "HYBRID",
+    "slug": "hybrid",
+    "scheme": "hybrid",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "backgroundColor": "#0c0d0c",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.hybrid.mobile"
+    },
+    "android": {
+      "package": "app.hybrid.mobile",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router", "expo-font"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.pnp.*
+.yarn/*
+
+# builds
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# expo
+.expo/
+.expo-shared/
+*.orig.*
+web-build/
+ios/
+android/
+expo-env.d.ts
+
+# env / secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# editor / os
+.DS_Store
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# vercel
+.vercel

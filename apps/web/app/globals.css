@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* HYBRID design tokens — mirror packages/core/src/brand.ts.
+   Exposed to Tailwind v4 via @theme so utilities like bg-ink / text-lime work. */
+@theme {
+  --color-ink: #0c0d0c;
+  --color-ink2: #141614;
+  --color-card: #161816;
+  --color-line: #2a2d2a;
+  --color-lime: #c4f035;
+  --color-chalk: #f3f4ef;
+  --color-ash: #8b8f86;
+  --color-blue: #7fd4e8;
+  --color-violet: #c9a9f0;
+  --color-amber: #f0b45e;
+  --color-red: #e0625e;
+
+  --font-display: var(--font-archivo), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-chalk);
+}
+
+* {
+  box-sizing: border-box;
+}
