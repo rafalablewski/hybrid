@@ -39,14 +39,15 @@ model User {
   language  String   @default("en")
   createdAt DateTime @default(now())
 
-  sessions    Session[]
-  macrocycles Macrocycle[]
-  biometrics  Biometric[]
-  signals     Signal[]
-  connections Connection[]
-  memberships Membership[]
-  coachLinks  CoachLink[]  @relation("asClient")
-  clientLinks CoachLink[]  @relation("asCoach")
+  sessions     Session[]
+  macrocycles  Macrocycle[]
+  biometrics   Biometric[]
+  signals      Signal[]
+  connections  Connection[]
+  memberships  Membership[]
+  rtpProtocols RtpProtocol[]
+  coachLinks   CoachLink[]   @relation("asClient")
+  clientLinks  CoachLink[]   @relation("asCoach")
 }
 
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
@@ -170,6 +171,22 @@ model Membership {
 
   @@unique([orgId, userId])
   @@index([orgId])
+  @@index([userId])
+}
+
+// A return-to-play protocol instance for an athlete + tissue. The gated stage
+// progression lives in @hybrid/core (rtp.ts); this stores state + audit.
+model RtpProtocol {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  tissue     String
+  injuryDate DateTime
+  stage      String   @default("acute")
+  completed  Json // string[] of gate keys met in the current stage
+  status     String   @default("active") // "active" | "cleared" | "abandoned"
+  createdAt  DateTime @default(now())
+
   @@index([userId])
 }
 

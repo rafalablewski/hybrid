@@ -17,6 +17,21 @@ import { biometricAdjustment } from "./readiness";
 
 export type RiskBand = "low" | "moderate" | "elevated" | "high";
 
+/**
+ * Calibration: map the 0..100 heuristic score to an injury PROBABILITY via a
+ * logistic curve, and version it. Coefficients are a documented prior (score 50
+ * → ~10%, 80 → ~35%), NOT yet fit on outcomes — when the data network has
+ * enough labeled injuries, refit here and bump the version. Probability +
+ * versioning is the structure a calibrated model and offline eval plug into.
+ */
+export const RISK_MODEL_VERSION = "heuristic-cal-v0";
+
+export function calibrateRisk(score: number): number {
+  const x = Math.max(0, Math.min(100, score)) / 100;
+  const z = -4.83 + 5.26 * x;
+  return 1 / (1 + Math.exp(-z));
+}
+
 export interface RiskDriver {
   label: string;
   /** points this factor contributed to the tissue's 0..100 risk */
@@ -27,6 +42,8 @@ export interface TissueRisk {
   tissue: MuscleGroup;
   /** 0..100 */
   risk: number;
+  /** calibrated injury probability 0..1 (see calibrateRisk) */
+  prob: number;
   band: RiskBand;
   /** acute:chronic workload ratio (1 = balanced; >1.5 = spiking) */
   acwr: number;
@@ -37,7 +54,11 @@ export interface TissueRisk {
 
 export interface InjuryRisk {
   overall: number;
+  /** calibrated probability of the highest-risk tissue */
+  prob: number;
   band: RiskBand;
+  /** which calibration produced these numbers */
+  modelVersion: string;
   /** every tissue, highest risk first */
   tissues: TissueRisk[];
   /** the subset at elevated/high risk — the coach's worklist */
@@ -119,13 +140,15 @@ export function computeInjuryRisk(log: TrainingLog, bio?: Biometrics): InjuryRis
     );
 
     drivers.sort((a, b) => b.contribution - a.contribution);
-    return { tissue, risk, band: band(risk), acwr, drivers, enoughHistory };
+    return { tissue, risk, prob: calibrateRisk(risk), band: band(risk), acwr, drivers, enoughHistory };
   }).sort((a, b) => b.risk - a.risk);
 
   const overall = tissues.length ? Math.max(...tissues.map((t) => t.risk)) : 0;
   return {
     overall,
+    prob: calibrateRisk(overall),
     band: band(overall),
+    modelVersion: RISK_MODEL_VERSION,
     tissues,
     flagged: tissues.filter((t) => t.risk >= 50),
   };

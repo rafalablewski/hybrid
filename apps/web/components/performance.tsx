@@ -14,6 +14,7 @@ import {
   type MuscleGroup,
   type TissueRisk,
 } from "@hybrid/core";
+import RtpPanel from "./rtp-panel";
 
 const bandColor = (b: string) =>
   b === "low" ? LIME : b === "moderate" ? BLUE : b === "elevated" ? AMBER : RED;
@@ -123,7 +124,10 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
       </div>
 
       <Card>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>Injury risk · tissue map</Mono>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>Injury risk · tissue map</Mono>
+          <Mono s={{ fontSize: 10 }} c={ASH}>model {risk.modelVersion} · calibrated probability</Mono>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
           <div style={{ display: "flex", gap: 16 }}>
             <Figure regions={FRONT} label="anterior" byTissue={byTissue} />
@@ -133,7 +137,7 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  {["Tissue", "Risk", "ACWR", "Top driver"].map((h) => (
+                  {["Tissue", "Risk", "P(injury)", "ACWR", "Top driver"].map((h) => (
                     <th key={h} style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: ASH, textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${LINE}` }}>{h}</th>
                   ))}
                 </tr>
@@ -143,6 +147,7 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
                   <tr key={t.tissue}>
                     <td style={{ ...mono, fontSize: 13, padding: "8px", textTransform: "capitalize", color: CHALK, borderBottom: `1px solid ${LINE}` }}>{t.tissue}</td>
                     <td style={{ padding: "8px", borderBottom: `1px solid ${LINE}` }}><Chip c={t.risk > 0 ? bandColor(t.band) : ASH}>{t.risk}</Chip></td>
+                    <td style={{ ...mono, fontSize: 12, padding: "8px", color: t.risk > 0 ? CHALK : ASH, borderBottom: `1px solid ${LINE}` }}>{(t.prob * 100).toFixed(1)}%</td>
                     <td style={{ ...mono, fontSize: 12, padding: "8px", color: t.enoughHistory ? CHALK : ASH, borderBottom: `1px solid ${LINE}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
                     <td style={{ ...mono, fontSize: 11, padding: "8px", color: ASH, borderBottom: `1px solid ${LINE}` }}>{t.drivers[0]?.label ?? "—"}</td>
                   </tr>
@@ -152,6 +157,8 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
           </div>
         </div>
       </Card>
+
+      <RtpPanel />
     </div>
   );
 }
