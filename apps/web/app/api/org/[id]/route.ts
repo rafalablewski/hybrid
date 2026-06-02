@@ -28,6 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const members = memberRows.map((m) => ({
     id: m.id,
+    userId: m.userId,
     name: m.user.name ?? m.user.email,
     role: m.role as OrgRole,
     teamId: m.teamId,

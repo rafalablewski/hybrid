@@ -1,19 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import {
   buildTeamTree,
   flattenTree,
   canManageOrg,
+  canRead,
   roleScope,
+  ORG_ROLES,
   type OrgRole,
   type TeamNode,
 } from "@hybrid/core";
 
 type Org = { id: string; name: string; role: OrgRole };
-type Member = { id: string; name: string; role: OrgRole; teamId: string | null; email?: string };
+type Member = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
 type Detail = { org: { id: string; name: string }; myRole: OrgRole; teams: TeamNode[]; members: Member[] };
+type AthleteView = {
+  name: string;
+  hpi: { score: number; band: string; limiter: string };
+  readiness: { score: number };
+  summary: string;
+  sessionCount: number;
+  injury: { overall: number; band: string; flaggedCount: number; tissues?: { tissue: string; risk: number; band: string }[] };
+};
+
+const hpiColor = (b: string) =>
+  b === "peak" || b === "primed" || b === "low" ? LIME : b === "moderate" ? BLUE : b === "compromised" || b === "elevated" ? AMBER : RED;
 
 const ROLE_COLOR: Record<OrgRole, string> = {
   OWNER: LIME,
@@ -33,6 +46,10 @@ export default function Org() {
   const [newOrg, setNewOrg] = useState("");
   const [newTeam, setNewTeam] = useState("");
   const [newTeamParent, setNewTeamParent] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<OrgRole>("COACH");
+  const [inviteErr, setInviteErr] = useState("");
+  const [athlete, setAthlete] = useState<AthleteView | null>(null);
 
   const loadOrgs = async () => {
     const res = await fetch("/api/org");
@@ -83,8 +100,47 @@ export default function Org() {
     }
   };
 
+  const invite = async () => {
+    if (!selected || !inviteEmail.trim()) return;
+    setInviteErr("");
+    const res = await fetch(`/api/org/${selected}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+    });
+    if (res.ok) {
+      setInviteEmail("");
+      loadDetail(selected);
+    } else {
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
+      setInviteErr(d.error ?? "could not add member");
+    }
+  };
+
+  const setMember = async (mid: string, patch: { role?: OrgRole; teamId?: string | null }) => {
+    if (!selected) return;
+    const res = await fetch(`/api/org/${selected}/members/${mid}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (res.ok) loadDetail(selected);
+  };
+
+  const viewAthlete = async (m: Member) => {
+    if (!selected) return;
+    setAthlete(null);
+    const res = await fetch(`/api/org/${selected}/athlete/${m.userId}`);
+    if (res.ok) {
+      const d = (await res.json()) as Omit<AthleteView, "name">;
+      setAthlete({ ...d, name: m.name });
+    }
+  };
+
   const tree = detail ? flattenTree(buildTeamTree(detail.teams)) : [];
   const canManage = detail ? canManageOrg(detail.myRole) : false;
+  const canSeeAthletes = detail ? canRead(detail.myRole, "performance") : false;
+  const teamName = (tid: string | null) => tree.find((t) => t.id === tid)?.name ?? "—";
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -161,14 +217,80 @@ export default function Org() {
               <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Staff & athletes</Mono>
               <div style={{ marginTop: 12 }}>
                 {detail.members.map((m) => (
-                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
-                    <Mono s={{ fontSize: 14 }} c={CHALK}>{m.name}{m.email ? ` · ${m.email}` : ""}</Mono>
-                    <Chip c={ROLE_COLOR[m.role]}>{m.role.toLowerCase()}</Chip>
+                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Mono s={{ fontSize: 14, display: "block" }} c={m.role === "ATHLETE" && canSeeAthletes ? BLUE : CHALK}>
+                        {m.role === "ATHLETE" && canSeeAthletes ? (
+                          <span style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)}>{m.name} →</span>
+                        ) : (
+                          m.name
+                        )}
+                        {m.email ? <span style={{ color: ASH }}> · {m.email}</span> : null}
+                      </Mono>
+                      <Mono s={{ fontSize: 10 }} c={ASH}>{teamName(m.teamId)}</Mono>
+                    </div>
+                    {canManage ? (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...input, fontSize: 11, padding: "5px 7px" }}>
+                          {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
+                        </select>
+                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...input, fontSize: 11, padding: "5px 7px" }}>
+                          <option value="">no team</option>
+                          {tree.map((t) => <option key={t.id} value={t.id}>{"— ".repeat(t.depth)}{t.name}</option>)}
+                        </select>
+                      </div>
+                    ) : (
+                      <Chip c={ROLE_COLOR[m.role]}>{m.role.toLowerCase()}</Chip>
+                    )}
                   </div>
                 ))}
               </div>
+              {canManage && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={input} />
+                    <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)} style={input}>
+                      {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
+                    </select>
+                    <button onClick={invite} style={btn(LIME)}>Add member</button>
+                  </div>
+                  {inviteErr && <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={AMBER}>{inviteErr}</Mono>}
+                </div>
+              )}
             </Card>
           </div>
+
+          {athlete && (
+            <Card style={{ borderLeft: `3px solid ${hpiColor(athlete.hpi.band)}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+                  Athlete Twin · {athlete.name}
+                </Mono>
+                <span style={{ cursor: "pointer", color: ASH, fontFamily: "monospace" }} onClick={() => setAthlete(null)}>✕</span>
+              </div>
+              <div style={{ display: "flex", gap: 20, alignItems: "baseline", marginTop: 8 }}>
+                <div style={{ ...disp, fontWeight: 900, fontSize: 40, color: hpiColor(athlete.hpi.band) }}>{athlete.hpi.score}</div>
+                <div>
+                  <Chip c={hpiColor(athlete.hpi.band)}>{athlete.hpi.band}</Chip>
+                  <Chip c={AMBER}>limiter · {athlete.hpi.limiter}</Chip>
+                  <Chip c={athlete.injury.flaggedCount ? RED : LIME}>injury {athlete.injury.overall}/100</Chip>
+                </div>
+              </div>
+              <Mono s={{ fontSize: 13, display: "block", marginTop: 8, lineHeight: 1.5 }} c={CHALK}>{athlete.summary}</Mono>
+              {athlete.injury.tissues ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                  {athlete.injury.tissues.filter((t) => t.risk > 0).map((t) => (
+                    <Chip key={t.tissue} c={hpiColor(t.band)}>{t.tissue} {t.risk}</Chip>
+                  ))}
+                </div>
+              ) : (
+                <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+                  {athlete.injury.flaggedCount} tissue(s) flagged · tissue-level detail is medical-tier
+                </Mono>
+              )}
+              <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={ASH}>{athlete.sessionCount} sessions logged</Mono>
+            </Card>
+          )}
         </>
       )}
     </div>
