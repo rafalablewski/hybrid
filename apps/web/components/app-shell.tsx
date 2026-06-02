@@ -29,6 +29,7 @@ import {
 import Logger from "./logger";
 import PlansScreen from "./plans";
 import SportScreen from "./sports";
+import CapabilitiesScreen from "./capabilities";
 import { useSessions } from "@/lib/use-sessions";
 
 const NAV: [string, string, string][] = [
@@ -41,6 +42,7 @@ const NAV: [string, string, string][] = [
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
   ["roles", "Roles & access", "⚿"],
+  ["capabilities", "Capabilities", "⊞"],
 ];
 
 type Scope = "athlete" | "coach" | "operator";
@@ -104,7 +106,7 @@ export default function AppShell() {
         <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px" }}>
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
-        {NAV.map(([id, l, ic]) => (
+        {NAV.filter(([id]) => id !== "capabilities" || session.role === "admin").map(([id, l, ic]) => (
           <button
             key={id}
             onClick={() => setScreen(id)}
@@ -290,6 +292,8 @@ export default function AppShell() {
 
         {screen === "roles" && <RolesScreen />}
 
+        {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
+
         {screen !== "analytics" &&
           screen !== "dashboard" &&
           screen !== "periodize" &&
@@ -297,7 +301,8 @@ export default function AppShell() {
           screen !== "sport" &&
           screen !== "log" &&
           screen !== "history" &&
-          screen !== "roles" && (
+          screen !== "roles" &&
+          screen !== "capabilities" && (
           <Card style={{ textAlign: "center", padding: 60 }}>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>
               {screen[0]!.toUpperCase() + screen.slice(1)}
