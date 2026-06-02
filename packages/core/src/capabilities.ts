@@ -53,7 +53,7 @@ export const CAPABILITIES: Capability[] = [
   // ---- Backend / Data ----
   { id: "db", area: "Data", status: "shipped", title: "Database (Prisma + Supabase)", detail: "7 tables (User, CoachLink, CoachNote, Session, Macrocycle, Biometric, Plan) with RLS enabled." },
   { id: "api", area: "Backend", status: "shipped", title: "Shared API", detail: "/api/me + /api/sessions, scoped to the user, accept both web cookies and mobile Bearer tokens — one backend, both clients." },
-  { id: "rls-policies", area: "Backend", status: "planned", title: "Row-level security policies", detail: "Tables have RLS on but no per-row policies yet; enforcement is in API code. Add Supabase policies for the coach/client/admin rules." },
+  { id: "rls-policies", area: "Backend", status: "blocked", title: "Row-level security policies", detail: "Policies authored in reference/rls-policies.sql (own-rows + coach-via-ACTIVE-link + private-notes). Defense-in-depth; the app already enforces in API code (Prisma bypasses RLS).", blockedBy: "Run reference/rls-policies.sql in the Supabase SQL editor — the sandbox can't reach the DB." },
 
   // ---- AI / Integrations ----
   { id: "ai-coach", area: "AI", status: "blocked", title: "AI coach (server-side Anthropic)", detail: "The rules-based prescription engine is live; the LLM coach is not wired.", blockedBy: "ANTHROPIC_API_KEY set server-side (never called from a client)." },
