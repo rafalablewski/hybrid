@@ -76,7 +76,7 @@ export interface InjuryRisk {
 function tissueLoadWindow(log: TrainingLog, days: number): Record<MuscleGroup, number> {
   const load = Object.fromEntries(ALL_MUSCLES.map((m) => [m, 0])) as Record<MuscleGroup, number>;
   for (const session of log) {
-    if (session.daysAgo >= days) continue;
+    if (session.daysAgo < 0 || session.daysAgo >= days) continue;
     for (const it of session.items) {
       const meta = MOVEMENTS[it.move];
       if (!meta) continue;

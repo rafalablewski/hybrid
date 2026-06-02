@@ -36,6 +36,7 @@ export async function POST(request: Request) {
   if (sigs.length)
     await prisma.signal.createMany({
       data: sigs.map((s) => ({ userId: user.id, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: new Date(s.ts) })),
+      skipDuplicates: true,
     });
 
   return NextResponse.json({ analysis, metrics }, { status: 201 });

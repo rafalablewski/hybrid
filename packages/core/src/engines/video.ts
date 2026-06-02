@@ -49,6 +49,7 @@ const cap = (s: Side) => (s === "left" ? "left" : "right");
 
 /** Knee angle (hip–knee–ankle) for a side, or null if keypoints are missing. */
 export function kneeAngle(pose: Pose, side: Side): number | null {
+  if (!pose) return null;
   const hip = pose[`${cap(side)}Hip` as PoseName];
   const knee = pose[`${cap(side)}Knee` as PoseName];
   const ankle = pose[`${cap(side)}Ankle` as PoseName];

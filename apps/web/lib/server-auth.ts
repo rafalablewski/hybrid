@@ -38,15 +38,15 @@ export async function getOrCreateDbUser(req?: Request) {
     },
   });
 
-  await claimPendingInvites(dbUser.id, dbUser.email);
   return dbUser;
 }
 
 /**
  * Materialize any pending org invitations addressed to this user's email into
- * real memberships. Runs on sign-in so an invited coach/athlete auto-joins.
+ * real memberships. Called from /api/me (app load), NOT on every request, so it
+ * doesn't add a query to every authenticated endpoint.
  */
-async function claimPendingInvites(userId: string, email: string) {
+export async function claimPendingInvites(userId: string, email: string) {
   if (!email) return;
   const invites = await prisma.orgInvite.findMany({ where: { email, status: "pending" } });
   for (const inv of invites) {

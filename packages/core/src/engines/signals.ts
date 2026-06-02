@@ -93,7 +93,7 @@ export function rollingBaseline(
 ): SignalBaseline {
   const vals = signals
     .filter((s) => s.kind === kind)
-    .sort((a, b) => b.ts.localeCompare(a.ts))
+    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
     .slice(0, window)
     .map((s) => s.value);
   const n = vals.length;
@@ -123,7 +123,7 @@ export function orientedZ(
 export function latest(signals: Signal[], kind: SignalKind): Signal | undefined {
   return signals
     .filter((s) => s.kind === kind)
-    .sort((a, b) => b.ts.localeCompare(a.ts))[0];
+    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())[0];
 }
 
 function metric(

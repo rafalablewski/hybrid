@@ -134,6 +134,8 @@ model Signal {
   source String // "apple" | "whoop" | "garmin" | "catapult" | "manual" | ...
   ts     DateTime
 
+  // de-dupe overlapping wearable syncs (same reading from the same source)
+  @@unique([userId, kind, ts, source])
   @@index([userId, kind, ts])
 }
 

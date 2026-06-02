@@ -61,6 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
         source: s.source,
         ts: new Date(s.ts),
       })),
+      skipDuplicates: true,
     });
     if (provider !== "apple")
       await prisma.connection.updateMany({
