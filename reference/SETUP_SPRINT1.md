@@ -12,15 +12,20 @@ real Supabase auth (Apple · Google · email) with zero code changes.
    and **direct** (port 5432) strings.
 
 ## 2. Set environment variables
-Copy `.env.example` → `.env` and fill in the values. Set the **same** variables
-in **Vercel → Project → Settings → Environment Variables** (then redeploy — the
+Copy `.env.example` → **`apps/web/.env`** (not repo root, not `.env.local`) and
+fill in the values. This single file is read by both Prisma migrate (runs from
+`apps/web`, reads `.env`) and Next.js local dev. Set the **same** variables in
+**Vercel → Project → Settings → Environment Variables** (then redeploy — the
 `NEXT_PUBLIC_*` ones are inlined at build time, so a rebuild is required).
+
+Do NOT run `npx prisma init` — the schema + Prisma deps already exist in this repo.
 
 ## 3. Run the database migration
 Prisma is already wired into `apps/web` (deps, schema path, client singleton at
 `apps/web/lib/db.ts`, and `prisma generate` runs on build). So:
 ```bash
 cd /path/to/hybrid
+cp .env.example apps/web/.env         # then fill in the values
 pnpm install                          # generates the Prisma client
 pnpm --filter @hybrid/web db:migrate  # prisma migrate dev (prompts for a name)
 ```
