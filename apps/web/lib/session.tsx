@@ -51,6 +51,33 @@ function fromSupabaseUser(user: User): Session {
   };
 }
 
+/** Resolve a Supabase user to a Session, preferring the DB role from /api/me
+ *  (the source of truth) and falling back to auth metadata if that call fails. */
+async function resolveSession(user: User): Promise<Session> {
+  const fallback = fromSupabaseUser(user);
+  try {
+    const res = await fetch("/api/me");
+    if (res.ok) {
+      const me = (await res.json()) as {
+        name?: string | null;
+        email?: string;
+        role?: Role;
+      };
+      return {
+        name: me.name
+          ? me.name.charAt(0).toUpperCase() + me.name.slice(1)
+          : fallback.name,
+        email: me.email ?? fallback.email,
+        role: me.role ?? fallback.role,
+        provider: fallback.provider,
+      };
+    }
+  } catch {
+    // network/route error — fall back to metadata
+  }
+  return fallback;
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
@@ -60,12 +87,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // --- Real auth: hydrate from Supabase and follow auth-state changes ---
     if (live) {
       const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
-        setSession(data.user ? fromSupabaseUser(data.user) : null);
+      supabase.auth.getUser().then(async ({ data }) => {
+        setSession(data.user ? await resolveSession(data.user) : null);
         setReady(true);
       });
       const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-        setSession(s?.user ? fromSupabaseUser(s.user) : null);
+        if (s?.user) resolveSession(s.user).then(setSession);
+        else setSession(null);
       });
       return () => sub.subscription.unsubscribe();
     }
