@@ -15,6 +15,7 @@ export * from "./i18n";
 export * from "./biometrics";
 export * from "./connectors";
 export * from "./org";
+export * from "./benchmarks";
 
 /** Sprint marker so both clients can show what's wired up. */
 export const CORE_VERSION = "0.1.0-sprint2";
