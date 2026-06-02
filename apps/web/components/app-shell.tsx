@@ -31,6 +31,7 @@ import PlansScreen from "./plans";
 import SportScreen from "./sports";
 import CapabilitiesScreen from "./capabilities";
 import { useSessions } from "@/lib/use-sessions";
+import { useMacrocycle } from "@/lib/use-macrocycle";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
@@ -59,6 +60,7 @@ export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
   const { sessions, refresh } = useSessions();
+  const { macro, refresh: refreshMacro } = useMacrocycle();
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(
@@ -272,9 +274,16 @@ export default function AppShell() {
 
         {screen === "dashboard" && <DashboardMirror />}
 
-        {screen === "periodize" && <PeriodizeScreen />}
+        {screen === "periodize" && <PeriodizeScreen macro={macro} />}
 
-        {screen === "plans" && <PlansScreen />}
+        {screen === "plans" && (
+          <PlansScreen
+            onEnrolled={() => {
+              refreshMacro();
+              setScreen("periodize");
+            }}
+          />
+        )}
 
         {screen === "sport" && <SportScreen />}
 

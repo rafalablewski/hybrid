@@ -6,14 +6,15 @@ import { INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Chip } fro
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
 // the exact same source the mobile app renders. Goal → plans → full detail.
-export default function PlansScreen() {
+export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void }) {
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
 
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
-  if (plan && goal) return <PlanDetailView goal={goal} plan={plan} back={() => setPlanId(null)} />;
+  if (plan && goal)
+    return <PlanDetailView goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
   if (goal)
     return (
       <PlanList
@@ -107,12 +108,32 @@ function PlanDetailView({
   goal,
   plan,
   back,
+  onEnrolled,
 }: {
   goal: GoalNode;
   plan: GoalPlan;
   back: () => void;
+  onEnrolled?: () => void;
 }) {
   const d = planDetail(plan.id, plan);
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+
+  const enroll = async () => {
+    setState("busy");
+    try {
+      const res = await fetch("/api/macrocycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: goal.name }),
+      });
+      if (!res.ok) return setState("error");
+      setState("done");
+      onEnrolled?.();
+    } catch {
+      setState("error");
+    }
+  };
+
   return (
     <div style={{ maxWidth: 820 }}>
       <BackLink onClick={back} label={goal.name} />
@@ -188,21 +209,32 @@ function PlanDetailView({
       <Info label="Progression" value={d.progression} />
 
       <button
+        onClick={enroll}
+        disabled={state === "busy" || state === "done"}
         style={{
           ...disp,
           fontWeight: 800,
           fontSize: 15,
-          background: LIME,
-          color: "#0c0d0c",
-          border: "none",
+          background: state === "done" ? INK2 : LIME,
+          color: state === "done" ? LIME : "#0c0d0c",
+          border: state === "done" ? `1px solid ${LIME}` : "none",
           borderRadius: 12,
           padding: "14px 28px",
-          cursor: "pointer",
+          cursor: state === "busy" || state === "done" ? "default" : "pointer",
           marginTop: 18,
         }}
       >
-        Enroll in {plan.name} →
+        {state === "busy"
+          ? "Enrolling…"
+          : state === "done"
+            ? "✓ Enrolled — see Periodize"
+            : `Enroll in ${plan.name} →`}
       </button>
+      {state === "error" && (
+        <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={AMBER}>
+          Couldn&apos;t enroll — sign in (real auth) and try again.
+        </Mono>
+      )}
     </div>
   );
 }

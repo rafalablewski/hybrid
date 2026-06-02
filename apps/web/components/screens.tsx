@@ -45,6 +45,7 @@ import {
   SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
+  type Macrocycle,
 } from "@hybrid/core";
 
 const fmtDate = (iso: string) =>
@@ -641,15 +642,16 @@ export function DashboardMirror() {
 }
 
 // ---------- PERIODIZE (real macrocycle from the engine) ----------
-export function PeriodizeScreen() {
-  const macro = buildMacrocycle("Hybrid");
-  const { block: current } = currentPhase(macro, SEASON_WEEK);
+export function PeriodizeScreen({ macro: enrolled }: { macro?: Macrocycle | null }) {
+  const macro = enrolled ?? buildMacrocycle("Hybrid");
+  const week = enrolled ? 1 : SEASON_WEEK;
+  const { block: current } = currentPhase(macro, week);
 
   return (
     <div>
       <Card style={{ marginBottom: 16 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          {macro.goalOrSport} · {macro.model}
+          {macro.goalOrSport}{macro.model ? ` · ${macro.model}` : enrolled ? " · enrolled" : ""}
         </Mono>
         <div style={{ ...disp, fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>
           {macro.totalWeeks}-week macrocycle · now in {current.label}
@@ -696,8 +698,8 @@ export function PeriodizeScreen() {
                     textAlign: "center",
                     padding: "8px 2px",
                     borderRadius: 8,
-                    background: m.week === SEASON_WEEK ? `${LIME}1a` : INK2,
-                    border: `1px solid ${m.week === SEASON_WEEK ? LIME : LINE}`,
+                    background: m.week === week ? `${LIME}1a` : INK2,
+                    border: `1px solid ${m.week === week ? LIME : LINE}`,
                   }}
                 >
                   <Mono s={{ fontSize: 10, display: "block" }} c={m.kind === "recovery" ? ASH : CHALK}>
