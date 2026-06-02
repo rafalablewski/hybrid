@@ -12,4 +12,5 @@ export * from "./twin";
 export * from "./injury";
 export * from "./rtp";
 export * from "./video";
+export * from "./peaking";
 export * from "./session";

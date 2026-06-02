@@ -47,6 +47,7 @@ model User {
   memberships  Membership[]
   rtpProtocols RtpProtocol[]
   videos       VideoAnalysis[]
+  events       Event[]
   coachLinks   CoachLink[]     @relation("asClient")
   clientLinks  CoachLink[]     @relation("asCoach")
 }
@@ -200,6 +201,20 @@ model VideoAnalysis {
   userId    String
   movement  String
   metrics   Json // MotionAnalysis shape
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A target competition. The peaking optimizer (peaking.ts) back-solves the
+// plan to land the athlete's best day on this date.
+model Event {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  name      String
+  sport     String
+  date      DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])

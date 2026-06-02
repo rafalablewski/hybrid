@@ -35,6 +35,7 @@ import Connections from "./connections";
 import Performance from "./performance";
 import Org from "./org";
 import VideoScreen from "./video-screen";
+import Competition from "./competition";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -48,6 +49,7 @@ const NAV: [string, string, string][] = [
   ["log", "Log session", "✎"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
+  ["competition", "Competition", "▲"],
   ["plans", "Plans", "▤"],
   ["sport", "Sport", "◎"],
   ["video", "Video", "▷"],
@@ -312,6 +314,8 @@ export default function AppShell() {
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
 
         {screen === "periodize" && <PeriodizeScreen macro={macro} />}
+
+        {screen === "competition" && <Competition />}
 
         {screen === "plans" && (
           <PlansScreen
