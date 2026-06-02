@@ -120,3 +120,31 @@ export function computePerformanceState(
 
   return { hpi, readiness, fatigue, drivers: drivers.slice(0, 4), summary };
 }
+
+export interface TrajectoryPoint {
+  /** days before today (0 = today) */
+  daysAgo: number;
+  hpi: number;
+  readiness: number;
+}
+
+/**
+ * Replay HPI + readiness over the last `days` by re-basing the log to each past
+ * day — so a coach sees the trend, not just today's snapshot. Load-driven
+ * (biometrics aren't replayed historically); returns oldest → newest.
+ */
+export function performanceTrajectory(log: TrainingLog, days = 14): TrajectoryPoint[] {
+  const out: TrajectoryPoint[] = [];
+  for (let n = days - 1; n >= 0; n--) {
+    const subLog = log
+      .filter((s) => s.daysAgo >= n)
+      .map((s) => ({ ...s, daysAgo: s.daysAgo - n }));
+    const fatigue = computeFatigue(subLog);
+    out.push({
+      daysAgo: n,
+      hpi: computeHpi(fatigue).score,
+      readiness: computeReadiness(fatigue).score,
+    });
+  }
+  return out;
+}

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computePerformanceState,
   computeInjuryRisk,
+  performanceTrajectory,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
 } from "./index";
@@ -90,6 +91,26 @@ describe("computeInjuryRisk", () => {
     expect(back.enoughHistory).toBe(false); // untouched tissue
   });
 
+  it("(trajectory) returns one point per day, oldest first, ending today", () => {
+    const traj = performanceTrajectory(SAMPLE_TRAINING_LOG, 10);
+    expect(traj).toHaveLength(10);
+    expect(traj[0]!.daysAgo).toBe(9);
+    expect(traj[traj.length - 1]!.daysAgo).toBe(0);
+    for (const p of traj) {
+      expect(p.hpi).toBeGreaterThanOrEqual(0);
+      expect(p.hpi).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("(trajectory) today's point matches a direct state compute", () => {
+    const traj = performanceTrajectory(SAMPLE_TRAINING_LOG, 14);
+    const today = traj[traj.length - 1]!;
+    const direct = computePerformanceState(SAMPLE_TRAINING_LOG);
+    expect(today.hpi).toBe(direct.hpi.score);
+  });
+});
+
+describe("computeInjuryRisk recovery", () => {
   it("recovery suppression raises risk across tissues", () => {
     const log: TrainingLog = [
       { daysAgo: 1, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },

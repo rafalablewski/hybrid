@@ -32,6 +32,7 @@ import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import CapabilitiesScreen from "./capabilities";
 import Connections from "./connections";
+import Performance from "./performance";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -41,6 +42,7 @@ import { useSignals } from "@/lib/use-signals";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
+  ["performance", "Performance", "◈"],
   ["log", "Log session", "✎"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
@@ -302,6 +304,8 @@ export default function AppShell() {
         {screen === "dashboard" && (
           <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
         )}
+
+        {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
 
         {screen === "periodize" && <PeriodizeScreen macro={macro} />}
 
