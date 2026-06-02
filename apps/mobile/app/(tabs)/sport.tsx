@@ -66,7 +66,7 @@ export default function Sport() {
       </View>
 
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
-        <Kicker color={C.lime}>Today's prescribed S&C · {rx.setScheme}</Kicker>
+        <Kicker color={C.lime}>{t("sport.prescribed")} · {rx.setScheme}</Kicker>
         {rx.blocks.map((b, i) => (
           <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 6 }}>
             <View style={{ flex: 1 }}>
@@ -79,7 +79,7 @@ export default function Sport() {
       </Card>
 
       <Card>
-        <Kicker>Why it transfers</Kicker>
+        <Kicker>{t("sport.why")}</Kicker>
         {rx.ranked.map((e) => (
           <View key={e.name} style={{ marginTop: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

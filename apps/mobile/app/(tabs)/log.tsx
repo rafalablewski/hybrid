@@ -10,6 +10,7 @@ import {
   type SessionBlock,
 } from "@hybrid/core";
 import { fetchSessions, createSession } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Button, C, F } from "../../lib/ui";
 
 type EB = SessionBlock & { uid: string };
@@ -17,6 +18,7 @@ const uid = () => Math.random().toString(36).slice(2);
 
 export default function Log() {
   const router = useRouter();
+  const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [title, setTitle] = useState("Workout");
   const [blocks, setBlocks] = useState<EB[]>([]);
@@ -74,7 +76,7 @@ export default function Log() {
       blocks: blocks.map(({ uid: _u, ...b }) => b),
     });
     if (!ok) {
-      setError("Couldn't save — check your connection / sign-in.");
+      setError(t("log.saveError"));
       setSaving(false);
       return;
     }
@@ -86,13 +88,13 @@ export default function Log() {
 
   return (
     <Screen>
-      <Kicker>Log session</Kicker>
+      <Kicker>{t("nav.log")}</Kicker>
 
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 8 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Kicker color={C.violet}>AI Coach · {rx.readiness}/100</Kicker>
+          <Kicker color={C.violet}>{t("home.aiCoach")} · {rx.readiness}/100</Kicker>
           <Pressable onPress={usePrescribed}>
-            <Mono color={C.violet}>use →</Mono>
+            <Mono color={C.violet}>{t("log.use")}</Mono>
           </Pressable>
         </View>
         <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>{rx.why}</Mono>
@@ -101,7 +103,7 @@ export default function Log() {
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Session title"
+        placeholder={t("log.titlePlaceholder")}
         placeholderTextColor={C.ash}
         style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 12, marginBottom: 12 }}
       />
@@ -132,7 +134,7 @@ export default function Log() {
                 </View>
               ))}
               <Pressable onPress={() => addSet(b.uid)}>
-                <Mono color={C.ash}>+ set</Mono>
+                <Mono color={C.ash}>{t("log.addSet")}</Mono>
               </Pressable>
             </>
           ) : (
@@ -143,17 +145,17 @@ export default function Log() {
 
       <View style={{ flexDirection: "row", gap: 8, marginVertical: 8 }}>
         <Pressable onPress={addStrength} style={pill(C.lime)}>
-          <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>+ Strength</Text>
+          <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>{t("log.addStrength")}</Text>
         </Pressable>
         <Pressable onPress={addCond} style={pill(C.blue)}>
-          <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.blue }}>+ Conditioning</Text>
+          <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.blue }}>{t("log.addConditioning")}</Text>
         </Pressable>
       </View>
 
       {!!error && <Mono color={C.red} style={{ marginBottom: 10 }}>{error}</Mono>}
 
       <Button
-        label={saving ? "Saving…" : "Save session →"}
+        label={saving ? t("log.saving") : t("log.save")}
         onPress={save}
         disabled={saving || blocks.length === 0}
       />

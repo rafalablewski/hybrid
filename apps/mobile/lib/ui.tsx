@@ -1,5 +1,15 @@
 import type { ReactNode } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet, type ViewStyle, type TextStyle } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+  type ViewStyle,
+  type TextStyle,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@hybrid/core";
 
@@ -14,11 +24,41 @@ export const F = {
   mono: "JetBrainsMono_400Regular",
 } as const;
 
-export function Screen({ children }: { children: ReactNode }) {
+export function Screen({
+  children,
+  refreshing,
+  onRefresh,
+}: {
+  children: ReactNode;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+}) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 48 }}>{children}</ScrollView>
+      <ScrollView
+        contentContainerStyle={{ padding: 18, paddingBottom: 48 }}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={!!refreshing}
+              onRefresh={onRefresh}
+              tintColor={C.lime}
+              colors={[C.lime]}
+            />
+          ) : undefined
+        }
+      >
+        {children}
+      </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export function Loading() {
+  return (
+    <View style={{ paddingVertical: 56, alignItems: "center" }}>
+      <ActivityIndicator color={C.lime} />
+    </View>
   );
 }
 

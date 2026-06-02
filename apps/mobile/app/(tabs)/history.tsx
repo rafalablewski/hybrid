@@ -4,7 +4,7 @@ import { useFocusEffect } from "expo-router";
 import { sessionVolume, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, Chip, Loading, C, F } from "../../lib/ui";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
@@ -16,18 +16,29 @@ function summary(b: SessionBlock): string {
 export default function History() {
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async (refresh = false) => {
+    if (refresh) setRefreshing(true);
+    setSessions(await fetchSessions());
+    setLoading(false);
+    setRefreshing(false);
+  }, []);
 
   // Refetch whenever the tab regains focus (e.g. right after logging).
   useFocusEffect(
     useCallback(() => {
-      fetchSessions().then(setSessions);
-    }, []),
+      load();
+    }, [load]),
   );
 
   return (
-    <Screen>
-      <Kicker>History</Kicker>
-      {sessions.length === 0 ? (
+    <Screen refreshing={refreshing} onRefresh={() => load(true)}>
+      <Kicker>{t("nav.history")}</Kicker>
+      {loading ? (
+        <Loading />
+      ) : sessions.length === 0 ? (
         <Card style={{ marginTop: 10, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{t("history.none")}</Text>
           <Mono style={{ marginTop: 8, textAlign: "center" }}>Log a workout — it appears here and on the web.</Mono>

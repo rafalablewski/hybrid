@@ -39,7 +39,7 @@ export default function Plans() {
             </View>
             <Mono style={{ marginTop: 8, lineHeight: 19 }}>{g.blurb}</Mono>
             <Mono color={g.color} style={{ marginTop: 8 }}>
-              {g.plans.length} plans →
+              {g.plans.length} {t("plans.plansCount")} →
             </Mono>
           </Card>
         </Pressable>
@@ -49,9 +49,10 @@ export default function Plans() {
 }
 
 function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
+  const { t } = useLang();
   return (
     <Screen>
-      <Back onPress={back} label="All goals" />
+      <Back onPress={back} label={t("plans.allGoals")} />
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginVertical: 8 }}>
         {goal.icon} {goal.name}
       </Text>
@@ -63,7 +64,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
               {p.hot && <Chip>Popular</Chip>}
             </View>
             <Mono style={{ marginVertical: 6 }}>
-              {p.weeks} wks · {p.sessions}×/wk · {p.tag}
+              {p.weeks} {t("plans.weeks")} · {p.sessions}×/wk · {p.tag}
             </Mono>
             <Mono color={C.chalk} style={{ lineHeight: 19 }}>
               {p.desc}
@@ -76,6 +77,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
 }
 
 function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: () => void }) {
+  const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
   const enroll = async () => {
@@ -87,16 +89,16 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
       <Back onPress={back} label={goal.name} />
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
       <Mono style={{ marginBottom: 14 }}>
-        {plan.weeks} weeks · {plan.sessions}×/week · {d.level}
+        {plan.weeks} {t("plans.weeks")} · {plan.sessions}×/wk · {d.level}
       </Mono>
 
-      <Field label="Who it's for" value={d.forWho} />
-      <Field label="Outcome" value={d.outcome} />
-      <Field label="Session length" value={d.sessionLength} />
-      <Field label="Equipment" value={d.equipment} />
+      <Field label={t("plan.forWho")} value={d.forWho} />
+      <Field label={t("plan.outcome")} value={d.outcome} />
+      <Field label={t("plan.sessionLength")} value={d.sessionLength} />
+      <Field label={t("plan.equipment")} value={d.equipment} />
 
       <Card>
-        <Kicker color={C.lime}>Weekly split</Kicker>
+        <Kicker color={C.lime}>{t("plan.split")}</Kicker>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
           {d.split.map((day, i) => (
             <View key={i} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7 }}>
@@ -109,7 +111,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
       </Card>
 
       <Card>
-        <Kicker color={C.amber}>Sample · {d.sample.day}</Kicker>
+        <Kicker color={C.amber}>{t("plan.sample")} · {d.sample.day}</Kicker>
         {d.sample.items.map((it, i) => (
           <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
             <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk, flex: 1 }}>{it.name}</Text>
@@ -118,16 +120,16 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
         ))}
       </Card>
 
-      <Field label="Progression" value={d.progression} />
+      <Field label={t("plan.progression")} value={d.progression} />
 
       <View style={{ marginTop: 8 }}>
         <Button
           label={
             enrolled === "done"
-              ? "✓ Enrolled"
+              ? t("common.enrolled")
               : enrolled === "busy"
-                ? "Enrolling…"
-                : `Enroll in ${plan.name}`
+                ? t("common.enrolling")
+                : `${t("common.enroll")} ${plan.name}`
           }
           color={C.lime}
           onPress={enroll}

@@ -63,7 +63,7 @@ export const CAPABILITIES: Capability[] = [
   // ---- Planned features ----
   { id: "coach-layer", area: "Web", status: "shipped", title: "Coach layer", detail: "CoachLink mutual-consent invites (accept/decline), roster, per-client sessions, and coaching notes incl. private (never shown to the client). Coach analytics dashboard computes from the real roster. Authorized by the relationship in the API. On web + mobile (the mobile Coach tab + plan enrollment hit the same API)." },
   { id: "plans-enroll", area: "Backend", status: "shipped", title: "Plan enrollment", detail: "Enrolling in a plan builds a macrocycle from the engine and persists it (POST /api/macrocycles); Periodize renders your enrolled season. Web done; mobile enroll pending." },
-  { id: "i18n", area: "Core", status: "shipped", title: "Localization (EN/PL/DE)", detail: "Shared i18n in core; persisted language switchers on web (header) and mobile (Home). Navigation, headers, and key screen strings translated on both clients. Full screen-body translation is incremental." },
+  { id: "i18n", area: "Core", status: "shipped", title: "Localization (EN/PL/DE)", detail: "Shared i18n in core; persisted language switchers on web + mobile. All UI labels across mobile (Home/Plans/Sport/Log/History/Coach) and web navigation/headers are translated. Data content (plan descriptions, sport rationales) stays source-language by design." },
 ];
 
 export function capabilitiesByStatus(status: CapabilityStatus): Capability[] {
