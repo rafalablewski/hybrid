@@ -6,8 +6,8 @@ import { prisma } from "@/lib/db";
 // Every query is scoped to the authenticated user's id — a user only ever
 // reads/writes their own Session rows.
 
-export async function GET() {
-  const user = await getOrCreateDbUser();
+export async function GET(request: Request) {
+  const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const sessions = await prisma.session.findMany({
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getOrCreateDbUser();
+  const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   let body: unknown;

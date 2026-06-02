@@ -1,17 +1,37 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { colors } from "@hybrid/core";
+import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  useFonts,
+  Archivo_400Regular,
+  Archivo_600SemiBold,
+  Archivo_700Bold,
+  Archivo_900Black,
+} from "@expo-google-fonts/archivo";
+import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
+import { SessionProvider } from "../lib/session";
+import { C } from "../lib/ui";
 
 export default function RootLayout() {
+  const [loaded] = useFonts({
+    Archivo_400Regular,
+    Archivo_600SemiBold,
+    Archivo_700Bold,
+    Archivo_900Black,
+    JetBrainsMono_400Regular,
+  });
+
+  if (!loaded) return <View style={{ flex: 1, backgroundColor: C.ink }} />;
+
   return (
-    <>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.ink },
-        }}
-      />
-    </>
+    <SafeAreaProvider>
+      <SessionProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.ink } }}
+        />
+      </SessionProvider>
+    </SafeAreaProvider>
   );
 }
