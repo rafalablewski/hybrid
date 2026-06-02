@@ -53,10 +53,10 @@ export const CAPABILITIES: Capability[] = [
   // ---- Backend / Data ----
   { id: "db", area: "Data", status: "shipped", title: "Database (Prisma + Supabase)", detail: "7 tables (User, CoachLink, CoachNote, Session, Macrocycle, Biometric, Plan) with RLS enabled." },
   { id: "api", area: "Backend", status: "shipped", title: "Shared API", detail: "/api/me + /api/sessions, scoped to the user, accept both web cookies and mobile Bearer tokens — one backend, both clients." },
-  { id: "rls-policies", area: "Backend", status: "blocked", title: "Row-level security policies", detail: "Policies authored in reference/rls-policies.sql (own-rows + coach-via-ACTIVE-link + private-notes). Defense-in-depth; the app already enforces in API code (Prisma bypasses RLS).", blockedBy: "Run reference/rls-policies.sql in the Supabase SQL editor — the sandbox can't reach the DB." },
+  { id: "rls-policies", area: "Backend", status: "shipped", title: "Row-level security policies", detail: "Applied in Supabase (reference/rls-policies.sql): own-rows for Session/Macrocycle/Biometric, coach read via ACTIVE CoachLink, private CoachNotes hidden from clients, Plan readable by signed-in users. Defense-in-depth atop the API-layer enforcement." },
 
   // ---- AI / Integrations ----
-  { id: "ai-coach", area: "AI", status: "blocked", title: "AI coach (server-side Anthropic)", detail: "The rules-based prescription engine is live; the LLM coach is not wired.", blockedBy: "ANTHROPIC_API_KEY set server-side (never called from a client)." },
+  { id: "ai-coach", area: "AI", status: "blocked", title: "AI coach (server-side Anthropic)", detail: "Wired: /api/ai-coach builds context from your real sessions + the prescription engine and calls Claude server-side (claude-opus-4-8) for a coaching note; falls back to the engine's rationale when no key is set. Live with the engine fallback today.", blockedBy: "Set ANTHROPIC_API_KEY in Vercel to switch on the LLM coach (never called from a client)." },
   { id: "biometrics-manual", area: "Data", status: "shipped", title: "Readiness check-in (manual biometrics)", detail: "Enter HRV / resting HR / sleep; persisted to the Biometric table and fed into the readiness engine (today vs. rolling baseline). Web dashboard." },
   { id: "wearables", area: "Integrations", status: "planned", title: "Wearable sync (HealthKit / WHOOP)", detail: "Manual check-in already feeds readiness; automatic sync is next. HealthKit (native) + WHOOP OAuth replace the manual inputs without changing the engine." },
 

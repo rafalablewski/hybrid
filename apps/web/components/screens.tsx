@@ -51,6 +51,7 @@ import {
 } from "@hybrid/core";
 import type { RosterRow } from "@/lib/use-roster";
 import BioCheckin from "./biocheckin";
+import AskCoach from "./ai-coach";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -674,6 +675,7 @@ export function DashboardMirror({
         <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
           confidence {Math.round(rx.confidence * 100)}% · grows as you log
         </Mono>
+        <AskCoach />
       </Card>
 
       {onCheckin && <BioCheckin onSaved={onCheckin} />}

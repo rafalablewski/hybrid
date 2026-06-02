@@ -18,6 +18,7 @@
     "schema": "../../prisma/schema.prisma"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.100.1",
     "@hybrid/core": "workspace:*",
     "@prisma/client": "6.19.3",
     "@supabase/ssr": "0.10.3",
