@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   prescribeSession,
+  computePerformanceState,
   toTrainingLog,
   buildMacrocycle,
   currentPhase,
@@ -14,6 +15,9 @@ import { fetchSessions } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Button, C, F } from "../../lib/ui";
+
+const hpiColor = (b: string) =>
+  b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
 
 export default function Home() {
   const router = useRouter();
@@ -27,6 +31,7 @@ export default function Home() {
 
   const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
   const rx = prescribeSession(log, SAMPLE_BIOMETRICS);
+  const state = computePerformanceState(log, SAMPLE_BIOMETRICS);
   const macro = buildMacrocycle("Hybrid");
   const { block, micro } = currentPhase(macro, 5);
 
@@ -89,6 +94,29 @@ export default function Home() {
         <Mono style={{ marginTop: 8 }}>
           confidence {Math.round(rx.confidence * 100)}% · grows as you log
         </Mono>
+      </Card>
+
+      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
+        <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 36, color: hpiColor(state.hpi.band) }}>
+            {state.hpi.score}
+          </Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+            HPI · {state.hpi.band} · limiter {state.hpi.limiter}
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
+          <Mono color={C.lime}>STR {state.hpi.components.strength}</Mono>
+          <Mono color={C.blue}>END {state.hpi.components.endurance}</Mono>
+          <Mono color={C.violet}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+        </View>
+        {state.drivers[0] && (
+          <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 18 }}>
+            {state.drivers[0].impact === "positive" ? "+ " : "− "}
+            {state.drivers[0].factor}: {state.drivers[0].detail}
+          </Mono>
+        )}
       </Card>
 
       <Mono style={{ marginTop: 4 }}>

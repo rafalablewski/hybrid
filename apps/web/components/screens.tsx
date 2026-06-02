@@ -36,6 +36,8 @@ import {
   buildMacrocycle,
   currentPhase,
   prescribeSession,
+  computePerformanceState,
+  computeInjuryRisk,
   toTrainingLog,
   totalVolume,
   sessionVolume,
@@ -55,6 +57,17 @@ import AskCoach from "./ai-coach";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+// HPI / risk band → brand color. Good = lime, watch = blue, caution = amber,
+// danger = red — shared by the Performance State HPI band and injury risk band.
+const BAND_COLOR = (b: string) =>
+  b === "peak" || b === "primed" || b === "low"
+    ? LIME
+    : b === "moderate"
+      ? BLUE
+      : b === "compromised" || b === "elevated"
+        ? AMBER
+        : RED;
 
 // ---------- data (ported from reference/HybridWeb.jsx) ----------
 const STRENGTH = [
@@ -618,10 +631,11 @@ export function DashboardMirror({
 }) {
   const macro = buildMacrocycle("Hybrid");
   const { block: phase, micro } = currentPhase(macro, SEASON_WEEK);
-  const rx = prescribeSession(
-    sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG,
-    bio ?? SAMPLE_BIOMETRICS,
-  );
+  const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
+  const theBio = bio ?? SAMPLE_BIOMETRICS;
+  const rx = prescribeSession(log, theBio);
+  const state = computePerformanceState(log, theBio);
+  const risk = computeInjuryRisk(log, theBio);
   const primaryName = rx.blocks[0]!.name;
 
   return (
@@ -676,6 +690,86 @@ export function DashboardMirror({
           confidence {Math.round(rx.confidence * 100)}% · grows as you log
         </Mono>
         <AskCoach />
+      </Card>
+
+      <Card span={2} style={{ borderLeft: `3px solid ${BLUE}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+              Performance State · Athlete Twin
+            </Mono>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "8px 0 2px" }}>
+              <div style={{ ...disp, fontWeight: 900, fontSize: 44, color: BAND_COLOR(state.hpi.band) }}>
+                {state.hpi.score}
+              </div>
+              <div>
+                <Mono s={{ fontSize: 13 }}>HPI · Hybrid Performance Index</Mono>
+                <div style={{ marginTop: 4 }}>
+                  <Chip c={BAND_COLOR(state.hpi.band)}>{state.hpi.band}</Chip>
+                  <Chip c={AMBER}>limiter · {state.hpi.limiter}</Chip>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ minWidth: 200, flex: 1, maxWidth: 320 }}>
+            {(
+              [
+                ["Strength", state.hpi.components.strength, LIME],
+                ["Endurance", state.hpi.components.endurance, BLUE],
+                ["Recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), VIOLET],
+              ] as const
+            ).map(([label, val, color]) => (
+              <div key={label} style={{ marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <Mono s={{ fontSize: 11 }}>{label}</Mono>
+                  <Mono s={{ fontSize: 11 }} c={color}>{val}</Mono>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: INK2, marginTop: 3, overflow: "hidden" }}>
+                  <div style={{ width: `${val}%`, height: "100%", background: color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", margin: "6px 0 12px" }} c={CHALK}>
+          {state.summary}
+        </Mono>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div>
+            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Why · top drivers</Mono>
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+              {state.drivers.map((d, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                  <span style={{ color: d.impact === "positive" ? LIME : AMBER, fontWeight: 900 }}>
+                    {d.impact === "positive" ? "+" : "−"}
+                  </span>
+                  <Mono s={{ fontSize: 12 }} c={CHALK}>{d.factor}</Mono>
+                  <Mono s={{ fontSize: 11 }} c={ASH}>{d.detail}</Mono>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Injury risk · by tissue</Mono>
+            <div style={{ marginTop: 8 }}>
+              {risk.flagged.length === 0 ? (
+                <Mono s={{ fontSize: 12 }} c={LIME}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {risk.flagged.map((t) => (
+                    <div key={t.tissue} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                      <Chip c={BAND_COLOR(t.band)}>{t.risk}</Chip>
+                      <Mono s={{ fontSize: 12, textTransform: "capitalize" }} c={CHALK}>{t.tissue}</Mono>
+                      <Mono s={{ fontSize: 11 }} c={ASH}>{t.drivers[0]?.label ?? ""}</Mono>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </Card>
 
       {onCheckin && <BioCheckin onSaved={onCheckin} />}
