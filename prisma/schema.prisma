@@ -42,6 +42,7 @@ model User {
   sessions    Session[]
   macrocycles Macrocycle[]
   biometrics  Biometric[]
+  signals     Signal[]
   coachLinks  CoachLink[]  @relation("asClient")
   clientLinks CoachLink[]  @relation("asCoach")
 }
@@ -49,13 +50,13 @@ model User {
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
 // not by role label alone.
 model CoachLink {
-  id        String     @id @default(cuid())
-  coach     User       @relation("asCoach", fields: [coachId], references: [id])
+  id        String      @id @default(cuid())
+  coach     User        @relation("asCoach", fields: [coachId], references: [id])
   coachId   String
-  client    User       @relation("asClient", fields: [clientId], references: [id])
+  client    User        @relation("asClient", fields: [clientId], references: [id])
   clientId  String
-  status    LinkStatus @default(PENDING)
-  createdAt DateTime   @default(now())
+  status    LinkStatus  @default(PENDING)
+  createdAt DateTime    @default(now())
   notes     CoachNote[]
 
   @@unique([coachId, clientId])
@@ -88,13 +89,13 @@ model Session {
 }
 
 model Macrocycle {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
   userId    String
   goal      String
   eventDate DateTime?
   blocks    Json // meso/micro structure from buildMacrocycle()
-  startedAt DateTime @default(now())
+  startedAt DateTime  @default(now())
 
   @@index([userId])
 }
@@ -110,6 +111,23 @@ model Biometric {
   source    String // "apple" | "whoop" | ...
 
   @@index([userId])
+}
+
+// The Athlete Twin's universal time-series. Every measurement — recovery, GPS
+// load, force-plate, blood, composition — lands here as ONE shape from any
+// source, so the engines read a single stream (see @hybrid/core signal
+// ontology). Generalizes Biometric; same own-rows RLS as Session/Biometric.
+model Signal {
+  id     String   @id @default(cuid())
+  user   User     @relation(fields: [userId], references: [id])
+  userId String
+  kind   String // "hrv" | "restingHr" | "sleep" | "highSpeedRunning" | ...
+  value  Float
+  unit   String
+  source String // "apple" | "whoop" | "garmin" | "catapult" | "manual" | ...
+  ts     DateTime
+
+  @@index([userId, kind, ts])
 }
 
 // Pre-built plan library (admin-managed).
