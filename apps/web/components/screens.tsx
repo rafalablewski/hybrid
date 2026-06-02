@@ -36,9 +36,19 @@ import {
   buildMacrocycle,
   currentPhase,
   prescribeSession,
+  totalVolume,
+  sessionVolume,
+  bestE1rmByLift,
+  e1rmSeries,
+  liftNames,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
+  type LoggedSession,
+  type SessionBlock,
 } from "@hybrid/core";
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 // ---------- data (ported from reference/HybridWeb.jsx) ----------
 const STRENGTH = [
@@ -123,8 +133,112 @@ const LANG_SPLIT = [
   { l: "Deutsch", n: 14 },
 ];
 
-// ---------- ANALYTICS: ATHLETE ----------
-export function AthleteAnalytics() {
+// ---------- ANALYTICS: ATHLETE (the Client dashboard) ----------
+// Uses the athlete's REAL logged sessions when available; falls back to sample
+// data in demo mode / before anything is logged.
+export function AthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[] }) {
+  if (sessions.length === 0) return <SampleAthlete />;
+  return <RealAthlete sessions={sessions} />;
+}
+
+function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
+  const vol = totalVolume(sessions);
+  const prs = bestE1rmByLift(sessions).slice(0, 6);
+  const topLift = liftNames(sessions)[0];
+  const series = topLift
+    ? e1rmSeries(sessions, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm }))
+    : [];
+  const volSeries = [...sessions]
+    .slice(0, 8)
+    .reverse()
+    .map((s) => ({ w: fmtDate(s.startedAt), vol: sessionVolume(s.blocks) }));
+  const lastReadiness =
+    sessions.find((s) => typeof s.readiness === "number")?.readiness ?? null;
+  const best = prs[0];
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <Stat label="Sessions" value={sessions.length} c={LIME} />
+      <Stat label="Total volume" value={`${(vol / 1000).toFixed(1)}k`} sub="kg" />
+      <Stat
+        label={best ? `${best.lift} e1RM` : "Best e1RM"}
+        value={best ? `${best.e1rm}kg` : "—"}
+        c={LIME}
+      />
+      <Stat label="Last readiness" value={lastReadiness ?? "—"} c={BLUE} />
+
+      {series.length > 0 && (
+        <ChartFrame span={2} title={`${topLift} · e1RM`} kicker="From your logs">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={series}>
+              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+              <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} domain={["auto", "auto"]} />
+              <Tooltip contentStyle={tip} />
+              <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+      )}
+
+      <ChartFrame span={series.length > 0 ? 2 : 4} title="Volume per session" kicker="Tonnage" c={BLUE}>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={volSeries}>
+            <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+            <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+            <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+            <Tooltip contentStyle={tip} />
+            <Bar dataKey="vol" fill={BLUE} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      {prs.length > 0 && (
+        <ChartFrame span={4} title="Personal records" kicker="Best e1RM per lift">
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Lift", "Best e1RM", "When"].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      ...mono,
+                      fontSize: 11,
+                      color: ASH,
+                      textTransform: "uppercase",
+                      textAlign: "left",
+                      padding: "8px 0",
+                      borderBottom: `1px solid ${LINE}`,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {prs.map((p) => (
+                <tr key={p.lift}>
+                  <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                    {p.lift}
+                  </td>
+                  <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                    {p.e1rm} kg
+                  </td>
+                  <td style={{ ...mono, fontSize: 13, color: ASH, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                    {fmtDate(p.when)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </ChartFrame>
+      )}
+    </div>
+  );
+}
+
+function SampleAthlete() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
       <Stat label="Squat e1RM" value="154kg" sub="+12 / 5wk" c={LIME} />
@@ -604,6 +718,57 @@ export function PeriodizeScreen() {
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ---------- HISTORY (real logged sessions) ----------
+function blockSummary(b: SessionBlock): string {
+  if (b.kind === "strength")
+    return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
+  return [b.format, b.minutes ? `${b.minutes} min` : null, b.rounds ? `${b.rounds} rounds` : null]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
+  if (sessions.length === 0)
+    return (
+      <Card style={{ textAlign: "center", padding: 60 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No sessions yet</div>
+        <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
+          Log your first workout from the <b style={{ color: LIME }}>Log session</b> tab — it&apos;ll
+          appear here and feed your dashboard.
+        </Mono>
+      </Card>
+    );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {sessions.map((s) => (
+        <Card key={s.id}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
+            <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
+          </div>
+          <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}>
+            <Chip c={BLUE}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
+            <Chip c={ASH}>{s.blocks.length} blocks</Chip>
+            {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
+          </div>
+          {s.blocks.map((b, i) => (
+            <div
+              key={i}
+              style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${LINE}` }}
+            >
+              <Mono s={{ fontSize: 13 }} c={CHALK}>
+                {b.name}
+              </Mono>
+              <Mono s={{ fontSize: 13 }}>{blockSummary(b)}</Mono>
+            </div>
+          ))}
+        </Card>
+      ))}
     </div>
   );
 }

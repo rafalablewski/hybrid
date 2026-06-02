@@ -6,3 +6,4 @@ export * from "./readiness";
 export * from "./progression";
 export * from "./periodization";
 export * from "./prescription";
+export * from "./session";

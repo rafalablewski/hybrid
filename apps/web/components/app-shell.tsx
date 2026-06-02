@@ -23,11 +23,15 @@ import {
   OperatorAnalytics,
   DashboardMirror,
   PeriodizeScreen,
+  HistoryScreen,
   RolesScreen,
 } from "./screens";
+import Logger from "./logger";
+import { useSessions } from "@/lib/use-sessions";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
+  ["log", "Log session", "✎"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
   ["plans", "Plans", "▤"],
@@ -49,6 +53,7 @@ const SCOPES_FOR: Record<Role, Scope[]> = {
 export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
+  const { sessions, refresh } = useSessions();
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(
@@ -254,7 +259,7 @@ export default function AppShell() {
                 </div>
               );
             })()}
-            {scope === "athlete" && <AthleteAnalytics />}
+            {scope === "athlete" && <AthleteAnalytics sessions={sessions} />}
             {scope === "coach" && <CoachAnalytics />}
             {scope === "operator" && <OperatorAnalytics />}
           </>
@@ -264,11 +269,25 @@ export default function AppShell() {
 
         {screen === "periodize" && <PeriodizeScreen />}
 
+        {screen === "log" && (
+          <Logger
+            sessions={sessions}
+            onSaved={() => {
+              refresh();
+              setScreen("history");
+            }}
+          />
+        )}
+
+        {screen === "history" && <HistoryScreen sessions={sessions} />}
+
         {screen === "roles" && <RolesScreen />}
 
         {screen !== "analytics" &&
           screen !== "dashboard" &&
           screen !== "periodize" &&
+          screen !== "log" &&
+          screen !== "history" &&
           screen !== "roles" && (
           <Card style={{ textAlign: "center", padding: 60 }}>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>
