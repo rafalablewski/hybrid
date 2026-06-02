@@ -27,11 +27,15 @@ export async function GET(request: Request) {
     }
   }
 
-  const [cal, outcomes] = await Promise.all([activeCalibration(), prisma.riskOutcome.count()]);
+  const [cal, positives, negatives] = await Promise.all([
+    activeCalibration(),
+    prisma.riskOutcome.count({ where: { injured: true } }),
+    prisma.riskOutcome.count({ where: { injured: false } }),
+  ]);
 
   return NextResponse.json({
     stats: datasetStats(obs, profiles.length),
     norms: aggregate(obs),
-    calibration: { ...cal, outcomes },
+    calibration: { ...cal, outcomes: positives + negatives, positives, negatives },
   });
 }

@@ -6,7 +6,7 @@ import { METRIC_LABEL, K_ANON, type BenchmarkMetric } from "@hybrid/core";
 
 type Norm = { cohortKey: string; sport: string; sex: string; ageBand: string; metric: BenchmarkMetric; n: number; mean: number; sd: number; p10: number; p50: number; p90: number };
 type Stats = { observations: number; athletes: number; cohorts: number; releasableCohorts: number };
-type Calibration = { version: string; n: number; outcomes: number; coeffs: { intercept: number; slope: number } };
+type Calibration = { version: string; n: number; outcomes: number; positives: number; negatives: number; coeffs: { intercept: number; slope: number } };
 
 // Admin-only benchmarking-intelligence view — the data product. Aggregates over
 // consented (discoverable) profiles, suppressing cohorts below K athletes.
@@ -39,6 +39,16 @@ export default function DataNet() {
     } else setRefitMsg("refit failed");
   };
 
+  const snapshot = async () => {
+    setRefitMsg("Snapshotting…");
+    const res = await fetch("/api/datanet/snapshot", { method: "POST" });
+    if (res.ok) {
+      const d = (await res.json()) as { written: number; skipped: number };
+      setRefitMsg(`Recorded ${d.written} negative sample(s) (${d.skipped} skipped — injured or already today).`);
+      load();
+    } else setRefitMsg("snapshot failed");
+  };
+
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
@@ -67,15 +77,20 @@ export default function DataNet() {
             <div>
               <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Injury calibration</Mono>
               <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>
-                model {cal.version} · {cal.n > 0 ? `refit on ${cal.n} outcomes` : "synthetic prior"} · {cal.outcomes} labeled outcome(s) captured
+                model {cal.version} · {cal.n > 0 ? `refit on ${cal.n} outcomes` : "synthetic prior"}
               </Mono>
               <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>
-                σ(a + b·score): a={cal.coeffs.intercept.toFixed(2)}, b={cal.coeffs.slope.toFixed(2)}
+                labels: {cal.positives} injured · {cal.negatives} healthy · σ(a + b·score): a={cal.coeffs.intercept.toFixed(2)}, b={cal.coeffs.slope.toFixed(2)}
               </Mono>
             </div>
-            <button onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
-              Refit now
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={snapshot} style={{ ...disp, fontWeight: 800, fontSize: 13, background: "transparent", color: CHALK, border: `1px solid ${LINE}`, borderRadius: 9, padding: "9px 14px", cursor: "pointer" }}>
+                Snapshot negatives
+              </button>
+              <button onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
+                Refit now
+              </button>
+            </div>
           </div>
           {refitMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={AMBER}>{refitMsg}</Mono>}
         </Card>
