@@ -38,11 +38,11 @@ const NAV: [string, string, string][] = [
 
 type Scope = "athlete" | "coach" | "operator";
 
-// A role only sees the scopes it's authorized for — the same model the Prisma
-// schema + RLS will enforce server-side in Sprint 1/8.
+// A role only sees the dashboards it's authorized for. Admin is the god view —
+// it can toggle all three. Client and Coach are locked to their own.
 const SCOPES_FOR: Record<Role, Scope[]> = {
   client: ["athlete"],
-  coach: ["athlete", "coach"],
+  coach: ["coach"],
   admin: ["athlete", "coach", "operator"],
 };
 
@@ -191,12 +191,13 @@ export default function AppShell() {
 
         {screen === "analytics" && (
           <>
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {allowedScopes.length > 1 && (
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               {(
                 [
-                  ["athlete", "Athlete", LIME],
+                  ["athlete", "Client", LIME],
                   ["coach", "Coach", VIOLET],
-                  ["operator", "Operator", AMBER],
+                  ["operator", "Admin", AMBER],
                 ] as const
               )
                 .filter(([id]) => allowedScopes.includes(id))
@@ -221,7 +222,8 @@ export default function AppShell() {
                     {l}
                   </button>
                 ))}
-            </div>
+              </div>
+            )}
             {(() => {
               const acc = scope === "operator" ? AMBER : scope === "coach" ? VIOLET : LIME;
               const txt =
@@ -229,7 +231,7 @@ export default function AppShell() {
                   ? "Operator scope · platform aggregates only — MAU, retention, content. No access to any individual's private training data."
                   : scope === "coach"
                     ? "Coach scope · only athletes who accepted you (mutual consent). Aggregate roster view; private athlete notes excluded."
-                    : "Athlete scope · your own training data only. Nothing here is visible to other athletes.";
+                    : "Client scope · your own training data only. Nothing here is visible to other athletes.";
               return (
                 <div
                   style={{
