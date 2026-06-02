@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { canRead, type OrgRole, type TeamNode } from "@hybrid/core";
+import { canRead, canManageOrg, type OrgRole, type TeamNode } from "@hybrid/core";
 
 // Org detail: the team tree + the staff/athlete roster, gated by membership.
 // Medical-tier fields are only included when the caller's role may read them.
@@ -36,7 +36,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     email: showMedical ? m.user.email : undefined,
   }));
 
-  return NextResponse.json({ org: { id: org.id, name: org.name }, myRole, teams, members });
+  // managers also see who's been invited but hasn't signed in yet
+  const invites = canManageOrg(myRole)
+    ? (await prisma.orgInvite.findMany({ where: { orgId: id, status: "pending" }, orderBy: { createdAt: "asc" } })).map(
+        (i) => ({ id: i.id, email: i.email, role: i.role as OrgRole, teamId: i.teamId }),
+      )
+    : [];
+
+  return NextResponse.json({ org: { id: org.id, name: org.name }, myRole, myTeamId: me.teamId, teams, members, invites });
 }
 
 // Add a team to the org (managers only).

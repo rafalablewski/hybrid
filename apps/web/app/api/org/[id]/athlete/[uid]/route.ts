@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { canRead, type OrgRole } from "@hybrid/core";
+import { canRead, canSeeAthlete, type OrgRole, type TeamNode } from "@hybrid/core";
 import { athleteState } from "@/lib/athlete-state";
 
 // An athlete's Performance State within the org, gated by the caller's role.
@@ -21,6 +21,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   // target must belong to the same org
   const target = await prisma.membership.findUnique({ where: { orgId_userId: { orgId: id, userId: uid } } });
   if (!target) return NextResponse.json({ error: "athlete not in org" }, { status: 404 });
+
+  // team-subtree scoping: a team-pinned coach only sees their subtree
+  const teamRows = await prisma.team.findMany({ where: { orgId: id }, select: { id: true, name: true, parentId: true } });
+  const teams: TeamNode[] = teamRows.map((t) => ({ id: t.id, name: t.name, parentId: t.parentId }));
+  if (!canSeeAthlete(myRole, me.teamId, target.teamId, teams))
+    return NextResponse.json({ error: "outside your team scope" }, { status: 403 });
 
   const { state, risk, sessionCount } = await athleteState(uid);
 

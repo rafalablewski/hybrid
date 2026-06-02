@@ -20,19 +20,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
   if (!ORG_ROLES.includes(role)) return NextResponse.json({ error: "invalid role" }, { status: 400 });
 
+  const teamId = typeof b.teamId === "string" && b.teamId ? b.teamId : null;
   const target = await prisma.user.findUnique({ where: { email } });
-  if (!target) return NextResponse.json({ error: "no account for that email" }, { status: 404 });
+
+  // No account yet → record a pending invite, claimed on their first sign-in.
+  if (!target) {
+    await prisma.orgInvite.upsert({
+      where: { orgId_email: { orgId: id, email } },
+      update: { role, teamId, status: "pending" },
+      create: { orgId: id, email, role, teamId, status: "pending" },
+    });
+    return NextResponse.json({ pending: true, email }, { status: 201 });
+  }
 
   const existing = await prisma.membership.findUnique({ where: { orgId_userId: { orgId: id, userId: target.id } } });
   if (existing) return NextResponse.json({ error: "already a member" }, { status: 409 });
 
   const m = await prisma.membership.create({
-    data: {
-      orgId: id,
-      userId: target.id,
-      role,
-      teamId: typeof b.teamId === "string" && b.teamId ? b.teamId : null,
-    },
+    data: { orgId: id, userId: target.id, role, teamId },
   });
   return NextResponse.json({ member: { id: m.id, name: target.name ?? target.email, role: m.role, teamId: m.teamId } }, { status: 201 });
 }

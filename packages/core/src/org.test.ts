@@ -6,6 +6,8 @@ import {
   buildTeamTree,
   flattenTree,
   teamSubtreeIds,
+  visibleTeamIds,
+  canSeeAthlete,
   type TeamNode,
 } from "./org";
 
@@ -70,5 +72,22 @@ describe("team tree", () => {
   it("treats an orphaned parent reference as a root (cycle-safe)", () => {
     const orphan: TeamNode[] = [{ id: "x", name: "X", parentId: "ghost" }];
     expect(buildTeamTree(orphan)).toHaveLength(1);
+  });
+
+  it("scopes a team-pinned coach to their subtree; managers see all", () => {
+    expect(visibleTeamIds("DIRECTOR", "u19", teams)).toBeNull(); // manager → all
+    expect(visibleTeamIds("COACH", null, teams)).toBeNull(); // unscoped staff → all
+    expect(visibleTeamIds("COACH", "b", teams)!.sort()).toEqual(["b", "u12", "u16", "u19"]);
+    expect(visibleTeamIds("ATHLETE", "b", teams)).toEqual([]);
+  });
+
+  it("canSeeAthlete enforces subtree + performance permission", () => {
+    // a U19 coach sees a U16 athlete (U16 is under U19) but not a First-Team one
+    expect(canSeeAthlete("COACH", "u19", "u16", teams)).toBe(true);
+    expect(canSeeAthlete("COACH", "u19", "first", teams)).toBe(false);
+    // an athlete role can't read the roster
+    expect(canSeeAthlete("ATHLETE", null, "u16", teams)).toBe(false);
+    // a director sees anyone
+    expect(canSeeAthlete("DIRECTOR", null, "first", teams)).toBe(true);
   });
 });

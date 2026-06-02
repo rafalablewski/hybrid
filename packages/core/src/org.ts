@@ -98,6 +98,35 @@ export function flattenTree(forest: TeamTree[]): TeamTree[] {
   return out;
 }
 
+/**
+ * The set of team ids a member may see athlete data for, or `null` for "all".
+ * Managers and unscoped staff (no team) see the whole org; a member pinned to a
+ * team sees only that team's subtree. Athletes get no roster scope ([]).
+ */
+export function visibleTeamIds(
+  role: OrgRole,
+  myTeamId: string | null,
+  teams: TeamNode[],
+): string[] | null {
+  if (role === "ATHLETE") return [];
+  if (canManageOrg(role) || !myTeamId) return null;
+  return teamSubtreeIds(teams, myTeamId);
+}
+
+/** Whether `role` (scoped to `myTeamId`) may see an athlete on `athleteTeamId`. */
+export function canSeeAthlete(
+  role: OrgRole,
+  myTeamId: string | null,
+  athleteTeamId: string | null,
+  teams: TeamNode[],
+): boolean {
+  if (!canRead(role, "performance")) return false;
+  const visible = visibleTeamIds(role, myTeamId, teams);
+  if (visible === null) return true; // org-wide
+  if (visible.length === 0) return false;
+  return athleteTeamId !== null && visible.includes(athleteTeamId);
+}
+
 /** All descendant team ids of `teamId` (inclusive), for scope checks. */
 export function teamSubtreeIds(teams: TeamNode[], teamId: string): string[] {
   const forest = buildTeamTree(teams);

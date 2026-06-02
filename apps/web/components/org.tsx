@@ -15,7 +15,8 @@ import {
 
 type Org = { id: string; name: string; role: OrgRole };
 type Member = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
-type Detail = { org: { id: string; name: string }; myRole: OrgRole; teams: TeamNode[]; members: Member[] };
+type Invite = { id: string; email: string; role: OrgRole; teamId: string | null };
+type Detail = { org: { id: string; name: string }; myRole: OrgRole; myTeamId: string | null; teams: TeamNode[]; members: Member[]; invites: Invite[] };
 type AthleteView = {
   name: string;
   hpi: { score: number; band: string; limiter: string };
@@ -109,12 +110,20 @@ export default function Org() {
       body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
     });
     if (res.ok) {
+      const d = (await res.json().catch(() => ({}))) as { pending?: boolean };
       setInviteEmail("");
+      setInviteErr(d.pending ? "Invited — they'll join on first sign-in." : "");
       loadDetail(selected);
     } else {
       const d = (await res.json().catch(() => ({}))) as { error?: string };
       setInviteErr(d.error ?? "could not add member");
     }
+  };
+
+  const revokeInvite = async (iid: string) => {
+    if (!selected) return;
+    const res = await fetch(`/api/org/${selected}/invites/${iid}`, { method: "DELETE" });
+    if (res.ok) loadDetail(selected);
   };
 
   const setMember = async (mid: string, patch: { role?: OrgRole; teamId?: string | null }) => {
@@ -255,6 +264,17 @@ export default function Org() {
                     <button onClick={invite} style={btn(LIME)}>Add member</button>
                   </div>
                   {inviteErr && <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={AMBER}>{inviteErr}</Mono>}
+                </div>
+              )}
+              {canManage && detail.invites.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Pending invites</Mono>
+                  {detail.invites.map((iv) => (
+                    <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
+                      <Mono s={{ fontSize: 12 }} c={ASH}>{iv.email} · {iv.role.toLowerCase()}</Mono>
+                      <span style={{ cursor: "pointer", color: AMBER, fontSize: 12 }} onClick={() => revokeInvite(iv.id)}>revoke</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </Card>

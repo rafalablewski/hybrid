@@ -173,6 +173,21 @@ model Membership {
   @@index([userId])
 }
 
+// A pending invitation to join an org by email, for people who don't have an
+// account yet. Claimed automatically on first sign-in (email match).
+model OrgInvite {
+  id        String   @id @default(cuid())
+  orgId     String
+  email     String
+  role      String
+  teamId    String?
+  status    String   @default("pending") // "pending" | "accepted" | "revoked"
+  createdAt DateTime @default(now())
+
+  @@unique([orgId, email])
+  @@index([email])
+}
+
 // A connected wearable/sensor account. Tokens let the server sync provider
 // data into the Signal ontology. Own-rows RLS (see reference SQL). Tokens
 // should be encrypted at rest in production.
