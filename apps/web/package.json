@@ -4,14 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate --schema ../../prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "echo \"(web) no lint yet\" && exit 0",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"(web) no tests yet\" && exit 0"
+    "test": "echo \"(web) no tests yet\" && exit 0",
+    "db:generate": "prisma generate --schema ../../prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema ../../prisma/schema.prisma",
+    "db:studio": "prisma studio --schema ../../prisma/schema.prisma"
+  },
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
   },
   "dependencies": {
     "@hybrid/core": "workspace:*",
+    "@prisma/client": "6.19.3",
     "@supabase/ssr": "0.10.3",
     "@supabase/supabase-js": "2.106.2",
     "next": "16.2.7",
@@ -24,6 +31,7 @@
     "@types/node": "22.13.0",
     "@types/react": "19.2.16",
     "@types/react-dom": "19.2.3",
+    "prisma": "6.19.3",
     "tailwindcss": "4.3.0",
     "typescript": "5.9.2"
   }

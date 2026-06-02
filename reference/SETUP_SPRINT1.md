@@ -17,14 +17,18 @@ in **Vercel → Project → Settings → Environment Variables** (then redeploy 
 `NEXT_PUBLIC_*` ones are inlined at build time, so a rebuild is required).
 
 ## 3. Run the database migration
+Prisma is already wired into `apps/web` (deps, schema path, client singleton at
+`apps/web/lib/db.ts`, and `prisma generate` runs on build). So:
 ```bash
 cd /path/to/hybrid
-pnpm add -D prisma -w && pnpm add @prisma/client -w   # one-time
-npx prisma migrate dev --name init --schema prisma/schema.prisma
-npx prisma generate --schema prisma/schema.prisma
+pnpm install                          # generates the Prisma client
+pnpm --filter @hybrid/web db:migrate  # prisma migrate dev (prompts for a name)
 ```
 This creates the `User`, `CoachLink`, `CoachNote`, `Session`, `Macrocycle`,
-`Biometric`, `Plan` tables from `prisma/schema.prisma`.
+`Biometric`, `Plan` tables from `prisma/schema.prisma`. `DIRECT_URL` (port 5432)
+must be set for migrations; `DATABASE_URL` (pooled) is what the app uses.
+
+Your project URL is already known: `https://hgufkvwccodogieqygyy.supabase.co`.
 
 ## 4. Enable auth providers (Supabase → Authentication → Providers)
 - **Email**: on by default — good for your first real login.
