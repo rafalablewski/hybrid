@@ -1,0 +1,165 @@
+import { describe, it, expect } from "vitest";
+import {
+  computeFatigue,
+  computeReadiness,
+  biometricAdjustment,
+  progressionSignal,
+  prescribeSession,
+  buildMacrocycle,
+  currentPhase,
+  ALL_MUSCLES,
+  SAMPLE_TRAINING_LOG,
+  SAMPLE_BIOMETRICS,
+} from "./index";
+import type { TrainingLog } from "./types";
+
+describe("computeFatigue", () => {
+  it("returns a 0..100 score for every muscle group", () => {
+    const f = computeFatigue(SAMPLE_TRAINING_LOG);
+    for (const m of ALL_MUSCLES) {
+      expect(f.muscles[m]).toBeGreaterThanOrEqual(0);
+      expect(f.muscles[m]).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("accumulates load per energy system", () => {
+    const f = computeFatigue(SAMPLE_TRAINING_LOG);
+    expect(f.systems.threshold).toBeGreaterThan(0);
+    expect(f.systems.anaerobic).toBeGreaterThan(0);
+    expect(f.systems.aerobic).toBeGreaterThan(0);
+  });
+
+  it("decays older sessions more than recent ones", () => {
+    const recent: TrainingLog = [
+      { daysAgo: 0, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+    ];
+    const old: TrainingLog = [
+      { daysAgo: 10, items: [{ move: "Back Squat", topRpe: 8, hardSets: 5 }] },
+    ];
+    expect(computeFatigue(recent).muscles.quads).toBeGreaterThan(
+      computeFatigue(old).muscles.quads,
+    );
+  });
+
+  it("is empty (all zero) for an empty log", () => {
+    const f = computeFatigue([]);
+    expect(f.muscles.quads).toBe(0);
+    expect(f.systems.aerobic).toBe(0);
+  });
+});
+
+describe("computeReadiness", () => {
+  it("clamps to the 35..98 band", () => {
+    const f = computeFatigue(SAMPLE_TRAINING_LOG);
+    const r = computeReadiness(f);
+    expect(r.score).toBeGreaterThanOrEqual(35);
+    expect(r.score).toBeLessThanOrEqual(98);
+  });
+
+  it("a fresh athlete reads more ready than a fatigued one", () => {
+    const fresh = computeReadiness(computeFatigue([]));
+    const cooked = computeReadiness(
+      computeFatigue([
+        { daysAgo: 0, items: [{ move: "Back Squat", topRpe: 10, hardSets: 8 }] },
+      ]),
+    );
+    expect(fresh.score).toBeGreaterThan(cooked.score);
+  });
+});
+
+describe("biometricAdjustment", () => {
+  it("is positive when HRV is up and resting HR is down", () => {
+    expect(biometricAdjustment(SAMPLE_BIOMETRICS)).toBeGreaterThan(0);
+  });
+
+  it("stays within -15..+15", () => {
+    const extreme = biometricAdjustment({
+      hrv: { today: 200, baseline: 50, unit: "ms", better: "high" },
+      restingHr: { today: 30, baseline: 60, unit: "bpm", better: "low" },
+      sleep: { today: 12, baseline: 7, unit: "h", better: "high" },
+    });
+    expect(extreme).toBeLessThanOrEqual(15);
+    expect(extreme).toBeGreaterThanOrEqual(-15);
+  });
+});
+
+describe("progressionSignal", () => {
+  it("holds when there isn't enough history", () => {
+    const sig = progressionSignal(
+      [{ daysAgo: 1, items: [{ move: "Back Squat", e1rm: 100, topRpe: 7 }] }],
+      "Back Squat",
+    );
+    expect(sig.action).toBe("hold");
+  });
+
+  it("progresses on a rising e1RM at submaximal RPE", () => {
+    const log: TrainingLog = [
+      { daysAgo: 1, items: [{ move: "Back Squat", e1rm: 150, topRpe: 7.5 }] },
+      { daysAgo: 4, items: [{ move: "Back Squat", e1rm: 145, topRpe: 7.5 }] },
+    ];
+    expect(progressionSignal(log, "Back Squat").action).toBe("progress");
+  });
+
+  it("deloads when the last top set was RPE 9+", () => {
+    const log: TrainingLog = [
+      { daysAgo: 1, items: [{ move: "Back Squat", e1rm: 150, topRpe: 9.5 }] },
+      { daysAgo: 4, items: [{ move: "Back Squat", e1rm: 150, topRpe: 8 }] },
+    ];
+    expect(progressionSignal(log, "Back Squat").action).toBe("deload");
+  });
+});
+
+describe("prescribeSession", () => {
+  it("returns a strength block + a conditioning block with an explanation", () => {
+    const rx = prescribeSession(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
+    expect(rx.blocks).toHaveLength(2);
+    expect(rx.blocks[0]!.kind).toBe("strength");
+    expect(rx.blocks[1]!.kind).toBe("conditioning");
+    expect(rx.why.length).toBeGreaterThan(20);
+    expect(rx.readiness).toBeGreaterThanOrEqual(35);
+  });
+
+  it("confidence increases with log depth", () => {
+    const shallow = prescribeSession(SAMPLE_TRAINING_LOG.slice(0, 1));
+    const deep = prescribeSession(SAMPLE_TRAINING_LOG);
+    expect(deep.confidence).toBeGreaterThan(shallow.confidence);
+  });
+
+  it("picks the freshest conditioning system", () => {
+    // hammer the threshold system; engine should avoid it
+    const log: TrainingLog = [
+      { daysAgo: 0, items: [{ move: "Row Intervals", system: "threshold", minutes: 60, rpe: 9 }] },
+    ];
+    expect(prescribeSession(log).pickSys).not.toBe("threshold");
+  });
+});
+
+describe("periodization", () => {
+  it("stacks all phases forward when there is no event", () => {
+    const macro = buildMacrocycle("Hybrid");
+    expect(macro.totalWeeks).toBeGreaterThan(0);
+    expect(macro.blocks.length).toBeGreaterThan(0);
+    const sum = macro.blocks.reduce((s, b) => s + b.micros.length, 0);
+    expect(sum).toBe(macro.totalWeeks);
+  });
+
+  it("fits phases into the weeks available before an event", () => {
+    const macro = buildMacrocycle("Hyrox", 10);
+    expect(macro.eventInWeeks).toBe(10);
+    // each block has at least one week
+    for (const b of macro.blocks) expect(b.weeks).toBeGreaterThanOrEqual(1);
+  });
+
+  it("resolves the current phase + microcycle for a given week", () => {
+    const macro = buildMacrocycle("Hybrid");
+    const { block, micro } = currentPhase(macro, 5);
+    expect(micro.week).toBe(5);
+    expect(block.startWeek).toBeLessThanOrEqual(5);
+    expect(block.endWeek).toBeGreaterThanOrEqual(5);
+  });
+
+  it("uses the endurance model for endurance goals", () => {
+    expect(buildMacrocycle("Running").model).toBe("Endurance model");
+    expect(buildMacrocycle("Powerlifting").model).toBe("Strength model");
+  });
+});

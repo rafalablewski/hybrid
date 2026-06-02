@@ -32,6 +32,13 @@ import {
   Stat,
   ChartFrame,
 } from "@/lib/ui";
+import {
+  buildMacrocycle,
+  currentPhase,
+  prescribeSession,
+  SAMPLE_TRAINING_LOG,
+  SAMPLE_BIOMETRICS,
+} from "@hybrid/core";
 
 // ---------- data (ported from reference/HybridWeb.jsx) ----------
 const STRENGTH = [
@@ -414,28 +421,37 @@ export function OperatorAnalytics() {
 }
 
 // ---------- DASHBOARD (mirror of the mobile home) ----------
+// Real engine output from @hybrid/core — not mock copy.
+const SEASON_WEEK = 5;
+
 export function DashboardMirror() {
+  const macro = buildMacrocycle("Hybrid");
+  const { block: phase, micro } = currentPhase(macro, SEASON_WEEK);
+  const rx = prescribeSession(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
+  const primaryName = rx.blocks[0]!.name;
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
       <Card style={{ borderLeft: `3px solid ${LIME}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          Training for · Hybrid · Strength phase
+          Training for · {macro.goalOrSport} · {phase.label} phase
         </Mono>
         <div style={{ ...disp, fontWeight: 900, fontSize: 26, margin: "8px 0 4px" }}>
-          Today · Lower + Engine
+          Today · {primaryName} + Engine
         </div>
-        <Mono s={{ fontSize: 13 }}>Week 5 of 14 · load week · ≈58 min · 3 blocks</Mono>
+        <Mono s={{ fontSize: 13 }}>
+          Week {SEASON_WEEK} of {macro.totalWeeks} · {micro.kind} week · {phase.focus.toLowerCase()}
+        </Mono>
         <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", margin: "16px 0" }}>
-          {(
-            [
-              ["Hyp", BLUE, 4],
-              ["Str", LIME, 4],
-              ["Pow", AMBER, 3],
-              ["Peak", VIOLET, 1],
-              ["De", ASH, 2],
-            ] as const
-          ).map(([l, c, w], i) => (
-            <div key={l} style={{ flex: w, background: i === 1 ? c : `${c}33` }} />
+          {macro.blocks.map((b) => (
+            <div
+              key={b.key}
+              title={`${b.label} · ${b.weeks} wk`}
+              style={{
+                flex: b.weeks,
+                background: b.key === phase.key ? b.color : `${b.color}33`,
+              }}
+            />
           ))}
         </div>
         <button
@@ -459,11 +475,11 @@ export function DashboardMirror() {
           AI Coach
         </Mono>
         <div style={{ ...disp, fontWeight: 700, fontSize: 18, margin: "8px 0 6px" }}>
-          Readiness 74/100
+          Readiness {rx.readiness}/100
         </div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.5 }}>
-          Strength phase, load week. Bench is your most-recovered lift — 5×5 at 80%. HRV +6 above
-          baseline cleared you to push.
+        <Mono s={{ fontSize: 13, lineHeight: 1.5 }}>{rx.why}</Mono>
+        <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
+          confidence {Math.round(rx.confidence * 100)}% · grows as you log
         </Mono>
       </Card>
       <Card span={2}>
@@ -506,6 +522,88 @@ export function DashboardMirror() {
           ))}
         </div>
       </Card>
+    </div>
+  );
+}
+
+// ---------- PERIODIZE (real macrocycle from the engine) ----------
+export function PeriodizeScreen() {
+  const macro = buildMacrocycle("Hybrid");
+  const { block: current } = currentPhase(macro, SEASON_WEEK);
+
+  return (
+    <div>
+      <Card style={{ marginBottom: 16 }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+          {macro.goalOrSport} · {macro.model}
+        </Mono>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>
+          {macro.totalWeeks}-week macrocycle · now in {current.label}
+        </div>
+        {/* phase timeline, weighted by weeks */}
+        <div style={{ display: "flex", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>
+          {macro.blocks.map((b) => (
+            <div
+              key={b.key}
+              title={`${b.label} · ${b.weeks} wk`}
+              style={{ flex: b.weeks, background: b.key === current.key ? b.color : `${b.color}40` }}
+            />
+          ))}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+          {macro.blocks.map((b) => (
+            <div key={b.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: b.color }} />
+              <Mono s={{ fontSize: 11 }} c={b.key === current.key ? CHALK : ASH}>
+                {b.label}
+              </Mono>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+        {macro.blocks.map((b) => (
+          <Card key={b.key} style={{ borderLeft: `3px solid ${b.color}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: b.color }}>{b.label}</div>
+              <Mono s={{ fontSize: 12 }}>
+                wk {b.startWeek}–{b.endWeek}
+              </Mono>
+            </div>
+            <Mono s={{ fontSize: 12, display: "block", margin: "6px 0 12px" }}>{b.focus}</Mono>
+            <div style={{ display: "flex", gap: 6 }}>
+              {b.micros.map((m) => (
+                <div
+                  key={m.week}
+                  title={`Week ${m.week} · ${m.kind} · intensity ${m.intensity} / volume ${m.volume}`}
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                    padding: "8px 2px",
+                    borderRadius: 8,
+                    background: m.week === SEASON_WEEK ? `${LIME}1a` : INK2,
+                    border: `1px solid ${m.week === SEASON_WEEK ? LIME : LINE}`,
+                  }}
+                >
+                  <Mono s={{ fontSize: 10, display: "block" }} c={m.kind === "recovery" ? ASH : CHALK}>
+                    W{m.week}
+                  </Mono>
+                  <div
+                    style={{
+                      height: 4,
+                      borderRadius: 2,
+                      marginTop: 4,
+                      background: m.kind === "recovery" ? ASH : b.color,
+                      opacity: 0.4 + (m.intensity / 100) * 0.6,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

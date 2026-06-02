@@ -22,6 +22,7 @@ import {
   CoachAnalytics,
   OperatorAnalytics,
   DashboardMirror,
+  PeriodizeScreen,
   RolesScreen,
 } from "./screens";
 
@@ -259,9 +260,14 @@ export default function AppShell() {
 
         {screen === "dashboard" && <DashboardMirror />}
 
+        {screen === "periodize" && <PeriodizeScreen />}
+
         {screen === "roles" && <RolesScreen />}
 
-        {screen !== "analytics" && screen !== "dashboard" && screen !== "roles" && (
+        {screen !== "analytics" &&
+          screen !== "dashboard" &&
+          screen !== "periodize" &&
+          screen !== "roles" && (
           <Card style={{ textAlign: "center", padding: 60 }}>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>
               {screen[0]!.toUpperCase() + screen.slice(1)}

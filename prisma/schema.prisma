@@ -1,0 +1,122 @@
+// HYBRID data model — Sprint 1.
+// Postgres on Supabase. The permission model lives HERE (roles + CoachLink),
+// not in the UI. Row-level security is enforced in Supabase / API middleware:
+//   - a user reads/writes Session, Macrocycle, Biometric only WHERE userId = auth.uid()
+//   - a coach reads a client's data only via an ACTIVE CoachLink
+//   - private CoachNotes are never returned to the client
+//   - admins read aggregates only — never another user's raw private rows
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled connection (PgBouncer) for the app; direct connection for migrations.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CLIENT
+  COACH
+  ADMIN
+}
+
+enum LinkStatus {
+  PENDING
+  ACTIVE
+  ENDED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  // Mirrors the Supabase auth.users id so RLS can match auth.uid().
+  authId    String?  @unique
+  email     String   @unique
+  name      String?
+  role      Role     @default(CLIENT) // a user can be COACH and CLIENT at once
+  language  String   @default("en")
+  createdAt DateTime @default(now())
+
+  sessions    Session[]
+  macrocycles Macrocycle[]
+  biometrics  Biometric[]
+  coachLinks  CoachLink[]  @relation("asClient")
+  clientLinks CoachLink[]  @relation("asCoach")
+}
+
+// The mutual-consent coach↔client relationship. Authorization is by THIS,
+// not by role label alone.
+model CoachLink {
+  id        String     @id @default(cuid())
+  coach     User       @relation("asCoach", fields: [coachId], references: [id])
+  coachId   String
+  client    User       @relation("asClient", fields: [clientId], references: [id])
+  clientId  String
+  status    LinkStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  notes     CoachNote[]
+
+  @@unique([coachId, clientId])
+  @@index([clientId])
+  @@index([coachId])
+}
+
+model CoachNote {
+  id        String    @id @default(cuid())
+  link      CoachLink @relation(fields: [linkId], references: [id])
+  linkId    String
+  body      String
+  private   Boolean   @default(false) // private notes the client never sees
+  createdAt DateTime  @default(now())
+
+  @@index([linkId])
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  title       String
+  startedAt   DateTime
+  completedAt DateTime?
+  blocks      Json // exercises/sets/reps/load/rpe — matches the prototype block shape
+  readiness   Int?
+
+  @@index([userId])
+}
+
+model Macrocycle {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  goal      String
+  eventDate DateTime?
+  blocks    Json // meso/micro structure from buildMacrocycle()
+  startedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Biometric {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  date      DateTime
+  hrv       Float?
+  restingHr Float?
+  sleepH    Float?
+  source    String // "apple" | "whoop" | ...
+
+  @@index([userId])
+}
+
+// Pre-built plan library (admin-managed).
+model Plan {
+  id     String @id @default(cuid())
+  goalId String
+  name   String
+  level  String
+  detail Json // the PLAN_DETAIL shape from the prototype
+}

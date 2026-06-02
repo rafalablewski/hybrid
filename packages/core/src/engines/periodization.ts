@@ -1,0 +1,128 @@
+import type { Macrocycle, MacroBlock, Phase, Microcycle } from "./types";
+
+/**
+ * Periodization engine. A macrocycle (season) is built from mesocycles (phase
+ * blocks), each split into microcycles (weeks of load vs recovery). Two phase
+ * models — endurance and strength — are selected by goal/sport.
+ */
+export const PHASE_MODELS: Record<string, { name: string; phases: Phase[] }> = {
+  endurance: {
+    name: "Endurance model",
+    phases: [
+      { key: "base", label: "Base", weeks: 4, intensity: 45, volume: 90, color: "#7fd4e8", focus: "Aerobic & muscular endurance", pattern: "3 load / 1 recovery" },
+      { key: "build", label: "Build", weeks: 3, intensity: 70, volume: 75, color: "#c4f035", focus: "Threshold & VO₂ max", pattern: "2 load / 1 recovery" },
+      { key: "peak", label: "Peak", weeks: 3, intensity: 90, volume: 50, color: "#f0b45e", focus: "Anaerobic capacity & power", pattern: "2 load / 1 recovery" },
+      { key: "taper", label: "Taper", weeks: 1, intensity: 75, volume: 30, color: "#c9a9f0", focus: "Sharpen, shed fatigue", pattern: "race week" },
+      { key: "recovery", label: "Recovery", weeks: 2, intensity: 30, volume: 35, color: "#8b8f86", focus: "Rest & regenerate", pattern: "easy" },
+    ],
+  },
+  strength: {
+    name: "Strength model",
+    phases: [
+      { key: "hypertrophy", label: "Hypertrophy", weeks: 4, intensity: 60, volume: 90, color: "#7fd4e8", focus: "Muscle mass, work capacity", pattern: "3 load / 1 deload" },
+      { key: "strength", label: "Strength", weeks: 4, intensity: 80, volume: 65, color: "#c4f035", focus: "Maximal force, heavy loads", pattern: "3 load / 1 deload" },
+      { key: "power", label: "Power", weeks: 3, intensity: 85, volume: 45, color: "#f0b45e", focus: "Rate of force, explosiveness", pattern: "2 load / 1 deload" },
+      { key: "peak", label: "Peak", weeks: 1, intensity: 95, volume: 25, color: "#c9a9f0", focus: "Express peak strength", pattern: "test week" },
+      { key: "deload", label: "Deload", weeks: 2, intensity: 35, volume: 35, color: "#8b8f86", focus: "Supercompensate", pattern: "easy" },
+    ],
+  },
+};
+
+/** goals/sports → which phase model. */
+export const MODEL_FOR: Record<string, "endurance" | "strength"> = {
+  Running: "endurance",
+  Cycling: "endurance",
+  Swimming: "endurance",
+  Hyrox: "endurance",
+  Triathlon: "endurance",
+  Bodybuilding: "strength",
+  Powerlifting: "strength",
+  Climbing: "strength",
+  BJJ: "strength",
+  Boxing: "strength",
+  Hybrid: "strength",
+};
+
+export function modelFor(goalOrSport: string): { name: string; phases: Phase[] } {
+  return PHASE_MODELS[MODEL_FOR[goalOrSport] ?? "strength"]!;
+}
+
+/**
+ * Build a macrocycle. If `eventInWeeks` is given, the active phases are scaled
+ * to fit the available weeks (taper/peak land on the event). Otherwise all
+ * phases are stacked forward from now, including the recovery block.
+ */
+export function buildMacrocycle(
+  goalOrSport: string,
+  eventInWeeks?: number | null,
+): Macrocycle {
+  const model = modelFor(goalOrSport);
+  const phases = model.phases.filter(
+    (p) => p.key !== "recovery" && p.key !== "deload",
+  ); // active build
+  const recovery = model.phases.find(
+    (p) => p.key === "recovery" || p.key === "deload",
+  );
+
+  let mesos: Phase[];
+  if (eventInWeeks) {
+    const ordered = [...phases]; // base...taper, in order
+    const total = ordered.reduce((s, p) => s + p.weeks, 0);
+    const scale = eventInWeeks / total;
+    mesos = ordered.map((p) => ({
+      ...p,
+      weeks: Math.max(1, Math.round(p.weeks * scale)),
+    }));
+  } else {
+    mesos = [...phases, ...(recovery ? [recovery] : [])];
+  }
+
+  let weekCursor = 0;
+  const blocks: MacroBlock[] = mesos.map((p) => {
+    const micros: Microcycle[] = Array.from({ length: p.weeks }, (_, i) => {
+      const isRecovery =
+        p.key === "recovery" ||
+        p.key === "deload" ||
+        (i === p.weeks - 1 && p.weeks >= 3);
+      return {
+        week: weekCursor + i + 1,
+        kind: isRecovery ? "recovery" : "load",
+        intensity: isRecovery
+          ? Math.round(p.intensity * 0.6)
+          : Math.min(100, p.intensity + i * 4),
+        volume: isRecovery
+          ? Math.round(p.volume * 0.55)
+          : Math.min(100, p.volume - i * 3),
+      };
+    });
+    const block: MacroBlock = {
+      ...p,
+      startWeek: weekCursor + 1,
+      endWeek: weekCursor + p.weeks,
+      micros,
+    };
+    weekCursor += p.weeks;
+    return block;
+  });
+
+  return {
+    model: model.name,
+    goalOrSport,
+    totalWeeks: weekCursor,
+    eventInWeeks: eventInWeeks ?? null,
+    blocks,
+  };
+}
+
+/** Which phase is "this week" (1-indexed), plus that week's microcycle. */
+export function currentPhase(
+  macro: Macrocycle,
+  currentWeek = 1,
+): { block: MacroBlock; micro: Microcycle } {
+  const block =
+    macro.blocks.find(
+      (b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek,
+    ) ?? macro.blocks[0]!;
+  const micro = block.micros.find((m) => m.week === currentWeek) ?? block.micros[0]!;
+  return { block, micro };
+}
