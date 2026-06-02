@@ -11,6 +11,7 @@ export * from "./engines";
 export * from "./plans";
 export * from "./sports";
 export * from "./capabilities";
+export * from "./i18n";
 
 /** Sprint marker so both clients can show what's wired up. */
 export const CORE_VERSION = "0.1.0-sprint2";

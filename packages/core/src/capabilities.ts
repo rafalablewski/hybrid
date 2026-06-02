@@ -62,7 +62,7 @@ export const CAPABILITIES: Capability[] = [
   // ---- Planned features ----
   { id: "coach-layer", area: "Web", status: "shipped", title: "Coach layer", detail: "CoachLink mutual-consent invites (accept/decline), roster, per-client sessions, and coaching notes incl. private (never shown to the client). Coach analytics dashboard computes from the real roster. Authorized by the relationship in the API. Web done; mobile coach screen pending." },
   { id: "plans-enroll", area: "Backend", status: "shipped", title: "Plan enrollment", detail: "Enrolling in a plan builds a macrocycle from the engine and persists it (POST /api/macrocycles); Periodize renders your enrolled season. Web done; mobile enroll pending." },
-  { id: "i18n", area: "Core", status: "planned", title: "Localization (PL/DE)", detail: "Translations exist in the prototype; not wired into the apps yet." },
+  { id: "i18n", area: "Core", status: "shipped", title: "Localization (EN/PL/DE)", detail: "i18n module in core + web language switcher (persisted); navigation + common labels translated. Screen content translated incrementally; mobile switcher pending." },
 ];
 
 export function capabilitiesByStatus(status: CapabilityStatus): Capability[] {

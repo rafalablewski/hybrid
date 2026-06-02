@@ -34,6 +34,7 @@ import CapabilitiesScreen from "./capabilities";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
+import { useLang } from "@/lib/i18n";
 
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
@@ -64,6 +65,7 @@ export default function AppShell() {
   const { sessions, refresh } = useSessions();
   const { macro, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
+  const { lang, setLang, t } = useLang();
   const [screen, setScreen] = useState("analytics");
 
   const allowedScopes = useMemo<Scope[]>(
@@ -134,7 +136,7 @@ export default function AppShell() {
             }}
           >
             <span style={{ fontSize: 16 }}>{ic}</span>
-            {l}
+            {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
           </button>
         ))}
         <div style={{ position: "absolute", bottom: 24, left: 16, right: 16 }}>
@@ -186,7 +188,7 @@ export default function AppShell() {
               cursor: "pointer",
             }}
           >
-            Sign out
+            {t("common.signout")}
           </button>
         </div>
       </aside>
@@ -202,6 +204,15 @@ export default function AppShell() {
               {screen}
             </h1>
           </div>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as "en" | "pl" | "de")}
+            style={{ ...cond, fontSize: 13, fontWeight: 700, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}
+          >
+            <option value="en">EN</option>
+            <option value="pl">PL</option>
+            <option value="de">DE</option>
+          </select>
         </header>
 
         {screen === "analytics" && (

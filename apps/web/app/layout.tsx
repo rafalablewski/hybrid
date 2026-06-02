@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { brand } from "@hybrid/core";
 import { SessionProvider } from "@/lib/session";
+import { LanguageProvider } from "@/lib/i18n";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <LanguageProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
