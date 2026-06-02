@@ -1,7 +1,9 @@
 -- HYBRID — RtpProtocol table (return-to-play rails).
 -- Run in the Supabase SQL Editor. Mirrors prisma/schema.prisma model
 -- RtpProtocol. RTP is medical-tier: own-rows + active-coach read (like Session).
--- Relies on public.app_user_id() + public.is_active_coach() from rls-policies.sql.
+-- PREREQUISITE: run reference/rls-policies.sql FIRST — it defines
+-- public.app_user_id() + public.is_active_coach(); without them the policy
+-- statements error and (in a single transaction) roll the table back.
 
 create table if not exists "RtpProtocol" (
   "id"         text primary key default gen_random_uuid()::text,
@@ -11,6 +13,7 @@ create table if not exists "RtpProtocol" (
   "stage"      text not null default 'acute',
   "completed"  jsonb not null default '[]'::jsonb,
   "status"     text not null default 'active',
+  "audit"      jsonb not null default '[]'::jsonb, -- append-only sign-off/override trail
   "createdAt"  timestamp(3) not null default now()
 );
 create index if not exists "RtpProtocol_userId_idx" on "RtpProtocol" ("userId");
