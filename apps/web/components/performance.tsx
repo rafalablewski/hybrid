@@ -7,7 +7,6 @@ import {
   computeInjuryRisk,
   performanceTrajectory,
   toTrainingLog,
-  SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type Biometrics,
   type LoggedSession,
@@ -61,7 +60,18 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 }
 
 export default function Performance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
-  const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
+  if (sessions.length === 0)
+    return (
+      <Card style={{ textAlign: "center", padding: 60 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No training data yet</div>
+        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+          Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk —
+          appears here, computed from your real training.
+        </Mono>
+      </Card>
+    );
+
+  const log = toTrainingLog(sessions);
   const theBio = bio ?? SAMPLE_BIOMETRICS;
   const state = computePerformanceState(log, theBio);
   const risk = computeInjuryRisk(log, theBio);
