@@ -47,6 +47,7 @@ import Today from "./today";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
 import Checkins from "./checkins";
+import Calendar from "./calendar";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -63,6 +64,7 @@ const NAV: [string, string, string][] = [
   ["log", "Log session", "✎"],
   ["nutrition", "Nutrition", "🍎"],
   ["checkin", "Check-in", "✓"],
+  ["calendar", "Calendar", "▦"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
   ["competition", "Competition", "▲"],
@@ -355,6 +357,8 @@ export default function AppShell() {
         {screen === "nutrition" && <Nutrition />}
 
         {screen === "checkin" && <Checkins sessions={sessions} />}
+
+        {screen === "calendar" && <Calendar sessions={sessions} />}
 
         {screen === "squad" && <TeamMonitor />}
 
