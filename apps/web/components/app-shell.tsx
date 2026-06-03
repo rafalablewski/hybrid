@@ -140,38 +140,42 @@ export default function AppShell() {
           top: 0,
           height: "100vh",
           flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px" }}>
+        <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px", flexShrink: 0 }}>
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
-        {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
-          <button
-            key={id}
-            onClick={() => setScreen(id)}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "11px 12px",
-              marginBottom: 4,
-              borderRadius: 10,
-              cursor: "pointer",
-              border: "none",
-              background: screen === id ? `${LIME}1a` : "transparent",
-              color: screen === id ? LIME : ASH,
-              ...disp,
-              fontSize: 14,
-              fontWeight: 600,
-              textAlign: "left",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{ic}</span>
-            {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
-          </button>
-        ))}
-        <div style={{ position: "absolute", bottom: 24, left: 16, right: 16 }}>
+        <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+          {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
+            <button
+              key={id}
+              onClick={() => setScreen(id)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "11px 12px",
+                marginBottom: 4,
+                borderRadius: 10,
+                cursor: "pointer",
+                border: "none",
+                background: screen === id ? `${LIME}1a` : "transparent",
+                color: screen === id ? LIME : ASH,
+                ...disp,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: "left",
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{ic}</span>
+              {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
+            </button>
+          ))}
+        </nav>
+        <div style={{ flexShrink: 0, paddingTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: INK2 }}>
             <div
               style={{
