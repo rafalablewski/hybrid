@@ -170,13 +170,17 @@ export default function Logger({
       <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
-            AI Coach · readiness {rx.readiness}/100
+            AI Coach{sessions.length > 0 ? ` · readiness ${rx.readiness}/100` : ""}
           </Mono>
           <button onClick={loadPrescribed} style={btn(VIOLET)}>
-            Use prescribed →
+            {sessions.length > 0 ? "Use prescribed →" : "Start a session →"}
           </button>
         </div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 8 }}>{rx.why}</Mono>
+        <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 8 }}>
+          {sessions.length > 0
+            ? rx.why
+            : "Log a few sessions and the coach reads your real readiness, fatigue and velocity to prescribe the day. For now, tap above for a balanced starter you can edit."}
+        </Mono>
       </Card>
 
       <input
