@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   LineChart,
   Line,
@@ -42,6 +43,9 @@ import {
   totalVolume,
   sessionVolume,
   bestE1rmByLift,
+  blockBestE1rm,
+  prsForSession,
+  volumeByMuscle,
   e1rmSeries,
   liftNames,
   SAMPLE_TRAINING_LOG,
@@ -911,6 +915,8 @@ function blockSummary(b: SessionBlock): string {
 }
 
 export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
   if (sessions.length === 0)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
@@ -922,32 +928,186 @@ export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
       </Card>
     );
 
+  const open = openId ? sessions.find((s) => s.id === openId) : null;
+  if (open) return <SessionDetail session={open} all={sessions} onBack={() => setOpenId(null)} />;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {sessions.map((s) => (
-        <Card key={s.id}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
-            <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
-          </div>
-          <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}>
-            <Chip c={BLUE}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
-            <Chip c={ASH}>{s.blocks.length} blocks</Chip>
-            {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
-          </div>
-          {s.blocks.map((b, i) => (
-            <div
-              key={i}
-              style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${LINE}` }}
-            >
-              <Mono s={{ fontSize: 13 }} c={CHALK}>
-                {b.name}
-              </Mono>
-              <Mono s={{ fontSize: 13 }}>{blockSummary(b)}</Mono>
+      {sessions.map((s) => {
+        const prCount = prsForSession(sessions, s.id).length;
+        return (
+          <Card key={s.id} onClick={() => setOpenId(s.id)} style={{ cursor: "pointer" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
+              <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
             </div>
-          ))}
+            <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
+              <Chip c={BLUE}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
+              <Chip c={ASH}>{s.blocks.length} blocks</Chip>
+              {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
+              {prCount > 0 && <Chip c={LIME}>🏆 {prCount} PR</Chip>}
+            </div>
+            {s.blocks.map((b, i) => (
+              <div
+                key={i}
+                style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${LINE}` }}
+              >
+                <Mono s={{ fontSize: 13 }} c={CHALK}>
+                  {b.name}
+                </Mono>
+                <Mono s={{ fontSize: 13 }}>{blockSummary(b)}</Mono>
+              </div>
+            ))}
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={ASH}>
+              Open the full breakdown →
+            </Mono>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+const MUSCLE_LABEL: Record<string, string> = {
+  quads: "Quads",
+  glutes: "Glutes",
+  posterior: "Posterior chain",
+  back: "Back",
+  chest: "Chest",
+  shoulders: "Shoulders",
+  triceps: "Triceps",
+};
+
+// ---------- SESSION DETAIL (web parity: PRs, e1RM trend, muscle focus) ----------
+function SessionDetail({
+  session,
+  all,
+  onBack,
+}: {
+  session: LoggedSession;
+  all: LoggedSession[];
+  onBack: () => void;
+}) {
+  const prs = prsForSession(all, session.id);
+  const prSet = new Set(prs.map((p) => p.lift));
+  const muscles = volumeByMuscle(session.blocks);
+  const muscleMax = muscles[0]?.volume || 1;
+  const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
+  const minutes = session.completedAt
+    ? Math.max(1, Math.round((Date.parse(session.completedAt) - Date.parse(session.startedAt)) / 60000))
+    : null;
+
+  // The session's heaviest lift → its e1RM trend across all history.
+  const topLift = session.blocks
+    .filter((b) => b.kind === "strength")
+    .map((b) => ({ name: b.name, e: blockBestE1rm(b) }))
+    .sort((a, b) => b.e - a.e)[0]?.name;
+  const series = topLift ? e1rmSeries(all, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm })) : [];
+
+  const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
+    p.previous == null ? `${p.lift} ${p.e1rm}kg (first!)` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <button
+        onClick={onBack}
+        style={{ ...mono, fontSize: 13, color: ASH, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
+      >
+        ← History
+      </button>
+
+      <div>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 26 }}>{session.title}</div>
+        <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }}>
+          {fmtDate(session.startedAt)}
+          {typeof session.readiness === "number" ? ` · readiness ${session.readiness}` : ""}
+        </Mono>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
+        <Stat label="Sets" value={sets} />
+        <Stat label="Kg moved" value={sessionVolume(session.blocks).toLocaleString()} c={LIME} />
+      </div>
+
+      {prs.length > 0 && (
+        <Card style={{ borderColor: LIME }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+            🏆 {prs.length} new personal record{prs.length > 1 ? "s" : ""}
+          </Mono>
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+            {prs.map((p) => (
+              <Mono key={p.lift} s={{ fontSize: 13 }} c={CHALK}>
+                {prLine(p)}
+              </Mono>
+            ))}
+          </div>
         </Card>
-      ))}
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: series.length > 1 ? "repeat(2, 1fr)" : "1fr", gap: 16 }}>
+        {muscles.length > 0 && (
+          <ChartFrame title="Muscle focus" kicker="Tonnage by muscle">
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {muscles.map((m) => (
+                <div key={m.muscle}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <Mono s={{ fontSize: 13 }} c={CHALK}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
+                    <Mono s={{ fontSize: 12 }}>{m.volume.toLocaleString()} kg</Mono>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 4, background: INK2, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.max(6, (m.volume / muscleMax) * 100)}%`, height: 8, borderRadius: 4, background: LIME }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartFrame>
+        )}
+
+        {series.length > 1 && (
+          <ChartFrame title={`${topLift} · e1RM`} kicker="Trend across your logs">
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={series}>
+                <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+                <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+                <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} domain={["auto", "auto"]} />
+                <Tooltip contentStyle={tip} />
+                <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartFrame>
+        )}
+      </div>
+
+      {/* Per-exercise breakdown */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {session.blocks.map((b, i) => (
+          <Card key={i}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
+                {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+              </div>
+              {b.kind === "strength" && blockBestE1rm(b) > 0 && (
+                <Mono s={{ fontSize: 13 }} c={LIME}>{Math.round(blockBestE1rm(b))} kg e1RM</Mono>
+              )}
+            </div>
+            {b.kind === "strength" ? (
+              <div style={{ marginTop: 8 }}>
+                {b.sets.map((st, j) => (
+                  <div key={j} style={{ display: "flex", gap: 16, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
+                    <Mono s={{ fontSize: 13, width: 22 }} c={ASH}>{j + 1}</Mono>
+                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}</Mono>
+                    {st.rpe ? <Mono s={{ fontSize: 13 }}>RPE {st.rpe}</Mono> : null}
+                    {st.vel ? <Mono s={{ fontSize: 13 }} c={BLUE}>{st.vel} m/s</Mono> : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>{blockSummary(b)}</Mono>
+            )}
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

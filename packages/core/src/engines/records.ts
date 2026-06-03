@@ -1,5 +1,7 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
 import { blockBestE1rm } from "./session";
+import { MOVEMENTS } from "./movements";
+import type { MuscleGroup } from "./types";
 
 // Personal-record detection. Pure helpers shared by the post-workout summary
 // (celebrate a PR the moment it's set) and the session-detail screen (badge the
@@ -66,4 +68,35 @@ export function prsForSession(all: LoggedSession[], id: string): PrHit[] {
   const t = new Date(target.startedAt).getTime();
   const prior = all.filter((s) => s.id !== id && new Date(s.startedAt).getTime() < t);
   return newPrsInSession(target, prior);
+}
+
+export interface MuscleVolume {
+  muscle: MuscleGroup;
+  volume: number;
+}
+
+/**
+ * Tonnage (load × reps) attributed to each muscle a session trained, using the
+ * MOVEMENTS map — each strength set's volume counts toward every muscle the
+ * movement touches. Answers "what did this session actually work?" Strongest
+ * first; custom movements with no muscle data are skipped.
+ */
+export function volumeByMuscle(blocks: SessionBlock[]): MuscleVolume[] {
+  const map = new Map<MuscleGroup, number>();
+  for (const b of blocks) {
+    if (b.kind !== "strength") continue;
+    const muscles = MOVEMENTS[b.name]?.muscles;
+    if (!muscles || muscles.length === 0) continue;
+    let tonnage = 0;
+    for (const s of b.sets) {
+      const load = parseFloat(s.load);
+      const reps = parseFloat(s.reps);
+      if (Number.isFinite(load) && Number.isFinite(reps)) tonnage += load * reps;
+    }
+    if (tonnage <= 0) continue;
+    for (const m of muscles) map.set(m, (map.get(m) ?? 0) + tonnage);
+  }
+  return [...map.entries()]
+    .map(([muscle, volume]) => ({ muscle, volume: Math.round(volume) }))
+    .sort((a, b) => b.volume - a.volume);
 }

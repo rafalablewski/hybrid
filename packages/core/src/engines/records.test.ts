@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { bestE1rmMap, newPrsInSession, prsForSession } from "./records";
+import { bestE1rmMap, newPrsInSession, prsForSession, volumeByMuscle } from "./records";
 import type { LoggedSession } from "./session";
 
 const squat = (load: string, reps: string): LoggedSession["blocks"][number] => ({
@@ -50,6 +50,27 @@ describe("personal records", () => {
     expect(prsForSession(all, "2")).toHaveLength(1); // beat s1
     expect(prsForSession(all, "3")).toHaveLength(0); // s2 already higher
     expect(prsForSession(all, "1")).toHaveLength(1); // first ever
+  });
+
+  it("volumeByMuscle attributes set tonnage to every muscle a lift trains", () => {
+    // Back Squat → quads, glutes, back. 100×5 = 500 kg to each.
+    const v = volumeByMuscle([{ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }] }]);
+    const byMuscle = Object.fromEntries(v.map((x) => [x.muscle, x.volume]));
+    expect(byMuscle.quads).toBe(500);
+    expect(byMuscle.glutes).toBe(500);
+    expect(byMuscle.back).toBe(500);
+    expect(byMuscle.chest).toBeUndefined();
+  });
+
+  it("volumeByMuscle sums across blocks and sorts strongest first", () => {
+    const v = volumeByMuscle([
+      { kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }] }, // quads+glutes+back 500 each
+      { kind: "strength", name: "Bench Press", sets: [{ load: "80", reps: "5" }] }, // chest+triceps+shoulders 400 each
+      { kind: "conditioning", name: "Easy Run", minutes: 20 }, // ignored
+    ]);
+    expect(v[0]!.volume).toBeGreaterThanOrEqual(v[v.length - 1]!.volume);
+    const quads = v.find((x) => x.muscle === "quads");
+    expect(quads!.volume).toBe(500);
   });
 
   it("ranks bigger improvements first", () => {

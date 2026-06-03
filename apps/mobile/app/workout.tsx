@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   prescribeSession,
@@ -94,6 +95,8 @@ export default function Workout() {
   const [elapsed, setElapsed] = useState(0);
   const [restSince, setRestSince] = useState<number | null>(null);
   const [restNow, setRestNow] = useState(0);
+  const [restTarget, setRestTarget] = useState<number | null>(null);
+  const restFired = useRef(false);
   const [readiness, setReadiness] = useState<number | undefined>(undefined);
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
@@ -105,10 +108,18 @@ export default function Workout() {
     if (phase !== "active") return;
     const id = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt.current.getTime()) / 1000));
-      if (restSince) setRestNow(Math.floor((Date.now() - restSince) / 1000));
+      if (restSince) {
+        const rn = Math.floor((Date.now() - restSince) / 1000);
+        setRestNow(rn);
+        // Buzz once when the chosen rest target is reached — eyes-off cue.
+        if (restTarget && rn >= restTarget && !restFired.current) {
+          restFired.current = true;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        }
+      }
     }, 1000);
     return () => clearInterval(id);
-  }, [phase, restSince]);
+  }, [phase, restSince, restTarget]);
 
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
   // AI / repeat-last start. Guests read their own on-device history. An empty
@@ -187,7 +198,13 @@ export default function Workout() {
     if (val) {
       setRestSince(Date.now());
       setRestNow(0);
+      restFired.current = false;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
+  };
+  const pickRest = (sec: number) => {
+    setRestTarget((cur) => (cur === sec ? null : sec));
+    restFired.current = false;
   };
 
   const buildBlocks = (): SessionBlock[] => {
@@ -314,14 +331,36 @@ export default function Workout() {
             : t("workout.firstExercise")}
         </Mono>
 
-        {restSince != null && (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}44`, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.blue }}>{t("workout.resting")} · {mmss(restNow)}</Text>
-            <Pressable onPress={() => setRestSince(null)} hitSlop={8}>
-              <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash }}>{t("workout.dismiss")}</Text>
-            </Pressable>
-          </View>
-        )}
+        {restSince != null && (() => {
+          const done = restTarget != null && restNow >= restTarget;
+          const accent = done ? C.lime : C.blue;
+          return (
+            <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: accent }}>
+                  {done ? t("workout.restDone") : t("workout.resting")} · {mmss(restNow)}{restTarget ? ` / ${mmss(restTarget)}` : ""}
+                </Text>
+                <Pressable onPress={() => setRestSince(null)} hitSlop={8}>
+                  <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash }}>{t("workout.dismiss")}</Text>
+                </Pressable>
+              </View>
+              <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
+                {[60, 90, 120, 180].map((sec) => {
+                  const on = restTarget === sec;
+                  return (
+                    <Pressable
+                      key={sec}
+                      onPress={() => pickRest(sec)}
+                      style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
+                    >
+                      <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? C.blue : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })()}
 
         {exercises.map((x) => (
           <Card key={x.uid}>

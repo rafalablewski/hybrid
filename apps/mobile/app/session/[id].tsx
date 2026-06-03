@@ -6,6 +6,7 @@ import {
   blockBestE1rm,
   prsForSession,
   e1rmSeries,
+  volumeByMuscle,
   type LoggedSession,
   type PrHit,
 } from "@hybrid/core";
@@ -102,6 +103,9 @@ export default function SessionDetail() {
         </View>
       )}
 
+      {/* Muscle focus — what this session actually trained */}
+      <MuscleFocus blocks={session.blocks} t={t} />
+
       {/* Per-exercise breakdown */}
       <View style={{ marginTop: 16 }}>
         {session.blocks.map((b, i) => (
@@ -167,6 +171,40 @@ function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: stri
     <Pressable onPress={() => router.back()} hitSlop={10}>
       <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("nav.history")}</Text>
     </Pressable>
+  );
+}
+
+const MUSCLE_LABEL: Record<string, string> = {
+  quads: "Quads",
+  glutes: "Glutes",
+  posterior: "Posterior chain",
+  back: "Back",
+  chest: "Chest",
+  shoulders: "Shoulders",
+  triceps: "Triceps",
+};
+
+function MuscleFocus({ blocks, t }: { blocks: LoggedSession["blocks"]; t: (k: string) => string }) {
+  const vol = volumeByMuscle(blocks);
+  if (vol.length === 0) return null;
+  const max = vol[0]!.volume || 1;
+  return (
+    <Card style={{ marginTop: 16 }}>
+      <Kicker>{t("session.muscleFocus")}</Kicker>
+      <View style={{ marginTop: 10, gap: 8 }}>
+        {vol.map((m) => (
+          <View key={m.muscle}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+              <Mono color={C.chalk}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
+              <Mono color={C.ash}>{m.volume.toLocaleString()} kg</Mono>
+            </View>
+            <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink2, overflow: "hidden" }}>
+              <View style={{ width: `${Math.max(6, (m.volume / max) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: C.lime }} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </Card>
   );
 }
 
