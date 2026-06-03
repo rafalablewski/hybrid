@@ -11,23 +11,11 @@ import {
   mvtFor,
   VELOCITY_ZONES,
   type LoggedSession,
-  type LVPoint,
   type LoadVelocityProfile,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
-
-// Sample back-squat ramp so the screen is meaningful before any velocity is
-// logged (mirrors the web Velocity screen): 1RM at MVT 0.30 ≈ 128 kg.
-const SAMPLE_LIFT = "Back Squat";
-const SAMPLE_POINTS: LVPoint[] = [
-  { load: 50, velocity: 0.85 },
-  { load: 70, velocity: 0.71 },
-  { load: 90, velocity: 0.57 },
-  { load: 100, velocity: 0.5 },
-  { load: 108, velocity: 0.45 },
-];
 
 const zoneColor = (id: string) =>
   id === "absolute-strength" ? C.red
@@ -40,7 +28,7 @@ export default function Velocity() {
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [lift, setLift] = useState<string>(SAMPLE_LIFT);
+  const [lift, setLift] = useState<string>("");
   const [targetVel, setTargetVel] = useState(0.5);
 
   const load = () => {
@@ -52,25 +40,19 @@ export default function Velocity() {
   useEffect(load, []);
 
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
-  const isDemo = lifts.length === 0;
-  const active = isDemo ? SAMPLE_LIFT : lifts.includes(lift) ? lift : lifts[0]!;
+  const noData = lifts.length === 0;
+  const active = lifts.includes(lift) ? lift : (lifts[0] ?? "");
   const mvt = mvtFor(active);
 
   const points = useMemo(
-    () => (isDemo ? SAMPLE_POINTS : bestPointPerLoad(lvPointsFromSessions(sessions, active))),
-    [sessions, active, isDemo],
+    () => bestPointPerLoad(lvPointsFromSessions(sessions, active)),
+    [sessions, active],
   );
   const profile = useMemo(() => fitLoadVelocityProfile(points, mvt), [points, mvt]);
   const rec = useMemo(() => suggestLoad(profile, { targetVelocity: targetVel }), [profile, targetVel]);
   const resolved = profile.estimated1rm > 0;
 
   const recentSets = useMemo(() => {
-    if (isDemo)
-      return [
-        { load: 90, reps: 5, vel: 0.57 },
-        { load: 100, reps: 5, vel: 0.5 },
-        { load: 108, reps: 3, vel: 0.45 },
-      ];
     return sessions
       .flatMap((s) =>
         s.blocks
@@ -81,24 +63,29 @@ export default function Velocity() {
       .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel))
       .slice(-6)
       .reverse();
-  }, [sessions, active, isDemo]);
+  }, [sessions, active]);
+
+  if (noData)
+    return (
+      <Screen refreshing={refreshing} onRefresh={load}>
+        <Kicker>{t("nav.velocity")} · VBT</Kicker>
+        <Card style={{ marginTop: 8, alignItems: "center", paddingVertical: 32 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>No bar speed yet</Text>
+          <Mono style={{ marginTop: 8, textAlign: "center", lineHeight: 19 }}>
+            Add a velocity (m/s) to a strength set in the live workout — across a few loads — and your
+            load–velocity profile, 1RM and zones build here from your real lifts.
+          </Mono>
+        </Card>
+      </Screen>
+    );
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
       <Kicker>{t("nav.velocity")} · VBT</Kicker>
 
-      {isDemo && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.amber, marginTop: 8 }}>
-          <Mono color={C.amber} style={{ lineHeight: 19 }}>
-            Sample profile. Log a strength set with a bar speed (m/s) in the Log tab across a few
-            loads and this rebuilds from your real velocity.
-          </Mono>
-        </Card>
-      )}
-
       {/* lift selector */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8, marginBottom: 4 }}>
-        {(isDemo ? [SAMPLE_LIFT] : lifts).map((l) => (
+        {lifts.map((l) => (
           <Pressable key={l} onPress={() => setLift(l)} style={pill(active === l, C.lime)}>
             <Text style={{ fontFamily: F.semi, fontSize: 12, color: active === l ? C.lime : C.ash }}>{l}</Text>
           </Pressable>
