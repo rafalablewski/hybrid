@@ -30,15 +30,7 @@ export default function Tactical() {
     : null;
 
   // illustrative squad: you + synthetic teammates, to show the unit rollup
-  const squad: UnitMember[] = dr
-    ? [
-        { name: "You", dri: dr.dri, status: dr.status },
-        { name: "Operator 2", dri: 86, status: "ready" },
-        { name: "Operator 3", dri: 72, status: "qualified" },
-        { name: "Operator 4", dri: 58, status: "limited" },
-        { name: "Operator 5", dri: 44, status: "non-deployable" },
-      ]
-    : [];
+  const squad: UnitMember[] = dr ? [{ name: "You", dri: dr.dri, status: dr.status }] : [];
   const unit = squad.length ? unitReadiness(squad) : null;
 
   return (
@@ -94,7 +86,7 @@ export default function Tactical() {
               </div>
             ))}
           </div>
-          <Mono s={{ fontSize: 10, display: "block", marginTop: 10 }} c={ASH}>Teammates illustrative · plug a real unit through the Org Graph.</Mono>
+          <Mono s={{ fontSize: 10, display: "block", marginTop: 10 }} c={ASH}>Unit roll-up shows your own readiness · connect a real unit through the Org Graph.</Mono>
         </Card>
       </div>
     </div>
