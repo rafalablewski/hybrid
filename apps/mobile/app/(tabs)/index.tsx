@@ -91,6 +91,15 @@ export default function Home() {
         </View>
       </View>
 
+      {/* START NOW — the one tap that matters in the gym */}
+      <Pressable
+        onPress={() => router.push("/workout?source=empty")}
+        style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 22, alignItems: "center", marginTop: 16 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  Start workout</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>log as you go · share when you finish</Text>
+      </Pressable>
+
       {/* personalize */}
       <Pressable
         onPress={() => router.push("/onboarding")}
@@ -113,7 +122,7 @@ export default function Home() {
                 <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{a.name}</Text>
                 <Mono style={{ fontSize: 11 }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </View>
-              <Pressable onPress={() => router.push("/(tabs)/log")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
+              <Pressable onPress={() => router.push("/workout?source=empty")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>Start</Text>
               </Pressable>
               <Pressable onPress={() => markDone(a.id)}>
@@ -135,7 +144,7 @@ export default function Home() {
         </Text>
         <Mono color={C.chalk} style={{ lineHeight: 20 }}>{rx.why}</Mono>
         <View style={{ marginTop: 14 }}>
-          <Button label={t("home.startSession")} onPress={() => router.push("/(tabs)/log")} />
+          <Button label={t("home.startSession")} onPress={() => router.push("/workout?source=ai")} />
         </View>
       </Card>
 
