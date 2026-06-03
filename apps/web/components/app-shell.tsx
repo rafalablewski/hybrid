@@ -42,8 +42,10 @@ import Tactical from "./tactical";
 import Longevity from "./longevity";
 import Velocity from "./velocity";
 import TeamCompare from "./team-compare";
+import TeamMonitor from "./team-monitor";
 import Today from "./today";
 import Nutrition from "./nutrition";
+import Onboarding from "./onboarding";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -53,6 +55,7 @@ import { useSignals } from "@/lib/use-signals";
 
 const NAV: [string, string, string][] = [
   ["today", "Today", "➤"],
+  ["onboarding", "Get started", "✦"],
   ["dashboard", "Dashboard", "◆"],
   ["performance", "Performance", "◈"],
   ["velocity", "Velocity (VBT)", "⚡"],
@@ -66,6 +69,7 @@ const NAV: [string, string, string][] = [
   ["video", "Video", "▷"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
+  ["squad", "Squad monitor", "◫"],
   ["teamcompare", "Team compare", "⚖"],
   ["org", "Organization", "⬡"],
   ["talent", "Talent", "✸"],
@@ -338,11 +342,17 @@ export default function AppShell() {
           <Today sessions={sessions} bio={bio ?? undefined} onStart={() => setScreen("log")} />
         )}
 
+        {screen === "onboarding" && (
+          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("periodize"); }} />
+        )}
+
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <Velocity sessions={sessions} />}
 
         {screen === "nutrition" && <Nutrition />}
+
+        {screen === "squad" && <TeamMonitor />}
 
         {screen === "teamcompare" && <TeamCompare />}
 

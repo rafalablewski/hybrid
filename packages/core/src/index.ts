@@ -9,6 +9,7 @@
 export * from "./brand";
 export * from "./engines";
 export * from "./plans";
+export * from "./onboarding";
 export * from "./sports";
 export * from "./capabilities";
 export * from "./i18n";

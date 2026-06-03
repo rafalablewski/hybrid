@@ -82,6 +82,18 @@ export default function Home() {
         </View>
       </View>
 
+      {/* personalize */}
+      <Pressable
+        onPress={() => router.push("/onboarding")}
+        style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.violet }}>✨ Set up your plan</Text>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
+        </View>
+        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.violet }}>→</Text>
+      </Pressable>
+
       {/* ROUTE TODAY — what to do, why */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 18 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

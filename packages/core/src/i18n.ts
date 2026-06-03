@@ -10,6 +10,8 @@ export const LANGS: Record<Lang, string> = { en: "English", pl: "Polski", de: "D
 export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   en: {
     "nav.today": "Today",
+    "nav.onboarding": "Get started",
+    "nav.squad": "Squad monitor",
     "nav.dashboard": "Dashboard",
     "nav.log": "Log session",
     "nav.analytics": "Analytics",
@@ -83,6 +85,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   },
   pl: {
     "nav.today": "Dziś",
+    "nav.onboarding": "Zacznij tutaj",
+    "nav.squad": "Monitor zespołu",
     "nav.dashboard": "Pulpit",
     "nav.log": "Zapisz sesję",
     "nav.analytics": "Analizy",
@@ -156,6 +160,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   },
   de: {
     "nav.today": "Heute",
+    "nav.onboarding": "Loslegen",
+    "nav.squad": "Team-Monitor",
     "nav.dashboard": "Übersicht",
     "nav.log": "Einheit",
     "nav.analytics": "Analysen",
