@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -10,12 +10,15 @@ import {
   liftNames,
   velocityProfiles,
   toTrainingLog,
+  weeklyRecap,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
+import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
+import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
 
@@ -28,6 +31,7 @@ const bandColor = (b: string) =>
 export default function Home() {
   const router = useRouter();
   const { name, signOut } = useSession();
+  const { draft } = useDraft();
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -57,6 +61,8 @@ export default function Home() {
   // Consumer engines run on REAL sessions (empty → honest "getting started").
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
+  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+  const recapRef = useRef<View>(null);
   const primaryLift = useMemo(() => liftNames(sessions)[0], [sessions]);
   const projection = useMemo(
     () => (primaryLift ? projectLift(sessions, primaryLift, { horizonWeeks: 12 }) : null),
@@ -91,6 +97,17 @@ export default function Home() {
         </View>
       </View>
 
+      {/* START NOW — the one tap that matters in the gym */}
+      <Pressable
+        onPress={() => router.push("/workout?source=empty")}
+        style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 22, alignItems: "center", marginTop: 16 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  {draft ? t("train.resume") : t("home.startWorkout")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>
+          {draft ? `${draft.exercises.length} ${t("workout.exercises")} · ${t("train.inProgress")}` : t("home.startWorkoutSub")}
+        </Text>
+      </Pressable>
+
       {/* personalize */}
       <Pressable
         onPress={() => router.push("/onboarding")}
@@ -113,7 +130,7 @@ export default function Home() {
                 <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{a.name}</Text>
                 <Mono style={{ fontSize: 11 }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </View>
-              <Pressable onPress={() => router.push("/(tabs)/log")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
+              <Pressable onPress={() => router.push("/workout?source=empty")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>Start</Text>
               </Pressable>
               <Pressable onPress={() => markDone(a.id)}>
@@ -135,7 +152,7 @@ export default function Home() {
         </Text>
         <Mono color={C.chalk} style={{ lineHeight: 20 }}>{rx.why}</Mono>
         <View style={{ marginTop: 14 }}>
-          <Button label={t("home.startSession")} onPress={() => router.push("/(tabs)/log")} />
+          <Button label={t("home.startSession")} onPress={() => router.push("/workout?source=ai")} />
         </View>
       </Card>
 
@@ -184,6 +201,23 @@ export default function Home() {
           <Mono color={C.ash}>this week {acc.sessionsLast7}/3</Mono>
         </View>
       </Card>
+
+      {/* YOUR WEEK — recap + share (only once there's something to recap) */}
+      {sessions.length > 0 && (
+        <View style={{ marginBottom: 12 }}>
+          <RecapShareCard ref={recapRef} recap={recap} t={t} />
+          {recap.sessions > 0 ? (
+            <Pressable
+              onPress={() => shareWorkout(recapRef, recapShareText(recap, t), t("recap.share"))}
+              style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
+            >
+              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{t("recap.share")}</Text>
+            </Pressable>
+          ) : (
+            <Mono style={{ marginTop: 10, textAlign: "center" }}>{t("recap.noneThisWeek")}</Mono>
+          )}
+        </View>
+      )}
 
       {/* FUTURE SELF */}
       {primaryLift && projection && !projection.insufficient && projGoal ? (

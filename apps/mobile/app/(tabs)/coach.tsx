@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
-import { sessionVolume } from "@hybrid/core";
+import { sessionVolume, weeklyRecap } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
   getCoachLinks,
@@ -215,6 +215,8 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             </Card>
           ))}
 
+          {sessions.length > 0 && <ClientWeek sessions={sessions} t={t} />}
+
           <Kicker color={C.lime}>{"\n"}{t("coach.recentSessions")}</Kicker>
           {sessions.length === 0 ? (
             <Mono>{t("coach.noSessions")}</Mono>
@@ -235,5 +237,57 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         </>
       )}
     </Screen>
+  );
+}
+
+const MUSCLE_LABEL: Record<string, string> = {
+  quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back",
+  chest: "Chest", shoulders: "Shoulders", triceps: "Triceps",
+};
+
+// The athlete's current week, as the coach sees it — same engine as the
+// client's own Today, so both read one source of truth.
+function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string) => string }) {
+  const r = weeklyRecap(sessions);
+  const hasPrev = r.prevSessions > 0 || r.prevVolume > 0;
+  return (
+    <>
+      <Kicker color={C.lime}>{"\n"}{t("recap.title")}</Kicker>
+      <Card>
+        {r.sessions === 0 ? (
+          <Mono>{t("recap.noneThisWeek")}</Mono>
+        ) : (
+          <>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
+              <Metric label={t("recap.sessions")} value={`${r.sessions}`} color={C.chalk} />
+              <Metric label={t("summary.kgMoved")} value={r.volume.toLocaleString()} color={C.lime} />
+              <Metric label={t("recap.activeDays")} value={`${r.activeDays}`} color={C.chalk} />
+              <Metric label={t("recap.prs")} value={`${r.prs.length}`} color={r.prs.length ? C.lime : C.ash} />
+              {r.topMuscle && <Metric label={t("recap.top")} value={MUSCLE_LABEL[r.topMuscle.muscle] ?? r.topMuscle.muscle} color={C.blue} />}
+            </View>
+            {hasPrev && (
+              <Mono color={r.volumeDelta >= 0 ? C.lime : C.amber} style={{ marginTop: 12 }}>
+                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("recap.sessions")} · {r.volumeDelta >= 0 ? "+" : ""}
+                {r.volumeDelta.toLocaleString()} kg {t("recap.vsLastWeek")}
+              </Mono>
+            )}
+            {r.prs.length > 0 && (
+              <Mono color={C.chalk} style={{ marginTop: 8 }}>
+                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? "" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+              </Mono>
+            )}
+          </>
+        )}
+      </Card>
+    </>
+  );
+}
+
+function Metric({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View>
+      <Text style={{ fontFamily: F.black, fontSize: 20, color }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
+    </View>
   );
 }

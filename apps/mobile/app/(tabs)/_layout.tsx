@@ -23,13 +23,17 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: F.mono, fontSize: 10 },
       }}
     >
+      {/* The funnel: see today → train → review. Everything else lives under More. */}
       <Tabs.Screen name="index" options={{ title: t("nav.dashboard"), tabBarIcon: icon("◆") }} />
-      <Tabs.Screen name="plans" options={{ title: t("nav.plans"), tabBarIcon: icon("▤") }} />
-      <Tabs.Screen name="sport" options={{ title: t("nav.sport"), tabBarIcon: icon("◎") }} />
-      <Tabs.Screen name="log" options={{ title: t("nav.log"), tabBarIcon: icon("✎") }} />
-      <Tabs.Screen name="velocity" options={{ title: t("nav.velocity"), tabBarIcon: icon("⚡") }} />
+      <Tabs.Screen name="log" options={{ title: t("nav.train"), tabBarIcon: icon("▶") }} />
       <Tabs.Screen name="history" options={{ title: t("nav.history"), tabBarIcon: icon("≣") }} />
-      <Tabs.Screen name="coach" options={{ title: t("nav.coach"), tabBarIcon: icon("✦") }} />
+      <Tabs.Screen name="more" options={{ title: t("nav.more"), tabBarIcon: icon("⋯") }} />
+
+      {/* Reachable from More / deep links, hidden from the bar to cut clutter. */}
+      <Tabs.Screen name="plans" options={{ href: null }} />
+      <Tabs.Screen name="sport" options={{ href: null }} />
+      <Tabs.Screen name="velocity" options={{ href: null }} />
+      <Tabs.Screen name="coach" options={{ href: null }} />
     </Tabs>
   );
 }

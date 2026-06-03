@@ -14,6 +14,8 @@ export * from "./rtp";
 export * from "./video";
 export * from "./peaking";
 export * from "./session";
+export * from "./records";
+export * from "./recap";
 export * from "./velocity";
 export * from "./habits";
 export * from "./accountability";
