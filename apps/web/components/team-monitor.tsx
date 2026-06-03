@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/core";
 import {
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
-  disp, cond, mono, Mono, Card,
+  disp, cond, mono, Mono, Card, Chip,
 } from "@/lib/ui";
 
 type SquadRow = {
@@ -37,6 +38,7 @@ export default function TeamMonitor() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<"readiness" | "acwr" | "risk">("readiness");
+  const [seg, setSeg] = useState<AthleteSegment | "all">("all");
 
   useEffect(() => {
     fetch("/api/coach/squad")
@@ -63,11 +65,25 @@ export default function TeamMonitor() {
       </Card>
     );
 
-  const sorted = [...squad].sort((a, b) =>
+  const segOf = (a: SquadRow): AthleteSegment =>
+    athleteSegment({
+      readiness: a.readiness,
+      acwrBand: a.acwrBand,
+      flagged: !!a.flagged,
+      daysSinceLast: a.lastSession ? Math.floor((Date.now() - Date.parse(a.lastSession)) / 86_400_000) : null,
+      sessions: a.sessions,
+    });
+
+  const counts = squad.reduce((m, a) => { const s = segOf(a); m[s] = (m[s] ?? 0) + 1; return m; }, {} as Record<string, number>);
+  const filtered = squad.filter((a) => seg === "all" || segOf(a) === seg);
+  const sorted = [...filtered].sort((a, b) =>
     sort === "readiness" ? a.readiness - b.readiness // worst first
     : sort === "acwr" ? b.acwr - a.acwr
     : b.riskOverall - a.riskOverall,
   );
+  const SEGS: (AthleteSegment | "all")[] = ["all", "needs-attention", "dormant", "new", "on-track"];
+  const segColor = (s: AthleteSegment) =>
+    s === "needs-attention" ? RED : s === "dormant" ? VIOLET : s === "new" ? BLUE : LIME;
 
   return (
     <div>
@@ -81,6 +97,16 @@ export default function TeamMonitor() {
         </div>
       )}
 
+      {/* auto-segment filter */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Segment</Mono>
+        {SEGS.map((s) => (
+          <button key={s} onClick={() => setSeg(s)} style={pill(seg === s)}>
+            {s === "all" ? `All ${squad.length}` : `${SEGMENT_LABELS[s]} ${counts[s] ?? 0}`}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Sort by</Mono>
         {(["readiness", "acwr", "risk"] as const).map((k) => (
@@ -93,6 +119,7 @@ export default function TeamMonitor() {
           <thead>
             <tr style={{ textAlign: "left", color: ASH }}>
               <th style={th}>Athlete</th>
+              <th style={thC}>Segment</th>
               <th style={thC}>Readiness</th>
               <th style={thC}>ACWR</th>
               <th style={thC}>Acute load</th>
@@ -105,6 +132,7 @@ export default function TeamMonitor() {
             {sorted.map((a) => (
               <tr key={a.linkId} style={{ borderTop: `1px solid ${LINE}` }}>
                 <td style={{ ...td, color: CHALK, fontFamily: "inherit" }}>{a.name}</td>
+                <td style={tdC}><Chip c={segColor(segOf(a))}>{SEGMENT_LABELS[segOf(a)]}</Chip></td>
                 <td style={tdC}><Dot c={readinessColor(a.readiness)} /> {a.readiness}</td>
                 <td style={tdC}>
                   <span style={{ color: acwrColor(a.acwrBand) }}>{a.acwr || "—"}</span>

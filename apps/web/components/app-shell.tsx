@@ -49,6 +49,7 @@ import Onboarding from "./onboarding";
 import Checkins from "./checkins";
 import Calendar from "./calendar";
 import Builder from "./builder";
+import ForcePlate from "./forceplate";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -62,6 +63,7 @@ const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
   ["performance", "Performance", "◈"],
   ["velocity", "Velocity (VBT)", "⚡"],
+  ["forceplate", "Force plate", "◇"],
   ["log", "Log session", "✎"],
   ["nutrition", "Nutrition", "🍎"],
   ["checkin", "Check-in", "✓"],
@@ -355,6 +357,8 @@ export default function AppShell() {
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <Velocity sessions={sessions} />}
+
+        {screen === "forceplate" && <ForcePlate />}
 
         {screen === "nutrition" && <Nutrition />}
 

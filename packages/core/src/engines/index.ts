@@ -22,3 +22,6 @@ export * from "./nutrition";
 export * from "./load";
 export * from "./compliance";
 export * from "./calendar";
+export * from "./forceplate";
+export * from "./composition";
+export * from "./segment";

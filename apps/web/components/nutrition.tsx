@@ -1,17 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition,
   adaptiveTargets,
   estimateMaintenance,
   dailyNutrition,
+  weightTrend,
   type NutritionGoal,
   type Signal,
 } from "@hybrid/core";
 import {
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
-  disp, cond, mono, Mono, Card, ChartFrame,
+  disp, cond, mono, tip, Mono, Card, ChartFrame,
 } from "@/lib/ui";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
@@ -45,6 +47,7 @@ export default function Nutrition() {
   const targets = useMemo(() => adaptiveTargets(signals, { goal }), [signals, goal]);
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
+  const weight = useMemo(() => weightTrend(signals), [signals]);
 
   const add = async () => {
     setSaving(true);
@@ -125,6 +128,26 @@ export default function Nutrition() {
           </Mono>
         </ChartFrame>
       </div>
+
+      {weight.points.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <ChartFrame title="Bodyweight trend" kicker={`${weight.ratePerWeek > 0 ? "+" : ""}${weight.ratePerWeek} kg/wk`} c={weight.ratePerWeek <= 0 ? LIME : AMBER}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={weight.points} margin={{ left: -10, right: 8 }}>
+                <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} tickFormatter={(d: string) => d.slice(5)} />
+                <YAxis unit="kg" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
+                <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? "trend" : "raw"]} />
+                <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="smoothed" stroke={LIME} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }}>
+              <span style={{ color: LIME }}>—</span> trend (smoothed) · <span style={{ color: ASH }}>—</span> daily reading. Daily weight is noisy; the trend is the signal.
+            </Mono>
+          </ChartFrame>
+        </div>
+      )}
 
       <Card style={{ marginTop: 16 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Recent days</Mono>

@@ -155,6 +155,13 @@ export default function Home() {
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Check-in →</Text>
           <Mono style={{ marginTop: 2, fontSize: 11 }}>weekly review · coach reply</Mono>
         </Pressable>
+        <Pressable
+          onPress={() => router.push("/calendar")}
+          style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Calendar →</Text>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>month view · load</Mono>
+        </Pressable>
       </View>
 
       {/* ON TRACK? — accountability engine */}
