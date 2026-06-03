@@ -144,4 +144,10 @@ export interface Prescription {
   confidence: number;
   pickSys: EnergySystem;
   bioAdj: number;
+  /** The 1RM the working load was derived from (kg). */
+  oneRm: number;
+  /** Whether `oneRm` came from the velocity profile (autoregulated) or rep-based e1RM. */
+  oneRmSource: "velocity" | "e1rm";
+  /** When autoregulated off bar speed: the mean concentric velocity to hit on the work sets (m/s). */
+  velocityTarget?: number;
 }

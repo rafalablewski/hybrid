@@ -15,8 +15,10 @@ import {
   liftsWithVelocity,
   velocityProfileFor,
 } from "./velocity";
+import { prescribeSession } from "./prescription";
 import type { VelocitySet, LVPoint } from "./velocity";
 import type { LoggedSession } from "./session";
+import type { TrainingLog } from "./types";
 
 describe("velocity zones", () => {
   it("classifies by mean concentric velocity", () => {
@@ -203,5 +205,42 @@ describe("bridge from logged sessions", () => {
     expect(p.n).toBe(3);
     expect(p.mvt).toBe(0.3);
     expect(p.estimated1rm).toBeGreaterThan(120);
+  });
+});
+
+describe("velocity-aware prescription (autoregulation)", () => {
+  const log: TrainingLog = [
+    { daysAgo: 7, items: [{ move: "Back Squat", e1rm: 130, topRpe: 7, hardSets: 4 }] },
+    { daysAgo: 3, items: [{ move: "Back Squat", e1rm: 132, topRpe: 7, hardSets: 4 }] },
+  ];
+  const profile = fitLoadVelocityProfile(
+    [
+      { load: 60, velocity: 0.7 },
+      { load: 100, velocity: 0.5 },
+      { load: 120, velocity: 0.4 },
+    ],
+    0.3,
+  ); // 1RM ≈ 140
+  // give every candidate the same profile so whichever lift is primary is covered
+  const profiles = {
+    "Back Squat": profile,
+    Deadlift: profile,
+    "Bench Press": profile,
+    "Overhead Press": profile,
+  };
+
+  it("anchors load to the velocity-estimated 1RM and returns a target bar speed", () => {
+    const rx = prescribeSession(log, undefined, { profiles });
+    expect(rx.oneRmSource).toBe("velocity");
+    expect(rx.oneRm).toBe(Math.round(profile.estimated1rm));
+    expect(rx.velocityTarget).toBeDefined();
+    expect(rx.velocityTarget!).toBeGreaterThan(0);
+    expect(rx.why).toMatch(/velocity-estimated 1RM/);
+  });
+
+  it("falls back to rep-based e1RM when no profile is given", () => {
+    const rx = prescribeSession(log);
+    expect(rx.oneRmSource).toBe("e1rm");
+    expect(rx.velocityTarget).toBeUndefined();
   });
 });

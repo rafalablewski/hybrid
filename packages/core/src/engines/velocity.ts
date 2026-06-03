@@ -265,6 +265,12 @@ export function percent1rmForVelocity(profile: LoadVelocityProfile, velocity: nu
   return (loadForVelocity(profile, velocity) / profile.estimated1rm) * 100;
 }
 
+/** Predicted mean velocity at a target %1RM from a fitted profile. 0 if unresolvable. */
+export function velocityForPercent(profile: LoadVelocityProfile, pct: number): number {
+  if (profile.estimated1rm <= 0) return 0;
+  return velocityAtLoad(profile, (pct / 100) * profile.estimated1rm);
+}
+
 /** Round to the nearest plate increment (default 2.5 kg). */
 export function roundToIncrement(kg: number, step = 2.5): number {
   if (step <= 0) return Math.round(kg);
@@ -357,4 +363,15 @@ export function velocityProfileFor(
   mvt = mvtFor(lift),
 ): LoadVelocityProfile {
   return fitLoadVelocityProfile(lvPointsFromSessions(sessions, lift), mvt);
+}
+
+/**
+ * Build a fitted load–velocity profile for every lift that has velocity data,
+ * keyed by lift name. The prescription engine reads this to autoregulate load
+ * off bar speed (only lifts with a resolvable 1RM are useful to it).
+ */
+export function velocityProfiles(sessions: LoggedSession[]): Record<string, LoadVelocityProfile> {
+  const out: Record<string, LoadVelocityProfile> = {};
+  for (const lift of liftsWithVelocity(sessions)) out[lift] = velocityProfileFor(sessions, lift);
+  return out;
 }

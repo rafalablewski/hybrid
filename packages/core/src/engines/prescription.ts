@@ -9,16 +9,32 @@ import { MOVEMENTS } from "./movements";
 import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { progressionSignal } from "./progression";
+import { velocityAtLoad, type LoadVelocityProfile } from "./velocity";
+
+export interface PrescribeOptions {
+  /**
+   * Per-lift load–velocity profiles (e.g. from `velocityProfiles(sessions)`).
+   * When the chosen primary lift has a resolvable profile, the working load is
+   * derived from the velocity-estimated 1RM — autoregulated to today's bar
+   * speed rather than a stale rep-based e1RM.
+   */
+  profiles?: Record<string, LoadVelocityProfile>;
+}
 
 /**
  * The prescription engine — the moat made real. Picks the most-recovered heavy
  * pattern with a good progression signal, doses it from that signal, pairs it
  * with the freshest conditioning system, and explains every choice. Confidence
  * rises with log depth (the network effect, made literal).
+ *
+ * VBT: pass `opts.profiles` and, when the primary lift has a fitted load–velocity
+ * profile, the load tracks the velocity-estimated 1RM and a target bar speed is
+ * returned for the work sets — true day-to-day autoregulation.
  */
 export function prescribeSession(
   log: TrainingLog,
   bio?: Biometrics,
+  opts?: PrescribeOptions,
 ): Prescription {
   const fatigue = computeFatigue(log);
   const { score: readiness, bioAdj } = computeReadiness(fatigue, bio);
@@ -50,7 +66,15 @@ export function prescribeSession(
       : primary.sig.action === "deload"
         ? 0.65
         : 0.75;
-  const workLoad = Math.round((lastE1rm * pct) / 2.5) * 2.5;
+
+  // VBT autoregulation: if we have a fitted load–velocity profile for the
+  // primary lift, anchor the load to its velocity-estimated 1RM (which moves
+  // with today's readiness) and surface the bar speed to hit on the work sets.
+  const profile = opts?.profiles?.[primary.move];
+  const useVel = !!profile && profile.estimated1rm > 0;
+  const oneRm = useVel ? profile!.estimated1rm : lastE1rm;
+  const workLoad = Math.round((oneRm * pct) / 2.5) * 2.5;
+  const velocityTarget = useVel ? velocityAtLoad(profile!, workLoad) : undefined;
   const reps = primary.sig.action === "deload" ? 3 : 5;
   const sets =
     primary.sig.action === "progress" ? 5 : primary.sig.action === "deload" ? 3 : 4;
@@ -94,10 +118,14 @@ export function prescribeSession(
     },
   ];
 
+  const loadBasis = useVel
+    ? `${Math.round(pct * 100)}% of your velocity-estimated 1RM (${Math.round(oneRm)}kg, autoregulated to today's bar speed) — aim for ~${velocityTarget!.toFixed(2)} m/s on the work sets`
+    : `${Math.round(pct * 100)}% e1RM`;
+
   const why =
     `Readiness ${readiness}/100. ` +
     `${primary.move} is your most-recovered heavy pattern, and your signal is "${primary.sig.action}" — ${primary.sig.reason}, ` +
-    `so I prescribed ${sets}×${reps} @ ${workLoad}kg (${Math.round(pct * 100)}% e1RM). ` +
+    `so I prescribed ${sets}×${reps} @ ${workLoad}kg (${loadBasis}). ` +
     `Your ${pickSys} system is the freshest, so today's conditioning is ${condMove.toLowerCase()} (${condFormat.toLowerCase()}) to balance the week.` +
     (bio && bioAdj !== 0
       ? ` Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${bioAdj > 0 ? "HRV is above baseline and sleep was solid, so you're cleared to push." : "HRV dipped and sleep ran short, so I held the load back."}`
@@ -112,5 +140,8 @@ export function prescribeSession(
     confidence,
     pickSys,
     bioAdj: bio ? bioAdj : 0,
+    oneRm: Math.round(oneRm),
+    oneRmSource: useVel ? "velocity" : "e1rm",
+    velocityTarget,
   };
 }

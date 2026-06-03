@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   prescribeSession,
   toTrainingLog,
+  velocityProfiles,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
@@ -68,7 +69,7 @@ export default function Logger({
   // Engine reads the athlete's REAL history (falls back to sample if none yet).
   const rx = useMemo(() => {
     const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
-    return prescribeSession(log, SAMPLE_BIOMETRICS);
+    return prescribeSession(log, SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) });
   }, [sessions]);
 
   const loadPrescribed = () => {
