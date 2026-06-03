@@ -250,19 +250,21 @@ export default function Home() {
         </Card>
       )}
 
-      {/* TWIN */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
-        <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 36, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
-          <Mono color={C.lime}>STR {state.hpi.components.strength}</Mono>
-          <Mono color={C.blue}>END {state.hpi.components.endurance}</Mono>
-          <Mono color={C.violet}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
-        </View>
-      </Card>
+      {/* TWIN — only once there's real training to compute it from */}
+      {sessions.length > 0 && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
+          <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 36, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+          </View>
+          <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
+            <Mono color={C.lime}>STR {state.hpi.components.strength}</Mono>
+            <Mono color={C.blue}>END {state.hpi.components.endurance}</Mono>
+            <Mono color={C.violet}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+          </View>
+        </Card>
+      )}
 
       <Mono style={{ marginTop: 4 }}>{t("home.signedInAs")} {name}. Logged sessions sync with the web app.</Mono>
     </Screen>

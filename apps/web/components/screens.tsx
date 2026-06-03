@@ -48,7 +48,6 @@ import {
   volumeByMuscle,
   e1rmSeries,
   liftNames,
-  SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
@@ -633,9 +632,20 @@ export function DashboardMirror({
   bio?: Biometrics | null;
   onCheckin?: () => void;
 }) {
+  if (sessions.length === 0)
+    return (
+      <Card style={{ textAlign: "center", padding: 60 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>Your dashboard is empty</div>
+        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+          Log a workout from the <b style={{ color: LIME }}>Log session</b> tab — your route, Athlete
+          Twin, injury risk and trends are all computed from your real sessions.
+        </Mono>
+      </Card>
+    );
+
   const macro = buildMacrocycle("Hybrid");
   const { block: phase, micro } = currentPhase(macro, SEASON_WEEK);
-  const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
+  const log = toTrainingLog(sessions);
   const theBio = bio ?? SAMPLE_BIOMETRICS;
   const rx = prescribeSession(log, theBio);
   const state = computePerformanceState(log, theBio);
@@ -824,8 +834,19 @@ export function DashboardMirror({
 
 // ---------- PERIODIZE (real macrocycle from the engine) ----------
 export function PeriodizeScreen({ macro: enrolled }: { macro?: Macrocycle | null }) {
-  const macro = enrolled ?? buildMacrocycle("Hybrid");
-  const week = enrolled ? 1 : SEASON_WEEK;
+  if (!enrolled)
+    return (
+      <Card style={{ textAlign: "center", padding: 60 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No active plan</div>
+        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+          Enroll in a plan from the <b style={{ color: LIME }}>Plans</b> tab — your periodized
+          macrocycle (phases, load &amp; recovery weeks) shows up here.
+        </Mono>
+      </Card>
+    );
+
+  const macro = enrolled;
+  const week = 1;
   const { block: current } = currentPhase(macro, week);
 
   return (
