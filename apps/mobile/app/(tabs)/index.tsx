@@ -16,6 +16,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
 import { useSession } from "../../lib/session";
+import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
 
@@ -28,6 +29,7 @@ const bandColor = (b: string) =>
 export default function Home() {
   const router = useRouter();
   const { name, signOut } = useSession();
+  const { draft } = useDraft();
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -96,8 +98,10 @@ export default function Home() {
         onPress={() => router.push("/workout?source=empty")}
         style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 22, alignItems: "center", marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  {t("home.startWorkout")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>{t("home.startWorkoutSub")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  {draft ? t("train.resume") : t("home.startWorkout")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>
+          {draft ? `${draft.exercises.length} ${t("workout.exercises")} · ${t("train.inProgress")}` : t("home.startWorkoutSub")}
+        </Text>
       </Pressable>
 
       {/* personalize */}

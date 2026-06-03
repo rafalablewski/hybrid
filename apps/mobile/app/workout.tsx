@@ -18,6 +18,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions, createSession, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
+import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
@@ -64,6 +65,7 @@ type Summ = {
   sets: number;
   minutes: number;
   guest: boolean;
+  pending: boolean;
   bests: ShareBest[];
   prs: PrHit[];
 };
@@ -94,6 +96,7 @@ export default function Workout() {
   const [restNow, setRestNow] = useState(0);
   const [readiness, setReadiness] = useState<number | undefined>(undefined);
   const [summary, setSummary] = useState<Summ | null>(null);
+  const [restored, setRestored] = useState(false);
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
@@ -108,28 +111,54 @@ export default function Workout() {
   }, [phase, restSince]);
 
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
-  // AI / repeat-last start. Guests read their own on-device history.
+  // AI / repeat-last start. Guests read their own on-device history. An empty
+  // start resumes an in-progress draft if one exists (never lose a workout).
   useEffect(() => {
     (async () => {
       const sessions = guest
         ? (await listGuestSessions()).map(guestToLogged)
         : await fetchSessions();
       prior.current = sessions;
+
       if (source === "last") {
+        await clearDraft();
         const last = sessions[0];
         if (last) {
           setTitle(last.title || "Workout");
           setExercises(blocksToExercises(last.blocks));
         }
       } else if (source === "ai") {
+        await clearDraft();
         const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
         const rx = prescribeSession(log, SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) });
         setReadiness(rx.readiness);
         setTitle("AI session");
         setExercises(blocksToExercises(rx.blocks as SessionBlock[]));
+      } else if (source === "new") {
+        // Deliberate fresh start — drop any interrupted draft.
+        await clearDraft();
+      } else {
+        const draft = await loadDraft();
+        if (draft) {
+          startedAt.current = new Date(draft.startedAt);
+          setTitle(draft.title);
+          setExercises(draft.exercises as WExercise[]);
+        }
       }
+      setRestored(true);
     })();
   }, [source, guest]);
+
+  // Persist the in-progress draft as it changes (debounced) so it survives a
+  // crash / kill. Only after the initial restore, so we never clobber a draft.
+  useEffect(() => {
+    if (!restored) return;
+    const id = setTimeout(() => {
+      if (exercises.length) saveDraft({ title, startedAt: startedAt.current.toISOString(), exercises });
+      else clearDraft();
+    }, 500);
+    return () => clearTimeout(id);
+  }, [exercises, title, restored]);
 
   const addExercise = (name: string) => {
     const clean = name.trim();
@@ -201,17 +230,20 @@ export default function Workout() {
       blocks,
     };
 
+    let pending = false;
     if (guest) {
       // No account yet — keep it on the device until they sign up.
       await saveGuestSession(payload);
     } else {
       const ok = await createSession(payload);
       if (!ok) {
-        setSaving(false);
-        setError(t("workout.saveError"));
-        return;
+        // Offline / server hiccup — never lose the workout. Stash it locally;
+        // it syncs on the next foreground / sign-in (see lib/guest + session).
+        await saveGuestSession(payload);
+        pending = true;
       }
     }
+    await clearDraft();
     setSaving(false);
     const sets = blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
 
@@ -242,6 +274,7 @@ export default function Workout() {
       sets,
       minutes: Math.max(1, Math.round((now.getTime() - startedAt.current.getTime()) / 60000)),
       guest,
+      pending,
       bests,
       prs,
     });
@@ -472,6 +505,12 @@ function Summary({
         </Pressable>
 
         <View style={{ flex: 1, minHeight: 24 }} />
+
+        {summary.pending && (
+          <View style={{ backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.amber }}>⟲ {t("summary.pendingSync")}</Text>
+          </View>
+        )}
 
         {summary.guest ? (
           <>

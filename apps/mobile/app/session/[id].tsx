@@ -5,6 +5,7 @@ import {
   sessionVolume,
   blockBestE1rm,
   prsForSession,
+  e1rmSeries,
   type LoggedSession,
   type PrHit,
 } from "@hybrid/core";
@@ -129,6 +130,7 @@ export default function SessionDetail() {
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>
                 ))}
+                <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
               </View>
             ) : (
               <Mono style={{ marginTop: 8 }}>
@@ -165,6 +167,38 @@ function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: stri
     <Pressable onPress={() => router.back()} hitSlop={10}>
       <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("nav.history")}</Text>
     </Pressable>
+  );
+}
+
+// Dependency-free e1RM trend: scaled bars, latest highlighted.
+function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  const delta = series[series.length - 1]! - series[0]!;
+  return (
+    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <Kicker>{t("session.trend")}</Kicker>
+        <Mono color={delta >= 0 ? C.lime : C.amber}>
+          {delta >= 0 ? "+" : ""}{delta} kg · {series.length}×
+        </Mono>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
+        {series.map((v, i) => (
+          <View
+            key={i}
+            style={{
+              flex: 1,
+              height: 6 + ((v - min) / range) * 22,
+              borderRadius: 2,
+              backgroundColor: i === series.length - 1 ? C.lime : `${C.lime}55`,
+            }}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 

@@ -27,10 +27,23 @@ export async function guestSessionCount(): Promise<number> {
   return (await listGuestSessions()).length;
 }
 
-/** After sign-in: push every locally-saved guest workout to the backend.
- *  Keeps any that fail to upload so a later attempt can retry. Returns the
- *  number successfully synced. */
+let flushing = false;
+
+/** After sign-in (or on foreground): push every locally-saved workout to the
+ *  backend. Keeps any that fail to upload so a later attempt can retry. Returns
+ *  the number successfully synced. Guarded so overlapping triggers can't
+ *  double-post the same session. */
 export async function flushGuestSessions(): Promise<number> {
+  if (flushing) return 0;
+  flushing = true;
+  try {
+    return await doFlush();
+  } finally {
+    flushing = false;
+  }
+}
+
+async function doFlush(): Promise<number> {
   const list = await listGuestSessions();
   if (!list.length) return 0;
   const remaining: GuestSession[] = [];
