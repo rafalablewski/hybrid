@@ -110,6 +110,32 @@ export async function createCheckin(payload: Partial<Checkin>): Promise<boolean>
   }
 }
 
+// ---- assignments (workouts a coach scheduled for the athlete) ----
+export type Assignment = { id: string; name: string; date: string; status: string; blocks: unknown[] };
+
+export async function fetchAssignments(): Promise<Assignment[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/assignments`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { assignments?: Assignment[] }).assignments ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function updateAssignment(id: string, status: "completed" | "skipped" | "assigned"): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/assignments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ status }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function enrollPlan(goal: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {

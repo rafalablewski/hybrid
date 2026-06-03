@@ -14,7 +14,7 @@ import {
   SAMPLE_BIOMETRICS,
   type LoggedSession,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { fetchSessions, fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
@@ -30,13 +30,22 @@ export default function Home() {
   const { name, signOut } = useSession();
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
     setRefreshing(true);
-    fetchSessions().then(setSessions).finally(() => setRefreshing(false));
+    Promise.all([fetchSessions(), fetchAssignments()])
+      .then(([s, a]) => { setSessions(s); setAssignments(a); })
+      .finally(() => setRefreshing(false));
   };
   useEffect(load, []);
+
+  const upcoming = assignments
+    .filter((a) => a.status === "assigned")
+    .sort((x, y) => Date.parse(x.date) - Date.parse(y.date))
+    .slice(0, 3);
+  const markDone = async (id: string) => { await updateAssignment(id, "completed"); load(); };
 
   const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
   const rx = useMemo(
@@ -93,6 +102,27 @@ export default function Home() {
         </View>
         <Text style={{ fontFamily: F.black, fontSize: 18, color: C.violet }}>→</Text>
       </Pressable>
+
+      {/* ASSIGNED — workouts the coach scheduled */}
+      {upcoming.length > 0 && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
+          <Kicker color={C.violet}>Assigned by your coach</Kicker>
+          {upcoming.map((a, i) => (
+            <View key={a.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: i ? 10 : 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{a.name}</Text>
+                <Mono style={{ fontSize: 11 }}>{new Date(a.date).toLocaleDateString()}</Mono>
+              </View>
+              <Pressable onPress={() => router.push("/(tabs)/log")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
+                <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>Start</Text>
+              </Pressable>
+              <Pressable onPress={() => markDone(a.id)}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>done</Text>
+              </Pressable>
+            </View>
+          ))}
+        </Card>
+      )}
 
       {/* ROUTE TODAY — what to do, why */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 18 }}>

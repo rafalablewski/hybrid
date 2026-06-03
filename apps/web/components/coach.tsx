@@ -152,6 +152,9 @@ export default function CoachScreen() {
   );
 }
 
+type TemplateRow = { id: string; name: string; description: string | null; blocks: unknown[] };
+type AssignmentRow = { id: string; name: string; date: string; status: string };
+
 type ClientCheckin = {
   id: string; weekOf: string; bodyMassKg: number | null; energy: number | null; sleep: number | null;
   soreness: number | null; mood: number | null; adherencePct: number | null; note: string | null;
@@ -162,21 +165,41 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [notes, setNotes] = useState<{ id: string; body: string; private: boolean; createdAt: string }[]>([]);
   const [checkins, setCheckins] = useState<ClientCheckin[]>([]);
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+  const [assignId, setAssignId] = useState("");
+  const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
 
   const load = useCallback(async () => {
-    const [s, n, c] = await Promise.all([
+    const [s, n, c, t, a] = await Promise.all([
       fetch(`/api/coach/links/${link.id}/sessions`).then((r) => (r.ok ? r.json() : { sessions: [] })),
       fetch(`/api/coach/links/${link.id}/notes`).then((r) => (r.ok ? r.json() : { notes: [] })),
       fetch(`/api/coach/links/${link.id}/checkins`).then((r) => (r.ok ? r.json() : { checkins: [] })),
+      fetch(`/api/templates`).then((r) => (r.ok ? r.json() : { templates: [] })),
+      fetch(`/api/coach/links/${link.id}/assignments`).then((r) => (r.ok ? r.json() : { assignments: [] })),
     ]);
     setSessions(s.sessions ?? []);
     setNotes(n.notes ?? []);
     setCheckins(c.checkins ?? []);
+    setTemplates(t.templates ?? []);
+    setAssignments(a.assignments ?? []);
   }, [link.id]);
+
+  const assign = async () => {
+    const t = templates.find((x) => x.id === assignId);
+    if (!t) return;
+    await fetch(`/api/coach/links/${link.id}/assignments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ templateId: t.id, name: t.name, blocks: t.blocks, date: new Date(assignDate).toISOString() }),
+    });
+    setAssignId("");
+    load();
+  };
 
   const sendReply = async (id: string) => {
     if (!replyText.trim()) return;
@@ -238,6 +261,39 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               <Mono s={{ fontSize: 11 }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
             </div>
             <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{n.body}</Mono>
+          </Card>
+        ))}
+      </Section>
+
+      <Section title="Programming" color={LIME}>
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
+          {templates.length === 0 ? (
+            <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>
+              No templates yet — build one on the Builder screen, then assign it here.
+            </Mono>
+          ) : (
+            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <select value={assignId} onChange={(e) => setAssignId(e.target.value)}
+                style={{ ...mono, fontSize: 14, flex: 1, minWidth: 180, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }}>
+                <option value="">Choose a template…</option>
+                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)}
+                style={{ ...mono, fontSize: 14, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }} />
+              <Btn label="Assign" color={assignId ? LIME : ASH} onClick={assign} />
+            </div>
+          )}
+        </Card>
+        {assignments.map((a) => (
+          <Card key={a.id}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{a.name}</div>
+                <Mono s={{ fontSize: 12 }}>{new Date(a.date).toLocaleDateString()}</Mono>
+              </div>
+              <Chip c={a.status === "completed" ? LIME : a.status === "skipped" ? RED : AMBER}>{a.status}</Chip>
+            </div>
           </Card>
         ))}
       </Section>

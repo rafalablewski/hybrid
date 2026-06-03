@@ -51,6 +51,9 @@ model User {
   talentProfile TalentProfile?
   riskOutcomes  RiskOutcome[]
   checkins      Checkin[]
+  templates       WorkoutTemplate[]
+  assignments     Assignment[]     @relation("assignmentAthlete")
+  assignmentsMade Assignment[]     @relation("assignmentCoach")
   coachLinks    CoachLink[]     @relation("asClient")
   clientLinks   CoachLink[]     @relation("asCoach")
 }
@@ -92,6 +95,41 @@ model Checkin {
   createdAt    DateTime  @default(now())
 
   @@index([userId])
+}
+
+// A reusable workout the coach (or athlete) builds once and assigns many times.
+model WorkoutTemplate {
+  id          String   @id @default(cuid())
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  name        String
+  description String?
+  blocks      Json // SessionBlock[]
+  createdAt   DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+// A workout scheduled to an athlete on a date. Blocks are a SNAPSHOT of the
+// template at assignment time, so later edits to the template never change a
+// workout already assigned. The athlete marks it complete (optionally linking
+// the logged session).
+model Assignment {
+  id           String   @id @default(cuid())
+  athlete      User     @relation("assignmentAthlete", fields: [athleteId], references: [id])
+  athleteId    String
+  assignedBy   User     @relation("assignmentCoach", fields: [assignedById], references: [id])
+  assignedById String
+  templateId   String?
+  name         String
+  blocks       Json // SessionBlock[] snapshot
+  date         DateTime
+  status       String   @default("assigned") // assigned | completed | skipped
+  sessionId    String? // the logged Session that fulfilled it
+  createdAt    DateTime @default(now())
+
+  @@index([athleteId])
+  @@index([assignedById])
 }
 
 model CoachNote {

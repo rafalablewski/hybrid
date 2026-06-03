@@ -12,6 +12,7 @@ import {
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 type EventRow = { id: string; name: string; sport: string; date: string };
+type AssignmentRow = { id: string; name: string; date: string; status: string };
 
 export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
   const now = new Date();
@@ -19,6 +20,14 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
   const [month, setMonth] = useState(now.getUTCMonth());
   const [selected, setSelected] = useState<string>(todayKey());
   const [events, setEvents] = useState<EventRow[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+
+  const loadAssignments = () =>
+    fetch("/api/assignments")
+      .then((r) => (r.ok ? r.json() : { assignments: [] }))
+      .then((d: { assignments?: AssignmentRow[] }) =>
+        setAssignments((d.assignments ?? []).map((a) => ({ ...a, date: a.date.slice(0, 10) }))))
+      .catch(() => setAssignments([]));
 
   useEffect(() => {
     fetch("/api/events")
@@ -26,7 +35,15 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
       .then((d: { events?: { id: string; name: string; sport: string; date: string }[] }) =>
         setEvents((d.events ?? []).map((e) => ({ ...e, date: e.date.slice(0, 10) }))))
       .catch(() => setEvents([]));
+    loadAssignments();
   }, []);
+
+  const markDone = async (id: string) => {
+    await fetch(`/api/assignments/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "completed" }),
+    });
+    loadAssignments();
+  };
 
   const byDay = useMemo(() => sessionsByDay(sessions), [sessions]);
   const intensity = useMemo(() => loadIntensity(byDay), [byDay]);
@@ -36,6 +53,11 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
     for (const e of events) (m[e.date] ??= []).push(e);
     return m;
   }, [events]);
+  const assignmentsByDay = useMemo(() => {
+    const m: Record<string, AssignmentRow[]> = {};
+    for (const a of assignments) (m[a.date] ??= []).push(a);
+    return m;
+  }, [assignments]);
 
   const monthLabel = new Date(Date.UTC(year, month, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
   const today = todayKey();
@@ -50,6 +72,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
 
   const selSessions = sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
   const selEvents = eventsByDay[selected] ?? [];
+  const selAssignments = assignmentsByDay[selected] ?? [];
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start" }}>
@@ -76,6 +99,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
           {matrix.flat().map((cell) => {
             const day = byDay[cell.date];
             const ev = eventsByDay[cell.date];
+            const asg = assignmentsByDay[cell.date];
             const inten = intensity(cell.date);
             const isToday = cell.date === today;
             const isSel = cell.date === selected;
@@ -98,7 +122,10 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
                   <span style={{ ...mono, fontSize: 11, color: isToday ? LIME : CHALK, fontWeight: isToday ? 700 : 400 }}>
                     {Number(cell.date.slice(8, 10))}
                   </span>
-                  {ev && <span style={{ width: 6, height: 6, borderRadius: 3, background: AMBER }} />}
+                  <span style={{ display: "flex", gap: 3 }}>
+                    {asg && <span title="assigned workout" style={{ width: 6, height: 6, borderRadius: 3, background: VIOLET }} />}
+                    {ev && <span title="event" style={{ width: 6, height: 6, borderRadius: 3, background: AMBER }} />}
+                  </span>
                 </div>
                 {day && (
                   <div style={{ marginTop: 4 }}>
@@ -112,7 +139,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
           })}
         </div>
         <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }}>
-          Cell shading = training load (sRPE) · <span style={{ color: AMBER }}>●</span> competition event
+          Cell shading = training load (sRPE) · <span style={{ color: VIOLET }}>●</span> assigned · <span style={{ color: AMBER }}>●</span> event
         </Mono>
       </Card>
 
@@ -130,7 +157,23 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
           </div>
         ))}
 
-        {selSessions.length === 0 && selEvents.length === 0 ? (
+        {selAssignments.map((a) => (
+          <div key={a.id} style={{ marginTop: 10 }}>
+            <Chip c={VIOLET}>Assigned</Chip>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{a.name}</div>
+              {a.status === "completed" ? (
+                <Chip c={LIME}>done</Chip>
+              ) : (
+                <button onClick={() => markDone(a.id)} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: LIME, background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
+                  Mark done
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {selSessions.length === 0 && selEvents.length === 0 && selAssignments.length === 0 ? (
           <Mono s={{ fontSize: 13, display: "block", marginTop: 12 }}>Nothing logged this day.</Mono>
         ) : (
           selSessions.map((s) => (
