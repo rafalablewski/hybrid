@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, tip, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, tip, Mono, Card, Chip, Select } from "@/lib/ui";
 import { optimizeForEvent } from "@hybrid/core";
 
 type Event = { id: string; name: string; sport: string; date: string };
@@ -58,9 +58,9 @@ export default function Competition() {
         </Mono>
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Event name" style={input} />
-          <select value={sport} onChange={(e) => setSport(e.target.value)} style={input}>
+          <Select value={sport} onChange={(e) => setSport(e.target.value)}>
             {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={input} />
           <button onClick={create} style={btn}>Add event</button>
         </div>

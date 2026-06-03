@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { sessionVolume, type LoggedSession } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 
 type Person = { id: string; name: string | null; email: string };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
@@ -311,11 +311,11 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             </Mono>
           ) : (
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <select value={assignId} onChange={(e) => setAssignId(e.target.value)}
-                style={{ ...mono, fontSize: 14, flex: 1, minWidth: 180, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }}>
+              <Select value={assignId} onChange={(e) => setAssignId(e.target.value)}
+                style={{ fontSize: 14, flex: 1, minWidth: 180 }}>
                 <option value="">Choose a template…</option>
                 {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+              </Select>
               <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)}
                 style={{ ...mono, fontSize: 14, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }} />
               <Btn label="Assign" color={assignId ? LIME : ASH} onClick={assign} />

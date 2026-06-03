@@ -1,6 +1,7 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
+import { useState } from "react";
 import { colors } from "@hybrid/core";
 
 // Ported 1:1 from reference/HybridWeb.jsx so the deployed app matches the
@@ -93,6 +94,102 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
     >
       {children}
     </span>
+  );
+}
+
+// Branded dropdown. Native <select> arrows + popups are OS-styled and clash
+// with the dark identity, so we strip the chrome (appearance:none), draw our
+// own chevron, and paint the control with brand tokens. One source of truth for
+// every dropdown in the app — pass `variant="pill"` for the rounded header look.
+export function Select({
+  children,
+  style = {},
+  variant = "default",
+  onFocus,
+  onBlur,
+  ...rest
+}: Omit<SelectHTMLAttributes<HTMLSelectElement>, "style"> & {
+  style?: CSSProperties;
+  variant?: "default" | "pill";
+}) {
+  const [focus, setFocus] = useState(false);
+  const pill = variant === "pill";
+  // layout props belong on the wrapper so flex/width keep behaving as before;
+  // everything else (typography, compact padding, …) decorates the control.
+  const { flex, width, minWidth, maxWidth, alignSelf, ...rest2 } = style;
+  return (
+    <div
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "stretch",
+        flex,
+        width,
+        minWidth,
+        maxWidth,
+        alignSelf,
+      }}
+    >
+      <select
+        {...rest}
+        onFocus={(e) => {
+          setFocus(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocus(false);
+          onBlur?.(e);
+        }}
+        style={{
+          ...mono,
+          fontSize: 13,
+          padding: pill ? "8px 14px" : "8px 10px",
+          borderRadius: pill ? 999 : 9,
+          background: INK2,
+          color: CHALK,
+          appearance: "none",
+          WebkitAppearance: "none",
+          MozAppearance: "none",
+          outline: "none",
+          cursor: "pointer",
+          width: "100%",
+          transition: "border-color .15s ease",
+          ...rest2,
+          // these are owned by the component and must survive style overrides:
+          border: `1px solid ${focus ? LIME : LINE}`,
+          paddingRight: pill ? 32 : 30,
+        }}
+      >
+        {children}
+      </select>
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          right: pill ? 12 : 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          pointerEvents: "none",
+          color: focus ? LIME : ASH,
+          transition: "color .15s ease",
+        }}
+      >
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="8 9 12 5 16 9" />
+          <polyline points="8 15 12 19 16 15" />
+        </svg>
+      </span>
+    </div>
   );
 }
 

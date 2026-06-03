@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 import {
   buildTeamTree,
   flattenTree,
@@ -211,12 +211,12 @@ export default function Org() {
               {canManage && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                   <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={input} />
-                  <select value={newTeamParent} onChange={(e) => setNewTeamParent(e.target.value)} style={input}>
+                  <Select value={newTeamParent} onChange={(e) => setNewTeamParent(e.target.value)}>
                     <option value="">(top level)</option>
                     {tree.map((t) => (
                       <option key={t.id} value={t.id}>{"— ".repeat(t.depth)}{t.name}</option>
                     ))}
-                  </select>
+                  </Select>
                   <button onClick={addTeam} style={btn(LIME)}>Add team</button>
                 </div>
               )}
@@ -240,13 +240,13 @@ export default function Org() {
                     </div>
                     {canManage ? (
                       <div style={{ display: "flex", gap: 6 }}>
-                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...input, fontSize: 11, padding: "5px 7px" }}>
+                        <Select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ fontSize: 11, paddingTop: 5, paddingBottom: 5, paddingLeft: 7 }}>
                           {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
-                        </select>
-                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...input, fontSize: 11, padding: "5px 7px" }}>
+                        </Select>
+                        <Select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ fontSize: 11, paddingTop: 5, paddingBottom: 5, paddingLeft: 7 }}>
                           <option value="">no team</option>
                           {tree.map((t) => <option key={t.id} value={t.id}>{"— ".repeat(t.depth)}{t.name}</option>)}
-                        </select>
+                        </Select>
                       </div>
                     ) : (
                       <Chip c={ROLE_COLOR[m.role]}>{m.role.toLowerCase()}</Chip>
@@ -258,9 +258,9 @@ export default function Org() {
                 <div style={{ marginTop: 12 }}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={input} />
-                    <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)} style={input}>
+                    <Select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)}>
                       {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
-                    </select>
+                    </Select>
                     <button onClick={invite} style={btn(LIME)}>Add member</button>
                   </div>
                   {inviteErr && <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={AMBER}>{inviteErr}</Mono>}
