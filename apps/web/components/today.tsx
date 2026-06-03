@@ -11,6 +11,7 @@ import {
   liftNames,
   velocityProfiles,
   toTrainingLog,
+  weeklyRecap,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
@@ -25,6 +26,15 @@ const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
 const bandColor = (b: string) =>
   b === "thriving" || b === "steady" ? LIME : b === "wobbling" ? BLUE : b === "at-risk" ? AMBER : RED;
+const MUSCLE_LABEL: Record<string, string> = {
+  quads: "Quads",
+  glutes: "Glutes",
+  posterior: "Posterior chain",
+  back: "Back",
+  chest: "Chest",
+  shoulders: "Shoulders",
+  triceps: "Triceps",
+};
 
 export default function Today({
   sessions,
@@ -43,6 +53,7 @@ export default function Today({
   const state = useMemo(() => computePerformanceState(log, bio ?? SAMPLE_BIOMETRICS), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
+  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
 
   const primaryLift = useMemo(() => liftNames(sessions)[0], [sessions]);
   const projection = useMemo(
@@ -94,6 +105,39 @@ export default function Today({
           </Mono>
         )}
       </Card>
+
+      {/* YOUR WEEK — recap */}
+      {sessions.length > 0 && (
+        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              Your week
+            </Mono>
+            {recap.prs.length > 0 && <Chip c={LIME}>🏆 {recap.prs.length} PR</Chip>}
+          </div>
+          <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>
+            <Metric label="Sessions" value={`${recap.sessions}`} c={CHALK} />
+            <Metric label="Volume" value={`${recap.volume.toLocaleString()} kg`} c={LIME} />
+            <Metric label="Sets" value={`${recap.sets}`} c={CHALK} />
+            <Metric label="Active days" value={`${recap.activeDays}`} c={CHALK} />
+            {recap.topMuscle && <Metric label="Top muscle" value={MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle} c={BLUE} />}
+          </div>
+          {(recap.prevSessions > 0 || recap.prevVolume > 0) && (
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 12 }} c={recap.volumeDelta >= 0 ? LIME : AMBER}>
+              {recap.sessionsDelta >= 0 ? "+" : ""}{recap.sessionsDelta} sessions · {recap.volumeDelta >= 0 ? "+" : ""}
+              {recap.volumeDelta.toLocaleString()} kg vs last week
+            </Mono>
+          )}
+          {recap.prs.length > 0 && (
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={CHALK}>
+              {recap.prs
+                .slice(0, 4)
+                .map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? " (first!)" : ` (+${p.e1rm - p.previous})`}`)
+                .join(" · ")}
+            </Mono>
+          )}
+        </Card>
+      )}
 
       {/* FUTURE SELF */}
       {primaryLift && projection && !projection.insufficient && projGoal ? (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -10,11 +10,13 @@ import {
   liftNames,
   velocityProfiles,
   toTrainingLog,
+  weeklyRecap,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
+import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
@@ -59,6 +61,8 @@ export default function Home() {
   // Consumer engines run on REAL sessions (empty → honest "getting started").
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
+  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+  const recapRef = useRef<View>(null);
   const primaryLift = useMemo(() => liftNames(sessions)[0], [sessions]);
   const projection = useMemo(
     () => (primaryLift ? projectLift(sessions, primaryLift, { horizonWeeks: 12 }) : null),
@@ -197,6 +201,23 @@ export default function Home() {
           <Mono color={C.ash}>this week {acc.sessionsLast7}/3</Mono>
         </View>
       </Card>
+
+      {/* YOUR WEEK — recap + share (only once there's something to recap) */}
+      {sessions.length > 0 && (
+        <View style={{ marginBottom: 12 }}>
+          <RecapShareCard ref={recapRef} recap={recap} t={t} />
+          {recap.sessions > 0 ? (
+            <Pressable
+              onPress={() => shareWorkout(recapRef, recapShareText(recap, t), t("recap.share"))}
+              style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
+            >
+              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{t("recap.share")}</Text>
+            </Pressable>
+          ) : (
+            <Mono style={{ marginTop: 10, textAlign: "center" }}>{t("recap.noneThisWeek")}</Mono>
+          )}
+        </View>
+      )}
 
       {/* FUTURE SELF */}
       {primaryLift && projection && !projection.insufficient && projGoal ? (

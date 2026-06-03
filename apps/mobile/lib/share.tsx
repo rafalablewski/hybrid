@@ -2,8 +2,19 @@ import { forwardRef } from "react";
 import { View, Text, Share } from "react-native";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand } from "@hybrid/core";
+import { brand, type WeeklyRecap } from "@hybrid/core";
 import { C, F, Kicker } from "./ui";
+
+const MUSCLE_LABEL: Record<string, string> = {
+  quads: "Quads",
+  glutes: "Glutes",
+  posterior: "Posterior chain",
+  back: "Back",
+  chest: "Chest",
+  shoulders: "Shoulders",
+  triceps: "Triceps",
+};
+const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
 export type ShareBest = { name: string; e1rm: number; pr?: boolean };
 export type ShareStats = {
@@ -53,6 +64,60 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
   ),
 );
 WorkoutShareCard.displayName = "WorkoutShareCard";
+
+// Branded "this week" recap card — also captured to a PNG for social.
+export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: string) => string }>(
+  ({ recap, t }, ref) => {
+    const hasPrev = recap.prevSessions > 0 || recap.prevVolume > 0;
+    return (
+      <View
+        ref={ref}
+        collapsable={false}
+        style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 18, padding: 20 }}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, letterSpacing: -1 }}>
+            {brand.name}
+            <Text style={{ color: C.lime }}>.</Text>
+          </Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("recap.title").toUpperCase()}</Text>
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
+          <Stat label={t("recap.sessions")} value={String(recap.sessions)} />
+          <Stat label={t("summary.kgMoved")} value={recap.volume.toLocaleString()} />
+          <Stat label={t("recap.prs")} value={String(recap.prs.length)} />
+        </View>
+        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, flexDirection: "row", justifyContent: "space-between" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+            {recap.activeDays} {t("recap.activeDays")}
+          </Text>
+          {recap.topMuscle && (
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+              {t("recap.top")} {MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle}
+            </Text>
+          )}
+        </View>
+        {hasPrev && (
+          <Text style={{ fontFamily: F.bold, fontSize: 12, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
+            {signed(recap.sessionsDelta)} {t("recap.sessions")} · {signed(recap.volumeDelta)} kg {t("recap.vsLastWeek")}
+          </Text>
+        )}
+      </View>
+    );
+  },
+);
+RecapShareCard.displayName = "RecapShareCard";
+
+export function recapShareText(recap: WeeklyRecap, t: (k: string) => string): string {
+  return [
+    `\u{1F4C8} ${t("recap.title")} — HYBRID`,
+    `${recap.sessions} ${t("recap.sessions")} · ${recap.volume.toLocaleString()} kg · ${recap.prs.length} ${t("recap.prs")}`,
+    recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${recap.prs[0].e1rm}kg` : null,
+    t("share.tracked"),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
