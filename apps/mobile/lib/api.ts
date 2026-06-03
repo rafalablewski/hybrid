@@ -44,6 +44,20 @@ export async function createSession(payload: NewSession): Promise<boolean> {
   }
 }
 
+// Wipe all of the signed-in user's data on the backend (keeps the login).
+export async function resetAccount(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/account/reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ confirm: "RESET" }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ---- signals (Athlete Twin time-series: recovery, body mass, nutrition…) ----
 export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
