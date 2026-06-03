@@ -114,20 +114,54 @@ export function Select({
 }) {
   const [focus, setFocus] = useState(false);
   const pill = variant === "pill";
-  // layout props belong on the wrapper so flex/width keep behaving as before;
-  // everything else (typography, compact padding, …) decorates the control.
-  const { flex, width, minWidth, maxWidth, alignSelf, ...rest2 } = style;
+  // Layout/positioning props belong on the wrapper (the chevron is absolutely
+  // positioned against it) so flex/width/margins/insets keep behaving; the rest
+  // (typography, compact padding, …) decorates the control.
+  const {
+    flex,
+    width,
+    minWidth,
+    maxWidth,
+    height,
+    minHeight,
+    maxHeight,
+    alignSelf,
+    margin,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    position,
+    top,
+    right,
+    bottom,
+    left,
+    display,
+    ...rest2
+  } = style;
   return (
     <div
       style={{
-        position: "relative",
-        display: "inline-flex",
+        position: position ?? "relative",
+        display: display ?? "inline-flex",
         alignItems: "stretch",
         flex,
         width,
         minWidth,
         maxWidth,
+        height,
+        minHeight,
+        maxHeight,
         alignSelf,
+        margin,
+        marginTop,
+        marginRight,
+        marginBottom,
+        marginLeft,
+        top,
+        right,
+        bottom,
+        left,
       }}
     >
       <select
