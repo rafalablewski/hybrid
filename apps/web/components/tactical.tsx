@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
 
-type State = { hpi: number; injuryRisk: number; readiness: number };
+type State = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
 
 const statusColor: Record<DutyStatus, string> = {
   ready: LIME,
@@ -25,8 +25,9 @@ export default function Tactical() {
   }, []);
 
   const num = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? parseFloat(s) : undefined);
-  const dr = state
-    ? deploymentReadiness({ hpi: state.hpi, injuryRisk: state.injuryRisk, loadCarriage: num(load), workCapacity: num(work) })
+  const hasData = !!state && state.sessionCount > 0;
+  const dr = hasData
+    ? deploymentReadiness({ hpi: state!.hpi, injuryRisk: state!.injuryRisk, loadCarriage: num(load), workCapacity: num(work) })
     : null;
 
   // illustrative squad: you + synthetic teammates, to show the unit rollup
@@ -57,7 +58,11 @@ export default function Tactical() {
               {dr.limiters.map((l) => <Mono key={l} s={{ fontSize: 11, display: "block" }} c={AMBER}>⚠ {l}</Mono>)}
             </div>
           )}
-          {state && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>HPI {state.hpi} · injury risk {state.injuryRisk}/100</Mono>}
+          {hasData ? (
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>HPI {state!.hpi} · injury risk {state!.injuryRisk}/100</Mono>
+          ) : (
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Log training to compute your Deployment Readiness Index from your Twin.</Mono>
+          )}
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <label style={{ flex: 1 }}>
               <Mono s={{ fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>Load carriage</Mono>

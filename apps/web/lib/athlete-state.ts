@@ -4,7 +4,6 @@ import {
   computeInjuryRisk,
   toBiometrics,
   toTrainingLog,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
   type Signal,
@@ -41,7 +40,8 @@ export async function athleteState(userId: string) {
   }));
 
   const log = toTrainingLog(sessions);
-  const bio = toBiometrics(signals) ?? (sessions.length ? undefined : SAMPLE_BIOMETRICS);
+  // Real signals only — never fabricate biometrics. No data → honest empty Twin.
+  const bio = toBiometrics(signals) ?? undefined;
   const state = computePerformanceState(log, bio);
   const { coeffs } = await activeCalibration();
   const risk = computeInjuryRisk(log, bio, coeffs);

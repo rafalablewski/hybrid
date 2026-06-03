@@ -13,12 +13,12 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const profile = await prisma.talentProfile.findUnique({ where: { userId: user.id } });
-  const { state } = await athleteState(user.id);
-  const computedHpi = state.hpi.score;
+  const { state, sessionCount } = await athleteState(user.id);
+  const computedHpi = sessionCount > 0 ? state.hpi.score : null;
 
   let report = null;
   if (profile) {
-    const metrics: Metrics = { ...((profile.metrics as Metrics) ?? {}), hpi: computedHpi };
+    const metrics: Metrics = { ...((profile.metrics as Metrics) ?? {}), ...(computedHpi != null ? { hpi: computedHpi } : {}) };
     report = talentReport(metrics, { sport: profile.sport, sex: profile.sex as Sex, age: profile.age });
   }
   return NextResponse.json({ profile, report, computedHpi });
@@ -41,12 +41,12 @@ export async function POST(request: Request) {
 
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
   const inMetrics = (b.metrics ?? {}) as Record<string, unknown>;
-  const { state } = await athleteState(user.id);
+  const { state, sessionCount } = await athleteState(user.id);
   const metrics: Metrics = {
     relStrength: num(inMetrics.relStrength),
     vo2: num(inMetrics.vo2),
     durability: num(inMetrics.durability),
-    hpi: state.hpi.score,
+    hpi: sessionCount > 0 ? state.hpi.score : undefined,
   };
   // drop undefined for a clean JSON column
   const clean = Object.fromEntries(Object.entries(metrics).filter(([, v]) => v !== undefined));
