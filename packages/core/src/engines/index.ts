@@ -15,3 +15,6 @@ export * from "./video";
 export * from "./peaking";
 export * from "./session";
 export * from "./velocity";
+export * from "./habits";
+export * from "./accountability";
+export * from "./future-self";

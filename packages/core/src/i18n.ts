@@ -9,6 +9,7 @@ export const LANGS: Record<Lang, string> = { en: "English", pl: "Polski", de: "D
 
 export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   en: {
+    "nav.today": "Today",
     "nav.dashboard": "Dashboard",
     "nav.log": "Log session",
     "nav.analytics": "Analytics",
@@ -80,6 +81,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     "log.saveError": "Couldn't save — check your connection / sign-in.",
   },
   pl: {
+    "nav.today": "Dziś",
     "nav.dashboard": "Pulpit",
     "nav.log": "Zapisz sesję",
     "nav.analytics": "Analizy",
@@ -151,6 +153,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     "log.saveError": "Nie udało się zapisać — sprawdź połączenie / logowanie.",
   },
   de: {
+    "nav.today": "Heute",
     "nav.dashboard": "Übersicht",
     "nav.log": "Einheit",
     "nav.analytics": "Analysen",

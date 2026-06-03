@@ -42,6 +42,7 @@ import Tactical from "./tactical";
 import Longevity from "./longevity";
 import Velocity from "./velocity";
 import TeamCompare from "./team-compare";
+import Today from "./today";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -50,6 +51,7 @@ import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
 
 const NAV: [string, string, string][] = [
+  ["today", "Today", "➤"],
   ["dashboard", "Dashboard", "◆"],
   ["performance", "Performance", "◈"],
   ["velocity", "Velocity (VBT)", "⚡"],
@@ -102,7 +104,7 @@ export default function AppShell() {
     refreshBiometrics();
     refreshSignals();
   }, [refreshBiometrics, refreshSignals]);
-  const [screen, setScreen] = useState("analytics");
+  const [screen, setScreen] = useState("today");
 
   const allowedScopes = useMemo<Scope[]>(
     () => (session ? SCOPES_FOR[session.role] : ["athlete"]),
@@ -328,6 +330,10 @@ export default function AppShell() {
 
         {screen === "dashboard" && (
           <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
+        )}
+
+        {screen === "today" && (
+          <Today sessions={sessions} bio={bio ?? undefined} onStart={() => setScreen("log")} />
         )}
 
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
