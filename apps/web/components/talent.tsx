@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
 
 type Bench = { metric: BenchmarkMetric; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
@@ -87,13 +87,13 @@ export default function Talent() {
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Your profile</Mono>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
-            <select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })} style={input}>
+            <Select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
               {SPORTS.map((s) => <option key={s}>{s}</option>)}
-            </select>
-            <select value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value })} style={input}>
+            </Select>
+            <Select value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value })}>
               <option value="M">Male</option>
               <option value="F">Female</option>
-            </select>
+            </Select>
             <input value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} placeholder="Age" inputMode="numeric" style={input} />
             <input value={form.relStrength} onChange={(e) => setForm({ ...form, relStrength: e.target.value })} placeholder="Rel. strength (×BW)" inputMode="decimal" style={input} />
             <input value={form.vo2} onChange={(e) => setForm({ ...form, vo2: e.target.value })} placeholder="VO₂ proxy" inputMode="decimal" style={input} />
@@ -136,13 +136,13 @@ export default function Talent() {
       <Card style={{ borderLeft: `3px solid ${LIME}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Discover talent</Mono>
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={q.sport} onChange={(e) => setQ({ ...q, sport: e.target.value })} style={input}>
+          <Select value={q.sport} onChange={(e) => setQ({ ...q, sport: e.target.value })}>
             <option value="">Any sport</option>
             {SPORTS.map((s) => <option key={s}>{s}</option>)}
-          </select>
-          <select value={q.metric} onChange={(e) => setQ({ ...q, metric: e.target.value as BenchmarkMetric })} style={input}>
+          </Select>
+          <Select value={q.metric} onChange={(e) => setQ({ ...q, metric: e.target.value as BenchmarkMetric })}>
             {BENCHMARK_METRICS.map((m) => <option key={m} value={m}>{METRIC_LABEL[m]}</option>)}
-          </select>
+          </Select>
           <input value={q.minPct} onChange={(e) => setQ({ ...q, minPct: e.target.value })} placeholder="min percentile" inputMode="numeric" style={{ ...input, width: 120 }} />
           <label style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
             <input type="checkbox" checked={q.byPotential} onChange={(e) => setQ({ ...q, byPotential: e.target.checked })} />

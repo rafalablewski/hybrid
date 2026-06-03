@@ -16,6 +16,7 @@ import {
   mono,
   Mono,
   Card,
+  Select,
 } from "@/lib/ui";
 import {
   AthleteAnalytics,
@@ -262,15 +263,16 @@ export default function AppShell() {
               {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
             </h1>
           </div>
-          <select
+          <Select
             value={lang}
             onChange={(e) => setLang(e.target.value as "en" | "pl" | "de")}
-            style={{ ...cond, fontSize: 13, fontWeight: 700, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}
+            variant="pill"
+            style={{ ...cond, fontWeight: 700 }}
           >
             <option value="en">EN</option>
             <option value="pl">PL</option>
             <option value="de">DE</option>
-          </select>
+          </Select>
         </header>
 
         {screen === "analytics" && (

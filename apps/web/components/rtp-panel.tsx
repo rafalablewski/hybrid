@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 import { evaluateRtp, STAGE_LABEL, type RtpStage } from "@hybrid/core";
 
 type AuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
@@ -56,9 +56,9 @@ export default function RtpPanel() {
       </Mono>
 
       <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
-        <select value={tissue} onChange={(e) => setTissue(e.target.value)} style={input}>
+        <Select value={tissue} onChange={(e) => setTissue(e.target.value)} style={{ textTransform: "capitalize" }}>
           {TISSUES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+        </Select>
         <button onClick={create} style={btn}>Open protocol</button>
       </div>
 
