@@ -23,7 +23,6 @@ import {
   mvtFor,
   VELOCITY_ZONES,
   type LoggedSession,
-  type LVPoint,
 } from "@hybrid/core";
 import {
   INK,
@@ -46,22 +45,6 @@ import {
   ChartFrame,
 } from "@/lib/ui";
 
-// A back-squat ramp so the screen is meaningful before any velocity is logged.
-// v ≈ 1.20 − 0.0070·load → estimated 1RM at MVT 0.30 ≈ 128 kg (mirrors the brief).
-const SAMPLE_LIFT = "Back Squat";
-const SAMPLE_POINTS: LVPoint[] = [
-  { load: 50, velocity: 0.85 },
-  { load: 70, velocity: 0.71 },
-  { load: 90, velocity: 0.57 },
-  { load: 100, velocity: 0.5 },
-  { load: 108, velocity: 0.45 },
-];
-const SAMPLE_SETS = [
-  { load: 90, reps: 5, vel: 0.57, loss: 6 },
-  { load: 100, reps: 5, vel: 0.5, loss: 11 },
-  { load: 108, reps: 3, vel: 0.45, loss: 18 },
-];
-
 const zoneColor = (id: string) =>
   id === "absolute-strength" ? RED
   : id === "strength-speed" ? AMBER
@@ -71,14 +54,14 @@ const zoneColor = (id: string) =>
 
 export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
-  const isDemo = lifts.length === 0;
-  const [lift, setLift] = useState<string>(lifts[0] ?? SAMPLE_LIFT);
-  const active = isDemo ? SAMPLE_LIFT : lifts.includes(lift) ? lift : lifts[0]!;
+  const noData = lifts.length === 0;
+  const [lift, setLift] = useState<string>(lifts[0] ?? "");
+  const active = lifts.includes(lift) ? lift : (lifts[0] ?? "");
 
   const mvt = mvtFor(active);
   const points = useMemo(
-    () => (isDemo ? SAMPLE_POINTS : bestPointPerLoad(lvPointsFromSessions(sessions, active))),
-    [sessions, active, isDemo],
+    () => bestPointPerLoad(lvPointsFromSessions(sessions, active)),
+    [sessions, active],
   );
   const profile = useMemo(() => fitLoadVelocityProfile(points, mvt), [points, mvt]);
 
@@ -98,21 +81,24 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
 
   const resolved = profile.estimated1rm > 0;
 
+  if (noData)
+    return (
+      <Card style={{ textAlign: "center", padding: 60 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No bar speed logged yet</div>
+        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>
+          Add a velocity (m/s) to a strength set in the <b style={{ color: LIME }}>Log session</b> tab —
+          across a few loads — and your load–velocity profile, estimated 1RM, zones and the
+          autoregulated load recommender build here from your real lifts.
+        </Mono>
+      </Card>
+    );
+
   return (
     <div>
-      {isDemo && (
-        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
-          <Mono s={{ fontSize: 12, lineHeight: 1.5 }} c={AMBER}>
-            Sample profile. Log a strength set with a velocity (m/s) in the Logger — across a
-            few loads — and this screen rebuilds from your real bar speed.
-          </Mono>
-        </Card>
-      )}
-
       {/* lift selector */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Lift</Mono>
-        {(isDemo ? [SAMPLE_LIFT] : lifts).map((l) => (
+        {lifts.map((l) => (
           <button
             key={l}
             onClick={() => setLift(l)}
@@ -248,7 +234,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
 
         {/* recent sets / feedback */}
         <ChartFrame title="Recent sets" kicker="bar speed + velocity loss" c={LIME}>
-          <RecentSets sessions={sessions} lift={active} isDemo={isDemo} />
+          <RecentSets sessions={sessions} lift={active} />
           <Mono s={{ fontSize: 11, display: "block", marginTop: 10, color: ASH }}>
             Per-rep trajectory &amp; bar path (sagittal) need the bar sensor / camera capture —
             see Capabilities (blocked until the sensor SDK is wired).
@@ -259,24 +245,22 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
   );
 }
 
-function RecentSets({ sessions, lift, isDemo }: { sessions: LoggedSession[]; lift: string; isDemo: boolean }) {
-  const rows = isDemo
-    ? SAMPLE_SETS
-    : sessions
-        .flatMap((s) =>
-          s.blocks
-            .filter((b): b is Extract<typeof b, { kind: "strength" }> => b.kind === "strength" && b.name === lift)
-            .flatMap((b) => b.sets),
-        )
-        .map((set) => ({
-          load: parseFloat(set.load),
-          reps: parseInt(set.reps, 10) || 0,
-          vel: parseFloat(set.vel ?? ""),
-          loss: NaN,
-        }))
-        .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel))
-        .slice(-6)
-        .reverse();
+function RecentSets({ sessions, lift }: { sessions: LoggedSession[]; lift: string }) {
+  const rows = sessions
+    .flatMap((s) =>
+      s.blocks
+        .filter((b): b is Extract<typeof b, { kind: "strength" }> => b.kind === "strength" && b.name === lift)
+        .flatMap((b) => b.sets),
+    )
+    .map((set) => ({
+      load: parseFloat(set.load),
+      reps: parseInt(set.reps, 10) || 0,
+      vel: parseFloat(set.vel ?? ""),
+      loss: NaN,
+    }))
+    .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel))
+    .slice(-6)
+    .reverse();
 
   if (rows.length === 0)
     return <Mono s={{ fontSize: 12 }}>No velocity-tagged sets logged for {lift} yet.</Mono>;
