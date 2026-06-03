@@ -40,6 +40,17 @@ import Talent from "./talent";
 import DataNet from "./datanet";
 import Tactical from "./tactical";
 import Longevity from "./longevity";
+import Velocity from "./velocity";
+import TeamCompare from "./team-compare";
+import TeamMonitor from "./team-monitor";
+import Today from "./today";
+import Nutrition from "./nutrition";
+import Onboarding from "./onboarding";
+import Checkins from "./checkins";
+import Calendar from "./calendar";
+import Builder from "./builder";
+import ForcePlate from "./forceplate";
+import Progress from "./progress";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -48,9 +59,18 @@ import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
 
 const NAV: [string, string, string][] = [
+  ["today", "Today", "➤"],
+  ["onboarding", "Get started", "✦"],
   ["dashboard", "Dashboard", "◆"],
   ["performance", "Performance", "◈"],
+  ["velocity", "Velocity (VBT)", "⚡"],
+  ["forceplate", "Force plate", "◇"],
   ["log", "Log session", "✎"],
+  ["nutrition", "Nutrition", "🍎"],
+  ["progress", "Progress photos", "📸"],
+  ["checkin", "Check-in", "✓"],
+  ["calendar", "Calendar", "▦"],
+  ["builder", "Builder", "⊕"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
   ["competition", "Competition", "▲"],
@@ -59,6 +79,8 @@ const NAV: [string, string, string][] = [
   ["video", "Video", "▷"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
+  ["squad", "Squad monitor", "◫"],
+  ["teamcompare", "Team compare", "⚖"],
   ["org", "Organization", "⬡"],
   ["talent", "Talent", "✸"],
   ["tactical", "Tactical", "▰"],
@@ -98,7 +120,7 @@ export default function AppShell() {
     refreshBiometrics();
     refreshSignals();
   }, [refreshBiometrics, refreshSignals]);
-  const [screen, setScreen] = useState("analytics");
+  const [screen, setScreen] = useState("today");
 
   const allowedScopes = useMemo<Scope[]>(
     () => (session ? SCOPES_FOR[session.role] : ["athlete"]),
@@ -140,38 +162,42 @@ export default function AppShell() {
           top: 0,
           height: "100vh",
           flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px" }}>
+        <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px", flexShrink: 0 }}>
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
-        {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
-          <button
-            key={id}
-            onClick={() => setScreen(id)}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "11px 12px",
-              marginBottom: 4,
-              borderRadius: 10,
-              cursor: "pointer",
-              border: "none",
-              background: screen === id ? `${LIME}1a` : "transparent",
-              color: screen === id ? LIME : ASH,
-              ...disp,
-              fontSize: 14,
-              fontWeight: 600,
-              textAlign: "left",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{ic}</span>
-            {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
-          </button>
-        ))}
-        <div style={{ position: "absolute", bottom: 24, left: 16, right: 16 }}>
+        <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+          {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
+            <button
+              key={id}
+              onClick={() => setScreen(id)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "11px 12px",
+                marginBottom: 4,
+                borderRadius: 10,
+                cursor: "pointer",
+                border: "none",
+                background: screen === id ? `${LIME}1a` : "transparent",
+                color: screen === id ? LIME : ASH,
+                ...disp,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: "left",
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{ic}</span>
+              {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
+            </button>
+          ))}
+        </nav>
+        <div style={{ flexShrink: 0, paddingTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: INK2 }}>
             <div
               style={{
@@ -322,7 +348,33 @@ export default function AppShell() {
           <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
         )}
 
+        {screen === "today" && (
+          <Today sessions={sessions} bio={bio ?? undefined} onStart={() => setScreen("log")} />
+        )}
+
+        {screen === "onboarding" && (
+          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("periodize"); }} />
+        )}
+
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
+
+        {screen === "velocity" && <Velocity sessions={sessions} />}
+
+        {screen === "forceplate" && <ForcePlate />}
+
+        {screen === "nutrition" && <Nutrition />}
+
+        {screen === "progress" && <Progress />}
+
+        {screen === "checkin" && <Checkins sessions={sessions} />}
+
+        {screen === "calendar" && <Calendar sessions={sessions} />}
+
+        {screen === "builder" && <Builder />}
+
+        {screen === "squad" && <TeamMonitor />}
+
+        {screen === "teamcompare" && <TeamCompare />}
 
         {screen === "periodize" && <PeriodizeScreen macro={macro} />}
 

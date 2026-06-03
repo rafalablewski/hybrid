@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import {
   prescribeSession,
   toTrainingLog,
+  velocityProfiles,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type LoggedSession,
@@ -30,7 +31,10 @@ export default function Log() {
   }, []);
 
   const rx = useMemo(
-    () => prescribeSession(sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS),
+    () =>
+      prescribeSession(sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS, {
+        profiles: velocityProfiles(sessions),
+      }),
     [sessions],
   );
 
@@ -52,7 +56,7 @@ export default function Log() {
   const remove = (u: string) => setBlocks((bs) => bs.filter((x) => x.uid !== u));
   const rename = (u: string, name: string) =>
     setBlocks((bs) => bs.map((x) => (x.uid === u ? ({ ...x, name } as EB) : x)));
-  const setStrSet = (u: string, i: number, k: "load" | "reps" | "rpe", v: string) =>
+  const setStrSet = (u: string, i: number, k: "load" | "reps" | "rpe" | "vel", v: string) =>
     setBlocks((bs) =>
       bs.map((x) =>
         x.uid === u && x.kind === "strength"
@@ -131,6 +135,7 @@ export default function Log() {
                   <Cell value={st.load} onChange={(v) => setStrSet(b.uid, i, "load", v)} ph="kg" />
                   <Cell value={st.reps} onChange={(v) => setStrSet(b.uid, i, "reps", v)} ph="reps" />
                   <Cell value={st.rpe ?? ""} onChange={(v) => setStrSet(b.uid, i, "rpe", v)} ph="rpe" />
+                  <Cell value={st.vel ?? ""} onChange={(v) => setStrSet(b.uid, i, "vel", v)} ph="m/s" />
                 </View>
               ))}
               <Pressable onPress={() => addSet(b.uid)}>

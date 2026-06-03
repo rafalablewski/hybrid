@@ -9,6 +9,12 @@ export interface StrengthSet {
   load: string;
   reps: string;
   rpe?: string;
+  /** mean concentric velocity for the set, m/s (VBT — sensor or manual entry) */
+  vel?: string;
+  /** peak concentric velocity, m/s */
+  peakVel?: string;
+  /** range of motion, cm */
+  rom?: string;
 }
 
 export interface StrengthBlock {

@@ -20,7 +20,17 @@
       "bundler": "metro",
       "output": "single"
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HYBRID uses your photo library so you can add progress photos.",
+          "cameraPermission": "HYBRID uses the camera so you can take progress photos."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }

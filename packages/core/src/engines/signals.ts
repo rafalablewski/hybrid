@@ -27,12 +27,19 @@ export type SignalKind =
   | "totalDistance"
   | "highSpeedRunning"
   | "accelLoad"
-  // neuromuscular (force plate / jump mat)
+  // neuromuscular (force plate / jump mat / bar sensor)
   | "jumpHeight"
   | "asymmetry"
+  | "barVelocity"
   // composition / physiology
   | "bodyMass"
-  | "bloodMarker";
+  | "bloodMarker"
+  // nutrition (manual macro logging; food DB is a separate, blocked layer)
+  | "energyIntake"
+  | "protein"
+  | "carbs"
+  | "fat"
+  | "water";
 
 /** Whether a higher reading is good ("high") or bad ("low") for the athlete. */
 export type SignalDirection = "high" | "low";
@@ -67,9 +74,18 @@ const META: Record<SignalKind, { unit: string; better: SignalDirection }> = {
   accelLoad: { unit: "au", better: "high" },
   jumpHeight: { unit: "cm", better: "high" },
   asymmetry: { unit: "%", better: "low" },
+  barVelocity: { unit: "m/s", better: "high" },
   bodyMass: { unit: "kg", better: "high" },
   bloodMarker: { unit: "", better: "high" },
+  energyIntake: { unit: "kcal", better: "high" },
+  protein: { unit: "g", better: "high" },
+  carbs: { unit: "g", better: "high" },
+  fat: { unit: "g", better: "high" },
+  water: { unit: "ml", better: "high" },
 };
+
+/** Every known signal kind — the single source of truth (API allow-lists derive from this). */
+export const SIGNAL_KINDS = Object.keys(META) as SignalKind[];
 
 /** Whether a higher value is good or bad for a given signal kind. */
 export function signalDirection(kind: SignalKind): SignalDirection {

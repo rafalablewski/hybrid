@@ -6,6 +6,7 @@ import {
   computeInjuryRisk,
   toBiometrics,
   toTrainingLog,
+  velocityProfiles,
   sessionVolume,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
   const bio = toBiometrics(coreSignals) ?? SAMPLE_BIOMETRICS;
 
   const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
-  const rx = prescribeSession(log, bio);
+  const rx = prescribeSession(log, bio, { profiles: velocityProfiles(sessions) });
   const state = computePerformanceState(log, bio);
   const risk = computeInjuryRisk(log, bio);
   const riskNote = risk.flagged.length

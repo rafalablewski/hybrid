@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { sessionVolume, type LoggedSession } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
 
 type Person = { id: string; name: string | null; email: string };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
@@ -152,20 +152,87 @@ export default function CoachScreen() {
   );
 }
 
+type TemplateRow = { id: string; name: string; description: string | null; blocks: unknown[] };
+type AssignmentRow = { id: string; name: string; date: string; status: string };
+
+type ClientCheckin = {
+  id: string; weekOf: string; bodyMassKg: number | null; energy: number | null; sleep: number | null;
+  soreness: number | null; mood: number | null; adherencePct: number | null; note: string | null;
+  coachReply: string | null; repliedAt: string | null;
+};
+
 function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [notes, setNotes] = useState<{ id: string; body: string; private: boolean; createdAt: string }[]>([]);
+  const [checkins, setCheckins] = useState<ClientCheckin[]>([]);
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+  const [assignId, setAssignId] = useState("");
+  const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [replyFor, setReplyFor] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   const load = useCallback(async () => {
-    const [s, n] = await Promise.all([
+    const [s, n, c, t, a, lk] = await Promise.all([
       fetch(`/api/coach/links/${link.id}/sessions`).then((r) => (r.ok ? r.json() : { sessions: [] })),
       fetch(`/api/coach/links/${link.id}/notes`).then((r) => (r.ok ? r.json() : { notes: [] })),
+      fetch(`/api/coach/links/${link.id}/checkins`).then((r) => (r.ok ? r.json() : { checkins: [] })),
+      fetch(`/api/templates`).then((r) => (r.ok ? r.json() : { templates: [] })),
+      fetch(`/api/coach/links/${link.id}/assignments`).then((r) => (r.ok ? r.json() : { assignments: [] })),
+      fetch(`/api/coach/links/${link.id}`).then((r) => (r.ok ? r.json() : { link: { tags: [] } })),
     ]);
     setSessions(s.sessions ?? []);
     setNotes(n.notes ?? []);
+    setCheckins(c.checkins ?? []);
+    setTemplates(t.templates ?? []);
+    setAssignments(a.assignments ?? []);
+    setTags(lk.link?.tags ?? []);
   }, [link.id]);
+
+  const saveTags = async (next: string[]) => {
+    setTags(next);
+    await fetch(`/api/coach/links/${link.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "tags", tags: next }),
+    });
+  };
+  const addTag = () => {
+    const v = tagInput.trim();
+    if (!v || tags.includes(v)) return setTagInput("");
+    saveTags([...tags, v]);
+    setTagInput("");
+  };
+
+  const assign = async () => {
+    const t = templates.find((x) => x.id === assignId);
+    if (!t) return;
+    const parsed = assignDate ? new Date(assignDate) : null;
+    if (!parsed || Number.isNaN(parsed.getTime())) return; // ignore a cleared/invalid date
+    await fetch(`/api/coach/links/${link.id}/assignments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ templateId: t.id, name: t.name, blocks: t.blocks, date: parsed.toISOString() }),
+    });
+    setAssignId("");
+    load();
+  };
+
+  const sendReply = async (id: string) => {
+    if (!replyText.trim()) return;
+    await fetch(`/api/checkins/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coachReply: replyText }),
+    });
+    setReplyFor(null);
+    setReplyText("");
+    load();
+  };
 
   useEffect(() => {
     load();
@@ -189,7 +256,23 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← Roster</Mono>
       </button>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>{personName(link.client)}</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>{link.client?.email}</Mono>
+      <Mono s={{ fontSize: 13, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
+
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+        {tags.map((t) => (
+          <span key={t} style={{ ...cond, fontSize: 12, color: BLUE, background: `${BLUE}1f`, border: `1px solid ${BLUE}55`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {t}
+            <button onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: BLUE, cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1 }}>×</button>
+          </span>
+        ))}
+        <input
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") addTag(); }}
+          placeholder="+ tag"
+          style={{ ...mono, fontSize: 12, width: 90, padding: "5px 8px", borderRadius: 999, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+        />
+      </div>
 
       <Section title="Coaching notes" color={VIOLET}>
         <Card>
@@ -217,6 +300,83 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{n.body}</Mono>
           </Card>
         ))}
+      </Section>
+
+      <Section title="Programming" color={LIME}>
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
+          {templates.length === 0 ? (
+            <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>
+              No templates yet — build one on the Builder screen, then assign it here.
+            </Mono>
+          ) : (
+            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <select value={assignId} onChange={(e) => setAssignId(e.target.value)}
+                style={{ ...mono, fontSize: 14, flex: 1, minWidth: 180, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }}>
+                <option value="">Choose a template…</option>
+                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)}
+                style={{ ...mono, fontSize: 14, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }} />
+              <Btn label="Assign" color={assignId ? LIME : ASH} onClick={assign} />
+            </div>
+          )}
+        </Card>
+        {assignments.map((a) => (
+          <Card key={a.id}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{a.name}</div>
+                <Mono s={{ fontSize: 12 }}>{new Date(a.date).toLocaleDateString()}</Mono>
+              </div>
+              <Chip c={a.status === "completed" ? LIME : a.status === "skipped" ? RED : AMBER}>{a.status}</Chip>
+            </div>
+          </Card>
+        ))}
+      </Section>
+
+      <Section title="Weekly check-ins" color={BLUE}>
+        {checkins.length === 0 ? (
+          <Mono>No check-ins submitted yet.</Mono>
+        ) : (
+          checkins.map((c) => (
+            <Card key={c.id} style={{ borderLeft: `3px solid ${c.coachReply ? LINE : BLUE}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ ...disp, fontWeight: 600, fontSize: 15 }}>{new Date(c.weekOf).toLocaleDateString()}</div>
+                {c.adherencePct != null && <Mono s={{ fontSize: 12 }}>{c.adherencePct}% adherence</Mono>}
+              </div>
+              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }}>
+                energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}
+                {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+              </Mono>
+              {c.note && <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{c.note}</Mono>}
+              {c.coachReply ? (
+                <div style={{ marginTop: 10, borderLeft: `2px solid ${VIOLET}`, paddingLeft: 10 }}>
+                  <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Your reply</Mono>
+                  <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4 }} c={CHALK}>{c.coachReply}</Mono>
+                </div>
+              ) : replyFor === c.id ? (
+                <div style={{ marginTop: 10 }}>
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Reply to your athlete…"
+                    rows={2}
+                    style={{ ...mono, fontSize: 14, width: "100%", padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <Btn label="Send reply" color={LIME} onClick={() => sendReply(c.id)} />
+                    <Btn label="Cancel" color={ASH} onClick={() => { setReplyFor(null); setReplyText(""); }} />
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 10 }}>
+                  <Btn label="Reply" color={VIOLET} onClick={() => { setReplyFor(c.id); setReplyText(""); }} />
+                </div>
+              )}
+            </Card>
+          ))
+        )}
       </Section>
 
       <Section title="Recent sessions" color={LIME}>

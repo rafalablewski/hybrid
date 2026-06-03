@@ -44,6 +44,98 @@ export async function createSession(payload: NewSession): Promise<boolean> {
   }
 }
 
+// ---- signals (Athlete Twin time-series: recovery, body mass, nutrition…) ----
+export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
+
+export async function fetchSignals(): Promise<CoreSignal[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/signals`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { signals?: { userId: string; kind: string; value: number; unit: string; source: string; ts: string }[] };
+    return (data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts }));
+  } catch {
+    return [];
+  }
+}
+
+export async function createSignal(kind: string, value: number, unit?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/signals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ kind, value, unit, source: "manual" }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ---- weekly check-ins ----
+export type Checkin = {
+  id: string;
+  weekOf: string;
+  bodyMassKg: number | null;
+  energy: number | null;
+  sleep: number | null;
+  soreness: number | null;
+  mood: number | null;
+  adherencePct: number | null;
+  note: string | null;
+  coachReply: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+};
+
+export async function fetchCheckins(): Promise<Checkin[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/checkins`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { checkins?: Checkin[] }).checkins ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createCheckin(payload: Partial<Checkin>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/checkins`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ---- assignments (workouts a coach scheduled for the athlete) ----
+export type Assignment = { id: string; name: string; date: string; status: string; blocks: unknown[] };
+
+export async function fetchAssignments(): Promise<Assignment[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/assignments`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { assignments?: Assignment[] }).assignments ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function updateAssignment(id: string, status: "completed" | "skipped" | "assigned"): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/assignments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ status }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function enrollPlan(goal: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {
