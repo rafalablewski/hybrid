@@ -12,6 +12,7 @@ import {
   VELOCITY_ZONES,
   type LoggedSession,
   type LoadVelocityProfile,
+  type LVPoint,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";

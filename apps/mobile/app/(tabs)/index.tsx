@@ -145,14 +145,16 @@ export default function Home() {
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 18 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Kicker color={C.lime}>Your route today</Kicker>
-          <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>
+          {sessions.length > 0 && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
         </View>
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
-          {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
+          {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
         </Text>
-        <Mono color={C.chalk} style={{ lineHeight: 20 }}>{rx.why}</Mono>
+        <Mono color={C.chalk} style={{ lineHeight: 20 }}>
+          {sessions.length > 0 ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
+        </Mono>
         <View style={{ marginTop: 14 }}>
-          <Button label={t("home.startSession")} onPress={() => router.push("/workout?source=ai")} />
+          <Button label={t("home.startSession")} onPress={() => router.push(sessions.length > 0 ? "/workout?source=ai" : "/workout?source=empty")} />
         </View>
       </Card>
 

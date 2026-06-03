@@ -69,18 +69,34 @@ export default function Today({
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
       {/* ROUTE TODAY */}
-      <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-            Your route today · readiness {rx.readiness}/100
+      {sessions.length === 0 ? (
+        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              Your route today
+            </Mono>
+            <button onClick={onStart} style={cta(LIME)}>Start session →</button>
+          </div>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Start your first session</div>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+            Log a workout and your route, readiness, Athlete Twin and trends all build from your real
+            training — nothing here is pre-filled.
           </Mono>
-          <button onClick={onStart} style={cta(LIME)}>Start session →</button>
-        </div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
-          {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
-        </div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
-      </Card>
+        </Card>
+      ) : (
+        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              Your route today · readiness {rx.readiness}/100
+            </Mono>
+            <button onClick={onStart} style={cta(LIME)}>Start session →</button>
+          </div>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+            {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
+          </div>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+        </Card>
+      )}
 
       {/* ON TRACK? — accountability */}
       <Card style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
@@ -175,21 +191,23 @@ export default function Today({
         </Card>
       )}
 
-      {/* TWIN mini */}
-      <Card style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-          Performance State · Athlete Twin
-        </Mono>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
-          <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>
-          <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
-          <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
-            <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
-            <Mono s={{ fontSize: 12 }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
-            <Mono s={{ fontSize: 12 }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+      {/* TWIN mini — only once there's real training to compute it from */}
+      {sessions.length > 0 && (
+        <Card style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+            Performance State · Athlete Twin
+          </Mono>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
+            <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>
+            <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
+            <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
+              <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
+              <Mono s={{ fontSize: 12 }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
+              <Mono s={{ fontSize: 12 }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }
