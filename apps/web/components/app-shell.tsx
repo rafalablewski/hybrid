@@ -43,6 +43,7 @@ import Longevity from "./longevity";
 import Velocity from "./velocity";
 import TeamCompare from "./team-compare";
 import Today from "./today";
+import Nutrition from "./nutrition";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -56,6 +57,7 @@ const NAV: [string, string, string][] = [
   ["performance", "Performance", "◈"],
   ["velocity", "Velocity (VBT)", "⚡"],
   ["log", "Log session", "✎"],
+  ["nutrition", "Nutrition", "🍎"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
   ["competition", "Competition", "▲"],
@@ -339,6 +341,8 @@ export default function AppShell() {
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <Velocity sessions={sessions} />}
+
+        {screen === "nutrition" && <Nutrition />}
 
         {screen === "teamcompare" && <TeamCompare />}
 

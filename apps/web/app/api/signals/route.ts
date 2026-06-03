@@ -1,25 +1,14 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { signalUnit, type SignalKind } from "@hybrid/core";
+import { signalUnit, SIGNAL_KINDS, type SignalKind } from "@hybrid/core";
 
 // The Athlete Twin's universal time-series. Any source (manual, HealthKit,
-// WHOOP, Garmin, Catapult…) writes one Signal shape here; the engines read the
-// stream via toBiometrics / the Twin. Scoped to the user; coaches read via the
-// active-link RLS policy.
-const KINDS: SignalKind[] = [
-  "hrv",
-  "restingHr",
-  "sleep",
-  "sleepScore",
-  "totalDistance",
-  "highSpeedRunning",
-  "accelLoad",
-  "jumpHeight",
-  "asymmetry",
-  "bodyMass",
-  "bloodMarker",
-];
+// WHOOP, Garmin, Catapult, nutrition…) writes one Signal shape here; the engines
+// read the stream via toBiometrics / the Twin. The accepted-kind allow-list is
+// the single source of truth in @hybrid/core so it never drifts. Scoped to the
+// user; coaches read via the active-link RLS policy.
+const KINDS: SignalKind[] = SIGNAL_KINDS;
 
 export async function GET(request: Request) {
   const user = await getOrCreateDbUser(request);

@@ -97,6 +97,24 @@ export default function Home() {
         </View>
       </Card>
 
+      {/* quick links */}
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <Pressable
+          onPress={() => router.push("/nutrition")}
+          style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Nutrition →</Text>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>log macros · adaptive targets</Mono>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/(tabs)/velocity")}
+          style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Velocity →</Text>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>VBT profile · est 1RM</Mono>
+        </Pressable>
+      </View>
+
       {/* ON TRACK? — accountability engine */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: bandColor(acc.band) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

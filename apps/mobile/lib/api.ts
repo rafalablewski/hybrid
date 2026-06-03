@@ -44,6 +44,33 @@ export async function createSession(payload: NewSession): Promise<boolean> {
   }
 }
 
+// ---- signals (Athlete Twin time-series: recovery, body mass, nutrition…) ----
+export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
+
+export async function fetchSignals(): Promise<CoreSignal[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/signals`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { signals?: { userId: string; kind: string; value: number; unit: string; source: string; ts: string }[] };
+    return (data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts }));
+  } catch {
+    return [];
+  }
+}
+
+export async function createSignal(kind: string, value: number, unit?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/signals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ kind, value, unit, source: "manual" }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function enrollPlan(goal: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {
