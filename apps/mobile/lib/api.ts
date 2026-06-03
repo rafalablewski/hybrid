@@ -71,6 +71,45 @@ export async function createSignal(kind: string, value: number, unit?: string): 
   }
 }
 
+// ---- weekly check-ins ----
+export type Checkin = {
+  id: string;
+  weekOf: string;
+  bodyMassKg: number | null;
+  energy: number | null;
+  sleep: number | null;
+  soreness: number | null;
+  mood: number | null;
+  adherencePct: number | null;
+  note: string | null;
+  coachReply: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+};
+
+export async function fetchCheckins(): Promise<Checkin[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/checkins`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { checkins?: Checkin[] }).checkins ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createCheckin(payload: Partial<Checkin>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/checkins`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function enrollPlan(goal: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {

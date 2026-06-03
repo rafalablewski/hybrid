@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { sessionVolume, type LoggedSession } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 type Person = { id: string; name: string | null; email: string };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
@@ -152,20 +152,43 @@ export default function CoachScreen() {
   );
 }
 
+type ClientCheckin = {
+  id: string; weekOf: string; bodyMassKg: number | null; energy: number | null; sleep: number | null;
+  soreness: number | null; mood: number | null; adherencePct: number | null; note: string | null;
+  coachReply: string | null; repliedAt: string | null;
+};
+
 function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [notes, setNotes] = useState<{ id: string; body: string; private: boolean; createdAt: string }[]>([]);
+  const [checkins, setCheckins] = useState<ClientCheckin[]>([]);
+  const [replyFor, setReplyFor] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
 
   const load = useCallback(async () => {
-    const [s, n] = await Promise.all([
+    const [s, n, c] = await Promise.all([
       fetch(`/api/coach/links/${link.id}/sessions`).then((r) => (r.ok ? r.json() : { sessions: [] })),
       fetch(`/api/coach/links/${link.id}/notes`).then((r) => (r.ok ? r.json() : { notes: [] })),
+      fetch(`/api/coach/links/${link.id}/checkins`).then((r) => (r.ok ? r.json() : { checkins: [] })),
     ]);
     setSessions(s.sessions ?? []);
     setNotes(n.notes ?? []);
+    setCheckins(c.checkins ?? []);
   }, [link.id]);
+
+  const sendReply = async (id: string) => {
+    if (!replyText.trim()) return;
+    await fetch(`/api/checkins/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coachReply: replyText }),
+    });
+    setReplyFor(null);
+    setReplyText("");
+    load();
+  };
 
   useEffect(() => {
     load();
@@ -217,6 +240,50 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{n.body}</Mono>
           </Card>
         ))}
+      </Section>
+
+      <Section title="Weekly check-ins" color={BLUE}>
+        {checkins.length === 0 ? (
+          <Mono>No check-ins submitted yet.</Mono>
+        ) : (
+          checkins.map((c) => (
+            <Card key={c.id} style={{ borderLeft: `3px solid ${c.coachReply ? LINE : BLUE}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ ...disp, fontWeight: 600, fontSize: 15 }}>{new Date(c.weekOf).toLocaleDateString()}</div>
+                {c.adherencePct != null && <Mono s={{ fontSize: 12 }}>{c.adherencePct}% adherence</Mono>}
+              </div>
+              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }}>
+                energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}
+                {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+              </Mono>
+              {c.note && <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{c.note}</Mono>}
+              {c.coachReply ? (
+                <div style={{ marginTop: 10, borderLeft: `2px solid ${VIOLET}`, paddingLeft: 10 }}>
+                  <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Your reply</Mono>
+                  <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4 }} c={CHALK}>{c.coachReply}</Mono>
+                </div>
+              ) : replyFor === c.id ? (
+                <div style={{ marginTop: 10 }}>
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Reply to your athlete…"
+                    rows={2}
+                    style={{ ...mono, fontSize: 14, width: "100%", padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <Btn label="Send reply" color={LIME} onClick={() => sendReply(c.id)} />
+                    <Btn label="Cancel" color={ASH} onClick={() => { setReplyFor(null); setReplyText(""); }} />
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 10 }}>
+                  <Btn label="Reply" color={VIOLET} onClick={() => { setReplyFor(c.id); setReplyText(""); }} />
+                </div>
+              )}
+            </Card>
+          ))
+        )}
       </Section>
 
       <Section title="Recent sessions" color={LIME}>

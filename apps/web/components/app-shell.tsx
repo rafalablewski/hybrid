@@ -46,6 +46,7 @@ import TeamMonitor from "./team-monitor";
 import Today from "./today";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
+import Checkins from "./checkins";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -61,6 +62,7 @@ const NAV: [string, string, string][] = [
   ["velocity", "Velocity (VBT)", "⚡"],
   ["log", "Log session", "✎"],
   ["nutrition", "Nutrition", "🍎"],
+  ["checkin", "Check-in", "✓"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
   ["competition", "Competition", "▲"],
@@ -351,6 +353,8 @@ export default function AppShell() {
         {screen === "velocity" && <Velocity sessions={sessions} />}
 
         {screen === "nutrition" && <Nutrition />}
+
+        {screen === "checkin" && <Checkins sessions={sessions} />}
 
         {screen === "squad" && <TeamMonitor />}
 

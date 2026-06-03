@@ -7,6 +7,7 @@
  */
 
 import type { LoggedSession } from "./session";
+import type { Signal } from "./signals";
 
 const DAY = 86_400_000;
 
@@ -96,4 +97,27 @@ export function habitStrength(sessions: LoggedSession[], targetPerWeek = 3, now 
     score += weights[w]! * hit;
   }
   return Math.round(score * 100);
+}
+
+export interface DailyChecklist {
+  trained: boolean;
+  nutritionLogged: boolean;
+  checkedIn: boolean;
+  done: number;
+  total: number;
+}
+
+const RECOVERY_KINDS = new Set<Signal["kind"]>(["hrv", "restingHr", "sleep", "sleepScore"]);
+
+/**
+ * Today's daily-loop checklist (the consumer "rings"): trained, logged a meal,
+ * and did a wellness check-in. Derived from existing data — no new storage.
+ */
+export function dailyChecklist(sessions: LoggedSession[], signals: Signal[], now = Date.now()): DailyChecklist {
+  const today = new Date(now).toISOString().slice(0, 10);
+  const trained = sessions.some((s) => dayKey(s.startedAt) === today);
+  const nutritionLogged = signals.some((s) => s.kind === "energyIntake" && dayKey(s.ts) === today);
+  const checkedIn = signals.some((s) => RECOVERY_KINDS.has(s.kind) && dayKey(s.ts) === today);
+  const done = [trained, nutritionLogged, checkedIn].filter(Boolean).length;
+  return { trained, nutritionLogged, checkedIn, done, total: 3 };
 }
