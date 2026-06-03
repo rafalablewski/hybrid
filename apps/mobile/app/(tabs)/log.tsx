@@ -74,13 +74,15 @@ export default function Train() {
       <Pressable onPress={() => start("ai")}>
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Kicker color={C.violet}>{t("train.aiReadiness")} {rx.readiness}/100</Kicker>
+            <Kicker color={C.violet}>{sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}</Kicker>
             <Text style={{ fontFamily: F.black, fontSize: 16, color: C.violet }}>{t("train.start")}</Text>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 8 }}>
-            {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
+            {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Smart starter session"}
           </Text>
-          <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>{rx.why}</Mono>
+          <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
+            {sessions.length > 0 ? rx.why : "Log a few sessions and the coach prescribes from your real readiness, fatigue and velocity. For now this is a balanced starter you can edit."}
+          </Mono>
         </Card>
       </Pressable>
 
