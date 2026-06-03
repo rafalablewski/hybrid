@@ -8,11 +8,6 @@ import {
   disp, cond, mono, tip, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
-const SAMPLE = `Date,Athlete,Jump Height (cm),Asymmetry (%)
-2026-05-04,You,37.8,5.2
-2026-05-11,You,38.6,4.1
-2026-05-18,You,39.9,3.3`;
-
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 export default function ForcePlate() {
@@ -72,9 +67,6 @@ export default function ForcePlate() {
             Choose file
             <input type="file" accept=".csv,text/csv,text/plain" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
           </label>
-          <button onClick={() => setCsv(SAMPLE)} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", color: ASH, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}>
-            Use sample
-          </button>
         </div>
         <textarea
           value={csv}
