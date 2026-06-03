@@ -23,6 +23,7 @@ export async function GET(request: Request) {
   const links = await prisma.coachLink.findMany({
     where: { coachId: me.id, status: "ACTIVE" },
     include: { client: { select: { id: true, name: true, email: true } } },
+    orderBy: { createdAt: "asc" },
   });
 
   const squad = await Promise.all(
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
       return {
         linkId: l.id,
         name: l.client.name || l.client.email.split("@")[0],
+        tags: l.tags,
         sessions: sessions.length,
         lastSession: rows[0] ? rows[0].startedAt.toISOString() : null,
         readiness: state.readiness.score,

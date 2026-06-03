@@ -67,6 +67,7 @@ model CoachLink {
   client    User        @relation("asClient", fields: [clientId], references: [id])
   clientId  String
   status    LinkStatus  @default(PENDING)
+  tags      String[]    @default([]) // coach-authored labels for roster segmentation
   createdAt DateTime    @default(now())
   notes     CoachNote[]
 

@@ -10,6 +10,7 @@ import {
 type SquadRow = {
   linkId: string;
   name: string;
+  tags?: string[];
   sessions: number;
   lastSession: string | null;
   readiness: number;
@@ -39,6 +40,7 @@ export default function TeamMonitor() {
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<"readiness" | "acwr" | "risk">("readiness");
   const [seg, setSeg] = useState<AthleteSegment | "all">("all");
+  const [tag, setTag] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/coach/squad")
@@ -75,7 +77,10 @@ export default function TeamMonitor() {
     });
 
   const counts = squad.reduce((m, a) => { const s = segOf(a); m[s] = (m[s] ?? 0) + 1; return m; }, {} as Record<string, number>);
-  const filtered = squad.filter((a) => seg === "all" || segOf(a) === seg);
+  const allTags = [...new Set(squad.flatMap((a) => a.tags ?? []))].sort();
+  const filtered = squad
+    .filter((a) => seg === "all" || segOf(a) === seg)
+    .filter((a) => !tag || (a.tags ?? []).includes(tag));
   const sorted = [...filtered].sort((a, b) =>
     sort === "readiness" ? a.readiness - b.readiness // worst first
     : sort === "acwr" ? b.acwr - a.acwr
@@ -107,6 +112,16 @@ export default function TeamMonitor() {
         ))}
       </div>
 
+      {allTags.length > 0 && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Tag</Mono>
+          <button onClick={() => setTag("")} style={pill(tag === "")}>All</button>
+          {allTags.map((t) => (
+            <button key={t} onClick={() => setTag(t)} style={pill(tag === t)}>{t}</button>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Sort by</Mono>
         {(["readiness", "acwr", "risk"] as const).map((k) => (
@@ -131,7 +146,14 @@ export default function TeamMonitor() {
           <tbody>
             {sorted.map((a) => (
               <tr key={a.linkId} style={{ borderTop: `1px solid ${LINE}` }}>
-                <td style={{ ...td, color: CHALK, fontFamily: "inherit" }}>{a.name}</td>
+                <td style={{ ...td, color: CHALK, fontFamily: "inherit" }}>
+                  {a.name}
+                  {(a.tags ?? []).length > 0 && (
+                    <span style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 3 }}>
+                      {a.tags!.map((t) => <Chip key={t} c={BLUE}>{t}</Chip>)}
+                    </span>
+                  )}
+                </td>
                 <td style={tdC}><Chip c={segColor(segOf(a))}>{SEGMENT_LABELS[segOf(a)]}</Chip></td>
                 <td style={tdC}><Dot c={readinessColor(a.readiness)} /> {a.readiness}</td>
                 <td style={tdC}>

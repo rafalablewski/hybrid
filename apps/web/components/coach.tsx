@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { sessionVolume, type LoggedSession } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
 
 type Person = { id: string; name: string | null; email: string };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
@@ -173,21 +173,40 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [replyText, setReplyText] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   const load = useCallback(async () => {
-    const [s, n, c, t, a] = await Promise.all([
+    const [s, n, c, t, a, lk] = await Promise.all([
       fetch(`/api/coach/links/${link.id}/sessions`).then((r) => (r.ok ? r.json() : { sessions: [] })),
       fetch(`/api/coach/links/${link.id}/notes`).then((r) => (r.ok ? r.json() : { notes: [] })),
       fetch(`/api/coach/links/${link.id}/checkins`).then((r) => (r.ok ? r.json() : { checkins: [] })),
       fetch(`/api/templates`).then((r) => (r.ok ? r.json() : { templates: [] })),
       fetch(`/api/coach/links/${link.id}/assignments`).then((r) => (r.ok ? r.json() : { assignments: [] })),
+      fetch(`/api/coach/links/${link.id}`).then((r) => (r.ok ? r.json() : { link: { tags: [] } })),
     ]);
     setSessions(s.sessions ?? []);
     setNotes(n.notes ?? []);
     setCheckins(c.checkins ?? []);
     setTemplates(t.templates ?? []);
     setAssignments(a.assignments ?? []);
+    setTags(lk.link?.tags ?? []);
   }, [link.id]);
+
+  const saveTags = async (next: string[]) => {
+    setTags(next);
+    await fetch(`/api/coach/links/${link.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "tags", tags: next }),
+    });
+  };
+  const addTag = () => {
+    const v = tagInput.trim();
+    if (!v || tags.includes(v)) return setTagInput("");
+    saveTags([...tags, v]);
+    setTagInput("");
+  };
 
   const assign = async () => {
     const t = templates.find((x) => x.id === assignId);
@@ -235,7 +254,23 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← Roster</Mono>
       </button>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>{personName(link.client)}</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>{link.client?.email}</Mono>
+      <Mono s={{ fontSize: 13, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
+
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+        {tags.map((t) => (
+          <span key={t} style={{ ...cond, fontSize: 12, color: BLUE, background: `${BLUE}1f`, border: `1px solid ${BLUE}55`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {t}
+            <button onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: BLUE, cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1 }}>×</button>
+          </span>
+        ))}
+        <input
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") addTag(); }}
+          placeholder="+ tag"
+          style={{ ...mono, fontSize: 12, width: 90, padding: "5px 8px", borderRadius: 999, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+        />
+      </div>
 
       <Section title="Coaching notes" color={VIOLET}>
         <Card>
