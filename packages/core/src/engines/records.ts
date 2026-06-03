@@ -100,3 +100,30 @@ export function volumeByMuscle(blocks: SessionBlock[]): MuscleVolume[] {
     .map(([muscle, volume]) => ({ muscle, volume: Math.round(volume) }))
     .sort((a, b) => b.volume - a.volume);
 }
+
+export interface ExerciseUse {
+  name: string;
+  kind: "strength" | "conditioning";
+  count: number;
+  lastUsed: string; // ISO
+}
+
+/**
+ * Every exercise the athlete has logged, most-recently-used first (ties broken
+ * by frequency). Powers a "your lifts" shortcut in the live workout picker so
+ * repeating a movement — including a custom one they typed — is one tap.
+ */
+export function exerciseHistory(sessions: LoggedSession[]): ExerciseUse[] {
+  const map = new Map<string, ExerciseUse>();
+  for (const s of sessions)
+    for (const b of s.blocks) {
+      const cur = map.get(b.name);
+      if (cur) {
+        cur.count += 1;
+        if (s.startedAt > cur.lastUsed) cur.lastUsed = s.startedAt;
+      } else {
+        map.set(b.name, { name: b.name, kind: b.kind, count: 1, lastUsed: s.startedAt });
+      }
+    }
+  return [...map.values()].sort((a, b) => b.lastUsed.localeCompare(a.lastUsed) || b.count - a.count);
+}

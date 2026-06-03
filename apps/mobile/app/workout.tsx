@@ -10,12 +10,14 @@ import {
   sessionVolume,
   blockBestE1rm,
   newPrsInSession,
+  exerciseHistory,
   MOVEMENTS,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
+  type ExerciseUse,
 } from "@hybrid/core";
 import { fetchSessions, createSession, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
@@ -48,10 +50,10 @@ const emptySet = (from?: WSet): WSet => ({
   done: false,
 });
 
-const newExercise = (name: string): WExercise => ({
+const newExercise = (name: string, kind: "strength" | "conditioning" = isCond(name) ? "conditioning" : "strength"): WExercise => ({
   uid: uid(),
   name,
-  kind: isCond(name) ? "conditioning" : "strength",
+  kind,
   sets: [emptySet()],
   minutes: "",
   rpe: "",
@@ -100,6 +102,7 @@ export default function Workout() {
   const [readiness, setReadiness] = useState<number | undefined>(undefined);
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
+  const [recent, setRecent] = useState<ExerciseUse[]>([]);
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
@@ -130,6 +133,7 @@ export default function Workout() {
         ? (await listGuestSessions()).map(guestToLogged)
         : await fetchSessions();
       prior.current = sessions;
+      setRecent(exerciseHistory(sessions));
 
       if (source === "last") {
         await clearDraft();
@@ -171,10 +175,10 @@ export default function Workout() {
     return () => clearTimeout(id);
   }, [exercises, title, restored]);
 
-  const addExercise = (name: string) => {
+  const addExercise = (name: string, kind?: "strength" | "conditioning") => {
     const clean = name.trim();
     if (!clean) return;
-    setExercises((xs) => [...xs, newExercise(clean)]);
+    setExercises((xs) => [...xs, newExercise(clean, kind)]);
     setPickerOpen(false);
     setCustom("");
   };
@@ -418,38 +422,65 @@ export default function Workout() {
           </Card>
         ))}
 
-        {pickerOpen ? (
-          <Card>
-            <Kicker color={C.lime}>{t("workout.pickExercise")}</Kicker>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              {Object.keys(MOVEMENTS).map((name) => (
-                <Pressable
-                  key={name}
-                  onPress={() => addExercise(name)}
-                  style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: isCond(name) ? `${C.blue}55` : `${C.lime}55`, backgroundColor: isCond(name) ? `${C.blue}1f` : `${C.lime}1f` }}
-                >
-                  <Text style={{ fontFamily: F.semi, fontSize: 13, color: isCond(name) ? C.blue : C.lime }}>{name}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+        {pickerOpen ? (() => {
+          const q = custom.trim().toLowerCase();
+          const match = (n: string) => !q || n.toLowerCase().includes(q);
+          const recentNames = new Set(recent.map((r) => r.name));
+          const recentShown = recent.filter((r) => match(r.name)).slice(0, 10);
+          const libShown = Object.keys(MOVEMENTS).filter((n) => !recentNames.has(n) && match(n));
+          const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
+          const chip = (name: string, kind: "strength" | "conditioning", key: string) => (
+            <Pressable
+              key={key}
+              onPress={() => addExercise(name, kind)}
+              style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: kind === "conditioning" ? `${C.blue}55` : `${C.lime}55`, backgroundColor: kind === "conditioning" ? `${C.blue}1f` : `${C.lime}1f` }}
+            >
+              <Text style={{ fontFamily: F.semi, fontSize: 13, color: kind === "conditioning" ? C.blue : C.lime }}>{name}</Text>
+            </Pressable>
+          );
+          return (
+            <Card>
+              <Kicker color={C.lime}>{t("workout.pickExercise")}</Kicker>
               <TextInput
                 value={custom}
                 onChangeText={setCustom}
-                placeholder={t("workout.typeOwn")}
+                placeholder={t("workout.search")}
                 placeholderTextColor={C.ash}
+                autoFocus
                 onSubmitEditing={() => addExercise(custom)}
-                style={{ flex: 1, fontFamily: F.reg, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+                style={{ fontFamily: F.reg, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
               />
-              <Pressable onPress={() => addExercise(custom)} style={{ paddingHorizontal: 16, justifyContent: "center", borderRadius: 10, backgroundColor: C.lime }}>
-                <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{t("common.add")}</Text>
+
+              {recentShown.length > 0 && (
+                <>
+                  <Kicker color={C.ash}>{t("workout.yourLifts")}</Kicker>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 4 }}>
+                    {recentShown.map((r) => chip(r.name, r.kind, `r-${r.name}`))}
+                  </View>
+                </>
+              )}
+
+              {libShown.length > 0 && (
+                <>
+                  {recentShown.length > 0 && <Kicker color={C.ash}>{t("workout.library")}</Kicker>}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    {libShown.map((name) => chip(name, isCond(name) ? "conditioning" : "strength", `l-${name}`))}
+                  </View>
+                </>
+              )}
+
+              {q.length > 0 && !exact && (
+                <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 14, borderRadius: 10, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>+ “{custom.trim()}”</Text>
+                </Pressable>
+              )}
+
+              <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} style={{ paddingTop: 12 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center" }}>{t("workout.close")}</Text>
               </Pressable>
-            </View>
-            <Pressable onPress={() => setPickerOpen(false)} style={{ paddingTop: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center" }}>{t("workout.close")}</Text>
-            </Pressable>
-          </Card>
-        ) : (
+            </Card>
+          );
+        })() : (
           <Pressable
             onPress={() => setPickerOpen(true)}
             style={{ borderWidth: 1, borderColor: C.lime, borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 4 }}

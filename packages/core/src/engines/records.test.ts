@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { bestE1rmMap, newPrsInSession, prsForSession, volumeByMuscle } from "./records";
+import { bestE1rmMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory } from "./records";
 import type { LoggedSession } from "./session";
 
 const squat = (load: string, reps: string): LoggedSession["blocks"][number] => ({
@@ -71,6 +71,22 @@ describe("personal records", () => {
     expect(v[0]!.volume).toBeGreaterThanOrEqual(v[v.length - 1]!.volume);
     const quads = v.find((x) => x.muscle === "quads");
     expect(quads!.volume).toBe(500);
+  });
+
+  it("exerciseHistory lists distinct exercises, most recent first, with counts", () => {
+    const hist = exerciseHistory([s1, s2, s3]); // all Back Squat across 3 dates
+    expect(hist).toHaveLength(1);
+    expect(hist[0]!.name).toBe("Back Squat");
+    expect(hist[0]!.count).toBe(3);
+    expect(hist[0]!.lastUsed).toBe(s3.startedAt); // newest
+  });
+
+  it("exerciseHistory orders a newer custom lift ahead of an older one", () => {
+    const a = session("p", "2026-05-01T10:00:00.000Z", [{ kind: "strength", name: "Zercher Squat", sets: [{ load: "60", reps: "5" }] }]);
+    const b = session("q", "2026-06-01T10:00:00.000Z", [{ kind: "conditioning", name: "Sled Push", minutes: 10 }]);
+    const hist = exerciseHistory([a, b]);
+    expect(hist[0]!.name).toBe("Sled Push");
+    expect(hist[0]!.kind).toBe("conditioning");
   });
 
   it("ranks bigger improvements first", () => {
