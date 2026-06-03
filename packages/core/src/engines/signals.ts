@@ -27,9 +27,10 @@ export type SignalKind =
   | "totalDistance"
   | "highSpeedRunning"
   | "accelLoad"
-  // neuromuscular (force plate / jump mat)
+  // neuromuscular (force plate / jump mat / bar sensor)
   | "jumpHeight"
   | "asymmetry"
+  | "barVelocity"
   // composition / physiology
   | "bodyMass"
   | "bloodMarker";
@@ -67,6 +68,7 @@ const META: Record<SignalKind, { unit: string; better: SignalDirection }> = {
   accelLoad: { unit: "au", better: "high" },
   jumpHeight: { unit: "cm", better: "high" },
   asymmetry: { unit: "%", better: "low" },
+  barVelocity: { unit: "m/s", better: "high" },
   bodyMass: { unit: "kg", better: "high" },
   bloodMarker: { unit: "", better: "high" },
 };

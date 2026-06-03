@@ -40,6 +40,8 @@ import Talent from "./talent";
 import DataNet from "./datanet";
 import Tactical from "./tactical";
 import Longevity from "./longevity";
+import Velocity from "./velocity";
+import TeamCompare from "./team-compare";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -50,6 +52,7 @@ import { useSignals } from "@/lib/use-signals";
 const NAV: [string, string, string][] = [
   ["dashboard", "Dashboard", "◆"],
   ["performance", "Performance", "◈"],
+  ["velocity", "Velocity (VBT)", "⚡"],
   ["log", "Log session", "✎"],
   ["analytics", "Analytics", "◷"],
   ["periodize", "Periodize", "◰"],
@@ -59,6 +62,7 @@ const NAV: [string, string, string][] = [
   ["video", "Video", "▷"],
   ["history", "History", "≣"],
   ["coach", "Coach", "✦"],
+  ["teamcompare", "Team compare", "⚖"],
   ["org", "Organization", "⬡"],
   ["talent", "Talent", "✸"],
   ["tactical", "Tactical", "▰"],
@@ -327,6 +331,10 @@ export default function AppShell() {
         )}
 
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
+
+        {screen === "velocity" && <Velocity sessions={sessions} />}
+
+        {screen === "teamcompare" && <TeamCompare />}
 
         {screen === "periodize" && <PeriodizeScreen macro={macro} />}
 

@@ -212,8 +212,8 @@ export default function Logger({
 
           {b.kind === "strength" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 28px", gap: 6, marginBottom: 4 }}>
-                {["load (kg)", "reps", "rpe", ""].map((h) => (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4 }}>
+                {["load (kg)", "reps", "rpe", "m/s", ""].map((h) => (
                   <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                     {h}
                   </Mono>
@@ -222,11 +222,12 @@ export default function Logger({
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
+                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
                 >
                   <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={inputStyle} />
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={inputStyle} />
                   <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={inputStyle} />
+                  <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={inputStyle} />
                   <button onClick={() => removeSet(b.uid, i)} style={{ ...btn(ASH), padding: "0" }}>
                     −
                   </button>
