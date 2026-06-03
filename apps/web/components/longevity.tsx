@@ -9,7 +9,7 @@ type ApiSignal = { kind: string; value: number; ts: string };
 const deltaColor = (d: number) => (d <= -3 ? LIME : d < 1 ? BLUE : d < 4 ? AMBER : RED);
 
 export default function Longevity() {
-  const [f, setF] = useState({ age: "35", restingHr: "", hrv: "", vo2: "", sleepH: "" });
+  const [f, setF] = useState({ age: "", restingHr: "", hrv: "", vo2: "", sleepH: "" });
 
   // prefill recovery markers from the latest signals
   useEffect(() => {
@@ -28,7 +28,9 @@ export default function Longevity() {
 
   const num = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? parseFloat(s) : undefined);
   const age = num(f.age) ?? 35;
-  const report = longevityReport({ age, restingHr: num(f.restingHr), hrv: num(f.hrv), vo2: num(f.vo2), sleepH: num(f.sleepH) });
+  const markers = { restingHr: num(f.restingHr), hrv: num(f.hrv), vo2: num(f.vo2), sleepH: num(f.sleepH) };
+  const hasMarkers = Object.values(markers).some((v) => v !== undefined);
+  const report = longevityReport({ age, ...markers });
 
   const fields: [keyof typeof f, string, string][] = [
     ["age", "Age", "yr"],
@@ -53,7 +55,7 @@ export default function Longevity() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Markers</Mono>
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>recovery markers prefilled from your latest signals</Mono>
+          <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>recovery markers prefilled from your latest signals when available</Mono>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
             {fields.map(([k, label, unit]) => (
               <label key={k}>
@@ -64,6 +66,15 @@ export default function Longevity() {
           </div>
         </Card>
 
+        {!hasMarkers ? (
+          <Card style={{ borderLeft: `3px solid ${BLUE}` }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Biological age</Mono>
+            <Mono s={{ fontSize: 13, display: "block", marginTop: 10, lineHeight: 1.6 }} c={CHALK}>
+              Enter at least one recovery marker (resting HR, HRV, VO₂ or sleep) — or connect a wearable —
+              and your biological-age estimate appears here. Nothing is pre-filled.
+            </Mono>
+          </Card>
+        ) : (
         <Card style={{ borderLeft: `3px solid ${deltaColor(report.delta)}` }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Biological age</Mono>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "6px 0" }}>
@@ -86,6 +97,7 @@ export default function Longevity() {
           )}
           <Mono s={{ fontSize: 10, display: "block", marginTop: 10 }} c={ASH}>model {report.modelVersion}</Mono>
         </Card>
+        )}
       </div>
     </div>
   );
