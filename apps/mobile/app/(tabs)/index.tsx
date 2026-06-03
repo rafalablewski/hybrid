@@ -140,27 +140,34 @@ export default function Home() {
       </Card>
 
       {/* quick links */}
-      <View style={{ flexDirection: "row", gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         <Pressable
           onPress={() => router.push("/nutrition")}
-          style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+          style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Nutrition →</Text>
           <Mono style={{ marginTop: 2, fontSize: 11 }}>log macros · adaptive targets</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/checkin")}
-          style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+          style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Check-in →</Text>
           <Mono style={{ marginTop: 2, fontSize: 11 }}>weekly review · coach reply</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/calendar")}
-          style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+          style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Calendar →</Text>
           <Mono style={{ marginTop: 2, fontSize: 11 }}>month view · load</Mono>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/progress")}
+          style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Progress →</Text>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>photos · timeline</Mono>
         </Pressable>
       </View>
 
