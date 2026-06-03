@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Session as SupaSession } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { flushGuestSessions } from "./guest";
 
 type Ctx = {
   session: SupaSession | null;
@@ -26,7 +27,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setReady(true);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      // First real sign-in: carry any guest workouts up to the account.
+      if (event === "SIGNED_IN") flushGuestSessions().catch(() => {});
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 

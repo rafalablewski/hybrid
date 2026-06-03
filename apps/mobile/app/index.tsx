@@ -6,5 +6,5 @@ import { C } from "../lib/ui";
 export default function Index() {
   const { session, ready } = useSession();
   if (!ready) return <View style={{ flex: 1, backgroundColor: C.ink }} />;
-  return <Redirect href={session ? "/(tabs)" : "/login"} />;
+  return <Redirect href={session ? "/(tabs)" : "/welcome"} />;
 }

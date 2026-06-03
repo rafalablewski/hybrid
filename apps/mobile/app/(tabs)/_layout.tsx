@@ -25,9 +25,9 @@ export default function TabsLayout() {
     >
       {/* The funnel: see today → train → review. Everything else lives under More. */}
       <Tabs.Screen name="index" options={{ title: t("nav.dashboard"), tabBarIcon: icon("◆") }} />
-      <Tabs.Screen name="log" options={{ title: "Train", tabBarIcon: icon("▶") }} />
+      <Tabs.Screen name="log" options={{ title: t("nav.train"), tabBarIcon: icon("▶") }} />
       <Tabs.Screen name="history" options={{ title: t("nav.history"), tabBarIcon: icon("≣") }} />
-      <Tabs.Screen name="more" options={{ title: "More", tabBarIcon: icon("⋯") }} />
+      <Tabs.Screen name="more" options={{ title: t("nav.more"), tabBarIcon: icon("⋯") }} />
 
       {/* Reachable from More / deep links, hidden from the bar to cut clutter. */}
       <Tabs.Screen name="plans" options={{ href: null }} />

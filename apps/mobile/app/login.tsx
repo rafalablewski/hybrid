@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { brand } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { useLang } from "../lib/i18n";
 import { C, F, Button } from "../lib/ui";
 
 export default function Login() {
   const router = useRouter();
+  const { t } = useLang();
+  const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
   const live = isSupabaseConfigured();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(modeParam === "signup" ? "signup" : "signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,6 +85,10 @@ export default function Login() {
           {mode === "signin" ? "Need an account? " : "Have an account? "}
           <Text style={{ color: C.lime }}>{mode === "signin" ? "Create one" : "Sign in"}</Text>
         </Text>
+      </Pressable>
+
+      <Pressable onPress={() => router.push("/workout?source=empty")} style={{ alignItems: "center", marginTop: 22 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← {t("login.guest")}</Text>
       </Pressable>
 
       {!live && (

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Share, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   prescribeSession,
@@ -8,14 +10,17 @@ import {
   velocityProfiles,
   sessionVolume,
   blockBestE1rm,
+  brand,
   MOVEMENTS,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type SessionBlock,
   type StrengthBlock,
-  type LoggedSession,
 } from "@hybrid/core";
-import { fetchSessions, createSession } from "../lib/api";
+import { fetchSessions, createSession, type NewSession } from "../lib/api";
+import { saveGuestSession } from "../lib/guest";
+import { useSession } from "../lib/session";
+import { useLang } from "../lib/i18n";
 import { C, F, Mono, Kicker, Card } from "../lib/ui";
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -52,8 +57,13 @@ const newExercise = (name: string): WExercise => ({
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+type Summ = { blocks: SessionBlock[]; volume: number; sets: number; minutes: number; guest: boolean };
+
 export default function Workout() {
   const router = useRouter();
+  const { t } = useLang();
+  const { session } = useSession();
+  const guest = !session;
   const { source } = useLocalSearchParams<{ source?: string }>();
 
   const [title, setTitle] = useState("Workout");
@@ -67,11 +77,10 @@ export default function Workout() {
   const [restSince, setRestSince] = useState<number | null>(null);
   const [restNow, setRestNow] = useState(0);
   const [readiness, setReadiness] = useState<number | undefined>(undefined);
-  const [summary, setSummary] = useState<{ blocks: SessionBlock[]; volume: number; sets: number; minutes: number } | null>(null);
+  const [summary, setSummary] = useState<Summ | null>(null);
 
   const startedAt = useRef(new Date());
 
-  // Live elapsed clock while training.
   useEffect(() => {
     if (phase !== "active") return;
     const id = setInterval(() => {
@@ -81,7 +90,6 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [phase, restSince]);
 
-  // Prefill: AI-prescribed or repeat-last. Empty start needs no fetch.
   useEffect(() => {
     if (source !== "ai" && source !== "last") return;
     fetchSessions().then((sessions) => {
@@ -111,7 +119,7 @@ export default function Workout() {
   const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
   const rename = (u: string, name: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, name } : x)));
-  const setField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
+  const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),
     );
@@ -122,11 +130,9 @@ export default function Workout() {
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(x.sets[x.sets.length - 1])] } : x)),
     );
   const removeSet = (u: string, i: number) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)),
-    );
+    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
   const toggleDone = (u: string, i: number, val: boolean) => {
-    setField(u, i, "done", val);
+    setSetField(u, i, "done", val);
     if (val) {
       setRestSince(Date.now());
       setRestNow(0);
@@ -159,61 +165,58 @@ export default function Workout() {
   const finish = async () => {
     const blocks = buildBlocks();
     if (!blocks.length) {
-      setError("Log at least one set to finish.");
+      setError(t("workout.minSet"));
       return;
     }
     setSaving(true);
     setError("");
     const now = new Date();
-    const ok = await createSession({
+    const payload: NewSession = {
       title: title.trim() || "Workout",
       readiness,
       startedAt: startedAt.current.toISOString(),
       completedAt: now.toISOString(),
       blocks,
-    });
-    setSaving(false);
-    if (!ok) {
-      setError("Couldn't save — check your connection and try again.");
-      return;
+    };
+
+    if (guest) {
+      // No account yet — keep it on the device until they sign up.
+      await saveGuestSession(payload);
+    } else {
+      const ok = await createSession(payload);
+      if (!ok) {
+        setSaving(false);
+        setError(t("workout.saveError"));
+        return;
+      }
     }
+    setSaving(false);
     const sets = blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
     setSummary({
       blocks,
       volume: sessionVolume(blocks),
       sets,
       minutes: Math.max(1, Math.round((now.getTime() - startedAt.current.getTime()) / 60000)),
+      guest,
     });
     setPhase("done");
   };
 
-  const discard = () => {
-    if (!exercises.length) return router.back();
-    // Soft discard — go back to the launcher; nothing was saved.
-    router.back();
-  };
-
-  if (phase === "done" && summary) return <Summary title={title} summary={summary} router={router} />;
+  if (phase === "done" && summary) return <Summary title={title} summary={summary} router={router} t={t} />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
-      {/* Live header: timer + finish — the only chrome during training */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <Pressable onPress={discard} hitSlop={10} style={{ width: 64 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Cancel</Text>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={{ width: 64 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("workout.cancel")}</Text>
         </Pressable>
         <View style={{ alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, letterSpacing: 1 }}>{mmss(elapsed)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>ELAPSED</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{t("workout.elapsed")}</Text>
         </View>
-        <Pressable
-          onPress={finish}
-          disabled={saving}
-          style={{ width: 64, alignItems: "flex-end" }}
-          hitSlop={10}
-        >
+        <Pressable onPress={finish} disabled={saving} style={{ width: 64, alignItems: "flex-end" }} hitSlop={10}>
           <Text style={{ fontFamily: F.black, fontSize: 14, color: saving ? C.ash : C.lime }}>
-            {saving ? "…" : "Finish"}
+            {saving ? "…" : t("workout.finish")}
           </Text>
         </Pressable>
       </View>
@@ -222,20 +225,21 @@ export default function Workout() {
         <TextInput
           value={title}
           onChangeText={setTitle}
-          placeholder="Name this workout"
+          placeholder={t("workout.nameWorkout")}
           placeholderTextColor={C.ash}
           style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, marginBottom: 4 }}
         />
         <Mono style={{ marginBottom: 14 }}>
-          {exercises.length ? `${exercises.length} exercise${exercises.length > 1 ? "s" : ""} · tap ✓ as you go` : "Add your first exercise to begin"}
+          {exercises.length
+            ? `${exercises.length} ${t("workout.exercises")} · ${t("workout.tapAsYouGo")}`
+            : t("workout.firstExercise")}
         </Mono>
 
-        {/* Rest timer — appears after you complete a set */}
         {restSince != null && (
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}44`, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.blue }}>Resting · {mmss(restNow)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.blue }}>{t("workout.resting")} · {mmss(restNow)}</Text>
             <Pressable onPress={() => setRestSince(null)} hitSlop={8}>
-              <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash }}>dismiss</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash }}>{t("workout.dismiss")}</Text>
             </Pressable>
           </View>
         )}
@@ -246,11 +250,7 @@ export default function Workout() {
               <Text style={{ fontFamily: F.mono, fontSize: 9, color: x.kind === "strength" ? C.lime : C.blue }}>
                 {x.kind.toUpperCase()}
               </Text>
-              <TextInput
-                value={x.name}
-                onChangeText={(v) => rename(x.uid, v)}
-                style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }}
-              />
+              <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }} />
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
                 <Text style={{ color: C.ash, fontSize: 15 }}>✕</Text>
               </Pressable>
@@ -270,34 +270,25 @@ export default function Workout() {
                     <Pressable onLongPress={() => removeSet(x.uid, i)} style={{ width: 28, alignItems: "center" }}>
                       <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{i + 1}</Text>
                     </Pressable>
-                    <Cell value={s.load} onChange={(v) => setField(x.uid, i, "load", v)} done={s.done} />
-                    <Cell value={s.reps} onChange={(v) => setField(x.uid, i, "reps", v)} done={s.done} />
-                    <Cell value={s.rpe} onChange={(v) => setField(x.uid, i, "rpe", v)} done={s.done} />
+                    <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
+                    <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
+                    <Cell value={s.rpe} onChange={(v) => setSetField(x.uid, i, "rpe", v)} done={s.done} />
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: s.done ? C.lime : C.ink2,
-                        borderWidth: 1,
-                        borderColor: s.done ? C.lime : C.line,
-                      }}
+                      style={{ width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
                     >
                       <Text style={{ fontSize: 16, color: s.done ? C.ink : C.ash, fontFamily: F.black }}>✓</Text>
                     </Pressable>
                   </View>
                 ))}
                 <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.lime }}>+ Set</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.lime }}>{t("workout.set")}</Text>
                 </Pressable>
               </>
             ) : (
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <View style={{ flex: 1 }}>
-                  <ColHead>MINUTES</ColHead>
+                  <ColHead>MIN</ColHead>
                   <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -309,10 +300,9 @@ export default function Workout() {
           </Card>
         ))}
 
-        {/* Exercise picker */}
         {pickerOpen ? (
           <Card>
-            <Kicker color={C.lime}>Pick an exercise</Kicker>
+            <Kicker color={C.lime}>{t("workout.pickExercise")}</Kicker>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
               {Object.keys(MOVEMENTS).map((name) => (
                 <Pressable
@@ -328,17 +318,17 @@ export default function Workout() {
               <TextInput
                 value={custom}
                 onChangeText={setCustom}
-                placeholder="Or type your own…"
+                placeholder={t("workout.typeOwn")}
                 placeholderTextColor={C.ash}
                 onSubmitEditing={() => addExercise(custom)}
                 style={{ flex: 1, fontFamily: F.reg, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
               />
               <Pressable onPress={() => addExercise(custom)} style={{ paddingHorizontal: 16, justifyContent: "center", borderRadius: 10, backgroundColor: C.lime }}>
-                <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>Add</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{t("common.add")}</Text>
               </Pressable>
             </View>
             <Pressable onPress={() => setPickerOpen(false)} style={{ paddingTop: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center" }}>close</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center" }}>{t("workout.close")}</Text>
             </Pressable>
           </Card>
         ) : (
@@ -346,7 +336,7 @@ export default function Workout() {
             onPress={() => setPickerOpen(true)}
             style={{ borderWidth: 1, borderColor: C.lime, borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.lime }}>+ Add exercise</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.lime }}>{t("workout.addExercise")}</Text>
           </Pressable>
         )}
 
@@ -358,11 +348,7 @@ export default function Workout() {
             disabled={saving}
             style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 18, opacity: saving ? 0.6 : 1 }}
           >
-            {saving ? (
-              <ActivityIndicator color={C.ink} />
-            ) : (
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>Finish workout</Text>
-            )}
+            {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
           </Pressable>
         )}
       </ScrollView>
@@ -374,11 +360,14 @@ function Summary({
   title,
   summary,
   router,
+  t,
 }: {
   title: string;
-  summary: { blocks: SessionBlock[]; volume: number; sets: number; minutes: number };
+  summary: Summ;
   router: ReturnType<typeof useRouter>;
+  t: (k: string) => string;
 }) {
+  const cardRef = useRef<View>(null);
   const prs = useMemo(
     () =>
       summary.blocks
@@ -389,41 +378,62 @@ function Summary({
     [summary],
   );
 
-  const share = async () => {
-    const lines = [
-      `\u{1F4AA} ${title || "Workout"} — done.`,
-      `${summary.minutes} min · ${summary.sets} sets · ${summary.volume.toLocaleString()} kg moved`,
-      prs[0] ? `Top lift: ${prs[0].name} e1RM ${prs[0].e1rm}kg` : null,
-      `Tracked with HYBRID.`,
-    ].filter(Boolean);
+  const shareText = [
+    `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
+    `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${summary.volume.toLocaleString()} kg`,
+    prs[0] ? `${t("share.topLift")}: ${prs[0].name} e1RM ${prs[0].e1rm}kg` : null,
+    t("share.tracked"),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const onShare = async () => {
+    // Prefer a rendered image card; fall back to text if capture/sharing is unavailable.
     try {
-      await Share.share({ message: lines.join("\n") });
+      if (cardRef.current) {
+        const uri = await captureRef(cardRef, { format: "png", quality: 1, result: "tmpfile" });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: t("summary.share") });
+          return;
+        }
+      }
     } catch {
-      /* user dismissed the share sheet */
+      /* fall through to text share */
+    }
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      /* user dismissed */
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
-        <View style={{ alignItems: "center", marginTop: 24, marginBottom: 8 }}>
+        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
           <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontSize: 34, color: C.lime, fontFamily: F.black }}>✓</Text>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>Workout complete</Text>
-          <Mono style={{ marginTop: 4 }}>{title || "Workout"}</Mono>
+          <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>{t("summary.complete")}</Text>
         </View>
 
-        {/* Shareable stat card */}
-        <Card style={{ marginTop: 16, borderColor: `${C.lime}55` }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Stat label="MINUTES" value={String(summary.minutes)} />
-            <Stat label="SETS" value={String(summary.sets)} />
-            <Stat label="KG MOVED" value={summary.volume.toLocaleString()} />
+        {/* Branded, shareable card — this exact view is captured to a PNG */}
+        <View ref={cardRef} collapsable={false} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 18, padding: 20, marginTop: 12 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, letterSpacing: -1 }}>
+              {brand.name}<Text style={{ color: C.lime }}>.</Text>
+            </Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("welcome.tagline")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 14 }}>{title || "Workout"}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
+            <Stat label={t("summary.minutes")} value={String(summary.minutes)} />
+            <Stat label={t("summary.sets")} value={String(summary.sets)} />
+            <Stat label={t("summary.kgMoved")} value={summary.volume.toLocaleString()} />
           </View>
           {prs.length > 0 && (
-            <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-              <Kicker>Today&apos;s bests (est. 1RM)</Kicker>
+            <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+              <Kicker>{t("summary.todaysBests")}</Kicker>
               {prs.slice(0, 4).map((p) => (
                 <View key={p.name} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
                   <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>{p.name}</Text>
@@ -432,27 +442,44 @@ function Summary({
               ))}
             </View>
           )}
-        </Card>
+        </View>
 
-        <Pressable
-          onPress={share}
-          style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 8 }}
-        >
-          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>Share your win</Text>
+        <Pressable onPress={onShare} style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 14 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("summary.share")}</Text>
         </Pressable>
 
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 1, minHeight: 24 }} />
 
-        <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>Back home? Dig into the detail.</Mono>
-        <Pressable
-          onPress={() => router.replace("/(tabs)/history")}
-          style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 15, alignItems: "center" }}
-        >
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>See your analysis →</Text>
-        </Pressable>
-        <Pressable onPress={() => router.replace("/(tabs)")} style={{ paddingVertical: 16, alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Done — back to Today</Text>
-        </Pressable>
+        {summary.guest ? (
+          <>
+            <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.violet }}>✓ {t("summary.guestSaved")}</Text>
+            </View>
+            <Pressable
+              onPress={() => router.replace("/login?mode=signup")}
+              style={{ backgroundColor: C.violet, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
+            >
+              <Text style={{ fontFamily: F.black, fontSize: 16, color: C.chalk }}>{t("summary.guestSave")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
+            </Pressable>
+            <Pressable onPress={() => router.replace("/welcome")} style={{ paddingVertical: 16, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("summary.notNow")}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
+            <Pressable
+              onPress={() => router.replace("/(tabs)/history")}
+              style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 15, alignItems: "center" }}
+            >
+              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("summary.seeAnalysis")}</Text>
+            </Pressable>
+            <Pressable onPress={() => router.replace("/(tabs)")} style={{ paddingVertical: 16, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("summary.doneToday")}</Text>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -491,18 +518,7 @@ function Cell({ value, onChange, done }: { value: string; onChange: (v: string) 
       value={value}
       onChangeText={onChange}
       keyboardType="numeric"
-      style={{
-        flex: 1,
-        fontFamily: F.mono,
-        fontSize: 16,
-        color: done ? C.ash : C.chalk,
-        textAlign: "center",
-        backgroundColor: C.ink2,
-        borderWidth: 1,
-        borderColor: C.line,
-        borderRadius: 10,
-        paddingVertical: 10,
-      }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: 16, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 10 }}
     />
   );
 }

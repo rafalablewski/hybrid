@@ -96,8 +96,8 @@ export default function Home() {
         onPress={() => router.push("/workout?source=empty")}
         style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 22, alignItems: "center", marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  Start workout</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>log as you go · share when you finish</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  {t("home.startWorkout")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>{t("home.startWorkoutSub")}</Text>
       </Pressable>
 
       {/* personalize */}
