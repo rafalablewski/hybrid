@@ -62,7 +62,18 @@ export default function More() {
         </View>
       ))}
 
-      <Pressable onPress={signOut} style={{ marginTop: 26, alignItems: "center" }}>
+      <Pressable
+        onPress={() => router.push("/settings")}
+        style={{ marginTop: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+      >
+        <View>
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("settings.title")}</Text>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>{t("settings.sub")}</Mono>
+        </View>
+        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
+      </Pressable>
+
+      <Pressable onPress={signOut} style={{ marginTop: 18, alignItems: "center" }}>
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("common.signout")}</Text>
       </Pressable>
     </Screen>

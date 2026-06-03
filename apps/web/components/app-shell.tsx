@@ -52,6 +52,7 @@ import Calendar from "./calendar";
 import Builder from "./builder";
 import ForcePlate from "./forceplate";
 import Progress from "./progress";
+import AccountSettings from "./account-settings";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -88,6 +89,7 @@ const NAV: [string, string, string][] = [
   ["longevity", "Longevity", "❤"],
   ["connections", "Connections", "⌁"],
   ["roles", "Roles & access", "⚿"],
+  ["settings", "Settings", "⚙"],
   ["datanet", "Data network", "⊟"],
   ["capabilities", "Capabilities", "⊞"],
 ];
@@ -420,6 +422,8 @@ export default function AppShell() {
         {screen === "longevity" && <Longevity />}
 
         {screen === "roles" && <RolesScreen />}
+
+        {screen === "settings" && <AccountSettings />}
 
         {screen === "datanet" && session.role === "admin" && <DataNet />}
 

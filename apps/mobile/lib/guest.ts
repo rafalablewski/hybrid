@@ -8,6 +8,10 @@ const KEY = "hybrid.guestSessions";
 
 export type GuestSession = NewSession & { savedAt: string };
 
+export async function clearGuestSessions(): Promise<void> {
+  await AsyncStorage.removeItem(KEY).catch(() => {});
+}
+
 export async function listGuestSessions(): Promise<GuestSession[]> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
