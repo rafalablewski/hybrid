@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Share, ActivityIndicator } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { captureRef } from "react-native-view-shot";
-import * as Sharing from "expo-sharing";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   prescribeSession,
@@ -10,15 +8,17 @@ import {
   velocityProfiles,
   sessionVolume,
   blockBestE1rm,
-  brand,
+  newPrsInSession,
   MOVEMENTS,
   SAMPLE_TRAINING_LOG,
   SAMPLE_BIOMETRICS,
   type SessionBlock,
-  type StrengthBlock,
+  type LoggedSession,
+  type PrHit,
 } from "@hybrid/core";
 import { fetchSessions, createSession, type NewSession } from "../lib/api";
-import { saveGuestSession } from "../lib/guest";
+import { saveGuestSession, listGuestSessions } from "../lib/guest";
+import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
 import { C, F, Mono, Kicker, Card } from "../lib/ui";
@@ -57,7 +57,23 @@ const newExercise = (name: string): WExercise => ({
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-type Summ = { blocks: SessionBlock[]; volume: number; sets: number; minutes: number; guest: boolean };
+type Summ = {
+  title: string;
+  blocks: SessionBlock[];
+  volume: number;
+  sets: number;
+  minutes: number;
+  guest: boolean;
+  bests: ShareBest[];
+  prs: PrHit[];
+};
+
+const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; blocks: unknown[] }): LoggedSession => ({
+  id: g.savedAt,
+  title: g.title,
+  startedAt: g.startedAt ?? g.savedAt,
+  blocks: g.blocks as SessionBlock[],
+});
 
 export default function Workout() {
   const router = useRouter();
@@ -80,6 +96,7 @@ export default function Workout() {
   const [summary, setSummary] = useState<Summ | null>(null);
 
   const startedAt = useRef(new Date());
+  const prior = useRef<LoggedSession[]>([]);
 
   useEffect(() => {
     if (phase !== "active") return;
@@ -90,24 +107,29 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [phase, restSince]);
 
+  // Load prior sessions once — to detect PRs at the finish, and to prefill an
+  // AI / repeat-last start. Guests read their own on-device history.
   useEffect(() => {
-    if (source !== "ai" && source !== "last") return;
-    fetchSessions().then((sessions) => {
+    (async () => {
+      const sessions = guest
+        ? (await listGuestSessions()).map(guestToLogged)
+        : await fetchSessions();
+      prior.current = sessions;
       if (source === "last") {
         const last = sessions[0];
         if (last) {
           setTitle(last.title || "Workout");
           setExercises(blocksToExercises(last.blocks));
         }
-      } else {
+      } else if (source === "ai") {
         const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
         const rx = prescribeSession(log, SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) });
         setReadiness(rx.readiness);
         setTitle("AI session");
         setExercises(blocksToExercises(rx.blocks as SessionBlock[]));
       }
-    });
-  }, [source]);
+    })();
+  }, [source, guest]);
 
   const addExercise = (name: string) => {
     const clean = name.trim();
@@ -192,17 +214,41 @@ export default function Workout() {
     }
     setSaving(false);
     const sets = blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
+
+    // PRs: compare this session against everything done before it.
+    const finished: LoggedSession = {
+      id: "new",
+      title: payload.title,
+      startedAt: payload.startedAt!,
+      completedAt: payload.completedAt,
+      blocks,
+    };
+    const prs = newPrsInSession(finished, prior.current);
+    const prSet = new Set(prs.map((p) => p.lift));
+    const bestMap = new Map<string, number>();
+    for (const b of blocks)
+      if (b.kind === "strength") {
+        const e = Math.round(blockBestE1rm(b));
+        if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+      }
+    const bests: ShareBest[] = [...bestMap.entries()]
+      .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
+      .sort((a, b) => b.e1rm - a.e1rm);
+
     setSummary({
+      title: payload.title,
       blocks,
       volume: sessionVolume(blocks),
       sets,
       minutes: Math.max(1, Math.round((now.getTime() - startedAt.current.getTime()) / 60000)),
       guest,
+      bests,
+      prs,
     });
     setPhase("done");
   };
 
-  if (phase === "done" && summary) return <Summary title={title} summary={summary} router={router} t={t} />;
+  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
@@ -357,55 +403,34 @@ export default function Workout() {
 }
 
 function Summary({
-  title,
   summary,
   router,
   t,
 }: {
-  title: string;
   summary: Summ;
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
 }) {
   const cardRef = useRef<View>(null);
-  const prs = useMemo(
-    () =>
-      summary.blocks
-        .filter((b): b is StrengthBlock => b.kind === "strength")
-        .map((b) => ({ name: b.name, e1rm: Math.round(blockBestE1rm(b)) }))
-        .filter((p) => p.e1rm > 0)
-        .sort((a, b) => b.e1rm - a.e1rm),
-    [summary],
-  );
+  const { title, prs, bests } = summary;
+
+  const prLine = (p: PrHit) =>
+    p.previous == null
+      ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})`
+      : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
 
   const shareText = [
     `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
     `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${summary.volume.toLocaleString()} kg`,
-    prs[0] ? `${t("share.topLift")}: ${prs[0].name} e1RM ${prs[0].e1rm}kg` : null,
+    prs[0]
+      ? `\u{1F3C6} ${prLine(prs[0])}`
+      : bests[0]
+        ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg`
+        : null,
     t("share.tracked"),
   ]
     .filter(Boolean)
     .join("\n");
-
-  const onShare = async () => {
-    // Prefer a rendered image card; fall back to text if capture/sharing is unavailable.
-    try {
-      if (cardRef.current) {
-        const uri = await captureRef(cardRef, { format: "png", quality: 1, result: "tmpfile" });
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: t("summary.share") });
-          return;
-        }
-      }
-    } catch {
-      /* fall through to text share */
-    }
-    try {
-      await Share.share({ message: shareText });
-    } catch {
-      /* user dismissed */
-    }
-  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
@@ -417,34 +442,32 @@ function Summary({
           <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>{t("summary.complete")}</Text>
         </View>
 
-        {/* Branded, shareable card — this exact view is captured to a PNG */}
-        <View ref={cardRef} collapsable={false} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 18, padding: 20, marginTop: 12 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, letterSpacing: -1 }}>
-              {brand.name}<Text style={{ color: C.lime }}>.</Text>
+        {/* PR celebration — the reason to keep coming back */}
+        {prs.length > 0 && (
+          <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 16, color: C.lime }}>
+              🏆 {prs.length} {t("summary.newPrs")}
             </Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("welcome.tagline")}</Text>
+            {prs.slice(0, 4).map((p) => (
+              <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>
+                {prLine(p)}
+              </Text>
+            ))}
           </View>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 14 }}>{title || "Workout"}</Text>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
-            <Stat label={t("summary.minutes")} value={String(summary.minutes)} />
-            <Stat label={t("summary.sets")} value={String(summary.sets)} />
-            <Stat label={t("summary.kgMoved")} value={summary.volume.toLocaleString()} />
-          </View>
-          {prs.length > 0 && (
-            <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-              <Kicker>{t("summary.todaysBests")}</Kicker>
-              {prs.slice(0, 4).map((p) => (
-                <View key={p.name} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>{p.name}</Text>
-                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.lime }}>{p.e1rm} kg</Text>
-                </View>
-              ))}
-            </View>
-          )}
+        )}
+
+        <View style={{ marginTop: 14 }}>
+          <WorkoutShareCard
+            ref={cardRef}
+            t={t}
+            stats={{ title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }}
+          />
         </View>
 
-        <Pressable onPress={onShare} style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 14 }}>
+        <Pressable
+          onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
+          style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
+        >
           <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("summary.share")}</Text>
         </Pressable>
 
@@ -528,14 +551,5 @@ function ColHead({ children, w }: { children: React.ReactNode; w?: number }) {
     <Text style={{ flex: w ? undefined : 1, width: w, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>
       {children}
     </Text>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
-    </View>
   );
 }

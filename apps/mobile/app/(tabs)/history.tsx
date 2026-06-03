@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
-import { View, Text } from "react-native";
-import { useFocusEffect } from "expo-router";
-import { sessionVolume, type LoggedSession, type SessionBlock } from "@hybrid/core";
+import { View, Text, Pressable } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { sessionVolume, prsForSession, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Loading, C, F } from "../../lib/ui";
@@ -15,6 +15,7 @@ function summary(b: SessionBlock): string {
 
 export default function History() {
   const { t } = useLang();
+  const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,24 +46,31 @@ export default function History() {
         </Card>
       ) : (
         <View style={{ marginTop: 10 }}>
-          {sessions.map((s) => (
-            <Card key={s.id}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
-                <Mono>{fmt(s.startedAt)}</Mono>
-              </View>
-              <View style={{ flexDirection: "row", gap: 8, marginVertical: 8 }}>
-                <Chip color={C.blue}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
-                <Chip color={C.ash}>{s.blocks.length} blocks</Chip>
-              </View>
-              {s.blocks.map((b, i) => (
-                <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line }}>
-                  <Mono color={C.chalk}>{b.name}</Mono>
-                  <Mono>{summary(b)}</Mono>
-                </View>
-              ))}
-            </Card>
-          ))}
+          {sessions.map((s) => {
+            const prCount = prsForSession(sessions, s.id).length;
+            return (
+              <Pressable key={s.id} onPress={() => router.push(`/session/${s.id}`)}>
+                <Card>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
+                    <Mono>{fmt(s.startedAt)}</Mono>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 8, marginVertical: 8 }}>
+                    <Chip color={C.blue}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
+                    <Chip color={C.ash}>{s.blocks.length} blocks</Chip>
+                    {prCount > 0 && <Chip color={C.lime}>🏆 {prCount} PR</Chip>}
+                  </View>
+                  {s.blocks.map((b, i) => (
+                    <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line }}>
+                      <Mono color={C.chalk}>{b.name}</Mono>
+                      <Mono>{summary(b)}</Mono>
+                    </View>
+                  ))}
+                  <Mono color={C.ash} style={{ marginTop: 8, fontSize: 11 }}>{t("history.tapDetail")}</Mono>
+                </Card>
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </Screen>
