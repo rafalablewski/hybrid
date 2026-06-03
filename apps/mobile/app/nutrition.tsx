@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import {
   todayNutrition,
@@ -48,8 +48,12 @@ export default function Nutrition() {
     push("protein", f.protein, "g");
     push("carbs", f.carbs, "g");
     push("fat", f.fat, "g");
-    await Promise.all(jobs);
-    setF({ kcal: "", protein: "", carbs: "", fat: "" });
+    const results = await Promise.all(jobs);
+    if (results.includes(false)) {
+      Alert.alert("Couldn't save", "Some entries didn't save — check your connection / sign-in, then try again.");
+    } else {
+      setF({ kcal: "", protein: "", carbs: "", fat: "" });
+    }
     setSaving(false);
     load();
   };

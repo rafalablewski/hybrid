@@ -26,12 +26,24 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "asc" },
   });
 
-  const squad = await Promise.all(
-    links.map(async (l) => {
-      const [rows, sigRows] = await Promise.all([
-        prisma.session.findMany({ where: { userId: l.clientId }, orderBy: { startedAt: "desc" }, take: 120 }),
-        prisma.signal.findMany({ where: { userId: l.clientId }, orderBy: { ts: "desc" }, take: 200 }),
-      ]);
+  // Batch both reads across the whole roster (two queries, not 2×N) and group
+  // in-memory — avoids exhausting the connection pool as the roster grows.
+  const clientIds = links.map((l) => l.clientId);
+  const [allRows, allSigRows] = await Promise.all([
+    prisma.session.findMany({ where: { userId: { in: clientIds } }, orderBy: { startedAt: "desc" } }),
+    prisma.signal.findMany({ where: { userId: { in: clientIds } }, orderBy: { ts: "desc" } }),
+  ]);
+  const groupBy = <T extends { userId: string }>(items: T[]) => {
+    const m = new Map<string, T[]>();
+    for (const it of items) { const a = m.get(it.userId); if (a) a.push(it); else m.set(it.userId, [it]); }
+    return m;
+  };
+  const sessionsByUser = groupBy(allRows);
+  const signalsByUser = groupBy(allSigRows);
+
+  const squad = links.map((l) => {
+      const rows = (sessionsByUser.get(l.clientId) ?? []).slice(0, 120); // already desc
+      const sigRows = (signalsByUser.get(l.clientId) ?? []).slice(0, 200);
       const sessions: LoggedSession[] = rows.map((s) => ({
         id: s.id,
         title: s.title,
@@ -67,8 +79,7 @@ export async function GET(request: Request) {
         riskBand: risk.band,
         flagged: risk.flagged[0]?.tissue ?? null,
       };
-    }),
-  );
+  });
 
   // squad summary — what a coach wants at a glance
   const summary = {

@@ -211,10 +211,12 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const assign = async () => {
     const t = templates.find((x) => x.id === assignId);
     if (!t) return;
+    const parsed = assignDate ? new Date(assignDate) : null;
+    if (!parsed || Number.isNaN(parsed.getTime())) return; // ignore a cleared/invalid date
     await fetch(`/api/coach/links/${link.id}/assignments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ templateId: t.id, name: t.name, blocks: t.blocks, date: new Date(assignDate).toISOString() }),
+      body: JSON.stringify({ templateId: t.id, name: t.name, blocks: t.blocks, date: parsed.toISOString() }),
     });
     setAssignId("");
     load();

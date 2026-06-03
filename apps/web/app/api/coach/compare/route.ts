@@ -37,29 +37,32 @@ export async function GET(request: Request) {
     include: { client: { select: { id: true, name: true, email: true } } },
   });
 
-  // Pull each client's sessions once, mapped to the shared LoggedSession shape.
-  const clients = await Promise.all(
-    links.map(async (l) => {
-      const rows = await prisma.session.findMany({
-        where: { userId: l.clientId },
-        orderBy: { startedAt: "desc" },
-        take: 120,
-      });
-      const sessions: LoggedSession[] = rows.map((s) => ({
-        id: s.id,
-        title: s.title,
-        startedAt: s.startedAt.toISOString(),
-        completedAt: s.completedAt ? s.completedAt.toISOString() : null,
-        blocks: s.blocks as unknown as SessionBlock[],
-        readiness: s.readiness,
-      }));
-      return {
-        linkId: l.id,
-        name: l.client.name || l.client.email.split("@")[0],
-        sessions,
-      };
-    }),
-  );
+  // Pull every client's sessions in ONE query (not N) and group in-memory —
+  // avoids an N+1 pattern that would spam the connection pool on big rosters.
+  const clientIds = links.map((l) => l.clientId);
+  const allRows = await prisma.session.findMany({
+    where: { userId: { in: clientIds } },
+    orderBy: { startedAt: "desc" },
+  });
+  const rowsByUser = new Map<string, typeof allRows>();
+  for (const r of allRows) { const a = rowsByUser.get(r.userId); if (a) a.push(r); else rowsByUser.set(r.userId, [r]); }
+
+  const clients = links.map((l) => {
+    const rows = (rowsByUser.get(l.clientId) ?? []).slice(0, 120); // already desc
+    const sessions: LoggedSession[] = rows.map((s) => ({
+      id: s.id,
+      title: s.title,
+      startedAt: s.startedAt.toISOString(),
+      completedAt: s.completedAt ? s.completedAt.toISOString() : null,
+      blocks: s.blocks as unknown as SessionBlock[],
+      readiness: s.readiness,
+    }));
+    return {
+      linkId: l.id,
+      name: l.client.name || l.client.email.split("@")[0],
+      sessions,
+    };
+  });
 
   // Lifts present anywhere across the roster, most-common first.
   const liftCounts = new Map<string, number>();

@@ -70,6 +70,7 @@ export default function Nutrition() {
           body: JSON.stringify({ kind, value: n, unit, source: "manual" }),
         });
         if (res.status === 401) { setError("Sign in to log nutrition (demo mode doesn't persist)."); setSaving(false); return; }
+        if (!res.ok) { setError(`Couldn't save ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
       }
       if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); }
     } catch {
