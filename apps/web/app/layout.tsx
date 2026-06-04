@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   description: brand.tagline,
 };
 
+// Render dynamically so the per-request CSP nonce (set in middleware) is applied
+// to Next's inline scripts. Static prerendering can't carry a per-request nonce,
+// which would make the strict nonce-based script-src block everything. The app
+// is auth-gated and data-driven, so it's request-time anyway.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {

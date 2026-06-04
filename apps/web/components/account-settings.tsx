@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "@/lib/session";
 import { LINE, LIME, CHALK, ASH, RED, INK2, disp, mono, Mono, Card } from "@/lib/ui";
+import MfaSettings from "./account/mfa";
 
 export default function AccountSettings() {
   const { logout } = useSession();
@@ -39,7 +40,9 @@ export default function AccountSettings() {
   return (
     <div style={{ maxWidth: 640 }}>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Settings</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 20 }}>Account &amp; data.</Mono>
+      <Mono s={{ fontSize: 13, display: "block", marginBottom: 20 }}>Account, security &amp; data.</Mono>
+
+      <MfaSettings />
 
       <Card style={{ borderLeft: `3px solid ${RED}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>

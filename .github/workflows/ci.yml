@@ -28,11 +28,30 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Generate the Prisma client BEFORE typecheck so tsc can resolve
+      # @prisma/client's generated types (PrismaClient, User, Role, model
+      # delegates). Only `build` runs prisma generate, but typecheck runs first.
+      - name: Generate Prisma client
+        run: pnpm --filter @hybrid/web db:generate
+
       # tsc across @hybrid/core, @hybrid/web AND @hybrid/mobile — the mobile
       # typecheck is the gap Vercel's web-only build doesn't cover.
       - name: Typecheck
         run: pnpm typecheck
 
-      # @hybrid/core engine unit tests (vitest).
+      # Unit + security tests: @hybrid/core engines + security primitives, and
+      # the @hybrid/web static security scans (auth on every route, admin guard,
+      # token redaction, headers, no committed secrets).
       - name: Test
         run: pnpm test
+
+      # Fail the build on a high/critical CVE in production dependencies.
+      # Dependabot (.github/dependabot.yml) raises the update PRs to fix them.
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high --prod
+
+      # iOS bundle export — proves the Expo app actually bundles (Metro
+      # resolution, native-module + asset registration), which the type-only
+      # check above can't see. No simulator needed.
+      - name: Mobile iOS bundle
+        run: pnpm --filter @hybrid/mobile export:ios

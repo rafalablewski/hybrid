@@ -10,6 +10,7 @@ import {
   type Signal,
 } from "@hybrid/core";
 import { PROVIDER_ENDPOINTS } from "@/lib/connectors";
+import { revealToken } from "@/lib/crypto";
 
 // Pull (or receive) provider data and write it into the Signal ontology.
 //   • WHOOP / Oura  — server fetches recent recovery using the stored token.
@@ -40,7 +41,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
 
     const path = provider === "whoop" ? "/recovery" : "/daily_readiness";
     const res = await fetch(`${ep.apiBase}${path}`, {
-      headers: { Authorization: `Bearer ${conn.accessToken}` },
+      headers: { Authorization: `Bearer ${revealToken(conn.accessToken)}` },
     });
     if (res.status === 401) {
       await prisma.connection.update({ where: { id: conn.id }, data: { status: "error" } });

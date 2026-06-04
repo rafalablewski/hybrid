@@ -15,6 +15,7 @@ import {
   type Signal,
 } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // The AI coach. Builds context from the athlete's REAL sessions + the
@@ -28,6 +29,10 @@ Rules: 2–4 sentences. Lead from the HPI and its limiter. Be concrete about loa
 export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // Expensive (LLM) endpoint — cap per IP to blunt cost-abuse / hammering.
+  const limited = rateLimit(request, { key: "ai-coach", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
 
   const rows = await prisma.session.findMany({
     where: { userId: user.id },
