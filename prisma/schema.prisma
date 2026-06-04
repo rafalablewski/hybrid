@@ -299,9 +299,15 @@ model TalentProfile {
   age        Int
   metrics    Json // { relStrength?, vo2?, durability?, hpi? }
   visibility String   @default("private") // "private" | "discoverable"
+  // Moderation gate: a discoverable profile must be approved before it appears
+  // in discovery. Existing rows default to approved (grandfathered); a new/edited
+  // discoverable profile is set to pending by the API and enters the queue.
+  moderationStatus String  @default("approved") // pending | approved | rejected
+  moderationNote   String?
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([visibility])
+  @@index([moderationStatus])
 }
 
 // A labeled risk outcome — the training signal for the injury calibration.
@@ -502,6 +508,29 @@ model FeatureFlag {
   updatedAt      DateTime @updatedAt
 
   @@index([enabled])
+}
+
+// A user-submitted content report — the second feeder of the admin moderation
+// queue (alongside discoverable talent profiles awaiting approval). Denormalized
+// (no FK relations, like AdminAudit) so it survives a reporter/target delete.
+// Filed by any signed-in user; resolved by a moderator. Server-only reads.
+model Report {
+  id              String    @id @default(cuid())
+  reporterId      String
+  reporterEmail   String
+  targetType      String // "talentProfile" | …
+  targetId        String
+  reason          String // inappropriate | fake | spam | other
+  detail          String?
+  status          String    @default("open") // open | resolved | dismissed
+  resolution      String? // moderator note
+  resolvedById    String?
+  resolvedByEmail String?
+  resolvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([status])
+  @@index([targetType, targetId])
 }
 
 // Append-only record of every privileged action taken in the admin panel.

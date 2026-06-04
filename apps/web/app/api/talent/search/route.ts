@@ -17,8 +17,10 @@ export async function GET(request: Request) {
   const minPct = Number(url.searchParams.get("minPct") ?? 0) || 0;
   const byPotential = url.searchParams.get("byPotential") === "1";
 
+  // Only APPROVED discoverable profiles surface — the moderation gate (a new or
+  // edited discoverable profile sits in the admin queue as "pending" first).
   const profiles = await prisma.talentProfile.findMany({
-    where: { visibility: "discoverable", ...(sport ? { sport } : {}) },
+    where: { visibility: "discoverable", moderationStatus: "approved", ...(sport ? { sport } : {}) },
     include: { user: true },
     take: 200,
   });
@@ -29,6 +31,7 @@ export async function GET(request: Request) {
       if (typeof m !== "number") return null;
       const b = benchmarkMetric(metric, m, { sport: p.sport, sex: p.sex as Sex, age: p.age });
       return {
+        id: p.id,
         name: p.user.name ?? "Athlete",
         sport: p.sport,
         age: p.age,

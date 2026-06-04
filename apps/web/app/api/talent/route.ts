@@ -51,10 +51,15 @@ export async function POST(request: Request) {
   // drop undefined for a clean JSON column
   const clean = Object.fromEntries(Object.entries(metrics).filter(([, v]) => v !== undefined));
 
+  // A discoverable profile enters the moderation queue (pending) on every save,
+  // so edited content is re-reviewed before it surfaces; a private profile needs
+  // no review.
+  const moderationStatus = visibility === "discoverable" ? "pending" : "approved";
+
   const profile = await prisma.talentProfile.upsert({
     where: { userId: user.id },
-    update: { sport: b.sport, sex, age, visibility, metrics: clean },
-    create: { userId: user.id, sport: b.sport, sex, age, visibility, metrics: clean },
+    update: { sport: b.sport, sex, age, visibility, metrics: clean, moderationStatus },
+    create: { userId: user.id, sport: b.sport, sex, age, visibility, metrics: clean, moderationStatus },
   });
   return NextResponse.json({ profile }, { status: 201 });
 }
