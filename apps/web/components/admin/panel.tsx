@@ -10,12 +10,13 @@ import AdminDirectory from "./directory";
 import AdminAnnouncements from "./announcements";
 import AdminExercises from "./exercises";
 import AdminMedia from "./media";
+import AdminTranslations from "./translations";
 import AdminContent from "./content";
 import AdminAuditLog from "./audit";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
 
-type SectionId = "overview" | "users" | "directory" | "announcements" | "exercises" | "media" | "content" | "security" | "audit" | "system";
+type SectionId = "overview" | "users" | "directory" | "announcements" | "exercises" | "media" | "translations" | "content" | "security" | "audit" | "system";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
@@ -24,6 +25,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "announcements", label: "Announcements", icon: "📣", group: "Content" },
   { id: "exercises", label: "Exercise library", icon: "🏋", group: "Content" },
   { id: "media", label: "Media library", icon: "🖼", group: "Content" },
+  { id: "translations", label: "Localization", icon: "🌐", group: "Content" },
   { id: "content", label: "Capabilities & data", icon: "⊞", group: "Content" },
   { id: "security", label: "Security", icon: "🛡", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
@@ -162,6 +164,7 @@ export default function AdminPanel() {
         {section === "announcements" && <AdminAnnouncements />}
         {section === "exercises" && <AdminExercises />}
         {section === "media" && <AdminMedia />}
+        {section === "translations" && <AdminTranslations />}
         {section === "content" && <AdminContent />}
         {section === "security" && <AdminSecurity />}
         {section === "audit" && <AdminAuditLog />}

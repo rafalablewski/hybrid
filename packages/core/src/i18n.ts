@@ -521,3 +521,42 @@ export function makeT(lang: Lang): (key: string) => string {
   return (key: string) =>
     TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.en[key] ?? key;
 }
+
+/** Sparse per-language overrides authored in the admin localization manager and
+ *  layered OVER the shipped strings. Core stays the baseline (works offline);
+ *  this only carries edited/added keys. */
+export type TranslationOverrides = Partial<Record<Lang, Record<string, string>>>;
+
+/** Resolve `key` for `lang` with admin overrides taking precedence, then the
+ *  shipped strings — each tried in the active language first, then English,
+ *  then the key itself. Pass the overrides loaded from /api/translations. With
+ *  no overrides this is identical to makeT, so existing behavior is unchanged. */
+export function makeTWithOverrides(
+  lang: Lang,
+  overrides: TranslationOverrides | undefined,
+): (key: string) => string {
+  if (!overrides) return makeT(lang);
+  return (key: string) =>
+    overrides[lang]?.[key] ??
+    TRANSLATIONS[lang]?.[key] ??
+    overrides.en?.[key] ??
+    TRANSLATIONS.en[key] ??
+    key;
+}
+
+/** Every translation key the app ships, as the union across all languages
+ *  (English is the superset in practice). The order is stable for the admin
+ *  manager's listing. */
+export function allTranslationKeys(): string[] {
+  const seen = new Set<string>();
+  for (const lang of Object.keys(TRANSLATIONS) as Lang[]) {
+    for (const k of Object.keys(TRANSLATIONS[lang])) seen.add(k);
+  }
+  return [...seen].sort();
+}
+
+/** The shipped baseline value for a key in a language (no override, no
+ *  cross-language fallback) — what the manager shows as the source string. */
+export function baselineString(lang: Lang, key: string): string | undefined {
+  return TRANSLATIONS[lang]?.[key];
+}
