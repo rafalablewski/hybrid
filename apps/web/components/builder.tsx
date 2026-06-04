@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
+import { useExercises } from "@/lib/use-exercises";
 
-const CATALOG = ["Back Squat", "Front Squat", "Deadlift", "Bench Press", "Overhead Press", "Barbell Row", "Romanian Deadlift", "Pull-up", "Power Clean"];
+// Baseline names the builder has always offered; the admin-managed library
+// (useExercises) is merged in so authored exercises autocomplete here too.
+const BASE_CATALOG = ["Back Squat", "Front Squat", "Deadlift", "Bench Press", "Overhead Press", "Barbell Row", "Romanian Deadlift", "Pull-up", "Power Clean"];
 type EditableBlock = SessionBlock & { uid: string };
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()));
 const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none" } as const;
@@ -12,6 +15,8 @@ const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
 export default function Builder() {
+  const { catalog: libraryCatalog } = useExercises();
+  const CATALOG = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
   const [name, setName] = useState("New workout");
   const [description, setDescription] = useState("");
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
