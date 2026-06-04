@@ -70,5 +70,9 @@ export function parseAnnouncement(
     out[key] = new Date(b[key] as string);
   }
 
+  // When both are supplied together, the publish window must be valid.
+  if (out.publishAt instanceof Date && out.expiresAt instanceof Date && out.publishAt >= out.expiresAt)
+    return { ok: false, error: "publishAt must be before expiresAt" };
+
   return { ok: true, data: out };
 }
