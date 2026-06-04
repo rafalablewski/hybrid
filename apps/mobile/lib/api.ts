@@ -1,4 +1,4 @@
-import type { LoggedSession } from "@hybrid/core";
+import type { LoggedSession, TranslationOverrides } from "@hybrid/core";
 import { supabase } from "./supabase";
 
 // The mobile client calls the SAME backend the web app uses (Vercel), with the
@@ -10,6 +10,19 @@ async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// Admin localization overrides, layered over the shipped strings. Empty when
+// signed-out / none authored, so the app always falls back to the baseline.
+export async function fetchTranslationOverrides(): Promise<TranslationOverrides> {
+  try {
+    const res = await fetch(`${API_URL}/api/translations`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { overrides?: TranslationOverrides };
+    return data.overrides ?? {};
+  } catch {
+    return {};
+  }
 }
 
 export async function fetchSessions(): Promise<LoggedSession[]> {

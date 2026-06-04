@@ -465,6 +465,26 @@ model MediaAsset {
   @@index([kind])
 }
 
+// Admin-authored localization override (CMS content #4). A SPARSE layer over the
+// shipped TRANSLATIONS in @hybrid/core: one row per (lang, key) an admin edited
+// or added. The clients load these and layer them over the baseline via
+// makeTWithOverrides, so a non-engineer can fix copy or fill a missing PL/DE
+// string without a deploy. Mutations server-only + audited; RLS lets signed-in
+// users read all rows (reference/sql-translation.sql).
+model Translation {
+  id             String   @id @default(cuid())
+  lang           String // en | pl | de
+  key            String // dotted key, e.g. "nav.today"
+  value          String
+  updatedById    String?
+  updatedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([lang, key])
+  @@index([lang])
+}
+
 // Append-only record of every privileged action taken in the admin panel.
 // Written server-side by the /api/admin/* routes (never by a client). Read is
 // admin-only. This is the institutional accountability layer: who did what, to
