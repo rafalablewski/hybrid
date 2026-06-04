@@ -22,7 +22,7 @@ describe("mergeMovements", () => {
     const merged = mergeMovements(MOVEMENTS, [
       { name: "Back Squat", pattern: "squat", muscles: ["quads"], baseLoad: 200, system: null },
     ]);
-    expect(merged["Back Squat"].baseLoad).toBe(200);
+    expect(merged["Back Squat"]?.baseLoad).toBe(200);
   });
 
   it("never lets an alias clobber an existing entry", () => {
@@ -30,7 +30,7 @@ describe("mergeMovements", () => {
       { name: "My Squat", pattern: "squat", muscles: ["quads"], baseLoad: 90, system: null, aliases: ["Back Squat"] },
     ]);
     // the built-in Back Squat survives the alias collision
-    expect(merged["Back Squat"].baseLoad).toBe(100);
+    expect(merged["Back Squat"]?.baseLoad).toBe(100);
   });
 
   it("does not mutate the built-in map", () => {
