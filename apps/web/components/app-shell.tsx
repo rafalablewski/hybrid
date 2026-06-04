@@ -51,6 +51,7 @@ import Builder from "./builder";
 import ForcePlate from "./forceplate";
 import Progress from "./progress";
 import AccountSettings from "./account-settings";
+import AnnouncementBanner from "./announcement-banner";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -274,6 +275,7 @@ export default function AppShell() {
 
       {/* main */}
       <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%" }}>
+        <AnnouncementBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>

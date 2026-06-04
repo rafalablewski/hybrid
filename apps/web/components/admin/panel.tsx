@@ -7,17 +7,19 @@ import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono 
 import AdminOverview from "./overview";
 import AdminUsers from "./users";
 import AdminDirectory from "./directory";
+import AdminAnnouncements from "./announcements";
 import AdminContent from "./content";
 import AdminAuditLog from "./audit";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
 
-type SectionId = "overview" | "users" | "directory" | "content" | "security" | "audit" | "system";
+type SectionId = "overview" | "users" | "directory" | "announcements" | "content" | "security" | "audit" | "system";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
   { id: "users", label: "Users", icon: "⦿", group: "Platform" },
   { id: "directory", label: "Orgs & coaching", icon: "⬡", group: "Platform" },
+  { id: "announcements", label: "Announcements", icon: "📣", group: "Content" },
   { id: "content", label: "Capabilities & data", icon: "⊞", group: "Content" },
   { id: "security", label: "Security", icon: "🛡", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
@@ -153,6 +155,7 @@ export default function AdminPanel() {
         {section === "overview" && <AdminOverview />}
         {section === "users" && <AdminUsers />}
         {section === "directory" && <AdminDirectory />}
+        {section === "announcements" && <AdminAnnouncements />}
         {section === "content" && <AdminContent />}
         {section === "security" && <AdminSecurity />}
         {section === "audit" && <AdminAuditLog />}

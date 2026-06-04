@@ -376,6 +376,28 @@ model Plan {
   detail Json // the PLAN_DETAIL shape from the prototype
 }
 
+// Admin-authored broadcast message surfaced in-app (the first CMS content type).
+// Authored + published from the admin console; read by clients via the API.
+// Mutations are server-only (admin-gated + audited); RLS lets any signed-in user
+// read only PUBLISHED rows (reference/sql-announcement.sql), defense-in-depth.
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  body        String // plain text / light markdown
+  level       String    @default("info") // "info" | "success" | "warning"
+  audience    String    @default("all") // "all" | "coaches" | "clients"
+  status      String    @default("draft") // "draft" | "published" | "archived"
+  pinned      Boolean   @default(false) // show as a dismissible banner
+  publishAt   DateTime? // scheduled go-live; null = live the moment it's published
+  expiresAt   DateTime? // auto-hide after this instant; null = no expiry
+  authorId    String // the admin who created it (no relation — survives user delete)
+  authorEmail String // denormalized for the audit trail / display
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, publishAt])
+}
+
 // Append-only record of every privileged action taken in the admin panel.
 // Written server-side by the /api/admin/* routes (never by a client). Read is
 // admin-only. This is the institutional accountability layer: who did what, to
