@@ -36,3 +36,9 @@ jobs:
       # @hybrid/core engine unit tests (vitest).
       - name: Test
         run: pnpm test
+
+      # iOS bundle export — proves the Expo app actually bundles (Metro
+      # resolution, native-module + asset registration), which the type-only
+      # check above can't see. No simulator needed.
+      - name: Mobile iOS bundle
+        run: pnpm --filter @hybrid/mobile export:ios
