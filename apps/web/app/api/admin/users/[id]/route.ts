@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
+import { evaluateRoleChange, isValidLanguage } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { prisma } from "@/lib/db";
-
-const ROLES: Role[] = ["CLIENT", "COACH", "ADMIN"];
 
 // One user's management record. Counts + memberships + recent-activity summary —
 // NOT the raw private training content. Admin-only.
@@ -87,25 +86,25 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const data: { role?: Role; language?: string; name?: string | null } = {};
 
   if (body.role !== undefined) {
-    const next = body.role.toUpperCase() as Role;
-    if (!ROLES.includes(next)) return NextResponse.json({ error: "invalid role" }, { status: 400 });
-    // Safety rails: don't let an admin demote themselves, and never remove the
-    // last remaining ADMIN (avoids locking the whole org out of the panel).
-    if (next !== "ADMIN" && target.role === "ADMIN") {
-      if (target.id === gate.admin.id)
-        return NextResponse.json({ error: "you cannot remove your own admin role" }, { status: 400 });
-      const admins = await prisma.user.count({ where: { role: "ADMIN" } });
-      if (admins <= 1)
-        return NextResponse.json({ error: "cannot demote the last remaining admin" }, { status: 400 });
-    }
-    data.role = next;
+    // The lockout/escalation rule lives in @hybrid/core (pure + unit-tested).
+    // Only count admins when we're actually demoting one — avoids the query
+    // on every edit.
+    const willDemoteAdmin = target.role === "ADMIN" && body.role.toUpperCase() !== "ADMIN";
+    const totalAdmins = willDemoteAdmin ? await prisma.user.count({ where: { role: "ADMIN" } }) : Infinity;
+    const decision = evaluateRoleChange({
+      currentRole: target.role,
+      requestedRole: body.role,
+      targetIsActor: target.id === gate.admin.id,
+      totalAdmins,
+    });
+    if (!decision.ok) return NextResponse.json({ error: decision.reason }, { status: 400 });
+    data.role = decision.nextRole;
   }
 
   if (body.language !== undefined) {
-    const lang = String(body.language).toLowerCase();
-    if (!["en", "pl", "de"].includes(lang))
+    if (!isValidLanguage(body.language))
       return NextResponse.json({ error: "invalid language" }, { status: 400 });
-    data.language = lang;
+    data.language = body.language;
   }
 
   if (body.name !== undefined) data.name = body.name ? String(body.name).slice(0, 120) : null;

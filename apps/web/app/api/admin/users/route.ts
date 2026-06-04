@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
+import { normalizeRole, clampPage, clampPageSize } from "@hybrid/core";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 
@@ -10,16 +11,16 @@ export async function GET(request: Request) {
   if (gate.error) return gate.error;
 
   const url = new URL(request.url);
-  const q = (url.searchParams.get("q") ?? "").trim();
-  const role = url.searchParams.get("role"); // CLIENT | COACH | ADMIN | null
-  const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
-  const pageSize = Math.min(100, Math.max(5, Number(url.searchParams.get("pageSize") ?? "25") || 25));
+  const q = (url.searchParams.get("q") ?? "").trim().slice(0, 120);
+  const role = normalizeRole(url.searchParams.get("role")); // CLIENT | COACH | ADMIN | null
+  const page = clampPage(url.searchParams.get("page"));
+  const pageSize = clampPageSize(url.searchParams.get("pageSize"));
 
   const where: Prisma.UserWhereInput = {
     ...(q
       ? { OR: [{ email: { contains: q, mode: "insensitive" } }, { name: { contains: q, mode: "insensitive" } }] }
       : {}),
-    ...(role === "CLIENT" || role === "COACH" || role === "ADMIN" ? { role } : {}),
+    ...(role ? { role } : {}),
   };
 
   const [total, users] = await Promise.all([

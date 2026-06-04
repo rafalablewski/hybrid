@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clampPage, clampPageSize } from "@hybrid/core";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 
@@ -10,9 +11,9 @@ export async function GET(request: Request) {
   if (gate.error) return gate.error;
 
   const url = new URL(request.url);
-  const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
-  const pageSize = Math.min(100, Math.max(10, Number(url.searchParams.get("pageSize") ?? "50") || 50));
-  const action = (url.searchParams.get("action") ?? "").trim();
+  const page = clampPage(url.searchParams.get("page"));
+  const pageSize = clampPageSize(url.searchParams.get("pageSize"), 50, 100);
+  const action = (url.searchParams.get("action") ?? "").trim().slice(0, 120);
 
   try {
     const where = action ? { action: { contains: action, mode: "insensitive" as const } } : {};

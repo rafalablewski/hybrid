@@ -12,6 +12,7 @@ export * from "./plans";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./capabilities";
+export * from "./security";
 export * from "./i18n";
 export * from "./biometrics";
 export * from "./connectors";
