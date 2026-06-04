@@ -398,6 +398,45 @@ model Announcement {
   @@index([status, publishAt])
 }
 
+// Admin-managed exercise library (CMS content type #2). A SUPERSET of the core
+// Movement shape: the engine-critical fields (pattern/muscles/baseLoad/system)
+// PLUS authored content (cues, equipment, demo video, aliases). The 9 built-in
+// movements stay in @hybrid/core (engines stay pure); this table holds CUSTOM
+// exercises + overrides, merged over the built-ins by name at read time
+// (mergeMovements). Mutations server-only + audited; RLS lets signed-in users
+// read only PUBLISHED rows (reference/sql-exercise.sql).
+model Exercise {
+  id      String @id @default(cuid())
+  slug    String @unique // stable id, e.g. "back-squat"
+  name    String @unique // display name = the engine key, e.g. "Back Squat"
+
+  // engine-critical (mirror core Movement; validated against the core enums)
+  pattern  String // squat | hinge | push | pull | lunge | carry | core | cond
+  muscles  String[] // MuscleGroup[] (quads/glutes/posterior/back/chest/shoulders/triceps)
+  baseLoad Float? // kg working baseline; null for conditioning
+  system   String? // anaerobic | threshold | aerobic | null
+
+  // CMS content
+  kind        String   @default("strength") // strength | conditioning
+  category    String? // library grouping, e.g. "Lower", "Olympic"
+  equipment   String[] // ["barbell","rack"]
+  aliases     String[] // alternate names → resolve renames + logged free-text
+  description String?
+  cues        String[] // coaching cues
+  videoUrl    String? // demo clip (the blocked video library plugs in here)
+  thumbUrl    String?
+
+  // lifecycle / provenance
+  status      String   @default("published") // draft | published | archived
+  source      String   @default("custom") // builtin | custom
+  authorId    String?
+  authorEmail String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
 // Append-only record of every privileged action taken in the admin panel.
 // Written server-side by the /api/admin/* routes (never by a client). Read is
 // admin-only. This is the institutional accountability layer: who did what, to

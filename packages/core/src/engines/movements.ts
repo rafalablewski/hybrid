@@ -24,3 +24,35 @@ export const MOVEMENTS: Record<string, Movement> = {
   "Easy Run": { pattern: "cond", muscles: ["quads"], baseLoad: null, system: "aerobic" },
   "Mixed Metcon": { pattern: "cond", muscles: ["posterior", "shoulders"], baseLoad: null, system: "anaerobic" },
 };
+
+/** A movement that carries its own display name + alternate names — the shape
+ *  the admin-managed exercise library yields (Exercise rows, minus the CMS-only
+ *  content). Kept here so core stays free of any DB/Prisma dependency. */
+export interface LibraryMovement extends Movement {
+  name: string;
+  aliases?: string[];
+}
+
+/** Fold the admin-authored exercise library over the built-in MOVEMENTS into one
+ *  `Record<string, Movement>` the (pure) engines and pickers consume unchanged.
+ *
+ *  - a custom exercise OVERRIDES a built-in of the same name;
+ *  - each alias resolves to the same Movement, so renamed/free-typed lifts still
+ *    map — but an alias NEVER clobbers a real (built-in or named) entry.
+ *
+ *  Built-ins remain the source of truth in code, so the catalog still works with
+ *  an empty DB and a DB outage degrades gracefully instead of emptying it. */
+export function mergeMovements(
+  builtins: Record<string, Movement>,
+  custom: LibraryMovement[],
+): Record<string, Movement> {
+  const out: Record<string, Movement> = { ...builtins };
+  for (const ex of custom) {
+    const m: Movement = { pattern: ex.pattern, muscles: ex.muscles, baseLoad: ex.baseLoad, system: ex.system };
+    out[ex.name] = m;
+    for (const alias of ex.aliases ?? []) {
+      if (!(alias in out)) out[alias] = m;
+    }
+  }
+  return out;
+}
