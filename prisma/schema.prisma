@@ -56,6 +56,7 @@ model User {
   assignmentsMade Assignment[]     @relation("assignmentCoach")
   coachLinks    CoachLink[]     @relation("asClient")
   clientLinks   CoachLink[]     @relation("asCoach")
+  adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
@@ -373,4 +374,26 @@ model Plan {
   name   String
   level  String
   detail Json // the PLAN_DETAIL shape from the prototype
+}
+
+// Append-only record of every privileged action taken in the admin panel.
+// Written server-side by the /api/admin/* routes (never by a client). Read is
+// admin-only. This is the institutional accountability layer: who did what, to
+// whom, when, and what changed. Never deleted or mutated.
+model AdminAudit {
+  id         String   @id @default(cuid())
+  actor      User     @relation("adminAuditActor", fields: [actorId], references: [id])
+  actorId    String
+  actorEmail String // denormalized so the log survives a user rename/delete
+  action     String // dotted verb, e.g. "user.role.update", "user.view"
+  targetType String? // "user" | "org" | "coachLink" | ...
+  targetId   String? // the affected entity's id
+  summary    String? // human-readable one-liner
+  metadata   Json? // structured before/after + reason
+  ip         String? // best-effort request IP
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

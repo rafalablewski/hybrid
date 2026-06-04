@@ -228,6 +228,28 @@ export default function AppShell() {
               </Mono>
             </div>
           </div>
+          {session.role === "admin" && (
+            <button
+              onClick={() => router.push("/admin")}
+              style={{
+                width: "100%",
+                marginTop: 8,
+                ...cond,
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: ".05em",
+                color: "#0c0d0c",
+                background: AMBER,
+                border: `1px solid ${AMBER}`,
+                borderRadius: 10,
+                padding: "8px 0",
+                cursor: "pointer",
+              }}
+            >
+              Admin console ↗
+            </button>
+          )}
           <button
             onClick={() => {
               logout();

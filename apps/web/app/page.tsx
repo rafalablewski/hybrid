@@ -56,7 +56,7 @@ export default function Landing() {
             Start training →
           </Link>
           <Link
-            href="/login"
+            href="/admin"
             className="rounded-xl border border-line bg-ink2 px-7 py-3.5 font-display font-bold text-chalk transition hover:border-lime"
           >
             Open the admin panel
