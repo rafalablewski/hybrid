@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
-import { evaluateRoleChange, isValidLanguage } from "@hybrid/core";
+import { evaluateRoleChange, isValidLanguage, normalizeRole } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -103,7 +103,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // The lockout/escalation rule lives in @hybrid/core (pure + unit-tested).
     // Only count admins when we're actually demoting one — avoids the query
     // on every edit.
-    const willDemoteAdmin = target.role === "ADMIN" && body.role.toUpperCase() !== "ADMIN";
+    const nextRole = normalizeRole(body.role);
+    const willDemoteAdmin = target.role === "ADMIN" && nextRole !== "ADMIN";
     const totalAdmins = willDemoteAdmin ? await prisma.user.count({ where: { role: "ADMIN" } }) : Infinity;
     const decision = evaluateRoleChange({
       currentRole: target.role,

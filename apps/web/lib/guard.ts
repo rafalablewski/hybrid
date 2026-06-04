@@ -51,11 +51,18 @@ export async function readJsonLimited<T = unknown>(
   }
   const raw = await req.text();
   // Guard against a lying/absent content-length by checking the actual bytes.
-  if (Buffer.byteLength(raw, "utf8") > maxBytes) {
+  // TextEncoder (not Buffer) so the helper stays portable across Edge/runtimes.
+  if (new TextEncoder().encode(raw).length > maxBytes) {
     return { error: NextResponse.json({ error: "payload too large" }, { status: 413 }) };
   }
   try {
-    return { data: (raw ? JSON.parse(raw) : {}) as T };
+    const parsed = raw ? JSON.parse(raw) : {};
+    // Routes destructure fields off this, so reject "null"/arrays/primitives
+    // up front rather than letting a property access throw downstream.
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { error: NextResponse.json({ error: "invalid json object" }, { status: 400 }) };
+    }
+    return { data: parsed as T };
   } catch {
     return { error: NextResponse.json({ error: "invalid json" }, { status: 400 }) };
   }
