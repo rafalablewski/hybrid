@@ -76,6 +76,7 @@ describe("xss: no raw HTML injection", () => {
 
 describe("transport: security headers are configured", () => {
   const cfg = read(join(APP_ROOT, "next.config.ts"));
+  const mw = read(join(APP_ROOT, "middleware.ts"));
   it("next.config sends the baseline headers", () => {
     for (const h of [
       "Strict-Transport-Security",
@@ -83,14 +84,16 @@ describe("transport: security headers are configured", () => {
       "X-Content-Type-Options",
       "Referrer-Policy",
       "Permissions-Policy",
-      "Content-Security-Policy",
     ]) {
       expect(cfg, `missing header ${h}`).toMatch(h);
     }
   });
-  it("the CSP locks down object/base/form/frame and forces https", () => {
+  it("middleware sets a strict, nonce-based CSP", () => {
+    expect(mw).toMatch(/content-security-policy/i);
+    expect(mw).toMatch(/'nonce-/);
+    expect(mw).toMatch(/'strict-dynamic'/);
     for (const d of ["object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "upgrade-insecure-requests"]) {
-      expect(cfg, `missing CSP directive ${d}`).toMatch(d);
+      expect(mw, `missing CSP directive ${d}`).toMatch(d);
     }
   });
 });
