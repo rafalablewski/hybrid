@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, disp, cond, mono, Mono } from "@/lib/ui";
@@ -27,6 +28,51 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  // MFA step-up: set after a password sign-in when a second factor is required.
+  const [mfaStep, setMfaStep] = useState<{ factorId: string; challengeId: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+
+  // After a password sign-in, ask Supabase whether the session must step up to
+  // aal2 (a verified factor exists). If so, challenge it and show the code
+  // prompt. Defensive: any MFA hiccup falls through to a normal sign-in so a
+  // user is never locked out by this check. Returns true if a prompt was shown.
+  const maybeStepUp = async (supabase: ReturnType<typeof createClient>): Promise<boolean> => {
+    try {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (!aal || !stepUpRequired(aal.currentLevel, aal.nextLevel)) return false;
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const totp = factors?.totp?.[0];
+      if (!totp) return false;
+      const { data: ch } = await supabase.auth.mfa.challenge({ factorId: totp.id });
+      if (!ch) return false;
+      setMfaStep({ factorId: totp.id, challengeId: ch.id });
+      setBusy(false);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const verifyMfa = async () => {
+    if (!mfaStep || !isValidTotpCode(mfaCode)) {
+      setError("Enter the 6-digit code from your authenticator.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const supabase = createClient();
+    const { error } = await supabase.auth.mfa.verify({
+      factorId: mfaStep.factorId,
+      challengeId: mfaStep.challengeId,
+      code: mfaCode.trim(),
+    });
+    if (error) {
+      setError(error.message);
+      setBusy(false);
+      return;
+    }
+    router.push("/app");
+  };
 
   // --- DEMO entry (no backend): set a local session and go ---
   const demoEnter = (provider: "apple" | "google" | "email") => {
@@ -98,6 +144,7 @@ export default function LoginPage() {
       setBusy(false);
       return;
     }
+    if (await maybeStepUp(supabase)) return; // a TOTP code is now required
     router.push("/app");
   };
 
@@ -130,6 +177,40 @@ export default function LoginPage() {
           </Mono>
         </div>
 
+        {/* MFA step-up: shown after a password sign-in when 2FA is required */}
+        {mfaStep ? (
+          <>
+            <Mono s={{ fontSize: 13, display: "block", marginBottom: 12, textAlign: "center" }} c={CHALK}>
+              Enter the 6-digit code from your authenticator app.
+            </Mono>
+            <input
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              autoFocus
+              placeholder="000000"
+              style={{ ...inputStyle, fontSize: 20, letterSpacing: ".3em", textAlign: "center" }}
+            />
+            {error && (
+              <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={RED}>
+                {error}
+              </Mono>
+            )}
+            <button
+              disabled={busy || !isValidTotpCode(mfaCode)}
+              onClick={verifyMfa}
+              style={{ ...disp, fontWeight: 800, fontSize: 15, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: "#0c0d0c" }}
+            >
+              {busy ? "…" : "Verify →"}
+            </button>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <Mono s={{ fontSize: 12 }} c={ASH}>← cancel</Mono>
+              </button>
+            </div>
+          </>
+        ) : (
+        <>
         {/* DEMO ONLY: pick which role to sign in as so you can see each surface */}
         {!live && (
           <>
@@ -292,6 +373,8 @@ export default function LoginPage() {
             ? "Real auth · Supabase (Apple · Google · email)."
             : "Demo sign-in. Add Supabase keys to switch on real Apple / Google / email auth."}
         </Mono>
+        </>
+        )}
       </div>
     </div>
   );
