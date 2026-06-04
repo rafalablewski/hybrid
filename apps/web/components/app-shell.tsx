@@ -52,6 +52,7 @@ import ForcePlate from "./forceplate";
 import Progress from "./progress";
 import AccountSettings from "./account-settings";
 import AnnouncementBanner from "./announcement-banner";
+import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRoster } from "@/lib/use-roster";
@@ -113,6 +114,9 @@ export default function AppShell() {
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
   const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
+  // Runtime feature flags — gate nav items + the announcement banner. Fail-open
+  // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
+  const { isEnabled } = useFlags();
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
@@ -170,7 +174,7 @@ export default function AppShell() {
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {NAV.map(([id, l, ic]) => (
+          {NAV.filter(([id]) => isEnabled(`nav.${id}`)).map(([id, l, ic]) => (
             <button
               key={id}
               onClick={() => setScreen(id)}
@@ -275,7 +279,7 @@ export default function AppShell() {
 
       {/* main */}
       <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%" }}>
-        <AnnouncementBanner />
+        {isEnabled("app.announcements") && <AnnouncementBanner />}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
