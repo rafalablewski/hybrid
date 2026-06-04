@@ -31,14 +31,12 @@ import Logger from "./logger";
 import PlansScreen from "./plans";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
-import CapabilitiesScreen from "./capabilities";
 import Connections from "./connections";
 import Performance from "./performance";
 import Org from "./org";
 import VideoScreen from "./video-screen";
 import Competition from "./competition";
 import Talent from "./talent";
-import DataNet from "./datanet";
 import Tactical from "./tactical";
 import Longevity from "./longevity";
 import Velocity from "./velocity";
@@ -90,12 +88,10 @@ const NAV: [string, string, string][] = [
   ["connections", "Connections", "⌁"],
   ["roles", "Roles & access", "⚿"],
   ["settings", "Settings", "⚙"],
-  ["datanet", "Data network", "⊟"],
-  ["capabilities", "Capabilities", "⊞"],
 ];
 
-// admin-only screens
-const ADMIN_ONLY = new Set(["capabilities", "datanet"]);
+// Operator-only tools (Capabilities, Data network) live in the dedicated admin
+// console at /admin, not in the consumer app shell.
 
 type Scope = "athlete" | "coach" | "operator";
 
@@ -173,7 +169,7 @@ export default function AppShell() {
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {NAV.filter(([id]) => !ADMIN_ONLY.has(id) || session.role === "admin").map(([id, l, ic]) => (
+          {NAV.map(([id, l, ic]) => (
             <button
               key={id}
               onClick={() => setScreen(id)}
@@ -446,10 +442,6 @@ export default function AppShell() {
         {screen === "roles" && <RolesScreen />}
 
         {screen === "settings" && <AccountSettings />}
-
-        {screen === "datanet" && session.role === "admin" && <DataNet />}
-
-        {screen === "capabilities" && session.role === "admin" && <CapabilitiesScreen />}
       </main>
     </div>
   );
