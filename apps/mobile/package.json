@@ -17,7 +17,7 @@
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@hybrid/core": "workspace:*",
-    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-async-storage/async-storage": "3.1.1",
     "@supabase/supabase-js": "2.107.0",
     "expo": "~56.0.8",
     "expo-constants": "~56.0.16",
