@@ -485,6 +485,25 @@ model Translation {
   @@index([lang])
 }
 
+// Admin-authored feature-flag override (CMS content #5: runtime config). A
+// SPARSE layer over the FEATURE_FLAGS registry in @hybrid/core — one row per flag
+// an admin toggled / scoped / configured. The clients read the evaluated flags
+// from /api/flags; code gates on them. Mutations server-only + audited; RLS lets
+// signed-in users read all rows (reference/sql-feature-flags.sql).
+model FeatureFlag {
+  id             String   @id @default(cuid())
+  key            String   @unique // matches a FEATURE_FLAGS registry key
+  enabled        Boolean  @default(true)
+  audience       String   @default("all") // all | coaches | clients | admins
+  value          Json? // optional config payload
+  updatedById    String?
+  updatedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([enabled])
+}
+
 // Append-only record of every privileged action taken in the admin panel.
 // Written server-side by the /api/admin/* routes (never by a client). Read is
 // admin-only. This is the institutional accountability layer: who did what, to
