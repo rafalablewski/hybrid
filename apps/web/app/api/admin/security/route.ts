@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SECURITY_CONTROLS, securityPosture } from "@hybrid/core";
 import { requireAdmin } from "@/lib/admin";
+import { isEncryptionConfigured } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 
 // Security posture for the admin /security tab: the canonical control registry
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
     { id: "rt-db", label: "Database reachable", ok: dbOk },
     { id: "rt-audit-table", label: "Audit table present (RLS-locked)", ok: auditTable },
     { id: "rt-auth-env", label: "Auth provider configured", ok: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) },
+    { id: "rt-token-encryption", label: "Token encryption key set", ok: isEncryptionConfigured() },
   ];
 
   return NextResponse.json({

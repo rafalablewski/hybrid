@@ -142,6 +142,37 @@ export function pruneRateStore(store: Map<string, RateState>, now: number = Date
   return removed;
 }
 
+export const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+export type CsrfDecision = { ok: true } | { ok: false; reason: string };
+
+/** CSRF defense for cookie-authenticated requests. Pure + testable.
+ *  Rationale: cookies are attached by the browser automatically, so a
+ *  state-changing request from another origin is the CSRF threat. We require a
+ *  same-origin Origin/Referer for unsafe methods. Bearer-token requests (mobile)
+ *  are exempt — a token is never sent ambiently, so they can't be forged this
+ *  way. Safe methods (GET/HEAD/OPTIONS) pass through. */
+export function csrfCheck(input: {
+  method: string;
+  hasBearer: boolean;
+  origin: string | null;
+  referer: string | null;
+  host: string | null;
+}): CsrfDecision {
+  if (!UNSAFE_METHODS.has(input.method.toUpperCase())) return { ok: true };
+  if (input.hasBearer) return { ok: true };
+  if (!input.host) return { ok: false, reason: "no host" };
+  const source = input.origin ?? input.referer;
+  if (!source) return { ok: false, reason: "missing origin" };
+  let sourceHost: string;
+  try {
+    sourceHost = new URL(source).host;
+  } catch {
+    return { ok: false, reason: "malformed origin" };
+  }
+  return sourceHost === input.host ? { ok: true } : { ok: false, reason: "cross-origin" };
+}
+
 /** True when a request body is within the allowed byte size. A null/absent
  *  content-length is treated as unknown → allowed (the stream read still caps).*/
 export function withinBodyLimit(contentLength: unknown, maxBytes: number): boolean {
@@ -174,20 +205,24 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
   { id: "authn-all-routes", category: "Authentication", severity: "critical", status: "pass", title: "Every API route authenticates", detail: "No /api route is reachable without resolving a real Supabase session; unauthenticated calls get 401. Enforced per-route via getOrCreateDbUser / requireAdmin.", evidence: "web static scan: every route.ts calls an auth helper" },
   { id: "authn-db-role", category: "Authentication", severity: "high", status: "pass", title: "Role sourced from the DB, not the client", detail: "A user's role is read from the User row server-side; auth-metadata role is only ever a creation-time seed. A client cannot self-assert ADMIN.", evidence: "server-auth.ts getOrCreateDbUser" },
   { id: "authn-dual-transport", category: "Authentication", severity: "medium", status: "pass", title: "Cookie + Bearer, both server-verified", detail: "Web sends the session cookie; mobile sends a Bearer access token. Both are verified by Supabase server-side before any row is touched.", evidence: "server-auth.ts" },
+  { id: "authn-mfa", category: "Authentication", severity: "high", status: "todo", title: "Multi-factor authentication", detail: "Supabase supports TOTP MFA, but enrollment + a step-up challenge aren't wired into the sign-in flow yet. High-value for admin accounts especially.", evidence: "Add Supabase MFA enrollment + an AAL2 gate on the admin surface" },
 
   // ---- Authorization ----
   { id: "authz-admin-api", category: "Authorization", severity: "critical", status: "pass", title: "Admin APIs require the ADMIN role", detail: "Every /api/admin/* route starts with requireAdmin() and returns 403 for non-admins. The check is server-side, not UI-gated.", evidence: "web static scan: admin routes import requireAdmin" },
   { id: "authz-admin-page", category: "Authorization", severity: "critical", status: "pass", title: "The /admin surface is server-gated", detail: "app/admin/layout.tsx resolves the user and redirects any non-admin before admin UI or data is sent to the browser.", evidence: "app/admin/layout.tsx getAdmin()" },
   { id: "authz-relationship", category: "Authorization", severity: "high", status: "pass", title: "Coach access is by relationship, not label", detail: "A coach reads a client's data only through an ACTIVE CoachLink (mutual consent); the role label alone grants nothing.", evidence: "coach routes gate on CoachLink status" },
   { id: "authz-last-admin", category: "Authorization", severity: "high", status: "pass", title: "No self-demote / last-admin lockout", detail: "Role changes run through evaluateRoleChange: an admin can't drop their own admin role, and the final admin can't be demoted.", evidence: "security.test.ts evaluateRoleChange" },
+  { id: "authz-csrf", category: "Authorization", severity: "critical", status: "pass", title: "CSRF protection on cookie auth", detail: "Cookie-authenticated state-changing requests (POST/PUT/PATCH/DELETE) must carry a same-origin Origin/Referer; cross-origin forgeries are rejected with 403 in middleware. Bearer-token (mobile) calls are exempt — they can't be ambiently forged.", evidence: "security.test.ts csrfCheck; middleware.ts enforces /api mutations" },
 
   // ---- Data protection / least privilege ----
   { id: "data-token-redaction", category: "Data protection", severity: "critical", status: "pass", title: "Wearable tokens never leave the server", detail: "Connection access/refresh tokens are never selected into an API response; clients see status + provider only.", evidence: "web static scan: no accessToken/refreshToken in responses" },
   { id: "data-admin-aggregates", category: "Data protection", severity: "high", status: "pass", title: "Admins see metadata, not private rows", detail: "Admin endpoints return aggregates, management metadata and activity COUNTS — never another user's raw training/check-in content.", evidence: "admin routes select counts/aggregates only" },
   { id: "data-rls", category: "Data protection", severity: "critical", status: "manual", title: "Row-level security in Postgres", detail: "Per-table RLS (own-rows + relationship policies) ships as reference/sql-*.sql and must be applied in Supabase so the DB enforces isolation even if the API is bypassed.", evidence: "Apply reference/sql-*.sql in the Supabase SQL Editor" },
+  { id: "data-token-encryption", category: "Data protection", severity: "high", status: "manual", title: "Wearable tokens encrypted at rest", detail: "Stored OAuth access/refresh tokens are sealed with AES-256-GCM (per-record IV + auth tag) before they hit the DB and unsealed only to call the provider. Round-trip is unit-tested; it activates once TOKEN_ENCRYPTION_KEY is set (until then tokens are stored as-is, backward-compatibly).", evidence: "lib/crypto.ts (tested); set TOKEN_ENCRYPTION_KEY in the deploy env" },
 
   // ---- Audit & accountability ----
   { id: "audit-trail", category: "Audit & accountability", severity: "high", status: "pass", title: "Privileged actions are audited", detail: "Every admin mutation writes an AdminAudit row (actor, action, target, before/after, IP, timestamp), surfaced in the Audit log.", evidence: "lib/admin.ts audit() on mutations" },
+  { id: "audit-support-reads", category: "Audit & accountability", severity: "medium", status: "pass", title: "Support lookups are logged", detail: "An admin opening an individual user's record writes a user.view audit entry, so 'support access' is accountable rather than silent — matching the stated privacy posture.", evidence: "GET /api/admin/users/[id] calls audit()" },
   { id: "audit-immutable", category: "Audit & accountability", severity: "medium", status: "manual", title: "Audit log is append-only + server-locked", detail: "AdminAudit has no UPDATE/DELETE code path and ships with RLS enabled and zero client policies (server-only). Requires the SQL to be applied.", evidence: "reference/sql-admin-audit.sql" },
 
   // ---- Input validation ----
@@ -217,6 +252,7 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
   { id: "ci-frozen-lockfile", category: "Supply chain", severity: "medium", status: "pass", title: "Reproducible installs in CI", detail: "CI installs with a frozen lockfile so a tampered/loose dependency tree fails the build.", evidence: ".github/workflows/ci.yml --frozen-lockfile" },
   { id: "ci-security-tests", category: "Supply chain", severity: "high", status: "pass", title: "Security tests run in CI", detail: "This control suite (logic + static scans) runs on every PR/push, so a regression that weakens a control turns CI red.", evidence: "security.test.ts + web security scan in CI" },
   { id: "deps-vuln-scan", category: "Supply chain", severity: "medium", status: "pass", title: "Automated dependency CVE scanning", detail: "Dependabot opens weekly update PRs for npm + GitHub Actions, and CI runs a dependency audit that fails the build on a critical advisory.", evidence: ".github/dependabot.yml + the audit step in ci.yml" },
+  { id: "disclosure-policy", category: "Supply chain", severity: "low", status: "pass", title: "Vulnerability disclosure contact", detail: "A machine-readable /.well-known/security.txt (RFC 9116) publishes a security contact so researchers can report issues responsibly.", evidence: "public/.well-known/security.txt" },
 
   // ---- Abuse / availability ----
   { id: "rate-limiting", category: "Abuse & availability", severity: "high", status: "pass", title: "Per-IP / per-route rate limiting", detail: "Sensitive + expensive endpoints (admin mutations, the AI coach) are rate-limited per client IP with a tested fixed-window limiter that returns 429 + Retry-After. In-process today; the limiter is storage-agnostic so a shared Redis/Upstash store drops in for multi-instance enforcement.", evidence: "security.test.ts fixedWindow; lib/guard.ts rateLimit applied to ai-coach + admin user mutation" },

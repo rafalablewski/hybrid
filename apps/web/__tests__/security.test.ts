@@ -95,6 +95,42 @@ describe("transport: security headers are configured", () => {
   });
 });
 
+describe("csrf: cookie mutations are origin-checked", () => {
+  it("middleware enforces csrfCheck on /api", () => {
+    const mw = read(join(APP_ROOT, "middleware.ts"));
+    expect(mw).toMatch(/csrfCheck/);
+    expect(mw).toMatch(/\/api\//);
+  });
+});
+
+describe("accountability: support reads are audited", () => {
+  it("the admin user-detail GET writes an audit entry", () => {
+    const src = read(join(APP_ROOT, "app", "api", "admin", "users", "[id]", "route.ts"));
+    expect(src).toMatch(/audit\(/);
+    expect(src).toMatch(/user\.view/);
+  });
+});
+
+describe("data at rest: wearable tokens are encryptable", () => {
+  it("stored tokens go through protectToken on write", () => {
+    const cb = read(join(APP_ROOT, "app", "api", "connect", "[provider]", "callback", "route.ts"));
+    expect(cb).toMatch(/protectToken\(/);
+    expect(cb).not.toMatch(/accessToken:\s*tok\.access_token\b/); // no raw token stored
+  });
+  it("tokens are decrypted before use, not stored decrypted", () => {
+    const sync = read(join(APP_ROOT, "app", "api", "connect", "[provider]", "sync", "route.ts"));
+    expect(sync).toMatch(/revealToken\(/);
+  });
+});
+
+describe("disclosure: security.txt is published", () => {
+  it("has an RFC 9116 contact + expiry", () => {
+    const txt = read(join(APP_ROOT, "public", ".well-known", "security.txt"));
+    expect(txt).toMatch(/^Contact:/m);
+    expect(txt).toMatch(/^Expires:/m);
+  });
+});
+
 describe("abuse: expensive + privileged writes are rate-limited", () => {
   it("the AI coach endpoint applies a rate limit", () => {
     const src = read(join(APP_ROOT, "app", "api", "ai-coach", "route.ts"));

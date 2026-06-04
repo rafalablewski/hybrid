@@ -46,6 +46,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     select: { startedAt: true, title: true },
   });
 
+  // Support-access accountability: an admin inspecting an individual's record
+  // is logged (not a silent lookup), matching the stated privacy posture.
+  await audit({
+    actor: gate.admin,
+    action: "user.view",
+    targetType: "user",
+    targetId: id,
+    summary: `Viewed ${user.email}`,
+    req: request,
+  });
+
   return NextResponse.json({
     id: user.id,
     email: user.email,

@@ -4,6 +4,7 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { connectorSpec, type ProviderId } from "@hybrid/core";
 import { oauthConfig } from "@/lib/connectors";
+import { protectToken } from "@/lib/crypto";
 
 // OAuth callback: verify state, exchange the code for tokens, and persist the
 // Connection. A follow-up sync pulls history into the Signal ontology.
@@ -47,8 +48,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     where: { userId_provider: { userId: user.id, provider } },
     update: {
       status: "active",
-      accessToken: tok.access_token,
-      refreshToken: tok.refresh_token ?? null,
+      accessToken: protectToken(tok.access_token),
+      refreshToken: protectToken(tok.refresh_token),
       expiresAt: tok.expires_in ? new Date(Date.now() + tok.expires_in * 1000) : null,
       scope: tok.scope ?? cfg.scopes.join(" "),
     },
@@ -56,8 +57,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
       userId: user.id,
       provider,
       status: "active",
-      accessToken: tok.access_token,
-      refreshToken: tok.refresh_token ?? null,
+      accessToken: protectToken(tok.access_token),
+      refreshToken: protectToken(tok.refresh_token),
       expiresAt: tok.expires_in ? new Date(Date.now() + tok.expires_in * 1000) : null,
       scope: tok.scope ?? cfg.scopes.join(" "),
     },

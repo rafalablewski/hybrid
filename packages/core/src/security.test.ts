@@ -10,6 +10,7 @@ import {
   fixedWindow,
   pruneRateStore,
   withinBodyLimit,
+  csrfCheck,
   type RateState,
   SECURITY_CONTROLS,
   securityPosture,
@@ -159,6 +160,33 @@ describe("withinBodyLimit", () => {
   it("rejects oversized", () => {
     expect(withinBodyLimit("1001", 1000)).toBe(false);
     expect(withinBodyLimit(5_000_000, 64_000)).toBe(false);
+  });
+});
+
+describe("csrfCheck", () => {
+  const base = { hasBearer: false, origin: null as string | null, referer: null as string | null, host: "app.hybrid.app" };
+  it("lets safe methods through", () => {
+    expect(csrfCheck({ ...base, method: "GET" }).ok).toBe(true);
+    expect(csrfCheck({ ...base, method: "HEAD" }).ok).toBe(true);
+  });
+  it("exempts Bearer-token (mobile) requests", () => {
+    expect(csrfCheck({ ...base, method: "POST", hasBearer: true }).ok).toBe(true);
+  });
+  it("allows same-origin cookie mutations (Origin)", () => {
+    expect(csrfCheck({ ...base, method: "POST", origin: "https://app.hybrid.app" }).ok).toBe(true);
+  });
+  it("allows same-origin via Referer when Origin is absent", () => {
+    expect(csrfCheck({ ...base, method: "PATCH", referer: "https://app.hybrid.app/admin" }).ok).toBe(true);
+  });
+  it("blocks a cross-origin cookie mutation", () => {
+    const r = csrfCheck({ ...base, method: "POST", origin: "https://evil.example" });
+    expect(r.ok).toBe(false);
+  });
+  it("blocks when no origin/referer is present on a cookie mutation", () => {
+    expect(csrfCheck({ ...base, method: "DELETE" }).ok).toBe(false);
+  });
+  it("rejects a malformed origin", () => {
+    expect(csrfCheck({ ...base, method: "POST", origin: "not-a-url" }).ok).toBe(false);
   });
 });
 

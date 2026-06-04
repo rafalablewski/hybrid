@@ -1,0 +1,9 @@
+# HYBRID — security vulnerability disclosure (RFC 9116)
+# If you believe you've found a security issue, please report it privately to
+# the contact below before any public disclosure. We appreciate responsible
+# disclosure and will respond as quickly as we can.
+
+Contact: mailto:rafal.ablewski95+ai@gmail.com
+Expires: 2027-06-04T00:00:00.000Z
+Preferred-Languages: en, pl, de
+Canonical: https://app.hybrid.app/.well-known/security.txt
