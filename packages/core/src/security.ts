@@ -87,6 +87,71 @@ export function redactSensitive<T>(value: T): T {
 }
 
 // ---------------------------------------------------------------------------
+// Rate limiting (pure, deterministic fixed-window) + body-size guard.
+// ---------------------------------------------------------------------------
+
+export interface RateState {
+  count: number;
+  resetAt: number; // epoch ms when the window rolls over
+}
+
+export interface RateResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  resetAt: number;
+  retryAfterSec: number;
+}
+
+/** Fixed-window rate limit. Pure: it mutates the passed-in store and takes an
+ *  injectable `now`, so it's fully testable and storage-agnostic — back it with
+ *  an in-process Map today, or a shared Redis/Upstash map for multi-instance. */
+export function fixedWindow(
+  store: Map<string, RateState>,
+  key: string,
+  opts: { limit: number; windowMs: number; now?: number },
+): RateResult {
+  const now = opts.now ?? Date.now();
+  const cur = store.get(key);
+  if (!cur || now >= cur.resetAt) {
+    const resetAt = now + opts.windowMs;
+    store.set(key, { count: 1, resetAt });
+    return { allowed: true, limit: opts.limit, remaining: opts.limit - 1, resetAt, retryAfterSec: 0 };
+  }
+  cur.count += 1;
+  const allowed = cur.count <= opts.limit;
+  return {
+    allowed,
+    limit: opts.limit,
+    remaining: Math.max(0, opts.limit - cur.count),
+    resetAt: cur.resetAt,
+    retryAfterSec: allowed ? 0 : Math.max(1, Math.ceil((cur.resetAt - now) / 1000)),
+  };
+}
+
+/** Evict expired entries so an in-process store can't grow unbounded. Returns
+ *  the number removed. Call opportunistically (e.g. 1% of requests). */
+export function pruneRateStore(store: Map<string, RateState>, now: number = Date.now()): number {
+  let removed = 0;
+  for (const [k, v] of store) {
+    if (now >= v.resetAt) {
+      store.delete(k);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+/** True when a request body is within the allowed byte size. A null/absent
+ *  content-length is treated as unknown → allowed (the stream read still caps).*/
+export function withinBodyLimit(contentLength: unknown, maxBytes: number): boolean {
+  if (contentLength === null || contentLength === undefined || contentLength === "") return true;
+  const n = typeof contentLength === "number" ? contentLength : Number(contentLength);
+  if (!Number.isFinite(n)) return true;
+  return n <= maxBytes;
+}
+
+// ---------------------------------------------------------------------------
 // Security control registry.
 // ---------------------------------------------------------------------------
 
@@ -128,7 +193,7 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
   // ---- Input validation ----
   { id: "input-enum-validation", category: "Input validation", severity: "high", status: "pass", title: "Enums are validated, not trusted", detail: "Role and language inputs are normalized against an allow-list before any write; junk is rejected with 400.", evidence: "security.test.ts normalizeRole / isValidLanguage" },
   { id: "input-pagination-clamp", category: "Input validation", severity: "medium", status: "pass", title: "Pagination is clamped", detail: "page/pageSize are clamped to safe bounds so a hostile request can't force an unbounded query.", evidence: "security.test.ts clampPage / clampPageSize" },
-  { id: "input-body-limits", category: "Input validation", severity: "medium", status: "todo", title: "Explicit request body-size limits", detail: "Per-route maximum body sizes / schema validation (e.g. zod) on every POST/PATCH are not yet enforced uniformly.", evidence: "Add a shared body validator + size cap to write routes" },
+  { id: "input-body-limits", category: "Input validation", severity: "medium", status: "pass", title: "Request body-size limits", detail: "Sensitive write routes reject oversized payloads (413) via a shared limit guard, so a giant body can't be used to exhaust memory. withinBodyLimit is unit-tested; schema validation per-route is an ongoing hardening.", evidence: "security.test.ts withinBodyLimit; lib/guard.ts readJsonLimited" },
 
   // ---- Transport & headers ----
   { id: "hdr-hsts", category: "Transport & headers", severity: "high", status: "pass", title: "HSTS forces HTTPS", detail: "Strict-Transport-Security is sent with a long max-age + includeSubDomains so browsers refuse plaintext.", evidence: "web static scan: next.config Strict-Transport-Security" },
@@ -136,7 +201,8 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
   { id: "hdr-nosniff", category: "Transport & headers", severity: "medium", status: "pass", title: "MIME sniffing disabled", detail: "X-Content-Type-Options: nosniff prevents content-type confusion attacks.", evidence: "web static scan: next.config nosniff" },
   { id: "hdr-referrer", category: "Transport & headers", severity: "low", status: "pass", title: "Referrer leakage minimized", detail: "Referrer-Policy: strict-origin-when-cross-origin keeps paths out of cross-site referers.", evidence: "web static scan: next.config Referrer-Policy" },
   { id: "hdr-permissions", category: "Transport & headers", severity: "low", status: "pass", title: "Powerful features locked down", detail: "Permissions-Policy disables camera/microphone/geolocation for the web origin by default.", evidence: "web static scan: next.config Permissions-Policy" },
-  { id: "hdr-csp", category: "Transport & headers", severity: "high", status: "todo", title: "Strict Content-Security-Policy", detail: "A nonce-based CSP isn't deployed yet — the UI relies heavily on inline styles, so a strict policy needs a styling pass first.", evidence: "Introduce a nonce/hash CSP after migrating inline styles" },
+  { id: "hdr-csp-baseline", category: "Transport & headers", severity: "high", status: "pass", title: "CSP baseline (object/base/form lockdown)", detail: "A Content-Security-Policy ships with the non-styling directives that need no nonce: object-src 'none', base-uri 'self', form-action 'self', frame-ancestors 'none', upgrade-insecure-requests — closing data-exfil and injection vectors.", evidence: "web static scan: next.config CSP directives" },
+  { id: "hdr-csp-strict-script", category: "Transport & headers", severity: "high", status: "todo", title: "Strict nonce-based script-src", detail: "A nonce/hash script-src (the strongest XSS defense) isn't deployed yet — it needs a nonce pipeline through Next + a pass over inline styles for style-src.", evidence: "Introduce a per-request nonce in middleware + tighten script-src/style-src" },
 
   // ---- Secrets ----
   { id: "secrets-no-hardcode", category: "Secrets", severity: "critical", status: "pass", title: "No secrets in the source tree", detail: "No private keys / service tokens are committed; secret-looking literals are caught by a scan.", evidence: "web static scan: no hardcoded secret patterns" },
@@ -150,10 +216,10 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
   // ---- Supply chain & process ----
   { id: "ci-frozen-lockfile", category: "Supply chain", severity: "medium", status: "pass", title: "Reproducible installs in CI", detail: "CI installs with a frozen lockfile so a tampered/loose dependency tree fails the build.", evidence: ".github/workflows/ci.yml --frozen-lockfile" },
   { id: "ci-security-tests", category: "Supply chain", severity: "high", status: "pass", title: "Security tests run in CI", detail: "This control suite (logic + static scans) runs on every PR/push, so a regression that weakens a control turns CI red.", evidence: "security.test.ts + web security scan in CI" },
-  { id: "deps-vuln-scan", category: "Supply chain", severity: "medium", status: "todo", title: "Automated dependency CVE scanning", detail: "Dependabot / npm-audit gating on known-vulnerable dependencies isn't wired into CI yet.", evidence: "Enable Dependabot + an audit step in CI" },
+  { id: "deps-vuln-scan", category: "Supply chain", severity: "medium", status: "pass", title: "Automated dependency CVE scanning", detail: "Dependabot opens weekly update PRs for npm + GitHub Actions, and CI runs a dependency audit that fails the build on a critical advisory.", evidence: ".github/dependabot.yml + the audit step in ci.yml" },
 
   // ---- Abuse / availability ----
-  { id: "rate-limiting", category: "Abuse & availability", severity: "high", status: "todo", title: "Per-IP / per-route rate limiting", detail: "Auth and write endpoints aren't rate-limited yet, leaving room for brute-force / abuse at scale.", evidence: "Add edge rate limiting (e.g. Upstash) to auth + write routes" },
+  { id: "rate-limiting", category: "Abuse & availability", severity: "high", status: "pass", title: "Per-IP / per-route rate limiting", detail: "Sensitive + expensive endpoints (admin mutations, the AI coach) are rate-limited per client IP with a tested fixed-window limiter that returns 429 + Retry-After. In-process today; the limiter is storage-agnostic so a shared Redis/Upstash store drops in for multi-instance enforcement.", evidence: "security.test.ts fixedWindow; lib/guard.ts rateLimit applied to ai-coach + admin user mutation" },
 ];
 
 export interface SecurityPosture {

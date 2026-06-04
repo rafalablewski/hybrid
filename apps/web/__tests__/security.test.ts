@@ -75,8 +75,8 @@ describe("xss: no raw HTML injection", () => {
 });
 
 describe("transport: security headers are configured", () => {
+  const cfg = read(join(APP_ROOT, "next.config.ts"));
   it("next.config sends the baseline headers", () => {
-    const cfg = read(join(APP_ROOT, "next.config.ts"));
     for (const h of [
       "Strict-Transport-Security",
       "X-Frame-Options",
@@ -87,6 +87,23 @@ describe("transport: security headers are configured", () => {
     ]) {
       expect(cfg, `missing header ${h}`).toMatch(h);
     }
+  });
+  it("the CSP locks down object/base/form/frame and forces https", () => {
+    for (const d of ["object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'", "upgrade-insecure-requests"]) {
+      expect(cfg, `missing CSP directive ${d}`).toMatch(d);
+    }
+  });
+});
+
+describe("abuse: expensive + privileged writes are rate-limited", () => {
+  it("the AI coach endpoint applies a rate limit", () => {
+    const src = read(join(APP_ROOT, "app", "api", "ai-coach", "route.ts"));
+    expect(src).toMatch(/rateLimit\(/);
+  });
+  it("the admin user mutation applies a rate limit and a body cap", () => {
+    const src = read(join(APP_ROOT, "app", "api", "admin", "users", "[id]", "route.ts"));
+    expect(src).toMatch(/rateLimit\(/);
+    expect(src).toMatch(/readJsonLimited/);
   });
 });
 

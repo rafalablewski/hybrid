@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
 import { evaluateRoleChange, isValidLanguage } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
+import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // One user's management record. Counts + memberships + recent-activity summary —
@@ -72,13 +73,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
+
+  const limited = rateLimit(request, { key: "admin-user-patch", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const { id } = await params;
 
-  const body = (await request.json().catch(() => ({}))) as {
-    role?: string;
-    language?: string;
-    name?: string | null;
-  };
+  const parsed = await readJsonLimited<{ role?: string; language?: string; name?: string | null }>(request, 8 * 1024);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
 
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });

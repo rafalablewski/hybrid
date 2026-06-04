@@ -7,6 +7,10 @@ import {
   clampPageSize,
   evaluateRoleChange,
   redactSensitive,
+  fixedWindow,
+  pruneRateStore,
+  withinBodyLimit,
+  type RateState,
   SECURITY_CONTROLS,
   securityPosture,
   SECURITY_ROLES,
@@ -105,6 +109,56 @@ describe("redactSensitive", () => {
       nested: { refreshToken: "[redacted]", name: "ok", apiKey: "[redacted]" },
       list: [{ password: "[redacted]", email: "e@x.com" }],
     });
+  });
+});
+
+describe("fixedWindow rate limiter", () => {
+  it("allows up to the limit, then blocks within the window", () => {
+    const store = new Map<string, RateState>();
+    const opts = { limit: 3, windowMs: 1000, now: 0 };
+    expect(fixedWindow(store, "ip", opts).allowed).toBe(true);
+    expect(fixedWindow(store, "ip", opts).allowed).toBe(true);
+    const third = fixedWindow(store, "ip", opts);
+    expect(third.allowed).toBe(true);
+    expect(third.remaining).toBe(0);
+    const fourth = fixedWindow(store, "ip", opts);
+    expect(fourth.allowed).toBe(false);
+    expect(fourth.retryAfterSec).toBeGreaterThan(0);
+  });
+  it("resets after the window rolls over", () => {
+    const store = new Map<string, RateState>();
+    fixedWindow(store, "ip", { limit: 1, windowMs: 1000, now: 0 });
+    expect(fixedWindow(store, "ip", { limit: 1, windowMs: 1000, now: 500 }).allowed).toBe(false);
+    expect(fixedWindow(store, "ip", { limit: 1, windowMs: 1000, now: 1000 }).allowed).toBe(true);
+  });
+  it("keys are independent (no cross-IP bleed)", () => {
+    const store = new Map<string, RateState>();
+    const opts = { limit: 1, windowMs: 1000, now: 0 };
+    expect(fixedWindow(store, "a", opts).allowed).toBe(true);
+    expect(fixedWindow(store, "b", opts).allowed).toBe(true);
+    expect(fixedWindow(store, "a", opts).allowed).toBe(false);
+  });
+  it("prunes only expired buckets", () => {
+    const store = new Map<string, RateState>();
+    fixedWindow(store, "old", { limit: 5, windowMs: 100, now: 0 });
+    fixedWindow(store, "new", { limit: 5, windowMs: 10_000, now: 0 });
+    expect(pruneRateStore(store, 1000)).toBe(1);
+    expect(store.has("old")).toBe(false);
+    expect(store.has("new")).toBe(true);
+  });
+});
+
+describe("withinBodyLimit", () => {
+  it("accepts within and absent/unknown length", () => {
+    expect(withinBodyLimit("100", 1000)).toBe(true);
+    expect(withinBodyLimit(1000, 1000)).toBe(true);
+    expect(withinBodyLimit(null, 1000)).toBe(true);
+    expect(withinBodyLimit(undefined, 1000)).toBe(true);
+    expect(withinBodyLimit("not-a-number", 1000)).toBe(true);
+  });
+  it("rejects oversized", () => {
+    expect(withinBodyLimit("1001", 1000)).toBe(false);
+    expect(withinBodyLimit(5_000_000, 64_000)).toBe(false);
   });
 });
 

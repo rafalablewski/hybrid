@@ -1,0 +1,26 @@
+version: 2
+updates:
+  # npm dependencies across the monorepo (pnpm workspaces).
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Batch low-risk updates so the queue stays reviewable.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+      - security
+
+  # Keep the GitHub Actions used in CI patched too.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci

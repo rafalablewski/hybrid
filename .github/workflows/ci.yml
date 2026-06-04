@@ -33,9 +33,16 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # @hybrid/core engine unit tests (vitest).
+      # Unit + security tests: @hybrid/core engines + security primitives, and
+      # the @hybrid/web static security scans (auth on every route, admin guard,
+      # token redaction, headers, no committed secrets).
       - name: Test
         run: pnpm test
+
+      # Fail the build on a high/critical CVE in production dependencies.
+      # Dependabot (.github/dependabot.yml) raises the update PRs to fix them.
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high --prod
 
       # iOS bundle export — proves the Expo app actually bundles (Metro
       # resolution, native-module + asset registration), which the type-only
