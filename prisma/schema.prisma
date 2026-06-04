@@ -437,6 +437,34 @@ model Exercise {
   @@index([status])
 }
 
+// Admin-managed media library (CMS content #3): the shared asset catalog
+// (exercise demo clips, announcement imagery, …). The bytes live in a PUBLIC
+// Supabase Storage bucket "media" (admin-only writes via is_admin() RLS); this
+// table is the catalog — title/alt/tags/lifecycle + the stable public URL other
+// content (an Exercise's videoUrl) points at. Mutations server-only + audited;
+// RLS lets signed-in users read only PUBLISHED rows (reference/sql-media-library.sql).
+model MediaAsset {
+  id          String   @id @default(cuid())
+  path        String   @unique // object path within the media bucket
+  url         String // stable public URL (the bucket is public-read)
+  title       String
+  alt         String? // caption / accessibility text
+  kind        String   @default("image") // image | video | other
+  contentType String?
+  sizeBytes   Int?
+  width       Int?
+  height      Int?
+  tags        String[] // search/filtering
+  status      String   @default("published") // draft | published | archived
+  authorId    String?
+  authorEmail String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([kind])
+}
+
 // Append-only record of every privileged action taken in the admin panel.
 // Written server-side by the /api/admin/* routes (never by a client). Read is
 // admin-only. This is the institutional accountability layer: who did what, to
