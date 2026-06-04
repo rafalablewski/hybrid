@@ -27,6 +27,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const before = await prisma.announcement.findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // Validate the publish window against the effective (post-update) values — a
+  // PATCH may change only one side, so check it against what's already stored.
+  const publishAt = clean.data.publishAt !== undefined ? clean.data.publishAt : before.publishAt;
+  const expiresAt = clean.data.expiresAt !== undefined ? clean.data.expiresAt : before.expiresAt;
+  if (publishAt && expiresAt && publishAt >= expiresAt)
+    return NextResponse.json({ error: "publishAt must be before expiresAt" }, { status: 400 });
+
   const updated = await prisma.announcement.update({ where: { id }, data: clean.data });
 
   await audit({

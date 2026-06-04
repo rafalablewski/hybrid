@@ -111,7 +111,11 @@ export function parseExercise(
     out.thumbUrl = typeof b.thumbUrl === "string" && b.thumbUrl.trim() ? b.thumbUrl.trim().slice(0, 500) : null;
 
   if (b.equipment !== undefined) out.equipment = cleanStringArray(b.equipment, 12, 40);
-  if (b.aliases !== undefined) out.aliases = cleanStringArray(b.aliases, 12, 80);
+  if (b.aliases !== undefined) {
+    const cleaned = cleanStringArray(b.aliases, 12, 80);
+    // an exercise is never its own alias (redundant + breaks resolution)
+    out.aliases = out.name ? cleaned.filter((a) => a !== out.name) : cleaned;
+  }
   if (b.cues !== undefined) out.cues = cleanStringArray(b.cues, 20, 280);
 
   return { ok: true, data: out };

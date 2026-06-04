@@ -28,12 +28,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!before) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const data = { ...clean.data };
+  const currentName = data.name ?? before.name;
 
   // Name-as-key: on rename, preserve the old name as an alias (deduped, and
-  // never aliasing to its own new name) so prior logs keep resolving.
+  // never aliasing to its own current name) so prior logs keep resolving. When
+  // the name is unchanged but aliases were edited, still drop the current name.
   if (data.name && data.name !== before.name) {
     const incoming = data.aliases ?? before.aliases;
-    data.aliases = [...new Set([...incoming, before.name])].filter((a) => a !== data.name);
+    data.aliases = [...new Set([...incoming, before.name])].filter((a) => a !== currentName);
+  } else if (data.aliases) {
+    data.aliases = data.aliases.filter((a) => a !== currentName);
   }
 
   try {

@@ -23,12 +23,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid targetType" }, { status: 400 });
   if (typeof b.targetId !== "string" || !b.targetId.trim())
     return NextResponse.json({ error: "targetId required" }, { status: 400 });
+  const targetId = b.targetId.trim();
   const reason = typeof b.reason === "string" && REASONS.includes(b.reason) ? b.reason : "other";
   const detail = typeof b.detail === "string" ? b.detail.trim().slice(0, 1000) : null;
 
+  // Reject reports against a non-existent target so the queue can't be spammed
+  // with orphaned rows.
+  if (b.targetType === "talentProfile") {
+    const exists = await prisma.talentProfile.findUnique({ where: { id: targetId }, select: { id: true } });
+    if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
+  }
+
   // Collapse duplicate open reports from the same user on the same target.
   const existing = await prisma.report.findFirst({
-    where: { reporterId: user.id, targetType: b.targetType, targetId: b.targetId, status: "open" },
+    where: { reporterId: user.id, targetType: b.targetType, targetId, status: "open" },
   });
   if (existing) return NextResponse.json({ report: existing, deduped: true });
 
@@ -37,7 +45,7 @@ export async function POST(request: Request) {
       reporterId: user.id,
       reporterEmail: user.email,
       targetType: b.targetType,
-      targetId: b.targetId.trim(),
+      targetId,
       reason,
       detail,
     },
