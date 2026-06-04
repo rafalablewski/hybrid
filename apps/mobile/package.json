@@ -17,7 +17,7 @@
     "@expo-google-fonts/archivo": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@hybrid/core": "workspace:*",
-    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-async-storage/async-storage": "3.1.1",
     "@supabase/supabase-js": "2.107.0",
     "expo": "~56.0.8",
     "expo-constants": "~56.0.16",
@@ -35,7 +35,7 @@
     "react-native": "0.85.3",
     "react-native-safe-area-context": "~5.8.0",
     "react-native-screens": "4.25.2",
-    "react-native-url-polyfill": "^2.0.0",
+    "react-native-url-polyfill": "^3.0.0",
     "react-native-view-shot": "5.1.0",
     "react-native-web": "~0.21.0"
   },
@@ -43,6 +43,6 @@
     "@babel/core": "^7.25.0",
     "@types/react": "19.2.16",
     "babel-preset-expo": "~56.0.14",
-    "typescript": "5.9.2"
+    "typescript": "6.0.3"
   }
 }
