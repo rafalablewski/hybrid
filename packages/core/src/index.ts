@@ -12,6 +12,7 @@ export * from "./plans";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./capabilities";
+export * from "./economics";
 export * from "./security";
 export * from "./mfa";
 export * from "./i18n";
