@@ -58,22 +58,35 @@ export default function AdminFinancials() {
   const [a, setA] = useState<EconomicAssumptions>(DEFAULT_ASSUMPTIONS);
 
   // Seed the audience inputs from the real platform aggregate (same shape the
-  // Overview screen consumes). Every value stays editable below.
+  // Overview screen consumes). Every value stays editable below. Sanitize the
+  // response: a missing/non-numeric field falls back to a default rather than
+  // poisoning the model with undefined → NaN.
   useEffect(() => {
+    let active = true;
     fetch("/api/admin/stats")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((s: { totalUsers: number; coaches: number }) => {
-        setSeed({ totalUsers: s.totalUsers, coaches: s.coaches });
-        setA((prev) => ({ ...prev, totalUsers: s.totalUsers, coaches: s.coaches }));
+      .then((s) => {
+        if (!active) return;
+        const totalUsers = typeof s?.totalUsers === "number" ? s.totalUsers : DEFAULT_ASSUMPTIONS.totalUsers;
+        const coaches = typeof s?.coaches === "number" ? s.coaches : DEFAULT_ASSUMPTIONS.coaches;
+        setSeed({ totalUsers, coaches });
+        setA((prev) => ({ ...prev, totalUsers, coaches }));
       })
-      .catch(() => setSeedErr(true));
+      .catch(() => {
+        if (active) setSeedErr(true);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const r = useMemo(() => computeEconomics(a), [a]);
 
-  const set = (patch: Partial<EconomicAssumptions>) => {
+  // Accepts a static patch OR a functional updater so nested updates (e.g. the
+  // coachTierMix shares) always merge against the latest state — no stale closures.
+  const set = (patch: Partial<EconomicAssumptions> | ((prev: EconomicAssumptions) => Partial<EconomicAssumptions>)) => {
     setUseLive(false);
-    setA((prev) => ({ ...prev, ...patch }));
+    setA((prev) => ({ ...prev, ...(typeof patch === "function" ? patch(prev) : patch) }));
   };
 
   const reseed = () => {
@@ -226,9 +239,9 @@ export default function AdminFinancials() {
             </Group>
 
             <Group label="Coach seats (mix %)">
-              <Range label="Starter share" value={Math.round(a.coachTierMix.starter * 100)} min={0} max={100} step={5} suffix="%" onChange={(v) => set({ coachTierMix: { ...a.coachTierMix, starter: v / 100 } })} />
-              <Range label="Pro share" value={Math.round(a.coachTierMix.pro * 100)} min={0} max={100} step={5} suffix="%" onChange={(v) => set({ coachTierMix: { ...a.coachTierMix, pro: v / 100 } })} />
-              <Range label="Business share" value={Math.round(a.coachTierMix.business * 100)} min={0} max={100} step={5} suffix="%" onChange={(v) => set({ coachTierMix: { ...a.coachTierMix, business: v / 100 } })} />
+              <Range label="Starter share" value={Math.round(a.coachTierMix.starter * 100)} min={0} max={100} step={5} suffix="%" onChange={(v) => set((prev) => ({ coachTierMix: { ...prev.coachTierMix, starter: v / 100 } }))} />
+              <Range label="Pro share" value={Math.round(a.coachTierMix.pro * 100)} min={0} max={100} step={5} suffix="%" onChange={(v) => set((prev) => ({ coachTierMix: { ...prev.coachTierMix, pro: v / 100 } }))} />
+              <Range label="Business share" value={Math.round(a.coachTierMix.business * 100)} min={0} max={100} step={5} suffix="%" onChange={(v) => set((prev) => ({ coachTierMix: { ...prev.coachTierMix, business: v / 100 } }))} />
             </Group>
 
             <Group label="Org / Enterprise">

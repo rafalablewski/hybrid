@@ -109,6 +109,22 @@ describe("computeEconomics — robustness", () => {
     expect(hi.revenue.total).toBeGreaterThan(lo.revenue.total);
   });
 
+  it("negative inputs never produce negative revenue (guarded like the other streams)", () => {
+    const r = computeEconomics({
+      ...base,
+      coachStarterPrice: -29,
+      coachProPrice: -79,
+      coachBusinessPrice: -199,
+      proPriceMonthly: -10,
+      orgAthletes: 100,
+      orgPricePerAthleteYear: -60,
+    });
+    expect(r.revenue.coach).toBe(0);
+    expect(r.revenue.b2c).toBeGreaterThanOrEqual(0);
+    expect(r.revenue.org).toBe(0);
+    expect(r.revenue.total).toBeGreaterThanOrEqual(0);
+  });
+
   it("break-even Pro users is a non-negative integer when reachable", () => {
     const r = computeEconomics(base);
     expect(Number.isInteger(r.breakEvenProUsers)).toBe(true);

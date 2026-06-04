@@ -271,9 +271,9 @@ export function computeEconomics(a: EconomicAssumptions): EconomicResult {
   const mix = a.coachTierMix;
   const coachRev =
     coaches *
-    (Math.max(0, mix.starter) * a.coachStarterPrice +
-      Math.max(0, mix.pro) * a.coachProPrice +
-      Math.max(0, mix.business) * a.coachBusinessPrice);
+    (Math.max(0, mix.starter) * Math.max(0, a.coachStarterPrice) +
+      Math.max(0, mix.pro) * Math.max(0, a.coachProPrice) +
+      Math.max(0, mix.business) * Math.max(0, a.coachBusinessPrice));
 
   // --- Org: per-athlete annual contracts, expressed monthly ---
   const org = (Math.max(0, a.orgAthletes) * Math.max(0, a.orgPricePerAthleteYear)) / 12;
