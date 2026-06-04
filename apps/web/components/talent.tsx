@@ -6,8 +6,8 @@ import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/c
 
 type Bench = { metric: BenchmarkMetric; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
 type Report = { cohort: { sport: string; sex: string; age: number }; benchmarks: Bench[]; overall: number; potential: number; modelVersion: string };
-type Profile = { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number> } | null;
-type Result = { name: string; sport: string; age: number; sex: string; percentile: number; potential: number };
+type Profile = { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number>; moderationStatus?: string } | null;
+type Result = { id: string; name: string; sport: string; age: number; sex: string; percentile: number; potential: number };
 
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerlifting", "Bodybuilding", "Hybrid"];
 const pctColor = (p: number) => (p >= 90 ? LIME : p >= 70 ? BLUE : p >= 40 ? AMBER : ASH);
@@ -68,6 +68,18 @@ export default function Talent() {
     if (res.ok) setResults(((await res.json()) as { results: Result[] }).results);
   };
 
+  // Flag a discoverable profile for the moderation queue.
+  const flagProfile = async (id: string) => {
+    const reason = prompt("Report this profile — reason? (inappropriate / fake / spam / other)", "inappropriate");
+    if (reason === null) return;
+    await fetch("/api/reports", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ targetType: "talentProfile", targetId: id, reason: reason.trim().toLowerCase() }),
+    });
+    alert("Thanks — our team will review it.");
+  };
+
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
@@ -103,6 +115,16 @@ export default function Talent() {
             <input type="checkbox" checked={form.visibility === "discoverable"} onChange={(e) => setForm({ ...form, visibility: e.target.checked ? "discoverable" : "private" })} />
             <Mono s={{ fontSize: 12 }} c={form.visibility === "discoverable" ? LIME : ASH}>Discoverable by clubs &amp; federations</Mono>
           </label>
+          {profile?.visibility === "discoverable" && profile?.moderationStatus === "pending" && (
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={AMBER}>
+              ⏳ Pending review — your profile appears in discovery once a moderator approves it.
+            </Mono>
+          )}
+          {profile?.moderationStatus === "rejected" && (
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={ASH}>
+              This profile was not approved for discovery. Edit and re-save to request another review.
+            </Mono>
+          )}
           <button onClick={save} style={{ ...btn, marginTop: 12 }}>Save profile</button>
         </Card>
 
@@ -155,9 +177,16 @@ export default function Talent() {
           {results.map((r, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
               <Mono s={{ fontSize: 13 }} c={CHALK}>{r.name} · {r.sport} · {r.sex}{r.age}</Mono>
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <Chip c={pctColor(r.percentile)}>{r.percentile}th</Chip>
                 {r.potential > r.percentile && <Chip c={VIOLET}>{r.potential}th pot.</Chip>}
+                <button
+                  onClick={() => flagProfile(r.id)}
+                  title="Report this profile"
+                  style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: 14, padding: "2px 4px" }}
+                >
+                  ⚑
+                </button>
               </div>
             </div>
           ))}
