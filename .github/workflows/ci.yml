@@ -28,6 +28,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Generate the Prisma client BEFORE typecheck so tsc can resolve
+      # @prisma/client's generated types (PrismaClient, User, Role, model
+      # delegates). Only `build` runs prisma generate, but typecheck runs first.
+      - name: Generate Prisma client
+        run: pnpm --filter @hybrid/web db:generate
+
       # tsc across @hybrid/core, @hybrid/web AND @hybrid/mobile — the mobile
       # typecheck is the gap Vercel's web-only build doesn't cover.
       - name: Typecheck
