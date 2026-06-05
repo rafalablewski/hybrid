@@ -12,8 +12,6 @@ import {
   velocityProfiles,
   toTrainingLog,
   weeklyRecap,
-  SAMPLE_TRAINING_LOG,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
   type Biometrics,
 } from "@hybrid/core";
@@ -45,12 +43,12 @@ export default function Today({
   bio?: Biometrics;
   onStart: () => void;
 }) {
-  const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
+  const log = toTrainingLog(sessions);
   const rx = useMemo(
-    () => prescribeSession(log, bio ?? SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) }),
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
     [log, bio, sessions],
   );
-  const state = useMemo(() => computePerformanceState(log, bio ?? SAMPLE_BIOMETRICS), [log, bio]);
+  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions), [sessions]);

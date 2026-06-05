@@ -8,8 +8,6 @@ import {
   toTrainingLog,
   velocityProfiles,
   sessionVolume,
-  SAMPLE_TRAINING_LOG,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
   type Signal,
@@ -62,9 +60,9 @@ export async function POST(request: Request) {
     source: r.source,
     ts: r.ts.toISOString(),
   }));
-  const bio = toBiometrics(coreSignals) ?? SAMPLE_BIOMETRICS;
+  const bio = toBiometrics(coreSignals) ?? undefined;
 
-  const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
+  const log = toTrainingLog(sessions);
   const rx = prescribeSession(log, bio, { profiles: velocityProfiles(sessions) });
   const state = computePerformanceState(log, bio);
   const risk = computeInjuryRisk(log, bio);

@@ -5,8 +5,6 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
-  SAMPLE_TRAINING_LOG,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
@@ -26,7 +24,7 @@ export default function Train() {
 
   const rx = useMemo(
     () =>
-      prescribeSession(sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS, {
+      prescribeSession(toTrainingLog(sessions), undefined, {
         profiles: velocityProfiles(sessions),
       }),
     [sessions],

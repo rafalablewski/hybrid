@@ -48,6 +48,10 @@ export default function Nutrition() {
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(signals), [signals]);
+  // Targets are only shown once we can estimate maintenance from the athlete's
+  // own data (a weigh-in or enough intake history). Otherwise we'd be showing a
+  // population default dressed up as a personal target — so we prompt instead.
+  const personalized = maint.kcal != null;
 
   const add = async () => {
     setSaving(true);
@@ -97,16 +101,34 @@ export default function Nutrition() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <ChartFrame title="Today vs adaptive target" kicker="macros" c={LIME}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Bar label="Energy" cur={today.kcal} target={targets.kcal} unit="kcal" color={LIME} />
-            <Bar label="Protein" cur={today.protein} target={targets.protein} unit="g" color={VIOLET} />
-            <Bar label="Carbs" cur={today.carbs} target={targets.carbs} unit="g" color={BLUE} />
-            <Bar label="Fat" cur={today.fat} target={targets.fat} unit="g" color={AMBER} />
-          </div>
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 14, lineHeight: 1.5 }}>
-            Maintenance ≈ {maint.kcal ?? "—"} kcal · {targets.basis}
-            {maint.weightChangeKg != null ? ` · weight trend ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
-          </Mono>
+          {personalized ? (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <Bar label="Energy" cur={today.kcal} target={targets.kcal} unit="kcal" color={LIME} />
+                <Bar label="Protein" cur={today.protein} target={targets.protein} unit="g" color={VIOLET} />
+                <Bar label="Carbs" cur={today.carbs} target={targets.carbs} unit="g" color={BLUE} />
+                <Bar label="Fat" cur={today.fat} target={targets.fat} unit="g" color={AMBER} />
+              </div>
+              <Mono s={{ fontSize: 11, display: "block", marginTop: 14, lineHeight: 1.5 }}>
+                Maintenance ≈ {maint.kcal} kcal · {targets.basis}
+                {maint.weightChangeKg != null ? ` · weight trend ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+              </Mono>
+            </>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+                Your targets adapt to you — they&apos;re not pre-set. Add a weigh-in (in a weekly
+                check-in) and log a few days of intake, and we&apos;ll estimate your maintenance from
+                your own energy balance and set goal-aware macros.
+              </Mono>
+              <div style={{ display: "flex", gap: 18 }}>
+                <Today2 label="Logged today" value={`${Math.round(today.kcal)} kcal`} />
+                <Today2 label="Protein" value={`${Math.round(today.protein)}g`} />
+                <Today2 label="Carbs" value={`${Math.round(today.carbs)}g`} />
+                <Today2 label="Fat" value={`${Math.round(today.fat)}g`} />
+              </div>
+            </div>
+          )}
         </ChartFrame>
 
         <ChartFrame title="Add to today" kicker="manual macros" c={VIOLET}>
@@ -182,6 +204,15 @@ function Bar({ label, cur, target, unit, color }: { label: string; cur: number; 
       <div style={{ height: 8, borderRadius: 4, background: INK2, overflow: "hidden" }}>
         <div style={{ width: `${pct * 100}%`, height: 8, background: over ? RED : color }} />
       </div>
+    </div>
+  );
+}
+
+function Today2({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: CHALK }}>{value}</div>
+      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
 }

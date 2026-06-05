@@ -12,8 +12,6 @@ import {
   newPrsInSession,
   exerciseHistory,
   MOVEMENTS,
-  SAMPLE_TRAINING_LOG,
-  SAMPLE_BIOMETRICS,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
@@ -144,8 +142,8 @@ export default function Workout() {
         }
       } else if (source === "ai") {
         await clearDraft();
-        const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
-        const rx = prescribeSession(log, SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) });
+        const log = toTrainingLog(sessions);
+        const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(sessions) });
         setReadiness(rx.readiness);
         setTitle("AI session");
         setExercises(blocksToExercises(rx.blocks as SessionBlock[]));

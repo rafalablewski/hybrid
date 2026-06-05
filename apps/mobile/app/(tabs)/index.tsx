@@ -10,12 +10,11 @@ import {
   liftNames,
   velocityProfiles,
   toTrainingLog,
+  toBiometrics,
   weeklyRecap,
-  SAMPLE_TRAINING_LOG,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
 } from "@hybrid/core";
-import { fetchSessions, fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
+import { fetchSessions, fetchAssignments, fetchSignals, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
 import { useDraft } from "../../lib/draft";
@@ -35,15 +34,23 @@ export default function Home() {
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchAssignments()])
-      .then(([s, a]) => { setSessions(s); setAssignments(a); })
+    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals()])
+      .then(([s, a, sig]) => { setSessions(s); setAssignments(a); setSignals(sig); })
       .finally(() => setRefreshing(false));
   };
   useEffect(load, []);
+
+  // Real biometrics from the Signal ontology (check-in + wearables) — undefined
+  // when nothing's logged, so readiness/HPI never run on fabricated data.
+  const bio = useMemo(
+    () => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]) ?? undefined,
+    [signals],
+  );
 
   const upcoming = assignments
     .filter((a) => a.status === "assigned")
@@ -51,12 +58,12 @@ export default function Home() {
     .slice(0, 3);
   const markDone = async (id: string) => { await updateAssignment(id, "completed"); load(); };
 
-  const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
+  const log = toTrainingLog(sessions);
   const rx = useMemo(
-    () => prescribeSession(log, SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) }),
-    [log, sessions],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
+    [log, sessions, bio],
   );
-  const state = useMemo(() => computePerformanceState(log, SAMPLE_BIOMETRICS), [log]);
+  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
 
   // Consumer engines run on REAL sessions (empty → honest "getting started").
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
