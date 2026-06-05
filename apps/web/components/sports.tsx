@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
+import { useSessions } from "@/lib/use-sessions";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
 
 const STORE_KEY = "hybrid.sport";
@@ -44,8 +45,10 @@ export default function SportScreen() {
     }
   }, [sport, levelIdx, markers, hydrated]);
 
+  // The athlete's real logged sessions drive the working loads below.
+  const { sessions } = useSessions();
   const meta = SPORTS[sport]!;
-  const rx = prescribeForSport(sport, levelIdx);
+  const rx = prescribeForSport(sport, levelIdx, { sessions });
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -141,10 +144,15 @@ export default function SportScreen() {
         </div>
       </Card>
 
-      {/* prescribed session */}
+      {/* prescribed session — loads driven by the athlete's logged lifts */}
       <Card style={{ borderLeft: `3px solid ${LIME}`, marginBottom: 16 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          Today&apos;s prescribed S&amp;C · {rx.setScheme}
+          Today&apos;s prescribed S&amp;C
+        </Mono>
+        <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>
+          {rx.personalized
+            ? "Working loads computed from your logged lifts."
+            : "Log these lifts and the loads tune to your own numbers."}
         </Mono>
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
           {rx.blocks.map((b) => (
@@ -156,7 +164,12 @@ export default function SportScreen() {
                 <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{b.name}</div>
                 <Mono s={{ fontSize: 11 }} c={AMBER}>{b.demand}</Mono>
               </div>
-              <Chip c={LIME}>{b.scheme}</Chip>
+              <div style={{ textAlign: "right" }}>
+                <Chip c={LIME}>{b.scheme}</Chip>
+                <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>
+                  {b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}
+                </Mono>
+              </div>
             </div>
           ))}
         </div>
