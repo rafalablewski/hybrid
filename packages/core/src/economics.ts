@@ -3,8 +3,19 @@
  *
  * The single source of truth for HOW the app makes money (revenue streams +
  * pricing tiers), WHAT it costs to run (cost drivers / COGS + fixed opex), and a
- * pure `computeEconomics()` that projects MRR/ARR, blended ARPU, gross margin,
- * LTV, CAC payback, LTV:CAC and break-even from a set of editable assumptions.
+ * pure `computeEconomics()` that turns a set of editable assumptions into a full
+ * SaaS picture:
+ *   • revenue (MRR/ARR by stream) + blended ARPU + gross margin / COGS breakdown
+ *   • PER-SEGMENT unit economics (B2C vs coach: ARPU, contribution margin, LTV,
+ *     CAC payback, LTV:CAC) instead of one mushy blended number
+ *   • the SaaS health scorecard investors actually look at — Rule of 40, net &
+ *     gross revenue retention, the SaaS quick ratio, magic number, burn multiple
+ *     and cash runway
+ *   • a 12-month forward projection (MRR trajectory, monthly P&L, cumulative
+ *     cash) with the modeled break-even month and cash-out month
+ *
+ * Plus `METRIC_GUIDE`: a plain-language glossary (what each metric means, the
+ * formula, and the benchmark to beat) so the screen explains itself.
  *
  * Pure + unit-tested. Surfaced in the admin "Financials" screen, seeded from the
  * real /api/admin/stats counts. This is a MODELING tool — live charging is the
@@ -125,6 +136,13 @@ export const COST_DRIVERS: CostDriver[] = [
     note: "Processing on every subscription charge. Applies once `billing` is live — the revenue layer is currently blocked on Stripe keys.",
   },
   {
+    id: "support",
+    label: "Coach success / support",
+    kind: "cogs",
+    rate: "~$3.00 / coach seat / mo",
+    note: "Human time servicing a coach account (onboarding, success, support) beyond the marginal infra their athletes already cost. Scales with the coach base, not the athlete base.",
+  },
+  {
     id: "fixed",
     label: "Fixed opex (base)",
     kind: "fixed",
@@ -169,13 +187,21 @@ export interface EconomicAssumptions {
   aiActivePct: number; // % of totalUsers using the AI coach
   aiCostPerUserMonthly: number; // $/active AI user/mo
   infraCostPerUserMonthly: number; // $/active user/mo
+  coachServiceCostMonthly: number; // $/coach seat/mo (success + support)
   fixedOpexMonthly: number; // $/mo
   stripeFeePct: number; // e.g. 2.9
   stripeFlatPerCharge: number; // e.g. 0.30
 
-  // --- growth / efficiency ---
-  monthlyChurnPct: number; // % of paying base lost per month
-  cac: number; // $ to acquire one paying customer
+  // --- retention & acquisition (per segment — the honest way) ---
+  b2cMonthlyChurnPct: number; // % of Pro base lost per month
+  coachMonthlyChurnPct: number; // % of coach base lost per month
+  b2cCac: number; // $ to acquire one Pro subscriber
+  coachCac: number; // $ to acquire one coach seat
+
+  // --- growth dynamics (drive the forward projection + SaaS ratios) ---
+  monthlyGrowthPct: number; // new logo growth on the paying base, %/mo
+  monthlyExpansionPct: number; // net expansion (upsell/seat growth) on existing MRR, %/mo
+  cashOnHand: number; // $ in the bank — sets the runway
 }
 
 export const DEFAULT_ASSUMPTIONS: EconomicAssumptions = {
@@ -198,13 +224,23 @@ export const DEFAULT_ASSUMPTIONS: EconomicAssumptions = {
   aiActivePct: 15,
   aiCostPerUserMonthly: 2,
   infraCostPerUserMonthly: 0.2,
+  coachServiceCostMonthly: 3,
   fixedOpexMonthly: 600,
   stripeFeePct: 2.9,
   stripeFlatPerCharge: 0.3,
 
-  monthlyChurnPct: 5,
-  cac: 25,
+  b2cMonthlyChurnPct: 6,
+  coachMonthlyChurnPct: 3,
+  b2cCac: 25,
+  coachCac: 180,
+
+  monthlyGrowthPct: 8,
+  monthlyExpansionPct: 1.5,
+  cashOnHand: 50000,
 };
+
+/** Number of months the forward projection runs. */
+export const PROJECTION_MONTHS = 12;
 
 export interface RevenueBreakdown {
   b2c: number;
@@ -217,8 +253,76 @@ export interface CogsBreakdown {
   ai: number;
   infra: number;
   stripe: number;
+  support: number;
   fixed: number;
   total: number;
+}
+
+/** Unit economics for one customer segment (B2C or coach). */
+export interface SegmentEconomics {
+  label: string;
+  /** Paying units in this segment. */
+  payingUnits: number;
+  /** Monthly recurring revenue from the segment. */
+  mrr: number;
+  /** Monthly revenue per paying unit. */
+  arpu: number;
+  /** Contribution margin for the segment, 0..1 (can be negative). */
+  grossMargin: number;
+  /** Monthly churn for the segment, as a fraction. */
+  monthlyChurn: number;
+  /** Cost to acquire one unit. */
+  cac: number;
+  /** Lifetime value: arpu × margin ÷ churn (Infinity at zero churn). */
+  ltv: number;
+  /** Months to recoup CAC from gross-margin dollars (Infinity if never). */
+  cacPaybackMonths: number;
+  /** LTV ÷ CAC (Infinity if CAC is 0). */
+  ltvToCac: number;
+}
+
+/** The SaaS health scorecard — the ratios that read a business at a glance. */
+export interface HealthIndicators {
+  /** Annualized growth of the paying base, %. */
+  annualGrowthRatePct: number;
+  /** Rule of 40: annual growth % + gross margin %. Healthy ≥ 40. */
+  ruleOf40: number;
+  /** Gross revenue retention, annualized %: (1 − churn)¹². */
+  grossRetentionAnnualPct: number;
+  /** Net revenue retention, annualized %: (1 − churn + expansion)¹². */
+  netRetentionAnnualPct: number;
+  /** SaaS quick ratio: (new + expansion MRR) ÷ churned MRR. Healthy ≥ 4. */
+  quickRatio: number;
+  /** Magic number: net-new ARR ÷ S&M spend (CAC × new units). Healthy ≥ 0.75. */
+  magicNumber: number;
+  /** Burn multiple: net burn ÷ net-new MRR. Lower is better (< 1 great). */
+  burnMultiple: number;
+  /** Months of runway at the current burn (Infinity if profitable). */
+  runwayMonths: number;
+  /** First-month net-new MRR (new + expansion − churned). */
+  netNewMrr: number;
+}
+
+/** One month of the forward projection. */
+export interface ForecastPoint {
+  month: number; // 0 = today
+  mrr: number;
+  customers: number;
+  /** Monthly net (revenue − variable COGS − fixed). */
+  profit: number;
+  /** Running cash including the starting balance. */
+  cumulativeCash: number;
+}
+
+export interface ForecastSummary {
+  months: number;
+  endingMrr: number;
+  endingArr: number;
+  /** First month the monthly P&L turns positive (0 = already, null = not within horizon). */
+  breakEvenMonth: number | null;
+  /** First month cumulative cash goes negative (null = never within horizon). */
+  cashOutMonth: number | null;
+  cumulativeCashEnd: number;
 }
 
 export interface EconomicResult {
@@ -236,95 +340,244 @@ export interface EconomicResult {
   grossProfit: number;
   /** grossProfit / revenue.total, 0..1 (0 when no revenue). */
   grossMargin: number;
-  /** Lifetime value: arpu × grossMargin ÷ monthlyChurn. */
+  /** Per-segment unit economics — the honest, un-blended view. */
+  segments: { b2c: SegmentEconomics; coach: SegmentEconomics };
+  /** Blended lifetime value (revenue-weighted across paying segments). */
   ltv: number;
-  /** Months to recoup CAC from gross-margin dollars (Infinity if never). */
+  /** Blended months to recoup CAC from gross-margin dollars (Infinity if never). */
   cacPaybackMonths: number;
-  /** LTV ÷ CAC (Infinity if CAC is 0). */
+  /** Blended LTV ÷ CAC (Infinity if CAC is 0). */
   ltvToCac: number;
   /** Same as grossProfit — the monthly contribution (negative = burn). */
   monthlyContribution: number;
   /** Pro subscribers needed for the whole model to break even (covers fixed). */
   breakEvenProUsers: number;
+  /** The SaaS health scorecard. */
+  health: HealthIndicators;
+  /** 12-month forward trajectory. */
+  projection: ForecastPoint[];
+  projectionSummary: ForecastSummary;
 }
+
+// ----------------------------------------------------------------------------
+// Plain-language glossary (so the screen explains itself)
+// ----------------------------------------------------------------------------
+
+export interface MetricGuide {
+  id: string;
+  label: string;
+  /** What it tells you, in one human sentence. */
+  what: string;
+  /** How it's computed. */
+  formula: string;
+  /** The number to beat. */
+  benchmark: string;
+}
+
+export const METRIC_GUIDE: MetricGuide[] = [
+  { id: "mrr", label: "MRR / ARR", what: "Predictable subscription revenue per month (MRR) and per year (ARR) — the headline size of the business.", formula: "MRR = Σ revenue per stream · ARR = MRR × 12", benchmark: "Grow it; everything else is a ratio on top." },
+  { id: "arpu", label: "Blended ARPU", what: "Average monthly revenue per paying customer across all streams.", formula: "total MRR ÷ paying units", benchmark: "Higher ARPU makes CAC easier to pay back." },
+  { id: "margin", label: "Gross margin", what: "Share of revenue left after the cost to serve (AI, infra, payments, support).", formula: "(revenue − COGS) ÷ revenue", benchmark: "Software SaaS: 75–85%+." },
+  { id: "ltv", label: "LTV", what: "Lifetime gross-profit a customer throws off before they churn.", formula: "ARPU × gross margin ÷ monthly churn", benchmark: "Compare to CAC, not in isolation." },
+  { id: "cac", label: "CAC", what: "Fully-loaded cost to acquire one paying customer.", formula: "sales & marketing ÷ new customers", benchmark: "Lower is better; judge via payback + LTV:CAC." },
+  { id: "payback", label: "CAC payback", what: "Months of gross profit needed to earn back one customer's CAC.", formula: "CAC ÷ (ARPU × gross margin)", benchmark: "< 12 months is healthy." },
+  { id: "ltvcac", label: "LTV : CAC", what: "Return on each acquisition dollar over a customer's life.", formula: "LTV ÷ CAC", benchmark: "≥ 3× healthy; < 1× you lose money per customer." },
+  { id: "ruleof40", label: "Rule of 40", what: "The growth-vs-profit trade-off — fast growth can excuse thin margins, and vice-versa.", formula: "annual growth % + gross margin %", benchmark: "≥ 40 is the bar." },
+  { id: "nrr", label: "Net revenue retention", what: "What last year's customers are worth a year later, including upsell, before any new logos.", formula: "(1 − churn + expansion)¹²", benchmark: "> 100% means you grow even with zero new sales; 110%+ is great." },
+  { id: "grr", label: "Gross revenue retention", what: "Revenue you keep from existing customers — no expansion credit. The pure stickiness number.", formula: "(1 − churn)¹²", benchmark: "> 90% (SMB) to > 95% (enterprise)." },
+  { id: "quickratio", label: "Quick ratio", what: "How fast you add revenue versus how fast you bleed it.", formula: "(new + expansion MRR) ÷ churned MRR", benchmark: "≥ 4 is efficient growth." },
+  { id: "magic", label: "Magic number", what: "Sales efficiency — new ARR generated per dollar of acquisition spend.", formula: "net-new ARR ÷ S&M spend", benchmark: "≥ 0.75 means lean in on spend." },
+  { id: "burnmultiple", label: "Burn multiple", what: "Dollars burned for every dollar of net-new recurring revenue added.", formula: "net burn ÷ net-new MRR", benchmark: "< 1 great · 1–2 ok · > 2 inefficient." },
+  { id: "runway", label: "Runway", what: "Months until the cash runs out at the current burn.", formula: "cash on hand ÷ monthly burn", benchmark: "Raise/cut before it drops under ~6 months." },
+  { id: "breakeven", label: "Break-even", what: "The point the business stops losing money — both as a subscriber count today and as a month in the forecast.", formula: "fixed cost ÷ per-unit contribution", benchmark: "Sooner = less capital needed." },
+];
 
 // ----------------------------------------------------------------------------
 // The calculator
 // ----------------------------------------------------------------------------
 
 const clampPct = (n: number) => Math.max(0, n) / 100;
+const pos = (n: number) => Math.max(0, n);
+
+/** Unit-economics for a single segment from its ARPU, margin, churn and CAC. */
+function segment(
+  label: string,
+  payingUnits: number,
+  mrr: number,
+  arpu: number,
+  grossMargin: number,
+  monthlyChurn: number,
+  cac: number,
+): SegmentEconomics {
+  const marginPerUnit = arpu * grossMargin;
+  const ltv = monthlyChurn > 0 ? (arpu * pos(grossMargin)) / monthlyChurn : Infinity;
+  const cacPaybackMonths = marginPerUnit > 0 ? pos(cac) / marginPerUnit : Infinity;
+  const ltvToCac = cac > 0 ? ltv / cac : Infinity;
+  return { label, payingUnits, mrr, arpu, grossMargin, monthlyChurn, cac, ltv, cacPaybackMonths, ltvToCac };
+}
 
 /**
  * Project the unit economics from a set of assumptions. Pure: same input →
  * same output, never throws, guards every divide.
  */
 export function computeEconomics(a: EconomicAssumptions): EconomicResult {
+  const stripe = clampPct(a.stripeFeePct);
+
   // --- B2C: Pro subscribers, blended monthly across monthly + annual plans ---
-  const proUsers = Math.round(Math.max(0, a.totalUsers) * clampPct(a.proConversionPct));
+  const proUsers = Math.round(pos(a.totalUsers) * clampPct(a.proConversionPct));
   const annualShare = clampPct(a.annualMixPct);
   const proMonthlyRevPerUser =
-    (1 - annualShare) * Math.max(0, a.proPriceMonthly) + annualShare * (Math.max(0, a.proPriceAnnual) / 12);
+    (1 - annualShare) * pos(a.proPriceMonthly) + annualShare * (pos(a.proPriceAnnual) / 12);
   const b2c = proUsers * proMonthlyRevPerUser;
 
   // --- Coaching: split the coach base across the three seat tiers ---
-  const coaches = Math.max(0, a.coaches);
+  const coaches = pos(a.coaches);
   const mix = a.coachTierMix;
-  const coachRev =
-    coaches *
-    (Math.max(0, mix.starter) * Math.max(0, a.coachStarterPrice) +
-      Math.max(0, mix.pro) * Math.max(0, a.coachProPrice) +
-      Math.max(0, mix.business) * Math.max(0, a.coachBusinessPrice));
+  const coachArpu =
+    pos(mix.starter) * pos(a.coachStarterPrice) +
+    pos(mix.pro) * pos(a.coachProPrice) +
+    pos(mix.business) * pos(a.coachBusinessPrice);
+  const coachRev = coaches * coachArpu;
 
   // --- Org: per-athlete annual contracts, expressed monthly ---
-  const org = (Math.max(0, a.orgAthletes) * Math.max(0, a.orgPricePerAthleteYear)) / 12;
+  const org = (pos(a.orgAthletes) * pos(a.orgPricePerAthleteYear)) / 12;
 
   const totalRev = b2c + coachRev + org;
 
   // --- COGS ---
-  const aiUsers = Math.max(0, a.totalUsers) * clampPct(a.aiActivePct);
-  const aiCost = aiUsers * Math.max(0, a.aiCostPerUserMonthly);
-  const infraCost = Math.max(0, a.totalUsers) * Math.max(0, a.infraCostPerUserMonthly);
+  const aiActiveShare = clampPct(a.aiActivePct);
+  const aiUsers = pos(a.totalUsers) * aiActiveShare;
+  const aiCost = aiUsers * pos(a.aiCostPerUserMonthly);
+  const infraCost = pos(a.totalUsers) * pos(a.infraCostPerUserMonthly);
+  const supportCost = coaches * pos(a.coachServiceCostMonthly);
   // Stripe: % of revenue + a flat fee per paying account's monthly charge.
   const payingUnits = proUsers + coaches + (a.orgAthletes > 0 ? 1 : 0);
-  const stripeCost = totalRev * clampPct(a.stripeFeePct) + payingUnits * Math.max(0, a.stripeFlatPerCharge);
-  const fixed = Math.max(0, a.fixedOpexMonthly);
-  const totalCogs = aiCost + infraCost + stripeCost + fixed;
+  const stripeCost = totalRev * stripe + payingUnits * pos(a.stripeFlatPerCharge);
+  const fixed = pos(a.fixedOpexMonthly);
+  const totalCogs = aiCost + infraCost + stripeCost + supportCost + fixed;
 
   const grossProfit = totalRev - totalCogs;
   const grossMargin = totalRev > 0 ? grossProfit / totalRev : 0;
-
   const blendedArpu = payingUnits > 0 ? totalRev / payingUnits : 0;
 
-  // --- LTV / CAC ---
-  const churn = clampPct(a.monthlyChurnPct);
-  const ltv = churn > 0 ? (blendedArpu * Math.max(0, grossMargin)) / churn : Infinity;
-  const marginPerUnit = blendedArpu * grossMargin;
-  const cacPaybackMonths = marginPerUnit > 0 ? Math.max(0, a.cac) / marginPerUnit : Infinity;
-  const ltvToCac = a.cac > 0 ? ltv / a.cac : Infinity;
+  // --- Per-segment unit economics (un-blended) ---
+  // B2C contribution: a Pro user's revenue minus the costs that scale with them.
+  const b2cMarginPerUser =
+    proMonthlyRevPerUser * (1 - stripe) -
+    pos(a.infraCostPerUserMonthly) -
+    aiActiveShare * pos(a.aiCostPerUserMonthly);
+  const b2cMargin = proMonthlyRevPerUser > 0 ? b2cMarginPerUser / proMonthlyRevPerUser : 0;
+  const b2cChurn = clampPct(a.b2cMonthlyChurnPct);
+  const b2cSeg = segment("B2C Pro", proUsers, b2c, proMonthlyRevPerUser, b2cMargin, b2cChurn, pos(a.b2cCac));
+
+  // Coach contribution: seat revenue minus payment fees + the human cost to serve
+  // the account (their athletes' infra/AI is already in the platform COGS above).
+  const coachMarginPerSeat = coachArpu * (1 - stripe) - pos(a.coachServiceCostMonthly);
+  const coachMargin = coachArpu > 0 ? coachMarginPerSeat / coachArpu : 0;
+  const coachChurn = clampPct(a.coachMonthlyChurnPct);
+  const coachSeg = segment("Coach seats", coaches, coachRev, coachArpu, coachMargin, coachChurn, pos(a.coachCac));
+
+  // --- Blended LTV / CAC (revenue-weighted churn, unit-weighted CAC) ---
+  const segRev = b2c + coachRev;
+  const blendedChurn = segRev > 0 ? (b2c * b2cChurn + coachRev * coachChurn) / segRev : 0;
+  const segUnits = proUsers + coaches;
+  const blendedCac = segUnits > 0 ? (proUsers * pos(a.b2cCac) + coaches * pos(a.coachCac)) / segUnits : 0;
+  const ltv = blendedChurn > 0 ? (blendedArpu * pos(grossMargin)) / blendedChurn : Infinity;
+  const blendedMarginPerUnit = blendedArpu * grossMargin;
+  const cacPaybackMonths = blendedMarginPerUnit > 0 ? blendedCac / blendedMarginPerUnit : Infinity;
+  const ltvToCac = blendedCac > 0 ? ltv / blendedCac : Infinity;
 
   // --- Break-even: how many Pro users (holding everything else) clear the loss ---
-  // Per-Pro-user monthly gross contribution, net of stripe % and infra/ai marginal.
-  const perProGross =
-    proMonthlyRevPerUser * (1 - clampPct(a.stripeFeePct)) -
-    Math.max(0, a.infraCostPerUserMonthly) -
-    clampPct(a.aiActivePct) * Math.max(0, a.aiCostPerUserMonthly);
-  // Fixed + the slice of fixed not yet covered by coach/org contribution.
-  const nonProContribution = coachRev * (1 - clampPct(a.stripeFeePct)) + org * (1 - clampPct(a.stripeFeePct));
+  const perProGross = b2cMarginPerUser;
+  const nonProContribution = coachRev * (1 - stripe) - supportCost + org * (1 - stripe);
   const uncovered = fixed - nonProContribution;
   const breakEvenProUsers = perProGross > 0 ? Math.max(0, Math.ceil(uncovered / perProGross)) : Infinity;
+
+  // --- SaaS health scorecard ---
+  const g = clampPct(a.monthlyGrowthPct);
+  const expansion = clampPct(a.monthlyExpansionPct);
+  const annualGrowthRatePct = (Math.pow(1 + g, 12) - 1) * 100;
+  const ruleOf40 = annualGrowthRatePct + grossMargin * 100;
+  const grossRetentionAnnualPct = Math.pow(Math.max(0, 1 - blendedChurn), 12) * 100;
+  const netRetentionAnnualPct = Math.pow(Math.max(0, 1 - blendedChurn + expansion), 12) * 100;
+
+  const newUnits = segUnits * g;
+  const newMrr = newUnits * blendedArpu;
+  const expansionMrr = totalRev * expansion;
+  const churnedMrr = segRev * blendedChurn;
+  const netNewMrr = newMrr + expansionMrr - churnedMrr;
+  const quickRatio = churnedMrr > 0 ? (newMrr + expansionMrr) / churnedMrr : Infinity;
+
+  const sAndM = newUnits * blendedCac;
+  const magicNumber = sAndM > 0 ? (netNewMrr * 12) / sAndM : Infinity;
+
+  const monthlyBurn = grossProfit < 0 ? -grossProfit : 0;
+  const runwayMonths = monthlyBurn > 0 ? pos(a.cashOnHand) / monthlyBurn : Infinity;
+  const burnMultiple = netNewMrr > 0 ? monthlyBurn / netNewMrr : monthlyBurn > 0 ? Infinity : 0;
+
+  const health: HealthIndicators = {
+    annualGrowthRatePct,
+    ruleOf40,
+    grossRetentionAnnualPct,
+    netRetentionAnnualPct,
+    quickRatio,
+    magicNumber,
+    burnMultiple,
+    runwayMonths,
+    netNewMrr,
+  };
+
+  // --- 12-month forward projection ---
+  // MRR compounds at a net monthly multiplier (new logos + expansion − churn);
+  // variable COGS scale with revenue, fixed opex stays put.
+  const variableRatio = totalRev > 0 ? (totalCogs - fixed) / totalRev : 0;
+  const netMult = Math.max(0, 1 + g - blendedChurn + expansion);
+  const customerMult = Math.max(0, 1 + g - blendedChurn);
+
+  const projection: ForecastPoint[] = [];
+  let mrr = totalRev;
+  let customers = payingUnits;
+  let cash = pos(a.cashOnHand);
+  let breakEvenMonth: number | null = grossProfit >= 0 ? 0 : null;
+  let cashOutMonth: number | null = cash < 0 ? 0 : null;
+  projection.push({ month: 0, mrr, customers, profit: grossProfit, cumulativeCash: cash });
+
+  for (let m = 1; m <= PROJECTION_MONTHS; m++) {
+    mrr *= netMult;
+    customers = Math.round(customers * customerMult);
+    const profit = mrr - mrr * variableRatio - fixed;
+    cash += profit;
+    if (breakEvenMonth === null && profit >= 0) breakEvenMonth = m;
+    if (cashOutMonth === null && cash < 0) cashOutMonth = m;
+    projection.push({ month: m, mrr, customers, profit, cumulativeCash: cash });
+  }
+
+  const last = projection[projection.length - 1]!;
+  const projectionSummary: ForecastSummary = {
+    months: PROJECTION_MONTHS,
+    endingMrr: last.mrr,
+    endingArr: last.mrr * 12,
+    breakEvenMonth,
+    cashOutMonth,
+    cumulativeCashEnd: last.cumulativeCash,
+  };
 
   return {
     revenue: { b2c, coach: coachRev, org, total: totalRev },
     arr: totalRev * 12,
     payingUnits,
     blendedArpu,
-    cogs: { ai: aiCost, infra: infraCost, stripe: stripeCost, fixed, total: totalCogs },
+    cogs: { ai: aiCost, infra: infraCost, stripe: stripeCost, support: supportCost, fixed, total: totalCogs },
     grossProfit,
     grossMargin,
+    segments: { b2c: b2cSeg, coach: coachSeg },
     ltv,
     cacPaybackMonths,
     ltvToCac,
     monthlyContribution: grossProfit,
     breakEvenProUsers,
+    health,
+    projection,
+    projectionSummary,
   };
 }

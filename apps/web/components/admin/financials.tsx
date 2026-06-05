@@ -3,21 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
+  ComposedChart,
   BarChart,
   Bar,
+  Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
+  Legend,
   Cell,
 } from "recharts";
 import {
   REVENUE_STREAMS,
   COST_DRIVERS,
+  METRIC_GUIDE,
   DEFAULT_ASSUMPTIONS,
   computeEconomics,
   type EconomicAssumptions,
   type RevenueStreamId,
+  type SegmentEconomics,
 } from "@hybrid/core";
 import {
   LINE,
@@ -47,15 +54,25 @@ const STREAM_COLOR: Record<RevenueStreamId, string> = {
 };
 
 const usd = (n: number) =>
-  n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
-const usdFull = (n: number) =>
-  `$${Math.round(n).toLocaleString()}`;
+  Math.abs(n) >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
+const usdFull = (n: number) => `$${Math.round(n).toLocaleString()}`;
+const pct = (n: number) => `${n.toFixed(0)}%`;
+const x1 = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)}×` : "∞");
+const mo = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)} mo` : "never");
+
+// Three-band judgement → brand color. good ≥ great, warn ≥ ok, else bad.
+const band = (v: number, great: number, ok: number, higherBetter = true) => {
+  if (!Number.isFinite(v)) return higherBetter ? LIME : RED;
+  if (higherBetter) return v >= great ? LIME : v >= ok ? AMBER : RED;
+  return v <= great ? LIME : v <= ok ? AMBER : RED;
+};
 
 export default function AdminFinancials() {
   const [seed, setSeed] = useState<{ totalUsers: number; coaches: number } | null>(null);
   const [seedErr, setSeedErr] = useState(false);
   const [useLive, setUseLive] = useState(true);
   const [a, setA] = useState<EconomicAssumptions>(DEFAULT_ASSUMPTIONS);
+  const [showGlossary, setShowGlossary] = useState(false);
 
   // Seed the audience inputs from the real platform aggregate (same shape the
   // Overview screen consumes). Every value stays editable below. Sanitize the
@@ -104,19 +121,29 @@ export default function AdminFinancials() {
     { name: "Org", v: r.revenue.org, c: STREAM_COLOR.org },
   ];
   const ltvCacOk = Number.isFinite(r.ltvToCac) && r.ltvToCac >= 3;
+  const h = r.health;
+  const ps = r.projectionSummary;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-      <Mono s={{ fontSize: 13, lineHeight: 1.5 }}>
+      <Mono s={{ fontSize: 13, lineHeight: 1.55 }}>
         How HYBRID makes money, what it costs to run, and a live unit-economics
-        model — seeded from real platform counts, every assumption editable. This
-        is a planning tool; live charging is the blocked <strong style={{ color: AMBER }}>billing</strong> capability.
+        model — seeded from real platform counts, every assumption editable. Read
+        it top to bottom: the <strong style={{ color: CHALK }}>headline</strong> sizes the business,{" "}
+        <strong style={{ color: CHALK }}>segments</strong> show which customer actually pays,{" "}
+        the <strong style={{ color: CHALK }}>scorecard</strong> grades growth efficiency, and the{" "}
+        <strong style={{ color: CHALK }}>forecast</strong> projects 12 months of cash. This is a planning
+        tool; live charging is the blocked <strong style={{ color: AMBER }}>billing</strong> capability.{" "}
+        <button onClick={() => setShowGlossary((v) => !v)} style={linkBtn}>
+          {showGlossary ? "Hide" : "What do these terms mean?"}
+        </button>
       </Mono>
+
+      {showGlossary && <Glossary />}
 
       {/* ---- headline ---- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-        <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} c={LIME} />
-        <Stat label="ARR (modeled)" value={usdFull(r.arr)} c={LIME} />
+        <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} sub={`ARR ${usdFull(r.arr)}`} c={LIME} />
         <Stat
           label="Gross margin"
           value={`${Math.round(r.grossMargin * 100)}%`}
@@ -125,9 +152,15 @@ export default function AdminFinancials() {
         />
         <Stat
           label="LTV : CAC"
-          value={Number.isFinite(r.ltvToCac) ? `${r.ltvToCac.toFixed(1)}×` : "∞"}
+          value={x1(r.ltvToCac)}
           sub={ltvCacOk ? "healthy (≥3×)" : "−below 3×"}
           c={ltvCacOk ? LIME : AMBER}
+        />
+        <Stat
+          label="Rule of 40"
+          value={Math.round(h.ruleOf40).toString()}
+          sub={h.ruleOf40 >= 40 ? "passes (≥40)" : "−below 40"}
+          c={band(h.ruleOf40, 40, 25)}
         />
       </div>
 
@@ -138,6 +171,7 @@ export default function AdminFinancials() {
             const color = STREAM_COLOR[stream.id];
             const monthly =
               stream.id === "b2c" ? r.revenue.b2c : stream.id === "coach" ? r.revenue.coach : stream.id === "org" ? r.revenue.org : null;
+            const shareOfMrr = monthly != null && r.revenue.total > 0 ? (monthly / r.revenue.total) * 100 : null;
             return (
               <Card key={stream.id} style={{ borderLeft: `3px solid ${color}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -146,7 +180,9 @@ export default function AdminFinancials() {
                     {stream.future && <span style={{ marginLeft: 8 }}><Chip c={ASH}>Future</Chip></span>}
                   </div>
                   {monthly != null ? (
-                    <Mono s={{ fontSize: 13 }} c={color}>{usdFull(monthly)}/mo modeled</Mono>
+                    <Mono s={{ fontSize: 13 }} c={color}>
+                      {usdFull(monthly)}/mo modeled{shareOfMrr != null ? ` · ${shareOfMrr.toFixed(0)}% of MRR` : ""}
+                    </Mono>
                   ) : (
                     <Mono s={{ fontSize: 12 }} c={ASH}>not in live margin</Mono>
                   )}
@@ -182,7 +218,8 @@ export default function AdminFinancials() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           {COST_DRIVERS.map((c) => {
             const live =
-              c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "fixed" ? r.cogs.fixed : null;
+              c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "support" ? r.cogs.support : c.id === "fixed" ? r.cogs.fixed : null;
+            const shareOfRev = live != null && r.revenue.total > 0 ? (live / r.revenue.total) * 100 : null;
             return (
               <Card key={c.id} style={{ borderLeft: `3px solid ${c.kind === "fixed" ? AMBER : RED}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
@@ -192,7 +229,7 @@ export default function AdminFinancials() {
                 <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={CHALK}>{c.rate}</Mono>
                 {live != null && (
                   <Mono s={{ fontSize: 12, display: "block", marginTop: 2 }} c={ASH}>
-                    ≈ {usdFull(live)}/mo at current model
+                    ≈ {usdFull(live)}/mo{shareOfRev != null ? ` · ${shareOfRev.toFixed(0)}% of revenue` : ""}
                   </Mono>
                 )}
                 <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
@@ -253,13 +290,22 @@ export default function AdminFinancials() {
               <Range label="AI active share" value={a.aiActivePct} min={0} max={100} step={5} suffix="%" onChange={(v) => set({ aiActivePct: v })} />
               <Num label="AI $/active user/mo" value={a.aiCostPerUserMonthly} step={0.5} prefix="$" onChange={(v) => set({ aiCostPerUserMonthly: v })} />
               <Num label="Infra $/user/mo" value={a.infraCostPerUserMonthly} step={0.05} prefix="$" onChange={(v) => set({ infraCostPerUserMonthly: v })} />
+              <Num label="Coach support $/seat/mo" value={a.coachServiceCostMonthly} step={0.5} prefix="$" onChange={(v) => set({ coachServiceCostMonthly: v })} />
               <Num label="Fixed opex /mo" value={a.fixedOpexMonthly} step={50} prefix="$" onChange={(v) => set({ fixedOpexMonthly: v })} />
               <Num label="Stripe fee" value={a.stripeFeePct} step={0.1} suffix="%" onChange={(v) => set({ stripeFeePct: v })} />
             </Group>
 
-            <Group label="Growth & efficiency">
-              <Range label="Monthly churn" value={a.monthlyChurnPct} min={0} max={20} step={0.5} suffix="%" onChange={(v) => set({ monthlyChurnPct: v })} />
-              <Num label="CAC ($/customer)" value={a.cac} step={5} prefix="$" onChange={(v) => set({ cac: v })} />
+            <Group label="Retention & CAC (per segment)">
+              <Range label="B2C churn /mo" value={a.b2cMonthlyChurnPct} min={0} max={20} step={0.5} suffix="%" onChange={(v) => set({ b2cMonthlyChurnPct: v })} />
+              <Range label="Coach churn /mo" value={a.coachMonthlyChurnPct} min={0} max={20} step={0.5} suffix="%" onChange={(v) => set({ coachMonthlyChurnPct: v })} />
+              <Num label="B2C CAC ($/sub)" value={a.b2cCac} step={5} prefix="$" onChange={(v) => set({ b2cCac: v })} />
+              <Num label="Coach CAC ($/seat)" value={a.coachCac} step={10} prefix="$" onChange={(v) => set({ coachCac: v })} />
+            </Group>
+
+            <Group label="Growth & cash">
+              <Range label="New-logo growth /mo" value={a.monthlyGrowthPct} min={0} max={30} step={0.5} suffix="%" onChange={(v) => set({ monthlyGrowthPct: v })} />
+              <Range label="Net expansion /mo" value={a.monthlyExpansionPct} min={0} max={10} step={0.5} suffix="%" onChange={(v) => set({ monthlyExpansionPct: v })} />
+              <Num label="Cash on hand" value={a.cashOnHand} step={5000} prefix="$" onChange={(v) => set({ cashOnHand: v })} />
             </Group>
           </Card>
 
@@ -270,12 +316,12 @@ export default function AdminFinancials() {
               <Stat label="ARR" value={usdFull(r.arr)} c={LIME} />
               <Stat label="Blended ARPU" value={`$${r.blendedArpu.toFixed(2)}`} sub={`${r.payingUnits.toLocaleString()} paying`} c={CHALK} />
               <Stat label="Gross margin" value={`${Math.round(r.grossMargin * 100)}%`} c={r.grossProfit >= 0 ? LIME : RED} />
-              <Stat label="LTV" value={Number.isFinite(r.ltv) ? usdFull(r.ltv) : "∞"} c={VIOLET} />
-              <Stat label="CAC payback" value={Number.isFinite(r.cacPaybackMonths) ? `${r.cacPaybackMonths.toFixed(1)} mo` : "never"} c={Number.isFinite(r.cacPaybackMonths) && r.cacPaybackMonths <= 12 ? LIME : AMBER} />
+              <Stat label="Blended LTV" value={Number.isFinite(r.ltv) ? usdFull(r.ltv) : "∞"} c={VIOLET} />
+              <Stat label="CAC payback" value={mo(r.cacPaybackMonths)} c={Number.isFinite(r.cacPaybackMonths) && r.cacPaybackMonths <= 12 ? LIME : AMBER} />
             </div>
 
             <ChartFrame title="Revenue by stream" kicker="Modeled MRR" c={LIME}>
-              <ResponsiveContainer width="100%" height={170}>
+              <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={revChart}>
                   <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
                   <XAxis dataKey="name" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
@@ -298,9 +344,10 @@ export default function AdminFinancials() {
               <PnL k="AI (Anthropic)" v={`−${usdFull(r.cogs.ai)}`} />
               <PnL k="Infra (Supabase + Vercel)" v={`−${usdFull(r.cogs.infra)}`} />
               <PnL k="Stripe fees" v={`−${usdFull(r.cogs.stripe)}`} />
+              <PnL k="Coach success / support" v={`−${usdFull(r.cogs.support)}`} />
               <PnL k="Fixed opex" v={`−${usdFull(r.cogs.fixed)}`} />
               <PnL k={r.grossProfit >= 0 ? "Contribution" : "Burn"} v={`${r.grossProfit >= 0 ? "" : "−"}${usdFull(Math.abs(r.grossProfit))}`} c={r.grossProfit >= 0 ? LIME : RED} bold />
-              <Mono s={{ fontSize: 11.5, display: "block", marginTop: 10 }} c={ASH}>
+              <Mono s={{ fontSize: 11.5, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
                 Break-even at{" "}
                 <span style={{ color: CHALK }}>
                   {Number.isFinite(r.breakEvenProUsers) ? `${r.breakEvenProUsers.toLocaleString()} Pro subscribers` : "— (Pro contribution ≤ 0)"}
@@ -311,7 +358,217 @@ export default function AdminFinancials() {
           </div>
         </div>
       </Section>
+
+      {/* ---- segment economics ---- */}
+      <Section title="Unit economics by segment" kicker="Who actually pays the bills — B2C vs coach, un-blended">
+        <Mono s={{ fontSize: 12.5, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
+          A blended LTV hides the truth. A coach seat costs more to win but is stickier and
+          worth far more than a consumer sub — these cards price each segment on its own
+          ARPU, contribution margin, churn and CAC. The bar on each metric is{" "}
+          <span style={{ color: LIME }}>green</span> when it clears the healthy benchmark.
+        </Mono>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          <SegmentCard seg={r.segments.b2c} color={LIME} />
+          <SegmentCard seg={r.segments.coach} color={VIOLET} />
+        </div>
+      </Section>
+
+      {/* ---- SaaS health scorecard ---- */}
+      <Section title="SaaS health scorecard" kicker="The efficiency ratios investors read first">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <Indicator
+            label="Rule of 40"
+            value={Math.round(h.ruleOf40).toString()}
+            c={band(h.ruleOf40, 40, 25)}
+            note={`${Math.round(h.annualGrowthRatePct)}% growth + ${Math.round(r.grossMargin * 100)}% margin`}
+            says="Fast growth can excuse thin margins and vice-versa. Pass the bar at 40."
+          />
+          <Indicator
+            label="Net revenue retention"
+            value={pct(h.netRetentionAnnualPct)}
+            c={band(h.netRetentionAnnualPct, 110, 100)}
+            note="annualized, incl. expansion"
+            says=">100% means the existing base grows by itself, before any new sales."
+          />
+          <Indicator
+            label="Gross revenue retention"
+            value={pct(h.grossRetentionAnnualPct)}
+            c={band(h.grossRetentionAnnualPct, 90, 80)}
+            note="annualized, no expansion"
+            says="Pure stickiness — the revenue you keep with zero upsell credit."
+          />
+          <Indicator
+            label="Quick ratio"
+            value={x1(h.quickRatio)}
+            c={band(h.quickRatio, 4, 2)}
+            note={`+${usdFull(h.netNewMrr)}/mo net-new`}
+            says="Revenue added vs. revenue lost. ≥4× is efficient growth."
+          />
+          <Indicator
+            label="Magic number"
+            value={x1(h.magicNumber)}
+            c={band(h.magicNumber, 0.75, 0.5)}
+            note="new ARR per $ of S&M"
+            says="Sales efficiency. ≥0.75 means it pays to spend more on growth."
+          />
+          <Indicator
+            label="Burn multiple"
+            value={h.runwayMonths === Infinity ? "profitable" : x1(h.burnMultiple)}
+            c={r.grossProfit >= 0 ? LIME : band(h.burnMultiple, 1, 2, false)}
+            note={r.grossProfit >= 0 ? "no burn" : "$ burned per $ net-new"}
+            says="Capital efficiency of growth. <1× great, >2× inefficient."
+          />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 12 }}>
+          <Indicator
+            label="Runway"
+            value={h.runwayMonths === Infinity ? "∞" : `${Math.floor(h.runwayMonths)} mo`}
+            c={h.runwayMonths === Infinity ? LIME : band(h.runwayMonths, 18, 6)}
+            note={h.runwayMonths === Infinity ? "cash-flow positive" : `on ${usdFull(a.cashOnHand)} cash`}
+            says="Months until the cash runs out at today's burn. Raise before ~6."
+          />
+          <Indicator
+            label="Annual growth"
+            value={pct(h.annualGrowthRatePct)}
+            c={band(h.annualGrowthRatePct, 100, 40)}
+            note={`${a.monthlyGrowthPct}%/mo compounded`}
+            says="New-logo growth of the paying base, annualized."
+          />
+          <Indicator
+            label="LTV : CAC (blended)"
+            value={x1(r.ltvToCac)}
+            c={band(r.ltvToCac, 3, 1)}
+            note={`payback ${mo(r.cacPaybackMonths)}`}
+            says="Return per acquisition dollar. ≥3× healthy, <1× loses money."
+          />
+        </div>
+      </Section>
+
+      {/* ---- 12-month projection ---- */}
+      <Section title="12-month forecast" kicker="MRR trajectory + cumulative cash">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
+          <Stat label="MRR in 12 mo" value={usdFull(ps.endingMrr)} sub={`ARR ${usdFull(ps.endingArr)}`} c={LIME} />
+          <Stat
+            label="Cash in 12 mo"
+            value={usdFull(ps.cumulativeCashEnd)}
+            sub={ps.cumulativeCashEnd >= a.cashOnHand ? `+${usdFull(ps.cumulativeCashEnd - a.cashOnHand)}` : `−${usdFull(a.cashOnHand - ps.cumulativeCashEnd)}`}
+            c={ps.cumulativeCashEnd >= 0 ? LIME : RED}
+          />
+          <Stat
+            label="P&L break-even"
+            value={ps.breakEvenMonth === null ? ">12 mo" : ps.breakEvenMonth === 0 ? "now" : `mo ${ps.breakEvenMonth}`}
+            c={ps.breakEvenMonth !== null ? LIME : AMBER}
+          />
+          <Stat
+            label="Cash-out"
+            value={ps.cashOutMonth === null ? "—" : `mo ${ps.cashOutMonth}`}
+            sub={ps.cashOutMonth === null ? "never within 12mo" : "−runs dry"}
+            c={ps.cashOutMonth === null ? LIME : RED}
+          />
+        </div>
+        <ChartFrame title="MRR vs. cumulative cash" kicker="next 12 months" c={LIME}>
+          <ResponsiveContainer width="100%" height={260}>
+            <ComposedChart data={r.projection} margin={{ top: 6, right: 8, left: 8, bottom: 0 }}>
+              <defs>
+                <linearGradient id="mrrFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={LIME} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={LIME} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <XAxis dataKey="month" stroke={ASH} style={{ ...mono, fontSize: 11 }} tickFormatter={(m) => `M${m}`} />
+              <YAxis yAxisId="mrr" stroke={ASH} style={{ ...mono, fontSize: 11 }} tickFormatter={usd} width={48} />
+              <YAxis yAxisId="cash" orientation="right" stroke={ASH} style={{ ...mono, fontSize: 11 }} tickFormatter={usd} width={48} />
+              <Tooltip
+                contentStyle={tip}
+                labelFormatter={(m) => `Month ${m}`}
+                formatter={(v, name) => [usdFull(Number(v)), name === "mrr" ? "MRR" : "Cumulative cash"]}
+                cursor={{ stroke: ASH }}
+              />
+              <Legend wrapperStyle={{ ...mono, fontSize: 11 }} formatter={(name) => (name === "mrr" ? "MRR" : "Cumulative cash")} />
+              <ReferenceLine yAxisId="cash" y={0} stroke={RED} strokeDasharray="4 4" />
+              <Area yAxisId="mrr" type="monotone" dataKey="mrr" stroke={LIME} strokeWidth={2} fill="url(#mrrFill)" />
+              <Line yAxisId="cash" type="monotone" dataKey="cumulativeCash" stroke={BLUE} strokeWidth={2} dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+        <Mono s={{ fontSize: 11.5, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+          MRR compounds at the net monthly rate (new logos + expansion − churn); variable COGS
+          scale with revenue while fixed opex holds. The dashed red line is zero cash — where the
+          blue line crosses it is the cash-out month. Assumptions, not booked revenue.
+        </Mono>
+      </Section>
     </div>
+  );
+}
+
+// ---- composite blocks ----
+
+function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
+  const paybackOk = Number.isFinite(seg.cacPaybackMonths) && seg.cacPaybackMonths <= 12;
+  const ratioOk = Number.isFinite(seg.ltvToCac) && seg.ltvToCac >= 3;
+  return (
+    <Card style={{ borderTop: `3px solid ${color}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{seg.label}</div>
+        <Mono s={{ fontSize: 12 }} c={ASH}>{seg.payingUnits.toLocaleString()} paying</Mono>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginTop: 12 }}>
+        <Metric label="ARPU /mo" value={`$${seg.arpu.toFixed(2)}`} c={CHALK} />
+        <Metric label="Contribution margin" value={`${Math.round(seg.grossMargin * 100)}%`} c={seg.grossMargin >= 0 ? CHALK : RED} />
+        <Metric label="LTV" value={Number.isFinite(seg.ltv) ? usdFull(seg.ltv) : "∞"} c={color} />
+        <Metric label="CAC" value={usdFull(seg.cac)} c={CHALK} />
+        <Metric label="CAC payback" value={mo(seg.cacPaybackMonths)} c={paybackOk ? LIME : AMBER} />
+        <Metric label="LTV : CAC" value={x1(seg.ltvToCac)} c={ratioOk ? LIME : AMBER} />
+      </div>
+      <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
+        {Math.round(seg.monthlyChurn * 100 * 10) / 10}% monthly churn · ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo average lifetime
+      </Mono>
+    </Card>
+  );
+}
+
+function Metric({ label, value, c = CHALK }: { label: string; value: string; c?: string }) {
+  return (
+    <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 10px" }}>
+      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: c, marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+function Indicator({ label, value, c, note, says }: { label: string; value: string; c: string; note: string; says: string }) {
+  return (
+    <Card style={{ borderLeft: `3px solid ${c}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{label}</Mono>
+      </div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 28, color: c, lineHeight: 1.1, margin: "4px 0 2px" }}>{value}</div>
+      <Mono s={{ fontSize: 11 }} c={ASH}>{note}</Mono>
+      <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={CHALK}>{says}</Mono>
+    </Card>
+  );
+}
+
+function Glossary() {
+  return (
+    <Card>
+      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
+        Metric glossary
+      </Mono>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        {METRIC_GUIDE.map((m) => (
+          <div key={m.id} style={{ borderLeft: `2px solid ${LINE}`, paddingLeft: 10 }}>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 13.5 }}>{m.label}</div>
+            <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 3 }} c={CHALK}>{m.what}</Mono>
+            <Mono s={{ fontSize: 11, lineHeight: 1.4, display: "block", marginTop: 4 }} c={ASH}>
+              <span style={{ color: VIOLET }}>= </span>{m.formula}
+            </Mono>
+            <Mono s={{ fontSize: 11, lineHeight: 1.4, display: "block", marginTop: 2 }} c={LIME}>{m.benchmark}</Mono>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 
@@ -450,3 +707,14 @@ function PnL({ k, v, c = CHALK, bold }: { k: string; v: string; c?: string; bold
     </div>
   );
 }
+
+const linkBtn: React.CSSProperties = {
+  ...mono,
+  fontSize: 12,
+  color: AMBER,
+  background: "none",
+  border: "none",
+  padding: 0,
+  cursor: "pointer",
+  textDecoration: "underline",
+};
