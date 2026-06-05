@@ -53,9 +53,15 @@ const STREAM_COLOR: Record<RevenueStreamId, string> = {
   data: ASH,
 };
 
-const usd = (n: number) =>
-  Math.abs(n) >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
-const usdFull = (n: number) => `$${Math.round(n).toLocaleString()}`;
+// Currency: keep the minus sign in front of the symbol (−$1.5k, not $-1.5k),
+// the standard for financial reporting. Call sites that already prefix their
+// own sign always pass a positive magnitude, so there's no double-up.
+const usd = (n: number) => {
+  const sign = n < 0 ? "−" : "";
+  const abs = Math.abs(n);
+  return abs >= 1000 ? `${sign}$${(abs / 1000).toFixed(1)}k` : `${sign}$${abs.toFixed(0)}`;
+};
+const usdFull = (n: number) => `${n < 0 ? "−" : ""}$${Math.round(Math.abs(n)).toLocaleString()}`;
 const pct = (n: number) => `${n.toFixed(0)}%`;
 const x1 = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)}×` : "∞");
 const mo = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)} mo` : "never");

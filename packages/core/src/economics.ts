@@ -509,7 +509,9 @@ export function computeEconomics(a: EconomicAssumptions): EconomicResult {
   const quickRatio = churnedMrr > 0 ? (newMrr + expansionMrr) / churnedMrr : Infinity;
 
   const sAndM = newUnits * blendedCac;
-  const magicNumber = sAndM > 0 ? (netNewMrr * 12) / sAndM : Infinity;
+  // No spend → "infinite efficiency" only makes sense if revenue still grew;
+  // a business shrinking on zero spend isn't infinitely efficient, it's at 0.
+  const magicNumber = sAndM > 0 ? (netNewMrr * 12) / sAndM : netNewMrr > 0 ? Infinity : 0;
 
   const monthlyBurn = grossProfit < 0 ? -grossProfit : 0;
   const runwayMonths = monthlyBurn > 0 ? pos(a.cashOnHand) / monthlyBurn : Infinity;
@@ -545,6 +547,9 @@ export function computeEconomics(a: EconomicAssumptions): EconomicResult {
   for (let m = 1; m <= PROJECTION_MONTHS; m++) {
     mrr *= netMult;
     customers = Math.round(customers * customerMult);
+    // Can't have revenue with no customers — once the base rounds to zero the
+    // line collapses (and stays collapsed, since 0 × netMult is still 0).
+    if (customers === 0) mrr = 0;
     const profit = mrr - mrr * variableRatio - fixed;
     cash += profit;
     if (breakEvenMonth === null && profit >= 0) breakEvenMonth = m;
