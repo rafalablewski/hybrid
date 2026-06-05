@@ -169,21 +169,23 @@ describe("computeEconomics — forward projection", () => {
   it("returns month 0..N starting from today's MRR", () => {
     const r = computeEconomics(base);
     expect(r.projection.length).toBe(PROJECTION_MONTHS + 1);
-    expect(r.projection[0].month).toBe(0);
-    expect(r.projection[0].mrr).toBeCloseTo(r.revenue.total, 6);
-    expect(r.projectionSummary.endingMrr).toBeCloseTo(r.projection[PROJECTION_MONTHS].mrr, 6);
+    const first = r.projection[0]!;
+    const final = r.projection[PROJECTION_MONTHS]!;
+    expect(first.month).toBe(0);
+    expect(first.mrr).toBeCloseTo(r.revenue.total, 6);
+    expect(r.projectionSummary.endingMrr).toBeCloseTo(final.mrr, 6);
     expect(r.projectionSummary.endingArr).toBeCloseTo(r.projectionSummary.endingMrr * 12, 6);
   });
 
   it("grows MRR month over month with positive net growth", () => {
     const r = computeEconomics(base);
-    expect(r.projection[PROJECTION_MONTHS].mrr).toBeGreaterThan(r.projection[0].mrr);
+    expect(r.projection[PROJECTION_MONTHS]!.mrr).toBeGreaterThan(r.projection[0]!.mrr);
   });
 
   it("cumulative cash accumulates the monthly P&L on top of the starting balance", () => {
     const r = computeEconomics(base);
-    expect(r.projection[0].cumulativeCash).toBeCloseTo(base.cashOnHand, 6);
-    const m1 = r.projection[1];
+    expect(r.projection[0]!.cumulativeCash).toBeCloseTo(base.cashOnHand, 6);
+    const m1 = r.projection[1]!;
     expect(m1.cumulativeCash).toBeCloseTo(base.cashOnHand + m1.profit, 6);
   });
 
