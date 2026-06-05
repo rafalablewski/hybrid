@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     source: r.source,
     ts: r.ts.toISOString(),
   }));
-  const bio = toBiometrics(coreSignals) ?? undefined;
+  const bio = toBiometrics(coreSignals);
 
   const log = toTrainingLog(sessions);
   const rx = prescribeSession(log, bio, { profiles: velocityProfiles(sessions) });

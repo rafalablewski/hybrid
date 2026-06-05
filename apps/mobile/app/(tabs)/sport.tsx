@@ -18,8 +18,9 @@ export default function Sport() {
   useEffect(() => {
     AsyncStorage.getItem(STORE_KEY)
       .then((raw) => {
-        if (raw) {
-          const s = JSON.parse(raw) as { sport?: string; levelIdx?: number };
+        if (!raw) return;
+        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
+        if (s && typeof s === "object") {
           if (s.sport && SPORTS[s.sport]) setSport(s.sport);
           if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
         }

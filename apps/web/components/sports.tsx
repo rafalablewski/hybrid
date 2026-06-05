@@ -22,10 +22,12 @@ export default function SportScreen() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
       if (raw) {
-        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number; markers?: Record<string, string> };
-        if (s.sport && SPORTS[s.sport]) setSport(s.sport);
-        if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-        if (s.markers && typeof s.markers === "object") setMarkers(s.markers);
+        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number; markers?: Record<string, string> } | null;
+        if (s && typeof s === "object") {
+          if (s.sport && SPORTS[s.sport]) setSport(s.sport);
+          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+          if (s.markers && typeof s.markers === "object") setMarkers(s.markers);
+        }
       }
     } catch {
       /* ignore corrupt/unavailable storage */

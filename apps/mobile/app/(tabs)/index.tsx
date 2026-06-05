@@ -48,7 +48,7 @@ export default function Home() {
   // Real biometrics from the Signal ontology (check-in + wearables) — undefined
   // when nothing's logged, so readiness/HPI never run on fabricated data.
   const bio = useMemo(
-    () => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]) ?? undefined,
+    () => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]),
     [signals],
   );
 
