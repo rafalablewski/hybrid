@@ -153,6 +153,13 @@ describe("computeEconomics — health scorecard", () => {
     expect(hi.health.quickRatio).toBeGreaterThan(lo.health.quickRatio);
   });
 
+  it("magic number is 0 (not Infinity) when shrinking on zero spend", () => {
+    // No growth → no new units → no S&M spend; churn outpaces expansion → net-new < 0.
+    const r = computeEconomics({ ...base, monthlyGrowthPct: 0, monthlyExpansionPct: 0 });
+    expect(r.health.netNewMrr).toBeLessThan(0);
+    expect(r.health.magicNumber).toBe(0);
+  });
+
   it("runway is finite while burning and infinite once profitable", () => {
     const burning = computeEconomics({ ...base, proConversionPct: 0, coaches: 0, fixedOpexMonthly: 5000, cashOnHand: 50000 });
     expect(burning.grossProfit).toBeLessThan(0);
@@ -187,6 +194,16 @@ describe("computeEconomics — forward projection", () => {
     expect(r.projection[0]!.cumulativeCash).toBeCloseTo(base.cashOnHand, 6);
     const m1 = r.projection[1]!;
     expect(m1.cumulativeCash).toBeCloseTo(base.cashOnHand + m1.profit, 6);
+  });
+
+  it("collapses MRR to zero once the customer base churns out", () => {
+    // Brutal churn, no growth/expansion → the base rounds to zero within a year.
+    const r = computeEconomics({ ...base, b2cMonthlyChurnPct: 60, coachMonthlyChurnPct: 60, monthlyGrowthPct: 0, monthlyExpansionPct: 0 });
+    const dead = r.projection.find((p) => p.customers === 0);
+    expect(dead).toBeDefined();
+    expect(dead!.mrr).toBe(0);
+    // Stays collapsed for the rest of the horizon.
+    expect(r.projection[r.projection.length - 1]!.mrr).toBe(0);
   });
 
   it("flags an already-profitable model as break-even at month 0", () => {
