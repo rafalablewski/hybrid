@@ -36,6 +36,10 @@ export default function Nutrition() {
   const targets = useMemo(() => adaptiveTargets(sig, { goal }), [signals, goal]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
+  // Only show targets once maintenance can be estimated from the athlete's own
+  // data (a weigh-in or intake history) — otherwise prompt instead of showing a
+  // population default as a personal target.
+  const personalized = maint.kcal != null;
 
   const add = async () => {
     setSaving(true);
@@ -81,15 +85,33 @@ export default function Nutrition() {
       {/* targets vs today */}
       <Card>
         <Kicker color={C.lime}>Today vs adaptive target</Kicker>
-        <View style={{ marginTop: 10, gap: 10 }}>
-          <Bar label="Energy" cur={today.kcal} target={targets.kcal} unit="kcal" color={C.lime} />
-          <Bar label="Protein" cur={today.protein} target={targets.protein} unit="g" color={C.violet} />
-          <Bar label="Carbs" cur={today.carbs} target={targets.carbs} unit="g" color={C.blue} />
-          <Bar label="Fat" cur={today.fat} target={targets.fat} unit="g" color={C.amber} />
-        </View>
-        <Mono style={{ marginTop: 12, fontSize: 11, lineHeight: 17 }}>
-          Maintenance ≈ {maint.kcal ?? "—"} kcal · {targets.basis}
-        </Mono>
+        {personalized ? (
+          <>
+            <View style={{ marginTop: 10, gap: 10 }}>
+              <Bar label="Energy" cur={today.kcal} target={targets.kcal} unit="kcal" color={C.lime} />
+              <Bar label="Protein" cur={today.protein} target={targets.protein} unit="g" color={C.violet} />
+              <Bar label="Carbs" cur={today.carbs} target={targets.carbs} unit="g" color={C.blue} />
+              <Bar label="Fat" cur={today.fat} target={targets.fat} unit="g" color={C.amber} />
+            </View>
+            <Mono style={{ marginTop: 12, fontSize: 11, lineHeight: 17 }}>
+              Maintenance ≈ {maint.kcal} kcal · {targets.basis}
+            </Mono>
+          </>
+        ) : (
+          <>
+            <Mono color={C.chalk} style={{ marginTop: 10, lineHeight: 19 }}>
+              Your targets adapt to you — they&apos;re not pre-set. Add a weigh-in (in a weekly
+              check-in) and log a few days of intake, and we&apos;ll estimate your maintenance and set
+              goal-aware macros.
+            </Mono>
+            <View style={{ flexDirection: "row", gap: 16, marginTop: 12 }}>
+              <Today2 label="Today" value={`${Math.round(today.kcal)} kcal`} />
+              <Today2 label="Protein" value={`${Math.round(today.protein)}g`} />
+              <Today2 label="Carbs" value={`${Math.round(today.carbs)}g`} />
+              <Today2 label="Fat" value={`${Math.round(today.fat)}g`} />
+            </View>
+          </>
+        )}
       </Card>
 
       {/* quick add */}
@@ -142,6 +164,15 @@ function Bar({ label, cur, target, unit, color }: { label: string; cur: number; 
       <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink2, overflow: "hidden" }}>
         <View style={{ width: `${pct * 100}%`, height: 8, backgroundColor: over ? C.red : color }} />
       </View>
+    </View>
+  );
+}
+
+function Today2({ label, value }: { label: string; value: string }) {
+  return (
+    <View>
+      <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{value}</Text>
+      <Mono style={{ fontSize: 10 }}>{label}</Mono>
     </View>
   );
 }

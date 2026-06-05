@@ -1,15 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
 
+const STORE_KEY = "hybrid.sport";
+
 // Sport-driven training — pick a sport + level, the shared engine
 // (prescribeForSport in @hybrid/core) ranks the S&C work that makes you better
-// at that sport. Same engine the mobile app uses.
+// at that sport. Same engine the mobile app uses. The athlete's sport, level
+// and performance markers are remembered, so the tab reflects THEM — not a
+// default demo selection.
 export default function SportScreen() {
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
+  const [markers, setMarkers] = useState<Record<string, string>>({});
+  const [hydrated, setHydrated] = useState(false);
+
+  // Restore the athlete's saved choice (client-only — avoids an SSR mismatch).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number; markers?: Record<string, string> } | null;
+        if (s && typeof s === "object") {
+          if (s.sport && SPORTS[s.sport]) setSport(s.sport);
+          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+          if (s.markers && typeof s.markers === "object") setMarkers(s.markers);
+        }
+      }
+    } catch {
+      /* ignore corrupt/unavailable storage */
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ sport, levelIdx, markers }));
+    } catch {
+      /* ignore */
+    }
+  }, [sport, levelIdx, markers, hydrated]);
 
   const meta = SPORTS[sport]!;
   const rx = prescribeForSport(sport, levelIdx);
@@ -89,6 +122,8 @@ export default function SportScreen() {
         <div style={{ marginTop: 12 }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>{meta.marker.label}</Mono>
           <input
+            value={markers[sport] ?? ""}
+            onChange={(e) => setMarkers((m) => ({ ...m, [sport]: e.target.value }))}
             placeholder={meta.marker.ph}
             style={{
               ...mono,

@@ -26,11 +26,12 @@ export async function POST(request: Request) {
     typeof b.weekOf === "string" && !Number.isNaN(Date.parse(b.weekOf)) ? new Date(b.weekOf) : new Date();
 
   const adherence = num(b.adherencePct);
+  const bodyMassKg = num(b.bodyMassKg);
   const checkin = await prisma.checkin.create({
     data: {
       userId: me.id,
       weekOf,
-      bodyMassKg: num(b.bodyMassKg),
+      bodyMassKg,
       energy: int1to5(b.energy),
       sleep: int1to5(b.sleep),
       soreness: int1to5(b.soreness),
@@ -39,5 +40,16 @@ export async function POST(request: Request) {
       note: typeof b.note === "string" && b.note.trim() ? b.note.trim().slice(0, 2000) : null,
     },
   });
+
+  // Mirror the weigh-in into the Signal ontology (bodyMass) so the nutrition
+  // engine's maintenance estimate + the smoothed bodyweight trend run on the
+  // athlete's REAL weight instead of a cold-start default. Best-effort: a
+  // duplicate (same week already logged) must not fail the check-in.
+  if (bodyMassKg != null && bodyMassKg > 0) {
+    await prisma.signal
+      .create({ data: { userId: me.id, kind: "bodyMass", value: bodyMassKg, unit: "kg", source: "checkin", ts: weekOf } })
+      .catch(() => {});
+  }
+
   return NextResponse.json({ checkin }, { status: 201 });
 }

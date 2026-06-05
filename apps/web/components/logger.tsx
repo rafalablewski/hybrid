@@ -5,8 +5,6 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
-  SAMPLE_TRAINING_LOG,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
   type StrengthSet,
@@ -66,10 +64,11 @@ export default function Logger({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Engine reads the athlete's REAL history (falls back to sample if none yet).
+  // Engine reads the athlete's REAL history. With no sessions yet it still
+  // returns a sensible starter (movement base loads, no fabricated history).
   const rx = useMemo(() => {
-    const log = sessions.length ? toTrainingLog(sessions) : SAMPLE_TRAINING_LOG;
-    return prescribeSession(log, SAMPLE_BIOMETRICS, { profiles: velocityProfiles(sessions) });
+    const log = toTrainingLog(sessions);
+    return prescribeSession(log, undefined, { profiles: velocityProfiles(sessions) });
   }, [sessions]);
 
   const loadPrescribed = () => {

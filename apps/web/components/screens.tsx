@@ -48,7 +48,6 @@ import {
   volumeByMuscle,
   e1rmSeries,
   liftNames,
-  SAMPLE_BIOMETRICS,
   type LoggedSession,
   type SessionBlock,
   type Macrocycle,
@@ -73,8 +72,8 @@ const BAND_COLOR = (b: string) =>
         : RED;
 
 // ---------- ANALYTICS: ATHLETE (the Client dashboard) ----------
-// Uses the athlete's REAL logged sessions when available; falls back to sample
-// data in demo mode / before anything is logged.
+// Renders the athlete's REAL logged sessions; before anything is logged it
+// shows an honest empty state (no sample data).
 export function AthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[] }) {
   if (sessions.length === 0)
     return (
@@ -186,7 +185,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
 }
 
 // ---------- ANALYTICS: COACH ----------
-// Real roster data when the coach has active clients; sample otherwise.
+// Real roster data when the coach has active clients; an empty state otherwise.
 export function CoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) {
   if (roster.length === 0)
     return (
@@ -361,7 +360,7 @@ export function DashboardMirror({
   const macro = buildMacrocycle("Hybrid");
   const { block: phase, micro } = currentPhase(macro, SEASON_WEEK);
   const log = toTrainingLog(sessions);
-  const theBio = bio ?? SAMPLE_BIOMETRICS;
+  const theBio = bio ?? undefined;
   const rx = prescribeSession(log, theBio);
   const state = computePerformanceState(log, theBio);
   const risk = computeInjuryRisk(log, theBio);

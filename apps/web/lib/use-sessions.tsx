@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { LoggedSession } from "@hybrid/core";
 
 /** Fetches the signed-in user's sessions from the API. In demo mode (no auth)
- *  the API returns 401, so this resolves to an empty list and callers fall back
- *  to sample data. */
+ *  the API returns 401, so this resolves to an empty list and callers render
+ *  honest empty states (no sample data). */
 export function useSessions() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [loading, setLoading] = useState(true);

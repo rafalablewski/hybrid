@@ -7,7 +7,6 @@ import {
   computeInjuryRisk,
   performanceTrajectory,
   toTrainingLog,
-  SAMPLE_BIOMETRICS,
   type Biometrics,
   type LoggedSession,
   type MuscleGroup,
@@ -72,7 +71,7 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
     );
 
   const log = toTrainingLog(sessions);
-  const theBio = bio ?? SAMPLE_BIOMETRICS;
+  const theBio = bio ?? undefined;
   const state = computePerformanceState(log, theBio);
   const risk = computeInjuryRisk(log, theBio);
   const traj = performanceTrajectory(log, 14).map((p) => ({

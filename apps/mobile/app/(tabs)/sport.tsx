@@ -1,13 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
+
+const STORE_KEY = "hybrid.sport";
 
 export default function Sport() {
   const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Remember the athlete's sport + level so the tab reflects THEM, not a
+  // default demo selection.
+  useEffect(() => {
+    AsyncStorage.getItem(STORE_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
+        if (s && typeof s === "object") {
+          if (s.sport && SPORTS[s.sport]) setSport(s.sport);
+          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHydrated(true));
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    AsyncStorage.setItem(STORE_KEY, JSON.stringify({ sport, levelIdx })).catch(() => {});
+  }, [sport, levelIdx, hydrated]);
 
   const meta = SPORTS[sport]!;
   const rx = prescribeForSport(sport, levelIdx);
