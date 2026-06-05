@@ -189,10 +189,10 @@ export function prescribeForSport(
   let personalized = false;
   const blocks: SportBlock[] = picks.map((p) => {
     const logged = e1rmByLift.get(p.name);
-    const mv = MOVEMENTS[p.name];
-    const loadable = logged != null || mv?.baseLoad != null;
+    const baseLoad = MOVEMENTS[p.name]?.baseLoad ?? null;
+    const loadable = logged != null || baseLoad != null;
     if (loadable) {
-      const oneRm = logged ?? mv!.baseLoad! * 1.2;
+      const oneRm = logged ?? (baseLoad ?? 0) * 1.2;
       const load = Math.round((oneRm * pct) / 2.5) * 2.5;
       if (logged != null) personalized = true;
       return {

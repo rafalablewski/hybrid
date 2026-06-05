@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
+import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
@@ -15,9 +16,19 @@ export default function Sport() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    fetchSessions().then(setSessions);
-  }, []);
+  // Refetch when the tab regains focus so loads reflect freshly logged
+  // sessions (the screen stays mounted across tab switches).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      fetchSessions().then((d) => {
+        if (active) setSessions(d);
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   // Remember the athlete's sport + level so the tab reflects THEM, not a
   // default demo selection.
@@ -99,9 +110,7 @@ export default function Sport() {
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
         <Kicker color={C.lime}>{t("sport.prescribed")}</Kicker>
         <Mono style={{ fontSize: 11, marginTop: 2 }}>
-          {rx.personalized
-            ? "Working loads from your logged lifts."
-            : "Log these lifts and the loads tune to your numbers."}
+          {rx.personalized ? t("sport.loadsFromLogs") : t("sport.loadsLogPrompt")}
         </Mono>
         {rx.blocks.map((b, i) => (
           <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 6 }}>
