@@ -60,36 +60,70 @@ import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
 
-const NAV: [string, string, string][] = [
-  ["today", "Today", "➤"],
-  ["onboarding", "Get started", "✦"],
-  ["dashboard", "Dashboard", "◆"],
-  ["performance", "Performance", "◈"],
-  ["velocity", "Velocity (VBT)", "⚡"],
-  ["forceplate", "Force plate", "◇"],
-  ["log", "Log session", "✎"],
-  ["nutrition", "Nutrition", "🍎"],
-  ["progress", "Progress photos", "📸"],
-  ["checkin", "Check-in", "✓"],
-  ["calendar", "Calendar", "▦"],
-  ["builder", "Builder", "⊕"],
-  ["analytics", "Analytics", "◷"],
-  ["periodize", "Periodize", "◰"],
-  ["competition", "Competition", "▲"],
-  ["plans", "Plans", "▤"],
-  ["sport", "Sport", "◎"],
-  ["video", "Video", "▷"],
-  ["history", "History", "≣"],
-  ["coach", "Coach", "✦"],
-  ["squad", "Squad monitor", "◫"],
-  ["teamcompare", "Team compare", "⚖"],
-  ["org", "Organization", "⬡"],
-  ["talent", "Talent", "✸"],
-  ["tactical", "Tactical", "▰"],
-  ["longevity", "Longevity", "❤"],
-  ["connections", "Connections", "⌁"],
-  ["roles", "Roles & access", "⚿"],
-  ["settings", "Settings", "⚙"],
+// Sidebar nav, grouped by what the user is trying to DO (mirrors the admin
+// console's grouped sidebar). Each group label is an i18n key (nav.group.*);
+// each item is [screenId, English fallback, icon]. Items stay gated per-item by
+// the nav.<id> feature flag; a group with no enabled items is hidden entirely.
+const NAV_GROUPS: { group: string; items: [string, string, string][] }[] = [
+  {
+    group: "home",
+    items: [
+      ["today", "Today", "➤"],
+      ["dashboard", "Dashboard", "◆"],
+      ["onboarding", "Get started", "✦"],
+    ],
+  },
+  {
+    group: "train",
+    items: [
+      ["log", "Log session", "✎"],
+      ["calendar", "Calendar", "▦"],
+      ["builder", "Builder", "⊕"],
+      ["plans", "Plans", "▤"],
+      ["periodize", "Periodize", "◰"],
+      ["sport", "Sport", "◎"],
+      ["competition", "Competition", "▲"],
+    ],
+  },
+  {
+    group: "analyze",
+    items: [
+      ["performance", "Performance", "◈"],
+      ["analytics", "Analytics", "◷"],
+      ["velocity", "Velocity (VBT)", "⚡"],
+      ["forceplate", "Force plate", "◇"],
+      ["video", "Video", "▷"],
+      ["history", "History", "≣"],
+    ],
+  },
+  {
+    group: "recovery",
+    items: [
+      ["checkin", "Check-in", "✓"],
+      ["nutrition", "Nutrition", "🍎"],
+      ["progress", "Progress photos", "📸"],
+      ["longevity", "Longevity", "❤"],
+    ],
+  },
+  {
+    group: "teams",
+    items: [
+      ["coach", "Coach", "✦"],
+      ["squad", "Squad monitor", "◫"],
+      ["teamcompare", "Team compare", "⚖"],
+      ["org", "Organization", "⬡"],
+      ["talent", "Talent", "✸"],
+      ["tactical", "Tactical", "▰"],
+    ],
+  },
+  {
+    group: "account",
+    items: [
+      ["connections", "Connections", "⌁"],
+      ["roles", "Roles & access", "⚿"],
+      ["settings", "Settings", "⚙"],
+    ],
+  },
 ];
 
 // Operator-only tools (Capabilities, Data network) live in the dedicated admin
@@ -174,32 +208,46 @@ export default function AppShell() {
           HYBRID<span style={{ color: LIME }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {NAV.filter(([id]) => isEnabled(`nav.${id}`)).map(([id, l, ic]) => (
-            <button
-              key={id}
-              onClick={() => setScreen(id)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 12px",
-                marginBottom: 4,
-                borderRadius: 10,
-                cursor: "pointer",
-                border: "none",
-                background: screen === id ? `${LIME}1a` : "transparent",
-                color: screen === id ? LIME : ASH,
-                ...disp,
-                fontSize: 14,
-                fontWeight: 600,
-                textAlign: "left",
-              }}
-            >
-              <span style={{ fontSize: 16 }}>{ic}</span>
-              {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
-            </button>
-          ))}
+          {NAV_GROUPS.map(({ group, items }) => {
+            const visible = items.filter(([id]) => isEnabled(`nav.${id}`));
+            if (visible.length === 0) return null;
+            return (
+              <div key={group} style={{ marginBottom: 14 }}>
+                <Mono
+                  s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
+                  c={ASH}
+                >
+                  {t(`nav.group.${group}`) === `nav.group.${group}` ? group : t(`nav.group.${group}`)}
+                </Mono>
+                {visible.map(([id, l, ic]) => (
+                  <button
+                    key={id}
+                    onClick={() => setScreen(id)}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 12px",
+                      marginBottom: 2,
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      border: "none",
+                      background: screen === id ? `${LIME}1a` : "transparent",
+                      color: screen === id ? LIME : ASH,
+                      ...disp,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>{ic}</span>
+                    {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </nav>
         <div style={{ flexShrink: 0, paddingTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: INK2 }}>
