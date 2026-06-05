@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
+import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
+import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
 
@@ -11,7 +12,12 @@ export default function Sport() {
   const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
+  const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    fetchSessions().then(setSessions);
+  }, []);
 
   // Remember the athlete's sport + level so the tab reflects THEM, not a
   // default demo selection.
@@ -35,7 +41,7 @@ export default function Sport() {
   }, [sport, levelIdx, hydrated]);
 
   const meta = SPORTS[sport]!;
-  const rx = prescribeForSport(sport, levelIdx);
+  const rx = prescribeForSport(sport, levelIdx, { sessions });
 
   return (
     <Screen>
@@ -91,14 +97,22 @@ export default function Sport() {
       </View>
 
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
-        <Kicker color={C.lime}>{t("sport.prescribed")} · {rx.setScheme}</Kicker>
+        <Kicker color={C.lime}>{t("sport.prescribed")}</Kicker>
+        <Mono style={{ fontSize: 11, marginTop: 2 }}>
+          {rx.personalized
+            ? "Working loads from your logged lifts."
+            : "Log these lifts and the loads tune to your numbers."}
+        </Mono>
         {rx.blocks.map((b, i) => (
           <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 6 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
               <Mono color={C.amber} style={{ fontSize: 11 }}>{b.demand}</Mono>
             </View>
-            <Chip>{b.scheme}</Chip>
+            <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
+              <Chip>{b.scheme}</Chip>
+              <Mono style={{ fontSize: 10, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Mono>
+            </View>
           </View>
         ))}
       </Card>
