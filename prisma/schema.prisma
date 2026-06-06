@@ -533,12 +533,37 @@ model AgentConfig {
   tone                String   @default("")
   collaborators       Json     @default("[]") // string[]
   tools               Json     @default("[]") // string[]
+  runtime             String   @default("messages") // messages | managed
+  managedAgentId      String? // Claude Managed Agents agent id (created lazily, reused)
+  memoryStoreId       String? // durable memory store id (created lazily, reused)
   updatedById         String?
   updatedByEmail      String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   @@index([status])
+}
+
+// One execution of an agent — the run history / transcript. Written server-side
+// by the run + stream routes (best-effort; never blocks the run). Read is
+// admin-only via the API. Denormalized agent role/name so it survives edits.
+model AgentRun {
+  id           String   @id @default(cuid())
+  agentId      String
+  agentRole    String
+  agentName    String
+  task         String
+  output       String // final synthesized output
+  steps        Json     @default("[]") // delegation trace: { agent, role, task, output }[]
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  status       String   @default("ok") // ok | error
+  runtime      String   @default("messages") // messages | managed
+  ranById      String?
+  ranByEmail   String?
+  createdAt    DateTime @default(now())
+
+  @@index([agentId, createdAt])
 }
 
 // A user-submitted content report — the second feeder of the admin moderation

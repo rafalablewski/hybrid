@@ -73,6 +73,7 @@ export async function POST(request: Request) {
       tone: d.tone ?? "",
       collaborators: (d.collaborators ?? []) as never,
       tools: (d.tools ?? []) as never,
+      runtime: d.runtime ?? "messages",
       updatedById: gate.admin.id,
       updatedByEmail: gate.admin.email,
     },

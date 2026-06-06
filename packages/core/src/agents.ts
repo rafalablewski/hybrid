@@ -31,6 +31,15 @@ export type AgentEffort = "low" | "medium" | "high" | "xhigh" | "max";
  */
 export type AuthorityLevel = "executive" | "functional" | "advisor";
 
+/**
+ * Where an agent executes:
+ * - `messages` — stateless Messages-API run (fast, ships today; delegation via
+ *   server-side tool orchestration).
+ * - `managed` — Claude Managed Agents session with a durable MEMORY STORE, so
+ *   the agent remembers across runs (needs ANTHROPIC_API_KEY + the beta).
+ */
+export type AgentRuntime = "messages" | "managed";
+
 /** One measurable objective the agent is steered + evaluated on. */
 export interface Kpi {
   metric: string;
@@ -63,6 +72,8 @@ export interface AgentDefinition {
   collaborators: string[];
   /** Capability labels the agent may use (see TOOL_OPTIONS). */
   tools: string[];
+  /** Execution backend (default "messages"). */
+  runtime: AgentRuntime;
   updatedAt?: string;
 }
 
@@ -71,6 +82,11 @@ export interface AgentDefinition {
 // ---------------------------------------------------------------------------
 
 export const AGENT_STATUSES: AgentStatus[] = ["draft", "active", "paused"];
+
+export const RUNTIMES: { value: AgentRuntime; label: string; note: string }[] = [
+  { value: "messages", label: "Messages (stateless)", note: "Fast; delegation via tool orchestration" },
+  { value: "managed", label: "Managed (durable memory)", note: "Remembers across runs — needs the API key + beta" },
+];
 
 export const MODELS: { id: AgentModelId; label: string; note: string }[] = [
   { id: "claude-opus-4-8", label: "Claude Opus 4.8", note: "Apex reasoning, precision — strategy & finance" },
@@ -275,6 +291,7 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     tone: "Decisive, calm, big-picture. Concise with the admin (recommendation first, then rationale); explicit with executives (task, intent, constraints). A respectful thought partner, not a yes-man.",
     collaborators: ["CFO", "CMO", "COO"],
     tools: ["delegate", "web_search", "memory"],
+    runtime: "messages",
   },
   CFO: {
     role: "CFO",
@@ -304,6 +321,7 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     tone: "Rigorous, precise, conservative. Shows the work, quantifies uncertainty. When the answer is no, says why and names the conditions for yes.",
     collaborators: ["CEO", "CMO", "COO"],
     tools: ["code_execution", "web_search", "memory"],
+    runtime: "messages",
   },
   CMO: {
     role: "CMO",
@@ -332,6 +350,7 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     tone: "Creative, persuasive, audience-obsessed, data-aware. Offers a few distinct directions with a rationale and recommends one; bold on ideas, disciplined on spend.",
     collaborators: ["CEO", "CFO", "COO"],
     tools: ["web_search", "web_fetch", "memory"],
+    runtime: "messages",
   },
   COO: {
     role: "COO",
@@ -360,6 +379,7 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     tone: "Pragmatic, organized, execution-focused. Communicates in clear status: done / blocked / next / owner. Biased toward action; resists over-engineering.",
     collaborators: ["CEO", "CFO", "COO"],
     tools: ["filesystem", "web_search", "memory"],
+    runtime: "messages",
   },
 };
 
@@ -411,6 +431,7 @@ export type AgentInput = Partial<{
   status: unknown;
   model: unknown;
   effort: unknown;
+  runtime: unknown;
   authority: unknown;
   reportsTo: unknown;
   mandate: unknown;
@@ -470,6 +491,10 @@ export function parseAgentInput(
   if (b.effort !== undefined) {
     if (!EFFORTS.includes(b.effort as AgentEffort)) return { ok: false, error: "invalid effort" };
     out.effort = b.effort as AgentEffort;
+  }
+  if (b.runtime !== undefined) {
+    if (!RUNTIMES.some((r) => r.value === b.runtime)) return { ok: false, error: "invalid runtime" };
+    out.runtime = b.runtime as AgentRuntime;
   }
   if (b.authority !== undefined) {
     if (!AUTHORITY_LEVELS.some((a) => a.value === b.authority)) return { ok: false, error: "invalid authority" };

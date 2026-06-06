@@ -62,6 +62,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(d.guardrails !== undefined ? { guardrails: d.guardrails as never } : {}),
       ...(d.collaborators !== undefined ? { collaborators: d.collaborators as never } : {}),
       ...(d.tools !== undefined ? { tools: d.tools as never } : {}),
+      ...(d.runtime !== undefined ? { runtime: d.runtime } : {}),
       updatedById: gate.admin.id,
       updatedByEmail: gate.admin.email,
     },

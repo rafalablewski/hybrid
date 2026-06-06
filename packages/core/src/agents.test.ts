@@ -29,6 +29,7 @@ function def(over: Partial<AgentDefinition> = {}): AgentDefinition {
     tone: "Decisive and calm.",
     collaborators: ["CFO", "CMO"],
     tools: ["delegate", "web_search", "memory"],
+    runtime: "messages",
     ...over,
   };
 }
@@ -150,6 +151,8 @@ describe("parseAgentInput", () => {
     expect(parseAgentInput({ model: "gpt-4" }, false).ok).toBe(false);
     expect(parseAgentInput({ effort: "ultra" }, false).ok).toBe(false);
     expect(parseAgentInput({ status: "running" }, false).ok).toBe(false);
+    expect(parseAgentInput({ runtime: "local" }, false).ok).toBe(false);
+    expect(parseAgentInput({ runtime: "managed" }, false)).toEqual({ ok: true, data: { runtime: "managed" } });
     expect(parseAgentInput({ tools: ["web_search", "rm_rf"] }, false)).toEqual({
       ok: false,
       error: "unknown tool: rm_rf",

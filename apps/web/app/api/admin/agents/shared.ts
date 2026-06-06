@@ -10,6 +10,7 @@ import {
   type AgentEffort,
   type AuthorityLevel,
   type AgentStatus,
+  type AgentRuntime,
   type Kpi,
 } from "@hybrid/core";
 
@@ -45,6 +46,7 @@ export function rowToDefinition(row: AgentConfig): AgentDefinition {
     tone: row.tone,
     collaborators: strArray(row.collaborators),
     tools: strArray(row.tools),
+    runtime: (row.runtime as AgentRuntime) ?? "messages",
     updatedAt: row.updatedAt.toISOString(),
   };
 }

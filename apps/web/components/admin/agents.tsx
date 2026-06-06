@@ -5,6 +5,7 @@ import {
   buildSystemPrompt,
   MODELS,
   EFFORTS,
+  RUNTIMES,
   AUTHORITY_LEVELS,
   TOOL_OPTIONS,
   AGENT_STATUSES,
@@ -17,6 +18,25 @@ import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mon
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
 type RunStep = { agent: string; role: string; task: string; output: string };
 type RunResult = { output: string; steps: RunStep[]; usage: { input: number; output: number } };
+type RunEvent =
+  | { type: "status"; message: string }
+  | { type: "text"; delta: string }
+  | { type: "delegate_start"; role: string; agent: string; task: string }
+  | { type: "delegate_end"; role: string; agent: string; output: string }
+  | { type: "done"; result: RunResult }
+  | { type: "error"; message: string };
+type RunRow = {
+  id: string;
+  task: string;
+  output: string;
+  steps: RunStep[];
+  inputTokens: number;
+  outputTokens: number;
+  status: string;
+  runtime: string;
+  ranByEmail: string | null;
+  createdAt: string;
+};
 
 const STATUS_COLOR: Record<AgentStatus, string> = { active: LIME, paused: AMBER, draft: ASH };
 
@@ -31,6 +51,10 @@ export default function AdminAgents() {
   const [task, setTask] = useState("");
   const [runBusy, setRunBusy] = useState(false);
   const [run, setRun] = useState<RunResult | null>(null);
+  const [liveText, setLiveText] = useState("");
+  const [liveSteps, setLiveSteps] = useState<RunStep[]>([]);
+  const [runStatus, setRunStatus] = useState("");
+  const [runs, setRuns] = useState<RunRow[]>([]);
 
   const load = useCallback(() => {
     fetch("/api/admin/agents")
@@ -51,8 +75,24 @@ export default function AdminAgents() {
     setDraft(a ? structuredClone(a) : null);
     setOriginal(a ? JSON.stringify(a) : "");
     setRun(null);
+    setLiveText("");
+    setLiveSteps([]);
+    setRunStatus("");
     setTask("");
   }, [selectedId, agents]);
+
+  const loadRuns = useCallback(() => {
+    if (!selectedId) {
+      setRuns([]);
+      return;
+    }
+    fetch(`/api/admin/agents/${selectedId}/runs`)
+      .then((r) => r.json())
+      .then((d) => setRuns(d.runs ?? []))
+      .catch(() => setRuns([]));
+  }, [selectedId]);
+
+  useEffect(loadRuns, [loadRuns]);
 
   const dirty = useMemo(() => draft != null && JSON.stringify(draft) !== original, [draft, original]);
   const preview = useMemo(() => (draft ? buildSystemPrompt(draft) : ""), [draft]);
@@ -114,23 +154,82 @@ export default function AdminAgents() {
     setDraft((d) => (d ? { ...d, [key]: value } : d));
   }
 
+  function handleEvent(ev: RunEvent) {
+    switch (ev.type) {
+      case "status":
+        setRunStatus(ev.message);
+        break;
+      case "text":
+        setLiveText((t) => t + ev.delta);
+        break;
+      case "delegate_start":
+        setRunStatus(`Delegating to ${ev.role}…`);
+        setLiveSteps((s) => [...s, { agent: ev.agent, role: ev.role, task: ev.task, output: "" }]);
+        break;
+      case "delegate_end":
+        setLiveSteps((s) => {
+          const copy = [...s];
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i]!.agent === ev.agent && copy[i]!.output === "") {
+              copy[i] = { ...copy[i]!, output: ev.output };
+              break;
+            }
+          }
+          return copy;
+        });
+        break;
+      case "done":
+        setRun(ev.result);
+        setLiveText(ev.result.output);
+        setLiveSteps(ev.result.steps);
+        setRunStatus("");
+        break;
+      case "error":
+        setRun({ output: `⚠ ${ev.message}`, steps: [], usage: { input: 0, output: 0 } });
+        setRunStatus("");
+        break;
+    }
+  }
+
   async function runTask() {
     if (!draft || !task.trim()) return;
     setRunBusy(true);
     setRun(null);
+    setLiveText("");
+    setLiveSteps([]);
+    setRunStatus("Starting…");
     try {
-      const r = await fetch(`/api/admin/agents/${draft.id}/run`, {
+      const resp = await fetch(`/api/admin/agents/${draft.id}/stream`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ task: task.trim() }),
       });
-      const d = await r.json();
-      if (d.error) setRun({ output: `⚠ ${d.error}`, steps: [], usage: { input: 0, output: 0 } });
-      else setRun({ output: d.output ?? "", steps: d.steps ?? [], usage: d.usage ?? { input: 0, output: 0 } });
+      if (!resp.body) throw new Error("no stream");
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split("\n\n");
+        buf = parts.pop() ?? "";
+        for (const part of parts) {
+          const line = part.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          try {
+            handleEvent(JSON.parse(line.slice(5).trim()) as RunEvent);
+          } catch {
+            /* ignore malformed frame */
+          }
+        }
+      }
     } catch {
       setRun({ output: "⚠ request failed", steps: [], usage: { input: 0, output: 0 } });
+      setRunStatus("");
     }
     setRunBusy(false);
+    loadRuns();
   }
 
   return (
@@ -252,13 +351,16 @@ export default function AdminAgents() {
                   {EFFORTS.map((e) => <option key={e} value={e}>{e}</option>)}
                 </Select>
               </Field>
-              <div style={{ gridColumn: "span 2" }}>
-                <Field label="Authority level">
-                  <Select value={draft.authority} onChange={(e) => set("authority", e.target.value as AgentDefinition["authority"])} style={{ width: "100%" }}>
-                    {AUTHORITY_LEVELS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-                  </Select>
-                </Field>
-              </div>
+              <Field label="Authority level">
+                <Select value={draft.authority} onChange={(e) => set("authority", e.target.value as AgentDefinition["authority"])} style={{ width: "100%" }}>
+                  {AUTHORITY_LEVELS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+                </Select>
+              </Field>
+              <Field label="Runtime" hint="managed = durable memory across runs">
+                <Select value={draft.runtime} onChange={(e) => set("runtime", e.target.value as AgentDefinition["runtime"])} style={{ width: "100%" }}>
+                  {RUNTIMES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                </Select>
+              </Field>
             </div>
 
             <div style={{ marginTop: 12 }}>
@@ -345,11 +447,16 @@ export default function AdminAgents() {
                         Save your changes before running.
                       </Mono>
                     )}
+                    {runBusy && runStatus && (
+                      <Mono s={{ fontSize: 11 }} c={LIME}>
+                        {runStatus}
+                      </Mono>
+                    )}
                   </div>
 
-                  {run && (
+                  {(run || liveText || liveSteps.length > 0) && (
                     <div style={{ marginTop: 12 }}>
-                      {run.steps.map((s, i) => (
+                      {liveSteps.map((s, i) => (
                         <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${VIOLET}` }}>
                           <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
                             ↳ delegated to {s.role} — {s.agent}
@@ -357,7 +464,9 @@ export default function AdminAgents() {
                           <Mono s={{ fontSize: 11, display: "block", margin: "2px 0 4px" }} c={ASH}>
                             “{s.task}”
                           </Mono>
-                          <div style={{ ...mono, fontSize: 12, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
+                          <div style={{ ...mono, fontSize: 12, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>
+                            {s.output || (runBusy ? "…" : "")}
+                          </div>
                         </div>
                       ))}
                       <div
@@ -373,9 +482,9 @@ export default function AdminAgents() {
                           whiteSpace: "pre-wrap",
                         }}
                       >
-                        {run.output || "(no output)"}
+                        {(run ? run.output : liveText) || (runBusy ? "…" : "(no output)")}
                       </div>
-                      {(run.usage.input > 0 || run.usage.output > 0) && (
+                      {run && (run.usage.input > 0 || run.usage.output > 0) && (
                         <Mono s={{ fontSize: 10, display: "block", marginTop: 6 }} c={ASH}>
                           {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
                         </Mono>
@@ -385,6 +494,36 @@ export default function AdminAgents() {
                 </>
               )}
             </Section>
+
+            {/* ---- run history ---- */}
+            {runs.length > 0 && (
+              <Section title="History" hint={`${runs.length} recent run${runs.length === 1 ? "" : "s"}`}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {runs.map((r) => (
+                    <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 12px" }}>
+                      <summary style={{ ...mono, fontSize: 12, color: CHALK, cursor: "pointer", listStyle: "none" }}>
+                        <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
+                        <Chip c={ASH}>{r.runtime}</Chip>
+                        <span style={{ color: ASH }}>{new Date(r.createdAt).toLocaleString()}</span>
+                        <div style={{ marginTop: 4, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.task}</div>
+                      </summary>
+                      <div style={{ marginTop: 8 }}>
+                        {r.steps.map((s, i) => (
+                          <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${VIOLET}` }}>
+                            <Mono s={{ fontSize: 10, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
+                            <div style={{ ...mono, fontSize: 11, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
+                          </div>
+                        ))}
+                        <div style={{ ...mono, fontSize: 12, color: CHALK, whiteSpace: "pre-wrap" }}>{r.output}</div>
+                        <Mono s={{ fontSize: 10, display: "block", marginTop: 6 }} c={ASH}>
+                          {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
+                        </Mono>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              </Section>
+            )}
 
             {/* ---- live prompt preview ---- */}
             <Section title="Live system prompt" hint="generated from the fields above — exactly what the agent runs on">

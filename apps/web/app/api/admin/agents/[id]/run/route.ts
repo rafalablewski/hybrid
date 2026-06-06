@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { runAgent } from "@/lib/agent-runtime";
+import { executeAgent } from "@/lib/agent-execute";
+import { recordRun } from "@/lib/agent-runs";
 import { rowToDefinition } from "../../shared";
 
-// Execute an agent on a task. Admin-only, heavily rate-limited (an LLM call —
-// and an executive fans out to its reports). The agent must be `active`. Without
-// ANTHROPIC_API_KEY it returns an honest "unconfigured" note (like /api/ai-coach)
-// rather than failing. Audited.
+// Execute an agent on a task (JSON, non-streaming — see /stream for live). Admin-
+// only, heavily rate-limited (an LLM call; an executive fans out to its reports).
+// The agent must be `active`. Without ANTHROPIC_API_KEY it returns an honest
+// "unconfigured" note. Persists the run + audits.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
@@ -38,8 +39,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
   }
 
-  // Roster for delegation: every active agent (coordinatedAgents narrows it to
-  // this executive's reports).
   let roster = [def];
   try {
     const rows = await prisma.agentConfig.findMany({ where: { status: "active" } });
@@ -49,23 +48,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const result = await runAgent({ apiKey, def, roster, task });
+    const result = await executeAgent({ apiKey, row, def, roster, task });
+    await recordRun({ def, task, result, status: "ok", actor: gate.admin });
     await audit({
       actor: gate.admin,
       action: "agent.run",
       targetType: "agent",
       targetId: id,
-      summary: `Ran ${def.name} (${def.role})${result.steps.length ? ` · delegated to ${result.steps.length}` : ""}`,
-      metadata: {
-        task: task.slice(0, 200),
-        delegations: result.steps.map((s) => s.role),
-        usage: result.usage,
-      },
+      summary: `Ran ${def.name} (${def.role}, ${def.runtime})${result.steps.length ? ` · delegated to ${result.steps.length}` : ""}`,
+      metadata: { task: task.slice(0, 200), runtime: def.runtime, delegations: result.steps.map((s) => s.role), usage: result.usage },
       req: request,
     });
     return NextResponse.json({ source: "ai", ...result });
   } catch (e) {
     console.error("[agent run] failed", e);
+    await recordRun({ def, task, result: { output: "(run failed)", steps: [], usage: { input: 0, output: 0 } }, status: "error", actor: gate.admin });
     return NextResponse.json({ error: "agent run failed" }, { status: 502 });
   }
 }
