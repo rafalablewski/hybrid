@@ -31,7 +31,8 @@ type RunLite = {
   createdAt: string;
 };
 type Upcoming = { id: string; agentName: string; role: string; status: string; task: string; cadence: string; nextRunAt: string | null };
-type Kpi = { metric: string; target: string };
+type Kpi = { metric: string; target: string; targetValue?: number | null };
+type Actual = { value: number; at: string; history: number[] };
 type Scorecard = {
   id: string;
   name: string;
@@ -46,6 +47,7 @@ type Scorecard = {
   tokens7d: number;
   cost7d: number;
   lastRunAt: string | null;
+  actuals: Record<string, Actual>;
 };
 type BrokenSchedule = { id: string; agentId: string; agentName: string; cadence: string; task: string; reason: string };
 type Overview = {
@@ -149,9 +151,9 @@ export default function AgentHQ() {
       </div>
 
       {tab === "command" && <Command data={data} />}
-      {tab === "scorecards" && <Scorecards data={data} />}
+      {tab === "scorecards" && <Scorecards data={data} onChange={load} />}
       {tab === "work" && <Work data={data} onRan={load} />}
-      {tab === "inbox" && <Inbox data={data} />}
+      {tab === "inbox" && <Inbox data={data} onChange={load} />}
       {tab === "reports" && <AdminAgentRuns />}
     </div>
   );
@@ -463,17 +465,17 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
 
 // ---- Scorecards ----------------------------------------------------------
 
-function Scorecards({ data }: { data: Overview | null }) {
+function Scorecards({ data, onChange }: { data: Overview | null; onChange: () => void }) {
   if (!data) return <Mono s={{ display: "block", padding: 20 }} c={ASH}>Loading scorecards…</Mono>;
   if (data.scorecards.length === 0) return <Empty>No agents yet — create your team in “AI agents”.</Empty>;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 16 }}>
-      {data.scorecards.map((s) => <ScorecardCard key={s.id} s={s} />)}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
+      {data.scorecards.map((s) => <ScorecardCard key={s.id} s={s} onChange={onChange} />)}
     </div>
   );
 }
 
-function ScorecardCard({ s }: { s: Scorecard }) {
+function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) {
   const sr = s.successRate;
   const srColor = sr == null ? ASH : sr >= 90 ? LIME : sr >= 70 ? AMBER : RED;
   return (
@@ -506,20 +508,87 @@ function ScorecardCard({ s }: { s: Scorecard }) {
         <Mini label="Last run" value={s.lastRunAt ? ago(s.lastRunAt) : "—"} />
       </div>
 
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }} c={AMBER}>KPI targets</Mono>
+      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }} c={AMBER}>KPIs — target vs actual</Mono>
       {s.kpis.length === 0 ? (
         <Mono s={{ fontSize: 11, display: "block" }} c={ASH}>No KPIs set.</Mono>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {s.kpis.map((k, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12 }}>
-              <span style={{ ...disp, color: CHALK, fontWeight: 600 }}>{k.metric}</span>
-              <Mono s={{ fontSize: 11, textAlign: "right", flexShrink: 0, maxWidth: "55%" }} c={ASH}>{k.target || "—"}</Mono>
-            </div>
-          ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {s.kpis.map((k, i) => <KpiRow key={i} agentId={s.id} k={k} actual={s.actuals[k.metric]} onLogged={onChange} />)}
         </div>
       )}
     </Card>
+  );
+}
+
+function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; actual?: Actual; onLogged: () => void }) {
+  const [val, setVal] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function log() {
+    const n = Number(val);
+    if (val === "" || Number.isNaN(n)) return;
+    setBusy(true);
+    await fetch(`/api/admin/agents/${agentId}/kpis`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ metric: k.metric, value: n }),
+    });
+    setBusy(false);
+    setVal("");
+    onLogged();
+  }
+
+  const target = k.targetValue ?? null;
+  const pct = target != null && target !== 0 && actual ? Math.round((actual.value / target) * 100) : null;
+  const onTarget = pct != null && pct >= 100;
+  const targetLabel = k.target.trim() || (target != null ? String(target) : "—");
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+        <span style={{ ...disp, color: CHALK, fontWeight: 700, fontSize: 13 }}>{k.metric}</span>
+        <Mono s={{ fontSize: 11, flexShrink: 0 }} c={ASH}>target {targetLabel}</Mono>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline", marginTop: 2 }}>
+        <Mono s={{ fontSize: 12 }} c={actual ? (target != null ? (onTarget ? LIME : AMBER) : CHALK) : ASH}>
+          {actual ? `actual ${actual.value}${pct != null ? ` · ${pct}% of target` : ""}` : "no actual logged"}
+        </Mono>
+        {actual && actual.history.length > 1 && <Spark values={[...actual.history].reverse()} up={onTarget} />}
+      </div>
+      {target != null && actual && (
+        <div style={{ height: 5, borderRadius: 99, background: INK2, marginTop: 5, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${Math.min(100, Math.max(0, pct ?? 0))}%`, background: onTarget ? LIME : AMBER, borderRadius: 99 }} />
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+        <input
+          type="number"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && log()}
+          placeholder="log actual…"
+          style={{ ...mono, fontSize: 12, flex: 1, padding: "5px 8px", borderRadius: 7, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+        />
+        <button
+          disabled={busy || val === ""}
+          onClick={log}
+          style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", borderRadius: 7, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: val === "" ? ASH : LIME, opacity: busy ? 0.5 : 1 }}
+        >
+          log
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Spark({ values, up }: { values: number[]; up: boolean }) {
+  const max = Math.max(...values, 1);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 2, height: 16 }}>
+      {values.map((v, i) => (
+        <span key={i} style={{ width: 3, height: Math.max(2, (v / max) * 16), background: up ? LIME : AMBER, borderRadius: 1, opacity: 0.4 + 0.6 * ((i + 1) / values.length) }} />
+      ))}
+    </span>
   );
 }
 
@@ -534,28 +603,69 @@ function Mini({ label, value }: { label: string; value: string }) {
 
 // ---- Inbox ---------------------------------------------------------------
 
-function Inbox({ data }: { data: Overview | null }) {
-  if (!data) return <Mono s={{ display: "block", padding: 20 }} c={ASH}>Loading inbox…</Mono>;
-  const { failed, brokenSchedules } = data.attention;
-  if (failed.length === 0 && brokenSchedules.length === 0)
+type Notif = { id: string; kind: string; agentName: string | null; title: string; body: string | null; severity: string; read: boolean; createdAt: string };
+
+function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void }) {
+  const [notifs, setNotifs] = useState<Notif[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const loadNotifs = useCallback(() => {
+    fetch("/api/admin/notifications")
+      .then((r) => r.json())
+      .then((d) => setNotifs(d.notifications ?? []))
+      .catch(() => setNotifs([]));
+  }, []);
+  useEffect(loadNotifs, [loadNotifs]);
+
+  async function markRead(id?: string) {
+    setBusy(true);
+    await fetch("/api/admin/notifications", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(id ? { id } : { all: true }),
+    });
+    setBusy(false);
+    loadNotifs();
+    onChange(); // refresh the HQ badge
+  }
+
+  const brokenSchedules = data?.attention.brokenSchedules ?? [];
+  const list = notifs ?? [];
+  const unread = list.filter((n) => !n.read).length;
+  const sevColor = (s: string) => (s === "error" ? RED : s === "info" ? BLUE : AMBER);
+
+  if (notifs !== null && list.length === 0 && brokenSchedules.length === 0)
     return (
       <Card>
         <Mono s={{ fontSize: 14, display: "block", textAlign: "center", padding: 28 }} c={LIME}>✓ All clear — nothing needs attention.</Mono>
       </Card>
     );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {failed.length > 0 && (
+      {list.length > 0 && (
         <Card style={{ borderLeft: `3px solid ${RED}` }}>
-          <SectionHead title="Failed runs" kicker={`${failed.length} need a look`} />
-          {failed.map((r) => (
-            <div key={r.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}` }}>
-              <span style={{ width: 7, height: 7, borderRadius: 99, background: RED, flexShrink: 0, marginTop: 5 }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <SectionHead title="Notifications" kicker={`${unread} unread · ${list.length} recent`} />
+            {unread > 0 && (
+              <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "6px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: ASH }}>
+                Mark all read
+              </button>
+            )}
+          </div>
+          {list.map((n) => (
+            <div key={n.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}`, opacity: n.read ? 0.5 : 1 }}>
+              <span style={{ width: 7, height: 7, borderRadius: 99, background: sevColor(n.severity), flexShrink: 0, marginTop: 5 }} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ ...disp, fontSize: 13, fontWeight: 700, color: CHALK }}>{r.agentName} <span style={{ color: ASH, fontWeight: 400 }}>· {r.agentRole}</span> <Chip c={ASH}>{r.runtime}</Chip></div>
-                <Mono s={{ fontSize: 11, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{r.task}</Mono>
+                <div style={{ ...disp, fontSize: 13, fontWeight: 700, color: CHALK }}>{n.title}</div>
+                {n.body && <Mono s={{ fontSize: 11, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{n.body}</Mono>}
               </div>
-              <Mono s={{ fontSize: 10, flexShrink: 0 }} c={ASH}>{ago(r.createdAt)}</Mono>
+              <Mono s={{ fontSize: 10, flexShrink: 0 }} c={ASH}>{ago(n.createdAt)}</Mono>
+              {!n.read && (
+                <button disabled={busy} onClick={() => markRead(n.id)} title="Dismiss" style={{ ...mono, fontSize: 14, lineHeight: 1, background: "transparent", border: "none", color: ASH, cursor: "pointer", flexShrink: 0 }}>
+                  ✕
+                </button>
+              )}
             </div>
           ))}
           <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={ASH}>Full transcripts in the Reports tab.</Mono>

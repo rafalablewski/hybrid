@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { costUsd } from "@hybrid/core";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 
@@ -54,10 +55,28 @@ export async function GET(request: Request) {
     });
   }
 
+  // Actual AI agent run spend over the last 30 days (real cost, fed into the
+  // Financials console). Best-effort: empty if the agent tables aren't migrated.
+  let agentSpend30d = 0;
+  let agentRuns30d = 0;
+  try {
+    const [runRows, agentRows] = await Promise.all([
+      prisma.agentRun.findMany({ where: { createdAt: { gte: since30 } }, select: { agentId: true, inputTokens: true, outputTokens: true } }),
+      prisma.agentConfig.findMany({ select: { id: true, model: true } }),
+    ]);
+    const modelOf = new Map(agentRows.map((a) => [a.id, a.model]));
+    agentRuns30d = runRows.length;
+    agentSpend30d = runRows.reduce((n, r) => n + costUsd(modelOf.get(r.agentId) ?? "claude-opus-4-8", r.inputTokens, r.outputTokens), 0);
+  } catch {
+    /* agent tables not migrated yet */
+  }
+
   return NextResponse.json({
     totalUsers,
     sessions,
     newUsers30,
+    agentSpend30d,
+    agentRuns30d,
     coaches: activeCoaches.length,
     mau: recentSessionUsers.length,
     orgs,

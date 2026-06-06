@@ -44,6 +44,8 @@ export type AgentRuntime = "messages" | "managed";
 export interface Kpi {
   metric: string;
   target: string;
+  /** Optional numeric target, for an explicit target-vs-actual scorecard. */
+  targetValue?: number | null;
 }
 
 /** The full, editable definition of one agent. Everything here is admin-tunable
@@ -181,7 +183,10 @@ export function buildSystemPrompt(def: AgentDefinition): string {
       bullets(
         def.kpis
           .filter((k) => k.metric.trim())
-          .map((k) => (k.target.trim() ? `${k.metric.trim()} — ${k.target.trim()}` : k.metric.trim())),
+          .map((k) => {
+            const t = k.target.trim() || (k.targetValue != null ? `target ${k.targetValue}` : "");
+            return t ? `${k.metric.trim()} — ${t}` : k.metric.trim();
+          }),
       ),
     );
   }
@@ -573,9 +578,11 @@ export function parseAgentInput(
       const metric = (k as Kpi).metric;
       const target = (k as Kpi).target;
       if (typeof metric !== "string" || !metric.trim()) continue; // drop blank rows
+      const tv = (k as Kpi).targetValue;
       kpis.push({
         metric: metric.trim().slice(0, 120),
         target: typeof target === "string" ? target.trim().slice(0, 200) : "",
+        targetValue: typeof tv === "number" && Number.isFinite(tv) ? tv : null,
       });
     }
     out.kpis = kpis;

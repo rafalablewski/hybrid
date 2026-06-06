@@ -24,7 +24,11 @@ function kpiArray(v: unknown): Kpi[] {
   if (!Array.isArray(v)) return [];
   return v
     .filter((k): k is Kpi => !!k && typeof k === "object" && typeof (k as Kpi).metric === "string")
-    .map((k) => ({ metric: k.metric, target: typeof k.target === "string" ? k.target : "" }));
+    .map((k) => ({
+      metric: k.metric,
+      target: typeof k.target === "string" ? k.target : "",
+      targetValue: typeof k.targetValue === "number" ? k.targetValue : null,
+    }));
 }
 
 /** Map a stored row into the core AgentDefinition shape. */

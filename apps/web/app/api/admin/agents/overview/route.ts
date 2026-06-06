@@ -74,6 +74,31 @@ export async function GET(request: Request) {
     /* AgentSchedule not migrated yet */
   }
 
+  // KPI actuals: latest value + a short history per (agent, metric).
+  const actualsByAgent = new Map<string, Record<string, { value: number; at: string; history: number[] }>>();
+  try {
+    const ms = await prisma.agentKpiMeasurement.findMany({ orderBy: { createdAt: "desc" }, take: 1000 });
+    for (const m of ms) {
+      let perAgent = actualsByAgent.get(m.agentId);
+      if (!perAgent) {
+        perAgent = {};
+        actualsByAgent.set(m.agentId, perAgent);
+      }
+      const cur = perAgent[m.metric];
+      if (!cur) perAgent[m.metric] = { value: m.value, at: m.createdAt.toISOString(), history: [m.value] };
+      else if (cur.history.length < 8) cur.history.push(m.value); // newest-first → history trails back
+    }
+  } catch {
+    /* AgentKpiMeasurement not migrated yet */
+  }
+
+  let unreadNotifs = 0;
+  try {
+    unreadNotifs = await prisma.agentNotification.count({ where: { read: false } });
+  } catch {
+    /* AgentNotification not migrated yet */
+  }
+
   // --- time windows ---
   const now = Date.now();
   const dayMs = 86_400_000;
@@ -121,6 +146,7 @@ export async function GET(request: Request) {
       tokens7d: sum(wk, (r) => r.inputTokens + r.outputTokens),
       cost7d: sum(wk, (r) => r.cost),
       lastRunAt: mine[0]?.createdAt ?? null, // runs are newest-first
+      actuals: actualsByAgent.get(d.id) ?? {},
     };
   });
 
@@ -159,7 +185,6 @@ export async function GET(request: Request) {
       task: s.task,
       reason: !a ? "agent deleted" : `agent ${a.status}`,
     }));
-  const failed24h = failed.filter((r) => within(r.createdAt, now - dayMs)).length;
 
   const stats = {
     agents: {
@@ -176,7 +201,7 @@ export async function GET(request: Request) {
     tokens: { today: sum(runsToday, (r) => r.inputTokens + r.outputTokens), week: sum(runsWeek, (r) => r.inputTokens + r.outputTokens) },
     cost: { today: sum(runsToday, (r) => r.cost), week: sum(runsWeek, (r) => r.cost) },
     schedules: { total: schedules.length, enabled: schedules.filter((s) => s.enabled).length },
-    attention: failed24h + brokenSchedules.length,
+    attention: unreadNotifs + brokenSchedules.length,
   };
 
   return NextResponse.json({

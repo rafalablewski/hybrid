@@ -586,6 +586,40 @@ model AgentSchedule {
   @@index([agentId])
 }
 
+// A recorded numeric actual for one of an agent's KPIs, over time — the "actual"
+// side of the target-vs-actual scorecard. Logged by an admin (or, later, an
+// agent). Server-only writes; deny-by-default RLS.
+model AgentKpiMeasurement {
+  id              String   @id @default(cuid())
+  agentId         String
+  metric          String // matches a Kpi.metric on the agent
+  value           Float
+  note            String?
+  recordedById    String?
+  recordedByEmail String?
+  createdAt       DateTime @default(now())
+
+  @@index([agentId, metric, createdAt])
+}
+
+// A persistent, dismissible notification for the Agent HQ inbox (e.g. a failed
+// run). Written best-effort when the event happens; marked read by the admin.
+// Server-only; deny-by-default RLS.
+model AgentNotification {
+  id        String   @id @default(cuid())
+  kind      String // run_failed | …
+  agentId   String?
+  agentName String?
+  title     String
+  body      String?
+  severity  String   @default("warning") // info | warning | error
+  read      Boolean  @default(false)
+  refId     String? // related entity (e.g. AgentRun id)
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
 // A user-submitted content report — the second feeder of the admin moderation
 // queue (alongside discoverable talent profiles awaiting approval). Denormalized
 // (no FK relations, like AdminAudit) so it survives a reporter/target delete.

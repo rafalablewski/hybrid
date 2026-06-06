@@ -192,7 +192,7 @@ describe("parseAgentInput", () => {
       { kpis: [{ metric: "  Runway  ", target: " 18mo " }, { metric: "", target: "x" }] },
       false,
     );
-    expect(r.ok && r.data.kpis).toEqual([{ metric: "Runway", target: "18mo" }]);
+    expect(r.ok && r.data.kpis).toEqual([{ metric: "Runway", target: "18mo", targetValue: null }]);
   });
 
   it("normalizes reportsTo '' to null", () => {

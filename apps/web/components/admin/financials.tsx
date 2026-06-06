@@ -75,6 +75,7 @@ const band = (v: number, great: number, ok: number, higherBetter = true) => {
 
 export default function AdminFinancials() {
   const [seed, setSeed] = useState<{ totalUsers: number; coaches: number } | null>(null);
+  const [agentCost, setAgentCost] = useState<{ spend: number; runs: number } | null>(null);
   const [seedErr, setSeedErr] = useState(false);
   const [useLive, setUseLive] = useState(true);
   const [a, setA] = useState<EconomicAssumptions>(DEFAULT_ASSUMPTIONS);
@@ -94,6 +95,10 @@ export default function AdminFinancials() {
         const coaches = typeof s?.coaches === "number" ? s.coaches : DEFAULT_ASSUMPTIONS.coaches;
         setSeed({ totalUsers, coaches });
         setA((prev) => ({ ...prev, totalUsers, coaches }));
+        setAgentCost({
+          spend: typeof s?.agentSpend30d === "number" ? s.agentSpend30d : 0,
+          runs: typeof s?.agentRuns30d === "number" ? s.agentRuns30d : 0,
+        });
       })
       .catch(() => {
         if (active) setSeedErr(true);
@@ -221,6 +226,20 @@ export default function AdminFinancials() {
 
       {/* ---- what it costs us ---- */}
       <Section title="What it costs us" kicker="Cost of goods + fixed opex (COGS drivers)">
+        {agentCost && agentCost.runs > 0 && (
+          <Card style={{ borderLeft: `3px solid ${BLUE}`, marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>Actual AI agent spend</div>
+              <Chip c={BLUE}>real · last 30d</Chip>
+            </div>
+            <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>
+              {usdFull(agentCost.spend)} over {agentCost.runs.toLocaleString()} runs (≈ {usdFull(agentCost.spend / 30)}/day)
+            </Mono>
+            <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
+              Measured from real agent runs (tokens × model list price). Use it to calibrate the modeled AI (Anthropic) COGS below — that figure is still an assumption.
+            </Mono>
+          </Card>
+        )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           {COST_DRIVERS.map((c) => {
             const live =

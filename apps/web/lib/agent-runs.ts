@@ -34,6 +34,25 @@ export async function recordRun(input: {
   } catch (e) {
     console.error("[agent run] failed to record run for", input.def.id, e);
   }
+
+  // Persistent inbox notification on failure (best-effort, independent of the
+  // run write above so one failing doesn't lose the other).
+  if (input.status === "error") {
+    try {
+      await prisma.agentNotification.create({
+        data: {
+          kind: "run_failed",
+          agentId: input.def.id,
+          agentName: input.def.name,
+          title: `${input.def.name} run failed`,
+          body: input.task.slice(0, 300),
+          severity: "error",
+        },
+      });
+    } catch (e) {
+      console.error("[agent run] failed to record notification for", input.def.id, e);
+    }
+  }
 }
 
 /** Persist the lazily-created Managed Agents ids back onto the agent so the next

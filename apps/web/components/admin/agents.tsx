@@ -710,16 +710,26 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
       {items.map((k, i) => (
         <div key={i} style={{ display: "flex", gap: 6 }}>
           <input
-            style={{ ...input, flex: "0 0 40%" }}
+            style={{ ...input, flex: "0 0 32%" }}
             placeholder="metric"
             value={k.metric}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, metric: e.target.value } : x)))}
           />
           <input
             style={input}
-            placeholder="target"
+            placeholder="target (text)"
             value={k.target}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, target: e.target.value } : x)))}
+          />
+          <input
+            style={{ ...input, flex: "0 0 96px" }}
+            type="number"
+            placeholder="# target"
+            title="Optional numeric target for the scorecard"
+            value={k.targetValue ?? ""}
+            onChange={(e) =>
+              onChange(items.map((x, j) => (j === i ? { ...x, targetValue: e.target.value === "" ? null : Number(e.target.value) } : x)))
+            }
           />
           <button style={removeBtn} title="Remove" onClick={() => onChange(items.filter((_, j) => j !== i))}>
             ×
