@@ -25,7 +25,8 @@ type RunEvent =
   | { type: "delegate_start"; role: string; agent: string; task: string }
   | { type: "delegate_end"; role: string; agent: string; output: string }
   | { type: "done"; result: RunResult }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "pending"; estimate: number | null };
 type RunRow = {
   id: string;
   task: string;
@@ -187,8 +188,8 @@ export default function AdminAgents() {
 
   async function save() {
     if (!draft) return;
-    const { id, name, role, mandate, status, model, effort, authority, reportsTo, responsibilities, kpis, guardrails, escalationThreshold, tone, collaborators, tools } = draft;
-    await patch(id, { name, role, mandate, status, model, effort, authority, reportsTo, responsibilities, kpis, guardrails, escalationThreshold, tone, collaborators, tools });
+    const { id, name, role, mandate, status, model, effort, authority, reportsTo, responsibilities, kpis, guardrails, escalationThreshold, tone, collaborators, tools, runtime, approvalThresholdUsd, budgetUsd7d } = draft;
+    await patch(id, { name, role, mandate, status, model, effort, authority, reportsTo, responsibilities, kpis, guardrails, escalationThreshold, tone, collaborators, tools, runtime, approvalThresholdUsd, budgetUsd7d });
   }
 
   async function remove(id: string) {
@@ -236,6 +237,14 @@ export default function AdminAgents() {
         break;
       case "error":
         setRun({ output: `⚠ ${ev.message}`, steps: [], usage: { input: 0, output: 0 } });
+        setRunStatus("");
+        break;
+      case "pending":
+        setRun({
+          output: `⏳ Queued for a second operator's approval${ev.estimate != null ? ` (est $${ev.estimate.toFixed(2)})` : ""}. Approve it in Agent HQ → Approvals.`,
+          steps: [],
+          usage: { input: 0, output: 0 },
+        });
         setRunStatus("");
         break;
     }
@@ -460,6 +469,32 @@ export default function AdminAgents() {
                     </button>
                   );
                 })}
+              </div>
+            </Section>
+
+            {/* ---- spend controls ---- */}
+            <Section title="Spend controls" hint="0 = off">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <Field label="Approval threshold ($)" hint="hold for a 2nd operator when est. run cost ≥ this">
+                  <input
+                    style={input}
+                    type="number"
+                    min={0}
+                    step="0.5"
+                    value={draft.approvalThresholdUsd || ""}
+                    onChange={(e) => set("approvalThresholdUsd", e.target.value === "" ? 0 : Number(e.target.value))}
+                  />
+                </Field>
+                <Field label="Weekly budget cap ($)" hint="auto-pause when 7-day spend ≥ this">
+                  <input
+                    style={input}
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={draft.budgetUsd7d || ""}
+                    onChange={(e) => set("budgetUsd7d", e.target.value === "" ? 0 : Number(e.target.value))}
+                  />
+                </Field>
               </div>
             </Section>
 

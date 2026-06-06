@@ -51,6 +51,8 @@ export function rowToDefinition(row: AgentConfig): AgentDefinition {
     collaborators: strArray(row.collaborators),
     tools: strArray(row.tools),
     runtime: (row.runtime as AgentRuntime) ?? "messages",
+    approvalThresholdUsd: row.approvalThresholdUsd ?? 0,
+    budgetUsd7d: row.budgetUsd7d ?? 0,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

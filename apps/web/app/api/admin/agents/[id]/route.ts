@@ -63,6 +63,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(d.collaborators !== undefined ? { collaborators: d.collaborators as never } : {}),
       ...(d.tools !== undefined ? { tools: d.tools as never } : {}),
       ...(d.runtime !== undefined ? { runtime: d.runtime } : {}),
+      ...(d.approvalThresholdUsd !== undefined ? { approvalThresholdUsd: d.approvalThresholdUsd } : {}),
+      ...(d.budgetUsd7d !== undefined ? { budgetUsd7d: d.budgetUsd7d } : {}),
       updatedById: gate.admin.id,
       updatedByEmail: gate.admin.email,
     },

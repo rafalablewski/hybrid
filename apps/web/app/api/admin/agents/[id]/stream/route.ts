@@ -4,6 +4,7 @@ import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
+import { enforceBudget, needsApproval } from "@/lib/agent-policy";
 import type { RunEvent, RunResult } from "@/lib/agent-runtime";
 import { rowToDefinition } from "../../shared";
 
@@ -34,7 +35,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (event: RunEvent | { type: "done"; result: RunResult } | { type: "error"; message: string }) => {
+      const send = (
+        event:
+          | RunEvent
+          | { type: "done"; result: RunResult }
+          | { type: "error"; message: string }
+          | { type: "pending"; estimate: number | null },
+      ) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
@@ -44,6 +51,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           message:
             "The agent runtime isn't configured. Set ANTHROPIC_API_KEY in the server environment to run agents.",
         });
+        controller.close();
+        return;
+      }
+
+      // Budget pre-check.
+      if (await enforceBudget(def)) {
+        send({ type: "error", message: "agent is over its 7-day budget and has been paused" });
+        controller.close();
+        return;
+      }
+
+      // Approval gate.
+      const ap = await needsApproval(def);
+      if (ap.required) {
+        try {
+          await prisma.agentApproval.create({
+            data: { agentId: id, agentName: def.name, task, estimateUsd: ap.estimate ?? 0, runtime: def.runtime, requestedById: gate.admin.id, requestedByEmail: gate.admin.email },
+          });
+          send({ type: "pending", estimate: ap.estimate });
+        } catch {
+          send({ type: "error", message: "approval required but the approvals table is missing" });
+        }
         controller.close();
         return;
       }
@@ -59,6 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       try {
         const result = await executeAgent({ apiKey, row, def, roster, task, onEvent: (e) => send(e) });
         await recordRun({ def, task, result, status: "ok", actor: gate.admin });
+        await enforceBudget(def); // pause if this run pushed it over the cap
         await audit({
           actor: gate.admin,
           action: "agent.run",

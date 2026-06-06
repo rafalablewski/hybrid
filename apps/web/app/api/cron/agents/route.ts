@@ -3,6 +3,7 @@ import { nextRunFrom } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
+import { enforceBudget } from "@/lib/agent-policy";
 import { rowToDefinition } from "../../admin/agents/shared";
 
 // Scheduled-run worker. Hit by Vercel Cron (see apps/web/vercel.json) — NOT
@@ -49,9 +50,17 @@ export async function GET(request: Request) {
       continue;
     }
     const def = rowToDefinition(row);
+    // Respect the 7-day budget: skip (and pause) an over-budget agent. Scheduled
+    // runs are pre-authorized by the operator who created them, so they bypass the
+    // approval gate — but never the budget cap.
+    if (await enforceBudget(def)) {
+      await advance;
+      continue;
+    }
     try {
       const result = await executeAgent({ apiKey, row, def, roster, task: sched.task });
       await recordRun({ def, task: sched.task, result, status: "ok" });
+      await enforceBudget(def);
       ran++;
     } catch (e) {
       console.error("[cron agents] run failed for", sched.agentId, e);

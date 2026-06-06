@@ -4,6 +4,7 @@ import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
+import { enforceBudget, needsApproval } from "@/lib/agent-policy";
 import { rowToDefinition } from "../../shared";
 
 // Execute an agent on a task (JSON, non-streaming — see /stream for live). Admin-
@@ -39,6 +40,31 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
   }
 
+  // Budget pre-check: if already at/over the 7-day cap, pause + block.
+  if (await enforceBudget(def))
+    return NextResponse.json({ error: "agent is over its 7-day budget and has been paused" }, { status: 409 });
+
+  // Approval gate: hold the run for a second operator if the estimate crosses it.
+  const ap = await needsApproval(def);
+  if (ap.required) {
+    try {
+      const approval = await prisma.agentApproval.create({
+        data: {
+          agentId: id,
+          agentName: def.name,
+          task,
+          estimateUsd: ap.estimate ?? 0,
+          runtime: def.runtime,
+          requestedById: gate.admin.id,
+          requestedByEmail: gate.admin.email,
+        },
+      });
+      return NextResponse.json({ pending: true, approvalId: approval.id, estimate: ap.estimate });
+    } catch {
+      return NextResponse.json({ error: "approval required but the approvals table is missing" }, { status: 503 });
+    }
+  }
+
   let roster = [def];
   try {
     const rows = await prisma.agentConfig.findMany({ where: { status: "active" } });
@@ -50,6 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const result = await executeAgent({ apiKey, row, def, roster, task });
     await recordRun({ def, task, result, status: "ok", actor: gate.admin });
+    await enforceBudget(def); // pause if this run pushed it over the cap
     await audit({
       actor: gate.admin,
       action: "agent.run",

@@ -536,6 +536,8 @@ model AgentConfig {
   runtime             String   @default("messages") // messages | managed
   managedAgentId      String? // Claude Managed Agents agent id (created lazily, reused)
   memoryStoreId       String? // durable memory store id (created lazily, reused)
+  approvalThresholdUsd Float   @default(0) // require 2nd-operator approval when est. run cost ≥ this (0 = off)
+  budgetUsd7d         Float    @default(0) // auto-pause when trailing-7d spend ≥ this (0 = off)
   updatedById         String?
   updatedByEmail      String?
   createdAt           DateTime @default(now())
@@ -600,6 +602,28 @@ model AgentKpiMeasurement {
   createdAt       DateTime @default(now())
 
   @@index([agentId, metric, createdAt])
+}
+
+// A run held for a second operator's approval (two-person control). Created when
+// an agent's estimated run cost crosses its approvalThresholdUsd; a DIFFERENT
+// operator approves (which executes it) or denies. Server-only; deny-by-default.
+model AgentApproval {
+  id               String    @id @default(cuid())
+  agentId          String
+  agentName        String
+  task             String
+  estimateUsd      Float     @default(0)
+  runtime          String    @default("messages")
+  status           String    @default("pending") // pending | approved | denied
+  requestedById    String?
+  requestedByEmail String?
+  decidedById      String?
+  decidedByEmail   String?
+  runId            String? // the AgentRun produced once approved + executed
+  createdAt        DateTime  @default(now())
+  decidedAt        DateTime?
+
+  @@index([status, createdAt])
 }
 
 // A persistent, dismissible notification for the Agent HQ inbox (e.g. a failed

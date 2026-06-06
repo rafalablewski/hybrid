@@ -8,6 +8,9 @@ import {
   delegateToolName,
   resolveEffort,
   costUsd,
+  estimateRunCost,
+  summarizeRuns,
+  digestText,
   cadenceMs,
   nextRunFrom,
   ROLE_PRESETS,
@@ -33,6 +36,8 @@ function def(over: Partial<AgentDefinition> = {}): AgentDefinition {
     collaborators: ["CFO", "CMO"],
     tools: ["delegate", "web_search", "memory"],
     runtime: "messages",
+    approvalThresholdUsd: 0,
+    budgetUsd7d: 0,
     ...over,
   };
 }
@@ -146,6 +151,37 @@ describe("costUsd", () => {
   });
   it("falls back to Opus pricing for an unknown model", () => {
     expect(costUsd("legacy-model", 1_000_000, 0)).toBeCloseTo(5);
+  });
+});
+
+describe("estimateRunCost", () => {
+  it("means recent costs, null when empty", () => {
+    expect(estimateRunCost([])).toBeNull();
+    expect(estimateRunCost([1, 2, 3])).toBeCloseTo(2);
+  });
+});
+
+describe("digest", () => {
+  const runs = [
+    { agentName: "CFO", status: "ok", cost: 0.5, task: "model" },
+    { agentName: "CFO", status: "error", cost: 0.1, task: "broke" },
+    { agentName: "CMO", status: "ok", cost: 0.2, task: "copy" },
+  ];
+  it("summarizes totals, success rate, cost, top agents, failures", () => {
+    const s = summarizeRuns(runs);
+    expect(s.total).toBe(3);
+    expect(s.ok).toBe(2);
+    expect(s.error).toBe(1);
+    expect(s.successRate).toBe(67);
+    expect(s.costUsd).toBeCloseTo(0.8);
+    expect(s.topAgents[0]).toEqual({ name: "CFO", runs: 2, cost: 0.6 });
+    expect(s.failures).toEqual([{ name: "CFO", task: "broke" }]);
+  });
+  it("renders text", () => {
+    const t = digestText(summarizeRuns(runs), "today");
+    expect(t).toContain("Agent digest — today");
+    expect(t).toContain("3 runs");
+    expect(t).toContain("⚠ 1 failed");
   });
 });
 

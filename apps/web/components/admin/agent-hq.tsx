@@ -59,6 +59,7 @@ type Overview = {
     cost: { today: number; week: number };
     schedules: { total: number; enabled: number };
     attention: number;
+    pendingApprovals: number;
   };
   trend: { day: string; ok: number; error: number }[];
   recent: RunLite[];
@@ -72,6 +73,7 @@ const TABS = [
   { id: "command", label: "Command center" },
   { id: "scorecards", label: "Scorecards" },
   { id: "work", label: "Work" },
+  { id: "approvals", label: "Approvals" },
   { id: "inbox", label: "Inbox" },
   { id: "reports", label: "Reports" },
 ] as const;
@@ -120,7 +122,7 @@ export default function AgentHQ() {
     <div>
       <div style={{ display: "flex", gap: 6, marginBottom: 18, borderBottom: `1px solid ${LINE}` }}>
         {TABS.map((t) => {
-          const badge = t.id === "inbox" ? data?.stats.attention ?? 0 : 0;
+          const badge = t.id === "inbox" ? data?.stats.attention ?? 0 : t.id === "approvals" ? data?.stats.pendingApprovals ?? 0 : 0;
           return (
             <button
               key={t.id}
@@ -153,6 +155,7 @@ export default function AgentHQ() {
       {tab === "command" && <Command data={data} />}
       {tab === "scorecards" && <Scorecards data={data} onChange={load} />}
       {tab === "work" && <Work data={data} onRan={load} />}
+      {tab === "approvals" && <Approvals onChange={load} />}
       {tab === "inbox" && <Inbox data={data} onChange={load} />}
       {tab === "reports" && <AdminAgentRuns />}
     </div>
@@ -251,6 +254,10 @@ function Command({ data }: { data: Overview | null }) {
           )}
         </Card>
       </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <DigestCard />
+      </div>
     </div>
   );
 }
@@ -335,6 +342,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
       });
       const d = await r.json();
       if (d.error || d.source === "unconfigured") setResult({ output: d.error ?? d.output, error: true });
+      else if (d.pending) setResult({ output: `⏳ Queued for a second operator's approval${d.estimate != null ? ` (est $${d.estimate.toFixed(2)})` : ""} — see the Approvals tab.` });
       else setResult({ output: d.output ?? "(no output)" });
       onRan();
     } catch {
@@ -648,6 +656,118 @@ function Mini({ label, value }: { label: string; value: string }) {
       <Mono s={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: CHALK, marginTop: 2 }}>{value}</div>
     </div>
+  );
+}
+
+// ---- Approvals -----------------------------------------------------------
+
+type Approval = { id: string; agentName: string; task: string; estimateUsd: number; runtime: string; requestedByEmail: string | null; createdAt: string };
+
+function Approvals({ onChange }: { onChange: () => void }) {
+  const [items, setItems] = useState<Approval[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState("");
+
+  const load = useCallback(() => {
+    fetch("/api/admin/approvals")
+      .then((r) => r.json())
+      .then((d) => setItems(d.approvals ?? []))
+      .catch(() => setItems([]));
+  }, []);
+  useEffect(load, [load]);
+
+  async function decide(id: string, decision: "approve" | "deny") {
+    setBusy(id);
+    setErr("");
+    const r = await fetch(`/api/admin/approvals/${id}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ decision }),
+    });
+    const d = await r.json().catch(() => ({}));
+    setBusy(null);
+    if (d.error) setErr(d.error);
+    load();
+    onChange();
+  }
+
+  if (items === null) return <Mono s={{ display: "block", padding: 20 }} c={ASH}>Loading approvals…</Mono>;
+  if (items.length === 0)
+    return (
+      <Card>
+        <Mono s={{ fontSize: 14, display: "block", textAlign: "center", padding: 28 }} c={LIME}>✓ No runs awaiting approval.</Mono>
+      </Card>
+    );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Mono s={{ fontSize: 11, display: "block" }} c={ASH}>
+        {items.length} run(s) held for a second operator. You can&apos;t approve your own request.
+      </Mono>
+      {err && <Mono s={{ fontSize: 12, display: "block" }} c={RED}>{err}</Mono>}
+      {items.map((a) => (
+        <Card key={a.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ ...disp, fontSize: 15, fontWeight: 800, color: CHALK }}>
+                {a.agentName} <Chip c={ASH}>{a.runtime}</Chip>{a.estimateUsd > 0 && <Chip c={VIOLET}>est ${a.estimateUsd.toFixed(2)}</Chip>}
+              </div>
+              <Mono s={{ fontSize: 12, display: "block", marginTop: 2, whiteSpace: "pre-wrap" }} c={ASH}>{a.task}</Mono>
+              <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: LIME, opacity: busy === a.id ? 0.5 : 1 }}>
+                Approve &amp; run
+              </button>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH }}>
+                Deny
+              </button>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// ---- Daily digest --------------------------------------------------------
+
+function DigestCard() {
+  const [d, setD] = useState<{ text: string; slackConfigured: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/agents/digest")
+      .then((r) => r.json())
+      .then((j) => setD({ text: j.text ?? "", slackConfigured: Boolean(j.slackConfigured) }))
+      .catch(() => setD(null));
+  }, []);
+
+  async function send() {
+    setBusy(true);
+    setSent(null);
+    const r = await fetch("/api/admin/agents/digest", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    setSent(j.sent ? "Sent to Slack ✓" : j.reason || j.error || "not sent");
+  }
+
+  return (
+    <Card span={2}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <SectionHead title="Daily digest" kicker="last 24h · auto-posts to Slack via cron" />
+        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "7px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+          {busy ? "Sending…" : "Send to Slack now"}
+        </button>
+      </div>
+      <pre style={{ ...mono, fontSize: 12, lineHeight: 1.55, color: CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, margin: "4px 0 0", whiteSpace: "pre-wrap" }}>
+        {d ? d.text : "Loading…"}
+      </pre>
+      <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={sent ? LIME : ASH}>
+        {sent ?? (d && !d.slackConfigured ? "Set SLACK_WEBHOOK_URL in the server env to enable delivery." : "Posts daily at 08:05 UTC (apps/web/vercel.json).")}
+      </Mono>
+    </Card>
   );
 }
 

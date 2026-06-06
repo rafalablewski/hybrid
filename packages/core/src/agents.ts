@@ -76,6 +76,10 @@ export interface AgentDefinition {
   tools: string[];
   /** Execution backend (default "messages"). */
   runtime: AgentRuntime;
+  /** Require a 2nd operator's approval when an estimated run cost ≥ this (USD; 0 = off). */
+  approvalThresholdUsd: number;
+  /** Auto-pause the agent when its trailing-7-day spend ≥ this (USD; 0 = off). */
+  budgetUsd7d: number;
   updatedAt?: string;
 }
 
@@ -110,6 +114,69 @@ export const MODEL_PRICING: Record<AgentModelId, { input: number; output: number
 export function costUsd(model: string, inputTokens: number, outputTokens: number): number {
   const p = MODEL_PRICING[model as AgentModelId] ?? MODEL_PRICING["claude-opus-4-8"];
   return (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;
+}
+
+/** Estimate a run's cost from the agent's recent runs (mean), or null if there's
+ *  no history to estimate from. Used by the approval gate. */
+export function estimateRunCost(recentCosts: number[]): number | null {
+  if (recentCosts.length === 0) return null;
+  return recentCosts.reduce((a, b) => a + b, 0) / recentCosts.length;
+}
+
+// ---------------------------------------------------------------------------
+// Daily digest — pure summary of recent runs (the cron posts it to Slack)
+// ---------------------------------------------------------------------------
+
+export interface DigestSummary {
+  total: number;
+  ok: number;
+  error: number;
+  successRate: number | null;
+  costUsd: number;
+  topAgents: { name: string; runs: number; cost: number }[];
+  failures: { name: string; task: string }[];
+}
+
+/** Roll a set of runs into a digest summary (pure). */
+export function summarizeRuns(runs: { agentName: string; status: string; cost: number; task: string }[]): DigestSummary {
+  const ok = runs.filter((r) => r.status === "ok").length;
+  const byAgent = new Map<string, { runs: number; cost: number }>();
+  for (const r of runs) {
+    const cur = byAgent.get(r.agentName) ?? { runs: 0, cost: 0 };
+    cur.runs += 1;
+    cur.cost += r.cost;
+    byAgent.set(r.agentName, cur);
+  }
+  return {
+    total: runs.length,
+    ok,
+    error: runs.length - ok,
+    successRate: runs.length ? Math.round((ok / runs.length) * 100) : null,
+    costUsd: runs.reduce((n, r) => n + r.cost, 0),
+    topAgents: [...byAgent.entries()]
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.runs - a.runs)
+      .slice(0, 5),
+    failures: runs.filter((r) => r.status === "error").slice(0, 5).map((r) => ({ name: r.agentName, task: r.task })),
+  };
+}
+
+/** Render a digest summary as plain text (for Slack / email). */
+export function digestText(s: DigestSummary, label: string): string {
+  const lines = [
+    `*Agent digest — ${label}*`,
+    `${s.total} runs · ${s.successRate == null ? "—" : `${s.successRate}% success`} · $${s.costUsd.toFixed(2)} spend`,
+  ];
+  if (s.topAgents.length) {
+    lines.push("", "Top agents:");
+    for (const a of s.topAgents) lines.push(`• ${a.name}: ${a.runs} runs, $${a.cost.toFixed(2)}`);
+  }
+  if (s.failures.length) {
+    lines.push("", `⚠ ${s.error} failed:`);
+    for (const f of s.failures) lines.push(`• ${f.name}: ${f.task.slice(0, 80)}`);
+  }
+  if (s.total === 0) lines.push("", "No runs in this window.");
+  return lines.join("\n");
 }
 
 export const AUTHORITY_LEVELS: { value: AuthorityLevel; label: string }[] = [
@@ -311,6 +378,8 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     collaborators: ["CFO", "CMO", "COO"],
     tools: ["delegate", "web_search", "memory"],
     runtime: "messages",
+    approvalThresholdUsd: 0,
+    budgetUsd7d: 0,
   },
   CFO: {
     role: "CFO",
@@ -341,6 +410,8 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     collaborators: ["CEO", "CMO", "COO"],
     tools: ["code_execution", "web_search", "memory"],
     runtime: "messages",
+    approvalThresholdUsd: 0,
+    budgetUsd7d: 0,
   },
   CMO: {
     role: "CMO",
@@ -370,6 +441,8 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     collaborators: ["CEO", "CFO", "COO"],
     tools: ["web_search", "web_fetch", "memory"],
     runtime: "messages",
+    approvalThresholdUsd: 0,
+    budgetUsd7d: 0,
   },
   COO: {
     role: "COO",
@@ -399,6 +472,8 @@ export const ROLE_PRESETS: Record<string, AgentPreset> = {
     collaborators: ["CEO", "CFO", "COO"],
     tools: ["filesystem", "web_search", "memory"],
     runtime: "messages",
+    approvalThresholdUsd: 0,
+    budgetUsd7d: 0,
   },
 };
 
@@ -473,6 +548,8 @@ export type AgentInput = Partial<{
   model: unknown;
   effort: unknown;
   runtime: unknown;
+  approvalThresholdUsd: unknown;
+  budgetUsd7d: unknown;
   authority: unknown;
   reportsTo: unknown;
   mandate: unknown;
@@ -536,6 +613,12 @@ export function parseAgentInput(
   if (b.runtime !== undefined) {
     if (!RUNTIMES.some((r) => r.value === b.runtime)) return { ok: false, error: "invalid runtime" };
     out.runtime = b.runtime as AgentRuntime;
+  }
+  for (const key of ["approvalThresholdUsd", "budgetUsd7d"] as const) {
+    if (b[key] === undefined) continue;
+    const n = b[key];
+    if (typeof n !== "number" || !Number.isFinite(n) || n < 0) return { ok: false, error: `${key} must be a number ≥ 0` };
+    out[key] = n;
   }
   if (b.authority !== undefined) {
     if (!AUTHORITY_LEVELS.some((a) => a.value === b.authority)) return { ok: false, error: "invalid authority" };

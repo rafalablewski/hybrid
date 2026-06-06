@@ -99,6 +99,13 @@ export async function GET(request: Request) {
     /* AgentNotification not migrated yet */
   }
 
+  let pendingApprovals = 0;
+  try {
+    pendingApprovals = await prisma.agentApproval.count({ where: { status: "pending" } });
+  } catch {
+    /* AgentApproval not migrated yet */
+  }
+
   // --- time windows ---
   const now = Date.now();
   const dayMs = 86_400_000;
@@ -202,6 +209,7 @@ export async function GET(request: Request) {
     cost: { today: sum(runsToday, (r) => r.cost), week: sum(runsWeek, (r) => r.cost) },
     schedules: { total: schedules.length, enabled: schedules.filter((s) => s.enabled).length },
     attention: unreadNotifs + brokenSchedules.length,
+    pendingApprovals,
   };
 
   return NextResponse.json({

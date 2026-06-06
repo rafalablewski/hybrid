@@ -74,6 +74,8 @@ export async function POST(request: Request) {
       collaborators: (d.collaborators ?? []) as never,
       tools: (d.tools ?? []) as never,
       runtime: d.runtime ?? "messages",
+      approvalThresholdUsd: d.approvalThresholdUsd ?? 0,
+      budgetUsd7d: d.budgetUsd7d ?? 0,
       updatedById: gate.admin.id,
       updatedByEmail: gate.admin.email,
     },
