@@ -15,6 +15,8 @@ import {
 import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
+type RunStep = { agent: string; role: string; task: string; output: string };
+type RunResult = { output: string; steps: RunStep[]; usage: { input: number; output: number } };
 
 const STATUS_COLOR: Record<AgentStatus, string> = { active: LIME, paused: AMBER, draft: ASH };
 
@@ -26,6 +28,9 @@ export default function AdminAgents() {
   const [draft, setDraft] = useState<AgentDefinition | null>(null);
   const [original, setOriginal] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [task, setTask] = useState("");
+  const [runBusy, setRunBusy] = useState(false);
+  const [run, setRun] = useState<RunResult | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/admin/agents")
@@ -45,6 +50,8 @@ export default function AdminAgents() {
     const a = agents?.find((x) => x.id === selectedId) ?? null;
     setDraft(a ? structuredClone(a) : null);
     setOriginal(a ? JSON.stringify(a) : "");
+    setRun(null);
+    setTask("");
   }, [selectedId, agents]);
 
   const dirty = useMemo(() => draft != null && JSON.stringify(draft) !== original, [draft, original]);
@@ -105,6 +112,25 @@ export default function AdminAgents() {
 
   function set<K extends keyof AgentDefinition>(key: K, value: AgentDefinition[K]) {
     setDraft((d) => (d ? { ...d, [key]: value } : d));
+  }
+
+  async function runTask() {
+    if (!draft || !task.trim()) return;
+    setRunBusy(true);
+    setRun(null);
+    try {
+      const r = await fetch(`/api/admin/agents/${draft.id}/run`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ task: task.trim() }),
+      });
+      const d = await r.json();
+      if (d.error) setRun({ output: `⚠ ${d.error}`, steps: [], usage: { input: 0, output: 0 } });
+      else setRun({ output: d.output ?? "", steps: d.steps ?? [], usage: d.usage ?? { input: 0, output: 0 } });
+    } catch {
+      setRun({ output: "⚠ request failed", steps: [], usage: { input: 0, output: 0 } });
+    }
+    setRunBusy(false);
   }
 
   return (
@@ -285,6 +311,81 @@ export default function AdminAgents() {
               </div>
             </Section>
 
+            {/* ---- run ---- */}
+            <Section
+              title="Run"
+              hint={
+                draft.authority === "executive" && reportsOf(agents, draft.role).length
+                  ? `coordinates ${reportsOf(agents, draft.role).map((a) => a.role).join(", ")}`
+                  : "give the agent a task and see its response"
+              }
+            >
+              {draft.status !== "active" ? (
+                <Mono s={{ fontSize: 12, display: "block" }} c={ASH}>
+                  Activate the agent (status → active) to run it.
+                </Mono>
+              ) : (
+                <>
+                  <textarea
+                    style={{ ...input, minHeight: 60, resize: "vertical" }}
+                    placeholder="e.g. Draft a Q3 priority for the team and pull in finance + marketing input."
+                    value={task}
+                    onChange={(e) => setTask(e.target.value)}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+                    <button
+                      disabled={runBusy || dirty || !task.trim()}
+                      onClick={runTask}
+                      style={{ ...primaryBtn, opacity: runBusy || dirty || !task.trim() ? 0.5 : 1 }}
+                    >
+                      {runBusy ? "Running…" : "Run agent"}
+                    </button>
+                    {dirty && (
+                      <Mono s={{ fontSize: 11 }} c={AMBER}>
+                        Save your changes before running.
+                      </Mono>
+                    )}
+                  </div>
+
+                  {run && (
+                    <div style={{ marginTop: 12 }}>
+                      {run.steps.map((s, i) => (
+                        <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${VIOLET}` }}>
+                          <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
+                            ↳ delegated to {s.role} — {s.agent}
+                          </Mono>
+                          <Mono s={{ fontSize: 11, display: "block", margin: "2px 0 4px" }} c={ASH}>
+                            “{s.task}”
+                          </Mono>
+                          <div style={{ ...mono, fontSize: 12, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
+                        </div>
+                      ))}
+                      <div
+                        style={{
+                          ...mono,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          color: CHALK,
+                          background: INK,
+                          border: `1px solid ${LINE}`,
+                          borderRadius: 10,
+                          padding: 14,
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {run.output || "(no output)"}
+                      </div>
+                      {(run.usage.input > 0 || run.usage.output > 0) && (
+                        <Mono s={{ fontSize: 10, display: "block", marginTop: 6 }} c={ASH}>
+                          {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
+                        </Mono>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </Section>
+
             {/* ---- live prompt preview ---- */}
             <Section title="Live system prompt" hint="generated from the fields above — exactly what the agent runs on">
               <pre
@@ -321,6 +422,12 @@ export default function AdminAgents() {
 }
 
 // ---- small editors -------------------------------------------------------
+
+/** Active agents that report to `role` — for the coordinator hint. */
+function reportsOf(agents: AgentDefinition[] | null, role: string): AgentDefinition[] {
+  const key = role.trim().toUpperCase();
+  return (agents ?? []).filter((a) => a.status === "active" && (a.reportsTo ?? "").trim().toUpperCase() === key);
+}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (

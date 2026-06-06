@@ -369,6 +369,39 @@ export function presetFor(role: string): AgentPreset | null {
 }
 
 // ---------------------------------------------------------------------------
+// Execution wiring — who an executive coordinates, and runtime knobs (pure)
+// ---------------------------------------------------------------------------
+
+/** The active agents an executive coordinates: those whose `reportsTo` is this
+ *  executive's role. Empty for a non-executive. The roster the coordinator may
+ *  delegate to at runtime. */
+export function coordinatedAgents(executive: AgentDefinition, all: AgentDefinition[]): AgentDefinition[] {
+  if (executive.authority !== "executive") return [];
+  const key = executive.role.trim().toUpperCase();
+  return all.filter(
+    (a) => a.id !== executive.id && a.status === "active" && (a.reportsTo ?? "").trim().toUpperCase() === key,
+  );
+}
+
+/** A stable, API-safe delegation tool name for a role, e.g. "delegate_to_cfo". */
+export function delegateToolName(role: string): string {
+  const slug = role.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return `delegate_to_${slug || "agent"}`;
+}
+
+/**
+ * Clamp the requested effort to what the chosen model actually supports:
+ * Haiku has no effort dial (→ null, omit it); Sonnet doesn't support the
+ * Opus-only `xhigh`/`max` (→ `high`); Opus passes through. Keeps a live run from
+ * 400-ing when an admin picks an effort the model can't take.
+ */
+export function resolveEffort(model: AgentModelId, effort: AgentEffort): AgentEffort | null {
+  if (model === "claude-haiku-4-5") return null;
+  if (model === "claude-sonnet-4-6") return effort === "max" || effort === "xhigh" ? "high" : effort;
+  return effort;
+}
+
+// ---------------------------------------------------------------------------
 // Validation — shared by the admin create/update routes (pure, tested)
 // ---------------------------------------------------------------------------
 

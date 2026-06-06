@@ -4,6 +4,9 @@ import {
   buildAgentConfig,
   parseAgentInput,
   presetFor,
+  coordinatedAgents,
+  delegateToolName,
+  resolveEffort,
   ROLE_PRESETS,
   type AgentDefinition,
 } from "./agents";
@@ -96,6 +99,37 @@ describe("presets", () => {
   it("presetFor is case-insensitive and null for unknown roles", () => {
     expect(presetFor("ceo")).toBe(ROLE_PRESETS.CEO);
     expect(presetFor("CTO")).toBeNull();
+  });
+});
+
+describe("coordinatedAgents", () => {
+  const ceo = def({ id: "ceo", role: "CEO", authority: "executive", reportsTo: null });
+  const cfo = def({ id: "cfo", role: "CFO", authority: "functional", reportsTo: "CEO", status: "active" });
+  const coo = def({ id: "coo", role: "COO", authority: "functional", reportsTo: "ceo", status: "paused" });
+  const all = [ceo, cfo, coo];
+
+  it("returns the active agents that report to the executive (case-insensitive)", () => {
+    expect(coordinatedAgents(ceo, all).map((a) => a.id)).toEqual(["cfo"]); // coo is paused → excluded
+  });
+  it("is empty for a non-executive", () => {
+    expect(coordinatedAgents(cfo, all)).toEqual([]);
+  });
+});
+
+describe("delegateToolName", () => {
+  it("slugifies the role into a stable tool name", () => {
+    expect(delegateToolName("CFO")).toBe("delegate_to_cfo");
+    expect(delegateToolName("Head of Growth")).toBe("delegate_to_head_of_growth");
+  });
+});
+
+describe("resolveEffort", () => {
+  it("drops effort for Haiku, clamps Opus-only levels for Sonnet, passes Opus through", () => {
+    expect(resolveEffort("claude-haiku-4-5", "high")).toBeNull();
+    expect(resolveEffort("claude-sonnet-4-6", "max")).toBe("high");
+    expect(resolveEffort("claude-sonnet-4-6", "xhigh")).toBe("high");
+    expect(resolveEffort("claude-sonnet-4-6", "medium")).toBe("medium");
+    expect(resolveEffort("claude-opus-4-8", "max")).toBe("max");
   });
 });
 
