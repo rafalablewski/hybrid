@@ -510,6 +510,37 @@ model FeatureFlag {
   @@index([enabled])
 }
 
+// The editable definition of one AI executive agent (CEO/CFO/CMO/COO + custom).
+// The KNOWN role presets live in @hybrid/core (so the org has working defaults
+// with an empty DB); this table stores the admin's edits — mandate, KPIs,
+// responsibilities, guardrails, model/effort, status. buildSystemPrompt() in
+// core turns a row into the live prompt. Mutations are server-only (ADMIN-gated
+// + audited); reads are admin-only via the API. JSON columns are arrays.
+model AgentConfig {
+  id                  String   @id @default(cuid())
+  role                String // "CEO" | "CFO" | … | custom label
+  name                String
+  status              String   @default("draft") // draft | active | paused
+  model               String   @default("claude-opus-4-8")
+  effort              String   @default("high") // low | medium | high | xhigh | max
+  authority           String   @default("functional") // executive | functional | advisor
+  reportsTo           String? // supervisor role/name; null = reports to the admin
+  mandate             String
+  responsibilities    Json     @default("[]") // string[]
+  kpis                Json     @default("[]") // { metric, target }[]
+  guardrails          Json     @default("[]") // string[]
+  escalationThreshold String   @default("")
+  tone                String   @default("")
+  collaborators       Json     @default("[]") // string[]
+  tools               Json     @default("[]") // string[]
+  updatedById         String?
+  updatedByEmail      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status])
+}
+
 // A user-submitted content report — the second feeder of the admin moderation
 // queue (alongside discoverable talent profiles awaiting approval). Denormalized
 // (no FK relations, like AdminAudit) so it survives a reporter/target delete.

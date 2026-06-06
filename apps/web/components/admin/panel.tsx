@@ -18,8 +18,9 @@ import AdminAuditLog from "./audit";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
 import AdminFinancials from "./financials";
+import AdminAgents from "./agents";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "security" | "audit" | "system";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "security" | "audit" | "system";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
@@ -27,6 +28,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "directory", label: "Orgs & coaching", icon: "⬡", group: "Platform" },
   { id: "moderation", label: "Moderation", icon: "⚖", group: "Platform" },
   { id: "financials", label: "Financials", icon: "💰", group: "Business" },
+  { id: "agents", label: "AI agents", icon: "🤖", group: "AI" },
   { id: "announcements", label: "Announcements", icon: "📣", group: "Content" },
   { id: "exercises", label: "Exercise library", icon: "🏋", group: "Content" },
   { id: "media", label: "Media library", icon: "🖼", group: "Content" },
@@ -169,6 +171,7 @@ export default function AdminPanel() {
         {section === "directory" && <AdminDirectory />}
         {section === "moderation" && <AdminModeration />}
         {section === "financials" && <AdminFinancials />}
+        {section === "agents" && <AdminAgents />}
         {section === "announcements" && <AdminAnnouncements />}
         {section === "exercises" && <AdminExercises />}
         {section === "media" && <AdminMedia />}
