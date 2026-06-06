@@ -34,9 +34,9 @@ describe("authentication: every API route authenticates", () => {
     const offenders = apiRoutes.filter((f) => {
       const src = read(f);
       // A route authenticates via a user session (getOrCreateDbUser/requireAdmin,
-      // or requireAgentOperator which wraps requireAdmin) OR, for machine-to-machine
-      // endpoints (Vercel Cron), a CRON_SECRET bearer.
-      return !/getOrCreateDbUser|requireAdmin|requireAgentOperator|CRON_SECRET/.test(src);
+      // or requireAgentOperator which wraps requireAdmin) OR a machine channel:
+      // a CRON_SECRET bearer (Vercel Cron) or a verified Slack request signature.
+      return !/getOrCreateDbUser|requireAdmin|requireAgentOperator|CRON_SECRET|verifySlackSignature/.test(src);
     });
     expect(offenders, `routes missing an auth check:\n${offenders.join("\n")}`).toEqual([]);
   });

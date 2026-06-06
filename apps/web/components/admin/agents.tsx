@@ -39,6 +39,7 @@ type RunRow = {
   ranByEmail: string | null;
   createdAt: string;
 };
+type TimelineItem = { id: string; ts: string; kind: "audit" | "run" | "approval"; title: string; detail: string; actor: string };
 type Schedule = {
   id: string;
   task: string;
@@ -65,6 +66,7 @@ export default function AdminAgents() {
   const [liveSteps, setLiveSteps] = useState<RunStep[]>([]);
   const [runStatus, setRunStatus] = useState("");
   const [runs, setRuns] = useState<RunRow[]>([]);
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newTask, setNewTask] = useState("");
   const [newCadence, setNewCadence] = useState<string>("daily");
@@ -106,6 +108,19 @@ export default function AdminAgents() {
   }, [selectedId]);
 
   useEffect(loadRuns, [loadRuns]);
+
+  const loadTimeline = useCallback(() => {
+    if (!selectedId) {
+      setTimeline([]);
+      return;
+    }
+    fetch(`/api/admin/agents/${selectedId}/timeline`)
+      .then((r) => r.json())
+      .then((d) => setTimeline(d.items ?? []))
+      .catch(() => setTimeline([]));
+  }, [selectedId]);
+
+  useEffect(loadTimeline, [loadTimeline]);
 
   const loadSchedules = useCallback(() => {
     if (!selectedId) {
@@ -289,6 +304,7 @@ export default function AdminAgents() {
     }
     setRunBusy(false);
     loadRuns();
+    loadTimeline();
   }
 
   return (
@@ -620,9 +636,32 @@ export default function AdminAgents() {
               </div>
             </Section>
 
+            {/* ---- activity timeline ---- */}
+            {timeline.length > 0 && (
+              <Section title="Timeline" hint="config edits · runs · approvals">
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {timeline.map((t) => {
+                    const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : VIOLET;
+                    return (
+                      <div key={t.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                        <span style={{ width: 7, height: 7, borderRadius: 99, background: c, flexShrink: 0, marginTop: 5 }} />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ ...disp, fontSize: 13, fontWeight: 700, color: CHALK }}>
+                            {t.title} <Mono s={{ fontSize: 10 }} c={c}>{t.kind}</Mono>
+                          </div>
+                          {t.detail && <Mono s={{ fontSize: 11, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{t.detail}</Mono>}
+                        </div>
+                        <Mono s={{ fontSize: 10, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} · {t.actor}</Mono>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Section>
+            )}
+
             {/* ---- run history ---- */}
             {runs.length > 0 && (
-              <Section title="History" hint={`${runs.length} recent run${runs.length === 1 ? "" : "s"}`}>
+              <Section title="History" hint={`${runs.length} recent run${runs.length === 1 ? "" : "s"} (transcripts)`}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {runs.map((r) => (
                     <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 12px" }}>

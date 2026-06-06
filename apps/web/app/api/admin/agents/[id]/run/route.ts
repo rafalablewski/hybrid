@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
 import { enforceBudget, needsApproval } from "@/lib/agent-policy";
+import { postSlackApproval } from "@/lib/slack";
 import { rowToDefinition } from "../../shared";
 
 // Execute an agent on a task (JSON, non-streaming — see /stream for live). Admin-
@@ -59,6 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           requestedByEmail: gate.admin.email,
         },
       });
+      await postSlackApproval({ id: approval.id, agentName: def.name, task, estimateUsd: ap.estimate ?? 0, requestedByEmail: gate.admin.email });
       return NextResponse.json({ pending: true, approvalId: approval.id, estimate: ap.estimate });
     } catch {
       return NextResponse.json({ error: "approval required but the approvals table is missing" }, { status: 503 });

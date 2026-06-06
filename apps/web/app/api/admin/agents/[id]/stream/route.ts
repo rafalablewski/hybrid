@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
 import { enforceBudget, needsApproval } from "@/lib/agent-policy";
+import { postSlackApproval } from "@/lib/slack";
 import type { RunEvent, RunResult } from "@/lib/agent-runtime";
 import { rowToDefinition } from "../../shared";
 
@@ -66,9 +67,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       const ap = await needsApproval(def);
       if (ap.required) {
         try {
-          await prisma.agentApproval.create({
+          const approval = await prisma.agentApproval.create({
             data: { agentId: id, agentName: def.name, task, estimateUsd: ap.estimate ?? 0, runtime: def.runtime, requestedById: gate.admin.id, requestedByEmail: gate.admin.email },
           });
+          await postSlackApproval({ id: approval.id, agentName: def.name, task, estimateUsd: ap.estimate ?? 0, requestedByEmail: gate.admin.email });
           send({ type: "pending", estimate: ap.estimate });
         } catch {
           send({ type: "error", message: "approval required but the approvals table is missing" });

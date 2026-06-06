@@ -257,6 +257,7 @@ function Command({ data }: { data: Overview | null }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <DigestCard />
+        <MonthlyCostCard />
       </div>
     </div>
   );
@@ -767,6 +768,69 @@ function DigestCard() {
       <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={sent ? LIME : ASH}>
         {sent ?? (d && !d.slackConfigured ? "Set SLACK_WEBHOOK_URL in the server env to enable delivery." : "Posts daily at 08:05 UTC (apps/web/vercel.json).")}
       </Mono>
+    </Card>
+  );
+}
+
+// ---- Monthly cost --------------------------------------------------------
+
+type MonthRep = { month: string; total: number; runs: number; perAgent: { name: string; runs: number; cost: number }[] };
+
+function MonthlyCostCard() {
+  const [d, setD] = useState<{ current: MonthRep; previous: MonthRep } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/agents/cost-report")
+      .then((r) => r.json())
+      .then((j) => setD(j.current ? j : null))
+      .catch(() => setD(null));
+  }, []);
+
+  async function send() {
+    setBusy(true);
+    setSent(null);
+    const r = await fetch("/api/admin/agents/cost-report", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    setSent(j.sent ? "Sent to Slack ✓" : j.reason || j.error || "not sent");
+  }
+
+  const csv = (month: string) => `/api/admin/agents/cost-report?month=${month}&format=csv`;
+  const link: React.CSSProperties = { ...mono, fontSize: 11, color: ASH, border: `1px solid ${LINE}`, borderRadius: 7, padding: "4px 9px", textDecoration: "none" };
+
+  return (
+    <Card span={2}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <SectionHead title="Monthly cost" kicker="real agent spend · auto-reports on the 1st" />
+        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "7px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+          {busy ? "Sending…" : "Send to Slack"}
+        </button>
+      </div>
+      {!d ? (
+        <Mono s={{ fontSize: 12, display: "block" }} c={ASH}>Loading…</Mono>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {[d.current, d.previous].map((m, i) => (
+            <div key={m.month} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " · MTD" : ""}</Mono>
+                <a href={csv(m.month)} style={link}>⬇ CSV</a>
+              </div>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 26, color: CHALK, margin: "4px 0" }}>{fmtUsd(m.total)}</div>
+              <Mono s={{ fontSize: 10, display: "block" }} c={ASH}>{m.runs} runs</Mono>
+              {m.perAgent.slice(0, 4).map((p) => (
+                <div key={p.name} style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11 }}>
+                  <span style={{ ...mono, color: ASH, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+                  <Mono s={{ fontSize: 11, flexShrink: 0 }} c={CHALK}>{fmtUsd(p.cost)}</Mono>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      {sent && <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={LIME}>{sent}</Mono>}
     </Card>
   );
 }
