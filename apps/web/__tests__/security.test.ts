@@ -33,7 +33,9 @@ describe("authentication: every API route authenticates", () => {
   it("no route is reachable without an auth helper", () => {
     const offenders = apiRoutes.filter((f) => {
       const src = read(f);
-      return !/getOrCreateDbUser|requireAdmin/.test(src);
+      // A route authenticates via a user session (getOrCreateDbUser/requireAdmin)
+      // OR, for machine-to-machine endpoints (Vercel Cron), a CRON_SECRET bearer.
+      return !/getOrCreateDbUser|requireAdmin|CRON_SECRET/.test(src);
     });
     expect(offenders, `routes missing an auth check:\n${offenders.join("\n")}`).toEqual([]);
   });

@@ -6,6 +6,7 @@ import {
   MODELS,
   EFFORTS,
   RUNTIMES,
+  CADENCES,
   AUTHORITY_LEVELS,
   TOOL_OPTIONS,
   AGENT_STATUSES,
@@ -37,6 +38,14 @@ type RunRow = {
   ranByEmail: string | null;
   createdAt: string;
 };
+type Schedule = {
+  id: string;
+  task: string;
+  cadence: string;
+  enabled: boolean;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+};
 
 const STATUS_COLOR: Record<AgentStatus, string> = { active: LIME, paused: AMBER, draft: ASH };
 
@@ -55,6 +64,9 @@ export default function AdminAgents() {
   const [liveSteps, setLiveSteps] = useState<RunStep[]>([]);
   const [runStatus, setRunStatus] = useState("");
   const [runs, setRuns] = useState<RunRow[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [newTask, setNewTask] = useState("");
+  const [newCadence, setNewCadence] = useState<string>("daily");
 
   const load = useCallback(() => {
     fetch("/api/admin/agents")
@@ -93,6 +105,44 @@ export default function AdminAgents() {
   }, [selectedId]);
 
   useEffect(loadRuns, [loadRuns]);
+
+  const loadSchedules = useCallback(() => {
+    if (!selectedId) {
+      setSchedules([]);
+      return;
+    }
+    fetch(`/api/admin/agents/${selectedId}/schedules`)
+      .then((r) => r.json())
+      .then((d) => setSchedules(d.schedules ?? []))
+      .catch(() => setSchedules([]));
+  }, [selectedId]);
+
+  useEffect(loadSchedules, [loadSchedules]);
+
+  async function addSchedule() {
+    if (!selectedId || !newTask.trim()) return;
+    await fetch(`/api/admin/agents/${selectedId}/schedules`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ task: newTask.trim(), cadence: newCadence }),
+    });
+    setNewTask("");
+    loadSchedules();
+  }
+
+  async function toggleSchedule(s: Schedule) {
+    await fetch(`/api/admin/agents/${selectedId}/schedules/${s.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ enabled: !s.enabled }),
+    });
+    loadSchedules();
+  }
+
+  async function deleteSchedule(id: string) {
+    await fetch(`/api/admin/agents/${selectedId}/schedules/${id}`, { method: "DELETE" });
+    loadSchedules();
+  }
 
   const dirty = useMemo(() => draft != null && JSON.stringify(draft) !== original, [draft, original]);
   const preview = useMemo(() => (draft ? buildSystemPrompt(draft) : ""), [draft]);
@@ -493,6 +543,46 @@ export default function AdminAgents() {
                   )}
                 </>
               )}
+            </Section>
+
+            {/* ---- schedules ---- */}
+            <Section title="Schedules" hint="standing tasks the agent runs on a cadence (fires via cron; only while active)">
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {schedules.map((s) => (
+                  <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 12px" }}>
+                    <button onClick={() => toggleSchedule(s)} style={toggle(s.enabled)} title={s.enabled ? "Disable" : "Enable"}>
+                      <span style={knob(s.enabled)} />
+                    </button>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div>
+                        <Chip c={s.enabled ? LIME : ASH}>{s.cadence}</Chip>
+                        <Chip c={ASH}>{s.enabled ? "on" : "off"}</Chip>
+                      </div>
+                      <div style={{ ...mono, fontSize: 12, color: CHALK, whiteSpace: "pre-wrap", marginTop: 4 }}>{s.task}</div>
+                      <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>
+                        {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleString()}` : "never run"}
+                        {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
+                      </Mono>
+                    </div>
+                    <button style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
+                  </div>
+                ))}
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={input}
+                    placeholder="Standing task, e.g. Daily ops status across the team."
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                  />
+                  <Select value={newCadence} onChange={(e) => setNewCadence(e.target.value)} style={{ flexShrink: 0 }}>
+                    {CADENCES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </Select>
+                  <button style={{ ...primaryBtn, flexShrink: 0, opacity: newTask.trim() ? 1 : 0.5 }} disabled={!newTask.trim()} onClick={addSchedule}>
+                    Add
+                  </button>
+                </div>
+              </div>
             </Section>
 
             {/* ---- run history ---- */}

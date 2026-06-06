@@ -566,6 +566,26 @@ model AgentRun {
   @@index([agentId, createdAt])
 }
 
+// A standing task that runs an agent on a cadence. The cron route (/api/cron/
+// agents) picks up enabled schedules whose nextRunAt is due, runs the agent, and
+// rolls nextRunAt forward. Server-only writes (ADMIN-gated API); deny-by-default.
+model AgentSchedule {
+  id             String    @id @default(cuid())
+  agentId        String
+  task           String
+  cadence        String    @default("daily") // hourly | daily | weekly
+  enabled        Boolean   @default(true)
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  createdById    String?
+  createdByEmail String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([enabled, nextRunAt])
+  @@index([agentId])
+}
+
 // A user-submitted content report — the second feeder of the admin moderation
 // queue (alongside discoverable talent profiles awaiting approval). Denormalized
 // (no FK relations, like AdminAudit) so it survives a reporter/target delete.

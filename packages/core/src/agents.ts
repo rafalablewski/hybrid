@@ -422,6 +422,28 @@ export function resolveEffort(model: AgentModelId, effort: AgentEffort): AgentEf
 }
 
 // ---------------------------------------------------------------------------
+// Scheduling — how often a standing task fires (pure; the cron route applies it)
+// ---------------------------------------------------------------------------
+
+export type AgentCadence = "hourly" | "daily" | "weekly";
+
+export const CADENCES: { value: AgentCadence; label: string; ms: number }[] = [
+  { value: "hourly", label: "Every hour", ms: 3_600_000 },
+  { value: "daily", label: "Every day", ms: 86_400_000 },
+  { value: "weekly", label: "Every week", ms: 604_800_000 },
+];
+
+/** Interval for a cadence in ms (defaults to daily for an unknown value). */
+export function cadenceMs(cadence: string): number {
+  return CADENCES.find((c) => c.value === cadence)?.ms ?? 86_400_000;
+}
+
+/** The next fire time for a cadence, measured from `from`. */
+export function nextRunFrom(cadence: string, from: Date): Date {
+  return new Date(from.getTime() + cadenceMs(cadence));
+}
+
+// ---------------------------------------------------------------------------
 // Validation — shared by the admin create/update routes (pure, tested)
 // ---------------------------------------------------------------------------
 

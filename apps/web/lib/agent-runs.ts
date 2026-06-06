@@ -1,4 +1,3 @@
-import type { User } from "@prisma/client";
 import type { AgentDefinition } from "@hybrid/core";
 import { prisma } from "./db";
 import type { RunResult } from "./agent-runtime";
@@ -12,7 +11,8 @@ export async function recordRun(input: {
   task: string;
   result: RunResult;
   status: "ok" | "error";
-  actor: User;
+  /** Who triggered it; omit for machine (scheduled) runs. */
+  actor?: { id: string; email: string };
 }): Promise<void> {
   try {
     await prisma.agentRun.create({
@@ -27,8 +27,8 @@ export async function recordRun(input: {
         outputTokens: input.result.usage.output,
         status: input.status,
         runtime: input.def.runtime,
-        ranById: input.actor.id,
-        ranByEmail: input.actor.email,
+        ranById: input.actor?.id ?? null,
+        ranByEmail: input.actor?.email ?? "scheduler",
       },
     });
   } catch (e) {

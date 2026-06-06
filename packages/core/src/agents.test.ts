@@ -7,6 +7,8 @@ import {
   coordinatedAgents,
   delegateToolName,
   resolveEffort,
+  cadenceMs,
+  nextRunFrom,
   ROLE_PRESETS,
   type AgentDefinition,
 } from "./agents";
@@ -131,6 +133,19 @@ describe("resolveEffort", () => {
     expect(resolveEffort("claude-sonnet-4-6", "xhigh")).toBe("high");
     expect(resolveEffort("claude-sonnet-4-6", "medium")).toBe("medium");
     expect(resolveEffort("claude-opus-4-8", "max")).toBe("max");
+  });
+});
+
+describe("scheduling", () => {
+  it("cadenceMs maps known cadences and defaults unknown to daily", () => {
+    expect(cadenceMs("hourly")).toBe(3_600_000);
+    expect(cadenceMs("weekly")).toBe(604_800_000);
+    expect(cadenceMs("nonsense")).toBe(86_400_000);
+  });
+  it("nextRunFrom advances by the cadence interval", () => {
+    const from = new Date("2026-06-06T00:00:00.000Z");
+    expect(nextRunFrom("hourly", from).toISOString()).toBe("2026-06-06T01:00:00.000Z");
+    expect(nextRunFrom("daily", from).toISOString()).toBe("2026-06-07T00:00:00.000Z");
   });
 });
 
