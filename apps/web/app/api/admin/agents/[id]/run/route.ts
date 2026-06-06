@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin, audit } from "@/lib/admin";
+import { requireAgentOperator, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
@@ -11,7 +11,7 @@ import { rowToDefinition } from "../../shared";
 // The agent must be `active`. Without ANTHROPIC_API_KEY it returns an honest
 // "unconfigured" note. Persists the run + audits.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireAdmin(request);
+  const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
   const limited = rateLimit(request, { key: "admin-agent-run", limit: 10, windowMs: 60_000 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CADENCES, nextRunFrom, type AgentCadence } from "@hybrid/core";
-import { requireAdmin, audit } from "@/lib/admin";
+import { requireAdmin, requireAgentOperator, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
@@ -9,7 +9,7 @@ const CADENCE_VALUES = CADENCES.map((c) => c.value);
 // Edit a schedule — toggle enabled, change task or cadence. Re-seeds nextRunAt
 // when it's (re)enabled or the cadence changes. Audited.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; sid: string }> }) {
-  const gate = await requireAdmin(request);
+  const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
   const limited = rateLimit(request, { key: "admin-agent-sched-patch", limit: 60, windowMs: 60_000 });

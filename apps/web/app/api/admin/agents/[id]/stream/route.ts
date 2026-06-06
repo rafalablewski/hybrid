@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin, audit } from "@/lib/admin";
+import { requireAgentOperator, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
@@ -11,7 +11,7 @@ import { rowToDefinition } from "../../shared";
 // boundaries) to the browser as Server-Sent Events, then a final `done`/`error`
 // frame. Same gates as /run (admin, rate limit, active, audited, persisted).
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireAdmin(request);
+  const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
   const limited = rateLimit(request, { key: "admin-agent-run", limit: 10, windowMs: 60_000 });

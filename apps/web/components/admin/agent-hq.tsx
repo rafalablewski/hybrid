@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select } from "@/lib/ui";
 import AdminAgentRuns from "./agent-runs";
 
@@ -523,6 +523,29 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
 function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; actual?: Actual; onLogged: () => void }) {
   const [val, setVal] = useState("");
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [series, setSeries] = useState<{ t: string; value: number }[] | null>(null);
+
+  const loadSeries = useCallback(() => {
+    fetch(`/api/admin/agents/${agentId}/kpis`)
+      .then((r) => r.json())
+      .then((d) => {
+        const ms = (d.measurements ?? []) as { metric: string; value: number; createdAt: string }[];
+        setSeries(
+          ms
+            .filter((m) => m.metric === k.metric)
+            .map((m) => ({ t: new Date(m.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }), value: m.value }))
+            .reverse(), // API is newest-first → chart oldest→newest
+        );
+      })
+      .catch(() => setSeries([]));
+  }, [agentId, k.metric]);
+
+  function toggleChart() {
+    const next = !open;
+    setOpen(next);
+    if (next && series === null) loadSeries();
+  }
 
   async function log() {
     const n = Number(val);
@@ -536,6 +559,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
     setBusy(false);
     setVal("");
     onLogged();
+    if (open) loadSeries();
   }
 
   const target = k.targetValue ?? null;
@@ -547,7 +571,10 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
         <span style={{ ...disp, color: CHALK, fontWeight: 700, fontSize: 13 }}>{k.metric}</span>
-        <Mono s={{ fontSize: 11, flexShrink: 0 }} c={ASH}>target {targetLabel}</Mono>
+        <span style={{ display: "flex", gap: 8, alignItems: "baseline", flexShrink: 0 }}>
+          <Mono s={{ fontSize: 11 }} c={ASH}>target {targetLabel}</Mono>
+          <button onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: open ? LIME : ASH, fontSize: 12, padding: 0 }}>📈</button>
+        </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline", marginTop: 2 }}>
         <Mono s={{ fontSize: 12 }} c={actual ? (target != null ? (onTarget ? LIME : AMBER) : CHALK) : ASH}>
@@ -577,6 +604,29 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
           log
         </button>
       </div>
+
+      {open && (
+        <div style={{ marginTop: 8 }}>
+          {series === null ? (
+            <Mono s={{ fontSize: 11, display: "block" }} c={ASH}>Loading trend…</Mono>
+          ) : series.length === 0 ? (
+            <Mono s={{ fontSize: 11, display: "block" }} c={ASH}>No actuals logged yet.</Mono>
+          ) : (
+            <div style={{ height: 150 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={series} margin={{ top: 6, right: 8, left: -22, bottom: 0 }}>
+                  <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="t" tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} />
+                  <YAxis tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} width={40} />
+                  <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
+                  {target != null && <ReferenceLine y={target} stroke={CHALK} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: 10, position: "insideTopRight" }} />}
+                  <Line type="monotone" dataKey="value" stroke={LIME} strokeWidth={2} dot={{ r: 3, fill: LIME }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

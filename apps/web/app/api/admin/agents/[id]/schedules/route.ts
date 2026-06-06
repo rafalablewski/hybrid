@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CADENCES, nextRunFrom, type AgentCadence } from "@hybrid/core";
-import { requireAdmin, audit } from "@/lib/admin";
+import { requireAdmin, requireAgentOperator, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 // Create a schedule (defaults enabled). nextRunAt is seeded from the cadence so
 // the cron picks it up. Audited.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireAdmin(request);
+  const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
   const limited = rateLimit(request, { key: "admin-agent-sched-post", limit: 30, windowMs: 60_000 });
