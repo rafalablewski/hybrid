@@ -7,6 +7,7 @@ import {
   coordinatedAgents,
   delegateToolName,
   resolveEffort,
+  costUsd,
   cadenceMs,
   nextRunFrom,
   ROLE_PRESETS,
@@ -133,6 +134,18 @@ describe("resolveEffort", () => {
     expect(resolveEffort("claude-sonnet-4-6", "xhigh")).toBe("high");
     expect(resolveEffort("claude-sonnet-4-6", "medium")).toBe("medium");
     expect(resolveEffort("claude-opus-4-8", "max")).toBe("max");
+  });
+});
+
+describe("costUsd", () => {
+  it("prices a run by model list price", () => {
+    // 1M in + 1M out on Opus = $5 + $25
+    expect(costUsd("claude-opus-4-8", 1_000_000, 1_000_000)).toBeCloseTo(30);
+    // Sonnet: 0.5M in + 0.2M out = 1.5 + 3 = 4.5
+    expect(costUsd("claude-sonnet-4-6", 500_000, 200_000)).toBeCloseTo(4.5);
+  });
+  it("falls back to Opus pricing for an unknown model", () => {
+    expect(costUsd("legacy-model", 1_000_000, 0)).toBeCloseTo(5);
   });
 });
 

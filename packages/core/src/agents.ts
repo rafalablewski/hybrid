@@ -96,6 +96,20 @@ export const MODELS: { id: AgentModelId; label: string; note: string }[] = [
 
 export const EFFORTS: AgentEffort[] = ["low", "medium", "high", "xhigh", "max"];
 
+/** Published list price per 1M tokens (USD), for run cost roll-ups. */
+export const MODEL_PRICING: Record<AgentModelId, { input: number; output: number }> = {
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+};
+
+/** Dollar cost of a run given the model and token counts (defaults to Opus
+ *  pricing for an unknown/legacy model id). */
+export function costUsd(model: string, inputTokens: number, outputTokens: number): number {
+  const p = MODEL_PRICING[model as AgentModelId] ?? MODEL_PRICING["claude-opus-4-8"];
+  return (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;
+}
+
 export const AUTHORITY_LEVELS: { value: AuthorityLevel; label: string }[] = [
   { value: "executive", label: "Executive (apex — delegates & arbitrates)" },
   { value: "functional", label: "Functional (domain owner — escalates the rest)" },
