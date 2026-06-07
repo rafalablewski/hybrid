@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession,
+  prescribeForSport,
+  reconcilePlan,
+  scheduleWeek,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -12,9 +16,12 @@ import {
   toTrainingLog,
   toBiometrics,
   weeklyRecap,
+  SPORTS,
+  LEVELS,
   type LoggedSession,
+  type Macrocycle,
 } from "@hybrid/core";
-import { fetchSessions, fetchAssignments, fetchSignals, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
+import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
 import { useDraft } from "../../lib/draft";
@@ -35,15 +42,35 @@ export default function Home() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
+  const [macro, setMacro] = useState<Macrocycle | null>(null);
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals()])
-      .then(([s, a, sig]) => { setSessions(s); setAssignments(a); setSignals(sig); })
+    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle()])
+      .then(([s, a, sig, m]) => {
+        setSessions(s); setAssignments(a); setSignals(sig);
+        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1);
+      })
       .finally(() => setRefreshing(false));
   };
   useEffect(load, []);
+
+  // the athlete's saved sport selection, so the day's plan folds in transfer work
+  useEffect(() => {
+    AsyncStorage.getItem("hybrid.sport")
+      .then((raw) => {
+        if (!raw) return;
+        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
+        if (s?.sport && SPORTS[s.sport]) {
+          const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
+          setSportSel({ sport: s.sport, levelIdx: lvl });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Real biometrics from the Signal ontology (check-in + wearables) — undefined
   // when nothing's logged, so readiness/HPI never run on fabricated data.
@@ -64,6 +91,27 @@ export default function Home() {
     [log, sessions, bio],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+
+  // The reconciled week: the macrocycle phase arbitrates the daily route + sport
+  // transfer into one session (overlap deduped, deload weeks trimmed).
+  const reconciled = useMemo(() => {
+    if (!macro || sessions.length === 0) return null;
+    const sport = sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined;
+    return reconcilePlan({ macro, daily: rx, sport, currentWeek });
+  }, [macro, rx, sportSel, sessions, currentWeek]);
+
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduled, setScheduled] = useState<string | null>(null);
+  const scheduleThisWeek = async () => {
+    if (!reconciled || scheduling) return;
+    setScheduling(true);
+    setScheduled(null);
+    const items = scheduleWeek(reconciled, { daysPerWeek: 3 });
+    const ok = await createSelfAssignments(items);
+    setScheduled(ok ? `Scheduled ${items.length} sessions — see your Calendar.` : "Couldn't schedule — try again.");
+    setScheduling(false);
+    if (ok) load();
+  };
 
   // Consumer engines run on REAL sessions (empty → honest "getting started").
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
@@ -164,6 +212,43 @@ export default function Home() {
           <Button label={t("home.startSession")} onPress={() => router.push(sessions.length > 0 ? "/workout?source=ai" : "/workout?source=empty")} />
         </View>
       </Card>
+
+      {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
+      {reconciled && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Kicker color={C.violet}>This week · {reconciled.phase.label} · wk {reconciled.phase.week}</Kicker>
+            <Chip color={reconciled.phase.kind === "recovery" ? C.amber : C.lime}>
+              {reconciled.phase.kind === "recovery" ? "deload" : "load"}
+            </Chip>
+          </View>
+          <View style={{ flexDirection: "row", gap: 16, marginTop: 10 }}>
+            <Mono color={C.ash}>intensity {reconciled.intensity}</Mono>
+            <Mono color={C.ash}>load ×{reconciled.loadFactor.toFixed(2)}</Mono>
+            <Mono color={C.ash}>vol ×{reconciled.volumeFactor.toFixed(2)}</Mono>
+          </View>
+          {reconciled.blocks.map((b, i) => (
+            <View key={`${b.name}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
+                <Mono color={b.source === "sport" ? C.amber : C.ash} style={{ fontSize: 11 }}>
+                  {b.source === "sport" ? `sport · ${b.demand ?? ""}` : b.kind === "conditioning" ? "conditioning" : "primary lift"}
+                </Mono>
+              </View>
+              <Chip color={b.source === "sport" ? C.amber : C.lime}>{b.scheme}</Chip>
+            </View>
+          ))}
+          <Mono color={C.chalk} style={{ marginTop: 10, lineHeight: 19 }}>{reconciled.why}</Mono>
+          <Pressable
+            onPress={scheduleThisWeek}
+            disabled={scheduling}
+            style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}
+          >
+            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : "Schedule this week →"}</Text>
+          </Pressable>
+          {scheduled && <Mono color={C.lime} style={{ marginTop: 8, textAlign: "center" }}>{scheduled}</Mono>}
+        </Card>
+      )}
 
       {/* quick links */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>

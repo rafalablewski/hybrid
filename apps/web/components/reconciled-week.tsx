@@ -1,0 +1,155 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  prescribeSession,
+  prescribeForSport,
+  reconcilePlan,
+  scheduleWeek,
+  velocityProfiles,
+  toTrainingLog,
+  SPORTS,
+  LEVELS,
+  type LoggedSession,
+  type Biometrics,
+  type Macrocycle,
+} from "@hybrid/core";
+import { readSportSelection } from "@/lib/sport-store";
+import { LINE, LIME, CHALK, ASH, VIOLET, AMBER, disp, cond, Mono, Card, Chip } from "@/lib/ui";
+
+/**
+ * The reconciled week — the macrocycle phase arbitrates the daily route + sport
+ * transfer work into ONE session, and (optionally) materializes it onto the
+ * week's training days as self-authored Assignments. Shared by the Today and
+ * Periodize screens so they show the same plan and the same scheduling action.
+ */
+export default function ReconciledWeek({
+  macro,
+  currentWeek = 1,
+  sessions,
+  bio,
+  style,
+}: {
+  macro: Macrocycle;
+  currentWeek?: number;
+  sessions: LoggedSession[];
+  bio?: Biometrics;
+  style?: React.CSSProperties;
+}) {
+  const rx = useMemo(
+    () => prescribeSession(toTrainingLog(sessions), bio, { profiles: velocityProfiles(sessions) }),
+    [sessions, bio],
+  );
+
+  // the athlete's saved sport selection (client-only — avoids an SSR mismatch).
+  const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
+  useEffect(() => {
+    const s = readSportSelection();
+    if (s?.sport && SPORTS[s.sport]) {
+      const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
+      setSportSel({ sport: s.sport, levelIdx: lvl });
+    }
+  }, []);
+
+  const reconciled = useMemo(() => {
+    if (sessions.length === 0) return null;
+    const sport = sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined;
+    return reconcilePlan({ macro, daily: rx, sport, currentWeek });
+  }, [macro, rx, sportSel, sessions, currentWeek]);
+
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduled, setScheduled] = useState<string | null>(null);
+  const scheduleThisWeek = async () => {
+    if (!reconciled || scheduling) return;
+    setScheduling(true);
+    setScheduled(null);
+    try {
+      const items = scheduleWeek(reconciled, { daysPerWeek: 3 });
+      const res = await fetch("/api/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      setScheduled(res.ok ? `Scheduled ${items.length} sessions — see the Calendar.` : "Couldn't schedule — try again.");
+    } catch {
+      setScheduled("Couldn't schedule — try again.");
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  if (!reconciled) return null;
+
+  return (
+    <Card style={{ borderLeft: `3px solid ${VIOLET}`, ...style }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          This week · {reconciled.phase.label} · week {reconciled.phase.week}
+        </Mono>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
+            {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
+          </Chip>
+          <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling)}>
+            {scheduling ? "Scheduling…" : "Schedule this week →"}
+          </button>
+        </div>
+      </div>
+      {scheduled && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
+      <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
+        <Metric label="Intensity" value={`${reconciled.intensity}`} c={CHALK} />
+        <Metric label="Volume" value={`${reconciled.volume}`} c={CHALK} />
+        <Metric label="Load ×" value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
+        <Metric label="Volume ×" value={`${reconciled.volumeFactor.toFixed(2)}`} c={VIOLET} />
+      </div>
+      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        {reconciled.blocks.map((b, i) => (
+          <div
+            key={`${b.name}-${i}`}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderTop: `1px solid ${LINE}` }}
+          >
+            <div>
+              <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{b.name}</div>
+              <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }} c={b.source === "sport" ? AMBER : ASH}>
+                {b.source === "sport" ? `sport · ${b.demand ?? ""}` : b.kind === "conditioning" ? "conditioning" : "primary lift"}
+              </Mono>
+            </div>
+            <Chip c={b.source === "sport" ? AMBER : LIME}>{b.scheme}</Chip>
+          </div>
+        ))}
+      </div>
+      <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 12 }} c={CHALK}>{reconciled.why}</Mono>
+      {reconciled.dropped.length > 0 && (
+        <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+          Dropped: {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" · ")}
+        </Mono>
+      )}
+    </Card>
+  );
+}
+
+function Metric({ label, value, c }: { label: string; value: string; c: string }) {
+  return (
+    <div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
+      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+    </div>
+  );
+}
+
+function cta(disabled: boolean) {
+  return {
+    ...cond,
+    fontSize: 13,
+    fontWeight: 800,
+    textTransform: "uppercase" as const,
+    letterSpacing: ".04em",
+    color: "#0c0d0c",
+    background: VIOLET,
+    border: "none",
+    borderRadius: 10,
+    padding: "9px 16px",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.6 : 1,
+  };
+}

@@ -56,6 +56,7 @@ import {
 import type { RosterRow } from "@/lib/use-roster";
 import BioCheckin from "./biocheckin";
 import AskCoach from "./ai-coach";
+import ReconciledWeek from "./reconciled-week";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -507,7 +508,17 @@ export function DashboardMirror({
 }
 
 // ---------- PERIODIZE (real macrocycle from the engine) ----------
-export function PeriodizeScreen({ macro: enrolled }: { macro?: Macrocycle | null }) {
+export function PeriodizeScreen({
+  macro: enrolled,
+  currentWeek = 1,
+  sessions = [],
+  bio,
+}: {
+  macro?: Macrocycle | null;
+  currentWeek?: number;
+  sessions?: LoggedSession[];
+  bio?: Biometrics | null;
+}) {
   if (!enrolled)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
@@ -520,11 +531,15 @@ export function PeriodizeScreen({ macro: enrolled }: { macro?: Macrocycle | null
     );
 
   const macro = enrolled;
-  const week = 1;
+  const week = currentWeek;
   const { block: current } = currentPhase(macro, week);
 
   return (
     <div>
+      {/* this week's reconciled session — the phase made concrete + schedulable */}
+      {sessions.length > 0 && (
+        <ReconciledWeek macro={macro} currentWeek={week} sessions={sessions} bio={bio ?? undefined} style={{ marginBottom: 16 }} />
+      )}
       <Card style={{ marginBottom: 16 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           {macro.goalOrSport}{macro.model ? ` · ${macro.model}` : enrolled ? " · enrolled" : ""}

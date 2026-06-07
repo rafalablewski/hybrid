@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import {
   prescribeSession,
-  prescribeForSport,
-  reconcilePlan,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -14,13 +12,11 @@ import {
   velocityProfiles,
   toTrainingLog,
   weeklyRecap,
-  SPORTS,
-  LEVELS,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
 } from "@hybrid/core";
-import { readSportSelection } from "@/lib/sport-store";
+import ReconciledWeek from "./reconciled-week";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
   disp, cond, mono, tip, Mono, Card, Chip, ChartFrame,
@@ -58,28 +54,6 @@ export default function Today({
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
     [log, bio, sessions],
   );
-
-  // the athlete's saved sport selection (client-only — avoids an SSR mismatch),
-  // so the day's plan can fold in the S&C that transfers to their sport.
-  const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
-  useEffect(() => {
-    const s = readSportSelection();
-    if (s?.sport && SPORTS[s.sport]) {
-      const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
-      setSportSel({ sport: s.sport, levelIdx: lvl });
-    }
-  }, []);
-
-  // The reconciled day: the macrocycle phase is the arbiter — it sets the
-  // week's intensity/volume envelope, and the daily route + sport transfer work
-  // are dosed within it (overlap deduped, accessory work trimmed on deloads).
-  const reconciled = useMemo(() => {
-    if (!macro || sessions.length === 0) return null;
-    const sport = sportSel
-      ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions })
-      : undefined;
-    return reconcilePlan({ macro, daily: rx, sport, currentWeek });
-  }, [macro, rx, sportSel, sessions, currentWeek]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
@@ -129,45 +103,8 @@ export default function Today({
       )}
 
       {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {reconciled && (
-        <Card style={{ borderLeft: `3px solid ${VIOLET}`, gridColumn: "span 2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
-              This week · {reconciled.phase.label} · week {reconciled.phase.week}
-            </Mono>
-            <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
-              {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
-            </Chip>
-          </div>
-          <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
-            <Metric label="Intensity" value={`${reconciled.intensity}`} c={CHALK} />
-            <Metric label="Volume" value={`${reconciled.volume}`} c={CHALK} />
-            <Metric label="Load ×" value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
-            <Metric label="Volume ×" value={`${reconciled.volumeFactor.toFixed(2)}`} c={VIOLET} />
-          </div>
-          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-            {reconciled.blocks.map((b, i) => (
-              <div
-                key={`${b.name}-${i}`}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderTop: `1px solid ${LINE}` }}
-              >
-                <div>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{b.name}</div>
-                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }} c={b.source === "sport" ? AMBER : ASH}>
-                    {b.source === "sport" ? `sport · ${b.demand ?? ""}` : b.kind === "conditioning" ? "conditioning" : "primary lift"}
-                  </Mono>
-                </div>
-                <Chip c={b.source === "sport" ? AMBER : LIME}>{b.scheme}</Chip>
-              </div>
-            ))}
-          </div>
-          <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 12 }} c={CHALK}>{reconciled.why}</Mono>
-          {reconciled.dropped.length > 0 && (
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
-              Dropped: {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" · ")}
-            </Mono>
-          )}
-        </Card>
+      {macro && sessions.length > 0 && (
+        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} style={{ gridColumn: "span 2" }} />
       )}
 
       {/* ON TRACK? — accountability */}
@@ -293,7 +230,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   );
 }
 
-function cta(color: string) {
+function cta(color: string, disabled = false) {
   return {
     ...cond,
     fontSize: 13,
@@ -305,6 +242,7 @@ function cta(color: string) {
     border: "none",
     borderRadius: 10,
     padding: "9px 16px",
-    cursor: "pointer",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.6 : 1,
   };
 }

@@ -5,6 +5,7 @@ import type {
   PrescribedConditioningBlock,
 } from "./types";
 import { currentPhase } from "./periodization";
+import type { SessionBlock } from "./session";
 import type { SportPrescription } from "../sports";
 
 /**
@@ -223,4 +224,75 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
     dropped,
     why,
   };
+}
+
+// ============================================================
+//  Materialization — turn the reconciled plan into dated sessions
+// ============================================================
+
+/** A reconciled session laid onto a date, ready to persist as an Assignment. */
+export interface ScheduledAssignment {
+  /** "{phase} · {primary lift}". */
+  name: string;
+  /** the persisted Session.blocks shape (what the logger + calendar consume). */
+  blocks: SessionBlock[];
+  /** ISO date the session is scheduled for. */
+  date: string;
+}
+
+/** Even-ish offsets (days from the week start) for N training days in a 7-day window. */
+const WEEK_SPREAD: Record<number, number[]> = {
+  1: [0],
+  2: [0, 3],
+  3: [0, 2, 4],
+  4: [0, 2, 4, 6],
+  5: [0, 1, 3, 4, 6],
+  6: [0, 1, 2, 3, 4, 5],
+};
+
+/**
+ * Map the reconciled blocks onto the persisted SessionBlock shape — so a
+ * reconciled plan can be written as a real Session/Assignment, not just shown.
+ */
+export function reconciledToSessionBlocks(blocks: ReconciledBlock[]): SessionBlock[] {
+  return blocks.map((b): SessionBlock => {
+    if (b.kind === "conditioning") {
+      return { kind: "conditioning", name: b.name, format: b.format, rounds: b.sets };
+    }
+    return {
+      kind: "strength",
+      name: b.name,
+      sets: Array.from({ length: b.sets }, () => ({
+        load: b.load != null ? String(b.load) : "",
+        reps: String(b.reps),
+        rpe: "",
+      })),
+    };
+  });
+}
+
+/**
+ * Lay the reconciled session onto the week's training days — the materialization
+ * step. Because every day comes from ONE reconciled plan (the phase already
+ * arbitrated route vs sport), the resulting dated rows can't collide with each
+ * other; they slot onto the calendar alongside coach Assignments. v1 writes the
+ * same session across the week's training days (the phase envelope is the week's
+ * constant); per-day variation arrives when each day re-prescribes off the prior
+ * day's log.
+ */
+export function scheduleWeek(
+  plan: ReconciledPlan,
+  opts: { startDate?: Date; daysPerWeek?: number } = {},
+): ScheduledAssignment[] {
+  const start = opts.startDate ? new Date(opts.startDate) : new Date();
+  const days = clamp(Math.round(opts.daysPerWeek ?? 3), 1, 6);
+  const offsets = WEEK_SPREAD[days]!;
+  const blocks = reconciledToSessionBlocks(plan.blocks);
+  const name = `${plan.phase.label} · ${plan.blocks[0]?.name ?? "Session"}`;
+  return offsets.map((off) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + off);
+    d.setHours(12, 0, 0, 0);
+    return { name, blocks, date: d.toISOString() };
+  });
 }
