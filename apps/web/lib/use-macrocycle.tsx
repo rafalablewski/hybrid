@@ -6,9 +6,11 @@ import type { Macrocycle, MacroBlock } from "@hybrid/core";
 type Row = { id: string; goal: string; blocks: MacroBlock[]; startedAt: string };
 
 /** The user's active (latest) enrolled macrocycle, reconstructed into the
- *  engine's Macrocycle shape. Null when none is enrolled (or in demo mode). */
+ *  engine's Macrocycle shape, plus which week of it is "this week" (1-indexed,
+ *  derived from when the season started). Null when none is enrolled. */
 export function useMacrocycle() {
   const [macro, setMacro] = useState<Macrocycle | null>(null);
+  const [currentWeek, setCurrentWeek] = useState(1);
 
   const refresh = useCallback(async () => {
     try {
@@ -18,10 +20,16 @@ export function useMacrocycle() {
       const row = data.macrocycles?.[0];
       if (!row || !row.blocks?.length) return setMacro(null);
       const blocks = row.blocks;
+      const totalWeeks = blocks[blocks.length - 1]!.endWeek;
+      const started = new Date(row.startedAt).getTime();
+      const elapsed = Number.isFinite(started)
+        ? Math.floor((Date.now() - started) / (7 * 86400000)) + 1
+        : 1;
+      setCurrentWeek(Math.max(1, Math.min(totalWeeks, elapsed)));
       setMacro({
         model: "",
         goalOrSport: row.goal,
-        totalWeeks: blocks[blocks.length - 1]!.endWeek,
+        totalWeeks,
         eventInWeeks: null,
         blocks,
       });
@@ -34,5 +42,5 @@ export function useMacrocycle() {
     refresh();
   }, [refresh]);
 
-  return { macro, refresh };
+  return { macro, currentWeek, refresh };
 }
