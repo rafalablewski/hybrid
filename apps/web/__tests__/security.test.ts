@@ -33,7 +33,10 @@ describe("authentication: every API route authenticates", () => {
   it("no route is reachable without an auth helper", () => {
     const offenders = apiRoutes.filter((f) => {
       const src = read(f);
-      return !/getOrCreateDbUser|requireAdmin/.test(src);
+      // A route authenticates via a user session (getOrCreateDbUser/requireAdmin,
+      // or requireAgentOperator which wraps requireAdmin) OR a machine channel:
+      // a CRON_SECRET bearer (Vercel Cron) or a verified Slack request signature.
+      return !/getOrCreateDbUser|requireAdmin|requireAgentOperator|CRON_SECRET|verifySlackSignature/.test(src);
     });
     expect(offenders, `routes missing an auth check:\n${offenders.join("\n")}`).toEqual([]);
   });
@@ -42,7 +45,8 @@ describe("authentication: every API route authenticates", () => {
 describe("authorization: admin surface is locked down", () => {
   it("every /api/admin route requires the ADMIN role", () => {
     expect(adminRoutes.length).toBeGreaterThan(5);
-    const offenders = adminRoutes.filter((f) => !/requireAdmin/.test(read(f)));
+    // requireAgentOperator wraps requireAdmin (admin + operator allow-list).
+    const offenders = adminRoutes.filter((f) => !/requireAdmin|requireAgentOperator/.test(read(f)));
     expect(offenders, `admin routes missing requireAdmin:\n${offenders.join("\n")}`).toEqual([]);
   });
   it("the /admin page is server-gated and redirects non-admins", () => {

@@ -32,6 +32,23 @@ export async function getAdmin(): Promise<User | null> {
   return user && user.role === "ADMIN" ? user : null;
 }
 
+/** Require ADMIN *and* membership of the agent-operator allow-list for the
+ *  expensive/spend-causing agent actions (run, stream, schedule). The list is
+ *  `AGENT_OPERATOR_EMAILS` (comma-separated) in the server env; if it's unset or
+ *  empty, every admin is an operator (backward-compatible default). Wraps
+ *  requireAdmin, so the admin gate still applies first. */
+export async function requireAgentOperator(req?: Request): Promise<Ok | Err> {
+  const gate = await requireAdmin(req);
+  if (gate.error) return gate;
+  const allow = (process.env.AGENT_OPERATOR_EMAILS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (allow.length === 0) return gate; // no allow-list configured → all admins
+  if (allow.includes(gate.admin.email.toLowerCase())) return gate;
+  return { error: NextResponse.json({ error: "not an agent operator — ask an owner to add you to AGENT_OPERATOR_EMAILS" }, { status: 403 }) };
+}
+
 /** Best-effort request IP from the proxy headers Vercel sets. */
 export function clientIp(req?: Request): string | null {
   if (!req) return null;

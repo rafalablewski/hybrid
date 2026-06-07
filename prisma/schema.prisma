@@ -510,6 +510,140 @@ model FeatureFlag {
   @@index([enabled])
 }
 
+// The editable definition of one AI executive agent (CEO/CFO/CMO/COO + custom).
+// The KNOWN role presets live in @hybrid/core (so the org has working defaults
+// with an empty DB); this table stores the admin's edits — mandate, KPIs,
+// responsibilities, guardrails, model/effort, status. buildSystemPrompt() in
+// core turns a row into the live prompt. Mutations are server-only (ADMIN-gated
+// + audited); reads are admin-only via the API. JSON columns are arrays.
+model AgentConfig {
+  id                  String   @id @default(cuid())
+  role                String // "CEO" | "CFO" | … | custom label
+  name                String
+  status              String   @default("draft") // draft | active | paused
+  model               String   @default("claude-opus-4-8")
+  effort              String   @default("high") // low | medium | high | xhigh | max
+  authority           String   @default("functional") // executive | functional | advisor
+  reportsTo           String? // supervisor role/name; null = reports to the admin
+  mandate             String
+  responsibilities    Json     @default("[]") // string[]
+  kpis                Json     @default("[]") // { metric, target }[]
+  guardrails          Json     @default("[]") // string[]
+  escalationThreshold String   @default("")
+  tone                String   @default("")
+  collaborators       Json     @default("[]") // string[]
+  tools               Json     @default("[]") // string[]
+  runtime             String   @default("messages") // messages | managed
+  managedAgentId      String? // Claude Managed Agents agent id (created lazily, reused)
+  memoryStoreId       String? // durable memory store id (created lazily, reused)
+  approvalThresholdUsd Float   @default(0) // require 2nd-operator approval when est. run cost ≥ this (0 = off)
+  budgetUsd7d         Float    @default(0) // auto-pause when trailing-7d spend ≥ this (0 = off)
+  updatedById         String?
+  updatedByEmail      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status])
+}
+
+// One execution of an agent — the run history / transcript. Written server-side
+// by the run + stream routes (best-effort; never blocks the run). Read is
+// admin-only via the API. Denormalized agent role/name so it survives edits.
+model AgentRun {
+  id           String   @id @default(cuid())
+  agentId      String
+  agentRole    String
+  agentName    String
+  task         String
+  output       String // final synthesized output
+  steps        Json     @default("[]") // delegation trace: { agent, role, task, output }[]
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  status       String   @default("ok") // ok | error
+  runtime      String   @default("messages") // messages | managed
+  ranById      String?
+  ranByEmail   String?
+  createdAt    DateTime @default(now())
+
+  @@index([agentId, createdAt])
+}
+
+// A standing task that runs an agent on a cadence. The cron route (/api/cron/
+// agents) picks up enabled schedules whose nextRunAt is due, runs the agent, and
+// rolls nextRunAt forward. Server-only writes (ADMIN-gated API); deny-by-default.
+model AgentSchedule {
+  id             String    @id @default(cuid())
+  agentId        String
+  task           String
+  cadence        String    @default("daily") // hourly | daily | weekly
+  enabled        Boolean   @default(true)
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  createdById    String?
+  createdByEmail String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([enabled, nextRunAt])
+  @@index([agentId])
+}
+
+// A recorded numeric actual for one of an agent's KPIs, over time — the "actual"
+// side of the target-vs-actual scorecard. Logged by an admin (or, later, an
+// agent). Server-only writes; deny-by-default RLS.
+model AgentKpiMeasurement {
+  id              String   @id @default(cuid())
+  agentId         String
+  metric          String // matches a Kpi.metric on the agent
+  value           Float
+  note            String?
+  recordedById    String?
+  recordedByEmail String?
+  createdAt       DateTime @default(now())
+
+  @@index([agentId, metric, createdAt])
+}
+
+// A run held for a second operator's approval (two-person control). Created when
+// an agent's estimated run cost crosses its approvalThresholdUsd; a DIFFERENT
+// operator approves (which executes it) or denies. Server-only; deny-by-default.
+model AgentApproval {
+  id               String    @id @default(cuid())
+  agentId          String
+  agentName        String
+  task             String
+  estimateUsd      Float     @default(0)
+  runtime          String    @default("messages")
+  status           String    @default("pending") // pending | approved | denied
+  requestedById    String?
+  requestedByEmail String?
+  decidedById      String?
+  decidedByEmail   String?
+  runId            String? // the AgentRun produced once approved + executed
+  createdAt        DateTime  @default(now())
+  decidedAt        DateTime?
+
+  @@index([status, createdAt])
+}
+
+// A persistent, dismissible notification for the Agent HQ inbox (e.g. a failed
+// run). Written best-effort when the event happens; marked read by the admin.
+// Server-only; deny-by-default RLS.
+model AgentNotification {
+  id        String   @id @default(cuid())
+  kind      String // run_failed | …
+  agentId   String?
+  agentName String?
+  title     String
+  body      String?
+  severity  String   @default("warning") // info | warning | error
+  read      Boolean  @default(false)
+  refId     String? // related entity (e.g. AgentRun id)
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
 // A user-submitted content report — the second feeder of the admin moderation
 // queue (alongside discoverable talent profiles awaiting approval). Denormalized
 // (no FK relations, like AdminAudit) so it survives a reporter/target delete.
