@@ -111,6 +111,19 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
             {enrolling ? "Setting up…" : "Start this plan →"}
           </button>
         </Card>
+      ) : goal ? (
+        <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Your plan</Mono>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+            Plans for this goal are coming soon. Jump into the app now — you can enroll once they land.
+          </Mono>
+          <button
+            onClick={onEnrolled}
+            style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "13px 26px", marginTop: 14, cursor: "pointer" }}
+          >
+            Continue to the app →
+          </button>
+        </Card>
       ) : (
         <Mono s={{ fontSize: 13 }}>Pick a goal to see your recommended plan.</Mono>
       )}

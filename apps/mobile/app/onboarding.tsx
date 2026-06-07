@@ -105,7 +105,18 @@ export default function Onboarding() {
           </View>
         </Card>
       )}
-      {!plan && <Mono style={{ marginTop: 12 }}>Pick a goal to see your recommended plan.</Mono>}
+      {!plan && goal && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
+          <Kicker color={C.violet}>Your plan</Kicker>
+          <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>
+            Plans for this goal are coming soon. Jump into the app now — you can enroll once they land.
+          </Mono>
+          <View style={{ marginTop: 14 }}>
+            <Button label="Continue to the app →" onPress={() => router.replace("/(tabs)")} />
+          </View>
+        </Card>
+      )}
+      {!plan && !goal && <Mono style={{ marginTop: 12 }}>Pick a goal to see your recommended plan.</Mono>}
     </Screen>
   );
 }

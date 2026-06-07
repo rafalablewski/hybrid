@@ -62,7 +62,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
         {goal.icon} {goal.name}
       </Text>
       {goal.plans.length === 0 && (
-        <Mono style={{ lineHeight: 19 }}>No plans here yet — plans for this goal are on the way.</Mono>
+        <Mono style={{ lineHeight: 19 }}>{t("plans.noPlansYet")}</Mono>
       )}
       {goal.plans.map((p) => (
         <Pressable key={p.id} onPress={() => pick(p.id)}>
