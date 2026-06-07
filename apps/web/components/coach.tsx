@@ -1,8 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { sessionVolume, weeklyRecap, type LoggedSession } from "@hybrid/core";
+import {
+  sessionVolume,
+  weeklyRecap,
+  buildMacrocycle,
+  buildTrainingWeek,
+  trainingDaysPerWeek,
+  toTrainingLog,
+  type LoggedSession,
+} from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+
+// goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
+// coach's one-click week generator.
+const GEN_GOALS = ["Hybrid", "Powerlifting", "Bodybuilding", "Running", "Cycling", "Hyrox", "Triathlon"];
 
 type Person = { id: string; name: string | null; email: string };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
@@ -169,6 +181,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [assignId, setAssignId] = useState("");
   const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
+  const [generating, setGenerating] = useState(false);
+  const [genMsg, setGenMsg] = useState<string | null>(null);
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [noteBody, setNoteBody] = useState("");
@@ -220,6 +235,41 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
     });
     setAssignId("");
     load();
+  };
+
+  // Generate a varied, periodized week for this client and assign it — the same
+  // reconciler the athlete's own Today uses, run on the client's real sessions.
+  // Days/week is inferred from their actual cadence; loads dose off their logs.
+  const generateWeek = async () => {
+    if (generating) return;
+    setGenerating(true);
+    setGenMsg(null);
+    try {
+      const macro = buildMacrocycle(genGoal);
+      const days = trainingDaysPerWeek(sessions);
+      const week = buildTrainingWeek({
+        macro,
+        currentWeek: 1,
+        log: toTrainingLog(sessions),
+        daysPerWeek: days,
+      });
+      const results = await Promise.all(
+        week.map((it) =>
+          fetch(`/api/coach/links/${link.id}/assignments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: it.name, blocks: it.blocks, date: it.date }),
+          }),
+        ),
+      );
+      const ok = results.filter((r) => r.ok).length;
+      setGenMsg(ok ? `Assigned ${ok} sessions (${days}/week) — ${genGoal}.` : "Couldn't generate — try again.");
+      load();
+    } catch {
+      setGenMsg("Couldn't generate — try again.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const sendReply = async (id: string) => {
@@ -321,6 +371,21 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               <Btn label="Assign" color={assignId ? LIME : ASH} onClick={assign} />
             </div>
           )}
+        </Card>
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Generate a periodized week</Mono>
+          <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+            {sessions.length === 0
+              ? "Once this athlete logs sessions, generate a varied week dosed from their own numbers."
+              : `A phase-arbitrated week, days/week from their cadence (~${trainingDaysPerWeek(sessions)}/wk), loads from their logs.`}
+          </Mono>
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <Select value={genGoal} onChange={(e) => setGenGoal(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 180 }}>
+              {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
+            </Select>
+            <Btn label={generating ? "Generating…" : "Generate & assign"} color={sessions.length > 0 && !generating ? VIOLET : ASH} onClick={generateWeek} />
+          </div>
+          {genMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={LIME}>{genMsg}</Mono>}
         </Card>
         {assignments.map((a) => (
           <Card key={a.id}>

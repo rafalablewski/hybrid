@@ -6,6 +6,7 @@ import {
   prescribeForSport,
   reconcilePlan,
   buildTrainingWeek,
+  trainingDaysPerWeek,
   velocityProfiles,
   toTrainingLog,
   SPORTS,
@@ -43,13 +44,23 @@ export default function ReconciledWeek({
 
   // the athlete's saved sport selection (client-only — avoids an SSR mismatch).
   const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
+  // the days/week from onboarding — the fallback before there's training history.
+  const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
   useEffect(() => {
     const s = readSportSelection();
     if (s?.sport && SPORTS[s.sport]) {
       const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
       setSportSel({ sport: s.sport, levelIdx: lvl });
     }
+    const raw = Number(localStorage.getItem("hybrid.daysPerWeek"));
+    if (Number.isFinite(raw) && raw > 0) setPrefDays(raw);
   }, []);
+
+  // availability-aware: actual recent cadence, falling back to the onboarding answer.
+  const daysPerWeek = useMemo(
+    () => trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 }),
+    [sessions, prefDays],
+  );
 
   const sportRx = useMemo(
     () => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined),
@@ -74,7 +85,7 @@ export default function ReconciledWeek({
         bio,
         profiles: velocityProfiles(sessions),
         sport: sportRx,
-        daysPerWeek: 3,
+        daysPerWeek,
       });
       const res = await fetch("/api/assignments", {
         method: "POST",
@@ -102,7 +113,7 @@ export default function ReconciledWeek({
             {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
           </Chip>
           <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling)}>
-            {scheduling ? "Scheduling…" : "Schedule this week →"}
+            {scheduling ? "Scheduling…" : `Schedule this week · ${daysPerWeek}d →`}
           </button>
         </div>
       </div>

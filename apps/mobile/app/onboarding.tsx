@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   recommendPlan,
   ONBOARDING_GOAL_GROUPS,
@@ -39,6 +40,7 @@ export default function Onboarding() {
     if (!plan) return;
     setEnrolling(true);
     await enrollPlan(plan.goalLabel);
+    await AsyncStorage.setItem("hybrid.daysPerWeek", String(days)).catch(() => {});
     setEnrolling(false);
     router.replace("/(tabs)");
   };

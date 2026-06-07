@@ -7,6 +7,7 @@ import {
   prescribeForSport,
   reconcilePlan,
   buildTrainingWeek,
+  trainingDaysPerWeek,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -45,6 +46,7 @@ export default function Home() {
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
+  const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
@@ -69,6 +71,9 @@ export default function Home() {
           setSportSel({ sport: s.sport, levelIdx: lvl });
         }
       })
+      .catch(() => {});
+    AsyncStorage.getItem("hybrid.daysPerWeek")
+      .then((raw) => { const n = Number(raw); if (Number.isFinite(n) && n > 0) setPrefDays(n); })
       .catch(() => {});
   }, []);
 
@@ -103,6 +108,10 @@ export default function Home() {
     return reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek });
   }, [macro, rx, sportRx, sessions, currentWeek]);
 
+  const daysPerWeek = useMemo(
+    () => trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 }),
+    [sessions, prefDays],
+  );
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
   const scheduleThisWeek = async () => {
@@ -116,7 +125,7 @@ export default function Home() {
       bio,
       profiles: velocityProfiles(sessions),
       sport: sportRx,
-      daysPerWeek: 3,
+      daysPerWeek,
     });
     const ok = await createSelfAssignments(items);
     setScheduled(ok ? `Scheduled ${items.length} sessions — see your Calendar.` : "Couldn't schedule — try again.");
@@ -255,7 +264,7 @@ export default function Home() {
             disabled={scheduling}
             style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : "Schedule this week →"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule this week · ${daysPerWeek}d →`}</Text>
           </Pressable>
           {scheduled && <Mono color={C.lime} style={{ marginTop: 8, textAlign: "center" }}>{scheduled}</Mono>}
         </Card>
