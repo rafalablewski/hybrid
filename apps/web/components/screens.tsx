@@ -48,8 +48,8 @@ import {
   volumeByMuscle,
   e1rmSeries,
   liftNames,
+  blockSummary,
   type LoggedSession,
-  type SessionBlock,
   type Macrocycle,
   type Biometrics,
 } from "@hybrid/core";
@@ -616,14 +616,6 @@ export function PeriodizeScreen({
 }
 
 // ---------- HISTORY (real logged sessions) ----------
-function blockSummary(b: SessionBlock): string {
-  if (b.kind === "strength")
-    return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
-  return [b.format, b.minutes ? `${b.minutes} min` : null, b.rounds ? `${b.rounds} rounds` : null]
-    .filter(Boolean)
-    .join(" · ");
-}
-
 export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
 

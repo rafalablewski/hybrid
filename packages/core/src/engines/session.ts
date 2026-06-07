@@ -68,6 +68,26 @@ export function blockBestE1rm(b: StrengthBlock): number {
   return best;
 }
 
+/**
+ * One-line summary of a conditioning block: format, the interval (rounds ×
+ * work/rest seconds) when logged, total minutes, and optionally RPE. Shared so
+ * the web + mobile history/detail views read intervals the same way.
+ */
+export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean } = {}): string {
+  const parts: (string | null | undefined)[] = [b.format];
+  if (b.work && b.rest) parts.push(`${b.rounds ? `${b.rounds}×` : ""}${b.work}/${b.rest}s`);
+  else if (b.rounds) parts.push(`${b.rounds} rounds`);
+  if (b.minutes) parts.push(`${b.minutes} min`);
+  if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
+  return parts.filter(Boolean).join(" · ");
+}
+
+/** One-line summary of any block (strength sets, or the conditioning summary). */
+export function blockSummary(b: SessionBlock): string {
+  if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
+  return conditioningSummary(b);
+}
+
 /** Tonnage (load × reps) summed across all strength sets in a session. */
 export function sessionVolume(blocks: SessionBlock[]): number {
   let v = 0;

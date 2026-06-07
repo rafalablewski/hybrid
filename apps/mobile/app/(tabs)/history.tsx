@@ -1,17 +1,12 @@
 import { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { sessionVolume, prsForSession, type LoggedSession, type SessionBlock } from "@hybrid/core";
+import { sessionVolume, prsForSession, blockSummary, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Loading, C, F } from "../../lib/ui";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-function summary(b: SessionBlock): string {
-  if (b.kind === "strength") return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
-  return [b.format, b.minutes ? `${b.minutes} min` : null].filter(Boolean).join(" · ");
-}
 
 export default function History() {
   const { t } = useLang();
@@ -63,7 +58,7 @@ export default function History() {
                   {s.blocks.map((b, i) => (
                     <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line }}>
                       <Mono color={C.chalk}>{b.name}</Mono>
-                      <Mono>{summary(b)}</Mono>
+                      <Mono>{blockSummary(b)}</Mono>
                     </View>
                   ))}
                   <Mono color={C.ash} style={{ marginTop: 8, fontSize: 11 }}>{t("history.tapDetail")}</Mono>
