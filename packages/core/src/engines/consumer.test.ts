@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { streak, habitStrength, weeklyConsistency, activeDays } from "./habits";
+import { streak, habitStrength, weeklyConsistency, activeDays, trainingDaysPerWeek } from "./habits";
 import { computeAccountability } from "./accountability";
 import { projectLift, projectBodyweight, adherenceFactor } from "./future-self";
 import type { LoggedSession } from "./session";
@@ -45,6 +45,15 @@ describe("habits — streaks", () => {
     const s = [session("a", daysAgo(0)), session("b", daysAgo(2)), session("c", daysAgo(4)), session("d", daysAgo(6))];
     expect(habitStrength(s, 3, NOW)).toBeGreaterThan(20);
     expect(weeklyConsistency(s, 4, NOW)).toBeGreaterThan(0);
+  });
+
+  it("trainingDaysPerWeek infers cadence from distinct active days, else uses fallback", () => {
+    // 4 distinct days this week → infers 4
+    const s = [session("a", daysAgo(0)), session("b", daysAgo(1)), session("c", daysAgo(3)), session("d", daysAgo(5))];
+    expect(trainingDaysPerWeek(s, { now: NOW })).toBe(4);
+    // no history → honors the onboarding fallback
+    expect(trainingDaysPerWeek([], { now: NOW, fallback: 5 })).toBe(5);
+    expect(trainingDaysPerWeek([], { now: NOW })).toBe(3);
   });
 });
 

@@ -84,6 +84,35 @@ export function weeklyConsistency(sessions: LoggedSession[], weeks = 4, now = Da
 }
 
 /**
+ * The athlete's typical training days/week, inferred from recent behavior — the
+ * median number of DISTINCT active days across the active weeks in the window.
+ * "Availability-aware" without asking: a 4-day-a-week athlete gets a 4-day plan.
+ * Falls back to `fallback` (e.g. their onboarding answer) before there's enough
+ * history. Clamped to a sane 1..6 schedulable range.
+ */
+export function trainingDaysPerWeek(
+  sessions: LoggedSession[],
+  opts: { weeks?: number; fallback?: number; now?: number } = {},
+): number {
+  const weeks = opts.weeks ?? 4;
+  const now = opts.now ?? Date.now();
+  const counts: number[] = [];
+  for (let w = 0; w < weeks; w++) {
+    const end = now - w * 7 * DAY;
+    const start = end - 7 * DAY;
+    const days = new Set<string>();
+    for (const s of sessions) {
+      const t = Date.parse(s.startedAt);
+      if (t > start && t <= end) days.add(new Date(t).toISOString().slice(0, 10));
+    }
+    if (days.size) counts.push(days.size);
+  }
+  if (!counts.length) return Math.max(1, Math.min(6, Math.round(opts.fallback ?? 3)));
+  counts.sort((a, b) => a - b);
+  return Math.max(2, Math.min(6, counts[Math.floor(counts.length / 2)]!));
+}
+
+/**
  * Habit-strength 0..100 — recency-weighted hit rate over the last 4 weeks
  * against a weekly target. Recent weeks count most (a strong habit is about what
  * you're doing now), so a comeback rebuilds the score quickly.

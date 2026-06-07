@@ -41,6 +41,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
       });
       if (res.status === 401) { setError("Sign in to save your plan (demo mode doesn't persist)."); setEnrolling(false); return; }
       if (!res.ok) { setError(`Couldn't enroll (HTTP ${res.status}).`); setEnrolling(false); return; }
+      try { localStorage.setItem("hybrid.daysPerWeek", String(days)); } catch { /* ignore */ }
       onEnrolled();
     } catch {
       setError("Network error — try again.");
