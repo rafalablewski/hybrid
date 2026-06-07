@@ -1,0 +1,226 @@
+import type {
+  Macrocycle,
+  Prescription,
+  PrescribedStrengthBlock,
+  PrescribedConditioningBlock,
+} from "./types";
+import { currentPhase } from "./periodization";
+import type { SportPrescription } from "../sports";
+
+/**
+ * The reconciler — one session out of three engines.
+ *
+ * Three engines independently answer "what should I train?" on different
+ * horizons: the macrocycle (engines/periodization.ts) sets the SEASON arc, the
+ * daily route (engines/prescription.ts) doses today's lift from readiness, and
+ * the sport engine (sports.ts) picks the S&C that transfers. They never
+ * coordinate, so on the same day they overlap (the same lift twice) or pull in
+ * different directions (a heavy daily lift in a deload week).
+ *
+ * `reconcilePlan` makes the enrolled macrocycle PHASE the arbiter: the current
+ * microcycle's intensity/volume is the WEEK'S ENVELOPE, and the daily + sport
+ * movements are dosed WITHIN it (loads scaled toward the phase intensity, set
+ * counts toward the phase volume). Overlap is resolved by priority — the daily
+ * primary lift owns its movement; a sport block naming the same lift is dropped
+ * as a duplicate. A recovery/deload week trims accessory work so the planned
+ * deload isn't undone by bolt-on sport volume. Pure — no I/O, no UI.
+ */
+
+/** A normal load week's intensity/volume — the envelope factors are relative to this. */
+const REFERENCE_INTENSITY = 75;
+const REFERENCE_VOLUME = 80;
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+const roundPlate = (kg: number) => Math.round(kg / 2.5) * 2.5;
+
+export interface ReconcileInput {
+  /** the enrolled macrocycle (the season). */
+  macro: Macrocycle;
+  /** which week of the macrocycle we're in (1-indexed). Defaults to 1. */
+  currentWeek?: number;
+  /** the readiness-driven daily prescription (prescribeSession). */
+  daily: Prescription;
+  /** the sport transfer prescription (prescribeForSport), if the athlete trains for a sport. */
+  sport?: SportPrescription;
+}
+
+export interface ReconciledBlock {
+  kind: "strength" | "conditioning";
+  name: string;
+  /** which engine the movement came from. */
+  source: "daily" | "sport";
+  /** the sport demand this trains (sport blocks only). */
+  demand?: string;
+  sets: number;
+  reps: number;
+  /** working load in kg, when the movement is loadable. */
+  load?: number;
+  /** display scheme — "4×5 @ 90kg", "8 rounds 40/20s", or "4×8" for bodyweight. */
+  scheme: string;
+  /** true when no external load applies (bodyweight / plyometric). */
+  bodyweight?: boolean;
+  /** conditioning format (conditioning blocks only). */
+  format?: string;
+}
+
+export interface ReconciledPlan {
+  phase: {
+    label: string;
+    focus: string;
+    /** the macrocycle week this plan is for. */
+    week: number;
+    kind: "load" | "recovery";
+  };
+  /** the week's envelope (0..100), straight off the microcycle. */
+  intensity: number;
+  volume: number;
+  /** the factors the envelope applied to daily/sport dosing. */
+  loadFactor: number;
+  volumeFactor: number;
+  /** the unified session: primary strength → sport transfer → conditioning. */
+  blocks: ReconciledBlock[];
+  /** movements removed during reconciliation, with the reason. */
+  dropped: { name: string; reason: string }[];
+  why: string;
+}
+
+/**
+ * Reconcile the daily prescription and sport transfer work against the current
+ * macrocycle phase, returning one coherent session for the day.
+ */
+export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
+  const { macro, daily, sport } = input;
+  const week = input.currentWeek ?? 1;
+  const { block, micro } = currentPhase(macro, week);
+
+  // the phase envelope → dosing factors, clamped so a single phase can't make
+  // the day absurd (no <60% loads, no >115%; volume 50%..120%).
+  const loadFactor = clamp(micro.intensity / REFERENCE_INTENSITY, 0.6, 1.15);
+  const volumeFactor = clamp(micro.volume / REFERENCE_VOLUME, 0.5, 1.2);
+  const isRecovery = micro.kind === "recovery";
+
+  const blocks: ReconciledBlock[] = [];
+  const dropped: { name: string; reason: string }[] = [];
+
+  // ---- 1) the daily primary strength lift owns its movement ----
+  const dailyStrength = daily.blocks.find(
+    (b): b is PrescribedStrengthBlock => b.kind === "strength",
+  );
+  let primaryName: string | null = null;
+  if (dailyStrength) {
+    primaryName = dailyStrength.name;
+    const baseSets = dailyStrength.sets.length;
+    const first = dailyStrength.sets[0];
+    const baseLoad = first ? Number(first.load) : NaN;
+    const reps = first ? Number(first.reps) : 5;
+    const sets = Math.max(1, Math.round(baseSets * volumeFactor));
+    if (Number.isFinite(baseLoad) && baseLoad > 0) {
+      const load = roundPlate(baseLoad * loadFactor);
+      blocks.push({
+        kind: "strength",
+        name: dailyStrength.name,
+        source: "daily",
+        sets,
+        reps,
+        load,
+        scheme: `${sets}×${reps} @ ${load}kg`,
+      });
+    } else {
+      blocks.push({
+        kind: "strength",
+        name: dailyStrength.name,
+        source: "daily",
+        sets,
+        reps,
+        scheme: `${sets}×${reps}`,
+        bodyweight: true,
+      });
+    }
+  }
+
+  // ---- 2) sport transfer work, deduped and dosed within the envelope ----
+  if (sport) {
+    // a recovery/deload week keeps only the single highest-priority transfer lift
+    // (demands are pre-ranked, so blocks[0] is the most important) — accessory
+    // sport volume must not undo a planned deload.
+    let sportBlocks = sport.blocks;
+    if (isRecovery && sportBlocks.length > 1) {
+      for (const b of sportBlocks.slice(1)) {
+        dropped.push({ name: b.name, reason: "recovery week — trimmed accessory transfer work" });
+      }
+      sportBlocks = sportBlocks.slice(0, 1);
+    }
+    for (const b of sportBlocks) {
+      if (primaryName && b.name === primaryName) {
+        dropped.push({ name: b.name, reason: `already your primary lift today (${primaryName})` });
+        continue;
+      }
+      const sets = Math.max(1, Math.round(b.sets * volumeFactor));
+      if (b.load != null && !b.bodyweight) {
+        const load = roundPlate(b.load * loadFactor);
+        blocks.push({
+          kind: "strength",
+          name: b.name,
+          source: "sport",
+          demand: b.demand,
+          sets,
+          reps: b.reps,
+          load,
+          scheme: `${sets}×${b.reps} @ ${load}kg`,
+        });
+      } else {
+        blocks.push({
+          kind: "strength",
+          name: b.name,
+          source: "sport",
+          demand: b.demand,
+          sets,
+          reps: b.reps,
+          scheme: `${sets}×${b.reps}`,
+          bodyweight: true,
+        });
+      }
+    }
+  }
+
+  // ---- 3) conditioning last, rounds scaled to the envelope volume ----
+  const dailyCond = daily.blocks.find(
+    (b): b is PrescribedConditioningBlock => b.kind === "conditioning",
+  );
+  if (dailyCond) {
+    const rounds = Math.max(1, Math.round(dailyCond.rounds * volumeFactor));
+    blocks.push({
+      kind: "conditioning",
+      name: dailyCond.name,
+      source: "daily",
+      sets: rounds,
+      reps: 0,
+      format: dailyCond.format,
+      scheme: `${rounds} rounds ${dailyCond.work}/${dailyCond.rest}s`,
+    });
+  }
+
+  const dedups = dropped.filter((d) => d.reason.startsWith("already")).length;
+  const why =
+    `Week ${week} — ${block.label} (${micro.kind} week, ${block.focus.toLowerCase()}). ` +
+    `The phase sets a ${micro.intensity}/100 intensity, ${micro.volume}/100 volume envelope, ` +
+    `so working loads are scaled ${loadFactor.toFixed(2)}× and volume ${volumeFactor.toFixed(2)}× ` +
+    `around your readiness-based prescription.` +
+    (dedups
+      ? ` Dropped ${dedups} sport block${dedups > 1 ? "s" : ""} that duplicated today's primary lift.`
+      : "") +
+    (isRecovery && dropped.some((d) => d.reason.startsWith("recovery"))
+      ? " Trimmed accessory sport work to protect the deload."
+      : "");
+
+  return {
+    phase: { label: block.label, focus: block.focus, week, kind: micro.kind },
+    intensity: micro.intensity,
+    volume: micro.volume,
+    loadFactor,
+    volumeFactor,
+    blocks,
+    dropped,
+    why,
+  };
+}
