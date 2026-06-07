@@ -133,14 +133,22 @@ describe("scheduleWeek", () => {
 describe("buildTrainingWeek", () => {
   const start = new Date(2026, 5, 8, 12, 0, 0, 0);
 
+  const primaryOf = (a: { blocks: { kind: string; name: string }[] }) => {
+    const first = a.blocks.find((b) => b.kind === "strength");
+    return first ? first.name : "";
+  };
+
   it("varies the primary lift across the week (not the same session N times)", () => {
     const week = buildTrainingWeek({ macro, currentWeek: 1, log: SAMPLE_TRAINING_LOG, daysPerWeek: 3, startDate: start });
     expect(week.length).toBe(3);
-    const primaries = week.map((a) => {
-      const first = a.blocks.find((b) => b.kind === "strength");
-      return first && first.kind === "strength" ? first.name : "";
-    });
-    expect(new Set(primaries).size).toBeGreaterThan(1); // distinct main lifts
+    expect(new Set(week.map(primaryOf)).size).toBeGreaterThan(1); // distinct main lifts
+  });
+
+  it("sequentially re-prescribes: day 2 avoids the muscles day 1 just hammered", () => {
+    // from a clean slate every lift is equally recovered, so day 1 takes the
+    // first pattern; that fatigue must push day 2 onto a different lift.
+    const week = buildTrainingWeek({ macro, currentWeek: 1, log: [], daysPerWeek: 3, startDate: start });
+    expect(primaryOf(week[0]!)).not.toBe(primaryOf(week[1]!));
   });
 
   it("spreads the sport transfer work across days rather than piling it on one", () => {
