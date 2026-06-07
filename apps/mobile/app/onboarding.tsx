@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   recommendPlan,
-  ONBOARDING_GOALS,
+  ONBOARDING_GOAL_GROUPS,
   type OnboardingGoal,
   type Experience,
   type Equipment,
@@ -56,18 +56,23 @@ export default function Onboarding() {
 
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>1 · Your main goal</Kicker>
-        <View style={{ marginTop: 8, gap: 8 }}>
-          {ONBOARDING_GOALS.map((g) => (
-            <Pressable
-              key={g.id}
-              onPress={() => setGoal(g.id)}
-              style={{ borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}14` : "transparent", borderRadius: 12, padding: 12 }}
-            >
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: goal === g.id ? C.lime : C.chalk }}>{g.label}</Text>
-              <Mono style={{ marginTop: 2, fontSize: 11 }}>{g.blurb}</Mono>
-            </Pressable>
-          ))}
-        </View>
+        {ONBOARDING_GOAL_GROUPS.map((group) => (
+          <View key={group.category} style={{ marginTop: 12 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
+            <View style={{ marginTop: 6, gap: 8 }}>
+              {group.goals.map((g) => (
+                <Pressable
+                  key={g.id}
+                  onPress={() => setGoal(g.id)}
+                  style={{ borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}14` : "transparent", borderRadius: 12, padding: 12 }}
+                >
+                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: goal === g.id ? C.lime : C.chalk }}>{g.label}</Text>
+                  <Mono style={{ marginTop: 2, fontSize: 11 }}>{g.blurb}</Mono>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ))}
       </Card>
 
       <Card>
@@ -100,7 +105,18 @@ export default function Onboarding() {
           </View>
         </Card>
       )}
-      {!plan && <Mono style={{ marginTop: 12 }}>Pick a goal to see your recommended plan.</Mono>}
+      {!plan && goal && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
+          <Kicker color={C.violet}>Your plan</Kicker>
+          <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>
+            Plans for this goal are coming soon. Jump into the app now — you can enroll once they land.
+          </Mono>
+          <View style={{ marginTop: 14 }}>
+            <Button label="Continue to the app →" onPress={() => router.replace("/(tabs)")} />
+          </View>
+        </Card>
+      )}
+      {!plan && !goal && <Mono style={{ marginTop: 12 }}>Pick a goal to see your recommended plan.</Mono>}
     </Screen>
   );
 }

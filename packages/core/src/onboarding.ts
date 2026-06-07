@@ -8,9 +8,10 @@
  * same recommendation and then enroll its macrocycle. No I/O.
  */
 
-import { GOAL_TREE, type GoalPlan } from "./plans";
+import { GOAL_TREE, GOAL_GROUPS, type GoalPlan, type GoalCategory } from "./plans";
 
-export type OnboardingGoal = "lose-fat" | "build-muscle" | "get-stronger" | "endurance" | "hybrid";
+/** A main goal id — always one of the plan library's goal (GOAL_TREE) ids. */
+export type OnboardingGoal = string;
 export type Experience = "beginner" | "intermediate" | "advanced";
 export type Equipment = "full" | "home" | "minimal";
 
@@ -36,28 +37,38 @@ export interface OnboardingPlan {
   why: string;
 }
 
-const GOAL_TO_NODE: Record<OnboardingGoal, string> = {
-  "lose-fat": "hyrox",
-  "build-muscle": "bb",
-  "get-stronger": "power",
-  endurance: "tri",
-  hybrid: "hybrid",
-};
+export interface OnboardingGoalOption {
+  id: OnboardingGoal;
+  label: string;
+  blurb: string;
+  category: GoalCategory;
+}
 
-export const ONBOARDING_GOALS: { id: OnboardingGoal; label: string; blurb: string }[] = [
-  { id: "lose-fat", label: "Lose fat", blurb: "Conditioning-led, strength to keep muscle" },
-  { id: "build-muscle", label: "Build muscle", blurb: "Hypertrophy splits, progressive overload" },
-  { id: "get-stronger", label: "Get stronger", blurb: "Squat / bench / deadlift focus" },
-  { id: "endurance", label: "Endurance", blurb: "Engine first, strength that supports it" },
-  { id: "hybrid", label: "Hybrid", blurb: "Lift heavy AND build your engine" },
-];
+// The onboarding main goal is chosen straight from the plan library's goals,
+// so the two can never drift apart — add a goal to GOAL_TREE and it shows up here.
+export const ONBOARDING_GOALS: OnboardingGoalOption[] =
+  GOAL_TREE.map((g) => ({ id: g.id, label: g.name, blurb: g.blurb, category: g.category }));
+
+export interface OnboardingGoalGroup {
+  category: GoalCategory;
+  goals: OnboardingGoalOption[];
+}
+
+/** The same goals, grouped by category in display order (empty groups dropped). */
+export const ONBOARDING_GOAL_GROUPS: OnboardingGoalGroup[] = GOAL_GROUPS.map((group) => ({
+  category: group.category,
+  goals: group.goals.map((g) => ({ id: g.id, label: g.name, blurb: g.blurb, category: g.category })),
+}));
 
 const expRank: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
-/** Recommend a first plan from intake answers (pure). */
-export function recommendPlan(a: OnboardingAnswers): OnboardingPlan {
-  const nodeId = GOAL_TO_NODE[a.goal] ?? "hybrid";
-  const node = GOAL_TREE.find((g) => g.id === nodeId) ?? GOAL_TREE.find((g) => g.id === "hybrid")!;
+/**
+ * Recommend a first plan from intake answers (pure).
+ * Returns null when the matched goal has no plans yet (the library is empty
+ * until real plans are uploaded).
+ */
+export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
+  const node = GOAL_TREE.find((g) => g.id === a.goal) ?? GOAL_TREE.find((g) => g.id === "hybrid")!;
   const days = Math.max(1, Math.min(7, Math.round(a.daysPerWeek)));
 
   // Pick the plan whose weekly frequency is closest to what they can commit to;
@@ -67,10 +78,12 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan {
     const dy = Math.abs(y.sessions - days);
     if (dx !== dy) return dx - dy;
     return expRank[a.experience] >= 2 ? y.sessions - x.sessions : x.sessions - y.sessions;
-  })[0] as GoalPlan;
+  })[0] as GoalPlan | undefined;
+
+  if (!pick) return null;
 
   const why =
-    `For ${labelFor(a.goal).toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +
+    `For ${node.name.toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +
     `${pick.name} (${pick.sessions}×/wk) fits best: ${pick.desc}`;
 
   return {
@@ -83,8 +96,4 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan {
     focus: pick.focus,
     why,
   };
-}
-
-function labelFor(g: OnboardingGoal): string {
-  return ONBOARDING_GOALS.find((x) => x.id === g)?.label ?? g;
 }

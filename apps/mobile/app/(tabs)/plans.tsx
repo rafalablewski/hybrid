@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { GOAL_TREE, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Button, C, F } from "../../lib/ui";
@@ -30,19 +30,24 @@ export default function Plans() {
     <Screen>
       <Kicker>Plans</Kicker>
       <Mono style={{ marginTop: 6, marginBottom: 14 }}>{t("plans.chooseGoal")}</Mono>
-      {GOAL_TREE.map((g) => (
-        <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
-          <Card style={{ borderLeftWidth: 3, borderLeftColor: g.color }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Text style={{ fontSize: 22, color: g.color }}>{g.icon}</Text>
-              <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{g.name}</Text>
-            </View>
-            <Mono style={{ marginTop: 8, lineHeight: 19 }}>{g.blurb}</Mono>
-            <Mono color={g.color} style={{ marginTop: 8 }}>
-              {g.plans.length} {t("plans.plansCount")} →
-            </Mono>
-          </Card>
-        </Pressable>
+      {GOAL_GROUPS.map((group) => (
+        <View key={group.category} style={{ marginBottom: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
+          {group.goals.map((g) => (
+            <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
+              <Card style={{ borderLeftWidth: 3, borderLeftColor: g.color }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Text style={{ fontSize: 22, color: g.color }}>{g.icon}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{g.name}</Text>
+                </View>
+                <Mono style={{ marginTop: 8, lineHeight: 19 }}>{g.blurb}</Mono>
+                <Mono color={g.color} style={{ marginTop: 8 }}>
+                  {g.plans.length} {t("plans.plansCount")} →
+                </Mono>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
       ))}
     </Screen>
   );
@@ -56,6 +61,9 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginVertical: 8 }}>
         {goal.icon} {goal.name}
       </Text>
+      {goal.plans.length === 0 && (
+        <Mono style={{ lineHeight: 19 }}>{t("plans.noPlansYet")}</Mono>
+      )}
       {goal.plans.map((p) => (
         <Pressable key={p.id} onPress={() => pick(p.id)}>
           <Card style={{ borderLeftWidth: 3, borderLeftColor: p.hot ? C.lime : C.line }}>
