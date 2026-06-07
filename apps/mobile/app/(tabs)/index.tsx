@@ -6,7 +6,7 @@ import {
   prescribeSession,
   prescribeForSport,
   reconcilePlan,
-  scheduleWeek,
+  buildTrainingWeek,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -94,19 +94,30 @@ export default function Home() {
 
   // The reconciled week: the macrocycle phase arbitrates the daily route + sport
   // transfer into one session (overlap deduped, deload weeks trimmed).
+  const sportRx = useMemo(
+    () => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined),
+    [sportSel, sessions],
+  );
   const reconciled = useMemo(() => {
     if (!macro || sessions.length === 0) return null;
-    const sport = sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined;
-    return reconcilePlan({ macro, daily: rx, sport, currentWeek });
-  }, [macro, rx, sportSel, sessions, currentWeek]);
+    return reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek });
+  }, [macro, rx, sportRx, sessions, currentWeek]);
 
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
   const scheduleThisWeek = async () => {
-    if (!reconciled || scheduling) return;
+    if (!reconciled || !macro || scheduling) return;
     setScheduling(true);
     setScheduled(null);
-    const items = scheduleWeek(reconciled, { daysPerWeek: 3 });
+    const items = buildTrainingWeek({
+      macro,
+      currentWeek,
+      log,
+      bio,
+      profiles: velocityProfiles(sessions),
+      sport: sportRx,
+      daysPerWeek: 3,
+    });
     const ok = await createSelfAssignments(items);
     setScheduled(ok ? `Scheduled ${items.length} sessions — see your Calendar.` : "Couldn't schedule — try again.");
     setScheduling(false);

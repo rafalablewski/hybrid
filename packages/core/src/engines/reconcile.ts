@@ -3,10 +3,15 @@ import type {
   Prescription,
   PrescribedStrengthBlock,
   PrescribedConditioningBlock,
+  TrainingLog,
+  Biometrics,
+  EnergySystem,
 } from "./types";
 import { currentPhase } from "./periodization";
+import { prescribeSession } from "./prescription";
+import type { LoadVelocityProfile } from "./velocity";
 import type { SessionBlock } from "./session";
-import type { SportPrescription } from "../sports";
+import type { SportPrescription, SportBlock } from "../sports";
 
 /**
  * The reconciler — one session out of three engines.
@@ -294,5 +299,71 @@ export function scheduleWeek(
     d.setDate(d.getDate() + off);
     d.setHours(12, 0, 0, 0);
     return { name, blocks, date: d.toISOString() };
+  });
+}
+
+// the main lift + conditioning system each day rotates through, so a generated
+// week is varied (not the same session N times). The daily engine still doses
+// each off the athlete's real numbers + the phase envelope.
+const PRIMARY_ROTATION = ["Back Squat", "Bench Press", "Deadlift", "Overhead Press"];
+const SYSTEM_ROTATION: EnergySystem[] = ["aerobic", "threshold", "anaerobic"];
+
+/** Round-robin a list into `n` buckets (bucket i gets items i, i+n, i+2n, …). */
+function distribute<T>(items: T[], n: number): T[][] {
+  const out: T[][] = Array.from({ length: n }, () => []);
+  items.forEach((it, i) => out[i % n]!.push(it));
+  return out;
+}
+
+export interface BuildWeekInput {
+  macro: Macrocycle;
+  currentWeek?: number;
+  /** the athlete's training log (drives the daily prescription each day). */
+  log: TrainingLog;
+  bio?: Biometrics;
+  profiles?: Record<string, LoadVelocityProfile>;
+  /** the sport transfer prescription, spread across the week's days. */
+  sport?: SportPrescription;
+  daysPerWeek?: number;
+  startDate?: Date;
+}
+
+/**
+ * Build a VARIED training week: a distinct phase-arbitrated session per training
+ * day. Each day rotates the primary lift + conditioning system (so it isn't the
+ * same workout repeated) and gets a fair, round-robin share of the sport
+ * transfer work, then runs through reconcilePlan so the phase envelope and
+ * overlap rules apply per day. The richer counterpart to scheduleWeek.
+ */
+export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] {
+  const start = input.startDate ? new Date(input.startDate) : new Date();
+  const days = clamp(Math.round(input.daysPerWeek ?? 3), 1, 6);
+  const offsets = WEEK_SPREAD[days]!;
+  const sportByDay = distribute<SportBlock>(input.sport?.blocks ?? [], days);
+
+  return offsets.map((off, i) => {
+    const daily = prescribeSession(input.log, input.bio, {
+      profiles: input.profiles,
+      preferPrimary: PRIMARY_ROTATION[i % PRIMARY_ROTATION.length],
+      preferSystem: SYSTEM_ROTATION[i % SYSTEM_ROTATION.length],
+    });
+    const daySport =
+      input.sport && sportByDay[i]!.length
+        ? { ...input.sport, blocks: sportByDay[i]! }
+        : undefined;
+    const plan = reconcilePlan({
+      macro: input.macro,
+      daily,
+      sport: daySport,
+      currentWeek: input.currentWeek,
+    });
+    const d = new Date(start);
+    d.setDate(d.getDate() + off);
+    d.setHours(12, 0, 0, 0);
+    return {
+      name: `${plan.phase.label} · ${plan.blocks[0]?.name ?? "Session"}`,
+      blocks: reconciledToSessionBlocks(plan.blocks),
+      date: d.toISOString(),
+    };
   });
 }
