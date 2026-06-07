@@ -94,6 +94,16 @@ export const GOAL_TREE: GoalNode[] = [
     plans: [] },
   { id: "mobility", name: "Mobility & Longevity", icon: "◇", color: BLUE, blurb: "Move freely and stay durable for decades. Mobility, stability, and prehab.",
     plans: [] },
+  { id: "kettlebell", name: "Kettlebell", icon: "◔", color: AMBER, blurb: "Swing, snatch, and get-up. One tool, full-body strength and conditioning.",
+    plans: [] },
+  { id: "tactical", name: "Tactical & Military", icon: "◣", color: VIOLET, blurb: "Ruck, carry, and work capacity under load. Built to pass the test and do the job.",
+    plans: [] },
+  { id: "sport", name: "Sport Performance", icon: "★", color: VIOLET, blurb: "Speed, power, and agility for field- and court-sport athletes.",
+    plans: [] },
+  { id: "swim", name: "Swimming", icon: "◑", color: BLUE, blurb: "Faster in the water — dryland strength, mobility, and shoulder durability.",
+    plans: [] },
+  { id: "prenatal", name: "Pre & Postnatal", icon: "◍", color: LIME, blurb: "Train safely and strong through pregnancy and the return after.",
+    plans: [] },
 ];
 
 // flat list still used by the landing carousel (top plan per goal).

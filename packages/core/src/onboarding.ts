@@ -10,7 +10,8 @@
 
 import { GOAL_TREE, type GoalPlan } from "./plans";
 
-export type OnboardingGoal = "lose-fat" | "build-muscle" | "get-stronger" | "endurance" | "hybrid";
+/** A main goal id — always one of the plan library's goal (GOAL_TREE) ids. */
+export type OnboardingGoal = string;
 export type Experience = "beginner" | "intermediate" | "advanced";
 export type Equipment = "full" | "home" | "minimal";
 
@@ -36,21 +37,10 @@ export interface OnboardingPlan {
   why: string;
 }
 
-const GOAL_TO_NODE: Record<OnboardingGoal, string> = {
-  "lose-fat": "hyrox",
-  "build-muscle": "bb",
-  "get-stronger": "power",
-  endurance: "tri",
-  hybrid: "hybrid",
-};
-
-export const ONBOARDING_GOALS: { id: OnboardingGoal; label: string; blurb: string }[] = [
-  { id: "lose-fat", label: "Lose fat", blurb: "Conditioning-led, strength to keep muscle" },
-  { id: "build-muscle", label: "Build muscle", blurb: "Hypertrophy splits, progressive overload" },
-  { id: "get-stronger", label: "Get stronger", blurb: "Squat / bench / deadlift focus" },
-  { id: "endurance", label: "Endurance", blurb: "Engine first, strength that supports it" },
-  { id: "hybrid", label: "Hybrid", blurb: "Lift heavy AND build your engine" },
-];
+// The onboarding main goal is chosen straight from the plan library's goals,
+// so the two can never drift apart — add a goal to GOAL_TREE and it shows up here.
+export const ONBOARDING_GOALS: { id: OnboardingGoal; label: string; blurb: string }[] =
+  GOAL_TREE.map((g) => ({ id: g.id, label: g.name, blurb: g.blurb }));
 
 const expRank: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
@@ -60,8 +50,7 @@ const expRank: Record<Experience, number> = { beginner: 0, intermediate: 1, adva
  * until real plans are uploaded).
  */
 export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
-  const nodeId = GOAL_TO_NODE[a.goal] ?? "hybrid";
-  const node = GOAL_TREE.find((g) => g.id === nodeId) ?? GOAL_TREE.find((g) => g.id === "hybrid")!;
+  const node = GOAL_TREE.find((g) => g.id === a.goal) ?? GOAL_TREE.find((g) => g.id === "hybrid")!;
   const days = Math.max(1, Math.min(7, Math.round(a.daysPerWeek)));
 
   // Pick the plan whose weekly frequency is closest to what they can commit to;
@@ -76,7 +65,7 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
   if (!pick) return null;
 
   const why =
-    `For ${labelFor(a.goal).toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +
+    `For ${node.name.toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +
     `${pick.name} (${pick.sessions}×/wk) fits best: ${pick.desc}`;
 
   return {
@@ -89,8 +78,4 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
     focus: pick.focus,
     why,
   };
-}
-
-function labelFor(g: OnboardingGoal): string {
-  return ONBOARDING_GOALS.find((x) => x.id === g)?.label ?? g;
 }
