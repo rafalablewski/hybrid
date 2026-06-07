@@ -90,9 +90,9 @@ export default function ReconciledWeek({
       const res = await fetch("/api/assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, replace: true }),
       });
-      setScheduled(res.ok ? `Scheduled ${items.length} sessions — see the Calendar.` : "Couldn't schedule — try again.");
+      setScheduled(res.ok ? `Scheduled ${items.length} sessions off your latest logs — see the Calendar.` : "Couldn't schedule — try again.");
     } catch {
       setScheduled("Couldn't schedule — try again.");
     } finally {
@@ -113,7 +113,7 @@ export default function ReconciledWeek({
             {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
           </Chip>
           <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling)}>
-            {scheduling ? "Scheduling…" : `Schedule this week · ${daysPerWeek}d →`}
+            {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
           </button>
         </div>
       </div>

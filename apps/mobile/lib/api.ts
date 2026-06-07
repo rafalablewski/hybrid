@@ -201,12 +201,14 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
 
 // Self-schedule: materialize the reconciled plan onto dated Assignments (the
 // athlete authoring their own). They show on the Calendar alongside coach work.
-export async function createSelfAssignments(items: ScheduledAssignment[]): Promise<boolean> {
+// replace=true clears upcoming pending self-authored days first, so re-running
+// after logging a day regenerates the rest of the week off real results.
+export async function createSelfAssignments(items: ScheduledAssignment[], replace = false): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/assignments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ items, replace }),
     });
     return res.ok;
   } catch {

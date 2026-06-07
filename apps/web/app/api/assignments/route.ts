@@ -16,14 +16,17 @@ export async function GET(request: Request) {
 }
 
 // Self-schedule: the athlete materializes their own plan onto dated sessions
-// (e.g. scheduleWeek() laying the reconciled plan across the week). Each row is
-// authored by the athlete for the athlete — same trust model as logging a
-// session. Coach-authored assignments still go through the coach link route.
+// (e.g. buildTrainingWeek() laying the reconciled week out). Each row is authored
+// by the athlete for the athlete — same trust model as logging a session.
+// With `replace: true` the upcoming, still-pending self-authored assignments
+// (today onward) are cleared first, so re-running after you've logged a day
+// regenerates the rest of the week off your REAL results (and re-scheduling is
+// idempotent — no duplicates). Completed/coach-authored days are never touched.
 export async function POST(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = (await request.json().catch(() => ({}))) as { items?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { items?: unknown; replace?: unknown };
   if (!Array.isArray(body.items) || body.items.length === 0)
     return NextResponse.json({ error: "items must be a non-empty array" }, { status: 400 });
   if (body.items.length > 14)
@@ -46,6 +49,17 @@ export async function POST(request: Request) {
     });
   }
 
-  await prisma.assignment.createMany({ data: rows });
+  if (body.replace === true) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    await prisma.$transaction([
+      prisma.assignment.deleteMany({
+        where: { athleteId: me.id, assignedById: me.id, status: "assigned", date: { gte: today } },
+      }),
+      prisma.assignment.createMany({ data: rows }),
+    ]);
+  } else {
+    await prisma.assignment.createMany({ data: rows });
+  }
   return NextResponse.json({ created: rows.length }, { status: 201 });
 }
