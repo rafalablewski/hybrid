@@ -3,6 +3,7 @@ import {
   reconcilePlan,
   scheduleWeek,
   buildTrainingWeek,
+  weekNeedsResync,
   reconciledToSessionBlocks,
   buildMacrocycle,
   prescribeSession,
@@ -158,5 +159,25 @@ describe("buildTrainingWeek", () => {
     expect(sportCounts.filter((c) => c > 0).length).toBeGreaterThanOrEqual(2);
     const offsets = week.map((a) => Math.round((Date.parse(a.date) - start.getTime()) / 86400000));
     expect(offsets).toEqual([0, 2, 4]);
+  });
+});
+
+describe("weekNeedsResync", () => {
+  const NOW = Date.parse("2026-06-10T12:00:00.000Z");
+  const iso = (daysFromNow: number) => new Date(NOW + daysFromNow * 86400000).toISOString();
+  const me = "u1";
+
+  it("flags a pending self-authored future day generated before the latest session", () => {
+    const rows = [{ athleteId: me, assignedById: me, status: "assigned", date: iso(1), createdAt: iso(-2) }];
+    const sessions = [{ startedAt: iso(-1) }]; // logged after the week was generated
+    expect(weekNeedsResync(rows, sessions, NOW)).toBe(true);
+  });
+
+  it("ignores completed days, coach-authored days, and weeks newer than the last session", () => {
+    const sessions = [{ startedAt: iso(-1) }];
+    expect(weekNeedsResync([{ athleteId: me, assignedById: me, status: "completed", date: iso(1), createdAt: iso(-2) }], sessions, NOW)).toBe(false);
+    expect(weekNeedsResync([{ athleteId: me, assignedById: "coach", status: "assigned", date: iso(1), createdAt: iso(-2) }], sessions, NOW)).toBe(false);
+    expect(weekNeedsResync([{ athleteId: me, assignedById: me, status: "assigned", date: iso(1), createdAt: iso(0) }], sessions, NOW)).toBe(false);
+    expect(weekNeedsResync([{ athleteId: me, assignedById: me, status: "assigned", date: iso(1), createdAt: iso(-2) }], [], NOW)).toBe(false);
   });
 });

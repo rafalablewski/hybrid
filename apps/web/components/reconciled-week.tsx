@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   prescribeSession,
   prescribeForSport,
   reconcilePlan,
   buildTrainingWeek,
   trainingDaysPerWeek,
+  weekNeedsResync,
   velocityProfiles,
   toTrainingLog,
   SPORTS,
@@ -73,7 +74,7 @@ export default function ReconciledWeek({
 
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
-  const scheduleThisWeek = async () => {
+  const doSchedule = async (auto: boolean) => {
     if (!reconciled || scheduling) return;
     setScheduling(true);
     setScheduled(null);
@@ -92,13 +93,38 @@ export default function ReconciledWeek({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items, replace: true }),
       });
-      setScheduled(res.ok ? `Scheduled ${items.length} sessions off your latest logs — see the Calendar.` : "Couldn't schedule — try again.");
+      setScheduled(
+        res.ok
+          ? `${auto ? "Auto re-synced" : "Scheduled"} ${items.length} sessions off your latest logs — see the Calendar.`
+          : "Couldn't schedule — try again.",
+      );
     } catch {
       setScheduled("Couldn't schedule — try again.");
     } finally {
       setScheduling(false);
     }
   };
+  const scheduleThisWeek = () => doSchedule(false);
+
+  // Auto re-sync: if a self-scheduled week is now stale (a day was logged after
+  // it was generated), regenerate the rest of it off the real result — once.
+  const autoSynced = useRef(false);
+  useEffect(() => {
+    if (autoSynced.current || !reconciled) return;
+    let cancelled = false;
+    fetch("/api/assignments")
+      .then((r) => (r.ok ? r.json() : { assignments: [] }))
+      .then((d: { assignments?: Parameters<typeof weekNeedsResync>[0] }) => {
+        if (cancelled || autoSynced.current) return;
+        if (weekNeedsResync(d.assignments ?? [], sessions)) {
+          autoSynced.current = true;
+          void doSchedule(true);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reconciled, sessions]);
 
   if (!reconciled) return null;
 
