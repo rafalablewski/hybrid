@@ -127,8 +127,8 @@ export default function Home() {
       sport: sportRx,
       daysPerWeek,
     });
-    const ok = await createSelfAssignments(items);
-    setScheduled(ok ? `Scheduled ${items.length} sessions — see your Calendar.` : "Couldn't schedule — try again.");
+    const ok = await createSelfAssignments(items, true);
+    setScheduled(ok ? `Scheduled ${items.length} sessions off your latest logs — see your Calendar.` : "Couldn't schedule — try again.");
     setScheduling(false);
     if (ok) load();
   };
@@ -264,7 +264,7 @@ export default function Home() {
             disabled={scheduling}
             style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule this week · ${daysPerWeek}d →`}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
           </Pressable>
           {scheduled && <Mono color={C.lime} style={{ marginTop: 8, textAlign: "center" }}>{scheduled}</Mono>}
         </Card>
