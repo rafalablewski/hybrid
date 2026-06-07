@@ -390,7 +390,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               : `A phase-arbitrated week, days/week from their cadence (~${trainingDaysPerWeek(sessions)}/wk), loads from their logs.`}
           </Mono>
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <Select value={genGoal} onChange={(e) => setGenGoal(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
+            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
               {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
             </Select>
             <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} style={{ fontSize: 14, minWidth: 150 }}>

@@ -54,6 +54,8 @@ describe("habits — streaks", () => {
     // no history → honors the onboarding fallback
     expect(trainingDaysPerWeek([], { now: NOW, fallback: 5 })).toBe(5);
     expect(trainingDaysPerWeek([], { now: NOW })).toBe(3);
+    // a genuine 1-day/week athlete keeps 1 (floor matches the no-history path)
+    expect(trainingDaysPerWeek([session("z", daysAgo(0))], { now: NOW })).toBe(1);
   });
 });
 
