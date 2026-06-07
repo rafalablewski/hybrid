@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 // A coach persists a periodized season FOR a rostered client (CoachLink-gated),
 // so the client's Periodize/Today reflect the SAME macrocycle the coach then
 // generates a week from — one shared source instead of an on-the-fly build.
+// Defense-in-depth: run reference/sql-coach-macrocycle.sql in Supabase to add the
+// matching active-coach RLS policy (the API already gates by the link).
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
