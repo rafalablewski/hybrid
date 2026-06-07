@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession,
@@ -59,7 +59,9 @@ export default function Home() {
       })
       .finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  // Reload whenever the Today tab gains focus — so returning here after logging
+  // a workout refreshes sessions/assignments and the auto re-sync can fire.
+  useFocusEffect(useCallback(() => { load(); }, []));
 
   // the athlete's saved sport selection, so the day's plan folds in transfer work
   useEffect(() => {
@@ -115,7 +117,7 @@ export default function Home() {
   );
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
-  const autoSynced = useRef(false);
+  const autoSynced = useRef(0);
   const doSchedule = async (auto: boolean) => {
     if (!reconciled || !macro || scheduling) return;
     setScheduling(true);
@@ -136,14 +138,16 @@ export default function Home() {
   };
   const scheduleThisWeek = () => doSchedule(false);
 
-  // Auto re-sync: a self-scheduled week that's gone stale (a day was logged
-  // after it was generated) regenerates off the real result — once.
+  // Auto re-sync, event-driven: when a NEWER session lands (you just logged a
+  // day — picked up by the focus reload), re-check the self-scheduled week and
+  // regenerate the rest off that real result. The ref tracks the latest session
+  // already handled, so it fires once per new session, not in a loop.
   useEffect(() => {
-    if (autoSynced.current || !reconciled) return;
-    if (weekNeedsResync(assignments, sessions)) {
-      autoSynced.current = true;
-      void doSchedule(true);
-    }
+    if (!reconciled) return;
+    const latest = sessions.reduce((m, s) => Math.max(m, Date.parse(s.startedAt) || 0), 0);
+    if (!latest || latest <= autoSynced.current) return;
+    autoSynced.current = latest;
+    if (weekNeedsResync(assignments, sessions)) void doSchedule(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reconciled, assignments, sessions]);
 

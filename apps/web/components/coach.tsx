@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   sessionVolume,
   weeklyRecap,
@@ -182,6 +182,8 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [assignId, setAssignId] = useState("");
   const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
+  const [genWeek, setGenWeek] = useState(1);
+  const genMacro = useMemo(() => buildMacrocycle(genGoal), [genGoal]);
   const [generating, setGenerating] = useState(false);
   const [genMsg, setGenMsg] = useState<string | null>(null);
   const [replyFor, setReplyFor] = useState<string | null>(null);
@@ -253,11 +255,11 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         body: JSON.stringify({ goal: genGoal }),
       });
       if (!enrolled.ok) { setGenMsg("Couldn't enroll the season — try again."); return; }
-      const macro = buildMacrocycle(genGoal);
       const days = trainingDaysPerWeek(sessions);
+      const wk = Math.max(1, Math.min(genMacro.totalWeeks, genWeek));
       const week = buildTrainingWeek({
-        macro,
-        currentWeek: 1,
+        macro: genMacro,
+        currentWeek: wk,
         log: toTrainingLog(sessions),
         daysPerWeek: days,
       });
@@ -271,7 +273,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         ),
       );
       const ok = results.filter((r) => r.ok).length;
-      setGenMsg(ok ? `Enrolled ${genGoal} + assigned ${ok} sessions (${days}/week).` : "Couldn't generate — try again.");
+      setGenMsg(ok ? `Enrolled ${genGoal} + assigned ${ok} sessions (wk ${wk}, ${days}/week).` : "Couldn't generate — try again.");
       load();
     } catch {
       setGenMsg("Couldn't generate — try again.");
@@ -388,8 +390,15 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               : `A phase-arbitrated week, days/week from their cadence (~${trainingDaysPerWeek(sessions)}/wk), loads from their logs.`}
           </Mono>
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <Select value={genGoal} onChange={(e) => setGenGoal(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 180 }}>
+            <Select value={genGoal} onChange={(e) => setGenGoal(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
               {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
+            </Select>
+            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} style={{ fontSize: 14, minWidth: 150 }}>
+              {genMacro.blocks.flatMap((b) =>
+                b.micros.map((m) => (
+                  <option key={m.week} value={m.week}>{`Wk ${m.week} · ${b.label}${m.kind === "recovery" ? " (deload)" : ""}`}</option>
+                )),
+              )}
             </Select>
             <Btn label={generating ? "Generating…" : "Generate & assign"} color={sessions.length > 0 && !generating ? VIOLET : ASH} onClick={generateWeek} />
           </div>
