@@ -138,7 +138,7 @@ export async function createCheckin(payload: Partial<Checkin>): Promise<boolean>
 }
 
 // ---- assignments (workouts a coach scheduled for the athlete) ----
-export type Assignment = { id: string; name: string; date: string; status: string; blocks: unknown[] };
+export type Assignment = { id: string; name: string; date: string; status: string; blocks: unknown[]; athleteId?: string; assignedById?: string; createdAt?: string };
 
 export async function fetchAssignments(): Promise<Assignment[]> {
   try {

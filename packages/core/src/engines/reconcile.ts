@@ -389,3 +389,42 @@ export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] 
     };
   });
 }
+
+/** Minimal Assignment shape needed to decide a re-sync (a subset of the DB row). */
+export interface SchedulableRow {
+  athleteId?: string;
+  assignedById?: string;
+  status: string;
+  date: string;
+  createdAt?: string;
+}
+
+/**
+ * Does the upcoming SELF-scheduled week need regenerating? True when a still-
+ * pending, self-authored (athlete === author) assignment dated today-or-later
+ * was generated BEFORE the athlete's most recent logged session — i.e. real
+ * results have landed since the week was simulated, so the rest of it should be
+ * re-prescribed off them. Coach-authored and completed days never trigger it.
+ */
+export function weekNeedsResync(
+  rows: SchedulableRow[],
+  sessions: { startedAt: string }[],
+  now = Date.now(),
+): boolean {
+  let latest = 0;
+  for (const s of sessions) {
+    const t = Date.parse(s.startedAt);
+    if (Number.isFinite(t) && t > latest) latest = t;
+  }
+  if (!latest) return false;
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  return rows.some(
+    (r) =>
+      r.status === "assigned" &&
+      !!r.assignedById &&
+      r.assignedById === r.athleteId &&
+      Date.parse(r.date) >= startOfToday.getTime() &&
+      Date.parse(r.createdAt ?? "") < latest,
+  );
+}

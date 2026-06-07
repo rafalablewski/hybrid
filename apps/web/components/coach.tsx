@@ -240,11 +240,19 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   // Generate a varied, periodized week for this client and assign it — the same
   // reconciler the athlete's own Today uses, run on the client's real sessions.
   // Days/week is inferred from their actual cadence; loads dose off their logs.
+  // The macrocycle is PERSISTED to the client first, so their Periodize/Today
+  // show the same season the coach is programming against (one shared source).
   const generateWeek = async () => {
     if (generating) return;
     setGenerating(true);
     setGenMsg(null);
     try {
+      const enrolled = await fetch(`/api/coach/links/${link.id}/macrocycle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: genGoal }),
+      });
+      if (!enrolled.ok) { setGenMsg("Couldn't enroll the season — try again."); return; }
       const macro = buildMacrocycle(genGoal);
       const days = trainingDaysPerWeek(sessions);
       const week = buildTrainingWeek({
@@ -263,7 +271,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         ),
       );
       const ok = results.filter((r) => r.ok).length;
-      setGenMsg(ok ? `Assigned ${ok} sessions (${days}/week) — ${genGoal}.` : "Couldn't generate — try again.");
+      setGenMsg(ok ? `Enrolled ${genGoal} + assigned ${ok} sessions (${days}/week).` : "Couldn't generate — try again.");
       load();
     } catch {
       setGenMsg("Couldn't generate — try again.");

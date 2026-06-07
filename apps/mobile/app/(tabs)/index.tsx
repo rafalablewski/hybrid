@@ -8,6 +8,7 @@ import {
   reconcilePlan,
   buildTrainingWeek,
   trainingDaysPerWeek,
+  weekNeedsResync,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -114,7 +115,8 @@ export default function Home() {
   );
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
-  const scheduleThisWeek = async () => {
+  const autoSynced = useRef(false);
+  const doSchedule = async (auto: boolean) => {
     if (!reconciled || !macro || scheduling) return;
     setScheduling(true);
     setScheduled(null);
@@ -128,10 +130,22 @@ export default function Home() {
       daysPerWeek,
     });
     const ok = await createSelfAssignments(items, true);
-    setScheduled(ok ? `Scheduled ${items.length} sessions off your latest logs — see your Calendar.` : "Couldn't schedule — try again.");
+    setScheduled(ok ? `${auto ? "Auto re-synced" : "Scheduled"} ${items.length} sessions off your latest logs — see your Calendar.` : "Couldn't schedule — try again.");
     setScheduling(false);
     if (ok) load();
   };
+  const scheduleThisWeek = () => doSchedule(false);
+
+  // Auto re-sync: a self-scheduled week that's gone stale (a day was logged
+  // after it was generated) regenerates off the real result — once.
+  useEffect(() => {
+    if (autoSynced.current || !reconciled) return;
+    if (weekNeedsResync(assignments, sessions)) {
+      autoSynced.current = true;
+      void doSchedule(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reconciled, assignments, sessions]);
 
   // Consumer engines run on REAL sessions (empty → honest "getting started").
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
