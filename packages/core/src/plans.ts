@@ -76,6 +76,14 @@ export const GOAL_TREE: GoalNode[] = [
     plans: [] },
   { id: "power", name: "Powerlifting", icon: "▬", color: VIOLET, blurb: "One goal: a bigger squat, bench, and deadlift total.",
     plans: [] },
+  { id: "run", name: "Running", icon: "▶", color: BLUE, blurb: "Get faster over 5k, 10k, half or full. Build the aerobic engine and durable legs.",
+    plans: [] },
+  { id: "crossfit", name: "CrossFit", icon: "✚", color: AMBER, blurb: "Constantly varied, high-intensity functional fitness. Be ready for anything.",
+    plans: [] },
+  { id: "calisthenics", name: "Calisthenics", icon: "◯", color: LIME, blurb: "Master your bodyweight — pull-ups, dips, levers, and the big skills.",
+    plans: [] },
+  { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: AMBER, blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
+    plans: [] },
 ];
 
 // flat list still used by the landing carousel (top plan per goal).
