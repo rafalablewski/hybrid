@@ -52,8 +52,11 @@ export default function Logger({
               kind: "conditioning",
               name: b.name,
               format: b.format,
+              // keep the interval prescription (work/rest seconds × rounds) intact,
+              // and also derive minutes so the history/summary views stay populated
+              work: b.work,
+              rest: b.rest,
               rounds: b.rounds,
-              // prescription gives work/rest seconds × rounds — fold to total minutes
               minutes: Math.round((b.rounds * (b.work + b.rest)) / 60),
             },
       ),

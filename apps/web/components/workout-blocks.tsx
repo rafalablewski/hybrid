@@ -138,7 +138,7 @@ export default function WorkoutBlocks({
 
   const setCondStr = (u: string, key: "format", val: string) =>
     patch(u, (b) => (b.kind === "conditioning" ? ({ ...b, [key]: val } as EditableBlock) : b));
-  const setCondNum = (u: string, key: "minutes" | "rounds" | "rpe", val: string) =>
+  const setCondNum = (u: string, key: "work" | "rest" | "rounds" | "minutes" | "rpe", val: string) =>
     patch(u, (b) =>
       b.kind === "conditioning" ? ({ ...b, [key]: condNum(val) } as EditableBlock) : b,
     );
@@ -209,15 +209,17 @@ export default function WorkoutBlocks({
               </button>
             </>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 6 }}>
-              {["format", "minutes", "rounds", "rpe"].map((h) => (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+              {["format", "work (s)", "rest (s)", "rounds", "minutes", "rpe"].map((h) => (
                 <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                   {h}
                 </Mono>
               ))}
               <input value={b.format ?? ""} onChange={(e) => setCondStr(b.uid, "format", e.target.value)} placeholder="intervals" style={input} />
-              <input value={String(b.minutes ?? "")} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
+              <input value={String(b.work ?? "")} onChange={(e) => setCondNum(b.uid, "work", e.target.value)} placeholder="40" style={input} />
+              <input value={String(b.rest ?? "")} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
               <input value={String(b.rounds ?? "")} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
+              <input value={String(b.minutes ?? "")} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
               <input value={String(b.rpe ?? "")} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="8" style={input} />
             </div>
           )}
