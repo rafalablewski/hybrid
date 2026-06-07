@@ -24,12 +24,25 @@ create table if not exists "AgentConfig" (
   "tone"                text not null default '',
   "collaborators"       jsonb not null default '[]'::jsonb,       -- string[]
   "tools"               jsonb not null default '[]'::jsonb,       -- string[]
+  "runtime"             text not null default 'messages',         -- messages | managed
+  "managedAgentId"      text,                                     -- Claude Managed Agents id (created lazily, reused)
+  "memoryStoreId"       text,                                     -- durable memory store id (created lazily, reused)
+  "approvalThresholdUsd" double precision not null default 0,     -- hold for a 2nd operator when est. run cost ≥ this (0 = off)
+  "budgetUsd7d"         double precision not null default 0,      -- auto-pause when trailing-7d spend ≥ this (0 = off)
   "updatedById"         text,
   "updatedByEmail"      text,
   "createdAt"           timestamp(3) not null default now(),
   "updatedAt"           timestamp(3) not null default now()
 );
 create index if not exists "AgentConfig_status_idx" on "AgentConfig" ("status");
+
+-- Heal an older table created before these columns existed (no-op on a fresh
+-- table created above). Keeps re-running this file safe and idempotent.
+alter table "AgentConfig" add column if not exists "runtime"              text not null default 'messages';
+alter table "AgentConfig" add column if not exists "managedAgentId"       text;
+alter table "AgentConfig" add column if not exists "memoryStoreId"        text;
+alter table "AgentConfig" add column if not exists "approvalThresholdUsd" double precision not null default 0;
+alter table "AgentConfig" add column if not exists "budgetUsd7d"          double precision not null default 0;
 
 -- Deny-by-default: enable RLS and add NO policies. Every client role is blocked;
 -- only the server's service-role connection (which bypasses RLS) can touch it.
