@@ -117,6 +117,9 @@ export default function SessionDetail() {
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
                   {prSet.has(b.name) ? "🏆 " : ""}{b.name}
                 </Text>
+                {b.kind === "strength" && b.superset && (
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ SS</Text>
+                )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.lime }}>
@@ -129,8 +132,8 @@ export default function SessionDetail() {
               <View style={{ marginTop: 8 }}>
                 {b.sets.map((s, j) => (
                   <View key={j} style={{ flexDirection: "row", gap: 12, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
-                    <Mono color={C.ash} style={{ width: 22 }}>{j + 1}</Mono>
-                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}</Mono>
+                    <Mono color={s.drop ? C.lime : C.ash} style={{ width: 22 }}>{s.drop ? "↓" : j + 1}</Mono>
+                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}{s.drop ? " · drop" : ""}</Mono>
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>

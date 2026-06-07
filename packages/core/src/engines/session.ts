@@ -15,6 +15,11 @@ export interface StrengthSet {
   peakVel?: string;
   /** range of motion, cm */
   rom?: string;
+  /**
+   * Drop set — performed immediately after the previous set with NO rest and a
+   * reduced load (strip weight, keep going to extend the set past failure).
+   */
+  drop?: boolean;
 }
 
 export interface StrengthBlock {
@@ -22,6 +27,13 @@ export interface StrengthBlock {
   name: string;
   sets: StrengthSet[];
   note?: string;
+  /**
+   * Superset — performed back-to-back (no rest) with the NEXT block in the
+   * session. Lets the logger pair e.g. Bench + Row without inventing a new
+   * block shape: a run of blocks each flagged `superset` (the last left off) is
+   * one superset group.
+   */
+  superset?: boolean;
 }
 
 export interface ConditioningBlock {
@@ -33,6 +45,8 @@ export interface ConditioningBlock {
   rounds?: number;
   minutes?: number;
   rpe?: number;
+  /** distance covered, km (runs/rows/rides) — pace is derived from minutes. */
+  distance?: number;
 }
 
 export type SessionBlock = StrengthBlock | ConditioningBlock;
@@ -69,15 +83,32 @@ export function blockBestE1rm(b: StrengthBlock): number {
 }
 
 /**
+ * Pace per km for a cardio block (e.g. "5:42 /km"), derived from distance +
+ * minutes. Null unless both are logged — pace isn't stored, it's computed so it
+ * can never disagree with the distance/time it came from.
+ */
+export function pacePerKm(b: ConditioningBlock): string | null {
+  if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
+  const secPerKm = (b.minutes * 60) / b.distance;
+  const m = Math.floor(secPerKm / 60);
+  const s = Math.round(secPerKm % 60);
+  return `${m}:${String(s).padStart(2, "0")} /km`;
+}
+
+/**
  * One-line summary of a conditioning block: format, the interval (rounds ×
- * work/rest seconds) when logged, total minutes, and optionally RPE. Shared so
- * the web + mobile history/detail views read intervals the same way.
+ * work/rest seconds) when logged, distance, total minutes, the derived pace,
+ * and optionally RPE. Shared so the web + mobile history/detail views read
+ * cardio the same way.
  */
 export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean } = {}): string {
   const parts: (string | null | undefined)[] = [b.format];
   if (b.work && b.rest) parts.push(`${b.rounds ? `${b.rounds}×` : ""}${b.work}/${b.rest}s`);
   else if (b.rounds) parts.push(`${b.rounds} rounds`);
+  if (b.distance) parts.push(`${b.distance} km`);
   if (b.minutes) parts.push(`${b.minutes} min`);
+  const pace = pacePerKm(b);
+  if (pace) parts.push(pace);
   if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
   return parts.filter(Boolean).join(" · ");
 }

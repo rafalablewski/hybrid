@@ -788,6 +788,7 @@ function SessionDetail({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
                 {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                {b.kind === "strength" && b.superset && <span style={{ ...mono, fontSize: 11, color: LIME, marginLeft: 8 }}>⛓ SS</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Mono s={{ fontSize: 13 }} c={LIME}>{Math.round(blockBestE1rm(b))} kg e1RM</Mono>
@@ -797,8 +798,8 @@ function SessionDetail({
               <div style={{ marginTop: 8 }}>
                 {b.sets.map((st, j) => (
                   <div key={j} style={{ display: "flex", gap: 16, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
-                    <Mono s={{ fontSize: 13, width: 22 }} c={ASH}>{j + 1}</Mono>
-                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}</Mono>
+                    <Mono s={{ fontSize: 13, width: 22 }} c={st.drop ? LIME : ASH}>{st.drop ? "↓" : j + 1}</Mono>
+                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}{st.drop ? " · drop" : ""}</Mono>
                     {st.rpe ? <Mono s={{ fontSize: 13 }}>RPE {st.rpe}</Mono> : null}
                     {st.vel ? <Mono s={{ fontSize: 13 }} c={BLUE}>{st.vel} m/s</Mono> : null}
                   </div>

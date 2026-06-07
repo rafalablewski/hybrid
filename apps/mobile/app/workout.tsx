@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -11,6 +11,10 @@ import {
   blockBestE1rm,
   newPrsInSession,
   exerciseHistory,
+  pacePerKm,
+  RPE_SCALE,
+  RPE_INTRO,
+  RPE_CARDIO_NOTE,
   MOVEMENTS,
   type SessionBlock,
   type LoggedSession,
@@ -31,7 +35,7 @@ const isCond = (name: string) => {
   return !!m && (m.system != null || m.pattern === "cond");
 };
 
-type WSet = { reps: string; load: string; rpe: string; done: boolean };
+type WSet = { reps: string; load: string; rpe: string; done: boolean; drop?: boolean };
 type WExercise = {
   uid: string;
   name: string;
@@ -39,6 +43,9 @@ type WExercise = {
   sets: WSet[];
   minutes: string;
   rpe: string;
+  distance: string;
+  /** Supersetted (no rest) with the next exercise. */
+  superset?: boolean;
 };
 
 const emptySet = (from?: WSet): WSet => ({
@@ -55,6 +62,7 @@ const newExercise = (name: string, kind: "strength" | "conditioning" = isCond(na
   sets: [emptySet()],
   minutes: "",
   rpe: "",
+  distance: "",
 });
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -101,6 +109,7 @@ export default function Workout() {
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
+  const [rpeHelp, setRpeHelp] = useState(false);
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
@@ -187,12 +196,23 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),
     );
-  const condField = (u: string, k: "minutes" | "rpe", v: string) =>
+  const condField = (u: string, k: "minutes" | "rpe" | "distance", v: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
   const addSet = (u: string) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(x.sets[x.sets.length - 1])] } : x)),
     );
+  // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
+  const addDropSet = (u: string) =>
+    setExercises((xs) =>
+      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), drop: true }] } : x)),
+    );
+  const toggleDrop = (u: string, i: number) =>
+    setExercises((xs) =>
+      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) } : x)),
+    );
+  const toggleSuperset = (u: string) =>
+    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, superset: !x.superset } : x)));
   const removeSet = (u: string, i: number) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
   const toggleDone = (u: string, i: number, val: boolean) => {
@@ -215,18 +235,25 @@ export default function Workout() {
       if (x.kind === "conditioning") {
         const minutes = parseFloat(x.minutes);
         const rpe = parseFloat(x.rpe);
-        if (!Number.isFinite(minutes) && !Number.isFinite(rpe)) continue;
+        const distance = parseFloat(x.distance);
+        if (!Number.isFinite(minutes) && !Number.isFinite(rpe) && !Number.isFinite(distance)) continue;
         blocks.push({
           kind: "conditioning",
           name: x.name,
+          ...(Number.isFinite(distance) ? { distance } : {}),
           ...(Number.isFinite(minutes) ? { minutes } : {}),
           ...(Number.isFinite(rpe) ? { rpe } : {}),
         });
       } else {
         const sets = x.sets
           .filter((s) => s.reps.trim() || s.load.trim())
-          .map((s) => ({ load: s.load.trim(), reps: s.reps.trim(), ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}) }));
-        if (sets.length) blocks.push({ kind: "strength", name: x.name, sets });
+          .map((s) => ({
+            load: s.load.trim(),
+            reps: s.reps.trim(),
+            ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}),
+            ...(s.drop ? { drop: true } : {}),
+          }));
+        if (sets.length) blocks.push({ kind: "strength", name: x.name, sets, ...(x.superset ? { superset: true } : {}) });
       }
     }
     return blocks;
@@ -327,11 +354,16 @@ export default function Workout() {
           placeholderTextColor={C.ash}
           style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, marginBottom: 4 }}
         />
-        <Mono style={{ marginBottom: 14 }}>
-          {exercises.length
-            ? `${exercises.length} ${t("workout.exercises")} · ${t("workout.tapAsYouGo")}`
-            : t("workout.firstExercise")}
-        </Mono>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <Mono style={{ flex: 1 }}>
+            {exercises.length
+              ? `${exercises.length} ${t("workout.exercises")} · ${t("workout.tapAsYouGo")}`
+              : t("workout.firstExercise")}
+          </Mono>
+          <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.blue }}>{t("workout.rpeWhat")}</Text>
+          </Pressable>
+        </View>
 
         {restSince != null && (() => {
           const done = restTarget != null && restNow >= restTarget;
@@ -371,10 +403,22 @@ export default function Workout() {
                 {x.kind.toUpperCase()}
               </Text>
               <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }} />
+              {x.kind === "strength" && (
+                <Pressable
+                  onPress={() => toggleSuperset(x.uid)}
+                  hitSlop={6}
+                  style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: x.superset ? C.lime : C.line, backgroundColor: x.superset ? `${C.lime}1f` : "transparent" }}
+                >
+                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: x.superset ? C.lime : C.ash }}>⛓ SS</Text>
+                </Pressable>
+              )}
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
                 <Text style={{ color: C.ash, fontSize: 15 }}>✕</Text>
               </Pressable>
             </View>
+            {x.kind === "strength" && x.superset && (
+              <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime, marginBottom: 8 }}>⛓ {t("workout.supersetNext")}</Text>
+            )}
 
             {x.kind === "strength" ? (
               <>
@@ -387,8 +431,12 @@ export default function Workout() {
                 </View>
                 {x.sets.map((s, i) => (
                   <View key={i} style={{ flexDirection: "row", gap: 6, alignItems: "center", marginBottom: 6 }}>
-                    <Pressable onLongPress={() => removeSet(x.uid, i)} style={{ width: 28, alignItems: "center" }}>
-                      <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{i + 1}</Text>
+                    <Pressable
+                      onPress={() => toggleDrop(x.uid, i)}
+                      onLongPress={() => removeSet(x.uid, i)}
+                      style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: s.drop ? 1 : 0, borderColor: C.lime, backgroundColor: s.drop ? `${C.lime}1f` : "transparent" }}
+                    >
+                      <Text style={{ fontFamily: F.mono, fontSize: 13, color: s.drop ? C.lime : C.ash }}>{s.drop ? "↓" : i + 1}</Text>
                     </Pressable>
                     <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
@@ -401,21 +449,38 @@ export default function Workout() {
                     </Pressable>
                   </View>
                 ))}
-                <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.lime }}>{t("workout.set")}</Text>
-                </Pressable>
+                <View style={{ flexDirection: "row", gap: 16 }}>
+                  <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.lime }}>{t("workout.set")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => addDropSet(x.uid)} style={{ paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.ash }}>{t("workout.dropSet")}</Text>
+                  </Pressable>
+                </View>
               </>
             ) : (
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <ColHead>MIN</ColHead>
-                  <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
+              <>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <ColHead>{t("workout.dist")}</ColHead>
+                    <Cell value={x.distance ?? ""} onChange={(v) => condField(x.uid, "distance", v)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ColHead>MIN</ColHead>
+                    <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ColHead>RPE</ColHead>
+                    <Cell value={x.rpe} onChange={(v) => condField(x.uid, "rpe", v)} />
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <ColHead>RPE</ColHead>
-                  <Cell value={x.rpe} onChange={(v) => condField(x.uid, "rpe", v)} />
-                </View>
-              </View>
+                {(() => {
+                  const pace = pacePerKm({ kind: "conditioning", name: x.name, distance: parseFloat(x.distance), minutes: parseFloat(x.minutes) });
+                  return pace ? (
+                    <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.blue, marginTop: 8 }}>{t("workout.pace")} {pace}</Text>
+                  ) : null;
+                })()}
+              </>
             )}
           </Card>
         ))}
@@ -499,7 +564,41 @@ export default function Workout() {
           </Pressable>
         )}
       </ScrollView>
+
+      <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
     </SafeAreaView>
+  );
+}
+
+// The RPE cheatsheet — same scale (from @hybrid/core) the web logger shows.
+function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () => void; t: (k: string) => string }) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
+        <Pressable onPress={() => {}} style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 36 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("rpe.title")}</Text>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("rpe.close")}</Text>
+            </Pressable>
+          </View>
+          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, lineHeight: 19, marginBottom: 16 }}>{RPE_INTRO}</Text>
+          <View style={{ flexDirection: "row", marginBottom: 6 }}>
+            <Text style={{ width: 40, fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>RPE</Text>
+            <Text style={{ width: 56, fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{t("rpe.rir")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{t("rpe.feels")}</Text>
+          </View>
+          {RPE_SCALE.map((step) => (
+            <View key={step.rpe} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 5, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Text style={{ width: 40, fontFamily: F.bold, fontSize: 14, color: C.lime }}>{step.rpe}</Text>
+              <Text style={{ width: 56, fontFamily: F.mono, fontSize: 13, color: C.chalk }}>{step.rir}</Text>
+              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: 13, color: C.chalk }}>{step.meaning}</Text>
+            </View>
+          ))}
+          <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, lineHeight: 18, marginTop: 14 }}>{RPE_CARDIO_NOTE}</Text>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -627,9 +726,12 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
             reps: s.reps ?? "",
             rpe: s.rpe ?? "",
             done: false,
+            ...(s.drop ? { drop: true } : {}),
           })),
           minutes: "",
           rpe: "",
+          distance: "",
+          ...(b.superset ? { superset: true } : {}),
         }
       : {
           uid: uid(),
@@ -638,6 +740,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           sets: [emptySet()],
           minutes: b.minutes != null ? String(b.minutes) : "",
           rpe: b.rpe != null ? String(b.rpe) : "",
+          distance: b.distance != null ? String(b.distance) : "",
         },
   );
 }

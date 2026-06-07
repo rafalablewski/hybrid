@@ -9,6 +9,7 @@ import {
   toTrainingLog,
   conditioningSummary,
   blockSummary,
+  pacePerKm,
 } from "./session";
 import type { LoggedSession } from "./session";
 
@@ -46,6 +47,22 @@ describe("block summaries", () => {
     expect(blockSummary({ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }, { load: "110", reps: "3" }] })).toBe(
       "100×5 · 110×3",
     );
+  });
+  it("conditioningSummary shows distance and the derived pace for a run", () => {
+    expect(conditioningSummary({ kind: "conditioning", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
+      "8 km · 50 min · 6:15 /km · RPE 6",
+    );
+  });
+});
+
+describe("cardio pace", () => {
+  it("pacePerKm derives min/km from distance + minutes", () => {
+    expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 10, minutes: 50 })).toBe("5:00 /km");
+    expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 8, minutes: 50 })).toBe("6:15 /km");
+  });
+  it("pacePerKm is null without both distance and minutes", () => {
+    expect(pacePerKm({ kind: "conditioning", name: "Run", minutes: 50 })).toBeNull();
+    expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 8 })).toBeNull();
   });
 });
 
