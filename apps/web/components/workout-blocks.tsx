@@ -72,7 +72,7 @@ function iconBtn(color: string) {
   };
 }
 
-const condNum = (s: string) => Number(s) || 0;
+const condNum = (s: string) => (s === "" ? undefined : Number(s) || 0);
 
 export default function WorkoutBlocks({
   blocks,
@@ -87,7 +87,7 @@ export default function WorkoutBlocks({
   /** Show per-block move/duplicate controls (the Builder wants them). */
   reorder?: boolean;
 }) {
-  const { catalog: libraryCatalog } = useExercises();
+  const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
 
   const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
