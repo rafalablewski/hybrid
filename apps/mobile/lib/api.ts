@@ -1,4 +1,4 @@
-import type { LoggedSession, TranslationOverrides } from "@hybrid/core";
+import type { LoggedSession, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment } from "@hybrid/core";
 import { supabase } from "./supabase";
 
 // The mobile client calls the SAME backend the web app uses (Vercel), with the
@@ -169,6 +169,44 @@ export async function enrollPlan(goal: string): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ goal }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+type MacroRow = { id: string; goal: string; blocks: MacroBlock[]; startedAt: string };
+
+// The athlete's active (latest) enrolled macrocycle reconstructed into the
+// engine shape, plus which week of it is "this week" (derived from startedAt).
+export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number } | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/macrocycles`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const row = ((await res.json()) as { macrocycles?: MacroRow[] }).macrocycles?.[0];
+    if (!row || !row.blocks?.length) return null;
+    const blocks = row.blocks;
+    const totalWeeks = blocks[blocks.length - 1]!.endWeek;
+    const started = new Date(row.startedAt).getTime();
+    const elapsed = Number.isFinite(started) ? Math.floor((Date.now() - started) / (7 * 86400000)) + 1 : 1;
+    return {
+      macro: { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks },
+      currentWeek: Math.max(1, Math.min(totalWeeks, elapsed)),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Self-schedule: materialize the reconciled plan onto dated Assignments (the
+// athlete authoring their own). They show on the Calendar alongside coach work.
+export async function createSelfAssignments(items: ScheduledAssignment[]): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/assignments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ items }),
     });
     return res.ok;
   } catch {

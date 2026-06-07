@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   reconcilePlan,
+  scheduleWeek,
+  reconciledToSessionBlocks,
   buildMacrocycle,
   prescribeSession,
   currentPhase,
@@ -85,5 +87,44 @@ describe("reconcilePlan", () => {
     const plan = reconcilePlan({ macro, daily, currentWeek: 1 });
     expect(plan.blocks.every((b) => b.source === "daily")).toBe(true);
     expect(plan.why).toContain("intensity");
+  });
+});
+
+describe("reconciledToSessionBlocks", () => {
+  it("maps reconciled blocks onto the persisted SessionBlock shape", () => {
+    const plan = reconcilePlan({ macro, daily, sport, currentWeek: 1 });
+    const blocks = reconciledToSessionBlocks(plan.blocks);
+    for (const [i, b] of blocks.entries()) {
+      const src = plan.blocks[i]!;
+      expect(b.kind).toBe(src.kind);
+      if (b.kind === "strength") {
+        expect(b.sets.length).toBe(src.sets); // one set entry per prescribed set
+        if (src.load != null) expect(b.sets[0]!.load).toBe(String(src.load));
+      } else {
+        expect(b.rounds).toBe(src.sets);
+      }
+    }
+  });
+});
+
+describe("scheduleWeek", () => {
+  const start = new Date(2026, 5, 8, 12, 0, 0, 0); // a Monday, local noon
+
+  it("spreads N training days across the week and carries the reconciled session", () => {
+    const plan = reconcilePlan({ macro, daily, sport, currentWeek: 1 });
+    const items = scheduleWeek(plan, { startDate: start, daysPerWeek: 3 });
+    expect(items.length).toBe(3);
+    const offsets = items.map((a) => Math.round((Date.parse(a.date) - start.getTime()) / 86400000));
+    expect(offsets).toEqual([0, 2, 4]);
+    for (const a of items) {
+      expect(a.name).toContain(plan.phase.label);
+      expect(a.blocks.length).toBe(plan.blocks.length);
+    }
+  });
+
+  it("clamps daysPerWeek to 1..6", () => {
+    const plan = reconcilePlan({ macro, daily, currentWeek: 1 });
+    expect(scheduleWeek(plan, { startDate: start, daysPerWeek: 99 }).length).toBe(6);
+    expect(scheduleWeek(plan, { startDate: start, daysPerWeek: 0 }).length).toBe(1);
   });
 });

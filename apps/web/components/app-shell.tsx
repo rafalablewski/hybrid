@@ -452,7 +452,7 @@ export default function AppShell() {
 
         {screen === "teamcompare" && <TeamCompare />}
 
-        {screen === "periodize" && <PeriodizeScreen macro={macro} />}
+        {screen === "periodize" && <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />}
 
         {screen === "competition" && <Competition />}
 
