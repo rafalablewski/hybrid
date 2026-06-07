@@ -4,6 +4,7 @@ import type {
   PrescribedStrengthBlock,
   PrescribedConditioningBlock,
   TrainingLog,
+  LogItem,
   Biometrics,
   EnergySystem,
 } from "./types";
@@ -302,17 +303,23 @@ export function scheduleWeek(
   });
 }
 
-// the main lift + conditioning system each day rotates through, so a generated
-// week is varied (not the same session N times). The daily engine still doses
-// each off the athlete's real numbers + the phase envelope.
-const PRIMARY_ROTATION = ["Back Squat", "Bench Press", "Deadlift", "Overhead Press"];
-const SYSTEM_ROTATION: EnergySystem[] = ["aerobic", "threshold", "anaerobic"];
-
-/** Round-robin a list into `n` buckets (bucket i gets items i, i+n, i+2n, …). */
+// Round-robin a list into `n` buckets (bucket i gets items i, i+n, i+2n, …).
 function distribute<T>(items: T[], n: number): T[][] {
   const out: T[][] = Array.from({ length: n }, () => []);
   items.forEach((it, i) => out[i % n]!.push(it));
   return out;
+}
+
+// Turn a reconciled day into the LogItems it would add to the athlete's history,
+// so the NEXT day's prescription feels its fatigue (the heavy squat today is why
+// tomorrow picks a press). Unknown sport-accessory moves contribute no muscle
+// fatigue (they're not in MOVEMENTS) — harmless; the main lifts drive rotation.
+function dayToLogItems(plan: ReconciledPlan, condSystem: EnergySystem): LogItem[] {
+  return plan.blocks.map((b) =>
+    b.kind === "strength"
+      ? { move: b.name, hardSets: b.sets, topRpe: 8 }
+      : { move: b.name, system: condSystem, minutes: b.sets, rpe: 8 },
+  );
 }
 
 export interface BuildWeekInput {
@@ -329,11 +336,13 @@ export interface BuildWeekInput {
 }
 
 /**
- * Build a VARIED training week: a distinct phase-arbitrated session per training
- * day. Each day rotates the primary lift + conditioning system (so it isn't the
- * same workout repeated) and gets a fair, round-robin share of the sport
- * transfer work, then runs through reconcilePlan so the phase envelope and
- * overlap rules apply per day. The richer counterpart to scheduleWeek.
+ * Build a VARIED training week by SEQUENTIAL re-prescription: each training day
+ * is prescribed off a log that already carries the fatigue from the earlier
+ * generated days this week, so the rotation is EMERGENT, not hard-coded — the
+ * engine naturally avoids the muscles it just hammered and picks the freshest
+ * pattern, exactly as a coach would program a week. Each day still runs through
+ * reconcilePlan (phase envelope + overlap rules) and gets a round-robin share of
+ * the sport transfer work. The richer counterpart to scheduleWeek.
  */
 export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] {
   const start = input.startDate ? new Date(input.startDate) : new Date();
@@ -341,11 +350,20 @@ export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] 
   const offsets = WEEK_SPREAD[days]!;
   const sportByDay = distribute<SportBlock>(input.sport?.blocks ?? [], days);
 
+  // sessions generated so far this week, keyed by their day offset, so each can
+  // be aged correctly when viewed from a later day.
+  const generated: { offset: number; items: LogItem[] }[] = [];
+
   return offsets.map((off, i) => {
-    const daily = prescribeSession(input.log, input.bio, {
+    // the log AS SEEN on this day: real sessions are `off` days older, and each
+    // earlier generated day is (off − its offset) days old.
+    const view: TrainingLog = [
+      ...input.log.map((s) => ({ ...s, daysAgo: s.daysAgo + off })),
+      ...generated.map((g) => ({ daysAgo: off - g.offset, items: g.items })),
+    ];
+    // today's wearable reading only applies to today (offset 0), not future days.
+    const daily = prescribeSession(view, off === 0 ? input.bio : undefined, {
       profiles: input.profiles,
-      preferPrimary: PRIMARY_ROTATION[i % PRIMARY_ROTATION.length],
-      preferSystem: SYSTEM_ROTATION[i % SYSTEM_ROTATION.length],
     });
     const daySport =
       input.sport && sportByDay[i]!.length
@@ -357,6 +375,10 @@ export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] 
       sport: daySport,
       currentWeek: input.currentWeek,
     });
+
+    // record what was done so the next day's prescription feels it.
+    generated.push({ offset: off, items: dayToLogItems(plan, daily.pickSys) });
+
     const d = new Date(start);
     d.setDate(d.getDate() + off);
     d.setHours(12, 0, 0, 0);
