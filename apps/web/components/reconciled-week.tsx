@@ -106,20 +106,23 @@ export default function ReconciledWeek({
   };
   const scheduleThisWeek = () => doSchedule(false);
 
-  // Auto re-sync: if a self-scheduled week is now stale (a day was logged after
-  // it was generated), regenerate the rest of it off the real result — once.
-  const autoSynced = useRef(false);
+  // Auto re-sync, event-driven: every time a NEWER session lands (you just
+  // logged a day), re-check the self-scheduled week and, if it's now stale,
+  // regenerate the rest of it off that real result. The ref tracks the latest
+  // session we've already reconciled against, so it fires once per new session
+  // (not in a loop, and not on every re-render).
+  const syncedFor = useRef(0);
   useEffect(() => {
-    if (autoSynced.current || !reconciled) return;
+    if (!reconciled) return;
+    const latest = sessions.reduce((m, s) => Math.max(m, Date.parse(s.startedAt) || 0), 0);
+    if (!latest || latest <= syncedFor.current) return;
     let cancelled = false;
     fetch("/api/assignments")
       .then((r) => (r.ok ? r.json() : { assignments: [] }))
       .then((d: { assignments?: Parameters<typeof weekNeedsResync>[0] }) => {
-        if (cancelled || autoSynced.current) return;
-        if (weekNeedsResync(d.assignments ?? [], sessions)) {
-          autoSynced.current = true;
-          void doSchedule(true);
-        }
+        if (cancelled) return;
+        syncedFor.current = latest; // this session state is now handled
+        if (weekNeedsResync(d.assignments ?? [], sessions)) void doSchedule(true);
       })
       .catch(() => {});
     return () => { cancelled = true; };
