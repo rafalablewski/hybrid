@@ -56,6 +56,9 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginVertical: 8 }}>
         {goal.icon} {goal.name}
       </Text>
+      {goal.plans.length === 0 && (
+        <Mono style={{ lineHeight: 19 }}>No plans here yet — plans for this goal are on the way.</Mono>
+      )}
       {goal.plans.map((p) => (
         <Pressable key={p.id} onPress={() => pick(p.id)}>
           <Card style={{ borderLeftWidth: 3, borderLeftColor: p.hot ? C.lime : C.line }}>

@@ -54,8 +54,12 @@ export const ONBOARDING_GOALS: { id: OnboardingGoal; label: string; blurb: strin
 
 const expRank: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
-/** Recommend a first plan from intake answers (pure). */
-export function recommendPlan(a: OnboardingAnswers): OnboardingPlan {
+/**
+ * Recommend a first plan from intake answers (pure).
+ * Returns null when the matched goal has no plans yet (the library is empty
+ * until real plans are uploaded).
+ */
+export function recommendPlan(a: OnboardingAnswers): OnboardingPlan | null {
   const nodeId = GOAL_TO_NODE[a.goal] ?? "hybrid";
   const node = GOAL_TREE.find((g) => g.id === nodeId) ?? GOAL_TREE.find((g) => g.id === "hybrid")!;
   const days = Math.max(1, Math.min(7, Math.round(a.daysPerWeek)));
@@ -67,7 +71,9 @@ export function recommendPlan(a: OnboardingAnswers): OnboardingPlan {
     const dy = Math.abs(y.sessions - days);
     if (dx !== dy) return dx - dy;
     return expRank[a.experience] >= 2 ? y.sessions - x.sessions : x.sessions - y.sessions;
-  })[0] as GoalPlan;
+  })[0] as GoalPlan | undefined;
+
+  if (!pick) return null;
 
   const why =
     `For ${labelFor(a.goal).toLowerCase()}, training ${days}×/week as ${a.experience === "advanced" ? "an" : "a"} ${a.experience} — ` +

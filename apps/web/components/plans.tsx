@@ -73,6 +73,11 @@ function PlanList({
         <span style={{ fontSize: 24, color: goal.color }}>{goal.icon}</span>
         <h2 style={{ ...disp, fontWeight: 900, fontSize: 26 }}>{goal.name}</h2>
       </div>
+      {goal.plans.length === 0 && (
+        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }}>
+          No plans here yet — plans for this goal are on the way.
+        </Mono>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
         {goal.plans.map((p) => (
           <Card
