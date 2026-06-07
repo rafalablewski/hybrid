@@ -7,6 +7,8 @@ import {
   bestE1rmByLift,
   liftNames,
   toTrainingLog,
+  conditioningSummary,
+  blockSummary,
 } from "./session";
 import type { LoggedSession } from "./session";
 
@@ -29,6 +31,23 @@ const sessions: LoggedSession[] = [
     ],
   },
 ];
+
+describe("block summaries", () => {
+  it("conditioningSummary renders the interval (rounds × work/rest) when logged", () => {
+    expect(conditioningSummary({ kind: "conditioning", name: "Row", format: "intervals", work: 40, rest: 20, rounds: 8, minutes: 8 })).toBe(
+      "intervals · 8×40/20s · 8 min",
+    );
+  });
+  it("conditioningSummary falls back to rounds, and adds RPE only when asked", () => {
+    expect(conditioningSummary({ kind: "conditioning", name: "Metcon", rounds: 5, rpe: 9 })).toBe("5 rounds");
+    expect(conditioningSummary({ kind: "conditioning", name: "Easy", minutes: 30, rpe: 6 }, { rpe: true })).toBe("30 min · RPE 6");
+  });
+  it("blockSummary formats strength sets", () => {
+    expect(blockSummary({ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }, { load: "110", reps: "3" }] })).toBe(
+      "100×5 · 110×3",
+    );
+  });
+});
 
 describe("session stats", () => {
   it("e1rm uses the Epley formula", () => {

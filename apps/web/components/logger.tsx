@@ -6,50 +6,21 @@ import {
   toTrainingLog,
   velocityProfiles,
   type LoggedSession,
-  type SessionBlock,
-  type StrengthSet,
 } from "@hybrid/core";
-import {
-  INK2,
-  LINE,
-  LIME,
-  CHALK,
-  ASH,
-  BLUE,
-  VIOLET,
-  RED,
-  disp,
-  cond,
-  mono,
-  Mono,
-  Card,
-} from "@/lib/ui";
-
-const CATALOG = [
-  "Back Squat",
-  "Front Squat",
-  "Deadlift",
-  "Bench Press",
-  "Overhead Press",
-  "Barbell Row",
-  "Romanian Deadlift",
-  "Pull-up",
-  "Power Clean",
-];
-
-type EditableBlock = SessionBlock & { uid: string };
-const uid = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Math.random());
+import { INK2, LINE, CHALK, LIME, VIOLET, RED, disp, mono, Mono, Card } from "@/lib/ui";
+import WorkoutBlocks, { blockBtn, uid, type EditableBlock } from "@/components/workout-blocks";
 
 const inputStyle = {
   ...mono,
-  fontSize: 14,
+  fontSize: 20,
+  fontWeight: 800,
   background: INK2,
   color: CHALK,
   border: `1px solid ${LINE}`,
   borderRadius: 8,
   padding: "8px 10px",
   outline: "none",
+  boxSizing: "border-box",
 } as const;
 
 export default function Logger({
@@ -81,54 +52,17 @@ export default function Logger({
               kind: "conditioning",
               name: b.name,
               format: b.format,
+              // keep the interval prescription (work/rest seconds × rounds) intact,
+              // and also derive minutes so the history/summary views stay populated
               work: b.work,
               rest: b.rest,
               rounds: b.rounds,
+              minutes: Math.round((b.rounds * (b.work + b.rest)) / 60),
             },
       ),
     );
     setTitle("AI Prescribed");
   };
-
-  const addStrength = () =>
-    setBlocks((bs) => [
-      ...bs,
-      { uid: uid(), kind: "strength", name: "Back Squat", sets: [{ load: "", reps: "", rpe: "" }] },
-    ]);
-  const addConditioning = () =>
-    setBlocks((bs) => [
-      ...bs,
-      { uid: uid(), kind: "conditioning", name: "Row Intervals", minutes: 12, rpe: 8 },
-    ]);
-  const removeBlock = (u: string) => setBlocks((bs) => bs.filter((b) => b.uid !== u));
-
-  const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
-    setBlocks((bs) => bs.map((b) => (b.uid === u ? fn(b) : b)));
-
-  const rename = (u: string, name: string) =>
-    setBlocks((bs) => bs.map((b) => (b.uid === u ? ({ ...b, name } as EditableBlock) : b)));
-
-  const setCond = (u: string, key: "minutes" | "rpe", val: number) =>
-    setBlocks((bs) =>
-      bs.map((b) =>
-        b.uid === u && b.kind === "conditioning" ? ({ ...b, [key]: val } as EditableBlock) : b,
-      ),
-    );
-
-  const updateSet = (u: string, i: number, key: keyof StrengthSet, val: string) =>
-    patch(u, (b) =>
-      b.kind === "strength"
-        ? { ...b, sets: b.sets.map((s, j) => (j === i ? ({ ...s, [key]: val } as StrengthSet) : s)) }
-        : b,
-    );
-  const addSet = (u: string) =>
-    patch(u, (b) =>
-      b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "" }] } : b,
-    );
-  const removeSet = (u: string, i: number) =>
-    patch(u, (b) =>
-      b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b,
-    );
 
   const save = async () => {
     setSaving(true);
@@ -171,7 +105,7 @@ export default function Logger({
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
             AI Coach{sessions.length > 0 ? ` · readiness ${rx.readiness}/100` : ""}
           </Mono>
-          <button onClick={loadPrescribed} style={btn(VIOLET)}>
+          <button onClick={loadPrescribed} style={blockBtn(VIOLET)}>
             {sessions.length > 0 ? "Use prescribed →" : "Start a session →"}
           </button>
         </div>
@@ -186,94 +120,14 @@ export default function Logger({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Session title"
-        style={{ ...inputStyle, ...disp, fontSize: 20, fontWeight: 800, width: "100%", marginBottom: 14 }}
+        style={{ ...inputStyle, ...disp, width: "100%", marginBottom: 14 }}
       />
 
-      {blocks.length === 0 && (
-        <Card style={{ textAlign: "center", padding: 36, marginBottom: 14 }}>
-          <Mono s={{ fontSize: 13 }}>
-            Empty session — add blocks below, or pull today&apos;s prescription.
-          </Mono>
-        </Card>
-      )}
-
-      {blocks.map((b) => (
-        <Card key={b.uid} style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : BLUE}>
-              {b.kind}
-            </Mono>
-            <input
-              list="lift-catalog"
-              value={b.name}
-              onChange={(e) => rename(b.uid, e.target.value)}
-              style={{ ...inputStyle, ...disp, fontWeight: 700, flex: 1 }}
-            />
-            <button onClick={() => removeBlock(b.uid)} style={btn(RED)}>
-              ✕
-            </button>
-          </div>
-
-          {b.kind === "strength" ? (
-            <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4 }}>
-                {["load (kg)", "reps", "rpe", "m/s", ""].map((h) => (
-                  <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
-                    {h}
-                  </Mono>
-                ))}
-              </div>
-              {b.sets.map((s, i) => (
-                <div
-                  key={i}
-                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
-                >
-                  <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={inputStyle} />
-                  <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={inputStyle} />
-                  <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={inputStyle} />
-                  <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={inputStyle} />
-                  <button onClick={() => removeSet(b.uid, i)} style={{ ...btn(ASH), padding: "0" }}>
-                    −
-                  </button>
-                </div>
-              ))}
-              <button onClick={() => addSet(b.uid)} style={{ ...btn(ASH), marginTop: 2 }}>
-                + set
-              </button>
-            </>
-          ) : (
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <Mono s={{ fontSize: 11 }}>minutes</Mono>
-              <input
-                value={String(b.minutes ?? "")}
-                onChange={(e) => setCond(b.uid, "minutes", Number(e.target.value) || 0)}
-                style={{ ...inputStyle, width: 70 }}
-              />
-              <Mono s={{ fontSize: 11 }}>rpe</Mono>
-              <input
-                value={String(b.rpe ?? "")}
-                onChange={(e) => setCond(b.uid, "rpe", Number(e.target.value) || 0)}
-                style={{ ...inputStyle, width: 70 }}
-              />
-            </div>
-          )}
-        </Card>
-      ))}
-
-      <datalist id="lift-catalog">
-        {CATALOG.map((c) => (
-          <option key={c} value={c} />
-        ))}
-      </datalist>
-
-      <div style={{ display: "flex", gap: 8, marginTop: 4, marginBottom: 18 }}>
-        <button onClick={addStrength} style={btn(LIME)}>
-          + Strength
-        </button>
-        <button onClick={addConditioning} style={btn(BLUE)}>
-          + Conditioning
-        </button>
-      </div>
+      <WorkoutBlocks
+        blocks={blocks}
+        setBlocks={setBlocks}
+        emptyHint="Empty session — add blocks below, or pull today's prescription."
+      />
 
       {error && (
         <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={RED}>
@@ -301,20 +155,4 @@ export default function Logger({
       </button>
     </div>
   );
-}
-
-function btn(color: string) {
-  return {
-    ...cond,
-    fontSize: 12,
-    fontWeight: 700,
-    textTransform: "uppercase" as const,
-    letterSpacing: ".04em",
-    color,
-    background: `${color}1f`,
-    border: `1px solid ${color}55`,
-    borderRadius: 8,
-    padding: "6px 12px",
-    cursor: "pointer",
-  };
 }

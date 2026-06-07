@@ -7,6 +7,7 @@ import {
   prsForSession,
   e1rmSeries,
   volumeByMuscle,
+  conditioningSummary,
   type LoggedSession,
   type PrHit,
 } from "@hybrid/core";
@@ -138,7 +139,7 @@ export default function SessionDetail() {
               </View>
             ) : (
               <Mono style={{ marginTop: 8 }}>
-                {[b.format, b.minutes ? `${b.minutes} min` : null, b.rpe ? `RPE ${b.rpe}` : null].filter(Boolean).join(" · ")}
+                {conditioningSummary(b, { rpe: true })}
               </Mono>
             )}
           </Card>
