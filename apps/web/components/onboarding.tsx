@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   recommendPlan,
-  ONBOARDING_GOALS,
+  ONBOARDING_GOAL_GROUPS,
   type OnboardingGoal,
   type Experience,
   type Equipment,
@@ -57,18 +57,23 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
 
       <Card style={{ marginBottom: 14 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>1 · Your main goal</Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
-          {ONBOARDING_GOALS.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGoal(g.id)}
-              style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12, border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}14` : "transparent" }}
-            >
-              <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: goal === g.id ? LIME : CHALK }}>{g.label}</div>
-              <Mono s={{ fontSize: 11 }}>{g.blurb}</Mono>
-            </button>
-          ))}
-        </div>
+        {ONBOARDING_GOAL_GROUPS.map((group) => (
+          <div key={group.category} style={{ marginTop: 14 }}>
+            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>{group.category}</Mono>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 6 }}>
+              {group.goals.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setGoal(g.id)}
+                  style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12, border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}14` : "transparent" }}
+                >
+                  <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: goal === g.id ? LIME : CHALK }}>{g.label}</div>
+                  <Mono s={{ fontSize: 11 }}>{g.blurb}</Mono>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>

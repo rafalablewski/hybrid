@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GOAL_TREE, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
@@ -35,24 +35,31 @@ function GoalGrid({ pick }: { pick: (id: string) => void }) {
       <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
         Start with your goal — we&apos;ll show the plans built for it.
       </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {GOAL_TREE.map((g) => (
-          <Card
-            key={g.id}
-            style={{ borderLeft: `3px solid ${g.color}`, cursor: "pointer" }}
-            onClick={() => pick(g.id)}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 22, color: g.color }}>{g.icon}</span>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{g.name}</div>
-            </div>
-            <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 8 }}>{g.blurb}</Mono>
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={g.color}>
-              {g.plans.length} plans →
-            </Mono>
-          </Card>
-        ))}
-      </div>
+      {GOAL_GROUPS.map((group) => (
+        <div key={group.category} style={{ marginBottom: 24 }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
+            {group.category}
+          </Mono>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            {group.goals.map((g) => (
+              <Card
+                key={g.id}
+                style={{ borderLeft: `3px solid ${g.color}`, cursor: "pointer" }}
+                onClick={() => pick(g.id)}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 22, color: g.color }}>{g.icon}</span>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{g.name}</div>
+                </div>
+                <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 8 }}>{g.blurb}</Mono>
+                <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={g.color}>
+                  {g.plans.length} plans →
+                </Mono>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

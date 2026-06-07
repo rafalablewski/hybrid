@@ -8,7 +8,7 @@
  * same recommendation and then enroll its macrocycle. No I/O.
  */
 
-import { GOAL_TREE, type GoalPlan } from "./plans";
+import { GOAL_TREE, GOAL_GROUPS, type GoalPlan, type GoalCategory } from "./plans";
 
 /** A main goal id — always one of the plan library's goal (GOAL_TREE) ids. */
 export type OnboardingGoal = string;
@@ -37,10 +37,28 @@ export interface OnboardingPlan {
   why: string;
 }
 
+export interface OnboardingGoalOption {
+  id: OnboardingGoal;
+  label: string;
+  blurb: string;
+  category: GoalCategory;
+}
+
 // The onboarding main goal is chosen straight from the plan library's goals,
 // so the two can never drift apart — add a goal to GOAL_TREE and it shows up here.
-export const ONBOARDING_GOALS: { id: OnboardingGoal; label: string; blurb: string }[] =
-  GOAL_TREE.map((g) => ({ id: g.id, label: g.name, blurb: g.blurb }));
+export const ONBOARDING_GOALS: OnboardingGoalOption[] =
+  GOAL_TREE.map((g) => ({ id: g.id, label: g.name, blurb: g.blurb, category: g.category }));
+
+export interface OnboardingGoalGroup {
+  category: GoalCategory;
+  goals: OnboardingGoalOption[];
+}
+
+/** The same goals, grouped by category in display order (empty groups dropped). */
+export const ONBOARDING_GOAL_GROUPS: OnboardingGoalGroup[] = GOAL_GROUPS.map((group) => ({
+  category: group.category,
+  goals: group.goals.map((g) => ({ id: g.id, label: g.name, blurb: g.blurb, category: g.category })),
+}));
 
 const expRank: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
