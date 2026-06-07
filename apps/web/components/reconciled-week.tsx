@@ -5,7 +5,7 @@ import {
   prescribeSession,
   prescribeForSport,
   reconcilePlan,
-  scheduleWeek,
+  buildTrainingWeek,
   velocityProfiles,
   toTrainingLog,
   SPORTS,
@@ -51,11 +51,14 @@ export default function ReconciledWeek({
     }
   }, []);
 
+  const sportRx = useMemo(
+    () => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined),
+    [sportSel, sessions],
+  );
   const reconciled = useMemo(() => {
     if (sessions.length === 0) return null;
-    const sport = sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined;
-    return reconcilePlan({ macro, daily: rx, sport, currentWeek });
-  }, [macro, rx, sportSel, sessions, currentWeek]);
+    return reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek });
+  }, [macro, rx, sportRx, sessions, currentWeek]);
 
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
@@ -64,7 +67,15 @@ export default function ReconciledWeek({
     setScheduling(true);
     setScheduled(null);
     try {
-      const items = scheduleWeek(reconciled, { daysPerWeek: 3 });
+      const items = buildTrainingWeek({
+        macro,
+        currentWeek,
+        log: toTrainingLog(sessions),
+        bio,
+        profiles: velocityProfiles(sessions),
+        sport: sportRx,
+        daysPerWeek: 3,
+      });
       const res = await fetch("/api/assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -19,6 +19,14 @@ export interface PrescribeOptions {
    * speed rather than a stale rep-based e1RM.
    */
   profiles?: Record<string, LoadVelocityProfile>;
+  /**
+   * Force a specific primary strength lift (when it's one of the candidates),
+   * overriding the most-recovered pick. Lets a week generator rotate the main
+   * lift across days instead of repeating the same one.
+   */
+  preferPrimary?: string;
+  /** Force a specific conditioning system, overriding the freshest pick. */
+  preferSystem?: EnergySystem;
 }
 
 /**
@@ -51,7 +59,10 @@ export function prescribeSession(
       return { move, musFatigue, sig, recovery: 100 - musFatigue };
     })
     .sort((a, b) => b.recovery - a.recovery);
-  const primary = scored[0]!;
+  const preferred = opts?.preferPrimary
+    ? scored.find((s) => s.move === opts.preferPrimary)
+    : undefined;
+  const primary = preferred ?? scored[0]!;
 
   // load prescription from signal
   const lastE1rm = (() => {
@@ -83,7 +94,7 @@ export function prescribeSession(
   const sysOrder = (
     Object.entries(fatigue.systems) as [EnergySystem, number][]
   ).sort((a, b) => a[1] - b[1]);
-  const pickSys = sysOrder[0]![0];
+  const pickSys = opts?.preferSystem ?? sysOrder[0]![0];
   const condMove =
     pickSys === "aerobic"
       ? "Easy Run"

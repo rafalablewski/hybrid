@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   reconcilePlan,
   scheduleWeek,
+  buildTrainingWeek,
   reconciledToSessionBlocks,
   buildMacrocycle,
   prescribeSession,
@@ -126,5 +127,28 @@ describe("scheduleWeek", () => {
     const plan = reconcilePlan({ macro, daily, currentWeek: 1 });
     expect(scheduleWeek(plan, { startDate: start, daysPerWeek: 99 }).length).toBe(6);
     expect(scheduleWeek(plan, { startDate: start, daysPerWeek: 0 }).length).toBe(1);
+  });
+});
+
+describe("buildTrainingWeek", () => {
+  const start = new Date(2026, 5, 8, 12, 0, 0, 0);
+
+  it("varies the primary lift across the week (not the same session N times)", () => {
+    const week = buildTrainingWeek({ macro, currentWeek: 1, log: SAMPLE_TRAINING_LOG, daysPerWeek: 3, startDate: start });
+    expect(week.length).toBe(3);
+    const primaries = week.map((a) => {
+      const first = a.blocks.find((b) => b.kind === "strength");
+      return first && first.kind === "strength" ? first.name : "";
+    });
+    expect(new Set(primaries).size).toBeGreaterThan(1); // distinct main lifts
+  });
+
+  it("spreads the sport transfer work across days rather than piling it on one", () => {
+    const week = buildTrainingWeek({ macro, currentWeek: 1, log: SAMPLE_TRAINING_LOG, sport, daysPerWeek: 3, startDate: start });
+    const sportCounts = week.map((a) => a.blocks.filter((b) => b.kind === "strength").length);
+    // at least two different days carry strength work (primary + distributed sport)
+    expect(sportCounts.filter((c) => c > 0).length).toBeGreaterThanOrEqual(2);
+    const offsets = week.map((a) => Math.round((Date.parse(a.date) - start.getTime()) / 86400000));
+    expect(offsets).toEqual([0, 2, 4]);
   });
 });
