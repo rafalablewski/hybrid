@@ -6,7 +6,6 @@ import type {
   TrainingLog,
   LogItem,
   Biometrics,
-  EnergySystem,
 } from "./types";
 import { currentPhase } from "./periodization";
 import { prescribeSession } from "./prescription";
@@ -286,21 +285,25 @@ export function reconciledToSessionBlocks(blocks: ReconciledBlock[]): SessionBlo
  * constant); per-day variation arrives when each day re-prescribes off the prior
  * day's log.
  */
+/** Lay one reconciled plan onto a date `off` days after `start` (noon local). */
+function datedAssignment(plan: ReconciledPlan, start: Date, off: number): ScheduledAssignment {
+  const d = new Date(start);
+  d.setDate(d.getDate() + off);
+  d.setHours(12, 0, 0, 0);
+  return {
+    name: `${plan.phase.label} · ${plan.blocks[0]?.name ?? "Session"}`,
+    blocks: reconciledToSessionBlocks(plan.blocks),
+    date: d.toISOString(),
+  };
+}
+
 export function scheduleWeek(
   plan: ReconciledPlan,
   opts: { startDate?: Date; daysPerWeek?: number } = {},
 ): ScheduledAssignment[] {
   const start = opts.startDate ? new Date(opts.startDate) : new Date();
   const days = clamp(Math.round(opts.daysPerWeek ?? 3), 1, 6);
-  const offsets = WEEK_SPREAD[days]!;
-  const blocks = reconciledToSessionBlocks(plan.blocks);
-  const name = `${plan.phase.label} · ${plan.blocks[0]?.name ?? "Session"}`;
-  return offsets.map((off) => {
-    const d = new Date(start);
-    d.setDate(d.getDate() + off);
-    d.setHours(12, 0, 0, 0);
-    return { name, blocks, date: d.toISOString() };
-  });
+  return WEEK_SPREAD[days]!.map((off) => datedAssignment(plan, start, off));
 }
 
 // Round-robin a list into `n` buckets (bucket i gets items i, i+n, i+2n, …).
@@ -312,13 +315,19 @@ function distribute<T>(items: T[], n: number): T[][] {
 
 // Turn a reconciled day into the LogItems it would add to the athlete's history,
 // so the NEXT day's prescription feels its fatigue (the heavy squat today is why
-// tomorrow picks a press). Unknown sport-accessory moves contribute no muscle
-// fatigue (they're not in MOVEMENTS) — harmless; the main lifts drive rotation.
-function dayToLogItems(plan: ReconciledPlan, condSystem: EnergySystem): LogItem[] {
+// tomorrow picks a press). Conditioning minutes are derived from the daily
+// block's work/rest per round (rounds are NOT minutes), so the system-fatigue
+// dose lands on the right scale. Unknown sport-accessory moves contribute no
+// muscle fatigue (they're not in MOVEMENTS) — harmless; the main lifts drive it.
+function dayToLogItems(plan: ReconciledPlan, daily: Prescription): LogItem[] {
+  const cond = daily.blocks.find(
+    (b): b is PrescribedConditioningBlock => b.kind === "conditioning",
+  );
+  const perRoundSec = cond ? cond.work + cond.rest : 60;
   return plan.blocks.map((b) =>
     b.kind === "strength"
       ? { move: b.name, hardSets: b.sets, topRpe: 8 }
-      : { move: b.name, system: condSystem, minutes: b.sets, rpe: 8 },
+      : { move: b.name, system: daily.pickSys, minutes: Math.max(1, Math.round((b.sets * perRoundSec) / 60)), rpe: 8 },
   );
 }
 
@@ -377,16 +386,9 @@ export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] 
     });
 
     // record what was done so the next day's prescription feels it.
-    generated.push({ offset: off, items: dayToLogItems(plan, daily.pickSys) });
+    generated.push({ offset: off, items: dayToLogItems(plan, daily) });
 
-    const d = new Date(start);
-    d.setDate(d.getDate() + off);
-    d.setHours(12, 0, 0, 0);
-    return {
-      name: `${plan.phase.label} · ${plan.blocks[0]?.name ?? "Session"}`,
-      blocks: reconciledToSessionBlocks(plan.blocks),
-      date: d.toISOString(),
-    };
+    return datedAssignment(plan, start, off);
   });
 }
 

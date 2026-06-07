@@ -50,11 +50,14 @@ export async function POST(request: Request) {
   }
 
   if (body.replace === true) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Key the delete off the EARLIEST regenerated date (the new week's start),
+    // not a server-local midnight — both delete and insert then use the same
+    // client-derived clock, so a prior run's "today" row is always replaced
+    // regardless of the athlete's timezone (no duplicates, no missed rows).
+    const from = new Date(Math.min(...rows.map((r) => r.date.getTime())));
     await prisma.$transaction([
       prisma.assignment.deleteMany({
-        where: { athleteId: me.id, assignedById: me.id, status: "assigned", date: { gte: today } },
+        where: { athleteId: me.id, assignedById: me.id, status: "assigned", date: { gte: from } },
       }),
       prisma.assignment.createMany({ data: rows }),
     ]);

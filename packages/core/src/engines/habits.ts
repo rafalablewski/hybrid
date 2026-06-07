@@ -109,7 +109,7 @@ export function trainingDaysPerWeek(
   }
   if (!counts.length) return Math.max(1, Math.min(6, Math.round(opts.fallback ?? 3)));
   counts.sort((a, b) => a - b);
-  return Math.max(2, Math.min(6, counts[Math.floor(counts.length / 2)]!));
+  return Math.max(1, Math.min(6, counts[Math.floor(counts.length / 2)]!));
 }
 
 /**

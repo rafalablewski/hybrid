@@ -230,7 +230,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   );
 }
 
-function cta(color: string, disabled = false) {
+function cta(color: string) {
   return {
     ...cond,
     fontSize: 13,
@@ -242,7 +242,6 @@ function cta(color: string, disabled = false) {
     border: "none",
     borderRadius: 10,
     padding: "9px 16px",
-    cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? 0.6 : 1,
+    cursor: "pointer",
   };
 }
