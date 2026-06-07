@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
+import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
-
-const STORE_KEY = "hybrid.sport";
 
 // Sport-driven training — pick a sport + level, the shared engine
 // (prescribeForSport in @hybrid/core) ranks the S&C work that makes you better
@@ -20,18 +19,11 @@ export default function SportScreen() {
 
   // Restore the athlete's saved choice (client-only — avoids an SSR mismatch).
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (raw) {
-        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number; markers?: Record<string, string> } | null;
-        if (s && typeof s === "object") {
-          if (s.sport && SPORTS[s.sport]) setSport(s.sport);
-          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-          if (s.markers && typeof s.markers === "object") setMarkers(s.markers);
-        }
-      }
-    } catch {
-      /* ignore corrupt/unavailable storage */
+    const s = readSportSelection();
+    if (s) {
+      if (s.sport && SPORTS[s.sport]) setSport(s.sport);
+      if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+      if (s.markers && typeof s.markers === "object") setMarkers(s.markers);
     }
     setHydrated(true);
   }, []);
@@ -39,7 +31,7 @@ export default function SportScreen() {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ sport, levelIdx, markers }));
+      localStorage.setItem(SPORT_STORE_KEY, JSON.stringify({ sport, levelIdx, markers }));
     } catch {
       /* ignore */
     }

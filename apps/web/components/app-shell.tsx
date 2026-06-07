@@ -143,7 +143,7 @@ export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
   const { sessions, refresh } = useSessions();
-  const { macro, refresh: refreshMacro } = useMacrocycle();
+  const { macro, currentWeek, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
@@ -425,7 +425,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <Today sessions={sessions} bio={bio ?? undefined} onStart={() => setScreen("log")} />
+          <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} onStart={() => setScreen("log")} />
         )}
 
         {screen === "onboarding" && (
