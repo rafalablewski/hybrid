@@ -50,6 +50,8 @@ const inputStyle = {
   borderRadius: 8,
   padding: "8px 10px",
   outline: "none",
+  minWidth: 0,
+  boxSizing: "border-box",
 } as const;
 
 export default function Logger({

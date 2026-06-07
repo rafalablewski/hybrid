@@ -10,7 +10,7 @@ import { useExercises } from "@/lib/use-exercises";
 const BASE_CATALOG = ["Back Squat", "Front Squat", "Deadlift", "Bench Press", "Overhead Press", "Barbell Row", "Romanian Deadlift", "Pull-up", "Power Clean"];
 type EditableBlock = SessionBlock & { uid: string };
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()));
-const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none" } as const;
+const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
 
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
