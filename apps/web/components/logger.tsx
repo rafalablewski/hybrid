@@ -44,27 +44,33 @@ export default function Logger({
 
   const loadPrescribed = () => {
     setBlocks(
-      rx.blocks.map((b) =>
-        b.kind === "strength"
-          ? { uid: uid(), kind: "strength", name: b.name, sets: b.sets }
-          : {
-              uid: uid(),
-              kind: "conditioning",
-              name: b.name,
-              format: b.format,
-              // Intervals (threshold/anaerobic): keep work/rest × rounds and derive
-              // minutes. Steady run (aerobic): carry the distance + minutes target so
-              // the logger's derived pace matches what the coach asked for.
-              ...(b.work != null ? { work: b.work } : {}),
-              ...(b.rest != null ? { rest: b.rest } : {}),
-              ...(b.rounds != null ? { rounds: b.rounds } : {}),
-              ...(b.distance != null ? { distance: b.distance } : {}),
-              ...(b.rpe != null ? { rpe: b.rpe } : {}),
-              minutes:
-                b.minutes ??
-                (b.work && b.rest && b.rounds ? Math.round((b.rounds * (b.work + b.rest)) / 60) : undefined),
-            },
-      ),
+      rx.blocks.map((b) => {
+        if (b.kind === "strength") return { uid: uid(), kind: "strength", name: b.name, sets: b.sets };
+        if (b.kind === "cardio")
+          // Steady run target — carry distance + minutes so the derived pace matches.
+          return {
+            uid: uid(),
+            kind: "cardio",
+            name: b.name,
+            ...(b.distance != null ? { distance: b.distance } : {}),
+            ...(b.minutes != null ? { minutes: b.minutes } : {}),
+            ...(b.rpe != null ? { rpe: b.rpe } : {}),
+          };
+        // Intervals — keep work/rest × rounds and derive editable minutes.
+        return {
+          uid: uid(),
+          kind: "conditioning",
+          name: b.name,
+          format: b.format,
+          ...(b.work != null ? { work: b.work } : {}),
+          ...(b.rest != null ? { rest: b.rest } : {}),
+          ...(b.rounds != null ? { rounds: b.rounds } : {}),
+          ...(b.rpe != null ? { rpe: b.rpe } : {}),
+          minutes:
+            b.minutes ??
+            (b.work && b.rest && b.rounds ? Math.round((b.rounds * (b.work + b.rest)) / 60) : undefined),
+        };
+      }),
     );
     setTitle("AI Prescribed");
   };

@@ -57,7 +57,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
         lifts.add(b.name);
       } else {
         sets += 1;
-        if (b.distance && b.distance > 0) distanceKm += b.distance;
+        if (b.kind === "cardio" && b.distance && b.distance > 0) distanceKm += b.distance;
       }
     }
     if (s.completedAt) minutes += Math.max(0, Math.round((ms(s.completedAt) - ms(s.startedAt)) / 60000));

@@ -105,7 +105,7 @@ describe("cardio records", () => {
     id,
     title: "Run",
     startedAt,
-    blocks: [{ kind: "conditioning", name: "Easy Run", distance, minutes }],
+    blocks: [{ kind: "cardio", name: "Easy Run", distance, minutes }],
   });
   const r1 = run("1", "2026-05-01T10:00:00.000Z", 5, 30); // 6:00/km
   const r2 = run("2", "2026-05-08T10:00:00.000Z", 8, 48); // further → distance PR

@@ -12,6 +12,8 @@ import {
   newPrsInSession,
   newCardioPrsInSession,
   exerciseHistory,
+  inferBlockKind,
+  migrateBlocks,
   pacePerKm,
   paceClock,
   supersetLabels,
@@ -36,16 +38,14 @@ import { useLang } from "../lib/i18n";
 import { C, F, Mono, Kicker, Card } from "../lib/ui";
 
 const uid = () => Math.random().toString(36).slice(2);
-const isCond = (name: string) => {
-  const m = MOVEMENTS[name];
-  return !!m && (m.system != null || m.pattern === "cond");
-};
+
+type WKind = "strength" | "cardio" | "conditioning";
 
 type WSet = { reps: string; load: string; rpe: string; done: boolean; drop?: boolean };
 type WExercise = {
   uid: string;
   name: string;
-  kind: "strength" | "conditioning";
+  kind: WKind;
   sets: WSet[];
   minutes: string;
   rpe: string;
@@ -61,7 +61,7 @@ const emptySet = (from?: WSet): WSet => ({
   done: false,
 });
 
-const newExercise = (name: string, kind: "strength" | "conditioning" = isCond(name) ? "conditioning" : "strength"): WExercise => ({
+const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercise => ({
   uid: uid(),
   name,
   kind,
@@ -100,7 +100,7 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
   id: g.savedAt,
   title: g.title,
   startedAt: g.startedAt ?? g.savedAt,
-  blocks: g.blocks as SessionBlock[],
+  blocks: migrateBlocks(g.blocks),
 });
 
 export default function Workout() {
@@ -199,7 +199,7 @@ export default function Workout() {
     return () => clearTimeout(id);
   }, [exercises, title, restored]);
 
-  const addExercise = (name: string, kind?: "strength" | "conditioning") => {
+  const addExercise = (name: string, kind?: WKind) => {
     const clean = name.trim();
     if (!clean) return;
     setExercises((xs) => [...xs, newExercise(clean, kind)]);
@@ -263,15 +263,25 @@ export default function Workout() {
   const buildBlocks = (): SessionBlock[] => {
     const blocks: SessionBlock[] = [];
     for (const x of exercises) {
-      if (x.kind === "conditioning") {
+      if (x.kind === "cardio") {
         const minutes = parseFloat(x.minutes);
         const rpe = parseFloat(x.rpe);
         const distance = parseFloat(x.distance);
         if (!Number.isFinite(minutes) && !Number.isFinite(rpe) && !Number.isFinite(distance)) continue;
         blocks.push({
-          kind: "conditioning",
+          kind: "cardio",
           name: x.name,
           ...(Number.isFinite(distance) ? { distance } : {}),
+          ...(Number.isFinite(minutes) ? { minutes } : {}),
+          ...(Number.isFinite(rpe) ? { rpe } : {}),
+        });
+      } else if (x.kind === "conditioning") {
+        const minutes = parseFloat(x.minutes);
+        const rpe = parseFloat(x.rpe);
+        if (!Number.isFinite(minutes) && !Number.isFinite(rpe)) continue;
+        blocks.push({
+          kind: "conditioning",
+          name: x.name,
           ...(Number.isFinite(minutes) ? { minutes } : {}),
           ...(Number.isFinite(rpe) ? { rpe } : {}),
         });
@@ -434,7 +444,7 @@ export default function Workout() {
         {exercises.map((x, xi) => (
           <Card key={x.uid}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: x.kind === "strength" ? C.lime : C.blue }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: x.kind === "strength" ? C.lime : x.kind === "cardio" ? C.blue : C.violet }}>
                 {x.kind.toUpperCase()}
               </Text>
               {ssLabels[xi] && (
@@ -493,7 +503,7 @@ export default function Workout() {
                   </Pressable>
                 </View>
               </>
-            ) : (
+            ) : x.kind === "cardio" ? (
               <>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <View style={{ flex: 1 }}>
@@ -510,12 +520,23 @@ export default function Workout() {
                   </View>
                 </View>
                 {(() => {
-                  const pace = pacePerKm({ kind: "conditioning", name: x.name, distance: parseFloat(x.distance), minutes: parseFloat(x.minutes) });
+                  const pace = pacePerKm({ distance: parseFloat(x.distance), minutes: parseFloat(x.minutes) });
                   return pace ? (
                     <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.blue, marginTop: 8 }}>{t("workout.pace")} {pace}</Text>
                   ) : null;
                 })()}
               </>
+            ) : (
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <ColHead>MIN</ColHead>
+                  <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <ColHead>RPE</ColHead>
+                  <Cell value={x.rpe} onChange={(v) => condField(x.uid, "rpe", v)} />
+                </View>
+              </View>
             )}
           </Card>
         ))}
@@ -527,15 +548,19 @@ export default function Workout() {
           const recentShown = recent.filter((r) => match(r.name)).slice(0, 10);
           const libShown = Object.keys(MOVEMENTS).filter((n) => !recentNames.has(n) && match(n));
           const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
-          const chip = (name: string, kind: "strength" | "conditioning", key: string) => (
-            <Pressable
-              key={key}
-              onPress={() => addExercise(name, kind)}
-              style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: kind === "conditioning" ? `${C.blue}55` : `${C.lime}55`, backgroundColor: kind === "conditioning" ? `${C.blue}1f` : `${C.lime}1f` }}
-            >
-              <Text style={{ fontFamily: F.semi, fontSize: 13, color: kind === "conditioning" ? C.blue : C.lime }}>{name}</Text>
-            </Pressable>
-          );
+          const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
+          const chip = (name: string, kind: WKind, key: string) => {
+            const c = kindColor(kind);
+            return (
+              <Pressable
+                key={key}
+                onPress={() => addExercise(name, kind)}
+                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}
+              >
+                <Text style={{ fontFamily: F.semi, fontSize: 13, color: c }}>{name}</Text>
+              </Pressable>
+            );
+          };
           return (
             <Card>
               <Kicker color={C.lime}>{t("workout.pickExercise")}</Kicker>
@@ -562,7 +587,7 @@ export default function Workout() {
                 <>
                   {recentShown.length > 0 && <Kicker color={C.ash}>{t("workout.library")}</Kicker>}
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-                    {libShown.map((name) => chip(name, isCond(name) ? "conditioning" : "strength", `l-${name}`))}
+                    {libShown.map((name) => chip(name, inferBlockKind(name), `l-${name}`))}
                   </View>
                 </>
               )}
@@ -787,11 +812,11 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
       : {
           uid: uid(),
           name: b.name,
-          kind: "conditioning" as const,
+          kind: b.kind,
           sets: [emptySet()],
           minutes: b.minutes != null ? String(b.minutes) : "",
           rpe: b.rpe != null ? String(b.rpe) : "",
-          distance: b.distance != null ? String(b.distance) : "",
+          distance: b.kind === "cardio" && b.distance != null ? String(b.distance) : "",
         },
   );
 }

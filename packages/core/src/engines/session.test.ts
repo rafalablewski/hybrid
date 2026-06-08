@@ -8,6 +8,7 @@ import {
   liftNames,
   toTrainingLog,
   conditioningSummary,
+  cardioSummary,
   blockSummary,
   pacePerKm,
   supersetLabels,
@@ -16,6 +17,8 @@ import {
   paceSeries,
   headlineRunMove,
   paceClock,
+  migrateBlocks,
+  inferBlockKind,
 } from "./session";
 import type { LoggedSession } from "./session";
 
@@ -54,8 +57,8 @@ describe("block summaries", () => {
       "100×5 · 110×3",
     );
   });
-  it("conditioningSummary shows distance and the derived pace for a run", () => {
-    expect(conditioningSummary({ kind: "conditioning", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
+  it("cardioSummary shows distance and the derived pace for a run", () => {
+    expect(cardioSummary({ kind: "cardio", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
       "8 km · 50 min · 6:15 /km · RPE 6",
     );
   });
@@ -91,14 +94,39 @@ describe("supersets", () => {
   });
 });
 
+describe("cardio/conditioning split", () => {
+  it("migrateBlocks upgrades a legacy conditioning-with-distance block to cardio", () => {
+    const out = migrateBlocks([
+      { kind: "conditioning", name: "Easy Run", distance: 8, minutes: 50, rpe: 6 },
+      { kind: "conditioning", name: "Metcon", format: "AMRAP", work: 40, rest: 20, rounds: 8 },
+      { kind: "strength", name: "Squat", sets: [{ load: "100", reps: "5" }] },
+    ]);
+    expect(out[0]).toEqual({ kind: "cardio", name: "Easy Run", distance: 8, minutes: 50, rpe: 6 });
+    expect(out[1]!.kind).toBe("conditioning"); // intervals stay conditioning
+    expect(out[2]!.kind).toBe("strength");
+  });
+  it("migrateBlocks leaves an interval block with distance as conditioning", () => {
+    const out = migrateBlocks([{ kind: "conditioning", name: "X", distance: 2, work: 30, rest: 30, rounds: 5 }]);
+    expect(out[0]!.kind).toBe("conditioning");
+  });
+  it("inferBlockKind classifies by catalog then keyword, defaulting to strength", () => {
+    expect(inferBlockKind("Easy Run")).toBe("cardio");
+    expect(inferBlockKind("Row Intervals")).toBe("conditioning");
+    expect(inferBlockKind("Trail Run")).toBe("cardio");
+    expect(inferBlockKind("EMOM Burpees")).toBe("conditioning");
+    expect(inferBlockKind("Back Squat")).toBe("strength");
+    expect(inferBlockKind("Zercher Carry")).toBe("strength");
+  });
+});
+
 describe("cardio pace", () => {
   it("pacePerKm derives min/km from distance + minutes", () => {
-    expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 10, minutes: 50 })).toBe("5:00 /km");
-    expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 8, minutes: 50 })).toBe("6:15 /km");
+    expect(pacePerKm({ distance: 10, minutes: 50 })).toBe("5:00 /km");
+    expect(pacePerKm({ distance: 8, minutes: 50 })).toBe("6:15 /km");
   });
   it("pacePerKm is null without both distance and minutes", () => {
-    expect(pacePerKm({ kind: "conditioning", name: "Run", minutes: 50 })).toBeNull();
-    expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 8 })).toBeNull();
+    expect(pacePerKm({ minutes: 50 })).toBeNull();
+    expect(pacePerKm({ distance: 8 })).toBeNull();
   });
   it("paceClock formats seconds-per-km as m:ss", () => {
     expect(paceClock(342)).toBe("5:42");
@@ -110,16 +138,16 @@ describe("cardio pace", () => {
   });
   it("paceSeries tracks one move's pace over time, oldest first", () => {
     const runs: LoggedSession[] = [
-      { id: "b", title: "Run", startedAt: "2026-05-10T00:00:00.000Z", blocks: [{ kind: "conditioning", name: "Easy Run", distance: 10, minutes: 55 }] },
-      { id: "a", title: "Run", startedAt: "2026-05-03T00:00:00.000Z", blocks: [{ kind: "conditioning", name: "Easy Run", distance: 10, minutes: 60 }] },
+      { id: "b", title: "Run", startedAt: "2026-05-10T00:00:00.000Z", blocks: [{ kind: "cardio", name: "Easy Run", distance: 10, minutes: 55 }] },
+      { id: "a", title: "Run", startedAt: "2026-05-03T00:00:00.000Z", blocks: [{ kind: "cardio", name: "Easy Run", distance: 10, minutes: 60 }] },
     ];
     expect(paceSeries(runs, "Easy Run").map((p) => p.secPerKm)).toEqual([360, 330]);
   });
   it("headlineRunMove picks the longest paced distance", () => {
     expect(
       headlineRunMove([
-        { kind: "conditioning", name: "Warm-up Jog", distance: 2, minutes: 12 },
-        { kind: "conditioning", name: "Long Run", distance: 15, minutes: 80 },
+        { kind: "cardio", name: "Warm-up Jog", distance: 2, minutes: 12 },
+        { kind: "cardio", name: "Long Run", distance: 15, minutes: 80 },
         { kind: "strength", name: "Squat", sets: [] },
       ]),
     ).toBe("Long Run");

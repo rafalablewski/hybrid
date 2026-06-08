@@ -40,6 +40,15 @@ export interface StrengthBlock {
   superset?: boolean;
 }
 
+export interface CardioBlock {
+  kind: "cardio";
+  name: string;
+  /** distance covered, km — pace is derived from minutes. */
+  distance?: number;
+  minutes?: number;
+  rpe?: number;
+}
+
 export interface ConditioningBlock {
   kind: "conditioning";
   name: string;
@@ -49,11 +58,16 @@ export interface ConditioningBlock {
   rounds?: number;
   minutes?: number;
   rpe?: number;
-  /** distance covered, km (runs/rows/rides) — pace is derived from minutes. */
+  /**
+   * @deprecated Cardio distance now lives on its own `cardio` block kind. Still
+   * read by `migrateBlocks` to upgrade sessions logged before the split.
+   */
   distance?: number;
 }
 
-export type SessionBlock = StrengthBlock | ConditioningBlock;
+export type SessionBlock = StrengthBlock | CardioBlock | ConditioningBlock;
+
+export type BlockKind = SessionBlock["kind"];
 
 export interface LoggedSession {
   id: string;
@@ -65,6 +79,7 @@ export interface LoggedSession {
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";
+export const isCardio = (b: SessionBlock): b is CardioBlock => b.kind === "cardio";
 const num = (s: string | undefined): number => {
   const n = parseFloat(s ?? "");
   return Number.isFinite(n) ? n : NaN;
@@ -91,7 +106,7 @@ export function blockBestE1rm(b: StrengthBlock): number {
  * minutes. Null unless both are logged — pace isn't stored, it's computed so it
  * can never disagree with the distance/time it came from.
  */
-export function pacePerKm(b: ConditioningBlock): string | null {
+export function pacePerKm(b: { distance?: number; minutes?: number }): string | null {
   if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
   return `${paceClock((b.minutes * 60) / b.distance)} /km`;
 }
@@ -119,7 +134,7 @@ export function paceSeries(sessions: LoggedSession[], move: string): PacePoint[]
   const pts: PacePoint[] = [];
   for (const s of sorted)
     for (const b of s.blocks)
-      if (b.kind === "conditioning" && b.name === move && b.distance && b.distance > 0 && b.minutes && b.minutes > 0)
+      if (isCardio(b) && b.name === move && b.distance && b.distance > 0 && b.minutes && b.minutes > 0)
         pts.push({ date: s.startedAt, secPerKm: Math.round((b.minutes * 60) / b.distance) });
   return pts;
 }
@@ -127,32 +142,101 @@ export function paceSeries(sessions: LoggedSession[], move: string): PacePoint[]
 /** The headline cardio move in a session (the one with the longest paced distance). */
 export function headlineRunMove(blocks: SessionBlock[]): string | undefined {
   return blocks
-    .filter((b): b is ConditioningBlock => b.kind === "conditioning" && !!b.distance && !!b.minutes)
+    .filter((b): b is CardioBlock => isCardio(b) && !!b.distance && !!b.minutes)
     .sort((a, b) => (b.distance ?? 0) - (a.distance ?? 0))[0]?.name;
 }
 
 /**
- * One-line summary of a conditioning block: format, the interval (rounds ×
- * work/rest seconds) when logged, distance, total minutes, the derived pace,
- * and optionally RPE. Shared so the web + mobile history/detail views read
- * cardio the same way.
+ * One-line summary of a cardio block: distance, minutes, derived pace, RPE.
+ * Shared so the web + mobile history/detail views read runs the same way.
  */
-export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean } = {}): string {
-  const parts: (string | null | undefined)[] = [b.format];
-  if (b.work && b.rest) parts.push(`${b.rounds ? `${b.rounds}×` : ""}${b.work}/${b.rest}s`);
-  else if (b.rounds) parts.push(`${b.rounds} rounds`);
+export function cardioSummary(b: CardioBlock, opts: { rpe?: boolean } = {}): string {
+  const parts: (string | null | undefined)[] = [];
   if (b.distance) parts.push(`${b.distance} km`);
   if (b.minutes) parts.push(`${b.minutes} min`);
   const pace = pacePerKm(b);
   if (pace) parts.push(pace);
   if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
+  return parts.filter(Boolean).join(" · ") || "cardio";
+}
+
+/**
+ * One-line summary of a conditioning (interval/metcon) block: format, the
+ * interval (rounds × work/rest seconds), total minutes, and optionally RPE.
+ */
+export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean } = {}): string {
+  const parts: (string | null | undefined)[] = [b.format];
+  if (b.work && b.rest) parts.push(`${b.rounds ? `${b.rounds}×` : ""}${b.work}/${b.rest}s`);
+  else if (b.rounds) parts.push(`${b.rounds} rounds`);
+  if (b.minutes) parts.push(`${b.minutes} min`);
+  if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
   return parts.filter(Boolean).join(" · ");
 }
 
-/** One-line summary of any block (strength sets, or the conditioning summary). */
+/** One-line summary of any block. */
 export function blockSummary(b: SessionBlock): string {
   if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
+  if (isCardio(b)) return cardioSummary(b);
   return conditioningSummary(b);
+}
+
+// ----- Block kind inference + legacy migration -----
+
+const CARDIO_RE = /\b(run|jog|walk|hike|ruck|sprint|swim|bike|cycl|ride|row(?!ing intervals)|erg|ski|elliptical|treadmill|cardio)\b/i;
+const CONDITIONING_RE = /\b(metcon|emom|amrap|wod|circuit|interval|conditioning|tabata|complex|finisher)s?\b/i;
+
+/**
+ * Best-guess block kind for an exercise name — checks the MOVEMENTS catalog
+ * first (a movement with a system / a "cond" pattern is cardio or conditioning),
+ * then a keyword heuristic, defaulting to strength.
+ */
+export function inferBlockKind(name: string): BlockKind {
+  const m = MOVEMENTS[name];
+  if (m) {
+    if (m.system == null && m.pattern !== "cond") return "strength";
+    // A known engine move: aerobic steady → cardio; intervals/metcon → conditioning.
+    if (CONDITIONING_RE.test(name)) return "conditioning";
+    if (m.system === "aerobic" || CARDIO_RE.test(name)) return "cardio";
+    return "conditioning";
+  }
+  if (CONDITIONING_RE.test(name)) return "conditioning";
+  if (CARDIO_RE.test(name)) return "cardio";
+  return "strength";
+}
+
+/**
+ * Upgrade sessions logged BEFORE the cardio/conditioning split: a conditioning
+ * block that carries a distance and no interval shape (work/rest/rounds) becomes
+ * a cardio block. Idempotent and defensive over raw JSON — apply at every point
+ * stored Session.blocks are read back into a LoggedSession.
+ */
+export function migrateBlocks(blocks: unknown): SessionBlock[] {
+  if (!Array.isArray(blocks)) return [];
+  return blocks.map((raw) => {
+    const b = raw as Record<string, unknown>;
+    if (
+      b?.kind === "conditioning" &&
+      typeof b.distance === "number" &&
+      b.distance > 0 &&
+      !b.work &&
+      !b.rest &&
+      !b.rounds
+    ) {
+      return {
+        kind: "cardio",
+        name: String(b.name ?? "Cardio"),
+        distance: b.distance,
+        ...(typeof b.minutes === "number" ? { minutes: b.minutes } : {}),
+        ...(typeof b.rpe === "number" ? { rpe: b.rpe } : {}),
+      } satisfies CardioBlock;
+    }
+    return raw as SessionBlock;
+  });
+}
+
+/** Migrate the blocks of a whole session list read from storage. */
+export function migrateSessions<T extends { blocks: unknown }>(sessions: T[]): (Omit<T, "blocks"> & { blocks: SessionBlock[] })[] {
+  return sessions.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }));
 }
 
 // ----- Supersets (A1/A2/A3 groups) -----
@@ -320,11 +404,15 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
           hardSets: b.sets.length,
         };
       }
+      if (b.kind === "cardio") {
+        const system = (MOVEMENTS[b.name]?.system ?? "aerobic") as EnergySystem;
+        return { move: b.name, system, minutes: b.minutes ?? 30, rpe: b.rpe ?? 6, ...(b.distance ? { distance: b.distance } : {}) };
+      }
       const system = (MOVEMENTS[b.name]?.system ?? "anaerobic") as EnergySystem;
       const minutes =
         b.minutes ??
         (b.work && b.rest && b.rounds ? Math.round(((b.work + b.rest) * b.rounds) / 60) : 12);
-      return { move: b.name, system, minutes, rpe: b.rpe ?? 8, ...(b.distance ? { distance: b.distance } : {}) };
+      return { move: b.name, system, minutes, rpe: b.rpe ?? 8 };
     });
     return { daysAgo, items };
   });

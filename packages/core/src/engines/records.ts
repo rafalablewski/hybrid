@@ -92,7 +92,7 @@ interface CardioEffort {
 function cardioEfforts(session: LoggedSession): CardioEffort[] {
   const best = new Map<string, CardioEffort>();
   for (const b of session.blocks) {
-    if (b.kind !== "conditioning" || !b.distance || b.distance <= 0) continue;
+    if (b.kind !== "cardio" || !b.distance || b.distance <= 0) continue;
     const secPerKm = b.minutes && b.minutes > 0 ? Math.round((b.minutes * 60) / b.distance) : null;
     const cur = best.get(b.name);
     if (!cur || b.distance > cur.distance) best.set(b.name, { move: b.name, distance: b.distance, secPerKm });
@@ -169,7 +169,7 @@ export function volumeByMuscle(blocks: SessionBlock[]): MuscleVolume[] {
 
 export interface ExerciseUse {
   name: string;
-  kind: "strength" | "conditioning";
+  kind: "strength" | "cardio" | "conditioning";
   count: number;
   lastUsed: string; // ISO
 }

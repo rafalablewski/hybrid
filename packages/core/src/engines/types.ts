@@ -125,7 +125,15 @@ export interface PrescribedConditioningBlock {
   work?: number;
   rest?: number;
   rounds?: number;
-  /** Steady cardio target (aerobic days): distance + duration + goal pace. */
+  minutes?: number;
+  rpe?: number;
+}
+
+export interface PrescribedCardioBlock {
+  uid: number;
+  kind: "cardio";
+  name: string;
+  /** Steady cardio target: distance + duration + goal pace. */
   distance?: number;
   minutes?: number;
   rpe?: number;
@@ -135,6 +143,7 @@ export interface PrescribedConditioningBlock {
 
 export type PrescribedBlock =
   | PrescribedStrengthBlock
+  | PrescribedCardioBlock
   | PrescribedConditioningBlock;
 
 export interface PrimaryPick {

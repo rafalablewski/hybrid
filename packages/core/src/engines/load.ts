@@ -28,6 +28,8 @@ export function sessionLoad(s: LoggedSession): number {
       const rpes = b.sets.map((x) => num(x.rpe)).filter((n) => Number.isFinite(n));
       const rpe = rpes.length ? Math.max(...rpes) : 7;
       load += b.sets.length * 3.5 * rpe;
+    } else if (b.kind === "cardio") {
+      load += (b.minutes ?? 30) * (b.rpe ?? 6);
     } else {
       const minutes =
         b.minutes ?? (b.work && b.rest && b.rounds ? ((b.work + b.rest) * b.rounds) / 60 : 12);

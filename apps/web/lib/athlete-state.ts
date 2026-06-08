@@ -4,8 +4,8 @@ import {
   computeInjuryRisk,
   toBiometrics,
   toTrainingLog,
+  migrateBlocks,
   type LoggedSession,
-  type SessionBlock,
   type Signal,
 } from "@hybrid/core";
 import { activeCalibration } from "@/lib/calibration";
@@ -26,7 +26,7 @@ export async function athleteState(userId: string) {
     title: r.title,
     startedAt: r.startedAt.toISOString(),
     completedAt: r.completedAt?.toISOString() ?? null,
-    blocks: r.blocks as unknown as SessionBlock[],
+    blocks: migrateBlocks(r.blocks),
     readiness: r.readiness,
   }));
 

@@ -9,7 +9,7 @@ const run = (id: string, started: string, name: string, distance?: number, minut
   id,
   title: "Run",
   startedAt: started,
-  blocks: [{ kind: "conditioning", name, ...(distance ? { distance } : {}), ...(minutes ? { minutes } : {}), ...(rpe ? { rpe } : {}) }],
+  blocks: [{ kind: "cardio", name, ...(distance ? { distance } : {}), ...(minutes ? { minutes } : {}), ...(rpe ? { rpe } : {}) }],
 });
 
 const sessions: LoggedSession[] = [
