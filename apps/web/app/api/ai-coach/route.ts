@@ -10,7 +10,7 @@ import {
   sessionVolume,
   runTotals,
   weeklyMileage,
-  effortSplit,
+  paceEffortSplit,
   pacedRunMoves,
   paceSeries,
   paceClock,
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
   // Cardio context — mileage, recent pace, and the easy/hard balance.
   const cardio = runTotals(sessions);
   const km4 = weeklyMileage(sessions, 4).map((w) => w.km);
-  const split = effortSplit(sessions);
+  const split = paceEffortSplit(sessions);
   const splitTotal = split.easy + split.moderate + split.hard;
   const easyPct = splitTotal ? Math.round((split.easy / splitTotal) * 100) : null;
   const topRun = pacedRunMoves(sessions)[0];
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   const cardioLine =
     cardio.efforts > 0
       ? `Cardio: ${cardio.distanceKm}km over ${cardio.efforts} efforts; last 4 weeks (km) ${km4.join("/")}` +
-        (easyPct != null ? `; ${easyPct}% of cardio minutes easy (RPE≤6) vs harder` : "") +
+        (easyPct != null ? `; ${easyPct}% of cardio minutes at an easy pace (vs harder)` : "") +
         (recentPace ? `; recent ${topRun} pace ${recentPace}/km` : "") +
         "."
       : "Cardio: none logged.";

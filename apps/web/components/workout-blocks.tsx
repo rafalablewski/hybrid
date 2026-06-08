@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, RPE_CARDIO_NOTE, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -288,15 +288,14 @@ export default function WorkoutBlocks({
             </>
           ) : b.kind === "cardio" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-                {["dist (km)", "minutes", "rpe"].map((h) => (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                {["dist (km)", "minutes"].map((h) => (
                   <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                     {h}
                   </Mono>
                 ))}
                 <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
                 <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
-                <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="6" style={input} />
               </div>
               {pacePerKm(b) && (
                 <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={BLUE}>
@@ -305,8 +304,8 @@ export default function WorkoutBlocks({
               )}
             </>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
-              {["format", "work (s)", "rest (s)", "rounds", "minutes", "rpe"].map((h) => (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+              {["format", "work (s)", "rest (s)", "rounds", "minutes"].map((h) => (
                 <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                   {h}
                 </Mono>
@@ -316,7 +315,6 @@ export default function WorkoutBlocks({
               <input value={condVal(b.uid, "rest", b.rest)} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
               <input value={condVal(b.uid, "rounds", b.rounds)} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
               <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
-              <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="8" style={input} />
             </div>
           )}
         </Card>
@@ -371,7 +369,6 @@ function RpeHelp({ onClose }: { onClose: () => void }) {
           </div>
         ))}
       </div>
-      <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 12 }} c={ASH}>{RPE_CARDIO_NOTE}</Mono>
     </Card>
   );
 }

@@ -16,7 +16,7 @@ import {
   runTotals,
   runStats,
   weeklyMileage,
-  effortSplit,
+  paceEffortSplit,
   pacedRunMoves,
   paceSeries,
   paceClock,
@@ -40,7 +40,7 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);
   const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
-  const split = useMemo(() => effortSplit(sessions), [sessions]);
+  const split = useMemo(() => paceEffortSplit(sessions), [sessions]);
   const paceMoves = useMemo(() => pacedRunMoves(sessions), [sessions]);
   const [move, setMove] = useState("");
   const active = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
@@ -61,18 +61,19 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
 
   const mileageData = mileage.map((w) => ({ w: fmtWeek(w.weekStart), km: w.km }));
   const paceData = active ? paceSeries(sessions, active).map((p) => ({ w: fmtWeek(p.date), pace: p.secPerKm })) : [];
-  const splitTotal = split.easy + split.moderate + split.hard || 1;
-  const easyPct = Math.round((split.easy / splitTotal) * 100);
+  const splitTotal = split.easy + split.moderate + split.hard;
+  const hasEffort = splitTotal > 0;
+  const easyPct = hasEffort ? Math.round((split.easy / splitTotal) * 100) : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 980 }}>
       <Header />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${easyPct != null ? 4 : 3}, 1fr)`, gap: 14 }}>
         <Stat label="Runs" value={totals.efforts} />
         <Stat label="Distance" value={`${totals.distanceKm} km`} c={BLUE} />
         <Stat label="Time" value={`${Math.round(totals.minutes / 6) / 10} h`} />
-        <Stat label="Easy %" value={`${easyPct}%`} c={LIME} />
+        {easyPct != null && <Stat label="Easy %" value={`${easyPct}%`} c={LIME} />}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
@@ -103,32 +104,38 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
         )}
       </div>
 
-      {/* Easy / moderate / hard split (the 80/20 lens) */}
-      <Card>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          Effort split · minutes by RPE
-        </Mono>
-        <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginTop: 12, background: INK2 }}>
-          {([["easy", split.easy, LIME], ["moderate", split.moderate, AMBER], ["hard", split.hard, RED]] as const).map(
-            ([k, v, c]) => v > 0 && <div key={k} style={{ width: `${(v / splitTotal) * 100}%`, background: c }} />,
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
-          <Legend c={LIME} label={`Easy (RPE ≤6) · ${split.easy} min`} />
-          <Legend c={AMBER} label={`Moderate (7) · ${split.moderate} min`} />
-          <Legend c={RED} label={`Hard (≥8) · ${split.hard} min`} />
-        </div>
-        {paceMoves.length > 1 && (
-          <div style={{ marginTop: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }}>Pace chart move</Mono>
-            <Select value={active} onChange={(e) => setMove(e.target.value)} style={{ width: 240 }}>
-              {paceMoves.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </Select>
+      {/* Easy / moderate / hard split (the 80/20 lens) — only when intensity was logged */}
+      {hasEffort && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+            Pace zones · minutes (from pace)
+          </Mono>
+          <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginTop: 12, background: INK2 }}>
+            {([["easy", split.easy, LIME], ["moderate", split.moderate, AMBER], ["hard", split.hard, RED]] as const).map(
+              ([k, v, c]) => v > 0 && <div key={k} style={{ width: `${(v / splitTotal) * 100}%`, background: c }} />,
+            )}
           </div>
-        )}
-      </Card>
+          <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
+            <Legend c={LIME} label={`Easy · ${split.easy} min`} />
+            <Legend c={AMBER} label={`Steady · ${split.moderate} min`} />
+            <Legend c={RED} label={`Hard · ${split.hard} min`} />
+          </div>
+          <Mono s={{ fontSize: 11, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+            Intensity is judged from pace, relative to your best for each movement — no manual input.
+          </Mono>
+        </Card>
+      )}
+
+      {paceMoves.length > 1 && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }}>Pace chart move</Mono>
+          <Select value={active} onChange={(e) => setMove(e.target.value)} style={{ width: 240 }}>
+            {paceMoves.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </Select>
+        </Card>
+      )}
 
       {/* Per-move table */}
       <Card>

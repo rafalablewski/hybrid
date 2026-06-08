@@ -4,7 +4,7 @@ import {
   runTotals,
   runStats,
   weeklyMileage,
-  effortSplit,
+  paceEffortSplit,
   pacedRunMoves,
   paceSeries,
   paceClock,
@@ -31,7 +31,7 @@ export default function Running() {
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);
   const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
-  const split = useMemo(() => effortSplit(sessions), [sessions]);
+  const split = useMemo(() => paceEffortSplit(sessions), [sessions]);
   const paceMoves = useMemo(() => pacedRunMoves(sessions), [sessions]);
   const active = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
   const pace = useMemo(() => (active ? paceSeries(sessions, active).map((p) => p.secPerKm) : []), [sessions, active]);
@@ -47,8 +47,9 @@ export default function Running() {
       </Screen>
     );
 
-  const splitTotal = split.easy + split.moderate + split.hard || 1;
-  const easyPct = Math.round((split.easy / splitTotal) * 100);
+  const splitTotal = split.easy + split.moderate + split.hard;
+  const hasEffort = splitTotal > 0;
+  const easyPct = hasEffort ? Math.round((split.easy / splitTotal) * 100) : null;
   const maxKm = Math.max(...mileage.map((w) => w.km), 1);
 
   return (
@@ -60,7 +61,7 @@ export default function Running() {
         <Metric label={t("running.runs")} value={String(totals.efforts)} />
         <Metric label="KM" value={`${totals.distanceKm}`} color={C.blue} />
         <Metric label="H" value={`${Math.round(totals.minutes / 6) / 10}`} />
-        <Metric label={t("running.easyPct")} value={`${easyPct}%`} color={C.lime} />
+        {easyPct != null && <Metric label={t("running.easyPct")} value={`${easyPct}%`} color={C.lime} />}
       </View>
 
       {/* Weekly mileage bars */}
@@ -79,20 +80,23 @@ export default function Running() {
         </View>
       </Card>
 
-      {/* Effort split (easy/moderate/hard) */}
-      <Card>
-        <Kicker color={C.lime}>{t("running.effortSplit")}</Kicker>
-        <View style={{ flexDirection: "row", height: 14, borderRadius: 7, overflow: "hidden", marginTop: 12, backgroundColor: C.ink2 }}>
-          {([["easy", split.easy, C.lime], ["moderate", split.moderate, C.amber], ["hard", split.hard, C.red]] as const).map(
-            ([k, v, c]) => v > 0 && <View key={k} style={{ width: `${(v / splitTotal) * 100}%`, backgroundColor: c }} />,
-          )}
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 10 }}>
-          <Legend c={C.lime} label={`${t("running.easy")} ${split.easy}m`} />
-          <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
-          <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
-        </View>
-      </Card>
+      {/* Effort split (easy/moderate/hard) — only when intensity was logged */}
+      {hasEffort && (
+        <Card>
+          <Kicker color={C.lime}>{t("running.effortSplit")}</Kicker>
+          <View style={{ flexDirection: "row", height: 14, borderRadius: 7, overflow: "hidden", marginTop: 12, backgroundColor: C.ink2 }}>
+            {([["easy", split.easy, C.lime], ["moderate", split.moderate, C.amber], ["hard", split.hard, C.red]] as const).map(
+              ([k, v, c]) => v > 0 && <View key={k} style={{ width: `${(v / splitTotal) * 100}%`, backgroundColor: c }} />,
+            )}
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 10 }}>
+            <Legend c={C.lime} label={`${t("running.easy")} ${split.easy}m`} />
+            <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
+            <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
+          </View>
+          <Mono style={{ fontSize: 11, lineHeight: 16, marginTop: 10 }}>{t("running.paceNote")}</Mono>
+        </Card>
+      )}
 
       {/* Pace trend per move */}
       {paceMoves.length > 0 && (

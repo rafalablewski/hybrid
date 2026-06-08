@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runTotals, runStats, weeklyMileage, effortSplit, pacedRunMoves } from "./running";
+import { runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves } from "./running";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-10T12:00:00.000Z").getTime();
@@ -48,10 +48,27 @@ describe("running analytics", () => {
     expect(wk[0]!.km).toBe(6); // 7-14 days ago: Row Intervals (9 days ago)
   });
 
-  it("effortSplit divides cardio minutes into easy/moderate/hard by RPE", () => {
-    const e = effortSplit(sessions);
-    expect(e.easy).toBe(48 + 55 + 32); // RPE ≤ 6
-    expect(e.hard).toBe(30); // RPE 8 row intervals
+  it("paceEffortSplit zones a move's minutes relative to its best pace", () => {
+    // One move, real spread: 4:00/km (hard, best), 5:00/km (+25% → easy).
+    const runs: LoggedSession[] = [
+      run("h", daysAgo(1), "Tempo Run", 10, 40), // 4:00/km
+      run("e", daysAgo(2), "Tempo Run", 10, 50), // 5:00/km, 25% slower → easy
+    ];
+    const e = paceEffortSplit(runs);
+    expect(e.hard).toBe(40);
+    expect(e.easy).toBe(50);
     expect(e.moderate).toBe(0);
+  });
+
+  it("paceEffortSplit calls a tightly-clustered move steady (no false hard)", () => {
+    // Two easy runs ~3% apart → not enough spread to judge intensity.
+    const runs: LoggedSession[] = [
+      run("a", daysAgo(1), "Easy Run", 10, 60), // 6:00/km
+      run("b", daysAgo(2), "Easy Run", 10, 61.5), // ~6:09/km, ~2.5% slower
+    ];
+    const e = paceEffortSplit(runs);
+    expect(e.hard).toBe(0);
+    expect(e.easy).toBe(0);
+    expect(e.moderate).toBe(122); // 60 + 61.5 minutes, both steady
   });
 });
