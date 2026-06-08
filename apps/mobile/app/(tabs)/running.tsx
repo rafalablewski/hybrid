@@ -4,7 +4,7 @@ import {
   runTotals,
   runStats,
   weeklyMileage,
-  effortSplit,
+  paceEffortSplit,
   pacedRunMoves,
   paceSeries,
   paceClock,
@@ -31,7 +31,7 @@ export default function Running() {
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);
   const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
-  const split = useMemo(() => effortSplit(sessions), [sessions]);
+  const split = useMemo(() => paceEffortSplit(sessions), [sessions]);
   const paceMoves = useMemo(() => pacedRunMoves(sessions), [sessions]);
   const active = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
   const pace = useMemo(() => (active ? paceSeries(sessions, active).map((p) => p.secPerKm) : []), [sessions, active]);
@@ -94,6 +94,7 @@ export default function Running() {
             <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
           </View>
+          <Mono style={{ fontSize: 11, lineHeight: 16, marginTop: 10 }}>{t("running.paceNote")}</Mono>
         </Card>
       )}
 

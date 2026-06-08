@@ -16,7 +16,7 @@ import {
   runTotals,
   runStats,
   weeklyMileage,
-  effortSplit,
+  paceEffortSplit,
   pacedRunMoves,
   paceSeries,
   paceClock,
@@ -40,7 +40,7 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);
   const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
-  const split = useMemo(() => effortSplit(sessions), [sessions]);
+  const split = useMemo(() => paceEffortSplit(sessions), [sessions]);
   const paceMoves = useMemo(() => pacedRunMoves(sessions), [sessions]);
   const [move, setMove] = useState("");
   const active = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
@@ -108,7 +108,7 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
       {hasEffort && (
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-            Effort split · minutes by RPE
+            Pace zones · minutes (from pace)
           </Mono>
           <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginTop: 12, background: INK2 }}>
             {([["easy", split.easy, LIME], ["moderate", split.moderate, AMBER], ["hard", split.hard, RED]] as const).map(
@@ -116,10 +116,13 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
             )}
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
-            <Legend c={LIME} label={`Easy (RPE ≤6) · ${split.easy} min`} />
-            <Legend c={AMBER} label={`Moderate (7) · ${split.moderate} min`} />
-            <Legend c={RED} label={`Hard (≥8) · ${split.hard} min`} />
+            <Legend c={LIME} label={`Easy · ${split.easy} min`} />
+            <Legend c={AMBER} label={`Steady · ${split.moderate} min`} />
+            <Legend c={RED} label={`Hard · ${split.hard} min`} />
           </div>
+          <Mono s={{ fontSize: 11, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+            Intensity is judged from pace, relative to your best for each movement — no manual input.
+          </Mono>
         </Card>
       )}
 

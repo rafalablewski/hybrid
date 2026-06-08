@@ -109,24 +109,49 @@ export function weeklyMileage(sessions: LoggedSession[], weeks = 8, now = Date.n
 export interface EffortSplit {
   /** minutes at an easy effort (RPE ≤ 6) */
   easy: number;
-  /** minutes at a moderate effort (RPE 7) */
+  /** minutes at a steady effort (near your typical pace, or sparse data) */
   moderate: number;
-  /** minutes at a hard effort (RPE ≥ 8) */
+  /** minutes at a hard effort (near your best pace for that move) */
   hard: number;
 }
 
 /**
- * Cardio minutes split by perceived effort (the 80/20 lens): easy (RPE ≤ 6),
- * moderate (7), hard (≥ 8). Only efforts that logged both minutes + RPE count.
+ * Cardio minutes split into pace zones — easy / steady / hard — DERIVED FROM
+ * PACE, no manual input. Intensity is relative to the athlete's own paces PER
+ * MOVE (a 5:00/km means different things to different runners), anchored to
+ * their best (fastest) pace for that move:
+ *   hard  → within ~6% of best pace (a quality / threshold effort)
+ *   easy  → ≥16% slower than best (a true recovery / base run)
+ *   steady→ in between
+ * When a move's paces are tightly clustered (<8% spread) there's no meaningful
+ * easy↔hard distinction yet — those minutes count as steady rather than
+ * pretending to know the intensity. Needs only distance + minutes.
  */
-export function effortSplit(sessions: LoggedSession[]): EffortSplit {
-  const split: EffortSplit = { easy: 0, moderate: 0, hard: 0 };
+export function paceEffortSplit(sessions: LoggedSession[]): EffortSplit {
+  const byMove = new Map<string, { secPerKm: number; minutes: number }[]>();
   for (const s of sessions)
     for (const b of s.blocks)
-      if (isCardio(b) && b.minutes && b.minutes > 0 && b.rpe != null) {
-        if (b.rpe <= 6) split.easy += b.minutes;
-        else if (b.rpe === 7) split.moderate += b.minutes;
-        else split.hard += b.minutes;
+      if (isCardio(b) && b.distance && b.distance > 0 && b.minutes && b.minutes > 0) {
+        const arr = byMove.get(b.name) ?? [];
+        arr.push({ secPerKm: (b.minutes * 60) / b.distance, minutes: b.minutes });
+        byMove.set(b.name, arr);
       }
+
+  const split: EffortSplit = { easy: 0, moderate: 0, hard: 0 };
+  for (const efforts of byMove.values()) {
+    const best = Math.min(...efforts.map((e) => e.secPerKm));
+    const worst = Math.max(...efforts.map((e) => e.secPerKm));
+    const meaningfulSpread = best > 0 && (worst - best) / best >= 0.08;
+    for (const e of efforts) {
+      if (!meaningfulSpread) {
+        split.moderate += e.minutes;
+        continue;
+      }
+      const ratio = e.secPerKm / best;
+      if (ratio <= 1.06) split.hard += e.minutes;
+      else if (ratio >= 1.16) split.easy += e.minutes;
+      else split.moderate += e.minutes;
+    }
+  }
   return { easy: Math.round(split.easy), moderate: Math.round(split.moderate), hard: Math.round(split.hard) };
 }
