@@ -21,7 +21,6 @@ import {
   isSupersettedWithPrev,
   RPE_SCALE,
   RPE_INTRO,
-  RPE_CARDIO_NOTE,
   MOVEMENTS,
   type SessionBlock,
   type LoggedSession,
@@ -265,25 +264,21 @@ export default function Workout() {
     for (const x of exercises) {
       if (x.kind === "cardio") {
         const minutes = parseFloat(x.minutes);
-        const rpe = parseFloat(x.rpe);
         const distance = parseFloat(x.distance);
-        if (!Number.isFinite(minutes) && !Number.isFinite(rpe) && !Number.isFinite(distance)) continue;
+        if (!Number.isFinite(minutes) && !Number.isFinite(distance)) continue;
         blocks.push({
           kind: "cardio",
           name: x.name,
           ...(Number.isFinite(distance) ? { distance } : {}),
           ...(Number.isFinite(minutes) ? { minutes } : {}),
-          ...(Number.isFinite(rpe) ? { rpe } : {}),
         });
       } else if (x.kind === "conditioning") {
         const minutes = parseFloat(x.minutes);
-        const rpe = parseFloat(x.rpe);
-        if (!Number.isFinite(minutes) && !Number.isFinite(rpe)) continue;
+        if (!Number.isFinite(minutes)) continue;
         blocks.push({
           kind: "conditioning",
           name: x.name,
           ...(Number.isFinite(minutes) ? { minutes } : {}),
-          ...(Number.isFinite(rpe) ? { rpe } : {}),
         });
       } else {
         const sets = x.sets
@@ -514,10 +509,6 @@ export default function Workout() {
                     <ColHead>MIN</ColHead>
                     <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <ColHead>RPE</ColHead>
-                    <Cell value={x.rpe} onChange={(v) => condField(x.uid, "rpe", v)} />
-                  </View>
                 </View>
                 {(() => {
                   const pace = pacePerKm({ distance: parseFloat(x.distance), minutes: parseFloat(x.minutes) });
@@ -531,10 +522,6 @@ export default function Workout() {
                 <View style={{ flex: 1 }}>
                   <ColHead>MIN</ColHead>
                   <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <ColHead>RPE</ColHead>
-                  <Cell value={x.rpe} onChange={(v) => condField(x.uid, "rpe", v)} />
                 </View>
               </View>
             )}
@@ -655,7 +642,6 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: 13, color: C.chalk }}>{step.meaning}</Text>
             </View>
           ))}
-          <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, lineHeight: 18, marginTop: 14 }}>{RPE_CARDIO_NOTE}</Text>
         </Pressable>
       </Pressable>
     </Modal>

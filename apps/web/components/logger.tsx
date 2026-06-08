@@ -54,7 +54,6 @@ export default function Logger({
             name: b.name,
             ...(b.distance != null ? { distance: b.distance } : {}),
             ...(b.minutes != null ? { minutes: b.minutes } : {}),
-            ...(b.rpe != null ? { rpe: b.rpe } : {}),
           };
         // Intervals — keep work/rest × rounds and derive editable minutes.
         return {
@@ -65,7 +64,6 @@ export default function Logger({
           ...(b.work != null ? { work: b.work } : {}),
           ...(b.rest != null ? { rest: b.rest } : {}),
           ...(b.rounds != null ? { rounds: b.rounds } : {}),
-          ...(b.rpe != null ? { rpe: b.rpe } : {}),
           minutes:
             b.minutes ??
             (b.work && b.rest && b.rounds ? Math.round((b.rounds * (b.work + b.rest)) / 60) : undefined),
