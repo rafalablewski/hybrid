@@ -1,10 +1,10 @@
-import type { LoggedSession, ConditioningBlock } from "./session";
+import type { LoggedSession, CardioBlock } from "./session";
 
-// Running / cardio analytics — pure aggregates over logged conditioning blocks,
-// so the web Running screen (and anything else) reads one source of truth. A
-// "cardio effort" is any conditioning block; pace stats need distance + minutes.
+// Running / cardio analytics — pure aggregates over logged cardio blocks, so the
+// web/mobile Running screens (and anything else) read one source of truth. A
+// "cardio effort" is any cardio block; pace stats need distance + minutes.
 
-const isCardio = (b: { kind: string }): b is ConditioningBlock => b.kind === "conditioning";
+const isCardio = (b: { kind: string }): b is CardioBlock => b.kind === "cardio";
 const WEEK = 7 * 86_400_000;
 const ms = (iso: string) => new Date(iso).getTime();
 

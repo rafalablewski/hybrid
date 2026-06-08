@@ -5,7 +5,7 @@ import {
   computeLoad,
   toTrainingLog,
   toBiometrics,
-  type SessionBlock,
+  migrateBlocks,
   type LoggedSession,
   type Signal,
 } from "@hybrid/core";
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         title: s.title,
         startedAt: s.startedAt.toISOString(),
         completedAt: s.completedAt ? s.completedAt.toISOString() : null,
-        blocks: s.blocks as unknown as SessionBlock[],
+        blocks: migrateBlocks(s.blocks),
         readiness: s.readiness,
       }));
       const signals: Signal[] = sigRows.map((r) => ({

@@ -8,6 +8,7 @@ import {
   e1rmSeries,
   volumeByMuscle,
   conditioningSummary,
+  cardioSummary,
   supersetLabels,
   paceSeries,
   paceClock,
@@ -130,9 +131,9 @@ export default function SessionDetail() {
           <Card key={i}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? C.lime : C.blue }}>{b.kind.toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? C.lime : b.kind === "cardio" ? C.blue : C.violet }}>{b.kind.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
-                  {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "conditioning" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
+                  {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
                 </Text>
                 {ssLabels[i] && (
                   <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ {ssLabels[i]}</Text>
@@ -157,13 +158,13 @@ export default function SessionDetail() {
                 ))}
                 <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
               </View>
-            ) : (
+            ) : b.kind === "cardio" ? (
               <>
-                <Mono style={{ marginTop: 8 }}>
-                  {conditioningSummary(b, { rpe: true })}
-                </Mono>
+                <Mono style={{ marginTop: 8 }}>{cardioSummary(b, { rpe: true })}</Mono>
                 <PaceTrend series={paceSeries(all, b.name).map((p) => p.secPerKm)} t={t} />
               </>
+            ) : (
+              <Mono style={{ marginTop: 8 }}>{conditioningSummary(b, { rpe: true })}</Mono>
             )}
           </Card>
         ))}

@@ -3,6 +3,7 @@ import type {
   Prescription,
   PrescribedStrengthBlock,
   PrescribedConditioningBlock,
+  PrescribedCardioBlock,
   TrainingLog,
   LogItem,
   Biometrics,
@@ -189,12 +190,12 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
     }
   }
 
-  // ---- 3) conditioning last, rounds scaled to the envelope volume ----
+  // ---- 3) conditioning / cardio last, dose-scaled to the envelope volume ----
   const dailyCond = daily.blocks.find(
-    (b): b is PrescribedConditioningBlock => b.kind === "conditioning",
+    (b): b is PrescribedConditioningBlock | PrescribedCardioBlock => b.kind === "conditioning" || b.kind === "cardio",
   );
   if (dailyCond) {
-    if (dailyCond.work != null && dailyCond.rest != null && dailyCond.rounds != null) {
+    if (dailyCond.kind === "conditioning" && dailyCond.work != null && dailyCond.rest != null && dailyCond.rounds != null) {
       // Interval prescription: scale rounds to the week's volume envelope.
       const rounds = Math.max(1, Math.round(dailyCond.rounds * volumeFactor));
       blocks.push({
@@ -209,15 +210,17 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
     } else {
       // Steady cardio (e.g. easy run): distance + minutes target, dose-scaled.
       const minutes = Math.max(1, Math.round((dailyCond.minutes ?? 20) * volumeFactor));
+      const distance = dailyCond.kind === "cardio" ? dailyCond.distance : undefined;
+      const paceTarget = dailyCond.kind === "cardio" ? dailyCond.paceTarget : undefined;
       blocks.push({
         kind: "conditioning",
         name: dailyCond.name,
         source: "daily",
         sets: 1,
         reps: 0,
-        format: dailyCond.format,
-        scheme: dailyCond.distance
-          ? `${dailyCond.distance} km${dailyCond.paceTarget ? ` @ ${dailyCond.paceTarget}` : ""} · ${minutes} min`
+        format: dailyCond.kind === "conditioning" ? dailyCond.format : "Steady",
+        scheme: distance
+          ? `${distance} km${paceTarget ? ` @ ${paceTarget}` : ""} · ${minutes} min`
           : `${minutes} min`,
       });
     }
@@ -338,9 +341,10 @@ function distribute<T>(items: T[], n: number): T[][] {
 // muscle fatigue (they're not in MOVEMENTS) — harmless; the main lifts drive it.
 function dayToLogItems(plan: ReconciledPlan, daily: Prescription): LogItem[] {
   const cond = daily.blocks.find(
-    (b): b is PrescribedConditioningBlock => b.kind === "conditioning",
+    (b): b is PrescribedConditioningBlock | PrescribedCardioBlock => b.kind === "conditioning" || b.kind === "cardio",
   );
-  const perRoundSec = cond?.work != null && cond?.rest != null ? cond.work + cond.rest : 60;
+  const perRoundSec =
+    cond?.kind === "conditioning" && cond.work != null && cond.rest != null ? cond.work + cond.rest : 60;
   return plan.blocks.map((b) =>
     b.kind === "strength"
       ? { move: b.name, hardSets: b.sets, topRpe: 8 }

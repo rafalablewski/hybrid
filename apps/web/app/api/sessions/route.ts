@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { migrateBlocks } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -10,11 +11,14 @@ export async function GET(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const sessions = await prisma.session.findMany({
+  const rows = await prisma.session.findMany({
     where: { userId: user.id },
     orderBy: { startedAt: "desc" },
     take: 50,
   });
+  // Upgrade runs logged before the cardio/conditioning split so both clients
+  // read them as cardio (migrateBlocks is idempotent).
+  const sessions = rows.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }));
   return NextResponse.json({ sessions });
 }
 

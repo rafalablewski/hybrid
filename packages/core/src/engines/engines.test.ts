@@ -111,11 +111,11 @@ describe("progressionSignal", () => {
 });
 
 describe("prescribeSession", () => {
-  it("returns a strength block + a conditioning block with an explanation", () => {
+  it("returns a strength block + a cardio/conditioning block with an explanation", () => {
     const rx = prescribeSession(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
     expect(rx.blocks).toHaveLength(2);
     expect(rx.blocks[0]!.kind).toBe("strength");
-    expect(rx.blocks[1]!.kind).toBe("conditioning");
+    expect(["cardio", "conditioning"]).toContain(rx.blocks[1]!.kind);
     expect(rx.why.length).toBeGreaterThan(20);
     expect(rx.readiness).toBeGreaterThanOrEqual(35);
   });
@@ -147,12 +147,11 @@ describe("prescribeSession", () => {
     ];
     const rx = prescribeSession(log);
     expect(rx.pickSys).toBe("aerobic");
-    const cond = rx.blocks.find((b) => b.kind === "conditioning")!;
-    expect(cond.kind).toBe("conditioning");
-    if (cond.kind === "conditioning") {
-      expect(cond.distance).toBeGreaterThan(0);
-      expect(cond.paceTarget).toBe("5:00 /km");
-      expect(cond.work).toBeUndefined();
+    const cardio = rx.blocks.find((b) => b.kind === "cardio")!;
+    expect(cardio.kind).toBe("cardio");
+    if (cardio.kind === "cardio") {
+      expect(cardio.distance).toBeGreaterThan(0);
+      expect(cardio.paceTarget).toBe("5:00 /km");
     }
     expect(rx.why).toContain("km run");
   });

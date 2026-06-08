@@ -157,9 +157,8 @@ export function prescribeSession(
     run
       ? {
           uid: 902,
-          kind: "conditioning",
+          kind: "cardio",
           name: condMove,
-          format: condFormat,
           distance: run.distance,
           minutes: run.minutes,
           paceTarget: formatPace(run.paceSecPerKm),

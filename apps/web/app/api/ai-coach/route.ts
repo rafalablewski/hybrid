@@ -15,7 +15,7 @@ import {
   paceSeries,
   paceClock,
   type LoggedSession,
-  type SessionBlock,
+  migrateBlocks,
   type Signal,
 } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     title: r.title,
     startedAt: r.startedAt.toISOString(),
     completedAt: r.completedAt?.toISOString() ?? null,
-    blocks: r.blocks as unknown as SessionBlock[],
+    blocks: migrateBlocks(r.blocks),
     readiness: r.readiness,
   }));
 
@@ -93,7 +93,13 @@ export async function POST(request: Request) {
     .map((s) => `- ${s.title} (${new Date(s.startedAt).toLocaleDateString()}): ${sessionVolume(s.blocks).toLocaleString()}kg, ${s.blocks.length} blocks`)
     .join("\n");
   const prescribed = rx.blocks
-    .map((b) => (b.kind === "strength" ? `${b.name} ${b.sets.length}×${b.sets[0]?.reps ?? ""} @ ${b.sets[0]?.load ?? ""}kg` : `${b.name} (${b.format})`))
+    .map((b) =>
+      b.kind === "strength"
+        ? `${b.name} ${b.sets.length}×${b.sets[0]?.reps ?? ""} @ ${b.sets[0]?.load ?? ""}kg`
+        : b.kind === "cardio"
+          ? `${b.name} ${b.distance ?? "?"}km${b.paceTarget ? ` @ ${b.paceTarget}` : ""}`
+          : `${b.name} (${b.format})`,
+    )
     .join("; ");
 
   // Cardio context — mileage, recent pace, and the easy/hard balance.

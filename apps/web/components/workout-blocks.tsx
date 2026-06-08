@@ -2,8 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, RPE_CARDIO_NOTE, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
+import { RPE_SCALE, RPE_INTRO, RPE_CARDIO_NOTE, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
@@ -106,11 +106,10 @@ export default function WorkoutBlocks({
       ...bs,
       { uid: uid(), kind: "strength", name: "Back Squat", sets: [{ load: "", reps: "", rpe: "" }] },
     ]);
+  const addCardio = () =>
+    setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name: "Run" }]);
   const addConditioning = () =>
-    setBlocks((bs) => [
-      ...bs,
-      { uid: uid(), kind: "conditioning", name: "Row Intervals", format: "", minutes: 12, rpe: 8 },
-    ]);
+    setBlocks((bs) => [...bs, { uid: uid(), kind: "conditioning", name: "Row Intervals", format: "" }]);
   const removeBlock = (u: string) => setBlocks((bs) => bs.filter((b) => b.uid !== u));
   const rename = (u: string, name: string) => patch(u, (b) => ({ ...b, name }) as EditableBlock);
 
@@ -169,7 +168,7 @@ export default function WorkoutBlocks({
   ) => {
     setCondDrafts((d) => ({ ...d, [`${u}:${key}`]: val }));
     patch(u, (b) =>
-      b.kind === "conditioning" ? ({ ...b, [key]: condNum(val) } as EditableBlock) : b,
+      b.kind === "cardio" || b.kind === "conditioning" ? ({ ...b, [key]: condNum(val) } as EditableBlock) : b,
     );
   };
 
@@ -186,7 +185,7 @@ export default function WorkoutBlocks({
       {blocks.map((b, idx) => (
         <Card key={b.uid} style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : BLUE}>
+            <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : b.kind === "cardio" ? BLUE : VIOLET}>
               {b.kind}
             </Mono>
             {ssLabels[idx] && (
@@ -287,20 +286,37 @@ export default function WorkoutBlocks({
                 </button>
               </div>
             </>
+          ) : b.kind === "cardio" ? (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                {["dist (km)", "minutes", "rpe"].map((h) => (
+                  <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
+                    {h}
+                  </Mono>
+                ))}
+                <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
+                <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
+                <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="6" style={input} />
+              </div>
+              {pacePerKm(b) && (
+                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={BLUE}>
+                  pace {pacePerKm(b)}
+                </Mono>
+              )}
+            </>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
-              {["format", "dist (km)", "work (s)", "rest (s)", "rounds", "minutes", "rpe"].map((h) => (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+              {["format", "work (s)", "rest (s)", "rounds", "minutes", "rpe"].map((h) => (
                 <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                   {h}
                 </Mono>
               ))}
-              <input value={b.format ?? ""} onChange={(e) => setCondStr(b.uid, "format", e.target.value)} placeholder="run" style={input} />
-              <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
+              <input value={b.format ?? ""} onChange={(e) => setCondStr(b.uid, "format", e.target.value)} placeholder="AMRAP" style={input} />
               <input value={condVal(b.uid, "work", b.work)} onChange={(e) => setCondNum(b.uid, "work", e.target.value)} placeholder="40" style={input} />
               <input value={condVal(b.uid, "rest", b.rest)} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
               <input value={condVal(b.uid, "rounds", b.rounds)} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
-              <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
-              <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="6" style={input} />
+              <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
+              <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="8" style={input} />
             </div>
           )}
         </Card>
@@ -318,7 +334,10 @@ export default function WorkoutBlocks({
         <button onClick={addStrength} style={blockBtn(LIME)}>
           + Strength
         </button>
-        <button onClick={addConditioning} style={blockBtn(BLUE)}>
+        <button onClick={addCardio} style={blockBtn(BLUE)}>
+          + Cardio
+        </button>
+        <button onClick={addConditioning} style={blockBtn(VIOLET)}>
           + Conditioning
         </button>
         <button onClick={() => setRpeHelp((v) => !v)} style={blockBtn(ASH)}>

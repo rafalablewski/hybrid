@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sessionVolume, type SessionBlock } from "@hybrid/core";
+import { sessionVolume, migrateBlocks } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       const last = sessions[0] ?? null;
       const last7 = sessions.filter((s) => s.startedAt >= weekAgo).length;
       const volume = sessions.reduce(
-        (sum, s) => sum + sessionVolume(s.blocks as unknown as SessionBlock[]),
+        (sum, s) => sum + sessionVolume(migrateBlocks(s.blocks)),
         0,
       );
       return {

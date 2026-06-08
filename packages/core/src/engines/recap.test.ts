@@ -71,8 +71,8 @@ describe("weeklyRecap", () => {
 
   it("sums the week's cardio distance and surfaces a cardio PR", () => {
     const runs: LoggedSession[] = [
-      sess("old", daysAgo(20), daysAgo(20), [{ kind: "conditioning", name: "Easy Run", distance: 5, minutes: 30 }]),
-      sess("now", daysAgo(2), daysAgo(2), [{ kind: "conditioning", name: "Easy Run", distance: 8, minutes: 46 }]),
+      sess("old", daysAgo(20), daysAgo(20), [{ kind: "cardio", name: "Easy Run", distance: 5, minutes: 30 }]),
+      sess("now", daysAgo(2), daysAgo(2), [{ kind: "cardio", name: "Easy Run", distance: 8, minutes: 46 }]),
     ];
     const r = weeklyRecap(runs, NOW);
     expect(r.distanceKm).toBe(8); // only this week's run counts

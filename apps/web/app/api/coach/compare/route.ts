@@ -3,6 +3,7 @@ import {
   e1rm,
   sessionVolume,
   velocityProfileFor,
+  migrateBlocks,
   type SessionBlock,
   type StrengthBlock,
   type LoggedSession,
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
       title: s.title,
       startedAt: s.startedAt.toISOString(),
       completedAt: s.completedAt ? s.completedAt.toISOString() : null,
-      blocks: s.blocks as unknown as SessionBlock[],
+      blocks: migrateBlocks(s.blocks),
       readiness: s.readiness,
     }));
     return {
