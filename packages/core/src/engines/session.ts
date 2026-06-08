@@ -93,10 +93,39 @@ export function blockBestE1rm(b: StrengthBlock): number {
  */
 export function pacePerKm(b: ConditioningBlock): string | null {
   if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
-  const secPerKm = (b.minutes * 60) / b.distance;
+  return `${paceClock((b.minutes * 60) / b.distance)} /km`;
+}
+
+/** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */
+export function paceClock(secPerKm: number): string {
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
-  return `${m}:${String(s).padStart(2, "0")} /km`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export interface PacePoint {
+  date: string; // ISO
+  secPerKm: number;
+}
+
+/** Pace (sec/km) over time for one cardio move, oldest → newest. Lower is faster. */
+export function paceSeries(sessions: LoggedSession[], move: string): PacePoint[] {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
+  const pts: PacePoint[] = [];
+  for (const s of sorted)
+    for (const b of s.blocks)
+      if (b.kind === "conditioning" && b.name === move && b.distance && b.distance > 0 && b.minutes && b.minutes > 0)
+        pts.push({ date: s.startedAt, secPerKm: Math.round((b.minutes * 60) / b.distance) });
+  return pts;
+}
+
+/** The headline cardio move in a session (the one with the longest paced distance). */
+export function headlineRunMove(blocks: SessionBlock[]): string | undefined {
+  return blocks
+    .filter((b): b is ConditioningBlock => b.kind === "conditioning" && !!b.distance && !!b.minutes)
+    .sort((a, b) => (b.distance ?? 0) - (a.distance ?? 0))[0]?.name;
 }
 
 /**

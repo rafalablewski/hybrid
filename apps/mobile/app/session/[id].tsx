@@ -9,6 +9,8 @@ import {
   volumeByMuscle,
   conditioningSummary,
   supersetLabels,
+  paceSeries,
+  paceClock,
   type LoggedSession,
   type PrHit,
 } from "@hybrid/core";
@@ -143,9 +145,12 @@ export default function SessionDetail() {
                 <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
               </View>
             ) : (
-              <Mono style={{ marginTop: 8 }}>
-                {conditioningSummary(b, { rpe: true })}
-              </Mono>
+              <>
+                <Mono style={{ marginTop: 8 }}>
+                  {conditioningSummary(b, { rpe: true })}
+                </Mono>
+                <PaceTrend series={paceSeries(all, b.name).map((p) => p.secPerKm)} t={t} />
+              </>
             )}
           </Card>
         ))}
@@ -238,6 +243,40 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
               height: 6 + ((v - min) / range) * 22,
               borderRadius: 2,
               backgroundColor: i === series.length - 1 ? C.lime : `${C.lime}55`,
+            }}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// Dependency-free pace trend (sec/km). Lower is faster, so a faster bar is
+// TALLER; latest highlighted, delta shown as time saved (lime) or lost (amber).
+function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  const delta = series[series.length - 1]! - series[0]!; // negative = got faster
+  const sign = delta <= 0 ? "−" : "+";
+  return (
+    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <Kicker>{t("session.paceTrend")}</Kicker>
+        <Mono color={delta <= 0 ? C.lime : C.amber}>
+          {sign}{paceClock(Math.abs(delta))} /km · {series.length}×
+        </Mono>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
+        {series.map((v, i) => (
+          <View
+            key={i}
+            style={{
+              flex: 1,
+              height: 6 + ((max - v) / range) * 22,
+              borderRadius: 2,
+              backgroundColor: i === series.length - 1 ? C.blue : `${C.blue}55`,
             }}
           />
         ))}

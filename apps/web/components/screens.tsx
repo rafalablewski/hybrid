@@ -50,6 +50,9 @@ import {
   liftNames,
   blockSummary,
   supersetLabels,
+  paceSeries,
+  headlineRunMove,
+  paceClock,
   type LoggedSession,
   type Macrocycle,
   type Biometrics,
@@ -708,6 +711,10 @@ function SessionDetail({
     .sort((a, b) => b.e - a.e)[0]?.name;
   const series = topLift ? e1rmSeries(all, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm })) : [];
 
+  // The session's headline run → its pace (sec/km) trend across all history.
+  const runMove = headlineRunMove(session.blocks);
+  const paceData = runMove ? paceSeries(all, runMove).map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm })) : [];
+
   const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
     p.previous == null ? `${p.lift} ${p.e1rm}kg (first!)` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
 
@@ -782,6 +789,27 @@ function SessionDetail({
           </ChartFrame>
         )}
       </div>
+
+      {paceData.length > 1 && (
+        <ChartFrame title={`${runMove} · pace`} kicker="Lower is faster · across your logs">
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={paceData}>
+              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+              <YAxis
+                stroke={ASH}
+                style={{ ...mono, fontSize: 11 }}
+                reversed
+                domain={["auto", "auto"]}
+                tickFormatter={(v: number) => paceClock(v)}
+                width={48}
+              />
+              <Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} />
+              <Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+      )}
 
       {/* Per-exercise breakdown */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

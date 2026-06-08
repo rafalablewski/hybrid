@@ -13,6 +13,9 @@ import {
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
+  paceSeries,
+  headlineRunMove,
+  paceClock,
 } from "./session";
 import type { LoggedSession } from "./session";
 
@@ -96,6 +99,26 @@ describe("cardio pace", () => {
   it("pacePerKm is null without both distance and minutes", () => {
     expect(pacePerKm({ kind: "conditioning", name: "Run", minutes: 50 })).toBeNull();
     expect(pacePerKm({ kind: "conditioning", name: "Run", distance: 8 })).toBeNull();
+  });
+  it("paceClock formats seconds-per-km as m:ss", () => {
+    expect(paceClock(342)).toBe("5:42");
+    expect(paceClock(300)).toBe("5:00");
+  });
+  it("paceSeries tracks one move's pace over time, oldest first", () => {
+    const runs: LoggedSession[] = [
+      { id: "b", title: "Run", startedAt: "2026-05-10T00:00:00.000Z", blocks: [{ kind: "conditioning", name: "Easy Run", distance: 10, minutes: 55 }] },
+      { id: "a", title: "Run", startedAt: "2026-05-03T00:00:00.000Z", blocks: [{ kind: "conditioning", name: "Easy Run", distance: 10, minutes: 60 }] },
+    ];
+    expect(paceSeries(runs, "Easy Run").map((p) => p.secPerKm)).toEqual([360, 330]);
+  });
+  it("headlineRunMove picks the longest paced distance", () => {
+    expect(
+      headlineRunMove([
+        { kind: "conditioning", name: "Warm-up Jog", distance: 2, minutes: 12 },
+        { kind: "conditioning", name: "Long Run", distance: 15, minutes: 80 },
+        { kind: "strength", name: "Squat", sets: [] },
+      ]),
+    ).toBe("Long Run");
   });
 });
 
