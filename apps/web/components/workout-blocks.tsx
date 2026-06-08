@@ -91,6 +91,12 @@ export default function WorkoutBlocks({
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
+  // Raw text buffer for the conditioning number fields so a mid-typed decimal
+  // ("8." or "8.5") survives — the block stores a number, but binding the input
+  // straight to String(number) would strip the trailing dot as you type.
+  const [condDrafts, setCondDrafts] = useState<Record<string, string>>({});
+  const condVal = (u: string, key: string, n: number | undefined) =>
+    condDrafts[`${u}:${key}`] ?? (n == null ? "" : String(n));
 
   const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
     setBlocks((bs) => bs.map((b) => (b.uid === u ? fn(b) : b)));
@@ -160,10 +166,12 @@ export default function WorkoutBlocks({
     u: string,
     key: "work" | "rest" | "rounds" | "minutes" | "rpe" | "distance",
     val: string,
-  ) =>
+  ) => {
+    setCondDrafts((d) => ({ ...d, [`${u}:${key}`]: val }));
     patch(u, (b) =>
       b.kind === "conditioning" ? ({ ...b, [key]: condNum(val) } as EditableBlock) : b,
     );
+  };
 
   const ssLabels = supersetLabels(blocks);
 
@@ -287,12 +295,12 @@ export default function WorkoutBlocks({
                 </Mono>
               ))}
               <input value={b.format ?? ""} onChange={(e) => setCondStr(b.uid, "format", e.target.value)} placeholder="run" style={input} />
-              <input value={String(b.distance ?? "")} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
-              <input value={String(b.work ?? "")} onChange={(e) => setCondNum(b.uid, "work", e.target.value)} placeholder="40" style={input} />
-              <input value={String(b.rest ?? "")} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
-              <input value={String(b.rounds ?? "")} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
-              <input value={String(b.minutes ?? "")} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
-              <input value={String(b.rpe ?? "")} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="6" style={input} />
+              <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
+              <input value={condVal(b.uid, "work", b.work)} onChange={(e) => setCondNum(b.uid, "work", e.target.value)} placeholder="40" style={input} />
+              <input value={condVal(b.uid, "rest", b.rest)} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
+              <input value={condVal(b.uid, "rounds", b.rounds)} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
+              <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
+              <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="6" style={input} />
             </div>
           )}
         </Card>

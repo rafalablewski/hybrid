@@ -98,8 +98,11 @@ export function pacePerKm(b: ConditioningBlock): string | null {
 
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */
 export function paceClock(secPerKm: number): string {
-  const m = Math.floor(secPerKm / 60);
-  const s = Math.round(secPerKm % 60);
+  // Round to whole seconds FIRST, then split — otherwise rounding the seconds
+  // component alone can yield 60 (e.g. 359.6 → "5:60" instead of "6:00").
+  const total = Math.round(secPerKm);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 

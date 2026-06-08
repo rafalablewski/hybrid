@@ -104,6 +104,10 @@ describe("cardio pace", () => {
     expect(paceClock(342)).toBe("5:42");
     expect(paceClock(300)).toBe("5:00");
   });
+  it("paceClock rounds the whole value so it never shows :60", () => {
+    expect(paceClock(359.6)).toBe("6:00"); // not 5:60
+    expect(paceClock(359.4)).toBe("5:59");
+  });
   it("paceSeries tracks one move's pace over time, oldest first", () => {
     const runs: LoggedSession[] = [
       { id: "b", title: "Run", startedAt: "2026-05-10T00:00:00.000Z", blocks: [{ kind: "conditioning", name: "Easy Run", distance: 10, minutes: 55 }] },
