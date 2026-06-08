@@ -52,12 +52,17 @@ export default function Logger({
               kind: "conditioning",
               name: b.name,
               format: b.format,
-              // keep the interval prescription (work/rest seconds × rounds) intact,
-              // and also derive minutes so the history/summary views stay populated
-              work: b.work,
-              rest: b.rest,
-              rounds: b.rounds,
-              minutes: Math.round((b.rounds * (b.work + b.rest)) / 60),
+              // Intervals (threshold/anaerobic): keep work/rest × rounds and derive
+              // minutes. Steady run (aerobic): carry the distance + minutes target so
+              // the logger's derived pace matches what the coach asked for.
+              ...(b.work != null ? { work: b.work } : {}),
+              ...(b.rest != null ? { rest: b.rest } : {}),
+              ...(b.rounds != null ? { rounds: b.rounds } : {}),
+              ...(b.distance != null ? { distance: b.distance } : {}),
+              ...(b.rpe != null ? { rpe: b.rpe } : {}),
+              minutes:
+                b.minutes ??
+                (b.work && b.rest && b.rounds ? Math.round((b.rounds * (b.work + b.rest)) / 60) : undefined),
             },
       ),
     );

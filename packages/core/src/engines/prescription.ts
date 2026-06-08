@@ -11,6 +11,49 @@ import { computeReadiness } from "./readiness";
 import { progressionSignal } from "./progression";
 import { velocityAtLoad, type LoadVelocityProfile } from "./velocity";
 
+export interface RunTarget {
+  /** km */
+  distance: number;
+  /** minutes (distance × pace) */
+  minutes: number;
+  /** seconds per km */
+  paceSecPerKm: number;
+}
+
+const median = (xs: number[]): number => {
+  if (!xs.length) return NaN;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
+};
+
+/** Format seconds-per-km as a pace string, e.g. 390 → "6:30 /km". */
+export function formatPace(secPerKm: number): string {
+  return `${Math.floor(secPerKm / 60)}:${String(Math.round(secPerKm % 60)).padStart(2, "0")} /km`;
+}
+
+/**
+ * Today's easy-run target, read off the athlete's REAL runs: their median easy
+ * pace and typical distance (scaled by readiness), so the AI prescribes a run
+ * they can actually hit. Falls back to a gentle 5 km @ 6:30/km when there's no
+ * run history yet (no fabricated personal pace).
+ */
+export function easyRunTarget(log: TrainingLog, readiness: number): RunTarget {
+  const runs = log
+    .flatMap((s) => s.items)
+    .filter((i) => i.system === "aerobic" && !!i.distance && i.distance > 0 && !!i.minutes && i.minutes > 0);
+  const paces = runs.map((r) => (r.minutes! * 60) / r.distance!);
+  const dists = runs.map((r) => r.distance!);
+  const medPace = median(paces);
+  const medDist = median(dists);
+  const paceSecPerKm = Number.isFinite(medPace) ? Math.round(medPace) : 390;
+  const base = Number.isFinite(medDist) ? medDist : 5;
+  const scale = readiness >= 70 ? 1 : readiness >= 50 ? 0.85 : 0.7;
+  const distance = Math.max(2, Math.round(base * scale * 2) / 2);
+  const minutes = Math.round((distance * paceSecPerKm) / 60);
+  return { distance, minutes, paceSecPerKm };
+}
+
 export interface PrescribeOptions {
   /**
    * Per-lift load–velocity profiles (e.g. from `velocityProfiles(sessions)`).
@@ -84,6 +127,7 @@ export function prescribeSession(
     Object.entries(fatigue.systems) as [EnergySystem, number][]
   ).sort((a, b) => a[1] - b[1]);
   const pickSys = sysOrder[0]![0];
+  const aerobic = pickSys === "aerobic";
   const condMove =
     pickSys === "aerobic"
       ? "Easy Run"
@@ -92,6 +136,9 @@ export function prescribeSession(
         : "Assault Bike";
   const condFormat =
     pickSys === "aerobic" ? "Steady" : pickSys === "threshold" ? "Intervals" : "EMOM";
+  // Aerobic day → a steady run with a real distance + goal pace (off the
+  // athlete's own runs); threshold/anaerobic stay interval-shaped.
+  const run = aerobic ? easyRunTarget(log, readiness) : null;
 
   // confidence rises with log depth — the network effect, made literal
   const confidence = Math.min(0.95, 0.45 + log.length * 0.08);
@@ -107,15 +154,26 @@ export function prescribeSession(
         rpe: "",
       })),
     },
-    {
-      uid: 902,
-      kind: "conditioning",
-      name: condMove,
-      format: condFormat,
-      work: 40,
-      rest: 20,
-      rounds: 8,
-    },
+    run
+      ? {
+          uid: 902,
+          kind: "conditioning",
+          name: condMove,
+          format: condFormat,
+          distance: run.distance,
+          minutes: run.minutes,
+          paceTarget: formatPace(run.paceSecPerKm),
+          rpe: 5,
+        }
+      : {
+          uid: 902,
+          kind: "conditioning",
+          name: condMove,
+          format: condFormat,
+          work: 40,
+          rest: 20,
+          rounds: 8,
+        },
   ];
 
   const loadBasis = useVel
@@ -126,7 +184,11 @@ export function prescribeSession(
     `Readiness ${readiness}/100. ` +
     `${primary.move} is your most-recovered heavy pattern, and your signal is "${primary.sig.action}" — ${primary.sig.reason}, ` +
     `so I prescribed ${sets}×${reps} @ ${workLoad}kg (${loadBasis}). ` +
-    `Your ${pickSys} system is the freshest, so today's conditioning is ${condMove.toLowerCase()} (${condFormat.toLowerCase()}) to balance the week.` +
+    `Your ${pickSys} system is the freshest, so today's conditioning is ${
+      run
+        ? `an easy ${run.distance} km run @ ~${formatPace(run.paceSecPerKm)} (≈${run.minutes} min, RPE 5)`
+        : `${condMove.toLowerCase()} (${condFormat.toLowerCase()})`
+    } to balance the week.` +
     (bio && bioAdj !== 0
       ? ` Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${bioAdj > 0 ? "HRV is above baseline and sleep was solid, so you're cleared to push." : "HRV dipped and sleep ran short, so I held the load back."}`
       : "");

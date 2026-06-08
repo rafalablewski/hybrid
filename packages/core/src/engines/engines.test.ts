@@ -5,6 +5,7 @@ import {
   biometricAdjustment,
   progressionSignal,
   prescribeSession,
+  easyRunTarget,
   buildMacrocycle,
   currentPhase,
   ALL_MUSCLES,
@@ -131,6 +132,46 @@ describe("prescribeSession", () => {
       { daysAgo: 0, items: [{ move: "Row Intervals", system: "threshold", minutes: 60, rpe: 9 }] },
     ];
     expect(prescribeSession(log).pickSys).not.toBe("threshold");
+  });
+
+  it("prescribes a steady run with distance + goal pace off the athlete's own runs", () => {
+    // Hammer threshold + anaerobic today so AEROBIC is the freshest system, with
+    // older runs on record (5:00/km over 10 km) for the engine to read pace from.
+    const log: TrainingLog = [
+      { daysAgo: 0, items: [
+        { move: "Row Intervals", system: "threshold", minutes: 40, rpe: 9 },
+        { move: "Assault Bike", system: "anaerobic", minutes: 25, rpe: 9 },
+      ] },
+      { daysAgo: 20, items: [{ move: "Easy Run", system: "aerobic", minutes: 50, rpe: 5, distance: 10 }] },
+      { daysAgo: 27, items: [{ move: "Easy Run", system: "aerobic", minutes: 50, rpe: 5, distance: 10 }] },
+    ];
+    const rx = prescribeSession(log);
+    expect(rx.pickSys).toBe("aerobic");
+    const cond = rx.blocks.find((b) => b.kind === "conditioning")!;
+    expect(cond.kind).toBe("conditioning");
+    if (cond.kind === "conditioning") {
+      expect(cond.distance).toBeGreaterThan(0);
+      expect(cond.paceTarget).toBe("5:00 /km");
+      expect(cond.work).toBeUndefined();
+    }
+    expect(rx.why).toContain("km run");
+  });
+});
+
+describe("easyRunTarget", () => {
+  it("derives pace from logged runs and scales distance down on a low-readiness day", () => {
+    const log: TrainingLog = [
+      { daysAgo: 3, items: [{ move: "Easy Run", system: "aerobic", minutes: 48, rpe: 5, distance: 8 }] },
+    ];
+    const fresh = easyRunTarget(log, 80);
+    const tired = easyRunTarget(log, 40);
+    expect(fresh.paceSecPerKm).toBe(360); // 48 min / 8 km = 6:00/km
+    expect(tired.distance).toBeLessThan(fresh.distance);
+  });
+  it("falls back to a gentle default with no run history", () => {
+    const t = easyRunTarget([], 75);
+    expect(t.distance).toBe(5);
+    expect(t.paceSecPerKm).toBe(390);
   });
 });
 

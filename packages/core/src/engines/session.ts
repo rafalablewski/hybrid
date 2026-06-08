@@ -292,7 +292,7 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
       const minutes =
         b.minutes ??
         (b.work && b.rest && b.rounds ? Math.round(((b.work + b.rest) * b.rounds) / 60) : 12);
-      return { move: b.name, system, minutes, rpe: b.rpe ?? 8 };
+      return { move: b.name, system, minutes, rpe: b.rpe ?? 8, ...(b.distance ? { distance: b.distance } : {}) };
     });
     return { daysAgo, items };
   });
