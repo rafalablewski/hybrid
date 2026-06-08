@@ -102,7 +102,7 @@ describe("reconciledToSessionBlocks", () => {
       if (b.kind === "strength") {
         expect(b.sets.length).toBe(src.sets); // one set entry per prescribed set
         if (src.load != null) expect(b.sets[0]!.load).toBe(String(src.load));
-      } else {
+      } else if (b.kind === "conditioning") {
         expect(b.rounds).toBe(src.sets);
       }
     }
