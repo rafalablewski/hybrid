@@ -235,12 +235,25 @@ export default function Workout() {
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
   const toggleDone = (u: string, i: number, val: boolean) => {
     setSetField(u, i, "done", val);
-    if (val) {
-      setRestSince(Date.now());
-      setRestNow(0);
-      restFired.current = false;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (!val) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    // No rest when this set flows straight into a drop set, or into the next
+    // exercise of a superset — you keep moving; the rest comes after the
+    // sequence (banking the last drop / the last superset exercise).
+    const ex = exercises.find((x) => x.uid === u);
+    const nextIsDrop = !!ex?.sets[i + 1]?.drop;
+    let midSuperset = false;
+    if (ex?.group) {
+      const members = exercises.filter((x) => x.group === ex.group);
+      midSuperset = members[members.length - 1]?.uid !== ex.uid;
     }
+    if (nextIsDrop || midSuperset) {
+      setRestSince(null); // suppress any lingering rest banner
+      return;
+    }
+    setRestSince(Date.now());
+    setRestNow(0);
+    restFired.current = false;
   };
   const pickRest = (sec: number) => {
     setRestTarget((cur) => (cur === sec ? null : sec));
