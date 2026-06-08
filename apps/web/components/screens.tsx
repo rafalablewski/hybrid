@@ -49,6 +49,7 @@ import {
   e1rmSeries,
   liftNames,
   blockSummary,
+  supersetLabels,
   type LoggedSession,
   type Macrocycle,
   type Biometrics,
@@ -692,6 +693,7 @@ function SessionDetail({
 }) {
   const prs = prsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
+  const ssLabels = supersetLabels(session.blocks);
   const muscles = volumeByMuscle(session.blocks);
   const muscleMax = muscles[0]?.volume || 1;
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
@@ -788,7 +790,7 @@ function SessionDetail({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
                 {prSet.has(b.name) ? "🏆 " : ""}{b.name}
-                {b.kind === "strength" && b.superset && <span style={{ ...mono, fontSize: 11, color: LIME, marginLeft: 8 }}>⛓ SS</span>}
+                {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: LIME, marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Mono s={{ fontSize: 13 }} c={LIME}>{Math.round(blockBestE1rm(b))} kg e1RM</Mono>

@@ -8,6 +8,7 @@ import {
   e1rmSeries,
   volumeByMuscle,
   conditioningSummary,
+  supersetLabels,
   type LoggedSession,
   type PrHit,
 } from "@hybrid/core";
@@ -53,6 +54,7 @@ export default function SessionDetail() {
 
   const prs = prsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
+  const ssLabels = supersetLabels(session.blocks);
   const strength = session.blocks.filter((b) => b.kind === "strength");
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const minutes =
@@ -117,8 +119,8 @@ export default function SessionDetail() {
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
                   {prSet.has(b.name) ? "🏆 " : ""}{b.name}
                 </Text>
-                {b.kind === "strength" && b.superset && (
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ SS</Text>
+                {ssLabels[i] && (
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (

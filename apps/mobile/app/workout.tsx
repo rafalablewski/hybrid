@@ -12,6 +12,9 @@ import {
   newPrsInSession,
   exerciseHistory,
   pacePerKm,
+  supersetLabels,
+  toggleSuperset,
+  isSupersettedWithPrev,
   RPE_SCALE,
   RPE_INTRO,
   RPE_CARDIO_NOTE,
@@ -44,8 +47,8 @@ type WExercise = {
   minutes: string;
   rpe: string;
   distance: string;
-  /** Supersetted (no rest) with the next exercise. */
-  superset?: boolean;
+  /** Superset group key — exercises sharing it are performed together (A1/A2…). */
+  group?: string;
 };
 
 const emptySet = (from?: WSet): WSet => ({
@@ -211,8 +214,9 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) } : x)),
     );
-  const toggleSuperset = (u: string) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, superset: !x.superset } : x)));
+  // Superset: group this exercise with the one directly above it (A1/A2/A3…).
+  const supersetWithPrev = (u: string) =>
+    setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
   const removeSet = (u: string, i: number) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
   const toggleDone = (u: string, i: number, val: boolean) => {
@@ -253,7 +257,7 @@ export default function Workout() {
             ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}),
             ...(s.drop ? { drop: true } : {}),
           }));
-        if (sets.length) blocks.push({ kind: "strength", name: x.name, sets, ...(x.superset ? { superset: true } : {}) });
+        if (sets.length) blocks.push({ kind: "strength", name: x.name, sets, ...(x.group ? { group: x.group } : {}) });
       }
     }
     return blocks;
@@ -329,6 +333,8 @@ export default function Workout() {
 
   if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
 
+  const ssLabels = supersetLabels(exercises);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
@@ -396,29 +402,29 @@ export default function Workout() {
           );
         })()}
 
-        {exercises.map((x) => (
+        {exercises.map((x, xi) => (
           <Card key={x.uid}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9, color: x.kind === "strength" ? C.lime : C.blue }}>
                 {x.kind.toUpperCase()}
               </Text>
+              {ssLabels[xi] && (
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.lime, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
+              )}
               <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }} />
-              {x.kind === "strength" && (
+              {x.kind === "strength" && xi > 0 && exercises[xi - 1]?.kind === "strength" && (
                 <Pressable
-                  onPress={() => toggleSuperset(x.uid)}
+                  onPress={() => supersetWithPrev(x.uid)}
                   hitSlop={6}
-                  style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: x.superset ? C.lime : C.line, backgroundColor: x.superset ? `${C.lime}1f` : "transparent" }}
+                  style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: isSupersettedWithPrev(exercises, xi) ? C.lime : C.line, backgroundColor: isSupersettedWithPrev(exercises, xi) ? `${C.lime}1f` : "transparent" }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: x.superset ? C.lime : C.ash }}>⛓ SS</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: isSupersettedWithPrev(exercises, xi) ? C.lime : C.ash }}>⛓ {isSupersettedWithPrev(exercises, xi) ? t("workout.supersetJoined") : t("workout.supersetUp")}</Text>
                 </Pressable>
               )}
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
                 <Text style={{ color: C.ash, fontSize: 15 }}>✕</Text>
               </Pressable>
             </View>
-            {x.kind === "strength" && x.superset && (
-              <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime, marginBottom: 8 }}>⛓ {t("workout.supersetNext")}</Text>
-            )}
 
             {x.kind === "strength" ? (
               <>
@@ -731,7 +737,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           minutes: "",
           rpe: "",
           distance: "",
-          ...(b.superset ? { superset: true } : {}),
+          ...(b.group ? { group: b.group } : {}),
         }
       : {
           uid: uid(),

@@ -10,6 +10,9 @@ import {
   conditioningSummary,
   blockSummary,
   pacePerKm,
+  supersetLabels,
+  toggleSuperset,
+  isSupersettedWithPrev,
 } from "./session";
 import type { LoggedSession } from "./session";
 
@@ -52,6 +55,36 @@ describe("block summaries", () => {
     expect(conditioningSummary({ kind: "conditioning", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
       "8 km · 50 min · 6:15 /km · RPE 6",
     );
+  });
+});
+
+describe("supersets", () => {
+  const S = (name: string, group?: string) => ({ kind: "strength" as const, name, sets: [{ load: "60", reps: "10" }], ...(group ? { group } : {}) });
+  const C = { kind: "conditioning" as const, name: "Run", minutes: 10 };
+
+  it("labels ≥2-member groups A1/A2/A3, lettering by first appearance", () => {
+    const blocks = [S("Bench", "g1"), S("Row", "g1"), C, S("Squat", "g2"), S("Leg Curl", "g2"), S("Calf", "g2")];
+    expect(supersetLabels(blocks)).toEqual(["A1", "A2", null, "B1", "B2", "B3"]);
+  });
+  it("ignores a singleton group", () => {
+    expect(supersetLabels([S("Bench", "lonely"), S("Squat")])).toEqual([null, null]);
+  });
+  it("normalizes the legacy link-to-next boolean", () => {
+    const legacy = [
+      { kind: "strength" as const, name: "Bench", sets: [], superset: true },
+      { kind: "strength" as const, name: "Row", sets: [] },
+      { kind: "strength" as const, name: "Squat", sets: [] },
+    ];
+    expect(supersetLabels(legacy)).toEqual(["A1", "A2", null]);
+  });
+  it("toggleSuperset joins with the block above, then leaves", () => {
+    let blocks = [S("Bench"), S("Row")];
+    blocks = toggleSuperset(blocks, 1, () => "g");
+    expect(isSupersettedWithPrev(blocks, 1)).toBe(true);
+    expect(supersetLabels(blocks)).toEqual(["A1", "A2"]);
+    blocks = toggleSuperset(blocks, 1, () => "g");
+    expect(supersetLabels(blocks)).toEqual([null, null]);
+    expect(blocks.every((b) => !b.group)).toBe(true);
   });
 });
 

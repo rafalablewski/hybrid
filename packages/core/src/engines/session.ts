@@ -28,10 +28,14 @@ export interface StrengthBlock {
   sets: StrengthSet[];
   note?: string;
   /**
-   * Superset — performed back-to-back (no rest) with the NEXT block in the
-   * session. Lets the logger pair e.g. Bench + Row without inventing a new
-   * block shape: a run of blocks each flagged `superset` (the last left off) is
-   * one superset group.
+   * Superset group key — strength blocks sharing the same `group` are performed
+   * together (no rest between exercises), shown as A1/A2/A3… The key is stable
+   * (a uid), so a group survives reordering and can hold 3+ exercises.
+   */
+  group?: string;
+  /**
+   * @deprecated Legacy "supersetted with the NEXT block" flag (pre-group model).
+   * Still read by `supersetLabels` for back-compat; new writes use `group`.
    */
   superset?: boolean;
 }
@@ -117,6 +121,81 @@ export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean 
 export function blockSummary(b: SessionBlock): string {
   if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
   return conditioningSummary(b);
+}
+
+// ----- Supersets (A1/A2/A3 groups) -----
+
+type GroupedBlock = { kind: string; group?: string; superset?: boolean };
+
+/** The superset group key for a block, normalizing the legacy `superset` flag. */
+function groupKeyAt(blocks: GroupedBlock[], i: number): string | null {
+  const b = blocks[i];
+  if (!b || b.kind !== "strength") return null;
+  if (b.group) return b.group;
+  // Legacy boolean: `superset` meant "joined to the NEXT block". A contiguous
+  // run of strength blocks linked that way is one group, keyed by its start.
+  const linksToNext = (x?: GroupedBlock) => !!x && x.kind === "strength" && !!x.superset && !x.group;
+  const inRun = (!!b.superset && !b.group) || linksToNext(blocks[i - 1]);
+  if (!inRun) return null;
+  let start = i;
+  while (start > 0 && linksToNext(blocks[start - 1])) start--;
+  return `legacy-${start}`;
+}
+
+/**
+ * Per-block superset labels (e.g. ["A1","A2",null,"B1","B2"]). Groups are
+ * lettered by first appearance; only groups with ≥2 members are labelled. One
+ * source of truth so the web + mobile editors and detail views can't drift.
+ */
+export function supersetLabels(blocks: GroupedBlock[]): (string | null)[] {
+  const keys = blocks.map((_, i) => groupKeyAt(blocks, i));
+  const counts = new Map<string, number>();
+  for (const k of keys) if (k) counts.set(k, (counts.get(k) ?? 0) + 1);
+  const letters = new Map<string, string>();
+  const seq = new Map<string, number>();
+  let nextLetter = 0;
+  return keys.map((k) => {
+    if (!k || (counts.get(k) ?? 0) < 2) return null;
+    if (!letters.has(k)) letters.set(k, String.fromCharCode(65 + nextLetter++ % 26));
+    const n = (seq.get(k) ?? 0) + 1;
+    seq.set(k, n);
+    return `${letters.get(k)}${n}`;
+  });
+}
+
+/** True when a block shares a superset group with the block directly above it. */
+export function isSupersettedWithPrev(blocks: GroupedBlock[], index: number): boolean {
+  const k = groupKeyAt(blocks, index);
+  return !!k && k === groupKeyAt(blocks, index - 1);
+}
+
+/**
+ * Toggle whether the block at `index` is supersetted with the one directly
+ * above it: joins (or extends) that group, or leaves it. Drops any group left
+ * with a single member. Pure — returns a new array; `newKey` mints group ids.
+ */
+export function toggleSuperset<T extends { kind: string; group?: string; superset?: boolean }>(
+  blocks: T[],
+  index: number,
+  newKey: () => string,
+): T[] {
+  const cur = blocks[index];
+  const prev = blocks[index - 1];
+  if (!cur || !prev || cur.kind !== "strength" || prev.kind !== "strength") return blocks;
+  const next = blocks.slice();
+  if (isSupersettedWithPrev(blocks, index)) {
+    next[index] = { ...cur, group: undefined, superset: undefined };
+  } else {
+    const g = groupKeyAt(blocks, index - 1) ?? newKey();
+    if (!prev.group) next[index - 1] = { ...prev, group: g, superset: undefined };
+    next[index] = { ...cur, group: g, superset: undefined };
+  }
+  // Cleanup: a group with <2 members isn't a superset anymore.
+  const counts = new Map<string, number>();
+  for (const b of next) if (b.kind === "strength" && b.group) counts.set(b.group, (counts.get(b.group) ?? 0) + 1);
+  return next.map((b) =>
+    b.kind === "strength" && b.group && (counts.get(b.group) ?? 0) < 2 ? { ...b, group: undefined } : b,
+  );
 }
 
 /** Tonnage (load × reps) summed across all strength sets in a session. */

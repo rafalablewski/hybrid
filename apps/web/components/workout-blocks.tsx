@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, RPE_CARDIO_NOTE } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, RPE_CARDIO_NOTE, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -150,9 +150,9 @@ export default function WorkoutBlocks({
         ? { ...b, sets: b.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) }
         : b,
     );
-  // A superset links this block to the next one (performed back-to-back).
-  const toggleSuperset = (u: string) =>
-    patch(u, (b) => (b.kind === "strength" ? { ...b, superset: !b.superset } : b));
+  // Superset: group this block with the one directly above it (A1/A2/A3…).
+  const supersetWithPrev = (u: string) =>
+    setBlocks((bs) => toggleSupersetGroup(bs, bs.findIndex((b) => b.uid === u), uid) as EditableBlock[]);
 
   const setCondStr = (u: string, key: "format", val: string) =>
     patch(u, (b) => (b.kind === "conditioning" ? ({ ...b, [key]: val } as EditableBlock) : b));
@@ -164,6 +164,8 @@ export default function WorkoutBlocks({
     patch(u, (b) =>
       b.kind === "conditioning" ? ({ ...b, [key]: condNum(val) } as EditableBlock) : b,
     );
+
+  const ssLabels = supersetLabels(blocks);
 
   return (
     <>
@@ -179,6 +181,11 @@ export default function WorkoutBlocks({
             <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : BLUE}>
               {b.kind}
             </Mono>
+            {ssLabels[idx] && (
+              <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: LIME, background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
+                ⛓ {ssLabels[idx]}
+              </span>
+            )}
             <input
               list="workout-catalog"
               value={b.name}
@@ -198,29 +205,23 @@ export default function WorkoutBlocks({
                 </button>
               </>
             )}
-            {b.kind === "strength" && idx < blocks.length - 1 && (
+            {b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
               <button
-                onClick={() => toggleSuperset(b.uid)}
-                title="Superset with the next block (no rest between)"
+                onClick={() => supersetWithPrev(b.uid)}
+                title="Superset with the exercise above (no rest between)"
                 style={
-                  b.superset
+                  isSupersettedWithPrev(blocks, idx)
                     ? { ...blockBtn(LIME), padding: "6px 10px" }
                     : { ...blockBtn(ASH), padding: "6px 10px" }
                 }
               >
-                ⛓ SS
+                ⛓ {isSupersettedWithPrev(blocks, idx) ? "joined" : "superset ↑"}
               </button>
             )}
             <button onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
               ✕
             </button>
           </div>
-
-          {b.kind === "strength" && b.superset && idx < blocks.length - 1 && (
-            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 8 }} c={LIME}>
-              ⛓ superset → {blocks[idx + 1]?.name || "next block"}
-            </Mono>
-          )}
 
           {b.kind === "strength" ? (
             <>
