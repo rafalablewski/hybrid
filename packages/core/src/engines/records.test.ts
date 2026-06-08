@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { bestE1rmMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory } from "./records";
+import { bestE1rmMap, newPrsInSession, prsForSession, volumeByMuscle, exerciseHistory, newCardioPrsInSession } from "./records";
 import type { LoggedSession } from "./session";
 
 const squat = (load: string, reps: string): LoggedSession["blocks"][number] => ({
@@ -97,5 +97,36 @@ describe("personal records", () => {
     const hits = newPrsInSession(multi, [s1, s2]);
     expect(hits.map((h) => h.lift)).toContain("Back Squat");
     expect(hits.map((h) => h.lift)).toContain("Bench Press");
+  });
+});
+
+describe("cardio records", () => {
+  const run = (id: string, startedAt: string, distance: number, minutes: number): LoggedSession => ({
+    id,
+    title: "Run",
+    startedAt,
+    blocks: [{ kind: "conditioning", name: "Easy Run", distance, minutes }],
+  });
+  const r1 = run("1", "2026-05-01T10:00:00.000Z", 5, 30); // 6:00/km
+  const r2 = run("2", "2026-05-08T10:00:00.000Z", 8, 48); // further → distance PR
+  const r3 = run("3", "2026-05-15T10:00:00.000Z", 8, 44); // same distance, faster → pace PR
+  const r4 = run("4", "2026-05-22T10:00:00.000Z", 3, 12); // short & quick → NOT a pace PR over 8k
+
+  it("a furthest-ever run is a distance PR", () => {
+    const hits = newCardioPrsInSession(r2, [r1]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!).toMatchObject({ move: "Easy Run", kind: "distance", value: 8, previous: 5 });
+  });
+  it("a faster run over the same distance is a pace PR", () => {
+    const hits = newCardioPrsInSession(r3, [r1, r2]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!).toMatchObject({ kind: "pace", value: 330, previous: 360 }); // 44min/8km vs 48min/8km
+  });
+  it("a short fast jog does not fake a long-run pace PR", () => {
+    expect(newCardioPrsInSession(r4, [r1, r2, r3])).toEqual([]);
+  });
+  it("the first run of a move is a distance first (previous = null)", () => {
+    const hits = newCardioPrsInSession(r1, []);
+    expect(hits[0]!).toMatchObject({ kind: "distance", previous: null });
   });
 });

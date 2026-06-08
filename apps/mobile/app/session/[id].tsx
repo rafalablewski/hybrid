@@ -11,8 +11,10 @@ import {
   supersetLabels,
   paceSeries,
   paceClock,
+  cardioPrsForSession,
   type LoggedSession,
   type PrHit,
+  type CardioPrHit,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
@@ -55,7 +57,9 @@ export default function SessionDetail() {
   }
 
   const prs = prsForSession(all, session.id);
+  const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
+  const cardioPrMoves = new Set(cardioPrs.map((p) => p.move));
   const ssLabels = supersetLabels(session.blocks);
   const strength = session.blocks.filter((b) => b.kind === "strength");
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
@@ -108,6 +112,15 @@ export default function SessionDetail() {
         </View>
       )}
 
+      {cardioPrs.length > 0 && (
+        <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 16 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.blue }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
+          {cardioPrs.slice(0, 6).map((p) => (
+            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
+          ))}
+        </View>
+      )}
+
       {/* Muscle focus — what this session actually trained */}
       <MuscleFocus blocks={session.blocks} t={t} />
 
@@ -119,7 +132,7 @@ export default function SessionDetail() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? C.lime : C.blue }}>{b.kind.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
-                  {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                  {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "conditioning" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
                 </Text>
                 {ssLabels[i] && (
                   <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ {ssLabels[i]}</Text>
@@ -176,6 +189,15 @@ export default function SessionDetail() {
 
 const prLine = (p: PrHit, t: (k: string) => string) =>
   p.previous == null ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+
+const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
+  if (p.kind === "distance")
+    return p.previous == null
+      ? `${p.move} ${p.value} km (${t("summary.firstTime")})`
+      : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
+  const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
+  return `${p.move} ${paceClock(p.value)} /km${delta}`;
+};
 
 function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: string) => string }) {
   return (

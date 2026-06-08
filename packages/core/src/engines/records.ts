@@ -70,6 +70,72 @@ export function prsForSession(all: LoggedSession[], id: string): PrHit[] {
   return newPrsInSession(target, prior);
 }
 
+// ----- Cardio records (distance & pace) -----
+
+export interface CardioPrHit {
+  move: string;
+  /** "distance" → went further than ever; "pace" → faster than ever over ≥ that far. */
+  kind: "distance" | "pace";
+  /** distance in km (kind "distance") or pace in sec/km (kind "pace", lower is faster). */
+  value: number;
+  /** prior best, or null if it's a first. */
+  previous: number | null;
+}
+
+interface CardioEffort {
+  move: string;
+  distance: number;
+  secPerKm: number | null;
+}
+
+/** The paced cardio efforts in a session, the longest distance per move. */
+function cardioEfforts(session: LoggedSession): CardioEffort[] {
+  const best = new Map<string, CardioEffort>();
+  for (const b of session.blocks) {
+    if (b.kind !== "conditioning" || !b.distance || b.distance <= 0) continue;
+    const secPerKm = b.minutes && b.minutes > 0 ? Math.round((b.minutes * 60) / b.distance) : null;
+    const cur = best.get(b.name);
+    if (!cur || b.distance > cur.distance) best.set(b.name, { move: b.name, distance: b.distance, secPerKm });
+  }
+  return [...best.values()];
+}
+
+/**
+ * New cardio personal records in `session` vs everything done BEFORE it: a
+ * DISTANCE PR (furthest ever for that move) or, failing that, a PACE PR (beat
+ * your best pace among prior runs of that move that were this distance or
+ * SHORTER — so you held a faster pace over an equal-or-longer run, and a quick
+ * short jog can't fake a long-run pace record). Distance PRs come first.
+ */
+export function newCardioPrsInSession(session: LoggedSession, prior: LoggedSession[]): CardioPrHit[] {
+  const priorEfforts = prior.flatMap(cardioEfforts);
+  const hits: CardioPrHit[] = [];
+  for (const e of cardioEfforts(session)) {
+    const sameMove = priorEfforts.filter((p) => p.move === e.move);
+    const prevMaxDist = sameMove.length ? Math.max(...sameMove.map((p) => p.distance)) : null;
+    if (prevMaxDist == null || e.distance > prevMaxDist) {
+      hits.push({ move: e.move, kind: "distance", value: e.distance, previous: prevMaxDist });
+    } else if (e.secPerKm != null) {
+      const paces = sameMove.filter((p) => p.distance <= e.distance && p.secPerKm != null).map((p) => p.secPerKm!);
+      const prevBestPace = paces.length ? Math.min(...paces) : null;
+      if (prevBestPace != null && e.secPerKm < prevBestPace) {
+        hits.push({ move: e.move, kind: "pace", value: e.secPerKm, previous: prevBestPace });
+      }
+    }
+  }
+  // Distance PRs first, then biggest distance / fastest pace.
+  return hits.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "distance" ? -1 : 1));
+}
+
+/** Cardio PRs newly set in the session with `id`, from a full session list. */
+export function cardioPrsForSession(all: LoggedSession[], id: string): CardioPrHit[] {
+  const target = all.find((s) => s.id === id);
+  if (!target) return [];
+  const t = new Date(target.startedAt).getTime();
+  const prior = all.filter((s) => s.id !== id && new Date(s.startedAt).getTime() < t);
+  return newCardioPrsInSession(target, prior);
+}
+
 export interface MuscleVolume {
   muscle: MuscleGroup;
   volume: number;

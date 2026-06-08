@@ -1,6 +1,13 @@
 import type { LoggedSession, SessionBlock } from "./session";
 import { sessionVolume } from "./session";
-import { newPrsInSession, volumeByMuscle, type PrHit, type MuscleVolume } from "./records";
+import {
+  newPrsInSession,
+  newCardioPrsInSession,
+  volumeByMuscle,
+  type PrHit,
+  type CardioPrHit,
+  type MuscleVolume,
+} from "./records";
 
 // Weekly recap — the retention loop. Rolls the last 7 days of training into one
 // shareable summary (with deltas vs the week before), so "come home and review"
@@ -15,7 +22,9 @@ export interface WeeklyRecap {
   minutes: number; // summed where completedAt is known
   activeDays: number; // distinct calendar days trained
   lifts: number; // distinct strength lifts
+  distanceKm: number; // total cardio distance logged this week
   prs: PrHit[]; // records set this week (best per lift)
+  cardioPrs: CardioPrHit[]; // cardio records set this week (distance/pace)
   topMuscle: MuscleVolume | null;
   prevSessions: number;
   prevVolume: number;
@@ -34,6 +43,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
   let volume = 0;
   let sets = 0;
   let minutes = 0;
+  let distanceKm = 0;
   const days = new Set<string>();
   const lifts = new Set<string>();
   const blocks: SessionBlock[] = [];
@@ -47,6 +57,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
         lifts.add(b.name);
       } else {
         sets += 1;
+        if (b.distance && b.distance > 0) distanceKm += b.distance;
       }
     }
     if (s.completedAt) minutes += Math.max(0, Math.round((ms(s.completedAt) - ms(s.startedAt)) / 60000));
@@ -63,6 +74,19 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
   }
   const prs = [...prMap.values()].sort((a, b) => b.e1rm - (b.previous ?? 0) - (a.e1rm - (a.previous ?? 0)));
 
+  // Cardio PRs across the week, best per move+kind.
+  const cardioMap = new Map<string, CardioPrHit>();
+  for (const s of [...thisWeek].sort((a, b) => ms(a.startedAt) - ms(b.startedAt))) {
+    const prior = sessions.filter((x) => ms(x.startedAt) < ms(s.startedAt));
+    for (const h of newCardioPrsInSession(s, prior)) {
+      const key = `${h.move}-${h.kind}`;
+      const cur = cardioMap.get(key);
+      const better = !cur || (h.kind === "distance" ? h.value > cur.value : h.value < cur.value);
+      if (better) cardioMap.set(key, h);
+    }
+  }
+  const cardioPrs = [...cardioMap.values()];
+
   const prevVolume = prevWeek.reduce((v, s) => v + sessionVolume(s.blocks), 0);
 
   return {
@@ -73,7 +97,9 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): Weekly
     minutes,
     activeDays: days.size,
     lifts: lifts.size,
+    distanceKm: Math.round(distanceKm * 10) / 10,
     prs,
+    cardioPrs,
     topMuscle: volumeByMuscle(blocks)[0] ?? null,
     prevSessions: prevWeek.length,
     prevVolume,

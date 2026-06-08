@@ -10,8 +10,10 @@ import {
   sessionVolume,
   blockBestE1rm,
   newPrsInSession,
+  newCardioPrsInSession,
   exerciseHistory,
   pacePerKm,
+  paceClock,
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
@@ -22,6 +24,7 @@ import {
   type SessionBlock,
   type LoggedSession,
   type PrHit,
+  type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
 import { fetchSessions, createSession, type NewSession } from "../lib/api";
@@ -80,7 +83,18 @@ type Summ = {
   pending: boolean;
   bests: ShareBest[];
   prs: PrHit[];
+  cardioPrs: CardioPrHit[];
 };
+
+/** A localized one-liner for a cardio PR (distance furthest / pace fastest). */
+export function cardioPrLine(p: CardioPrHit, t: (k: string) => string): string {
+  if (p.kind === "distance")
+    return p.previous == null
+      ? `${p.move} ${p.value} km (${t("summary.firstTime")})`
+      : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
+  const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
+  return `${p.move} ${paceClock(p.value)} /km${delta}`;
+}
 
 const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; blocks: unknown[] }): LoggedSession => ({
   id: g.savedAt,
@@ -306,6 +320,7 @@ export default function Workout() {
       blocks,
     };
     const prs = newPrsInSession(finished, prior.current);
+    const cardioPrs = newCardioPrsInSession(finished, prior.current);
     const prSet = new Set(prs.map((p) => p.lift));
     const bestMap = new Map<string, number>();
     for (const b of blocks)
@@ -327,6 +342,7 @@ export default function Workout() {
       pending,
       bests,
       prs,
+      cardioPrs,
     });
     setPhase("done");
   };
@@ -618,7 +634,7 @@ function Summary({
   t: (k: string) => string;
 }) {
   const cardRef = useRef<View>(null);
-  const { title, prs, bests } = summary;
+  const { title, prs, bests, cardioPrs } = summary;
 
   const prLine = (p: PrHit) =>
     p.previous == null
@@ -630,9 +646,11 @@ function Summary({
     `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${summary.volume.toLocaleString()} kg`,
     prs[0]
       ? `\u{1F3C6} ${prLine(prs[0])}`
-      : bests[0]
-        ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg`
-        : null,
+      : cardioPrs[0]
+        ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
+        : bests[0]
+          ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg`
+          : null,
     t("share.tracked"),
   ]
     .filter(Boolean)
@@ -657,6 +675,20 @@ function Summary({
             {prs.slice(0, 4).map((p) => (
               <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>
                 {prLine(p)}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        {/* Cardio PR celebration — runs count too */}
+        {cardioPrs.length > 0 && (
+          <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 12 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 16, color: C.blue }}>
+              🏃 {cardioPrs.length} {t("summary.newCardioPrs")}
+            </Text>
+            {cardioPrs.slice(0, 4).map((p) => (
+              <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>
+                {cardioPrLine(p, t)}
               </Text>
             ))}
           </View>

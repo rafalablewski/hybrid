@@ -53,6 +53,8 @@ import {
   paceSeries,
   headlineRunMove,
   paceClock,
+  cardioPrsForSession,
+  type CardioPrHit,
   type LoggedSession,
   type Macrocycle,
   type Biometrics,
@@ -695,6 +697,7 @@ function SessionDetail({
   onBack: () => void;
 }) {
   const prs = prsForSession(all, session.id);
+  const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
   const ssLabels = supersetLabels(session.blocks);
   const muscles = volumeByMuscle(session.blocks);
@@ -717,6 +720,14 @@ function SessionDetail({
 
   const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
     p.previous == null ? `${p.lift} ${p.e1rm}kg (first!)` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+  const cardioPrLine = (p: CardioPrHit) => {
+    if (p.kind === "distance")
+      return p.previous == null
+        ? `${p.move} ${p.value} km (first!)`
+        : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
+    const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
+    return `${p.move} ${paceClock(p.value)} /km${delta}`;
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -750,6 +761,21 @@ function SessionDetail({
             {prs.map((p) => (
               <Mono key={p.lift} s={{ fontSize: 13 }} c={CHALK}>
                 {prLine(p)}
+              </Mono>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {cardioPrs.length > 0 && (
+        <Card style={{ borderColor: BLUE }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+            🏃 {cardioPrs.length} new cardio record{cardioPrs.length > 1 ? "s" : ""}
+          </Mono>
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+            {cardioPrs.map((p) => (
+              <Mono key={`${p.move}-${p.kind}`} s={{ fontSize: 13 }} c={CHALK}>
+                {cardioPrLine(p)}
               </Mono>
             ))}
           </div>
