@@ -33,6 +33,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="plans" options={{ href: null }} />
       <Tabs.Screen name="sport" options={{ href: null }} />
       <Tabs.Screen name="velocity" options={{ href: null }} />
+      <Tabs.Screen name="running" options={{ href: null }} />
       <Tabs.Screen name="coach" options={{ href: null }} />
     </Tabs>
   );

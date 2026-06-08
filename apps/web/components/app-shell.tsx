@@ -40,6 +40,7 @@ import Talent from "./talent";
 import Tactical from "./tactical";
 import Longevity from "./longevity";
 import Velocity from "./velocity";
+import Running from "./running";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
@@ -91,6 +92,7 @@ const NAV_GROUPS: { group: string; items: [string, string, string][] }[] = [
       ["performance", "Performance", "◈"],
       ["analytics", "Analytics", "◷"],
       ["velocity", "Velocity (VBT)", "⚡"],
+      ["running", "Running", "🏃"],
       ["forceplate", "Force plate", "◇"],
       ["video", "Video", "▷"],
       ["history", "History", "≣"],
@@ -435,6 +437,8 @@ export default function AppShell() {
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
 
         {screen === "velocity" && <Velocity sessions={sessions} />}
+
+        {screen === "running" && <Running sessions={sessions} />}
 
         {screen === "forceplate" && <ForcePlate />}
 

@@ -1,7 +1,8 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, RPE_CARDIO_NOTE, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -89,6 +90,13 @@ export default function WorkoutBlocks({
 }) {
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
+  const [rpeHelp, setRpeHelp] = useState(false);
+  // Raw text buffer for the conditioning number fields so a mid-typed decimal
+  // ("8." or "8.5") survives — the block stores a number, but binding the input
+  // straight to String(number) would strip the trailing dot as you type.
+  const [condDrafts, setCondDrafts] = useState<Record<string, string>>({});
+  const condVal = (u: string, key: string, n: number | undefined) =>
+    condDrafts[`${u}:${key}`] ?? (n == null ? "" : String(n));
 
   const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
     setBlocks((bs) => bs.map((b) => (b.uid === u ? fn(b) : b)));
@@ -133,15 +141,39 @@ export default function WorkoutBlocks({
     patch(u, (b) =>
       b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "" }] } : b,
     );
+  // A drop set is a lighter continuation of the previous set (no rest) — add it
+  // pre-flagged so it reads as part of the same effort.
+  const addDropSet = (u: string) =>
+    patch(u, (b) =>
+      b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", drop: true }] } : b,
+    );
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
+  // A drop set rides on the previous set (no rest, lighter) — a per-set flag.
+  const toggleDrop = (u: string, i: number) =>
+    patch(u, (b) =>
+      b.kind === "strength"
+        ? { ...b, sets: b.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) }
+        : b,
+    );
+  // Superset: group this block with the one directly above it (A1/A2/A3…).
+  const supersetWithPrev = (u: string) =>
+    setBlocks((bs) => toggleSupersetGroup(bs, bs.findIndex((b) => b.uid === u), uid) as EditableBlock[]);
 
   const setCondStr = (u: string, key: "format", val: string) =>
     patch(u, (b) => (b.kind === "conditioning" ? ({ ...b, [key]: val } as EditableBlock) : b));
-  const setCondNum = (u: string, key: "work" | "rest" | "rounds" | "minutes" | "rpe", val: string) =>
+  const setCondNum = (
+    u: string,
+    key: "work" | "rest" | "rounds" | "minutes" | "rpe" | "distance",
+    val: string,
+  ) => {
+    setCondDrafts((d) => ({ ...d, [`${u}:${key}`]: val }));
     patch(u, (b) =>
       b.kind === "conditioning" ? ({ ...b, [key]: condNum(val) } as EditableBlock) : b,
     );
+  };
+
+  const ssLabels = supersetLabels(blocks);
 
   return (
     <>
@@ -157,6 +189,11 @@ export default function WorkoutBlocks({
             <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : BLUE}>
               {b.kind}
             </Mono>
+            {ssLabels[idx] && (
+              <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: LIME, background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
+                ⛓ {ssLabels[idx]}
+              </span>
+            )}
             <input
               list="workout-catalog"
               value={b.name}
@@ -176,6 +213,19 @@ export default function WorkoutBlocks({
                 </button>
               </>
             )}
+            {b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
+              <button
+                onClick={() => supersetWithPrev(b.uid)}
+                title="Superset with the exercise above (no rest between)"
+                style={
+                  isSupersettedWithPrev(blocks, idx)
+                    ? { ...blockBtn(LIME), padding: "6px 10px" }
+                    : { ...blockBtn(ASH), padding: "6px 10px" }
+                }
+              >
+                ⛓ {isSupersettedWithPrev(blocks, idx) ? "joined" : "superset ↑"}
+              </button>
+            )}
             <button onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
               ✕
             </button>
@@ -183,18 +233,42 @@ export default function WorkoutBlocks({
 
           {b.kind === "strength" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4 }}>
-                {["load (kg)", "reps", "rpe", "m/s", ""].map((h) => (
-                  <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
-                    {h}
-                  </Mono>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
+                <span />
+                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load (kg)</Mono>
+                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>reps</Mono>
+                <button
+                  onClick={() => setRpeHelp((v) => !v)}
+                  title="What is RPE?"
+                  style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: rpeHelp ? LIME : ASH, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                >
+                  rpe ⓘ
+                </button>
+                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
+                <span />
               </div>
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
+                  style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
                 >
+                  <button
+                    onClick={() => toggleDrop(b.uid, i)}
+                    title={s.drop ? "Drop set — tap to make a normal set" : "Mark as a drop set (no rest, lighter)"}
+                    style={{
+                      ...mono,
+                      fontSize: s.drop ? 12 : 13,
+                      fontWeight: 700,
+                      color: s.drop ? LIME : ASH,
+                      background: s.drop ? `${LIME}1f` : "transparent",
+                      border: `1px solid ${s.drop ? LIME : LINE}`,
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    {s.drop ? "↓" : i + 1}
+                  </button>
                   <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={input} />
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
                   <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={input} />
@@ -204,23 +278,29 @@ export default function WorkoutBlocks({
                   </button>
                 </div>
               ))}
-              <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
-                + set
-              </button>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
+                  + set
+                </button>
+                <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title="Add a drop set — a lighter continuation, no rest">
+                  + drop set
+                </button>
+              </div>
             </>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
-              {["format", "work (s)", "rest (s)", "rounds", "minutes", "rpe"].map((h) => (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+              {["format", "dist (km)", "work (s)", "rest (s)", "rounds", "minutes", "rpe"].map((h) => (
                 <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                   {h}
                 </Mono>
               ))}
-              <input value={b.format ?? ""} onChange={(e) => setCondStr(b.uid, "format", e.target.value)} placeholder="intervals" style={input} />
-              <input value={String(b.work ?? "")} onChange={(e) => setCondNum(b.uid, "work", e.target.value)} placeholder="40" style={input} />
-              <input value={String(b.rest ?? "")} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
-              <input value={String(b.rounds ?? "")} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
-              <input value={String(b.minutes ?? "")} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
-              <input value={String(b.rpe ?? "")} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="8" style={input} />
+              <input value={b.format ?? ""} onChange={(e) => setCondStr(b.uid, "format", e.target.value)} placeholder="run" style={input} />
+              <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
+              <input value={condVal(b.uid, "work", b.work)} onChange={(e) => setCondNum(b.uid, "work", e.target.value)} placeholder="40" style={input} />
+              <input value={condVal(b.uid, "rest", b.rest)} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
+              <input value={condVal(b.uid, "rounds", b.rounds)} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
+              <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
+              <input value={condVal(b.uid, "rpe", b.rpe)} onChange={(e) => setCondNum(b.uid, "rpe", e.target.value)} placeholder="6" style={input} />
             </div>
           )}
         </Card>
@@ -232,14 +312,47 @@ export default function WorkoutBlocks({
         ))}
       </datalist>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 4, marginBottom: 14 }}>
+      {rpeHelp && <RpeHelp onClose={() => setRpeHelp(false)} />}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
         <button onClick={addStrength} style={blockBtn(LIME)}>
           + Strength
         </button>
         <button onClick={addConditioning} style={blockBtn(BLUE)}>
           + Conditioning
         </button>
+        <button onClick={() => setRpeHelp((v) => !v)} style={blockBtn(ASH)}>
+          What's RPE?
+        </button>
       </div>
     </>
+  );
+}
+
+// The RPE cheatsheet — the same scale (from @hybrid/core) the mobile logger shows.
+function RpeHelp({ onClose }: { onClose: () => void }) {
+  return (
+    <Card style={{ borderLeft: `3px solid ${LIME}`, marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+          RPE — how hard did that feel?
+        </Mono>
+        <button onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+      </div>
+      <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
+      <div style={{ display: "grid", gridTemplateColumns: "44px 64px 1fr", gap: "4px 10px", alignItems: "baseline" }}>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>RPE</Mono>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>reps left</Mono>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>feels like</Mono>
+        {RPE_SCALE.map((step) => (
+          <div key={step.rpe} style={{ display: "contents" }}>
+            <Mono s={{ fontSize: 13, fontWeight: 700 }} c={LIME}>{step.rpe}</Mono>
+            <Mono s={{ fontSize: 13 }} c={CHALK}>{step.rir}</Mono>
+            <Mono s={{ fontSize: 13 }} c={CHALK}>{step.meaning}</Mono>
+          </div>
+        ))}
+      </div>
+      <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 12 }} c={ASH}>{RPE_CARDIO_NOTE}</Mono>
+    </Card>
   );
 }

@@ -138,12 +138,16 @@ export default function Today({
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your week
             </Mono>
-            {recap.prs.length > 0 && <Chip c={LIME}>🏆 {recap.prs.length} PR</Chip>}
+            <div style={{ display: "flex", gap: 8 }}>
+              {recap.prs.length > 0 && <Chip c={LIME}>🏆 {recap.prs.length} PR</Chip>}
+              {recap.cardioPrs.length > 0 && <Chip c={BLUE}>🏃 {recap.cardioPrs.length} PR</Chip>}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>
             <Metric label="Sessions" value={`${recap.sessions}`} c={CHALK} />
             <Metric label="Volume" value={`${recap.volume.toLocaleString()} kg`} c={LIME} />
             <Metric label="Sets" value={`${recap.sets}`} c={CHALK} />
+            {recap.distanceKm > 0 && <Metric label="Distance" value={`${recap.distanceKm} km`} c={BLUE} />}
             <Metric label="Active days" value={`${recap.activeDays}`} c={CHALK} />
             {recap.topMuscle && <Metric label="Top muscle" value={MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle} c={BLUE} />}
           </div>

@@ -31,6 +31,8 @@ export interface LogItem {
   system?: EnergySystem;
   minutes?: number;
   rpe?: number;
+  /** distance covered (km) for cardio items — lets the engine read your pace. */
+  distance?: number;
 }
 
 export interface TrainingSession {
@@ -119,9 +121,16 @@ export interface PrescribedConditioningBlock {
   kind: "conditioning";
   name: string;
   format: string;
-  work: number;
-  rest: number;
-  rounds: number;
+  /** Interval shape (threshold/anaerobic days). */
+  work?: number;
+  rest?: number;
+  rounds?: number;
+  /** Steady cardio target (aerobic days): distance + duration + goal pace. */
+  distance?: number;
+  minutes?: number;
+  rpe?: number;
+  /** Goal pace for a steady run, e.g. "5:30 /km". */
+  paceTarget?: string;
 }
 
 export type PrescribedBlock =

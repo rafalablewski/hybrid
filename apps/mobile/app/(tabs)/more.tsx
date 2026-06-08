@@ -20,6 +20,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
     titleKey: "more.analyze",
     links: [
       { labelKey: "nav.velocity", sub: "VBT · load–velocity", href: "/(tabs)/velocity", color: C.blue },
+      { labelKey: "nav.running", sub: "mileage · pace · easy/hard", href: "/(tabs)/running", color: C.blue },
       { labelKey: "nav.progress", sub: "body recomposition", href: "/progress", color: C.violet },
     ],
   },

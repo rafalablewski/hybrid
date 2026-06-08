@@ -194,16 +194,33 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
     (b): b is PrescribedConditioningBlock => b.kind === "conditioning",
   );
   if (dailyCond) {
-    const rounds = Math.max(1, Math.round(dailyCond.rounds * volumeFactor));
-    blocks.push({
-      kind: "conditioning",
-      name: dailyCond.name,
-      source: "daily",
-      sets: rounds,
-      reps: 0,
-      format: dailyCond.format,
-      scheme: `${rounds} rounds ${dailyCond.work}/${dailyCond.rest}s`,
-    });
+    if (dailyCond.work != null && dailyCond.rest != null && dailyCond.rounds != null) {
+      // Interval prescription: scale rounds to the week's volume envelope.
+      const rounds = Math.max(1, Math.round(dailyCond.rounds * volumeFactor));
+      blocks.push({
+        kind: "conditioning",
+        name: dailyCond.name,
+        source: "daily",
+        sets: rounds,
+        reps: 0,
+        format: dailyCond.format,
+        scheme: `${rounds} rounds ${dailyCond.work}/${dailyCond.rest}s`,
+      });
+    } else {
+      // Steady cardio (e.g. easy run): distance + minutes target, dose-scaled.
+      const minutes = Math.max(1, Math.round((dailyCond.minutes ?? 20) * volumeFactor));
+      blocks.push({
+        kind: "conditioning",
+        name: dailyCond.name,
+        source: "daily",
+        sets: 1,
+        reps: 0,
+        format: dailyCond.format,
+        scheme: dailyCond.distance
+          ? `${dailyCond.distance} km${dailyCond.paceTarget ? ` @ ${dailyCond.paceTarget}` : ""} · ${minutes} min`
+          : `${minutes} min`,
+      });
+    }
   }
 
   const dedups = dropped.filter((d) => d.reason.startsWith("already")).length;
@@ -323,11 +340,21 @@ function dayToLogItems(plan: ReconciledPlan, daily: Prescription): LogItem[] {
   const cond = daily.blocks.find(
     (b): b is PrescribedConditioningBlock => b.kind === "conditioning",
   );
-  const perRoundSec = cond ? cond.work + cond.rest : 60;
+  const perRoundSec = cond?.work != null && cond?.rest != null ? cond.work + cond.rest : 60;
   return plan.blocks.map((b) =>
     b.kind === "strength"
       ? { move: b.name, hardSets: b.sets, topRpe: 8 }
-      : { move: b.name, system: daily.pickSys, minutes: Math.max(1, Math.round((b.sets * perRoundSec) / 60)), rpe: 8 },
+      : {
+          move: b.name,
+          system: daily.pickSys,
+          // Steady cardio carries its own minutes (sets = 1); intervals derive
+          // minutes from rounds × work/rest.
+          minutes:
+            cond?.minutes != null && b.sets === 1
+              ? cond.minutes
+              : Math.max(1, Math.round((b.sets * perRoundSec) / 60)),
+          rpe: 8,
+        },
   );
 }
 

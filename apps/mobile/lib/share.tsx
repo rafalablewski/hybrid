@@ -91,6 +91,11 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
           <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
             {recap.activeDays} {t("recap.activeDays")}
           </Text>
+          {recap.distanceKm > 0 && (
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+              {recap.distanceKm} km
+            </Text>
+          )}
           {recap.topMuscle && (
             <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
               {t("recap.top")} {MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle}

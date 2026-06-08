@@ -8,8 +8,13 @@ import {
   e1rmSeries,
   volumeByMuscle,
   conditioningSummary,
+  supersetLabels,
+  paceSeries,
+  paceClock,
+  cardioPrsForSession,
   type LoggedSession,
   type PrHit,
+  type CardioPrHit,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
@@ -52,7 +57,10 @@ export default function SessionDetail() {
   }
 
   const prs = prsForSession(all, session.id);
+  const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
+  const cardioPrMoves = new Set(cardioPrs.map((p) => p.move));
+  const ssLabels = supersetLabels(session.blocks);
   const strength = session.blocks.filter((b) => b.kind === "strength");
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
   const minutes =
@@ -104,6 +112,15 @@ export default function SessionDetail() {
         </View>
       )}
 
+      {cardioPrs.length > 0 && (
+        <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 16 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.blue }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
+          {cardioPrs.slice(0, 6).map((p) => (
+            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
+          ))}
+        </View>
+      )}
+
       {/* Muscle focus — what this session actually trained */}
       <MuscleFocus blocks={session.blocks} t={t} />
 
@@ -115,8 +132,11 @@ export default function SessionDetail() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? C.lime : C.blue }}>{b.kind.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
-                  {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                  {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "conditioning" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
                 </Text>
+                {ssLabels[i] && (
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ {ssLabels[i]}</Text>
+                )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.lime }}>
@@ -129,8 +149,8 @@ export default function SessionDetail() {
               <View style={{ marginTop: 8 }}>
                 {b.sets.map((s, j) => (
                   <View key={j} style={{ flexDirection: "row", gap: 12, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
-                    <Mono color={C.ash} style={{ width: 22 }}>{j + 1}</Mono>
-                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}</Mono>
+                    <Mono color={s.drop ? C.lime : C.ash} style={{ width: 22 }}>{s.drop ? "↓" : j + 1}</Mono>
+                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}{s.drop ? " · drop" : ""}</Mono>
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>
@@ -138,9 +158,12 @@ export default function SessionDetail() {
                 <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
               </View>
             ) : (
-              <Mono style={{ marginTop: 8 }}>
-                {conditioningSummary(b, { rpe: true })}
-              </Mono>
+              <>
+                <Mono style={{ marginTop: 8 }}>
+                  {conditioningSummary(b, { rpe: true })}
+                </Mono>
+                <PaceTrend series={paceSeries(all, b.name).map((p) => p.secPerKm)} t={t} />
+              </>
             )}
           </Card>
         ))}
@@ -166,6 +189,15 @@ export default function SessionDetail() {
 
 const prLine = (p: PrHit, t: (k: string) => string) =>
   p.previous == null ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+
+const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
+  if (p.kind === "distance")
+    return p.previous == null
+      ? `${p.move} ${p.value} km (${t("summary.firstTime")})`
+      : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
+  const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
+  return `${p.move} ${paceClock(p.value)} /km${delta}`;
+};
 
 function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: string) => string }) {
   return (
@@ -233,6 +265,40 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
               height: 6 + ((v - min) / range) * 22,
               borderRadius: 2,
               backgroundColor: i === series.length - 1 ? C.lime : `${C.lime}55`,
+            }}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// Dependency-free pace trend (sec/km). Lower is faster, so a faster bar is
+// TALLER; latest highlighted, delta shown as time saved (lime) or lost (amber).
+function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  const delta = series[series.length - 1]! - series[0]!; // negative = got faster
+  const sign = delta <= 0 ? "−" : "+";
+  return (
+    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <Kicker>{t("session.paceTrend")}</Kicker>
+        <Mono color={delta <= 0 ? C.lime : C.amber}>
+          {sign}{paceClock(Math.abs(delta))} /km · {series.length}×
+        </Mono>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
+        {series.map((v, i) => (
+          <View
+            key={i}
+            style={{
+              flex: 1,
+              height: 6 + ((max - v) / range) * 22,
+              borderRadius: 2,
+              backgroundColor: i === series.length - 1 ? C.blue : `${C.blue}55`,
             }}
           />
         ))}

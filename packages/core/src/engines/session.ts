@@ -15,6 +15,11 @@ export interface StrengthSet {
   peakVel?: string;
   /** range of motion, cm */
   rom?: string;
+  /**
+   * Drop set — performed immediately after the previous set with NO rest and a
+   * reduced load (strip weight, keep going to extend the set past failure).
+   */
+  drop?: boolean;
 }
 
 export interface StrengthBlock {
@@ -22,6 +27,17 @@ export interface StrengthBlock {
   name: string;
   sets: StrengthSet[];
   note?: string;
+  /**
+   * Superset group key — strength blocks sharing the same `group` are performed
+   * together (no rest between exercises), shown as A1/A2/A3… The key is stable
+   * (a uid), so a group survives reordering and can hold 3+ exercises.
+   */
+  group?: string;
+  /**
+   * @deprecated Legacy "supersetted with the NEXT block" flag (pre-group model).
+   * Still read by `supersetLabels` for back-compat; new writes use `group`.
+   */
+  superset?: boolean;
 }
 
 export interface ConditioningBlock {
@@ -33,6 +49,8 @@ export interface ConditioningBlock {
   rounds?: number;
   minutes?: number;
   rpe?: number;
+  /** distance covered, km (runs/rows/rides) — pace is derived from minutes. */
+  distance?: number;
 }
 
 export type SessionBlock = StrengthBlock | ConditioningBlock;
@@ -69,15 +87,64 @@ export function blockBestE1rm(b: StrengthBlock): number {
 }
 
 /**
+ * Pace per km for a cardio block (e.g. "5:42 /km"), derived from distance +
+ * minutes. Null unless both are logged — pace isn't stored, it's computed so it
+ * can never disagree with the distance/time it came from.
+ */
+export function pacePerKm(b: ConditioningBlock): string | null {
+  if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
+  return `${paceClock((b.minutes * 60) / b.distance)} /km`;
+}
+
+/** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */
+export function paceClock(secPerKm: number): string {
+  // Round to whole seconds FIRST, then split — otherwise rounding the seconds
+  // component alone can yield 60 (e.g. 359.6 → "5:60" instead of "6:00").
+  const total = Math.round(secPerKm);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export interface PacePoint {
+  date: string; // ISO
+  secPerKm: number;
+}
+
+/** Pace (sec/km) over time for one cardio move, oldest → newest. Lower is faster. */
+export function paceSeries(sessions: LoggedSession[], move: string): PacePoint[] {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
+  const pts: PacePoint[] = [];
+  for (const s of sorted)
+    for (const b of s.blocks)
+      if (b.kind === "conditioning" && b.name === move && b.distance && b.distance > 0 && b.minutes && b.minutes > 0)
+        pts.push({ date: s.startedAt, secPerKm: Math.round((b.minutes * 60) / b.distance) });
+  return pts;
+}
+
+/** The headline cardio move in a session (the one with the longest paced distance). */
+export function headlineRunMove(blocks: SessionBlock[]): string | undefined {
+  return blocks
+    .filter((b): b is ConditioningBlock => b.kind === "conditioning" && !!b.distance && !!b.minutes)
+    .sort((a, b) => (b.distance ?? 0) - (a.distance ?? 0))[0]?.name;
+}
+
+/**
  * One-line summary of a conditioning block: format, the interval (rounds ×
- * work/rest seconds) when logged, total minutes, and optionally RPE. Shared so
- * the web + mobile history/detail views read intervals the same way.
+ * work/rest seconds) when logged, distance, total minutes, the derived pace,
+ * and optionally RPE. Shared so the web + mobile history/detail views read
+ * cardio the same way.
  */
 export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean } = {}): string {
   const parts: (string | null | undefined)[] = [b.format];
   if (b.work && b.rest) parts.push(`${b.rounds ? `${b.rounds}×` : ""}${b.work}/${b.rest}s`);
   else if (b.rounds) parts.push(`${b.rounds} rounds`);
+  if (b.distance) parts.push(`${b.distance} km`);
   if (b.minutes) parts.push(`${b.minutes} min`);
+  const pace = pacePerKm(b);
+  if (pace) parts.push(pace);
   if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
   return parts.filter(Boolean).join(" · ");
 }
@@ -86,6 +153,81 @@ export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean 
 export function blockSummary(b: SessionBlock): string {
   if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
   return conditioningSummary(b);
+}
+
+// ----- Supersets (A1/A2/A3 groups) -----
+
+type GroupedBlock = { kind: string; group?: string; superset?: boolean };
+
+/** The superset group key for a block, normalizing the legacy `superset` flag. */
+function groupKeyAt(blocks: GroupedBlock[], i: number): string | null {
+  const b = blocks[i];
+  if (!b || b.kind !== "strength") return null;
+  if (b.group) return b.group;
+  // Legacy boolean: `superset` meant "joined to the NEXT block". A contiguous
+  // run of strength blocks linked that way is one group, keyed by its start.
+  const linksToNext = (x?: GroupedBlock) => !!x && x.kind === "strength" && !!x.superset && !x.group;
+  const inRun = (!!b.superset && !b.group) || linksToNext(blocks[i - 1]);
+  if (!inRun) return null;
+  let start = i;
+  while (start > 0 && linksToNext(blocks[start - 1])) start--;
+  return `legacy-${start}`;
+}
+
+/**
+ * Per-block superset labels (e.g. ["A1","A2",null,"B1","B2"]). Groups are
+ * lettered by first appearance; only groups with ≥2 members are labelled. One
+ * source of truth so the web + mobile editors and detail views can't drift.
+ */
+export function supersetLabels(blocks: GroupedBlock[]): (string | null)[] {
+  const keys = blocks.map((_, i) => groupKeyAt(blocks, i));
+  const counts = new Map<string, number>();
+  for (const k of keys) if (k) counts.set(k, (counts.get(k) ?? 0) + 1);
+  const letters = new Map<string, string>();
+  const seq = new Map<string, number>();
+  let nextLetter = 0;
+  return keys.map((k) => {
+    if (!k || (counts.get(k) ?? 0) < 2) return null;
+    if (!letters.has(k)) letters.set(k, String.fromCharCode(65 + nextLetter++ % 26));
+    const n = (seq.get(k) ?? 0) + 1;
+    seq.set(k, n);
+    return `${letters.get(k)}${n}`;
+  });
+}
+
+/** True when a block shares a superset group with the block directly above it. */
+export function isSupersettedWithPrev(blocks: GroupedBlock[], index: number): boolean {
+  const k = groupKeyAt(blocks, index);
+  return !!k && k === groupKeyAt(blocks, index - 1);
+}
+
+/**
+ * Toggle whether the block at `index` is supersetted with the one directly
+ * above it: joins (or extends) that group, or leaves it. Drops any group left
+ * with a single member. Pure — returns a new array; `newKey` mints group ids.
+ */
+export function toggleSuperset<T extends { kind: string; group?: string; superset?: boolean }>(
+  blocks: T[],
+  index: number,
+  newKey: () => string,
+): T[] {
+  const cur = blocks[index];
+  const prev = blocks[index - 1];
+  if (!cur || !prev || cur.kind !== "strength" || prev.kind !== "strength") return blocks;
+  const next = blocks.slice();
+  if (isSupersettedWithPrev(blocks, index)) {
+    next[index] = { ...cur, group: undefined, superset: undefined };
+  } else {
+    const g = groupKeyAt(blocks, index - 1) ?? newKey();
+    if (!prev.group) next[index - 1] = { ...prev, group: g, superset: undefined };
+    next[index] = { ...cur, group: g, superset: undefined };
+  }
+  // Cleanup: a group with <2 members isn't a superset anymore.
+  const counts = new Map<string, number>();
+  for (const b of next) if (b.kind === "strength" && b.group) counts.set(b.group, (counts.get(b.group) ?? 0) + 1);
+  return next.map((b) =>
+    b.kind === "strength" && b.group && (counts.get(b.group) ?? 0) < 2 ? { ...b, group: undefined } : b,
+  );
 }
 
 /** Tonnage (load × reps) summed across all strength sets in a session. */
@@ -182,7 +324,7 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
       const minutes =
         b.minutes ??
         (b.work && b.rest && b.rounds ? Math.round(((b.work + b.rest) * b.rounds) / 60) : 12);
-      return { move: b.name, system, minutes, rpe: b.rpe ?? 8 };
+      return { move: b.name, system, minutes, rpe: b.rpe ?? 8, ...(b.distance ? { distance: b.distance } : {}) };
     });
     return { daysAgo, items };
   });

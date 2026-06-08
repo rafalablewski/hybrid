@@ -49,6 +49,12 @@ import {
   e1rmSeries,
   liftNames,
   blockSummary,
+  supersetLabels,
+  paceSeries,
+  headlineRunMove,
+  paceClock,
+  cardioPrsForSession,
+  type CardioPrHit,
   type LoggedSession,
   type Macrocycle,
   type Biometrics,
@@ -691,7 +697,9 @@ function SessionDetail({
   onBack: () => void;
 }) {
   const prs = prsForSession(all, session.id);
+  const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
+  const ssLabels = supersetLabels(session.blocks);
   const muscles = volumeByMuscle(session.blocks);
   const muscleMax = muscles[0]?.volume || 1;
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
@@ -706,8 +714,20 @@ function SessionDetail({
     .sort((a, b) => b.e - a.e)[0]?.name;
   const series = topLift ? e1rmSeries(all, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm })) : [];
 
+  // The session's headline run → its pace (sec/km) trend across all history.
+  const runMove = headlineRunMove(session.blocks);
+  const paceData = runMove ? paceSeries(all, runMove).map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm })) : [];
+
   const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
     p.previous == null ? `${p.lift} ${p.e1rm}kg (first!)` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+  const cardioPrLine = (p: CardioPrHit) => {
+    if (p.kind === "distance")
+      return p.previous == null
+        ? `${p.move} ${p.value} km (first!)`
+        : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
+    const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
+    return `${p.move} ${paceClock(p.value)} /km${delta}`;
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -741,6 +761,21 @@ function SessionDetail({
             {prs.map((p) => (
               <Mono key={p.lift} s={{ fontSize: 13 }} c={CHALK}>
                 {prLine(p)}
+              </Mono>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {cardioPrs.length > 0 && (
+        <Card style={{ borderColor: BLUE }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+            🏃 {cardioPrs.length} new cardio record{cardioPrs.length > 1 ? "s" : ""}
+          </Mono>
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+            {cardioPrs.map((p) => (
+              <Mono key={`${p.move}-${p.kind}`} s={{ fontSize: 13 }} c={CHALK}>
+                {cardioPrLine(p)}
               </Mono>
             ))}
           </div>
@@ -781,6 +816,27 @@ function SessionDetail({
         )}
       </div>
 
+      {paceData.length > 1 && (
+        <ChartFrame title={`${runMove} · pace`} kicker="Lower is faster · across your logs">
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={paceData}>
+              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+              <YAxis
+                stroke={ASH}
+                style={{ ...mono, fontSize: 11 }}
+                reversed
+                domain={["auto", "auto"]}
+                tickFormatter={(v: number) => paceClock(v)}
+                width={48}
+              />
+              <Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} />
+              <Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+      )}
+
       {/* Per-exercise breakdown */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {session.blocks.map((b, i) => (
@@ -788,6 +844,7 @@ function SessionDetail({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
                 {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: LIME, marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Mono s={{ fontSize: 13 }} c={LIME}>{Math.round(blockBestE1rm(b))} kg e1RM</Mono>
@@ -797,8 +854,8 @@ function SessionDetail({
               <div style={{ marginTop: 8 }}>
                 {b.sets.map((st, j) => (
                   <div key={j} style={{ display: "flex", gap: 16, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
-                    <Mono s={{ fontSize: 13, width: 22 }} c={ASH}>{j + 1}</Mono>
-                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}</Mono>
+                    <Mono s={{ fontSize: 13, width: 22 }} c={st.drop ? LIME : ASH}>{st.drop ? "↓" : j + 1}</Mono>
+                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}{st.drop ? " · drop" : ""}</Mono>
                     {st.rpe ? <Mono s={{ fontSize: 13 }}>RPE {st.rpe}</Mono> : null}
                     {st.vel ? <Mono s={{ fontSize: 13 }} c={BLUE}>{st.vel} m/s</Mono> : null}
                   </div>
