@@ -473,13 +473,15 @@ export default function Workout() {
     setPhase("done");
   };
 
+  // "Last time" reference per lift — computed once from history (which is fixed
+  // for the session), not re-sorted on every per-second timer re-render.
+  // Must stay ABOVE the early return below — hooks can't run conditionally.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
+
   if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
 
   const ssLabels = supersetLabels(exercises);
-  // "Last time" reference per lift — computed once from history (which is fixed
-  // for the session), not re-sorted on every per-second timer re-render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
