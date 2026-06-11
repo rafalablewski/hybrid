@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -56,7 +56,7 @@ Notifications.setNotificationHandler({
 
 type WKind = "strength" | "cardio" | "conditioning";
 
-type WSet = { reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
+type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
 
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
@@ -77,6 +77,7 @@ type WExercise = {
 };
 
 const emptySet = (from?: WSet): WSet => ({
+  uid: uid(),
   reps: from?.reps ?? "",
   load: from?.load ?? "",
   rpe: from?.rpe ?? "",
@@ -150,12 +151,20 @@ export default function Workout() {
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
   const [rpeHelp, setRpeHelp] = useState(false);
   const [showTip, setShowTip] = useState(false);
+  // Get-ready countdown on entering a fresh workout (5→1→GO) before the clock
+  // starts; null once it finishes or when resuming an in-progress draft.
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const didCountdown = useRef(false);
+  // Pause/hold — freezes the elapsed clock (and any running rest) until resumed.
+  const [paused, setPaused] = useState(false);
+  const pausedAt = useRef(0);
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
 
   useEffect(() => {
-    if (phase !== "active") return;
+    // Don't advance the clock during the get-ready countdown or while paused.
+    if (phase !== "active" || paused || countdown !== null) return;
     const id = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt.current.getTime()) / 1000));
       if (restSince) {
@@ -169,7 +178,22 @@ export default function Workout() {
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [phase, restSince, restTarget]);
+  }, [phase, restSince, restTarget, paused, countdown]);
+
+  // Drive the get-ready countdown: 5→1, a brief "GO", then start the clock from
+  // zero so the elapsed time reflects actual training, not the count-in.
+  useEffect(() => {
+    if (countdown == null) return;
+    if (countdown <= 0) {
+      startedAt.current = new Date();
+      setElapsed(0);
+      const id = setTimeout(() => setCountdown(null), 700);
+      return () => clearTimeout(id);
+    }
+    Haptics.selectionAsync().catch(() => {});
+    const id = setTimeout(() => setCountdown((c) => (c == null ? null : c - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [countdown]);
 
   // Show the one-time logging guide until the athlete has banked a set before.
   useEffect(() => {
@@ -241,6 +265,9 @@ export default function Workout() {
       prior.current = sessions;
       setRecent(exerciseHistory(sessions));
 
+      // Resuming a live draft keeps its running clock — everything else is a
+      // fresh start that gets the get-ready count-in.
+      let resumedDraft = false;
       if (source === "last") {
         await clearDraft();
         const last = sessions[0];
@@ -264,7 +291,15 @@ export default function Workout() {
           startedAt.current = new Date(draft.startedAt);
           setTitle(draft.title);
           setExercises(draft.exercises as WExercise[]);
+          resumedDraft = true;
         }
+      }
+      // Count the athlete in on a fresh workout (once per mount), starting the
+      // clock only when it hits GO (see the countdown effect above).
+      if (!resumedDraft && !didCountdown.current) {
+        didCountdown.current = true;
+        startedAt.current = new Date();
+        setCountdown(5);
       }
       setRestored(true);
     })();
@@ -364,6 +399,20 @@ export default function Workout() {
   const pickRest = (sec: number) => {
     setRestTarget((cur) => (cur === sec ? null : sec));
     restFired.current = false;
+  };
+  // Pause/resume the workout: on resume, shift the clock (and any running rest)
+  // forward by the held duration so neither jumps when the timer wakes back up.
+  const togglePause = () => {
+    if (paused) {
+      const held = Date.now() - pausedAt.current;
+      startedAt.current = new Date(startedAt.current.getTime() + held);
+      if (restSince != null) setRestSince(restSince + held);
+      setPaused(false);
+    } else {
+      pausedAt.current = Date.now();
+      setPaused(true);
+    }
+    Haptics.selectionAsync().catch(() => {});
   };
 
   const buildBlocks = (): SessionBlock[] => {
@@ -473,13 +522,15 @@ export default function Workout() {
     setPhase("done");
   };
 
+  // "Last time" reference per lift — computed once from history (which is fixed
+  // for the session), not re-sorted on every per-second timer re-render.
+  // Must stay ABOVE the early return below — hooks can't run conditionally.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
+
   if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
 
   const ssLabels = supersetLabels(exercises);
-  // "Last time" reference per lift — computed once from history (which is fixed
-  // for the session), not re-sorted on every per-second timer re-render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
@@ -488,8 +539,8 @@ export default function Workout() {
           <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("workout.cancel")}</Text>
         </Pressable>
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, letterSpacing: 1 }}>{mmss(elapsed)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{t("workout.elapsed")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: paused ? C.amber : C.chalk, letterSpacing: 1 }}>{mmss(elapsed)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: paused ? C.amber : C.ash, letterSpacing: 1 }}>{paused ? t("workout.paused") : t("workout.elapsed")}</Text>
         </View>
         <Pressable onPress={finish} disabled={saving} style={{ width: 64, alignItems: "flex-end" }} hitSlop={10}>
           <Text style={{ fontFamily: F.black, fontSize: 14, color: saving ? C.ash : C.lime }}>
@@ -630,7 +681,8 @@ export default function Workout() {
                   <View style={{ width: 40 }} />
                 </View>
                 {x.sets.map((s, i) => (
-                  <View key={i} style={{ flexDirection: "row", gap: 6, alignItems: "center", marginBottom: 6 }}>
+                  <SwipeRow key={s.uid ?? i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
+                    <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                     <Pressable
                       onPress={() => toggleDrop(x.uid, i)}
                       onLongPress={() => removeSet(x.uid, i)}
@@ -647,7 +699,8 @@ export default function Workout() {
                     >
                       <Text style={{ fontSize: 16, color: s.done ? C.ink : C.ash, fontFamily: F.black }}>✓</Text>
                     </Pressable>
-                  </View>
+                    </View>
+                  </SwipeRow>
                 ))}
                 <View style={{ flexDirection: "row", gap: 16 }}>
                   <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
@@ -762,17 +815,41 @@ export default function Workout() {
         {!!error && <Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono>}
 
         {exercises.length > 0 && (
-          <Pressable
-            onPress={finish}
-            disabled={saving}
-            style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 18, opacity: saving ? 0.6 : 1 }}
-          >
-            {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
-          </Pressable>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 18 }}>
+            {/* Pause/hold sits next to Finish — freeze the clock for a phone call,
+                a long queue for the rack, or a between-blocks breather. */}
+            <Pressable
+              onPress={togglePause}
+              style={{ paddingHorizontal: 18, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
+            >
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: paused ? C.amber : C.ash }}>
+                {paused ? `▶ ${t("workout.resume")}` : `❚❚ ${t("workout.pause")}`}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={finish}
+              disabled={saving}
+              style={{ flex: 1, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
+            >
+              {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
+            </Pressable>
+          </View>
         )}
       </ScrollView>
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
+
+      {/* Get-ready count-in — covers the screen on a fresh start until GO. */}
+      {countdown != null && (
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash, letterSpacing: 3, marginBottom: 12 }}>
+            {t("workout.getReady").toUpperCase()}
+          </Text>
+          <Text style={{ fontFamily: F.black, fontSize: countdown > 0 ? 132 : 96, color: C.lime }}>
+            {countdown > 0 ? countdown : t("workout.go")}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -944,6 +1021,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           name: b.name,
           kind: "strength" as const,
           sets: (b.sets.length ? b.sets : [{ load: "", reps: "", rpe: "" }]).map((s) => ({
+            uid: uid(),
             load: s.load ?? "",
             reps: s.reps ?? "",
             rpe: s.rpe ?? "",
@@ -964,6 +1042,42 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           rpe: b.rpe != null ? String(b.rpe) : "",
           distance: b.kind === "cardio" && b.distance != null ? String(b.distance) : "",
         },
+  );
+}
+
+// Swipe a set row left to reveal a Delete action — for sets added by accident.
+// Built on Animated + PanResponder (no native gesture-handler dependency, so it
+// works in the existing dev build). Only claims clearly-horizontal drags, so the
+// numeric inputs still focus on tap and the list still scrolls vertically.
+function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete: () => void; label: string }) {
+  const tx = useRef(new Animated.Value(0)).current;
+  const openRef = useRef(false);
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+      onPanResponderMove: (_, g) => {
+        const base = openRef.current ? -76 : 0;
+        tx.setValue(Math.max(-110, Math.min(0, base + g.dx)));
+      },
+      onPanResponderRelease: (_, g) => {
+        const open = openRef.current ? g.dx < 40 : g.dx < -40;
+        openRef.current = open;
+        Animated.spring(tx, { toValue: open ? -76 : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
+      },
+    }),
+  ).current;
+  return (
+    <View style={{ position: "relative", marginBottom: 6, overflow: "hidden" }}>
+      <Pressable
+        onPress={onDelete}
+        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 10 }}
+      >
+        <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.chalk }}>{label}</Text>
+      </Pressable>
+      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: C.card }} {...pan.panHandlers}>
+        {children}
+      </Animated.View>
+    </View>
   );
 }
 
