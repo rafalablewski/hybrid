@@ -20,6 +20,12 @@ export interface StrengthSet {
    * reduced load (strip weight, keep going to extend the set past failure).
    */
   drop?: boolean;
+  /**
+   * Rest taken BEFORE this set, in seconds — captured live by the mobile logger
+   * (the gap between banking the previous set and banking this one). Optional, so
+   * sessions logged without the live timer (web editor, imports) are unaffected.
+   */
+  rest?: number;
 }
 
 export interface StrengthBlock {
