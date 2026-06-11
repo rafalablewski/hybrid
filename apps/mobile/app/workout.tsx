@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -20,7 +20,7 @@ import {
   pacePerKm,
   paceClock,
   blockSummary,
-  lastStrengthBlock,
+  lastStrengthByLift,
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
@@ -202,14 +202,7 @@ export default function Workout() {
   const restNotifId = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    const cancelPrev = async () => {
-      if (restNotifId.current) {
-        await Notifications.cancelScheduledNotificationAsync(restNotifId.current).catch(() => {});
-        restNotifId.current = null;
-      }
-    };
     (async () => {
-      await cancelPrev();
       if (phase !== "active" || restSince == null || restTarget == null) return;
       const remaining = restTarget - Math.floor((Date.now() - restSince) / 1000);
       if (remaining <= 0) return;
@@ -224,8 +217,15 @@ export default function Workout() {
         // notifications unavailable (e.g. permission denied) — silent no-op
       }
     })();
+    // Cancel the scheduled alert when the rest changes/stops OR the screen
+    // unmounts — otherwise a "Rest's up" notification leaks after you've left
+    // or finished the workout. `cancelled` also catches an in-flight schedule.
     return () => {
       cancelled = true;
+      if (restNotifId.current) {
+        Notifications.cancelScheduledNotificationAsync(restNotifId.current).catch(() => {});
+        restNotifId.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restSince, restTarget, phase]);
@@ -333,9 +333,9 @@ export default function Workout() {
         x.uid === u
           ? {
               ...x,
-              sets: x.sets.map((s, j) =>
-                j === i ? { ...s, done: val, ...(restTaken != null ? { rest: restTaken } : {}) } : s,
-              ),
+              // Un-ticking clears the recorded rest too, so a stale value can't
+              // persist if you re-do the set without the timer running.
+              sets: x.sets.map((s, j) => (j === i ? { ...s, done: val, rest: val ? restTaken : undefined } : s)),
             }
           : x,
       ),
@@ -476,6 +476,10 @@ export default function Workout() {
   if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
 
   const ssLabels = supersetLabels(exercises);
+  // "Last time" reference per lift — computed once from history (which is fixed
+  // for the session), not re-sorted on every per-second timer re-render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
@@ -611,7 +615,7 @@ export default function Workout() {
                 {(() => {
                   // "Last time" reference — the most recent prior session's sets
                   // for this lift, so progressive overload has a target to beat.
-                  const last = lastStrengthBlock(prior.current, x.name);
+                  const last = lastByLift.get(x.name);
                   return last ? (
                     <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginBottom: 8 }}>
                       {t("workout.lastTime")} · {blockSummary(last)}

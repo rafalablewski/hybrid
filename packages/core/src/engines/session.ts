@@ -187,17 +187,20 @@ export function blockSummary(b: SessionBlock): string {
 }
 
 /**
- * The most recent prior strength performance of a lift (newest session first),
- * or null if it's never been logged. Powers a "last time" reference in the live
- * logger so the athlete can chase progressive overload instead of guessing.
+ * The most recent prior strength performance of EACH lift (newest session
+ * first), keyed by lift name. One pass over a single sort, so the live logger
+ * can show a "last time" reference per exercise without re-sorting history on
+ * every render. Powers progressive overload — a target to beat.
  */
-export function lastStrengthBlock(sessions: LoggedSession[], lift: string): StrengthBlock | null {
+export function lastStrengthByLift(sessions: LoggedSession[]): Map<string, StrengthBlock> {
   const sorted = [...sessions].sort(
     (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
   );
+  const map = new Map<string, StrengthBlock>();
   for (const s of sorted)
-    for (const b of s.blocks) if (isStrength(b) && b.name === lift && b.sets.length) return b;
-  return null;
+    for (const b of s.blocks)
+      if (isStrength(b) && b.sets.length && !map.has(b.name)) map.set(b.name, b);
+  return map;
 }
 
 // ----- Block kind inference + legacy migration -----
