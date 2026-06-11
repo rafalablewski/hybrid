@@ -19,6 +19,7 @@ import {
   paceClock,
   migrateBlocks,
   inferBlockKind,
+  lastStrengthByLift,
 } from "./session";
 import type { LoggedSession } from "./session";
 
@@ -61,6 +62,20 @@ describe("block summaries", () => {
     expect(cardioSummary({ kind: "cardio", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
       "8 km · 50 min · 6:15 /km · RPE 6",
     );
+  });
+});
+
+describe("lastStrengthByLift", () => {
+  it("returns the most recent prior block per lift (newest session wins)", () => {
+    const map = lastStrengthByLift(sessions);
+    // Two Back Squat sessions (May 20 + May 27) — the newer one (id 2) is kept.
+    expect(blockSummary(map.get("Back Squat")!)).toBe("120×3");
+    expect(map.has("Row Intervals")).toBe(false); // conditioning isn't strength
+  });
+  it("skips strength blocks with no sets and is empty for no history", () => {
+    expect(lastStrengthByLift([]).size).toBe(0);
+    const noSets: LoggedSession[] = [{ id: "x", title: "t", startedAt: "2026-01-01T00:00:00.000Z", blocks: [{ kind: "strength", name: "Bench", sets: [] }] }];
+    expect(lastStrengthByLift(noSets).has("Bench")).toBe(false);
   });
 });
 

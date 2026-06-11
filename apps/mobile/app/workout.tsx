@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   prescribeSession,
@@ -16,6 +19,8 @@ import {
   migrateBlocks,
   pacePerKm,
   paceClock,
+  blockSummary,
+  lastStrengthByLift,
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
@@ -38,9 +43,27 @@ import { C, F, Mono, Kicker, Card } from "../lib/ui";
 
 const uid = () => Math.random().toString(36).slice(2);
 
+// Present the rest-done notification even with the app foregrounded (sound +
+// banner), so the cue lands whether the phone is in your hand or your pocket.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: false,
+  }),
+});
+
 type WKind = "strength" | "cardio" | "conditioning";
 
-type WSet = { reps: string; load: string; rpe: string; done: boolean; drop?: boolean };
+type WSet = { reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
+
+// Default rest the countdown targets before you pick a preset — so a new user
+// always sees a counting-down timer (not a stopwatch climbing with no end).
+const DEFAULT_REST = 90;
+// One-time "how logging works" coach tip — shown until the athlete completes
+// their first-ever set or dismisses it.
+const TIP_KEY = "hybrid.workoutTipSeen";
 type WExercise = {
   uid: string;
   name: string;
@@ -119,13 +142,14 @@ export default function Workout() {
   const [elapsed, setElapsed] = useState(0);
   const [restSince, setRestSince] = useState<number | null>(null);
   const [restNow, setRestNow] = useState(0);
-  const [restTarget, setRestTarget] = useState<number | null>(null);
+  const [restTarget, setRestTarget] = useState<number | null>(DEFAULT_REST);
   const restFired = useRef(false);
   const [readiness, setReadiness] = useState<number | undefined>(undefined);
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
   const [rpeHelp, setRpeHelp] = useState(false);
+  const [showTip, setShowTip] = useState(false);
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
@@ -146,6 +170,65 @@ export default function Workout() {
     }, 1000);
     return () => clearInterval(id);
   }, [phase, restSince, restTarget]);
+
+  // Show the one-time logging guide until the athlete has banked a set before.
+  useEffect(() => {
+    AsyncStorage.getItem(TIP_KEY).then((v) => setShowTip(v !== "1")).catch(() => {});
+  }, []);
+  const dismissTip = () => {
+    setShowTip(false);
+    AsyncStorage.setItem(TIP_KEY, "1").catch(() => {});
+  };
+
+  // Keep the screen on while logging — no dimming/sleep mid-set (chalky hands,
+  // no taps). Released the moment the workout finishes or the screen unmounts.
+  useEffect(() => {
+    if (phase !== "active") return;
+    activateKeepAwakeAsync("workout").catch(() => {});
+    return () => {
+      deactivateKeepAwake("workout").catch(() => {});
+    };
+  }, [phase]);
+
+  // Ask for notification permission once (best-effort) so the rest-done alert
+  // can fire while the app is backgrounded / the phone is locked.
+  useEffect(() => {
+    Notifications.requestPermissionsAsync().catch(() => {});
+  }, []);
+
+  // Schedule (and keep in sync) a local notification for when the rest
+  // countdown ends — so you get an audible cue even with the app pocketed. Re-
+  // fires whenever a new rest starts or the target changes; cancelled on stop.
+  const restNotifId = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (phase !== "active" || restSince == null || restTarget == null) return;
+      const remaining = restTarget - Math.floor((Date.now() - restSince) / 1000);
+      if (remaining <= 0) return;
+      try {
+        const idn = await Notifications.scheduleNotificationAsync({
+          content: { title: t("workout.restDone"), body: t("notif.restBody"), sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: remaining },
+        });
+        if (cancelled) await Notifications.cancelScheduledNotificationAsync(idn).catch(() => {});
+        else restNotifId.current = idn;
+      } catch {
+        // notifications unavailable (e.g. permission denied) — silent no-op
+      }
+    })();
+    // Cancel the scheduled alert when the rest changes/stops OR the screen
+    // unmounts — otherwise a "Rest's up" notification leaks after you've left
+    // or finished the workout. `cancelled` also catches an in-flight schedule.
+    return () => {
+      cancelled = true;
+      if (restNotifId.current) {
+        Notifications.cancelScheduledNotificationAsync(restNotifId.current).catch(() => {});
+        restNotifId.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restSince, restTarget, phase]);
 
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
   // AI / repeat-last start. Guests read their own on-device history. An empty
@@ -206,6 +289,15 @@ export default function Workout() {
     setCustom("");
   };
   const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
+  const moveExercise = (u: string, dir: -1 | 1) =>
+    setExercises((xs) => {
+      const i = xs.findIndex((x) => x.uid === u);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= xs.length) return xs;
+      const next = [...xs];
+      [next[i], next[j]] = [next[j]!, next[i]!];
+      return next;
+    });
   const rename = (u: string, name: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, name } : x)));
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
@@ -233,8 +325,23 @@ export default function Workout() {
   const removeSet = (u: string, i: number) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
   const toggleDone = (u: string, i: number, val: boolean) => {
-    setSetField(u, i, "done", val);
+    // Banking a set also records the rest that preceded it — the gap since the
+    // last set was banked (the live timer) is saved on the set as real data.
+    const restTaken = val && restSince != null ? Math.floor((Date.now() - restSince) / 1000) : undefined;
+    setExercises((xs) =>
+      xs.map((x) =>
+        x.uid === u
+          ? {
+              ...x,
+              // Un-ticking clears the recorded rest too, so a stale value can't
+              // persist if you re-do the set without the timer running.
+              sets: x.sets.map((s, j) => (j === i ? { ...s, done: val, rest: val ? restTaken : undefined } : s)),
+            }
+          : x,
+      ),
+    );
     if (!val) return;
+    if (showTip) dismissTip(); // first banked set — the guide has done its job
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     // No rest when this set flows straight into a drop set, or into the next
     // exercise of a superset — you keep moving; the rest comes after the
@@ -288,6 +395,7 @@ export default function Workout() {
             reps: s.reps.trim(),
             ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}),
             ...(s.drop ? { drop: true } : {}),
+            ...(s.rest != null ? { rest: s.rest } : {}),
           }));
         if (sets.length) blocks.push({ kind: "strength", name: x.name, sets, ...(x.group ? { group: x.group } : {}) });
       }
@@ -368,6 +476,10 @@ export default function Workout() {
   if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
 
   const ssLabels = supersetLabels(exercises);
+  // "Last time" reference per lift — computed once from history (which is fixed
+  // for the session), not re-sorted on every per-second timer re-render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
@@ -405,17 +517,43 @@ export default function Workout() {
           </Pressable>
         </View>
 
+        {showTip && (
+          <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.lime }}>{t("workout.tipTitle")}</Text>
+              <Pressable onPress={dismissTip} hitSlop={8}>
+                <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.lime }}>{t("workout.tipGot")}</Text>
+              </Pressable>
+            </View>
+            <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>{t("workout.tipBody")}</Text>
+          </View>
+        )}
+
         {restSince != null && (() => {
-          const done = restTarget != null && restNow >= restTarget;
+          // Countdown: show the time LEFT against the target, ticking to zero;
+          // once reached it flips to "Rest done" and shows how long you've gone
+          // over. With no target it falls back to a plain elapsed stopwatch.
+          const remaining = restTarget != null ? restTarget - restNow : null;
+          const done = remaining != null && remaining <= 0;
           const accent = done ? C.lime : C.blue;
+          const clock =
+            restTarget == null
+              ? mmss(restNow)
+              : done
+                ? `+${mmss(restNow - restTarget)}`
+                : `${mmss(remaining!)} ${t("workout.restLeft")}`;
           return (
             <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: accent }}>
-                  {done ? t("workout.restDone") : t("workout.resting")} · {mmss(restNow)}{restTarget ? ` / ${mmss(restTarget)}` : ""}
+                  {done ? t("workout.restDone") : t("workout.resting")} · {clock}
                 </Text>
-                <Pressable onPress={() => setRestSince(null)} hitSlop={8}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash }}>{t("workout.dismiss")}</Text>
+                <Pressable
+                  onPress={() => setRestSince(null)}
+                  hitSlop={8}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: accent }}
+                >
+                  <Text style={{ fontFamily: F.bold, fontSize: 12, color: accent }}>■ {t("workout.stopRest")}</Text>
                 </Pressable>
               </View>
               <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
@@ -446,15 +584,27 @@ export default function Workout() {
                 <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.lime, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
               )}
               <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }} />
-              {x.kind === "strength" && xi > 0 && exercises[xi - 1]?.kind === "strength" && (
-                <Pressable
-                  onPress={() => supersetWithPrev(x.uid)}
-                  hitSlop={6}
-                  style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: isSupersettedWithPrev(exercises, xi) ? C.lime : C.line, backgroundColor: isSupersettedWithPrev(exercises, xi) ? `${C.lime}1f` : "transparent" }}
-                >
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: isSupersettedWithPrev(exercises, xi) ? C.lime : C.ash }}>⛓ {isSupersettedWithPrev(exercises, xi) ? t("workout.supersetJoined") : t("workout.supersetUp")}</Text>
-                </Pressable>
-              )}
+              {/* Superset with the exercise BELOW — placed on the upper card so
+                  even the FIRST exercise can start a superset (no rest between). */}
+              {x.kind === "strength" && exercises[xi + 1]?.kind === "strength" && (() => {
+                const joined = isSupersettedWithPrev(exercises, xi + 1);
+                const nextUid = exercises[xi + 1]!.uid;
+                return (
+                  <Pressable
+                    onPress={() => supersetWithPrev(nextUid)}
+                    hitSlop={6}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
+                  >
+                    <Text style={{ fontFamily: F.mono, fontSize: 11, color: joined ? C.lime : C.ash }}>⛓ {joined ? t("workout.supersetJoined") : t("workout.superset")}</Text>
+                  </Pressable>
+                );
+              })()}
+              <Pressable onPress={() => moveExercise(x.uid, -1)} disabled={xi === 0} hitSlop={6}>
+                <Text style={{ color: xi === 0 ? C.line : C.ash, fontSize: 15 }}>↑</Text>
+              </Pressable>
+              <Pressable onPress={() => moveExercise(x.uid, 1)} disabled={xi === exercises.length - 1} hitSlop={6}>
+                <Text style={{ color: xi === exercises.length - 1 ? C.line : C.ash, fontSize: 15 }}>↓</Text>
+              </Pressable>
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
                 <Text style={{ color: C.ash, fontSize: 15 }}>✕</Text>
               </Pressable>
@@ -462,6 +612,16 @@ export default function Workout() {
 
             {x.kind === "strength" ? (
               <>
+                {(() => {
+                  // "Last time" reference — the most recent prior session's sets
+                  // for this lift, so progressive overload has a target to beat.
+                  const last = lastByLift.get(x.name);
+                  return last ? (
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginBottom: 8 }}>
+                      {t("workout.lastTime")} · {blockSummary(last)}
+                    </Text>
+                  ) : null;
+                })()}
                 <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
                   <ColHead>KG</ColHead>

@@ -45,7 +45,8 @@
           "photosPermission": "HYBRID uses your photo library so you can add progress photos.",
           "cameraPermission": "HYBRID uses the camera so you can take progress photos."
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

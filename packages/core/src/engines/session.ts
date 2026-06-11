@@ -20,6 +20,12 @@ export interface StrengthSet {
    * reduced load (strip weight, keep going to extend the set past failure).
    */
   drop?: boolean;
+  /**
+   * Rest taken BEFORE this set, in seconds — captured live by the mobile logger
+   * (the gap between banking the previous set and banking this one). Optional, so
+   * sessions logged without the live timer (web editor, imports) are unaffected.
+   */
+  rest?: number;
 }
 
 export interface StrengthBlock {
@@ -178,6 +184,23 @@ export function blockSummary(b: SessionBlock): string {
   if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(" · ");
   if (isCardio(b)) return cardioSummary(b);
   return conditioningSummary(b);
+}
+
+/**
+ * The most recent prior strength performance of EACH lift (newest session
+ * first), keyed by lift name. One pass over a single sort, so the live logger
+ * can show a "last time" reference per exercise without re-sorting history on
+ * every render. Powers progressive overload — a target to beat.
+ */
+export function lastStrengthByLift(sessions: LoggedSession[]): Map<string, StrengthBlock> {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+  );
+  const map = new Map<string, StrengthBlock>();
+  for (const s of sorted)
+    for (const b of s.blocks)
+      if (isStrength(b) && b.sets.length && !map.has(b.name)) map.set(b.name, b);
+  return map;
 }
 
 // ----- Block kind inference + legacy migration -----
