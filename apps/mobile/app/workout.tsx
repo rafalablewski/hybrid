@@ -56,7 +56,7 @@ Notifications.setNotificationHandler({
 
 type WKind = "strength" | "cardio" | "conditioning";
 
-type WSet = { reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
+type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
 
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
@@ -77,6 +77,7 @@ type WExercise = {
 };
 
 const emptySet = (from?: WSet): WSet => ({
+  uid: uid(),
   reps: from?.reps ?? "",
   load: from?.load ?? "",
   rpe: from?.rpe ?? "",
@@ -680,7 +681,7 @@ export default function Workout() {
                   <View style={{ width: 40 }} />
                 </View>
                 {x.sets.map((s, i) => (
-                  <SwipeRow key={i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
+                  <SwipeRow key={s.uid ?? i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
                     <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                     <Pressable
                       onPress={() => toggleDrop(x.uid, i)}
@@ -1020,6 +1021,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           name: b.name,
           kind: "strength" as const,
           sets: (b.sets.length ? b.sets : [{ load: "", reps: "", rpe: "" }]).map((s) => ({
+            uid: uid(),
             load: s.load ?? "",
             reps: s.reps ?? "",
             rpe: s.rpe ?? "",
@@ -1065,7 +1067,7 @@ function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete
     }),
   ).current;
   return (
-    <View style={{ position: "relative", marginBottom: 6 }}>
+    <View style={{ position: "relative", marginBottom: 6, overflow: "hidden" }}>
       <Pressable
         onPress={onDelete}
         style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 10 }}
