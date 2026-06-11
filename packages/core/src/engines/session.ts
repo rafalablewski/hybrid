@@ -186,6 +186,20 @@ export function blockSummary(b: SessionBlock): string {
   return conditioningSummary(b);
 }
 
+/**
+ * The most recent prior strength performance of a lift (newest session first),
+ * or null if it's never been logged. Powers a "last time" reference in the live
+ * logger so the athlete can chase progressive overload instead of guessing.
+ */
+export function lastStrengthBlock(sessions: LoggedSession[], lift: string): StrengthBlock | null {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+  );
+  for (const s of sorted)
+    for (const b of s.blocks) if (isStrength(b) && b.name === lift && b.sets.length) return b;
+  return null;
+}
+
 // ----- Block kind inference + legacy migration -----
 
 const CARDIO_RE = /\b(run|jog|walk|hike|ruck|sprint|swim|bike|cycl|ride|row(?!ing intervals)|erg|ski|elliptical|treadmill|cardio)\b/i;

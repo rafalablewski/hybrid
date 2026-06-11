@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -17,6 +19,8 @@ import {
   migrateBlocks,
   pacePerKm,
   paceClock,
+  blockSummary,
+  lastStrengthBlock,
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
@@ -38,6 +42,17 @@ import { useLang } from "../lib/i18n";
 import { C, F, Mono, Kicker, Card } from "../lib/ui";
 
 const uid = () => Math.random().toString(36).slice(2);
+
+// Present the rest-done notification even with the app foregrounded (sound +
+// banner), so the cue lands whether the phone is in your hand or your pocket.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: false,
+  }),
+});
 
 type WKind = "strength" | "cardio" | "conditioning";
 
@@ -165,6 +180,56 @@ export default function Workout() {
     AsyncStorage.setItem(TIP_KEY, "1").catch(() => {});
   };
 
+  // Keep the screen on while logging — no dimming/sleep mid-set (chalky hands,
+  // no taps). Released the moment the workout finishes or the screen unmounts.
+  useEffect(() => {
+    if (phase !== "active") return;
+    activateKeepAwakeAsync("workout").catch(() => {});
+    return () => {
+      deactivateKeepAwake("workout").catch(() => {});
+    };
+  }, [phase]);
+
+  // Ask for notification permission once (best-effort) so the rest-done alert
+  // can fire while the app is backgrounded / the phone is locked.
+  useEffect(() => {
+    Notifications.requestPermissionsAsync().catch(() => {});
+  }, []);
+
+  // Schedule (and keep in sync) a local notification for when the rest
+  // countdown ends — so you get an audible cue even with the app pocketed. Re-
+  // fires whenever a new rest starts or the target changes; cancelled on stop.
+  const restNotifId = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const cancelPrev = async () => {
+      if (restNotifId.current) {
+        await Notifications.cancelScheduledNotificationAsync(restNotifId.current).catch(() => {});
+        restNotifId.current = null;
+      }
+    };
+    (async () => {
+      await cancelPrev();
+      if (phase !== "active" || restSince == null || restTarget == null) return;
+      const remaining = restTarget - Math.floor((Date.now() - restSince) / 1000);
+      if (remaining <= 0) return;
+      try {
+        const idn = await Notifications.scheduleNotificationAsync({
+          content: { title: t("workout.restDone"), body: t("notif.restBody"), sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: remaining },
+        });
+        if (cancelled) await Notifications.cancelScheduledNotificationAsync(idn).catch(() => {});
+        else restNotifId.current = idn;
+      } catch {
+        // notifications unavailable (e.g. permission denied) — silent no-op
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restSince, restTarget, phase]);
+
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
   // AI / repeat-last start. Guests read their own on-device history. An empty
   // start resumes an in-progress draft if one exists (never lose a workout).
@@ -224,6 +289,15 @@ export default function Workout() {
     setCustom("");
   };
   const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
+  const moveExercise = (u: string, dir: -1 | 1) =>
+    setExercises((xs) => {
+      const i = xs.findIndex((x) => x.uid === u);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= xs.length) return xs;
+      const next = [...xs];
+      [next[i], next[j]] = [next[j]!, next[i]!];
+      return next;
+    });
   const rename = (u: string, name: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, name } : x)));
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
@@ -521,6 +595,12 @@ export default function Workout() {
                   </Pressable>
                 );
               })()}
+              <Pressable onPress={() => moveExercise(x.uid, -1)} disabled={xi === 0} hitSlop={6}>
+                <Text style={{ color: xi === 0 ? C.line : C.ash, fontSize: 15 }}>↑</Text>
+              </Pressable>
+              <Pressable onPress={() => moveExercise(x.uid, 1)} disabled={xi === exercises.length - 1} hitSlop={6}>
+                <Text style={{ color: xi === exercises.length - 1 ? C.line : C.ash, fontSize: 15 }}>↓</Text>
+              </Pressable>
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
                 <Text style={{ color: C.ash, fontSize: 15 }}>✕</Text>
               </Pressable>
@@ -528,6 +608,16 @@ export default function Workout() {
 
             {x.kind === "strength" ? (
               <>
+                {(() => {
+                  // "Last time" reference — the most recent prior session's sets
+                  // for this lift, so progressive overload has a target to beat.
+                  const last = lastStrengthBlock(prior.current, x.name);
+                  return last ? (
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginBottom: 8 }}>
+                      {t("workout.lastTime")} · {blockSummary(last)}
+                    </Text>
+                  ) : null;
+                })()}
                 <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
                   <ColHead>KG</ColHead>
