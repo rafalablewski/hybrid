@@ -111,6 +111,27 @@ pnpm install`}</Cmd>
             <kbd style={kbd}>i</kbd> to open the phone again.
           </Step>
         </Steps>
+        <Note c={VIOLET}>
+          <strong>Can&rsquo;t find or open the Simulator? Open it by hand.</strong> The &ldquo;Xcode Simulator&rdquo;
+          is really a separate app just called <strong>Simulator</strong> (it comes <em>with</em> Xcode — you
+          don&rsquo;t open Xcode itself). To launch it yourself:
+          <div style={{ marginTop: 6 }}>
+            <strong>1.</strong> Press <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>Space</kbd> (this opens Spotlight
+            search). <strong>2.</strong> Type <strong>Simulator</strong>. <strong>3.</strong> Press{" "}
+            <kbd style={kbd}>Enter</kbd>. A phone-shaped window appears — <strong>that IS the Xcode Simulator.</strong>
+          </div>
+          <div style={{ marginTop: 6 }}>
+            Leave it open, go back to the engine window (step 6) and press <kbd style={kbd}>i</kbd> — Expo loads the
+            app into the phone you just opened. If nothing called &ldquo;Simulator&rdquo; shows up in Spotlight, Xcode
+            isn&rsquo;t fully installed yet — do steps 1&ndash;2 first.
+          </div>
+          <div style={{ marginTop: 6 }}>
+            If pressing <kbd style={kbd}>i</kbd> shows an error about Xcode, paste this one line (it tells your Mac
+            where Xcode is), type your Mac password when asked — you won&rsquo;t see it as you type, that&rsquo;s
+            normal — then press <kbd style={kbd}>i</kbd> again:
+          </div>
+          <Cmd>{`sudo xcode-select -s /Applications/Xcode.app`}</Cmd>
+        </Note>
         <Note c={LIME}>
           <strong>✓ You did it!</strong> Next time you only need steps 6 and 7. The app opens even with no key —
           you just can&rsquo;t <em>sign in</em> yet, you can still look around.
