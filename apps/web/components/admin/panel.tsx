@@ -17,11 +17,12 @@ import AdminContent from "./content";
 import AdminAuditLog from "./audit";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
+import AdminSimulator from "./simulator";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "security" | "audit" | "system";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "security" | "audit" | "system" | "simulator";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
@@ -40,6 +41,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "security", label: "Security", icon: "🛡", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", group: "Governance" },
+  { id: "simulator", label: "iOS simulator", icon: "", group: "Governance" },
 ];
 
 export default function AdminPanel() {
@@ -184,6 +186,7 @@ export default function AdminPanel() {
         {section === "security" && <AdminSecurity />}
         {section === "audit" && <AdminAuditLog />}
         {section === "system" && <AdminSystem />}
+        {section === "simulator" && <AdminSimulator />}
       </main>
     </div>
   );
