@@ -272,6 +272,21 @@ xcrun simctl launch booted app.hybrid.mobile`}</Cmd>
         </Mono>
         <ul style={list}>
           <Li>
+            <strong>Red screen: &ldquo;No script URL provided&rdquo;</strong> (it also says{" "}
+            <code style={code}>unsanitizedScriptURLString = (null)</code>). The app built and opened fine, but{" "}
+            <strong>Metro</strong> — the thing that serves the app&rsquo;s JavaScript — isn&rsquo;t running. This happens
+            with the Xcode ▶ method, which doesn&rsquo;t start Metro for you. Open a <strong>new</strong> Terminal
+            window and start it:
+            <Cmd>{`cd apps/mobile
+pnpm start`}</Cmd>
+            Leave that window open, then reload the app in the Simulator: press <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>R</kbd>{" "}
+            (or tap <kbd style={kbd}>R</kbd> twice). The red screen goes away. Still red? In the{" "}
+            <code style={code}>pnpm start</code> window press <kbd style={kbd}>r</kbd>, or restart it with a clean cache:{" "}
+            <code style={code}>npx expo start -c</code>. <strong>Remember:</strong> the Xcode method needs TWO things
+            running — Metro <em>and</em> the app. (The easy Expo Go path, press <kbd style={kbd}>i</kbd>, starts Metro
+            automatically, so you never see this.)
+          </Li>
+          <Li>
             <strong>It says <code style={code}>supabaseKey is required.</code></strong> This was an old bug — the
             app crashed when it had no login key. It&rsquo;s <strong>fixed now</strong>. Get the fix by pulling the
             latest code: in the Terminal, go into the folder (<code style={code}>cd hybrid</code>) and paste{" "}
