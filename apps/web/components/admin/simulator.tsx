@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, VIOLET, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Governance → "iOS simulator" guide. The mobile app is a managed Expo / React
@@ -329,12 +329,19 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 function Cmd({ children }: { children: string }) {
   const [copied, setCopied] = useState(false);
+  // Reset the "copied" label after a moment, cleaning up the timer if the
+  // component unmounts first (no state update on an unmounted component).
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1400);
+    return () => clearTimeout(t);
+  }, [copied]);
   const copy = () => {
-    navigator.clipboard?.writeText(children).then(
-      () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1400);
-      },
+    // `navigator.clipboard` is undefined on non-HTTPS / older browsers — guard
+    // it so we never call `.then` on undefined.
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(children).then(
+      () => setCopied(true),
       () => {},
     );
   };

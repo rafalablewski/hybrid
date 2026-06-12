@@ -41,7 +41,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "security", label: "Security", icon: "🛡", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", group: "Governance" },
-  { id: "simulator", label: "iOS simulator", icon: "", group: "Governance" },
+  { id: "simulator", label: "iOS simulator", icon: "📱", group: "Governance" },
 ];
 
 export default function AdminPanel() {
