@@ -136,6 +136,18 @@ pnpm install`}</Cmd>
           <strong>✓ You did it!</strong> Next time you only need steps 6 and 7. The app opens even with no key —
           you just can&rsquo;t <em>sign in</em> yet, you can still look around.
         </Note>
+        <Note c={ASH}>
+          <strong>Already set up? The whole thing in a few lines.</strong> Get the newest code, then start the engine
+          and press <kbd style={kbd}>i</kbd> (with your Simulator open):
+          <Cmd>{`cd hybrid
+git checkout claude/loving-ritchie-x181a0
+git pull
+pnpm install
+pnpm --filter @hybrid/mobile dev`}</Cmd>
+          When it&rsquo;s waiting, press <kbd style={kbd}>i</kbd>. That bundles the GitHub repo and loads it into the
+          open Simulator. (<code style={code}>git pull</code> + <code style={code}>pnpm install</code> are only needed
+          when the code changed — otherwise just the last line, then <kbd style={kbd}>i</kbd>.)
+        </Note>
         <Note c={BLUE}>
           <strong>Want to actually log in?</strong> You need one key called{" "}
           <code style={code}>EXPO_PUBLIC_SUPABASE_ANON_KEY</code>. An admin has it (in Supabase it&rsquo;s under
@@ -184,6 +196,25 @@ npx expo run:ios`}</Cmd>
             normal. After it finishes, the pretend iPhone opens with the camera and save-photo working.
           </Step>
         </Steps>
+        <Note c={BLUE}>
+          <strong>Or do it the &ldquo;real Xcode&rdquo; way (open the project and press ▶).</strong> If you&rsquo;d
+          rather press the Play button in Xcode yourself, this builds the same thing. From the repo root:
+          <Cmd>{`cd apps/mobile
+npx expo prebuild --platform ios
+open ios/HYBRID.xcworkspace`}</Cmd>
+          That last line opens the project in Xcode. <strong>Important:</strong> open the{" "}
+          <code style={code}>.xcworkspace</code> file, NOT <code style={code}>.xcodeproj</code>. Then in Xcode&rsquo;s
+          top toolbar set the scheme to <strong>HYBRID</strong> and the destination to one of your simulators, and
+          press the <strong>▶ Play</strong> button (or <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>R</kbd>).
+          <div style={{ marginTop: 6 }}>
+            If the app loads <strong>blank or red</strong>, the JavaScript engine (Metro) isn&rsquo;t running — start
+            it in a second Terminal and the app will connect:
+          </div>
+          <Cmd>{`cd apps/mobile
+pnpm start`}</Cmd>
+          Note: <code style={code}>npx expo prebuild</code> creates an <code style={code}>ios/</code> folder — that&rsquo;s
+          generated build output, so don&rsquo;t commit it (it&rsquo;s already in <code style={code}>.gitignore</code>).
+        </Note>
       </Card>
 
       {/* Add-on B — EAS cloud (no compiler), simple */}
