@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { fetchSignals, createSignal, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "Lose" },
@@ -68,7 +68,7 @@ export default function Nutrition() {
     <Screen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Nutrition · today</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.lime }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime) }}>← back</Text>
       </View>
 
       {/* goal */}
@@ -79,7 +79,7 @@ export default function Nutrition() {
             onPress={() => setGoal(g.id)}
             style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}1a` : "transparent" }}
           >
-            <Text style={{ fontFamily: F.semi, fontSize: 12, color: goal === g.id ? C.lime : C.ash }}>{g.label}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: 12, color: goal === g.id ? txt(C, C.lime) : C.ash }}>{g.label}</Text>
           </Pressable>
         ))}
       </View>

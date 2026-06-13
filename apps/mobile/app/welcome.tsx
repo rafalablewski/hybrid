@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { brand } from "@hybrid/core";
 import { useLang } from "../lib/i18n";
 import { F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 
 export default function Welcome() {
   const C = useTheme().palette;
@@ -16,9 +16,9 @@ export default function Welcome() {
       <View style={{ flex: 1, justifyContent: "center" }}>
         <Text style={{ fontFamily: F.black, fontSize: 52, color: C.chalk, letterSpacing: -2 }}>
           {brand.name}
-          <Text style={{ color: C.lime }}>.</Text>
+          <Text style={{ color: txt(C, C.lime) }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.lime, letterSpacing: 3, marginTop: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), letterSpacing: 3, marginTop: 8 }}>
           {t("welcome.tagline")}
         </Text>
 
@@ -40,7 +40,7 @@ export default function Welcome() {
 
       <Pressable onPress={() => router.push("/login")} style={{ alignItems: "center", paddingVertical: 20 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>
-          {t("welcome.haveAccount")} <Text style={{ color: C.lime }}>{t("welcome.signIn")}</Text>
+          {t("welcome.haveAccount")} <Text style={{ color: txt(C, C.lime) }}>{t("welcome.signIn")}</Text>
         </Text>
       </Pressable>
     </SafeAreaView>

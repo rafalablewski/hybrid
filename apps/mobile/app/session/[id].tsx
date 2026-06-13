@@ -21,7 +21,7 @@ import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -109,7 +109,7 @@ export default function SessionDetail() {
 
       {prs.length > 0 && (
         <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.lime }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
           {prs.slice(0, 6).map((p) => (
             <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t)}</Text>
           ))}
@@ -118,7 +118,7 @@ export default function SessionDetail() {
 
       {cardioPrs.length > 0 && (
         <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.blue }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.blue) }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
           {cardioPrs.slice(0, 6).map((p) => (
             <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
           ))}
@@ -134,16 +134,16 @@ export default function SessionDetail() {
           <Card key={i}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? C.lime : b.kind === "cardio" ? C.blue : C.violet }}>{b.kind.toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
                   {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
                 </Text>
                 {ssLabels[i] && (
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ {ssLabels[i]}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.lime }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>
                   {Math.round(blockBestE1rm(b))} kg e1RM
                 </Text>
               )}

@@ -17,7 +17,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 
 const zoneColor = (id: string) =>
   id === "absolute-strength" ? C.red
@@ -90,7 +90,7 @@ export default function Velocity() {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8, marginBottom: 4 }}>
         {lifts.map((l) => (
           <Pressable key={l} onPress={() => setLift(l)} style={pill(active === l, C.lime)}>
-            <Text style={{ fontFamily: F.semi, fontSize: 12, color: active === l ? C.lime : C.ash }}>{l}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: 12, color: active === l ? txt(C, C.lime) : C.ash }}>{l}</Text>
           </Pressable>
         ))}
       </View>
@@ -116,7 +116,7 @@ export default function Velocity() {
           <Plot points={points} profile={profile} />
         </View>
         <Mono style={{ marginTop: 8, fontSize: 11 }}>
-          <Text style={{ color: C.lime }}>●</Text> measured  ·  <Text style={{ color: C.violet }}>—</Text> fit → 1RM at MVT
+          <Text style={{ color: txt(C, C.lime) }}>●</Text> measured  ·  <Text style={{ color: txt(C, C.violet) }}>—</Text> fit → 1RM at MVT
         </Mono>
       </Card>
 
@@ -130,7 +130,7 @@ export default function Velocity() {
         </View>
         {rec ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 30, color: C.violet }}>
+            <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.violet) }}>
               {rec.load} <Text style={{ fontSize: 14, color: C.ash }}>kg</Text>
             </Text>
             <Mono>≈ {rec.percent1rm.toFixed(0)}% 1RM</Mono>
@@ -195,7 +195,7 @@ function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
       onPress={onPress}
       style={{ width: 48, height: 40, borderRadius: 10, borderWidth: 1, borderColor: `${C.violet}66`, backgroundColor: `${C.violet}1f`, alignItems: "center", justifyContent: "center" }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: 22, color: C.violet }}>{label}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.violet) }}>{label}</Text>
     </Pressable>
   );
 }

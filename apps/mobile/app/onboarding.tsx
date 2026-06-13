@@ -11,7 +11,7 @@ import {
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 
 const EXP: { id: Experience; label: string }[] = [
   { id: "beginner", label: "Beginner" },
@@ -70,7 +70,7 @@ export default function Onboarding() {
                   onPress={() => setGoal(g.id)}
                   style={{ borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}14` : "transparent", borderRadius: 12, padding: 12 }}
                 >
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: goal === g.id ? C.lime : C.chalk }}>{g.label}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: goal === g.id ? txt(C, C.lime) : C.chalk }}>{g.label}</Text>
                   <Mono style={{ marginTop: 2, fontSize: 11 }}>{g.blurb}</Mono>
                 </Pressable>
               ))}
@@ -135,7 +135,7 @@ function Row({ options, value, onPick }: { options: { id: string; label: string 
           onPress={() => onPick(o.id)}
           style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: value === o.id ? C.lime : C.line, backgroundColor: value === o.id ? `${C.lime}1a` : "transparent" }}
         >
-          <Text style={{ fontFamily: F.semi, fontSize: 13, color: value === o.id ? C.lime : C.ash }}>{o.label}</Text>
+          <Text style={{ fontFamily: F.semi, fontSize: 13, color: value === o.id ? txt(C, C.lime) : C.ash }}>{o.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -146,7 +146,7 @@ function Step({ label, onPress }: { label: string; onPress: () => void }) {
   const C = useTheme().palette;
   return (
     <Pressable onPress={onPress} style={{ width: 52, height: 44, borderRadius: 10, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color: C.lime }}>{label}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime) }}>{label}</Text>
     </Pressable>
   );
 }

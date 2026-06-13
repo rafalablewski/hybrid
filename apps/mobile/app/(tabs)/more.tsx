@@ -3,7 +3,7 @@ import { useRouter, type Href } from "expo-router";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 
 type Link = { labelKey: string; sub: string; href: Href; color: string };
 
@@ -57,7 +57,7 @@ export default function More() {
                 onPress={() => router.push(l.href)}
                 style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
               >
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: l.color }}>{t(l.labelKey)} →</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, l.color) }}>{t(l.labelKey)} →</Text>
                 <Mono style={{ marginTop: 2, fontSize: 11 }}>{l.sub}</Mono>
               </Pressable>
             ))}

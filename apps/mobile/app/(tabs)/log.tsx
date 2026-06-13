@@ -11,7 +11,7 @@ import { fetchSessions } from "../../lib/api";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 
 export default function Train() {
   const C = useTheme().palette;
@@ -75,7 +75,7 @@ export default function Train() {
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Kicker color={C.violet}>{sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}</Kicker>
-            <Text style={{ fontFamily: F.black, fontSize: 16, color: C.violet }}>{t("train.start")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.violet) }}>{t("train.start")}</Text>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 8 }}>
             {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Smart starter session"}
@@ -92,7 +92,7 @@ export default function Train() {
           <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Kicker color={C.blue}>{t("train.repeatLast")}</Kicker>
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: C.blue }}>{t("train.start")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.blue) }}>{t("train.start")}</Text>
             </View>
             <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 8 }}>{last.title}</Text>
             <Mono style={{ marginTop: 4 }}>
