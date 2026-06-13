@@ -42,8 +42,9 @@ const ACCENT_TEXT: Record<string, string> = {
 };
 
 /** Map a bright accent (or ash) to its theme-aware text colour; pass anything
- *  else through unchanged. Use for inline accent TEXT: `color: txt(BLUE)`. */
-export const txt = (c: string): string => ACCENT_TEXT[c] ?? c;
+ *  else through unchanged. Accepts an optional colour (e.g. Mono's `c?`) and
+ *  returns undefined for it. Use for inline accent TEXT: `color: txt(BLUE)`. */
+export const txt = (c?: string): string | undefined => (c ? ACCENT_TEXT[c] ?? c : undefined);
 
 export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
 export const cond: CSSProperties = { fontFamily: "'Archivo Narrow', sans-serif" };

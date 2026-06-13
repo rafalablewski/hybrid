@@ -25,12 +25,8 @@ export function useTheme() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    try {
-      localStorage.setItem(KEY, theme);
-    } catch {
-      /* storage disabled — theme still applies for the session */
-    }
-    // 1-year cookie so SSR can paint the right theme on the next request.
+    // 1-year cookie so SSR can paint the right theme on the next request
+    // (cookie is the single source of truth — read server-side in layout.tsx).
     document.cookie = `${KEY}=${theme}; path=/; max-age=31536000; samesite=lax`;
   }, [theme]);
 

@@ -171,7 +171,9 @@ export function CommandMenu() {
                 opacity: a,
               }}
             >
-              <Pressable onPress={(e) => e.stopPropagation()}>
+              {/* absorbs taps so they don't reach the backdrop's close handler
+                  (RN touch events don't bubble; no stopPropagation needed) */}
+              <Pressable onPress={() => {}}>
                 <GlassCard intensity={50} padding={20} style={{ borderRadius: 28, marginBottom: 0 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <View>
