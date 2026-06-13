@@ -48,12 +48,25 @@ export function Card({
   style,
   span,
   onClick,
+  glass,
+  variant,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   span?: number;
   onClick?: () => void;
+  /** Opt into the Liquid Glass surface (see globals.css `.liquid-glass`). */
+  glass?: boolean;
+  /** Glass variant — only applies when `glass` is set. */
+  variant?: "thin" | "thick" | "vibrant";
 }) {
+  if (glass) {
+    return (
+      <Glass span={span} variant={variant} onClick={onClick} style={{ padding: 20, ...style }}>
+        {children}
+      </Glass>
+    );
+  }
   return (
     <div
       onClick={onClick}
@@ -67,6 +80,51 @@ export function Card({
         ...style,
       }}
     >
+      {children}
+    </div>
+  );
+}
+
+// Liquid Glass surface primitive. The visual treatment lives in globals.css
+// (`.liquid-glass` + `.lg-*` variants); this just wires up the className,
+// the sheen layer and the brand-consistent props (span/onClick/style). Add
+// `hover` for the rim-sweep + lift on pointer interaction.
+export function Glass({
+  children,
+  style,
+  span,
+  onClick,
+  variant,
+  hover = true,
+  className = "",
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+  span?: number;
+  onClick?: () => void;
+  variant?: "thin" | "thick" | "vibrant";
+  hover?: boolean;
+  className?: string;
+}) {
+  const cls = [
+    "liquid-glass",
+    variant ? `lg-${variant}` : "",
+    hover ? "lg-hover" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <div
+      onClick={onClick}
+      className={cls}
+      style={{
+        gridColumn: span ? `span ${span}` : undefined,
+        cursor: onClick ? "pointer" : undefined,
+        ...style,
+      }}
+    >
+      <span className="lg-sheen" aria-hidden />
       {children}
     </div>
   );

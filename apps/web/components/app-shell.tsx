@@ -501,6 +501,106 @@ export default function AppShell() {
 
         {screen === "settings" && <AccountSettings />}
       </main>
+
+      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} t={t} />
     </div>
+  );
+}
+
+// Central "control center" command menu: a floating orb (bottom-centre) and a
+// ⌘K / Ctrl-K bloom hub that mirrors the sidebar nav (same NAV_GROUPS, same
+// per-item flag gating). Liquid Glass treatment lives in globals.css (.cmd-*).
+function CommandMenu({
+  screen,
+  setScreen,
+  isEnabled,
+  t,
+}: {
+  screen: string;
+  setScreen: (id: string) => void;
+  isEnabled: (flag: string) => boolean;
+  t: (key: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen((o) => !o);
+      } else if (e.key === "Escape") {
+        setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Flatten the grouped nav into flag-enabled tiles, carrying the group label.
+  const tiles = NAV_GROUPS.flatMap(({ group, items }) =>
+    items
+      .filter(([id]) => isEnabled(`nav.${id}`))
+      .map(([id, label, icon]) => ({ id, label, icon, group })),
+  );
+
+  const label = (id: string, fallback: string) =>
+    t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
+  const groupLabel = (g: string) =>
+    t(`nav.group.${g}`) === `nav.group.${g}` ? g : t(`nav.group.${g}`);
+  // Force monochrome (text) rendering on single-unit symbol glyphs so they
+  // never fall back to dark emoji presentation; true emoji are left alone.
+  const glyph = (ic: string) => (Array.from(ic).length === 1 ? `${ic}︎` : ic);
+
+  return (
+    <>
+      <button className="cmd-orb liquid-glass" aria-label="Open menu (⌘K)" onClick={() => setOpen(true)}>
+        <span className="lg-sheen" aria-hidden />
+        <span className="cmd-dot" />
+      </button>
+
+      <div
+        className={`cmd-scrim${open ? " is-open" : ""}`}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setOpen(false);
+        }}
+      >
+        <div className="cmd-hub liquid-glass lg-thick" role="dialog" aria-modal="true" aria-label="Quick menu">
+          <span className="lg-sheen" aria-hidden />
+          <div className="cmd-head">
+            <div>
+              <Mono s={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase" }} c={ASH}>
+                app.hybrid.app
+              </Mono>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginTop: 2 }}>Jump to…</div>
+            </div>
+            <button className="cmd-close" aria-label="Close" onClick={() => setOpen(false)}>
+              ✕
+            </button>
+          </div>
+          <div className="cmd-tiles">
+            {tiles.map((tile, i) => (
+              <button
+                key={tile.id}
+                className={`cmd-tile liquid-glass${screen === tile.id ? " is-active" : ""}`}
+                style={{ ["--i" as string]: i }}
+                onClick={() => {
+                  setScreen(tile.id);
+                  setOpen(false);
+                }}
+              >
+                <span className="lg-sheen" aria-hidden />
+                <span className="cmd-ic">{glyph(tile.icon)}</span>
+                <span className="cmd-lb" style={disp}>
+                  {label(tile.id, tile.label)}
+                </span>
+                <span className="cmd-gp" style={mono}>
+                  {groupLabel(tile.group)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

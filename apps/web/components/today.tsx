@@ -74,7 +74,7 @@ export default function Today({
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
       {/* ROUTE TODAY */}
       {sessions.length === 0 ? (
-        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your route today
@@ -88,7 +88,7 @@ export default function Today({
           </Mono>
         </Card>
       ) : (
-        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your route today · readiness {rx.readiness}/100
