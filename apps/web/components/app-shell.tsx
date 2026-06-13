@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { groupedNav } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import {
   INK,
@@ -68,75 +69,11 @@ import { useLang } from "@/lib/i18n";
 import { useBiometrics } from "@/lib/use-biometrics";
 import { useSignals } from "@/lib/use-signals";
 
-// Sidebar nav, grouped by what the user is trying to DO (mirrors the admin
-// console's grouped sidebar). Each group label is an i18n key (nav.group.*);
-// each item is [screenId, English fallback, icon]. Items stay gated per-item by
-// the nav.<id> feature flag; a group with no enabled items is hidden entirely.
-const NAV_GROUPS: { group: string; items: [string, string, string][] }[] = [
-  {
-    group: "home",
-    items: [
-      ["today", "Today", "➤"],
-      ["dashboard", "Dashboard", "◆"],
-      ["onboarding", "Get started", "✦"],
-    ],
-  },
-  {
-    group: "train",
-    items: [
-      ["log", "Log session", "✎"],
-      ["calendar", "Calendar", "▦"],
-      ["builder", "Builder", "⊕"],
-      ["plans", "Plans", "▤"],
-      ["periodize", "Periodize", "◰"],
-      ["sport", "Sport", "◎"],
-      ["competition", "Competition", "▲"],
-    ],
-  },
-  {
-    group: "analyze",
-    items: [
-      ["performance", "Performance", "◈"],
-      ["analytics", "Analytics", "◷"],
-      ["velocity", "Velocity (VBT)", "⚡"],
-      ["running", "Running", "🏃"],
-      ["forceplate", "Force plate", "◇"],
-      ["video", "Video", "▷"],
-      ["history", "History", "≣"],
-    ],
-  },
-  {
-    group: "recovery",
-    items: [
-      ["checkin", "Check-in", "✓"],
-      ["nutrition", "Nutrition", "🍎"],
-      ["progress", "Progress photos", "📸"],
-      ["longevity", "Longevity", "❤"],
-    ],
-  },
-  {
-    group: "teams",
-    items: [
-      ["coach", "Coach", "✦"],
-      ["squad", "Squad monitor", "◫"],
-      ["teamcompare", "Team compare", "⚖"],
-      ["org", "Organization", "⬡"],
-      ["talent", "Talent", "✸"],
-      ["tactical", "Tactical", "▰"],
-    ],
-  },
-  {
-    group: "account",
-    items: [
-      ["connections", "Connections", "⌁"],
-      ["roles", "Roles & access", "⚿"],
-      ["settings", "Settings", "⚙"],
-    ],
-  },
-];
-
-// Operator-only tools (Capabilities, Data network) live in the dedicated admin
-// console at /admin, not in the consumer app shell.
+// Sidebar nav comes from the shared canonical map (@hybrid/core `groupedNav`),
+// so web + mobile can't drift. Items stay gated per-item by the nav.<id> feature
+// flag; a group with no enabled items is hidden entirely. Group labels are i18n
+// keys (nav.group.*); item labels are i18n (nav.<id>) with the core fallback.
+// Operator-only tools (Capabilities, Data network) live in the /admin console.
 
 type Scope = "athlete" | "coach" | "operator";
 
@@ -238,8 +175,8 @@ export default function AppShell() {
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {NAV_GROUPS.map(({ group, items }) => {
-            const visible = items.filter(([id]) => isEnabled(`nav.${id}`));
+          {groupedNav().map(({ group, items }) => {
+            const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
             if (visible.length === 0) return null;
             return (
               <div key={group} style={{ marginBottom: 14 }}>
@@ -251,8 +188,8 @@ export default function AppShell() {
                     {t(`nav.group.${group}`) === `nav.group.${group}` ? group : t(`nav.group.${group}`)}
                   </Mono>
                 )}
-                {visible.map(([id, l, ic]) => {
-                  const label = t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`);
+                {visible.map(({ id, label: fallback, icon: ic }) => {
+                  const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
                   return (
                     <button
                       key={id}
@@ -631,11 +568,9 @@ function CommandMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Flatten the grouped nav into flag-enabled tiles, carrying the group label.
-  const tiles = NAV_GROUPS.flatMap(({ group, items }) =>
-    items
-      .filter(([id]) => isEnabled(`nav.${id}`))
-      .map(([id, label, icon]) => ({ id, label, icon, group })),
+  // Flatten the shared canonical nav into flag-enabled tiles.
+  const tiles = groupedNav().flatMap(({ group, items }) =>
+    items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group })),
   );
 
   const label = (id: string, fallback: string) =>

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRouter, type Href } from "expo-router";
+import { NAV_ITEMS } from "@hybrid/core";
 import { useLang } from "../lib/i18n";
 import { C, F } from "../lib/ui";
 
@@ -77,21 +78,25 @@ export function GlassTabBarBackground() {
   );
 }
 
-// Tiles for the control-center sheet — mirrors the app's nav surface.
-const TILES: { labelKey: string; fallback: string; icon: string; href: Href; group: string }[] = [
-  { labelKey: "nav.dashboard", fallback: "Today", icon: "◆", href: "/(tabs)", group: "home" },
-  { labelKey: "nav.train", fallback: "Train", icon: "▶", href: "/(tabs)/log", group: "home" },
-  { labelKey: "nav.history", fallback: "History", icon: "≣", href: "/(tabs)/history", group: "home" },
-  { labelKey: "nav.plans", fallback: "Plans", icon: "▤", href: "/(tabs)/plans", group: "plan" },
-  { labelKey: "nav.sport", fallback: "Sport", icon: "◎", href: "/(tabs)/sport", group: "plan" },
-  { labelKey: "nav.calendar", fallback: "Calendar", icon: "▦", href: "/calendar", group: "plan" },
-  { labelKey: "nav.velocity", fallback: "Velocity", icon: "⚡", href: "/(tabs)/velocity", group: "analyze" },
-  { labelKey: "nav.running", fallback: "Running", icon: "🏃", href: "/(tabs)/running", group: "analyze" },
-  { labelKey: "nav.progress", fallback: "Progress", icon: "📸", href: "/progress", group: "analyze" },
-  { labelKey: "nav.nutrition", fallback: "Nutrition", icon: "🍎", href: "/nutrition", group: "recovery" },
-  { labelKey: "nav.checkin", fallback: "Check-in", icon: "✓", href: "/checkin", group: "recovery" },
-  { labelKey: "settings.title", fallback: "Settings", icon: "⚙", href: "/settings", group: "account" },
-];
+// Tiles for the control-center sheet — built from the shared canonical nav
+// (@hybrid/core NAV_ITEMS) filtered to the routes mobile actually has, so the
+// icons/labels/grouping can't drift from web. Each id maps to an expo-router href.
+const HREF: Record<string, Href> = {
+  today: "/(tabs)",
+  log: "/(tabs)/log",
+  history: "/(tabs)/history",
+  plans: "/(tabs)/plans",
+  sport: "/(tabs)/sport",
+  calendar: "/calendar",
+  velocity: "/(tabs)/velocity",
+  running: "/(tabs)/running",
+  progress: "/progress",
+  nutrition: "/nutrition",
+  checkin: "/checkin",
+  coach: "/(tabs)/coach",
+  settings: "/settings",
+};
+const TILES = NAV_ITEMS.filter((i) => i.id in HREF);
 
 // Force monochrome (text) rendering on single-unit glyphs so they don't fall
 // back to dark emoji presentation; true emoji (🏃/🍎/📸) are left alone.
@@ -192,8 +197,8 @@ export function CommandMenu() {
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                     {TILES.map((tile) => (
                       <Pressable
-                        key={tile.labelKey}
-                        onPress={() => go(tile.href)}
+                        key={tile.id}
+                        onPress={() => go(HREF[tile.id]!)}
                         style={{
                           width: "30%",
                           flexGrow: 1,
@@ -221,7 +226,7 @@ export function CommandMenu() {
                           <Text style={{ fontSize: 20, color: C.chalk }}>{glyph(tile.icon)}</Text>
                         </View>
                         <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.chalk }} numberOfLines={1}>
-                          {label(tile.labelKey, tile.fallback)}
+                          {label(`nav.${tile.id}`, tile.label)}
                         </Text>
                         <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6 }}>
                           {tile.group}
