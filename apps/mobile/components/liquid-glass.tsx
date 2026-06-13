@@ -13,7 +13,8 @@ import { BlurView } from "expo-blur";
 import { useRouter, type Href } from "expo-router";
 import { NAV_ITEMS } from "@hybrid/core";
 import { useLang } from "../lib/i18n";
-import { C, F } from "../lib/ui";
+import { useTheme } from "../lib/theme";
+import { F } from "../lib/ui";
 
 const AnimatedBlur = Animated.createAnimatedComponent(BlurView);
 
@@ -36,21 +37,25 @@ export function GlassCard({
   children,
   style,
   intensity = 38,
-  tint = "dark",
+  tint,
   accent,
   padding = 16,
 }: {
   children: ReactNode;
   style?: ViewStyle;
   intensity?: number;
-  tint?: "dark" | "light" | "default";
-  /** Optional left accent bar (e.g. C.lime) matching the web cards. */
+  /** Override the blur tint; defaults to the active theme. */
+  tint?: "dark" | "light";
+  /** Optional left accent bar (e.g. the lime accent) matching the web cards. */
   accent?: string;
   padding?: number;
 }) {
-  const film = tint === "light" ? "rgba(255,255,255,0.34)" : "rgba(22,24,22,0.34)";
-  const rim = tint === "light" ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.22)";
-  const border = tint === "light" ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.10)";
+  const { scheme } = useTheme();
+  const t = tint ?? scheme;
+  const light = t === "light";
+  const film = light ? "rgba(255,255,255,0.34)" : "rgba(22,24,22,0.34)";
+  const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.22)";
+  const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.10)";
   return (
     <View
       style={[
@@ -59,7 +64,7 @@ export function GlassCard({
         style,
       ]}
     >
-      <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />
+      <BlurView intensity={intensity} tint={t} style={StyleSheet.absoluteFill} />
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
       <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
       {accent && <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent }} />}
@@ -70,10 +75,16 @@ export function GlassCard({
 
 /** Frosted background for the bottom tab bar (used via Tabs `tabBarBackground`). */
 export function GlassTabBarBackground() {
+  const { scheme } = useTheme();
   return (
     <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(12,13,12,0.55)" }]} />
+      <BlurView intensity={40} tint={scheme} style={StyleSheet.absoluteFill} />
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: scheme === "light" ? "rgba(233,236,230,0.55)" : "rgba(12,13,12,0.55)" },
+        ]}
+      />
     </View>
   );
 }
@@ -112,7 +123,10 @@ export function CommandMenu() {
   const a = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   const { t } = useLang();
+  const { scheme, palette } = useTheme();
   const label = (k: string, fb: string) => (t(k) === k ? fb : t(k));
+  // neutral chip/border tint that reads on either glass theme
+  const neutral = (o: number) => (scheme === "light" ? `rgba(20,30,15,${o})` : `rgba(255,255,255,${o})`);
 
   useEffect(() => {
     if (open) {
@@ -147,27 +161,32 @@ export function CommandMenu() {
             alignItems: "center",
             justifyContent: "center",
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.12)",
+            borderColor: neutral(0.12),
           },
           glassShadow,
         ]}
       >
-        <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(22,24,22,0.4)" }]} />
-        <View style={{ width: 20, height: 20, borderRadius: 7, backgroundColor: C.lime }} />
+        <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: scheme === "light" ? "rgba(255,255,255,0.4)" : "rgba(22,24,22,0.4)" }]} />
+        <View style={{ width: 20, height: 20, borderRadius: 7, backgroundColor: palette.lime }} />
       </Pressable>
 
       <Modal visible={mounted} transparent animationType="none" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
           <AnimatedBlur
             intensity={a.interpolate({ inputRange: [0, 1], outputRange: [0, 24] })}
-            tint="dark"
+            tint={scheme}
             style={StyleSheet.absoluteFill}
           />
           <Animated.View
             style={[
               StyleSheet.absoluteFill,
-              { backgroundColor: "rgba(0,0,0,0.45)", opacity: a, justifyContent: "center", padding: 22 },
+              {
+                backgroundColor: scheme === "light" ? "rgba(210,216,205,0.45)" : "rgba(0,0,0,0.45)",
+                opacity: a,
+                justifyContent: "center",
+                padding: 22,
+              },
             ]}
           >
             <Animated.View
@@ -182,16 +201,16 @@ export function CommandMenu() {
                 <GlassCard intensity={50} padding={20} style={{ borderRadius: 28, marginBottom: 0 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <View>
-                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, color: C.ash, textTransform: "uppercase" }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, color: palette.ash, textTransform: "uppercase" }}>
                         app.hybrid.app
                       </Text>
-                      <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 2 }}>Jump to…</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: 18, color: palette.chalk, marginTop: 2 }}>Jump to…</Text>
                     </View>
                     <Pressable
                       onPress={() => setOpen(false)}
-                      style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.16)", backgroundColor: "rgba(255,255,255,0.07)" }}
+                      style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: neutral(0.16), backgroundColor: neutral(0.07) }}
                     >
-                      <Text style={{ color: C.chalk, fontSize: 15 }}>✕</Text>
+                      <Text style={{ color: palette.chalk, fontSize: 15 }}>✕</Text>
                     </Pressable>
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
@@ -206,9 +225,9 @@ export function CommandMenu() {
                           paddingVertical: 14,
                           alignItems: "center",
                           gap: 8,
-                          backgroundColor: "rgba(255,255,255,0.06)",
+                          backgroundColor: neutral(0.06),
                           borderWidth: 1,
-                          borderColor: "rgba(255,255,255,0.10)",
+                          borderColor: neutral(0.1),
                         }}
                       >
                         <View
@@ -218,17 +237,17 @@ export function CommandMenu() {
                             borderRadius: 14,
                             alignItems: "center",
                             justifyContent: "center",
-                            backgroundColor: "rgba(255,255,255,0.07)",
+                            backgroundColor: neutral(0.07),
                             borderWidth: 1,
-                            borderColor: "rgba(255,255,255,0.18)",
+                            borderColor: neutral(0.18),
                           }}
                         >
-                          <Text style={{ fontSize: 20, color: C.chalk }}>{glyph(tile.icon)}</Text>
+                          <Text style={{ fontSize: 20, color: palette.chalk }}>{glyph(tile.icon)}</Text>
                         </View>
-                        <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.chalk }} numberOfLines={1}>
+                        <Text style={{ fontFamily: F.bold, fontSize: 12, color: palette.chalk }} numberOfLines={1}>
                           {label(`nav.${tile.id}`, tile.label)}
                         </Text>
-                        <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: 8, color: palette.ash, textTransform: "uppercase", letterSpacing: 0.6 }}>
                           {tile.group}
                         </Text>
                       </Pressable>

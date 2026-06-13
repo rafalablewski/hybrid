@@ -6,12 +6,21 @@ import { clearGuestSessions } from "../lib/guest";
 import { clearDraft } from "../lib/draft";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, Mono, C, F } from "../lib/ui";
+import { useTheme, type ThemePref } from "../lib/theme";
+import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+
+const APPEARANCE: { id: ThemePref; label: string }[] = [
+  { id: "system", label: "System" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+];
 
 export default function Settings() {
   const router = useRouter();
   const { t } = useLang();
   const { signOut } = useSession();
+  const { palette, pref, setPref } = useTheme();
+  const C = palette;
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -40,6 +49,32 @@ export default function Settings() {
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 10 }}>{t("settings.title")}</Text>
+
+      <Card style={{ marginTop: 16 }}>
+        <Kicker>Appearance</Kicker>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+          {APPEARANCE.map((opt) => {
+            const on = pref === opt.id;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => setPref(opt.id)}
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  paddingVertical: 11,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: on ? C.lime : C.line,
+                  backgroundColor: on ? C.lime : "transparent",
+                }}
+              >
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: on ? C.onAccent : C.ash }}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
 
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.red, marginTop: 16 }}>
         <Kicker color={C.red}>{t("settings.dangerZone")}</Kicker>

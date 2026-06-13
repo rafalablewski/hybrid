@@ -12,7 +12,21 @@ import {
 import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
+import { ThemeProvider, useTheme } from "../lib/theme";
 import { C } from "../lib/ui";
+
+// Inner shell so it can read the theme (the provider sits above it): drives the
+// status-bar style + the navigator background so the whole app follows
+// light/dark (system by default, overridable in Settings).
+function Shell() {
+  const { scheme, palette } = useTheme();
+  return (
+    <>
+      <StatusBar style={scheme === "light" ? "dark" : "light"} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.ink } }} />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -27,14 +41,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <SessionProvider>
-        <LanguageProvider>
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.ink } }}
-          />
-        </LanguageProvider>
-      </SessionProvider>
+      <ThemeProvider>
+        <SessionProvider>
+          <LanguageProvider>
+            <Shell />
+          </LanguageProvider>
+        </SessionProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

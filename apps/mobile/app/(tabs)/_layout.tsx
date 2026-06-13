@@ -2,7 +2,8 @@ import { Tabs, Redirect } from "expo-router";
 import { Text, View, type ColorValue } from "react-native";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { C, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
+import { F } from "../../lib/ui";
 import { CommandMenu, GlassTabBarBackground } from "../../components/liquid-glass";
 
 const icon = (glyph: string) => ({ color }: { color: ColorValue }) =>
@@ -11,18 +12,19 @@ const icon = (glyph: string) => ({ color }: { color: ColorValue }) =>
 export default function TabsLayout() {
   const { session, ready } = useSession();
   const { t } = useLang();
+  const { palette } = useTheme();
   if (!ready) return null;
   if (!session) return <Redirect href="/login" />;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink }}>
+    <View style={{ flex: 1, backgroundColor: palette.ink }}>
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarBackground: () => <GlassTabBarBackground />,
-          tabBarStyle: { backgroundColor: "transparent", borderTopColor: C.line },
-          tabBarActiveTintColor: C.lime,
-          tabBarInactiveTintColor: C.ash,
+          tabBarStyle: { backgroundColor: "transparent", borderTopColor: palette.line },
+          tabBarActiveTintColor: palette.lime,
+          tabBarInactiveTintColor: palette.ash,
           tabBarLabelStyle: { fontFamily: F.mono, fontSize: 10 },
         }}
       >
