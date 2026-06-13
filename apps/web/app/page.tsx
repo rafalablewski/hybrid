@@ -21,7 +21,14 @@ const FEATURES = [
 
 export default function Landing() {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-6 pb-24">
+    <>
+      {/* ambient field — drifting accent blobs the glass refracts */}
+      <div className="lg-field" aria-hidden>
+        <div className="lg-blob lg-a" />
+        <div className="lg-blob lg-b" />
+        <div className="lg-blob lg-c" />
+      </div>
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-5xl px-6 pb-24">
       <header className="flex items-center justify-between py-6">
         <div className="font-display text-2xl font-black tracking-tight">
           {brand.name}
@@ -29,8 +36,9 @@ export default function Landing() {
         </div>
         <Link
           href="/login"
-          className="rounded-xl border border-line px-4 py-2 font-display text-sm font-bold text-chalk transition hover:border-lime"
+          className="liquid-glass lg-hover inline-flex items-center px-4 py-2 font-display text-sm font-bold text-chalk"
         >
+          <span className="lg-sheen" />
           Sign in
         </Link>
       </header>
@@ -57,8 +65,9 @@ export default function Landing() {
           </Link>
           <Link
             href="/admin"
-            className="rounded-xl border border-line bg-ink2 px-7 py-3.5 font-display font-bold text-chalk transition hover:border-lime"
+            className="liquid-glass lg-hover inline-flex items-center px-7 py-3.5 font-display font-bold text-chalk"
           >
+            <span className="lg-sheen" />
             Open the admin panel
           </Link>
         </div>
@@ -85,9 +94,10 @@ export default function Landing() {
           {FEATURES.map((f) => (
             <div
               key={f.t}
-              className="rounded-2xl border border-line bg-card p-5"
+              className="liquid-glass lg-hover p-5"
               style={{ borderLeft: `3px solid ${f.c}` }}
             >
+              <span className="lg-sheen" />
               <div className="font-display text-lg font-bold">{f.t}</div>
               <p className="mt-2 font-display text-sm leading-relaxed text-ash">{f.d}</p>
             </div>
@@ -101,6 +111,7 @@ export default function Landing() {
           {brand.web} · @hybrid/core {CORE_VERSION}
         </span>
       </footer>
-    </main>
+      </main>
+    </>
   );
 }
