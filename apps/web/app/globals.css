@@ -85,7 +85,9 @@ body {
 }
 
 [data-theme="light"] {
-  /* brand surface/text tokens flip; accents (lime/blue/violet/…) stay put */
+  /* brand surface/text tokens flip; accents (lime/blue/violet/…) stay put.
+     These values MIRROR packages/core/src/theme.ts (THEMES.light), which the
+     contrast test guards at WCAG AA — keep the two in lockstep. */
   --color-ink: #e9ece6;
   --color-ink2: #dfe2da;
   --color-card: #f6f7f3;
@@ -344,6 +346,20 @@ body {
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .liquid-glass, .cmd-scrim.is-open, .cmd-hub { background: rgba(var(--glass-base), 0.94); }
+}
+/* Respect a user's request for less transparency: drop the blur, grain and the
+   ambient field, and make every glass surface (near-)solid. */
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass, .cmd-hub, .cmd-scrim.is-open, .lg-sidebar {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(var(--glass-base), 0.97) !important;
+  }
+  .liquid-glass::before,
+  .liquid-glass > .lg-sheen,
+  .lg-field {
+    display: none !important;
+  }
 }
 
 /* ---- frosted-glass sidebar (consumer + admin) ---- */
