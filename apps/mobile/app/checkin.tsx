@@ -3,7 +3,8 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchSessions, type Checkin } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Button, C, F } from "../lib/ui";
+import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 
 const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[] = [
   { key: "energy", label: "Energy" },
@@ -13,6 +14,7 @@ const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[
 ];
 
 export default function CheckinScreen() {
+  const C = useTheme().palette;
   const router = useRouter();
   const [history, setHistory] = useState<Checkin[]>([]);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -123,6 +125,7 @@ export default function CheckinScreen() {
 }
 
 function Field({ value, onChange, ph }: { value: string; onChange: (v: string) => void; ph: string }) {
+  const C = useTheme().palette;
   return (
     <TextInput
       value={value}

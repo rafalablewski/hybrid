@@ -3,9 +3,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { brand } from "@hybrid/core";
 import { useLang } from "../lib/i18n";
-import { C, F } from "../lib/ui";
+import { F } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 
 export default function Welcome() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
 

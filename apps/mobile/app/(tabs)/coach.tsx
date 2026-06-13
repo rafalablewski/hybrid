@@ -14,11 +14,13 @@ import {
   type Note,
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, Button, Loading, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, Chip, Button, Loading, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
 export default function Coach() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const [asCoach, setAsCoach] = useState<CoachLink[]>([]);
   const [asClient, setAsClient] = useState<CoachLink[]>([]);
@@ -152,6 +154,7 @@ export default function Coach() {
 }
 
 function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
+  const C = useTheme().palette;
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -248,6 +251,7 @@ const MUSCLE_LABEL: Record<string, string> = {
 // The athlete's current week, as the coach sees it — same engine as the
 // client's own Today, so both read one source of truth.
 function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string) => string }) {
+  const C = useTheme().palette;
   const r = weeklyRecap(sessions);
   const hasPrev = r.prevSessions > 0 || r.prevVolume > 0;
   return (
@@ -284,6 +288,7 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
 }
 
 function Metric({ label, value, color }: { label: string; value: string; color: string }) {
+  const C = useTheme().palette;
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: 20, color }}>{value}</Text>

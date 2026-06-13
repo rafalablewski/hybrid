@@ -13,10 +13,12 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, C, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 export default function Running() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -141,6 +143,7 @@ export default function Running() {
 
 // Dependency-free pace bars: lower (faster) is taller; latest highlighted.
 function PaceBars({ series }: { series: number[] }) {
+  const C = useTheme().palette;
   if (series.length < 2)
     return <Mono style={{ marginTop: 12 }}>Log this run a few times to see a pace trend.</Mono>;
   const max = Math.max(...series);
@@ -162,10 +165,12 @@ function PaceBars({ series }: { series: number[] }) {
   );
 }
 
-function Metric({ label, value, color = C.chalk }: { label: string; value: string; color?: string }) {
+function Metric({ label, value, color }: { label: string; value: string; color?: string }) {
+  const C = useTheme().palette;
+  const fg = color ?? C.chalk;
   return (
     <View style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 22, color: fg }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
@@ -181,6 +186,7 @@ function Legend({ c, label }: { c: string; label: string }) {
 }
 
 function ColHead({ children, flex = 1 }: { children: React.ReactNode; flex?: number }) {
+  const C = useTheme().palette;
   return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{children}</Text>;
 }
 

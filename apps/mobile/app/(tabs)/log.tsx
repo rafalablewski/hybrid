@@ -10,9 +10,11 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, H1, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 export default function Train() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
   const { draft, discard } = useDraft();

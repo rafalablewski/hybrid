@@ -3,9 +3,11 @@ import { View, Text, Pressable } from "react-native";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, Button, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 export default function Plans() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function Plans() {
 }
 
 function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
+  const C = useTheme().palette;
   const { t } = useLang();
   return (
     <Screen>
@@ -85,6 +88,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
 }
 
 function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: () => void }) {
+  const C = useTheme().palette;
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
@@ -154,6 +158,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
 }
 
 function Field({ label, value }: { label: string; value: string }) {
+  const C = useTheme().palette;
   return (
     <Card>
       <Kicker>{label}</Kicker>

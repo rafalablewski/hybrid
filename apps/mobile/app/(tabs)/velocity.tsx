@@ -17,6 +17,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 const zoneColor = (id: string) =>
   id === "absolute-strength" ? C.red
@@ -26,6 +27,7 @@ const zoneColor = (id: string) =>
   : C.violet;
 
 export default function Velocity() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -187,6 +189,7 @@ export default function Velocity() {
 }
 
 function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
+  const C = useTheme().palette;
   return (
     <Pressable
       onPress={onPress}
@@ -199,6 +202,7 @@ function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
 
 // Dependency-free plot: measured points as dots, the fitted line as sampled dots.
 function Plot({ points, profile }: { points: LVPoint[]; profile: LoadVelocityProfile }) {
+  const C = useTheme().palette;
   const [w, setW] = useState(0);
   const H = 190;
   const pad = 10;

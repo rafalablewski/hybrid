@@ -29,6 +29,7 @@ import { useSession } from "../../lib/session";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
@@ -37,6 +38,7 @@ const bandColor = (b: string) =>
   b === "thriving" || b === "steady" ? C.lime : b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
 
 export default function Home() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { name, signOut } = useSession();
   const { draft } = useDraft();

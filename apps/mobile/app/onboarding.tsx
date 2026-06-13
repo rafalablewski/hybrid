@@ -10,7 +10,8 @@ import {
   type Equipment,
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Button, C, F } from "../lib/ui";
+import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 
 const EXP: { id: Experience; label: string }[] = [
   { id: "beginner", label: "Beginner" },
@@ -24,6 +25,7 @@ const EQUIP: { id: Equipment; label: string }[] = [
 ];
 
 export default function Onboarding() {
+  const C = useTheme().palette;
   const router = useRouter();
   const [goal, setGoal] = useState<OnboardingGoal | null>(null);
   const [experience, setExperience] = useState<Experience>("beginner");
@@ -124,6 +126,7 @@ export default function Onboarding() {
 }
 
 function Row({ options, value, onPick }: { options: { id: string; label: string }[]; value: string; onPick: (v: string) => void }) {
+  const C = useTheme().palette;
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
       {options.map((o) => (
@@ -140,6 +143,7 @@ function Row({ options, value, onPick }: { options: { id: string; label: string 
 }
 
 function Step({ label, onPress }: { label: string; onPress: () => void }) {
+  const C = useTheme().palette;
   return (
     <Pressable onPress={onPress} style={{ width: 52, height: 44, borderRadius: 10, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: 22, color: C.lime }}>{label}</Text>

@@ -3,6 +3,7 @@ import { useRouter, type Href } from "expo-router";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 type Link = { labelKey: string; sub: string; href: Href; color: string };
 
@@ -35,6 +36,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
 ];
 
 export default function More() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
   const { signOut } = useSession();

@@ -5,11 +5,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, Chip, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 const STORE_KEY = "hybrid.sport";
 
 export default function Sport() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);

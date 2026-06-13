@@ -5,9 +5,11 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { brand } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useLang } from "../lib/i18n";
-import { C, F, Button } from "../lib/ui";
+import { F, Button } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 
 export default function Login() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
@@ -113,6 +115,7 @@ function Input({
   secure?: boolean;
   keyboard?: "email-address";
 }) {
+  const C = useTheme().palette;
   return (
     <TextInput
       value={value}

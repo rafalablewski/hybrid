@@ -3,12 +3,17 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
-import { Screen, Card, Kicker, Mono, C, F } from "../lib/ui";
+import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export default function CalendarScreen() {
+  const C = useTheme().palette;
+  // themed inside the component so the month-nav buttons follow light/dark
+  const nav = { width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center" as const, justifyContent: "center" as const };
+  const navTxt = { fontFamily: F.black, fontSize: 18, color: C.chalk };
   const router = useRouter();
   const now = new Date();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -98,6 +103,3 @@ export default function CalendarScreen() {
     </Screen>
   );
 }
-
-const nav = { width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center" as const, justifyContent: "center" as const };
-const navTxt = { fontFamily: F.black, fontSize: 18, color: C.chalk };

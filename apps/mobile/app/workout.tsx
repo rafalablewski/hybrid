@@ -39,7 +39,8 @@ import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { C, F, Mono, Kicker, Card } from "../lib/ui";
+import { F, Mono, Kicker, Card } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -127,6 +128,7 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
 });
 
 export default function Workout() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
   const { session } = useSession();
@@ -856,6 +858,7 @@ export default function Workout() {
 
 // The RPE cheatsheet — same scale (from @hybrid/core) the web logger shows.
 function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () => void; t: (k: string) => string }) {
+  const C = useTheme().palette;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
@@ -894,6 +897,7 @@ function Summary({
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
 }) {
+  const C = useTheme().palette;
   const cardRef = useRef<View>(null);
   const { title, prs, bests, cardioPrs } = summary;
 
@@ -1050,6 +1054,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
 // works in the existing dev build). Only claims clearly-horizontal drags, so the
 // numeric inputs still focus on tap and the list still scrolls vertically.
 function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete: () => void; label: string }) {
+  const C = useTheme().palette;
   const tx = useRef(new Animated.Value(0)).current;
   const openRef = useRef(false);
   const pan = useRef(
@@ -1082,6 +1087,7 @@ function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete
 }
 
 function Cell({ value, onChange, done }: { value: string; onChange: (v: string) => void; done?: boolean }) {
+  const C = useTheme().palette;
   return (
     <TextInput
       value={value}
@@ -1093,6 +1099,7 @@ function Cell({ value, onChange, done }: { value: string; onChange: (v: string) 
 }
 
 function ColHead({ children, w }: { children: React.ReactNode; w?: number }) {
+  const C = useTheme().palette;
   return (
     <Text style={{ flex: w ? undefined : 1, width: w, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>
       {children}
