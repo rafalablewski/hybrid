@@ -222,6 +222,7 @@ export default function AppShell() {
 
       {/* sidebar */}
       <aside
+        className="lg-sidebar"
         style={{
           width: collapsed ? 72 : 240,
           borderRight: `1px solid ${LINE}`,
@@ -236,43 +237,20 @@ export default function AppShell() {
           transition: "width .28s cubic-bezier(.22,1,.36,1), padding .28s cubic-bezier(.22,1,.36,1)",
         }}
       >
-        {/* brand + collapse toggle */}
+        {/* brand */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: collapsed ? "center" : "space-between",
+            ...disp,
+            fontWeight: 900,
+            fontSize: 22,
+            letterSpacing: "-.04em",
             padding: collapsed ? "0 0 22px" : "0 4px 22px",
+            textAlign: collapsed ? "center" : "left",
             flexShrink: 0,
           }}
         >
-          {!collapsed && (
-            <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em" }}>
-              HYBRID<span style={{ color: LIME_T }}>.</span>
-            </div>
-          )}
-          <button
-            onClick={toggleCollapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            style={{
-              width: 30,
-              height: 30,
-              display: "grid",
-              placeItems: "center",
-              borderRadius: 8,
-              border: `1px solid ${LINE}`,
-              background: INK2,
-              color: txt(ASH),
-              cursor: "pointer",
-              ...disp,
-              fontSize: 15,
-              lineHeight: 1,
-              flexShrink: 0,
-            }}
-          >
-            {collapsed ? "»" : "«"}
-          </button>
+          {collapsed ? "H" : "HYBRID"}
+          <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {NAV_GROUPS.map(({ group, items }) => {
@@ -388,6 +366,28 @@ export default function AppShell() {
               {collapsed ? "⬡" : "Admin console ↗"}
             </button>
           )}
+          <button
+            onClick={toggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            style={{
+              width: "100%",
+              marginTop: 8,
+              ...cond,
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+              color: txt(ASH),
+              background: INK2,
+              border: `1px solid ${LINE}`,
+              borderRadius: 10,
+              padding: "8px 0",
+              cursor: "pointer",
+            }}
+          >
+            {collapsed ? "»" : "« Collapse"}
+          </button>
           <button
             onClick={() => {
               logout();

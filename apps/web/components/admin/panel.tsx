@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt } from "@/lib/ui";
@@ -48,6 +48,20 @@ export default function AdminPanel() {
   const router = useRouter();
   const { session, logout } = useSession();
   const [section, setSection] = useState<SectionId>("overview");
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    if (typeof localStorage !== "undefined" && localStorage.getItem("hybrid-admin-sidebar") === "1") setCollapsed(true);
+  }, []);
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem("hybrid-admin-sidebar", next ? "1" : "0");
+      } catch {
+        /* storage disabled */
+      }
+      return next;
+    });
 
   const active = SECTIONS.find((s) => s.id === section)!;
   const groups = [...new Set(SECTIONS.map((s) => s.group))];
@@ -62,11 +76,11 @@ export default function AdminPanel() {
       </div>
       {/* ---- sidebar ---- */}
       <aside
+        className="lg-sidebar"
         style={{
-          width: 250,
-          background: "#0a0b0a",
+          width: collapsed ? 72 : 250,
           borderRight: `1px solid ${LINE}`,
-          padding: "22px 14px",
+          padding: collapsed ? "22px 10px" : "22px 14px",
           position: "sticky",
           top: 0,
           height: "100vh",
@@ -74,36 +88,43 @@ export default function AdminPanel() {
           display: "flex",
           flexDirection: "column",
           zIndex: 1,
+          transition: "width .28s cubic-bezier(.22,1,.36,1), padding .28s cubic-bezier(.22,1,.36,1)",
         }}
       >
-        <div style={{ padding: "0 8px 4px" }}>
+        <div style={{ padding: collapsed ? "0 0 4px" : "0 8px 4px", textAlign: collapsed ? "center" : "left" }}>
           <div style={{ ...disp, fontWeight: 900, fontSize: 21, letterSpacing: "-.04em" }}>
-            HYBRID<span style={{ color: txt(AMBER) }}>.</span>
+            {collapsed ? "H" : "HYBRID"}<span style={{ color: txt(AMBER) }}>.</span>
           </div>
-          <Mono s={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase" }} c={AMBER}>
-            Admin console
-          </Mono>
+          {!collapsed && (
+            <Mono s={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase" }} c={AMBER}>
+              Admin console
+            </Mono>
+          )}
         </div>
 
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0, marginTop: 22 }}>
           {groups.map((g) => (
             <div key={g} style={{ marginBottom: 16 }}>
-              <Mono
-                s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 10px", display: "block", marginBottom: 6 }}
-                c={ASH}
-              >
-                {g}
-              </Mono>
+              {!collapsed && (
+                <Mono
+                  s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 10px", display: "block", marginBottom: 6 }}
+                  c={ASH}
+                >
+                  {g}
+                </Mono>
+              )}
               {SECTIONS.filter((s) => s.group === g).map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setSection(s.id)}
+                  title={collapsed ? s.label : undefined}
                   style={{
                     width: "100%",
                     display: "flex",
                     alignItems: "center",
-                    gap: 11,
-                    padding: "9px 11px",
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    gap: collapsed ? 0 : 11,
+                    padding: collapsed ? "9px 0" : "9px 11px",
                     marginBottom: 2,
                     borderRadius: 9,
                     cursor: "pointer",
@@ -117,7 +138,7 @@ export default function AdminPanel() {
                   }}
                 >
                   <span style={{ fontSize: 14, width: 16, textAlign: "center" }}>{s.icon}</span>
-                  {s.label}
+                  {!collapsed && s.label}
                 </button>
               ))}
             </div>
@@ -125,28 +146,36 @@ export default function AdminPanel() {
         </nav>
 
         <div style={{ flexShrink: 0, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
-          <div style={{ padding: "8px 10px" }}>
-            <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {session?.name ?? "—"}
+          {!collapsed && (
+            <div style={{ padding: "8px 10px" }}>
+              <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {session?.name ?? "—"}
+              </div>
+              <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={AMBER}>
+                {session?.role ?? "admin"}
+              </Mono>
             </div>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={AMBER}>
-              {session?.role ?? "admin"}
-            </Mono>
-          </div>
+          )}
+          <button onClick={() => router.push("/app")} title={collapsed ? "Back to app" : undefined} style={navBtn(false)}>
+            {collapsed ? "←" : "← Back to app"}
+          </button>
           <button
-            onClick={() => router.push("/app")}
-            style={navBtn(false)}
+            onClick={toggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            style={{ ...navBtn(false) }}
           >
-            ← Back to app
+            {collapsed ? "»" : "« Collapse"}
           </button>
           <button
             onClick={() => {
               logout();
               router.replace("/login");
             }}
+            title={collapsed ? "Sign out" : undefined}
             style={navBtn(true)}
           >
-            Sign out
+            {collapsed ? "⏻" : "Sign out"}
           </button>
         </div>
       </aside>
