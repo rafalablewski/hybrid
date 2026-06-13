@@ -32,6 +32,7 @@ import {
   Chip,
   Stat,
   ChartFrame,
+  txt,
 } from "@/lib/ui";
 import {
   buildMacrocycle,
@@ -157,7 +158,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
                     style={{
                       ...mono,
                       fontSize: 11,
-                      color: ASH,
+                      color: txt(ASH),
                       textTransform: "uppercase",
                       textAlign: "left",
                       padding: "8px 0",
@@ -178,7 +179,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
                   <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     {p.e1rm} kg
                   </td>
-                  <td style={{ ...mono, fontSize: 13, color: ASH, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     {fmtDate(p.when)}
                   </td>
                 </tr>
@@ -199,7 +200,7 @@ export function CoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) {
       <Card style={{ textAlign: "center", padding: 60 }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No clients yet</div>
         <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
-          Invite athletes from the <b style={{ color: LIME }}>Coach</b> tab. Once they accept and train, your roster analytics appear here.
+          Invite athletes from the <b style={{ color: txt(LIME) }}>Coach</b> tab. Once they accept and train, your roster analytics appear here.
         </Mono>
       </Card>
     );
@@ -238,7 +239,7 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
           <thead>
             <tr>
               {["Athlete", "Readiness", "Adherence", "Sessions", "Last"].map((h) => (
-                <th key={h} style={{ ...mono, fontSize: 11, color: ASH, textTransform: "uppercase", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                <th key={h} style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                   {h}
                 </th>
               ))}
@@ -248,12 +249,12 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
             {roster.map((c) => (
               <tr key={c.linkId}>
                 <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.name}</td>
-                <td style={{ ...mono, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}`, color: c.readiness == null ? ASH : c.readiness > 70 ? LIME : c.readiness > 50 ? AMBER : RED }}>
+                <td style={{ ...mono, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}`, color: txt(c.readiness == null ? ASH : c.readiness > 70 ? LIME : c.readiness > 50 ? AMBER : RED) }}>
                   {c.readiness ?? "—"}
                 </td>
                 <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.adherence}%</td>
                 <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.sessions}</td>
-                <td style={{ ...mono, fontSize: 13, color: ASH, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.lastSession ? fmtDate(c.lastSession) : "—"}</td>
+                <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.lastSession ? fmtDate(c.lastSession) : "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -358,7 +359,7 @@ export function DashboardMirror({
       <Card style={{ textAlign: "center", padding: 60 }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>Your dashboard is empty</div>
         <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
-          Log a workout from the <b style={{ color: LIME }}>Log session</b> tab — your route, Athlete
+          Log a workout from the <b style={{ color: txt(LIME) }}>Log session</b> tab — your route, Athlete
           Twin, injury risk and trends are all computed from your real sessions.
         </Mono>
       </Card>
@@ -434,7 +435,7 @@ export function DashboardMirror({
               Performance State · Athlete Twin
             </Mono>
             <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "8px 0 2px" }}>
-              <div style={{ ...disp, fontWeight: 900, fontSize: 44, color: BAND_COLOR(state.hpi.band) }}>
+              <div style={{ ...disp, fontWeight: 900, fontSize: 44, color: txt(BAND_COLOR(state.hpi.band)) }}>
                 {state.hpi.score}
               </div>
               <div>
@@ -477,7 +478,7 @@ export function DashboardMirror({
             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
               {state.drivers.map((d, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                  <span style={{ color: d.impact === "positive" ? LIME : AMBER, fontWeight: 900 }}>
+                  <span style={{ color: txt(d.impact === "positive" ? LIME : AMBER), fontWeight: 900 }}>
                     {d.impact === "positive" ? "+" : "−"}
                   </span>
                   <Mono s={{ fontSize: 12 }} c={CHALK}>{d.factor}</Mono>
@@ -530,7 +531,7 @@ export function PeriodizeScreen({
       <Card style={{ textAlign: "center", padding: 60 }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No active plan</div>
         <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
-          Enroll in a plan from the <b style={{ color: LIME }}>Plans</b> tab — your periodized
+          Enroll in a plan from the <b style={{ color: txt(LIME) }}>Plans</b> tab — your periodized
           macrocycle (phases, load &amp; recovery weeks) shows up here.
         </Mono>
       </Card>
@@ -579,7 +580,7 @@ export function PeriodizeScreen({
         {macro.blocks.map((b) => (
           <Card key={b.key} style={{ borderLeft: `3px solid ${b.color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: b.color }}>{b.label}</div>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(b.color) }}>{b.label}</div>
               <Mono s={{ fontSize: 12 }}>
                 wk {b.startWeek}–{b.endWeek}
               </Mono>
@@ -630,7 +631,7 @@ export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
       <Card style={{ textAlign: "center", padding: 60 }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No sessions yet</div>
         <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
-          Log your first workout from the <b style={{ color: LIME }}>Log session</b> tab — it&apos;ll
+          Log your first workout from the <b style={{ color: txt(LIME) }}>Log session</b> tab — it&apos;ll
           appear here and feed your dashboard.
         </Mono>
       </Card>
@@ -733,7 +734,7 @@ function SessionDetail({
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <button
         onClick={onBack}
-        style={{ ...mono, fontSize: 13, color: ASH, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
+        style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
       >
         ← History
       </button>
@@ -844,7 +845,7 @@ function SessionDetail({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
                 {prSet.has(b.name) ? "🏆 " : ""}{b.name}
-                {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: LIME, marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
+                {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Mono s={{ fontSize: 13 }} c={LIME}>{Math.round(blockBestE1rm(b))} kg e1RM</Mono>
@@ -895,7 +896,7 @@ export function RolesScreen() {
           textAlign: "center",
           padding: "11px 6px",
           borderBottom: `1px solid ${LINE}`,
-          color: no ? ASH : yes ? LIME : AMBER,
+          color: txt(no ? ASH : yes ? LIME : AMBER),
         }}
       >
         {no ? "—" : v}
@@ -918,7 +919,7 @@ export function RolesScreen() {
           ] as const
         ).map(([n, c, d]) => (
           <Card key={n} style={{ borderLeft: `3px solid ${c}` }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: c }}>{n}</div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(c) }}>{n}</div>
             <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>
               {d}
             </Mono>
@@ -938,7 +939,7 @@ export function RolesScreen() {
                   style={{
                     ...mono,
                     fontSize: 11,
-                    color: i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER,
+                    color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER),
                     textTransform: "uppercase",
                     textAlign: i === 0 ? "left" : "center",
                     padding: "8px 6px",

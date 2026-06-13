@@ -5,9 +5,11 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { brand } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useLang } from "../lib/i18n";
-import { C, F, Button } from "../lib/ui";
+import { F, Button } from "../lib/ui";
+import { useTheme, txt } from "../lib/theme";
 
 export default function Login() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
@@ -51,9 +53,9 @@ export default function Login() {
       <View style={{ alignItems: "center", marginBottom: 32 }}>
         <Text style={{ fontFamily: F.black, fontSize: 44, color: C.chalk, letterSpacing: -2 }}>
           {brand.name}
-          <Text style={{ color: C.lime }}>.</Text>
+          <Text style={{ color: txt(C, C.lime) }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.lime, letterSpacing: 3, marginTop: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), letterSpacing: 3, marginTop: 6 }}>
           STRENGTH · CONDITIONING
         </Text>
       </View>
@@ -65,7 +67,7 @@ export default function Login() {
       <Input value={password} onChange={setPassword} placeholder="password" secure />
 
       {!!error && (
-        <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.red, marginBottom: 10 }}>{error}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.red), marginBottom: 10 }}>{error}</Text>
       )}
 
       <Button
@@ -83,7 +85,7 @@ export default function Login() {
       >
         <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
           {mode === "signin" ? "Need an account? " : "Have an account? "}
-          <Text style={{ color: C.lime }}>{mode === "signin" ? "Create one" : "Sign in"}</Text>
+          <Text style={{ color: txt(C, C.lime) }}>{mode === "signin" ? "Create one" : "Sign in"}</Text>
         </Text>
       </Pressable>
 
@@ -113,6 +115,7 @@ function Input({
   secure?: boolean;
   keyboard?: "email-address";
 }) {
+  const C = useTheme().palette;
   return (
     <TextInput
       value={value}

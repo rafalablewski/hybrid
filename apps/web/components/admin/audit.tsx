@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type Entry = {
   id: string;
@@ -40,7 +40,7 @@ export default function AdminAuditLog() {
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Audit log not initialized</div>
         <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>AdminAudit</b> table doesn&apos;t exist yet. Run{" "}
-          <span style={{ color: AMBER }}>reference/sql-admin-audit.sql</span> in the Supabase SQL Editor to
+          <span style={{ color: txt(AMBER) }}>reference/sql-admin-audit.sql</span> in the Supabase SQL Editor to
           create it. Until then, privileged actions still work but aren&apos;t recorded.
         </Mono>
       </Card>
@@ -66,7 +66,7 @@ export default function AdminAuditLog() {
           <thead>
             <tr>
               {["When", "Actor", "Action", "Target", ""].map((h, i) => (
-                <th key={h || i} style={{ ...mono, fontSize: 10, color: ASH, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <th key={h || i} style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   {h}
                 </th>
               ))}
@@ -81,7 +81,7 @@ export default function AdminAuditLog() {
                   onMouseEnter={(ev) => (ev.currentTarget.style.background = INK2)}
                   onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
                 >
-                  <td style={{ ...mono, fontSize: 12, color: ASH, padding: "11px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
+                  <td style={{ ...mono, fontSize: 12, color: txt(ASH), padding: "11px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
                     {new Date(e.createdAt).toISOString().slice(0, 19).replace("T", " ")}
                   </td>
                   <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
@@ -93,12 +93,12 @@ export default function AdminAuditLog() {
                   <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: 12 }} c={ASH}>{e.summary || (e.targetType ? `${e.targetType}:${e.targetId?.slice(0, 8)}` : "—")}</Mono>
                   </td>
-                  <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}`, color: ASH }}>{open === e.id ? "▾" : "▸"}</td>
+                  <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}`, color: txt(ASH) }}>{open === e.id ? "▾" : "▸"}</td>
                 </tr>
                 {open === e.id && (
                   <tr>
                     <td colSpan={5} style={{ padding: "0 16px 14px", borderBottom: `1px solid ${LINE}`, background: "#0a0b0a" }}>
-                      <pre style={{ ...mono, fontSize: 11, color: ASH, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: "10px 0 0", lineHeight: 1.5 }}>
+                      <pre style={{ ...mono, fontSize: 11, color: txt(ASH), whiteSpace: "pre-wrap", wordBreak: "break-word", margin: "10px 0 0", lineHeight: 1.5 }}>
                         {JSON.stringify({ ip: e.ip, targetType: e.targetType, targetId: e.targetId, metadata: e.metadata }, null, 2)}
                       </pre>
                     </td>
@@ -107,7 +107,7 @@ export default function AdminAuditLog() {
               </Fragment>
             ))}
             {data && data.entries.length === 0 && (
-              <tr><td colSpan={5} style={{ ...mono, fontSize: 13, color: ASH, textAlign: "center", padding: 40 }}>No audit events recorded yet.</td></tr>
+              <tr><td colSpan={5} style={{ ...mono, fontSize: 13, color: txt(ASH), textAlign: "center", padding: 40 }}>No audit events recorded yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -126,7 +126,7 @@ export default function AdminAuditLog() {
 
 function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; disabled?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: disabled ? ASH : CHALK, background: CARD, border: `1px solid ${LINE}`, borderRadius: 9, padding: "8px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
+    <button onClick={onClick} disabled={disabled} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: txt(disabled ? ASH : CHALK), background: CARD, border: `1px solid ${LINE}`, borderRadius: 9, padding: "8px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );

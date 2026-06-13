@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, RED, ON_ACCENT, disp, cond, mono, Mono, Card } from "@/lib/ui";
 
 const BUCKET = "progress";
 type Photo = { name: string; path: string; url: string; date: string };
@@ -95,7 +95,7 @@ export default function Progress() {
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
           onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={busy}
-          style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "12px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
+          style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "12px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
           {busy ? "Uploading…" : "+ Add photo"}
         </button>
       </Card>

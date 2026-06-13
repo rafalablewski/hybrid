@@ -9,7 +9,8 @@ import {
   type NutritionGoal,
 } from "@hybrid/core";
 import { fetchSignals, createSignal, type CoreSignal } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Button, C, F } from "../lib/ui";
+import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { useTheme, txt } from "../lib/theme";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "Lose" },
@@ -18,6 +19,7 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 ];
 
 export default function Nutrition() {
+  const C = useTheme().palette;
   const router = useRouter();
   const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,7 +68,7 @@ export default function Nutrition() {
     <Screen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Nutrition · today</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.lime }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime) }}>← back</Text>
       </View>
 
       {/* goal */}
@@ -77,7 +79,7 @@ export default function Nutrition() {
             onPress={() => setGoal(g.id)}
             style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}1a` : "transparent" }}
           >
-            <Text style={{ fontFamily: F.semi, fontSize: 12, color: goal === g.id ? C.lime : C.ash }}>{g.label}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: 12, color: goal === g.id ? txt(C, C.lime) : C.ash }}>{g.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -153,6 +155,7 @@ export default function Nutrition() {
 }
 
 function Bar({ label, cur, target, unit, color }: { label: string; cur: number; target: number; unit: string; color: string }) {
+  const C = useTheme().palette;
   const pct = target > 0 ? Math.min(1, cur / target) : 0;
   const over = cur > target * 1.05;
   return (
@@ -169,6 +172,7 @@ function Bar({ label, cur, target, unit, color }: { label: string; cur: number; 
 }
 
 function Today2({ label, value }: { label: string; value: string }) {
+  const C = useTheme().palette;
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{value}</Text>
@@ -178,6 +182,7 @@ function Today2({ label, value }: { label: string; value: string }) {
 }
 
 function Cell({ value, onChange, ph }: { value: string; onChange: (v: string) => void; ph: string }) {
+  const C = useTheme().palette;
   return (
     <TextInput
       value={value}

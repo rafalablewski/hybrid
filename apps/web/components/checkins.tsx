@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
+  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, Mono, Card, Chip,
 } from "@/lib/ui";
 
@@ -100,7 +100,7 @@ export default function Checkins({ sessions }: { sessions: LoggedSession[] }) {
         />
         {error && <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{error}</Mono>}
         <button onClick={submit} disabled={saving}
-          style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "12px 24px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+          style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "12px 24px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Submitting…" : "Submit check-in →"}
         </button>
       </Card>

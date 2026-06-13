@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Liquid Glass System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   HYBRID · LIQUID GLASS DESIGN SYSTEM  (standalone preview)
+   Brand tokens mirror packages/core/src/brand.ts
+   Built CSS-first: backdrop-filter, layered shadows, conic rim,
+   SVG grain, @property-animated tokens. No gradients-as-crutch.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1 · ANIMATABLE TOKENS via @property -------------------------------
+   Registering custom props lets the browser interpolate them, so blur,
+   opacity, rim colour and the rim sweep angle animate SMOOTHLY (a plain
+   --var would snap). This is the backbone of the "liquid" feel.        */
+@property --lg-blur     { syntax:'<length>';     inherits:true;  initial-value:18px; }
+@property --lg-opacity  { syntax:'<number>';     inherits:true;  initial-value:.55; }
+@property --lg-rim      { syntax:'<color>';      inherits:true;  initial-value:rgba(255,255,255,.55); }
+@property --lg-angle    { syntax:'<angle>';      inherits:false; initial-value:0deg; }
+@property --lg-glow     { syntax:'<number>';     inherits:true;  initial-value:0; }
+@property --lg-lift     { syntax:'<length>';     inherits:false; initial-value:0px; }
+
+/* ---- 2 · BRAND + GLASS TOKENS ----------------------------------------- */
+:root{
+  /* brand (brand.ts) */
+  --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+  --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+  --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+  --disp:'Archivo',system-ui,sans-serif;
+  --cond:'Archivo Narrow',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+
+  /* spring + glass easings */
+  --spring:cubic-bezier(.34,1.56,.64,1);     /* overshoot + settle */
+  --ease:cubic-bezier(.22,1,.36,1);          /* smooth deceleration */
+
+  /* grain (visionOS-style) — feTurbulence baked to a data-URI */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* DARK theme (default) — glass = light film over dark ink */
+[data-theme="dark"]{
+  --bg:#0a0b0a;
+  --text:var(--chalk);
+  --muted:var(--ash);
+  --accent-text:var(--lime);      /* lime is readable on dark surfaces */
+  --glass-rgb:243,244,239;        /* chalk → a *bright* film */
+  --text-rgb:243,244,239;         /* content colour as rgb (for chips) */
+  --glass-base:22,24,22;          /* card tint underneath */
+  --rim-hi:rgba(255,255,255,.65); /* top-left rim highlight */
+  --rim-lo:rgba(255,255,255,.04); /* fading round the edge */
+  --inner-hi:rgba(255,255,255,.16);
+  --inner-lo:rgba(0,0,0,.45);
+  --drop:rgba(0,0,0,.6);
+  --lg-bright:1.06;
+  --grain-blend:overlay; --grain-opacity:.05;
+}
+/* LIGHT theme — glass = frosted white over a bright field */
+[data-theme="light"]{
+  --bg:#e9ece6;
+  --text:#0c0d0c;
+  --muted:#5a5e56;
+  --accent-text:#4c6606;          /* darker lime — AA on white (raw lime fails) */
+  --glass-rgb:255,255,255;
+  --text-rgb:12,13,12;
+  --glass-base:255,255,255;
+  --rim-hi:rgba(255,255,255,.95);
+  --rim-lo:rgba(255,255,255,.10);
+  --inner-hi:rgba(255,255,255,.7);
+  --inner-lo:rgba(20,30,15,.10);
+  --drop:rgba(40,55,25,.18);
+  --lg-bright:1.0;
+  --grain-blend:soft-light; --grain-opacity:.06;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--disp);background:var(--bg);color:var(--text);min-height:100vh;
+  transition:background .5s var(--ease),color .5s var(--ease);overflow-x:hidden;
+}
+
+/* ---- ambient background the glass actually refracts ------------------- */
+.field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.field .grid{position:absolute;inset:-2px;opacity:.5;
+  background:
+    linear-gradient(transparent 0 39px, color-mix(in srgb,var(--text) 6%, transparent) 39px 40px),
+    linear-gradient(90deg, transparent 0 39px, color-mix(in srgb,var(--text) 6%, transparent) 39px 40px);
+  background-size:40px 40px;-webkit-mask:radial-gradient(circle at 50% 40%,#000,transparent 75%);mask:radial-gradient(circle at 50% 40%,#000,transparent 75%);}
+.blob{position:absolute;width:46vmax;height:46vmax;border-radius:50%;filter:blur(60px);opacity:.55;mix-blend-mode:screen;will-change:transform}
+[data-theme="light"] .blob{opacity:.6;mix-blend-mode:multiply;filter:blur(70px)}
+.blob.a{background:var(--lime);  top:-10vmax; left:-6vmax;  animation:drift1 19s ease-in-out infinite}
+.blob.b{background:var(--blue);  top:6vmax;   right:-10vmax;animation:drift2 23s ease-in-out infinite}
+.blob.c{background:var(--violet);bottom:-16vmax;left:36%;   animation:drift3 27s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(8vmax,5vmax,0) scale(1.15)}}
+@keyframes drift2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-7vmax,6vmax,0) scale(1.1)}}
+@keyframes drift3{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-5vmax,-5vmax,0) scale(1.2)}}
+
+/* ════════════════════════════════════════════════════════════════════
+   3 · CORE COMPONENT — .liquid-glass  (+ variants)
+   Anatomy:  element        → backdrop blur + base film + layered shadows
+             ::before       → grain + sheen sweep (blend-mode)
+             ::after        → conic rim light (masked to a 1.5px ring)
+   ════════════════════════════════════════════════════════════════════ */
+.liquid-glass{
+  --lg-blur:18px; --lg-opacity:.55; --lg-glow:0; --lg-lift:0px;
+  position:relative;border-radius:24px;isolation:isolate;
+  /* the film: a flat translucent tint — NOT a gradient */
+  background:rgba(var(--glass-base), var(--lg-opacity));
+  -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(150%) brightness(var(--lg-bright));
+          backdrop-filter:blur(var(--lg-blur)) saturate(150%) brightness(var(--lg-bright));
+  border:1px solid transparent;
+  /* DEPTH = stacked shadows: inner top sheen, inner bottom shade,
+     a tight contact shadow, a soft lifted drop, and an accent glow */
+  box-shadow:
+    inset 0 1.5px 0 var(--inner-hi),
+    inset 0 -1px 1px var(--inner-lo),
+    inset 0 0 0 1px rgba(var(--text-rgb),.05),
+    0 1px 1px rgba(0,0,0,.25),
+    0 calc(14px + var(--lg-lift)) calc(40px + var(--lg-lift)) calc(-18px) var(--drop),
+    0 0 calc(40px * var(--lg-glow)) rgba(196,240,53,calc(.55 * var(--lg-glow)));
+  transform:translateZ(0);
+  transition:--lg-blur .5s var(--ease), --lg-opacity .5s var(--ease),
+             --lg-glow .45s var(--ease), --lg-lift .5s var(--spring),
+             transform .5s var(--spring), border-radius .6s var(--spring);
+  will-change:transform;
+}
+/* grain + a single diagonal sheen (sweeps on hover) */
+.liquid-glass::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;z-index:0;pointer-events:none;
+  background:var(--grain);background-size:180px 180px;
+  mix-blend-mode:var(--grain-blend);opacity:var(--grain-opacity);
+}
+.liquid-glass > .sheen{
+  position:absolute;inset:0;border-radius:inherit;z-index:0;pointer-events:none;overflow:hidden;
+}
+.liquid-glass > .sheen::after{
+  content:"";position:absolute;inset:-40%;
+  background:linear-gradient(115deg,transparent 42%,rgba(var(--glass-rgb),.16) 50%,transparent 58%);
+  transform:translateX(-60%);transition:transform 1s var(--ease);
+}
+.liquid-glass:hover > .sheen::after{transform:translateX(60%)}
+/* conic rim — the Apple "glass edge". Brighter on one side, masked to a ring */
+.liquid-glass::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;z-index:2;pointer-events:none;padding:1.5px;
+  background:conic-gradient(from var(--lg-angle),
+     var(--rim-hi), var(--rim-lo) 20%, rgba(var(--glass-rgb),.30) 40%,
+     var(--rim-lo) 60%, var(--rim-hi) 80%, var(--rim-lo));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  transition:--lg-angle 1.2s var(--ease);
+}
+.liquid-glass:hover{--lg-angle:360deg; transform:translateZ(0) scale(1.012)}
+.liquid-glass:hover{--lg-lift:6px}
+.liquid-glass > *{position:relative;z-index:1}
+
+/* ---- VARIANTS -------------------------------------------------------- */
+.lg-thin   { --lg-blur:8px;  --lg-opacity:.34; border-radius:20px; }
+.lg-thick  { --lg-blur:34px; --lg-opacity:.72; }
+.lg-vibrant{ --lg-blur:22px; --lg-opacity:.5;  --lg-glow:1; }
+.lg-vibrant::after{background:conic-gradient(from var(--lg-angle),
+     rgba(196,240,53,.9), var(--rim-lo) 22%, rgba(196,240,53,.4) 45%,
+     var(--rim-lo) 68%, rgba(196,240,53,.9));}
+/* tint variants override the film colour */
+.lg-light  { --glass-base:255,255,255; --glass-rgb:255,255,255; }
+.lg-dark   { --glass-base:10,11,10;    --lg-opacity:.6; }
+
+/* ════════════════════════════════════════════════════════════════════
+   PAGE LAYOUT
+   ════════════════════════════════════════════════════════════════════ */
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:28px 24px 160px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:36px}
+.brandmark{font-weight:900;font-size:22px;letter-spacing:-.04em}
+.brandmark i{color:var(--accent-text);font-style:normal}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.controls{display:flex;gap:10px;align-items:center}
+
+h1{font-weight:900;font-size:clamp(34px,6vw,60px);letter-spacing:-.04em;line-height:.98;margin:0 0 14px}
+.lede{font-family:var(--mono);font-size:14px;line-height:1.7;color:var(--muted);max-width:60ch}
+.section-label{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:64px 0 16px;display:flex;align-items:center;gap:10px}
+.section-label::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text) 12%,transparent)}
+
+/* hero card */
+.hero{padding:40px;display:grid;gap:18px}
+.hero .tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--accent-text);background:rgba(196,240,53,.14);border:1px solid rgba(196,240,53,.3);padding:6px 12px;border-radius:999px;width:fit-content}
+.hero h2{font-weight:900;font-size:clamp(26px,4vw,40px);letter-spacing:-.03em;margin:0}
+.hero p{font-family:var(--mono);font-size:14px;line-height:1.7;color:var(--muted);margin:0;max-width:54ch}
+.hero .stats{display:flex;gap:30px;flex-wrap:wrap;margin-top:6px}
+.hero .stats b{display:block;font-weight:800;font-size:30px;line-height:1}
+.hero .stats span{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+
+/* feature grid */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:760px){.features{grid-template-columns:1fr}}
+.feature{padding:24px;display:grid;gap:10px;min-height:170px;align-content:start}
+.feature .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:20px;color:var(--text);font-variant-emoji:text;background:rgba(var(--text-rgb),.07);border:1px solid rgba(var(--text-rgb),.18)}
+.feature h3{font-weight:800;font-size:18px;margin:4px 0 0;letter-spacing:-.01em}
+.feature p{font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--muted);margin:0}
+.feature .variant{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-text)}
+
+/* buttons */
+.btnrow{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.btn{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:14px;
+  padding:14px 26px;border-radius:14px;cursor:pointer;border:1px solid transparent;position:relative;
+  display:inline-flex;align-items:center;gap:10px;transition:transform .35s var(--spring),box-shadow .35s var(--ease)}
+.btn:active{transform:scale(.96)}
+/* primary = solid lime with glass-rim gloss */
+.btn-primary{color:var(--ink);background:var(--lime);
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 10px 24px -10px rgba(196,240,53,.8)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 16px 34px -10px rgba(196,240,53,1)}
+/* secondary = liquid glass button (reuses the core) */
+.btn-glass{color:var(--text);--lg-blur:14px;--lg-opacity:.4}
+.btn-glass.liquid-glass{border-radius:14px}
+
+/* ════════════════════════════════════════════════════════════════════
+   4 · CENTRAL FLOATING MENU  (orb → control-center hub)
+   ════════════════════════════════════════════════════════════════════ */
+/* trigger orb — fixed bottom-center */
+.orb{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:50;
+  width:64px;height:64px;border-radius:50%;cursor:pointer;display:grid;place-items:center;
+  --lg-blur:16px;--lg-opacity:.5;--lg-glow:1;
+  animation:orbfloat 6s ease-in-out infinite;}
+.orb .dot{width:22px;height:22px;border-radius:7px;background:var(--lime);
+  box-shadow:0 0 18px rgba(196,240,53,.9);transition:transform .5s var(--spring),border-radius .5s var(--spring)}
+.orb:hover .dot{transform:rotate(45deg) scale(1.05);border-radius:9px}
+@keyframes orbfloat{0%,100%{translate:0 0}50%{translate:0 -8px}}
+
+/* scrim — dims + blurs the whole app behind the hub */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0);
+  -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px);
+  opacity:0;visibility:hidden;transition:opacity .5s var(--ease),backdrop-filter .5s var(--ease),background .5s var(--ease);
+  display:grid;place-items:center;padding:24px}
+[data-theme="light"] .scrim{background:rgba(220,225,215,0)}
+body.menu-open .scrim{opacity:1;visibility:visible;background:rgba(0,0,0,.4);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+[data-theme="light"] body.menu-open .scrim{background:rgba(210,216,205,.45)}
+
+/* the hub */
+.hub{width:min(560px,94vw);padding:26px;border-radius:34px;
+  transform:scale(.84) translateY(24px);opacity:0;transition:transform .55s var(--spring),opacity .4s var(--ease);
+  --lg-blur:30px;--lg-opacity:.6}
+body.menu-open .hub{transform:scale(1) translateY(0);opacity:1}
+.hub-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.hub-head .t{font-weight:800;font-size:16px;letter-spacing:-.01em}
+.hub-head .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hub-close{width:34px;height:34px;border-radius:50%;border:1px solid rgba(var(--glass-rgb),.16);
+  background:rgba(var(--glass-rgb),.08);color:var(--text);cursor:pointer;font-size:16px;line-height:1;display:grid;place-items:center;transition:.3s}
+.hub-close:hover{transform:rotate(90deg);background:rgba(var(--glass-rgb),.16)}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:520px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{padding:16px 10px;border-radius:20px;display:grid;gap:9px;justify-items:center;text-align:center;cursor:pointer;
+  color:var(--text);--lg-blur:10px;--lg-opacity:.46;
+  /* staggered bloom */
+  opacity:0;transform:translateY(16px) scale(.9);
+  transition:transform .5s var(--spring),opacity .4s var(--ease),--lg-opacity .3s,--lg-glow .3s}
+body.menu-open .tile{opacity:1;transform:translateY(0) scale(1);transition-delay:calc(.12s + var(--i)*.045s)}
+/* icon sits on a light chip + forced text (monochrome) rendering, so glyphs
+   never fall back to dark emoji presentation — guarantees contrast */
+.tile .ti{font-size:22px;line-height:1;width:48px;height:48px;display:grid;place-items:center;border-radius:15px;
+  color:var(--text);font-variant-emoji:text;
+  background:rgba(var(--text-rgb),.07);border:1px solid rgba(var(--text-rgb),.18);
+  box-shadow:inset 0 1px 0 rgba(var(--glass-rgb),.30);
+  transition:transform .45s var(--spring),background .3s var(--ease),color .3s,box-shadow .3s}
+.tile .tl{font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.03em;color:var(--text)}
+.tile .ts{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tile:hover{--lg-opacity:.6;--lg-glow:1;transform:translateY(-4px) scale(1.04)}
+.tile:hover .ti,.tile.is-active .ti{transform:scale(1.1) translateY(-2px);color:var(--accent-text);
+  background:rgba(196,240,53,.16);border-color:rgba(196,240,53,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 20px rgba(196,240,53,.45)}
+.tile.is-active{--lg-glow:1;--lg-opacity:.6}
+.tile.is-active .tl{color:var(--accent-text)}
+
+/* ════════════════════════════════════════════════════════════════════
+   MODAL / DIALOG
+   ════════════════════════════════════════════════════════════════════ */
+.modal-scrim{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:24px;
+  opacity:0;visibility:hidden;background:rgba(0,0,0,0);
+  -webkit-backdrop-filter:blur(0);backdrop-filter:blur(0);
+  transition:opacity .45s var(--ease),backdrop-filter .45s var(--ease),background .45s}
+body.modal-open .modal-scrim{opacity:1;visibility:visible;background:rgba(0,0,0,.45);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.modal{width:min(440px,94vw);padding:30px;border-radius:28px;--lg-blur:30px;--lg-opacity:.62;
+  transform:scale(.9) translateY(20px);opacity:0;transition:transform .5s var(--spring),opacity .4s var(--ease)}
+body.modal-open .modal{transform:scale(1) translateY(0);opacity:1}
+.modal h3{font-weight:800;font-size:22px;margin:0 0 8px;letter-spacing:-.02em}
+.modal p{font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--muted);margin:0 0 22px}
+.modal .actions{display:flex;gap:12px;justify-content:flex-end}
+
+/* toggle pill (theme + buttons) */
+.pill-btn{font-family:var(--cond);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;
+  padding:10px 16px;border-radius:999px;cursor:pointer;color:var(--text);
+  --lg-blur:14px;--lg-opacity:.4}
+
+/* accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important}
+}
+/* graceful fallback when backdrop-filter is unsupported */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .liquid-glass,.scrim,.hub,.modal{background:rgba(var(--glass-base),.92)}
+}
+
+.foot{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;margin-top:30px}
+.foot code{color:var(--text);background:rgba(var(--glass-rgb),.08);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+
+<!-- ambient field the glass refracts -->
+<div class="field" aria-hidden="true">
+  <div class="grid"></div>
+  <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
+</div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="brandmark">HYBRID<i>.</i></div>
+      <div class="kick">liquid glass · design system</div>
+    </div>
+    <div class="controls">
+      <button class="pill-btn liquid-glass" id="themeBtn"><span class="sheen"></span>◐ Theme</button>
+      <button class="btn btn-primary" id="openMenu">⌘ Open menu</button>
+    </div>
+  </div>
+
+  <h1>Glass with<br>weight &amp; light.</h1>
+  <p class="lede">A single <code style="font-family:var(--mono)">.liquid-glass</code> primitive — frosted backdrop blur,
+  visionOS grain, a conic rim that catches light on one edge, layered depth shadows, and tokens that animate.
+  Same lime-on-ink brand, now with real material.</p>
+
+  <!-- HERO -->
+  <div class="section-label">Hero card · <span style="color:var(--accent-text)">.lg-vibrant</span></div>
+  <div class="hero liquid-glass lg-vibrant"><span class="sheen"></span>
+    <span class="tag">● Primed · readiness 82</span>
+    <h2>Lower power + Tempo intervals</h2>
+    <p>Posterior chain is fresh and recovery is banked. Push the squat, then bleed off
+    with Z2 intervals — aerobic base without taxing tomorrow.</p>
+    <div class="stats">
+      <div><b>142<span style="font-size:16px;color:var(--accent-text)">→163</span></b><span>kg e1RM · 12 wks</span></div>
+      <div><b style="color:var(--accent-text)">18,420</b><span>kg volume / wk</span></div>
+      <div><b>79</b><span>HPI · primed</span></div>
+    </div>
+    <div class="btnrow" style="margin-top:8px">
+      <button class="btn btn-primary">Start session →</button>
+      <button class="btn btn-glass liquid-glass"><span class="sheen"></span>View plan</button>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="section-label">Feature cards · variants</div>
+  <div class="features">
+    <div class="feature liquid-glass lg-thin"><span class="sheen"></span>
+      <div class="ic">◈</div>
+      <span class="variant">.lg-thin</span>
+      <h3>Performance State</h3>
+      <p>Light film, low blur — lets dense data read through. For chrome over busy charts.</p>
+    </div>
+    <div class="feature liquid-glass"><span class="sheen"></span>
+      <div class="ic">⚡</div>
+      <span class="variant">default</span>
+      <h3>Velocity (VBT)</h3>
+      <p>The baseline glass — balanced blur and opacity. The everyday card surface.</p>
+    </div>
+    <div class="feature liquid-glass lg-thick"><span class="sheen"></span>
+      <div class="ic">❤</div>
+      <span class="variant">.lg-thick</span>
+      <h3>Longevity</h3>
+      <p>Heavy frost, near-opaque — for focused panels and modals that must dominate.</p>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="section-label">Buttons</div>
+  <div class="btnrow">
+    <button class="btn btn-primary">Primary action →</button>
+    <button class="btn btn-glass liquid-glass"><span class="sheen"></span>Secondary glass</button>
+    <button class="btn btn-glass liquid-glass lg-vibrant"><span class="sheen"></span>Vibrant glass</button>
+    <button class="btn btn-glass liquid-glass" id="openModal"><span class="sheen"></span>Open modal</button>
+  </div>
+
+  <div class="foot">
+    <b style="color:var(--text)">Perf notes baked in:</b> <code>will-change:transform</code> + <code>translateZ(0)</code> on every glass surface ·
+    one shared <code>backdrop-filter</code> per element (never nested) · animations drive <code>transform</code>/<code>opacity</code>/registered <code>@property</code> tokens only (compositor-friendly) ·
+    <code>@property</code> makes blur/opacity/rim-angle interpolate · grain is a tiny inline SVG (no image request) ·
+    <code>prefers-reduced-motion</code> + a no-<code>backdrop-filter</code> fallback included.
+  </div>
+</div>
+
+<!-- ════ CENTRAL MENU ════ -->
+<button class="orb liquid-glass" id="orb" aria-label="Open menu"><span class="sheen"></span><span class="dot"></span></button>
+
+<div class="scrim" id="scrim">
+  <div class="hub liquid-glass lg-thick" role="dialog" aria-modal="true" aria-label="Quick menu"><span class="sheen"></span>
+    <div class="hub-head">
+      <div>
+        <div class="k">app.hybrid.app</div>
+        <div class="t">Jump to…</div>
+      </div>
+      <button class="hub-close" id="hubClose" aria-label="Close">✕</button>
+    </div>
+    <div class="tiles" id="tiles"><!-- injected --></div>
+  </div>
+</div>
+
+<!-- ════ MODAL ════ -->
+<div class="modal-scrim" id="modalScrim">
+  <div class="modal liquid-glass" role="dialog" aria-modal="true" aria-label="Confirm"><span class="sheen"></span>
+    <h3>End this session?</h3>
+    <p>Your 4 logged sets will be saved to history and feed today's readiness. You can always re-open it from the calendar.</p>
+    <div class="actions">
+      <button class="btn btn-glass liquid-glass" id="modalCancel"><span class="sheen"></span>Cancel</button>
+      <button class="btn btn-primary" id="modalConfirm">Save &amp; end</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---- central menu tiles (mirrors the app's nav) ---- */
+const TILES = [
+  ['➤','Today','home',1],['◆','Dashboard','home',0],['✎','Log','train',0],['▦','Calendar','train',0],
+  ['▤','Plans','train',0],['◎','Sport','train',0],['◈','Performance','analyze',0],['⚡','Velocity','analyze',0],
+  ['🏃','Running','analyze',0],['✓','Check-in','recovery',0],['❤','Longevity','recovery',0],['⚙','Settings','account',0],
+];
+const tilesEl = document.getElementById('tiles');
+// append U+FE0E (text variation selector) to single-unit symbol glyphs so they
+// render monochrome instead of as dark emoji; true emoji (🏃) are left alone
+const txtGlyph = ic => ic.length === 1 ? ic + '︎' : ic;
+tilesEl.innerHTML = TILES.map(([ic,label,grp,active],i)=>`
+  <button class="tile liquid-glass${active?' is-active':''}" style="--i:${i}">
+    <span class="sheen"></span>
+    <span class="ti">${txtGlyph(ic)}</span>
+    <span class="tl">${label}</span>
+    <span class="ts">${grp}</span>
+  </button>`).join('');
+
+/* ---- open / close menu ---- */
+const body = document.body;
+const openMenu = ()=>body.classList.add('menu-open');
+const closeMenu = ()=>body.classList.remove('menu-open');
+document.getElementById('orb').addEventListener('click', openMenu);
+document.getElementById('openMenu').addEventListener('click', openMenu);
+document.getElementById('hubClose').addEventListener('click', closeMenu);
+document.getElementById('scrim').addEventListener('click', e=>{ if(e.target.id==='scrim') closeMenu(); });
+tilesEl.addEventListener('click', e=>{
+  const t = e.target.closest('.tile'); if(!t) return;
+  tilesEl.querySelectorAll('.tile').forEach(x=>x.classList.remove('is-active'));
+  t.classList.add('is-active');
+  setTimeout(closeMenu,180);
+});
+
+/* ⌘K / Ctrl-K to toggle, Esc to close everything */
+addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault();
+    body.classList.toggle('menu-open'); }
+  if(e.key==='Escape'){ closeMenu(); closeModal(); }
+});
+
+/* ---- subtle parallax tilt on the hub (depth) ---- */
+const hub = document.querySelector('.hub');
+document.getElementById('scrim').addEventListener('pointermove', e=>{
+  if(!body.classList.contains('menu-open')) return;
+  const r = hub.getBoundingClientRect();
+  const dx = (e.clientX-(r.left+r.width/2))/r.width;
+  const dy = (e.clientY-(r.top+r.height/2))/r.height;
+  hub.style.transform = `scale(1) translateY(0) rotateX(${(-dy*5).toFixed(2)}deg) rotateY(${(dx*6).toFixed(2)}deg)`;
+});
+document.getElementById('scrim').addEventListener('pointerleave', ()=>{ hub.style.transform=''; });
+
+/* ---- modal ---- */
+const openModal = ()=>body.classList.add('modal-open');
+const closeModal = ()=>body.classList.remove('modal-open');
+document.getElementById('openModal').addEventListener('click', openModal);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalConfirm').addEventListener('click', closeModal);
+document.getElementById('modalScrim').addEventListener('click', e=>{ if(e.target.id==='modalScrim') closeModal(); });
+
+/* ---- theme toggle ---- */
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const h = document.documentElement;
+  h.dataset.theme = h.dataset.theme==='dark' ? 'light' : 'dark';
+});
+</script>
+</body>
+</html>

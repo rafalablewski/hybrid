@@ -29,6 +29,7 @@ import { useSession } from "../../lib/session";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
+import { useTheme, txt } from "../../lib/theme";
 
 const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
@@ -37,6 +38,7 @@ const bandColor = (b: string) =>
   b === "thriving" || b === "steady" ? C.lime : b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
 
 export default function Home() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { name, signOut } = useSession();
   const { draft } = useDraft();
@@ -207,10 +209,10 @@ export default function Home() {
         style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.violet }}>✨ Set up your plan</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
           <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
         </View>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.violet }}>→</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
       </Pressable>
 
       {/* ASSIGNED — workouts the coach scheduled */}
@@ -224,7 +226,7 @@ export default function Home() {
                 <Mono style={{ fontSize: 11 }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </View>
               <Pressable onPress={() => router.push("/workout?source=empty")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>Start</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: 12, color: txt(C, C.lime) }}>Start</Text>
               </Pressable>
               <Pressable onPress={() => markDone(a.id)}>
                 <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>done</Text>
@@ -358,7 +360,7 @@ export default function Home() {
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 8 }}>
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk }}>{Math.round(projection.current)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 14, color: C.ash }}>→</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.violet }}>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: txt(C, C.violet) }}>
               {Math.round(projection.series[projection.series.length - 1]!.value)}
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>kg in 12 wks</Text>
@@ -387,7 +389,7 @@ export default function Home() {
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
           <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 36, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band)) }}>{state.hpi.score}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>

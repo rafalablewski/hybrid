@@ -7,7 +7,7 @@ import {
   velocityProfiles,
   type LoggedSession,
 } from "@hybrid/core";
-import { INK2, LINE, CHALK, LIME, VIOLET, RED, disp, mono, Mono, Card } from "@/lib/ui";
+import { INK2, LINE, CHALK, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { blockBtn, uid, type EditableBlock } from "@/components/workout-blocks";
 
 const inputStyle = {
@@ -152,7 +152,7 @@ export default function Logger({
           fontWeight: 800,
           fontSize: 15,
           background: LIME,
-          color: "#0c0d0c",
+          color: ON_ACCENT,
           border: "none",
           borderRadius: 12,
           padding: "14px 28px",

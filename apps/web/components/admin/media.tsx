@@ -11,12 +11,14 @@ import {
   ASH,
   AMBER,
   RED,
+  ON_ACCENT,
   disp,
   cond,
   mono,
   Mono,
   Card,
   Chip,
+  txt,
 } from "@/lib/ui";
 
 const BUCKET = "media";
@@ -145,7 +147,7 @@ export default function AdminMedia() {
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Media library not initialized</div>
         <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>MediaAsset</b> table + <b>media</b> bucket don&apos;t exist yet. Run{" "}
-          <span style={{ color: AMBER }}>reference/sql-media-library.sql</span> in the Supabase SQL Editor, then reload.
+          <span style={{ color: txt(AMBER) }}>reference/sql-media-library.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
       </Card>
     );
@@ -197,7 +199,7 @@ export default function AdminMedia() {
               ) : a.kind === "video" ? (
                 <video src={a.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} muted playsInline preload="metadata" />
               ) : (
-                <span style={{ fontSize: 32, color: ASH }}>⎙</span>
+                <span style={{ fontSize: 32, color: txt(ASH) }}>⎙</span>
               )}
             </div>
 
@@ -231,7 +233,7 @@ export default function AdminMedia() {
                       <button disabled={busy} onClick={() => patch(a.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
                     )}
                     {a.status !== "archived" && <button disabled={busy} onClick={() => patch(a.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-                    <button disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: RED, borderColor: `${RED}55` }}>Delete</button>
+                    <button disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
                   </div>
                 </>
               )}
@@ -273,7 +275,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: 9,
   cursor: "pointer",
   background: LIME,
-  color: "#0c0d0c",
+  color: ON_ACCENT,
   border: `1px solid ${LIME}`,
 };
 const miniBtn: React.CSSProperties = {

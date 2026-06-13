@@ -4,19 +4,65 @@ import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
 import { colors } from "@hybrid/core";
 
-// Ported 1:1 from reference/HybridWeb.jsx so the deployed app matches the
-// prototype exactly. Tokens come from @hybrid/core (the shared identity).
-export const INK = colors.ink,
-  INK2 = colors.ink2,
-  CARD = colors.card,
+// Tokens come from @hybrid/core (the shared identity). Surface + primary-text
+// tokens resolve through CSS variables (globals.css @theme + [data-theme])
+// so the app re-themes (dark ⇄ light) without touching inline styles. LINE,
+// ASH and the accents stay raw hex because they're also fed to recharts as SVG
+// presentation attributes, where CSS var() does not resolve.
+export const INK = "var(--color-ink)",
+  INK2 = "var(--color-ink2)",
+  CARD = "var(--color-card)",
   LINE = colors.line;
 export const LIME = colors.lime,
-  CHALK = colors.chalk,
+  CHALK = "var(--color-chalk)",
   ASH = colors.ash,
   BLUE = colors.blue,
   VIOLET = colors.violet,
   AMBER = colors.amber,
   RED = colors.red;
+
+// Fixed near-black for text/icons placed ON a bright accent fill (lime/amber/…).
+// Stays dark in BOTH themes (accent fills are bright in both), so it must NOT be
+// the themed INK var. Replaces the scattered "#0c0d0c" literals.
+export const ON_ACCENT = colors.ink;
+
+// Theme-aware FOREGROUND accent colours (for text). The bright accents above
+// stay fixed for backgrounds / borders / chart strokes / glows (and recharts,
+// which can't resolve var()); these darken on light so accent TEXT keeps WCAG
+// AA. Use *_T directly for inline accent text, or rely on Mono/Chip which map
+// a bright accent → its themed text colour automatically.
+export const LIME_T = "var(--lime-text)",
+  BLUE_T = "var(--blue-text)",
+  VIOLET_T = "var(--violet-text)",
+  AMBER_T = "var(--amber-text)",
+  RED_T = "var(--red-text)";
+
+const ACCENT_TEXT: Record<string, string> = {
+  [colors.lime]: LIME_T,
+  [colors.blue]: BLUE_T,
+  [colors.violet]: VIOLET_T,
+  [colors.amber]: AMBER_T,
+  [colors.red]: RED_T,
+  [colors.ash]: "var(--color-ash)",
+};
+
+/** Map a bright accent (or ash) to its theme-aware text colour; pass anything
+ *  else through unchanged. Accepts an optional colour (e.g. Mono's `c?`) and
+ *  returns undefined for it. Use for inline accent TEXT: `color: txt(BLUE)`. */
+export const txt = (c?: string): string | undefined => (c ? ACCENT_TEXT[c] ?? c : undefined);
+
+/** The ambient Liquid Glass field — slow-drifting accent blobs that the glass
+ *  surfaces refract. Render once per page/shell, behind the content (the
+ *  styling + stacking live in globals.css `.lg-field`). */
+export function GlassField() {
+  return (
+    <div className="lg-field" aria-hidden>
+      <div className="lg-blob lg-a" />
+      <div className="lg-blob lg-b" />
+      <div className="lg-blob lg-c" />
+    </div>
+  );
+}
 
 export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
 export const cond: CSSProperties = { fontFamily: "'Archivo Narrow', sans-serif" };
@@ -40,7 +86,9 @@ export function Mono({
   s?: CSSProperties;
   c?: string;
 }) {
-  return <span style={{ ...mono, color: c, ...s }}>{children}</span>;
+  // Auto-map a bright accent (or ash) to its theme-aware text colour so every
+  // `Mono c={LIME}` across the app stays AA in light mode without edits.
+  return <span style={{ ...mono, color: txt(c), ...s }}>{children}</span>;
 }
 
 export function Card({
@@ -48,12 +96,25 @@ export function Card({
   style,
   span,
   onClick,
+  glass = true,
+  variant,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   span?: number;
   onClick?: () => void;
+  /** Liquid Glass surface (default). Pass `glass={false}` for a solid card. */
+  glass?: boolean;
+  /** Glass variant — only applies when `glass` is set. */
+  variant?: "thin" | "thick" | "vibrant";
 }) {
+  if (glass) {
+    return (
+      <Glass span={span} variant={variant} onClick={onClick} style={{ padding: 20, ...style }}>
+        {children}
+      </Glass>
+    );
+  }
   return (
     <div
       onClick={onClick}
@@ -72,6 +133,51 @@ export function Card({
   );
 }
 
+// Liquid Glass surface primitive. The visual treatment lives in globals.css
+// (`.liquid-glass` + `.lg-*` variants); this just wires up the className,
+// the sheen layer and the brand-consistent props (span/onClick/style). Add
+// `hover` for the rim-sweep + lift on pointer interaction.
+export function Glass({
+  children,
+  style,
+  span,
+  onClick,
+  variant,
+  hover = true,
+  className = "",
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+  span?: number;
+  onClick?: () => void;
+  variant?: "thin" | "thick" | "vibrant";
+  hover?: boolean;
+  className?: string;
+}) {
+  const cls = [
+    "liquid-glass",
+    variant ? `lg-${variant}` : "",
+    hover ? "lg-hover" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <div
+      onClick={onClick}
+      className={cls}
+      style={{
+        gridColumn: span ? `span ${span}` : undefined,
+        cursor: onClick ? "pointer" : undefined,
+        ...style,
+      }}
+    >
+      <span className="lg-sheen" aria-hidden />
+      {children}
+    </div>
+  );
+}
+
 export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }) {
   return (
     <span
@@ -82,7 +188,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
         fontWeight: 600,
         letterSpacing: ".05em",
         textTransform: "uppercase",
-        color: c,
+        color: txt(c),
         background: `${c}1f`,
         padding: "3px 9px",
         borderRadius: 5,
@@ -239,7 +345,7 @@ export function Stat({
   c?: string;
 }) {
   return (
-    <Card>
+    <Card glass>
       <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>
         {label}
       </Mono>
@@ -248,7 +354,7 @@ export function Stat({
           ...disp,
           fontWeight: 800,
           fontSize: 34,
-          color: c,
+          color: txt(c),
           lineHeight: 1.1,
           margin: "6px 0 2px",
         }}
@@ -281,7 +387,7 @@ export function ChartFrame({
   span?: number;
 }) {
   return (
-    <Card span={span}>
+    <Card span={span} glass>
       <div style={{ marginBottom: 14 }}>
         {kicker && (
           <Mono

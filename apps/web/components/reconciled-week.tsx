@@ -17,7 +17,7 @@ import {
   type Macrocycle,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
-import { LINE, LIME, CHALK, ASH, VIOLET, AMBER, disp, cond, Mono, Card, Chip } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
 
 /**
  * The reconciled week — the macrocycle phase arbitrates the daily route + sport
@@ -195,7 +195,7 @@ function cta(disabled: boolean) {
     fontWeight: 800,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
-    color: "#0c0d0c",
+    color: ON_ACCENT,
     background: VIOLET,
     border: "none",
     borderRadius: 10,

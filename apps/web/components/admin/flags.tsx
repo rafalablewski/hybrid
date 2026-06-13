@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Flag = {
   key: string;
@@ -61,7 +61,7 @@ export default function AdminFlags() {
           <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Overrides not persisted yet</div>
           <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
             The <b>FeatureFlag</b> table doesn&apos;t exist yet — run{" "}
-            <span style={{ color: AMBER }}>reference/sql-feature-flags.sql</span> in Supabase to make toggles persist.
+            <span style={{ color: txt(AMBER) }}>reference/sql-feature-flags.sql</span> in Supabase to make toggles persist.
             Until then the app runs on the registry defaults below.
           </Mono>
         </Card>
@@ -155,5 +155,5 @@ const resetBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK,
-  color: ASH,
+  color: txt(ASH),
 };

@@ -12,8 +12,8 @@ import {
   type Signal,
 } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
-  disp, cond, mono, tip, Mono, Card, ChartFrame,
+  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
+  disp, cond, mono, tip, Mono, Card, ChartFrame, txt,
 } from "@/lib/ui";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
@@ -92,7 +92,7 @@ export default function Nutrition() {
           <button
             key={g.id}
             onClick={() => setGoal(g.id)}
-            style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "6px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}1a` : "transparent", color: goal === g.id ? LIME : ASH }}
+            style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "6px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}1a` : "transparent", color: txt(goal === g.id ? LIME : ASH) }}
           >
             {g.label}
           </button>
@@ -142,7 +142,7 @@ export default function Nutrition() {
           <button
             onClick={add}
             disabled={saving}
-            style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 10, padding: "11px 22px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
+            style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 22px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
           >
             {saving ? "Adding…" : "Add →"}
           </button>
@@ -166,7 +166,7 @@ export default function Nutrition() {
               </LineChart>
             </ResponsiveContainer>
             <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }}>
-              <span style={{ color: LIME }}>—</span> trend (smoothed) · <span style={{ color: ASH }}>—</span> daily reading. Daily weight is noisy; the trend is the signal.
+              <span style={{ color: txt(LIME) }}>—</span> trend (smoothed) · <span style={{ color: txt(ASH) }}>—</span> daily reading. Daily weight is noisy; the trend is the signal.
             </Mono>
           </ChartFrame>
         </div>
@@ -182,7 +182,7 @@ export default function Nutrition() {
               <div key={d.date} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8, padding: "8px 0", borderTop: i ? `1px solid ${LINE}` : "none", ...mono, fontSize: 13 }}>
                 <span style={{ color: CHALK }}>{d.date.slice(5)}</span>
                 <span style={{ color: CHALK }}>{Math.round(d.kcal)} kcal</span>
-                <span style={{ color: ASH }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</span>
+                <span style={{ color: txt(ASH) }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</span>
               </div>
             ))
           )}

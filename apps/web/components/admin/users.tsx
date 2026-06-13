@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 
 type Row = {
   id: string;
@@ -349,7 +349,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   ...disp,
                   fontWeight: 800,
                   fontSize: 14,
-                  color: "#0c0d0c",
+                  color: ON_ACCENT,
                   background: dirty && !saving ? AMBER : LINE,
                   border: "none",
                   borderRadius: 10,

@@ -10,7 +10,7 @@ import {
   toTrainingLog,
   type LoggedSession,
 } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator.
@@ -320,9 +320,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
         {tags.map((t) => (
-          <span key={t} style={{ ...cond, fontSize: 12, color: BLUE, background: `${BLUE}1f`, border: `1px solid ${BLUE}55`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span key={t} style={{ ...cond, fontSize: 12, color: txt(BLUE), background: `${BLUE}1f`, border: `1px solid ${BLUE}55`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
             {t}
-            <button onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: BLUE, cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1 }}>×</button>
+            <button onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: txt(BLUE), cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1 }}>×</button>
           </span>
         ))}
         <input
@@ -532,7 +532,7 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
 function Metric({ label, value, c }: { label: string; value: string; c: string }) {
   return (
     <div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: txt(c) }}>{value}</div>
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
@@ -562,7 +562,7 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: ".04em",
-        color: color === ASH ? ASH : "#0c0d0c",
+        color: txt(color === ASH ? ASH : ON_ACCENT),
         background: color === ASH ? "transparent" : color,
         border: `1px solid ${color === ASH ? LINE : color}`,
         borderRadius: 8,

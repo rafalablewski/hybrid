@@ -14,7 +14,7 @@ import {
   type AgentStatus,
   type Kpi,
 } from "@hybrid/core";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
 type RunStep = { agent: string; role: string; task: string; output: string };
@@ -314,7 +314,7 @@ export default function AdminAgents() {
           <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Agents aren&apos;t persisted yet</div>
           <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
             The <b>AgentConfig</b> table doesn&apos;t exist yet — run{" "}
-            <span style={{ color: AMBER }}>reference/sql-agents.sql</span> in Supabase to make agents persist. You can
+            <span style={{ color: txt(AMBER) }}>reference/sql-agents.sql</span> in Supabase to make agents persist. You can
             still preview the role presets below.
           </Mono>
         </Card>
@@ -332,7 +332,7 @@ export default function AdminAgents() {
             + {p.role}
           </button>
         ))}
-        <button disabled={busy} onClick={() => createFrom()} style={{ ...presetBtn, borderStyle: "dashed", color: ASH }}>
+        <button disabled={busy} onClick={() => createFrom()} style={{ ...presetBtn, borderStyle: "dashed", color: txt(ASH) }}>
           + Custom
         </button>
       </div>
@@ -479,7 +479,7 @@ export default function AdminAgents() {
                     <button
                       key={t.value}
                       onClick={() => set("tools", on ? draft.tools.filter((x) => x !== t.value) : [...draft.tools, t.value])}
-                      style={{ ...chipBtn, background: on ? `${LIME}1f` : INK2, color: on ? LIME : ASH, borderColor: on ? LIME : LINE }}
+                      style={{ ...chipBtn, background: on ? `${LIME}1f` : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
                     >
                       {on ? "✓ " : "+ "}{t.label}
                     </button>
@@ -668,7 +668,7 @@ export default function AdminAgents() {
                       <summary style={{ ...mono, fontSize: 12, color: CHALK, cursor: "pointer", listStyle: "none" }}>
                         <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
                         <Chip c={ASH}>{r.runtime}</Chip>
-                        <span style={{ color: ASH }}>{new Date(r.createdAt).toLocaleString()}</span>
+                        <span style={{ color: txt(ASH) }}>{new Date(r.createdAt).toLocaleString()}</span>
                         <div style={{ marginTop: 4, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.task}</div>
                       </summary>
                       <div style={{ marginTop: 8 }}>
@@ -737,7 +737,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <label style={{ display: "block" }}>
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
         {label}
-        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: ASH }}> · {hint}</span> : null}
+        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
       </Mono>
       {children}
     </label>
@@ -749,7 +749,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
       <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
         {title}
-        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: ASH }}> · {hint}</span> : null}
+        {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
       </Mono>
       {children}
     </div>
@@ -852,7 +852,7 @@ const primaryBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LIME}`,
   background: `${LIME}22`,
-  color: LIME,
+  color: txt(LIME),
 };
 const dangerBtn: React.CSSProperties = {
   ...cond,
@@ -865,7 +865,7 @@ const dangerBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: "transparent",
-  color: ASH,
+  color: txt(ASH),
 };
 const addBtn: React.CSSProperties = {
   ...cond,
@@ -877,7 +877,7 @@ const addBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px dashed ${LINE}`,
   background: "transparent",
-  color: ASH,
+  color: txt(ASH),
 };
 const removeBtn: React.CSSProperties = {
   ...mono,
@@ -889,7 +889,7 @@ const removeBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK2,
-  color: ASH,
+  color: txt(ASH),
 };
 const chipBtn: React.CSSProperties = {
   ...cond,

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { allTranslationKeys, baselineString, LANGS, type Lang } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Select, txt } from "@/lib/ui";
 
 const LANG_LIST = Object.keys(LANGS) as Lang[];
 
@@ -98,7 +98,7 @@ export default function AdminTranslations() {
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Localization not initialized</div>
         <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Translation</b> table doesn&apos;t exist yet. Run{" "}
-          <span style={{ color: AMBER }}>reference/sql-translation.sql</span> in the Supabase SQL Editor, then reload.
+          <span style={{ color: txt(AMBER) }}>reference/sql-translation.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
       </Card>
     );
@@ -132,9 +132,9 @@ export default function AdminTranslations() {
         <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th style={{ ...mono, fontSize: 10, color: ASH, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}`, width: "22%" }}>Key</th>
+              <th style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}`, width: "22%" }}>Key</th>
               {LANG_LIST.map((l) => (
-                <th key={l} style={{ ...mono, fontSize: 10, color: ASH, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}` }}>
+                <th key={l} style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}` }}>
                   {LANGS[l]}
                 </th>
               ))}
@@ -171,7 +171,7 @@ export default function AdminTranslations() {
                             padding: "6px 8px",
                             borderRadius: 7,
                             background: INK2,
-                            color: missing && !val ? ASH : CHALK,
+                            color: txt(missing && !val ? ASH : CHALK),
                             border: `1px solid ${overridden ? LIME : missing ? AMBER : LINE}`,
                             outline: "none",
                             resize: "vertical",
@@ -183,7 +183,7 @@ export default function AdminTranslations() {
                           <button
                             title="Revert to baseline"
                             onClick={() => save(lang, key, "")}
-                            style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: 13, padding: "4px 2px", flexShrink: 0 }}
+                            style={{ background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", fontSize: 13, padding: "4px 2px", flexShrink: 0 }}
                           >
                             ↺
                           </button>
@@ -195,7 +195,7 @@ export default function AdminTranslations() {
               </tr>
             ))}
             {loaded && visible.length === 0 && (
-              <tr><td colSpan={1 + LANG_LIST.length} style={{ ...mono, fontSize: 13, color: ASH, textAlign: "center", padding: 32 }}>No keys match.</td></tr>
+              <tr><td colSpan={1 + LANG_LIST.length} style={{ ...mono, fontSize: 13, color: txt(ASH), textAlign: "center", padding: 32 }}>No keys match.</td></tr>
             )}
           </tbody>
         </table>

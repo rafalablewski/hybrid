@@ -20,7 +20,8 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Loading, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
+import { useTheme, txt } from "../../lib/theme";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -28,6 +29,7 @@ const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { h
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 export default function SessionDetail() {
+  const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -107,7 +109,7 @@ export default function SessionDetail() {
 
       {prs.length > 0 && (
         <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.lime }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
           {prs.slice(0, 6).map((p) => (
             <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t)}</Text>
           ))}
@@ -116,7 +118,7 @@ export default function SessionDetail() {
 
       {cardioPrs.length > 0 && (
         <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.blue }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.blue) }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
           {cardioPrs.slice(0, 6).map((p) => (
             <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
           ))}
@@ -132,16 +134,16 @@ export default function SessionDetail() {
           <Card key={i}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? C.lime : b.kind === "cardio" ? C.blue : C.violet }}>{b.kind.toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
                 <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
                   {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
                 </Text>
                 {ssLabels[i] && (
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.lime }}>⛓ {ssLabels[i]}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.lime }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>
                   {Math.round(blockBestE1rm(b))} kg e1RM
                 </Text>
               )}
@@ -203,6 +205,7 @@ const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
 };
 
 function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: string) => string }) {
+  const C = useTheme().palette;
   return (
     <Pressable onPress={() => router.back()} hitSlop={10}>
       <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("nav.history")}</Text>
@@ -221,6 +224,7 @@ const MUSCLE_LABEL: Record<string, string> = {
 };
 
 function MuscleFocus({ blocks, t }: { blocks: LoggedSession["blocks"]; t: (k: string) => string }) {
+  const C = useTheme().palette;
   const vol = volumeByMuscle(blocks);
   if (vol.length === 0) return null;
   const max = vol[0]!.volume || 1;
@@ -246,6 +250,7 @@ function MuscleFocus({ blocks, t }: { blocks: LoggedSession["blocks"]; t: (k: st
 
 // Dependency-free e1RM trend: scaled bars, latest highlighted.
 function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
+  const C = useTheme().palette;
   if (series.length < 2) return null;
   const max = Math.max(...series);
   const min = Math.min(...series);
@@ -279,6 +284,7 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
 // Dependency-free pace trend (sec/km). Lower is faster, so a faster bar is
 // TALLER; latest highlighted, delta shown as time saved (lime) or lost (amber).
 function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }) {
+  const C = useTheme().palette;
   if (series.length < 2) return null;
   const max = Math.max(...series);
   const min = Math.min(...series);
@@ -311,6 +317,7 @@ function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
+  const C = useTheme().palette;
   return (
     <View style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{value}</Text>

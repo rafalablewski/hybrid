@@ -44,6 +44,7 @@ import {
   Chip,
   Stat,
   ChartFrame,
+  txt,
 } from "@/lib/ui";
 
 const STREAM_COLOR: Record<RevenueStreamId, string> = {
@@ -144,7 +145,7 @@ export default function AdminFinancials() {
         <strong style={{ color: CHALK }}>segments</strong> show which customer actually pays,{" "}
         the <strong style={{ color: CHALK }}>scorecard</strong> grades growth efficiency, and the{" "}
         <strong style={{ color: CHALK }}>forecast</strong> projects 12 months of cash. This is a planning
-        tool; live charging is the blocked <strong style={{ color: AMBER }}>billing</strong> capability.{" "}
+        tool; live charging is the blocked <strong style={{ color: txt(AMBER) }}>billing</strong> capability.{" "}
         <button onClick={() => setShowGlossary((v) => !v)} style={linkBtn}>
           {showGlossary ? "Hide" : "What do these terms mean?"}
         </button>
@@ -390,7 +391,7 @@ export default function AdminFinancials() {
           A blended LTV hides the truth. A coach seat costs more to win but is stickier and
           worth far more than a consumer sub — these cards price each segment on its own
           ARPU, contribution margin, churn and CAC. The bar on each metric is{" "}
-          <span style={{ color: LIME }}>green</span> when it clears the healthy benchmark.
+          <span style={{ color: txt(LIME) }}>green</span> when it clears the healthy benchmark.
         </Mono>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           <SegmentCard seg={r.segments.b2c} color={LIME} />
@@ -557,7 +558,7 @@ function Metric({ label, value, c = CHALK }: { label: string; value: string; c?:
   return (
     <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 10px" }}>
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: c, marginTop: 2 }}>{value}</div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(c), marginTop: 2 }}>{value}</div>
     </div>
   );
 }
@@ -568,7 +569,7 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{label}</Mono>
       </div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 28, color: c, lineHeight: 1.1, margin: "4px 0 2px" }}>{value}</div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 28, color: txt(c), lineHeight: 1.1, margin: "4px 0 2px" }}>{value}</div>
       <Mono s={{ fontSize: 11 }} c={ASH}>{note}</Mono>
       <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={CHALK}>{says}</Mono>
     </Card>
@@ -587,7 +588,7 @@ function Glossary() {
             <div style={{ ...disp, fontWeight: 700, fontSize: 13.5 }}>{m.label}</div>
             <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 3 }} c={CHALK}>{m.what}</Mono>
             <Mono s={{ fontSize: 11, lineHeight: 1.4, display: "block", marginTop: 4 }} c={ASH}>
-              <span style={{ color: VIOLET }}>= </span>{m.formula}
+              <span style={{ color: txt(VIOLET) }}>= </span>{m.formula}
             </Mono>
             <Mono s={{ fontSize: 11, lineHeight: 1.4, display: "block", marginTop: 2 }} c={LIME}>{m.benchmark}</Mono>
           </div>
@@ -716,7 +717,7 @@ function Btn({ label, active, onClick, disabled }: { label: string; active: bool
         cursor: disabled ? "not-allowed" : "pointer",
         border: `1px solid ${active ? LIME : LINE}`,
         background: active ? `${LIME}1c` : "transparent",
-        color: disabled ? LINE : active ? LIME : ASH,
+        color: txt(disabled ? LINE : active ? LIME : ASH),
       }}
     >
       {label}
@@ -736,7 +737,7 @@ function PnL({ k, v, c = CHALK, bold }: { k: string; v: string; c?: string; bold
 const linkBtn: React.CSSProperties = {
   ...mono,
   fontSize: 12,
-  color: AMBER,
+  color: txt(AMBER),
   background: "none",
   border: "none",
   padding: 0,

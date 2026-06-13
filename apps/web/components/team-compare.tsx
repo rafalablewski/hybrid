@@ -47,7 +47,7 @@ const METRICS = [
   { key: "estVel1rm", label: "1RM (velocity)", unit: "kg", color: VIOLET },
   { key: "bestVel", label: "Best bar speed", unit: "m/s", color: BLUE },
   { key: "volume", label: "Total volume", unit: "kg", color: AMBER },
-  { key: "reps", label: "Total reps", unit: "", color: CHALK },
+  { key: "reps", label: "Total reps", unit: "", color: ASH },
 ] as const;
 
 type MetricKey = (typeof METRICS)[number]["key"];
@@ -148,7 +148,7 @@ export default function TeamCompare() {
               type="category"
               dataKey="name"
               width={90}
-              tick={{ fill: CHALK, fontSize: 12 }}
+              tick={{ fill: ASH, fontSize: 12 }}
               stroke={LINE}
             />
             <Tooltip

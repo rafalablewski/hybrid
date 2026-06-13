@@ -3,7 +3,8 @@ import { View, Text, Pressable, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-import { Screen, Card, Kicker, Mono, C, F } from "../lib/ui";
+import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import { useTheme, txt } from "../lib/theme";
 
 const BUCKET = "progress";
 type Photo = { name: string; path: string; url: string; date: string };
@@ -14,6 +15,7 @@ type Status = "loading" | "ready" | "no-auth" | "no-bucket";
 // owner-folder RLS). The phone is where these get taken, so this is the natural
 // capture surface; the web Progress screen shows the same timeline.
 export default function ProgressScreen() {
+  const C = useTheme().palette;
   const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -112,7 +114,7 @@ export default function ProgressScreen() {
                 <Text style={{ fontFamily: F.black, fontSize: 15, color: "#0c0d0c" }}>{busy ? "Uploading…" : "Take photo"}</Text>
               </Pressable>
               <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 12, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.lime }}>From library</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>From library</Text>
               </Pressable>
             </View>
           </Card>

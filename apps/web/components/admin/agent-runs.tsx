@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { INK, LINE, LIME, CHALK, ASH, AMBER, RED, VIOLET, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK, LINE, LIME, CHALK, ASH, AMBER, RED, VIOLET, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type RunStep = { agent: string; role: string; task: string; output: string };
 type RunRow = {
@@ -45,7 +45,7 @@ export default function AdminAgentRuns() {
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
           <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
             Run history isn&apos;t persisted yet — run{" "}
-            <span style={{ color: AMBER }}>reference/sql-agent-runs.sql</span> in Supabase.
+            <span style={{ color: txt(AMBER) }}>reference/sql-agent-runs.sql</span> in Supabase.
           </Mono>
         </Card>
       )}
@@ -63,7 +63,7 @@ export default function AdminAgentRuns() {
               cursor: "pointer",
               border: `1px solid ${filter === f ? LIME : LINE}`,
               background: filter === f ? `${LIME}1f` : "transparent",
-              color: filter === f ? LIME : ASH,
+              color: txt(filter === f ? LIME : ASH),
             }}
           >
             {f}
@@ -71,14 +71,14 @@ export default function AdminAgentRuns() {
         ))}
         <a
           href={`/api/admin/agent-runs/export${filter === "all" ? "" : `?status=${filter}`}`}
-          style={{ ...mono, fontSize: 12, padding: "5px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH, marginLeft: "auto", textDecoration: "none" }}
+          style={{ ...mono, fontSize: 12, padding: "5px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH), marginLeft: "auto", textDecoration: "none" }}
         >
           ⬇ CSV
         </a>
-        <button onClick={() => window.print()} style={{ ...mono, fontSize: 12, padding: "5px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH }}>
+        <button onClick={() => window.print()} style={{ ...mono, fontSize: 12, padding: "5px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
           🖨 PDF
         </button>
-        <button onClick={load} style={{ ...mono, fontSize: 12, padding: "5px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH }}>
+        <button onClick={load} style={{ ...mono, fontSize: 12, padding: "5px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
           ↻ refresh
         </button>
       </div>
@@ -94,7 +94,7 @@ export default function AdminAgentRuns() {
                   <Chip c={ASH}>{r.agentRole}</Chip>
                   <Chip c={ASH}>{r.runtime}</Chip>
                   {r.steps.length > 0 && <Chip c={VIOLET}>{r.steps.length} delegated</Chip>}
-                  <span style={{ color: ASH, marginLeft: "auto" }}>{new Date(r.createdAt).toLocaleString()}</span>
+                  <span style={{ color: txt(ASH), marginLeft: "auto" }}>{new Date(r.createdAt).toLocaleString()}</span>
                 </div>
                 <div style={{ marginTop: 6, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.task}

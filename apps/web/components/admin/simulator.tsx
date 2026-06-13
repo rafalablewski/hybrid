@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, VIOLET, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, VIOLET, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 // Governance → "iOS simulator" guide. The mobile app is a managed Expo / React
 // Native project (no checked-in ios/ folder), so running it in Apple's iOS
@@ -332,7 +332,7 @@ pnpm start`}</Cmd>
 const code = {
   ...mono,
   fontSize: 12,
-  color: LIME,
+  color: txt(LIME),
   background: INK,
   border: `1px solid ${LINE}`,
   borderRadius: 5,
@@ -355,7 +355,7 @@ const list = { margin: 0, paddingLeft: 0, listStyle: "none", display: "grid", ga
 function Li({ children }: { children: ReactNode }) {
   return (
     <li style={{ display: "flex", gap: 10, ...disp, fontSize: 14, lineHeight: 1.5, color: CHALK }}>
-      <span style={{ color: AMBER, flexShrink: 0 }}>›</span>
+      <span style={{ color: txt(AMBER), flexShrink: 0 }}>›</span>
       <span>{children}</span>
     </li>
   );
@@ -377,7 +377,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
           borderRadius: 7,
           background: INK2,
           border: `1px solid ${LINE}`,
-          color: AMBER,
+          color: txt(AMBER),
           fontSize: 12,
           display: "flex",
           alignItems: "center",
@@ -388,7 +388,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ ...disp, fontWeight: 700, fontSize: 14, color: CHALK, marginBottom: 6 }}>{title}</div>
-        <div style={{ ...disp, fontSize: 13.5, lineHeight: 1.55, color: ASH }}>{children}</div>
+        <div style={{ ...disp, fontSize: 13.5, lineHeight: 1.55, color: txt(ASH) }}>{children}</div>
       </div>
     </div>
   );
@@ -441,7 +441,7 @@ function Cmd({ children }: { children: string }) {
           fontSize: 10,
           textTransform: "uppercase",
           letterSpacing: ".08em",
-          color: copied ? INK : ASH,
+          color: txt(copied ? INK : ASH),
           background: copied ? LIME : INK2,
           border: `1px solid ${LINE}`,
           borderRadius: 6,
@@ -472,7 +472,7 @@ function Note({ children, c }: { children: ReactNode; c: string }) {
         color: CHALK,
       }}
     >
-      <span style={{ color: c, flexShrink: 0 }}>!</span>
+      <span style={{ color: txt(c), flexShrink: 0 }}>!</span>
       <span>{children}</span>
     </div>
   );

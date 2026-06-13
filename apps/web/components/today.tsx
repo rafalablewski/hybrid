@@ -18,8 +18,8 @@ import {
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
 import {
-  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
-  disp, cond, mono, tip, Mono, Card, Chip, ChartFrame,
+  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
+  disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
 const hpiColor = (b: string) =>
@@ -74,7 +74,7 @@ export default function Today({
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
       {/* ROUTE TODAY */}
       {sessions.length === 0 ? (
-        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your route today
@@ -88,7 +88,7 @@ export default function Today({
           </Mono>
         </Card>
       ) : (
-        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your route today · readiness {rx.readiness}/100
@@ -108,7 +108,7 @@ export default function Today({
       )}
 
       {/* ON TRACK? — accountability */}
-      <Card style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
+      <Card glass style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={bandColor(acc.band)}>
             On track? · {acc.band}
@@ -133,7 +133,7 @@ export default function Today({
 
       {/* YOUR WEEK — recap */}
       {sessions.length > 0 && (
-        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+        <Card glass style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your week
@@ -173,8 +173,8 @@ export default function Today({
         <ChartFrame title={`Future self · ${primaryLift}`} kicker="projected from your behavior" c={VIOLET}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: CHALK }}>{Math.round(projection.current)}</span>
-            <span style={{ color: ASH }}>→</span>
-            <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: VIOLET }}>
+            <span style={{ color: txt(ASH) }}>→</span>
+            <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: txt(VIOLET) }}>
               {Math.round(projection.series[projection.series.length - 1]!.value)}
             </span>
             <Mono s={{ fontSize: 12 }}>kg e1RM · 12 wks</Mono>
@@ -195,7 +195,7 @@ export default function Today({
           </Mono>
         </ChartFrame>
       ) : (
-        <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
+        <Card glass style={{ borderLeft: `3px solid ${VIOLET}` }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Future self</Mono>
           <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
             Log a lift across a few sessions and we&apos;ll project where you&apos;re headed — your 12-week
@@ -206,12 +206,12 @@ export default function Today({
 
       {/* TWIN mini — only once there's real training to compute it from */}
       {sessions.length > 0 && (
-        <Card style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
+        <Card glass style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
             Performance State · Athlete Twin
           </Mono>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
-            <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>
+            <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
             <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
             <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
               <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
@@ -228,7 +228,7 @@ export default function Today({
 function Metric({ label, value, c }: { label: string; value: string; c: string }) {
   return (
     <div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: txt(c) }}>{value}</div>
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
@@ -241,7 +241,7 @@ function cta(color: string) {
     fontWeight: 800,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
-    color: "#0c0d0c",
+    color: ON_ACCENT,
     background: color,
     border: "none",
     borderRadius: 10,

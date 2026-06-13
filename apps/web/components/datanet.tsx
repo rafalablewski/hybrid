@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, mono, Mono, Card, Chip, Stat } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip, Stat } from "@/lib/ui";
 import { METRIC_LABEL, K_ANON, type BenchmarkMetric } from "@hybrid/core";
 
 type Norm = { cohortKey: string; sport: string; sex: string; ageBand: string; metric: BenchmarkMetric; n: number; mean: number; sd: number; p10: number; p50: number; p90: number };
@@ -87,7 +87,7 @@ export default function DataNet() {
               <button onClick={snapshot} style={{ ...disp, fontWeight: 800, fontSize: 13, background: "transparent", color: CHALK, border: `1px solid ${LINE}`, borderRadius: 9, padding: "9px 14px", cursor: "pointer" }}>
                 Snapshot negatives
               </button>
-              <button onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
+              <button onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
                 Refit now
               </button>
             </div>

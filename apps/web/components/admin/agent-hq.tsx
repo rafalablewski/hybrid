@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select } from "@/lib/ui";
+import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import AdminAgentRuns from "./agent-runs";
 
 type AgentLite = {
@@ -135,7 +135,7 @@ export default function AgentHQ() {
                 cursor: "pointer",
                 border: "none",
                 background: "transparent",
-                color: tab === t.id ? CHALK : ASH,
+                color: txt(tab === t.id ? CHALK : ASH),
                 borderBottom: `2px solid ${tab === t.id ? AMBER : "transparent"}`,
                 marginBottom: -1,
               }}
@@ -147,7 +147,7 @@ export default function AgentHQ() {
             </button>
           );
         })}
-        <button onClick={load} style={{ ...mono, marginLeft: "auto", fontSize: 12, color: ASH, background: "transparent", border: "none", cursor: "pointer" }}>
+        <button onClick={load} style={{ ...mono, marginLeft: "auto", fontSize: 12, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer" }}>
           ↻ refresh
         </button>
       </div>
@@ -220,8 +220,8 @@ function Command({ data }: { data: Overview | null }) {
                   <span style={{ width: 7, height: 7, borderRadius: 99, background: r.status === "ok" ? LIME : RED, flexShrink: 0, marginTop: 5 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ ...disp, fontSize: 13, fontWeight: 700, color: CHALK }}>
-                      {r.agentName} <span style={{ color: ASH, fontWeight: 400 }}>· {r.agentRole}</span>
-                      {r.delegations > 0 && <span style={{ color: VIOLET, fontSize: 11 }}> · {r.delegations} delegated</span>}
+                      {r.agentName} <span style={{ color: txt(ASH), fontWeight: 400 }}>· {r.agentRole}</span>
+                      {r.delegations > 0 && <span style={{ color: txt(VIOLET), fontSize: 11 }}> · {r.delegations} delegated</span>}
                     </div>
                     <Mono s={{ fontSize: 11, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{r.task}</Mono>
                   </div>
@@ -368,9 +368,9 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 title="Drag me onto the dropzone"
-                style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "8px 12px", borderRadius: 9, cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `${LIME}1f` : INK2, color: agentId === a.id ? LIME : CHALK, display: "flex", alignItems: "center", gap: 7 }}
+                style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "8px 12px", borderRadius: 9, cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `${LIME}1f` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
               >
-                <span style={{ color: ASH }}>⠿</span>
+                <span style={{ color: txt(ASH) }}>⠿</span>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: DOT[a.status] ?? ASH }} />
                 {a.name}
               </div>
@@ -418,14 +418,14 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           <button
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
-            style={{ ...cond, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "8px 18px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: LIME, opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
+            style={{ ...cond, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "8px 18px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
           >
             {busy ? "Running…" : "Run"}
           </button>
         </div>
         {active.length === 0 && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={AMBER}>No active agents — activate one in “AI agents” first.</Mono>}
         {result && (
-          <div style={{ ...mono, marginTop: 12, fontSize: 13, lineHeight: 1.6, color: result.error ? AMBER : CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, whiteSpace: "pre-wrap" }}>
+          <div style={{ ...mono, marginTop: 12, fontSize: 13, lineHeight: 1.6, color: txt(result.error ? AMBER : CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, whiteSpace: "pre-wrap" }}>
             {result.output}
           </div>
         )}
@@ -582,7 +582,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <span style={{ ...disp, color: CHALK, fontWeight: 700, fontSize: 13 }}>{k.metric}</span>
         <span style={{ display: "flex", gap: 8, alignItems: "baseline", flexShrink: 0 }}>
           <Mono s={{ fontSize: 11 }} c={ASH}>target {targetLabel}</Mono>
-          <button onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: open ? LIME : ASH, fontSize: 12, padding: 0 }}>📈</button>
+          <button onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: txt(open ? LIME : ASH), fontSize: 12, padding: 0 }}>📈</button>
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline", marginTop: 2 }}>
@@ -608,7 +608,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <button
           disabled={busy || val === ""}
           onClick={log}
-          style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", borderRadius: 7, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: val === "" ? ASH : LIME, opacity: busy ? 0.5 : 1 }}
+          style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", borderRadius: 7, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
         >
           log
         </button>
@@ -628,7 +628,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
                   <XAxis dataKey="t" tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} />
                   <YAxis tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} width={40} />
                   <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
-                  {target != null && <ReferenceLine y={target} stroke={CHALK} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: 10, position: "insideTopRight" }} />}
+                  {target != null && <ReferenceLine y={target} stroke={ASH} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: 10, position: "insideTopRight" }} />}
                   <Line type="monotone" dataKey="value" stroke={LIME} strokeWidth={2} dot={{ r: 3, fill: LIME }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -717,10 +717,10 @@ function Approvals({ onChange }: { onChange: () => void }) {
               <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: LIME, opacity: busy === a.id ? 0.5 : 1 }}>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
                 Approve &amp; run
               </button>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH }}>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
                 Deny
               </button>
             </div>
@@ -798,7 +798,7 @@ function MonthlyCostCard() {
   }
 
   const csv = (month: string) => `/api/admin/agents/cost-report?month=${month}&format=csv`;
-  const link: React.CSSProperties = { ...mono, fontSize: 11, color: ASH, border: `1px solid ${LINE}`, borderRadius: 7, padding: "4px 9px", textDecoration: "none" };
+  const link: React.CSSProperties = { ...mono, fontSize: 11, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 7, padding: "4px 9px", textDecoration: "none" };
 
   return (
     <Card span={2}>
@@ -822,7 +822,7 @@ function MonthlyCostCard() {
               <Mono s={{ fontSize: 10, display: "block" }} c={ASH}>{m.runs} runs</Mono>
               {m.perAgent.slice(0, 4).map((p) => (
                 <div key={p.name} style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11 }}>
-                  <span style={{ ...mono, color: ASH, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+                  <span style={{ ...mono, color: txt(ASH), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
                   <Mono s={{ fontSize: 11, flexShrink: 0 }} c={CHALK}>{fmtUsd(p.cost)}</Mono>
                 </div>
               ))}
@@ -882,7 +882,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <SectionHead title="Notifications" kicker={`${unread} unread · ${list.length} recent`} />
             {unread > 0 && (
-              <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "6px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: ASH }}>
+              <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "6px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
                 Mark all read
               </button>
             )}
@@ -896,7 +896,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
               </div>
               <Mono s={{ fontSize: 10, flexShrink: 0 }} c={ASH}>{ago(n.createdAt)}</Mono>
               {!n.read && (
-                <button disabled={busy} onClick={() => markRead(n.id)} title="Dismiss" style={{ ...mono, fontSize: 14, lineHeight: 1, background: "transparent", border: "none", color: ASH, cursor: "pointer", flexShrink: 0 }}>
+                <button disabled={busy} onClick={() => markRead(n.id)} title="Dismiss" style={{ ...mono, fontSize: 14, lineHeight: 1, background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", flexShrink: 0 }}>
                   ✕
                 </button>
               )}

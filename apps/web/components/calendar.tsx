@@ -6,7 +6,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, cond, mono, Mono, Card, Chip,
+  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip,
 } from "@/lib/ui";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -119,7 +119,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ ...mono, fontSize: 11, color: isToday ? LIME : CHALK, fontWeight: isToday ? 700 : 400 }}>
+                  <span style={{ ...mono, fontSize: 11, color: txt(isToday ? LIME : CHALK), fontWeight: isToday ? 700 : 400 }}>
                     {Number(cell.date.slice(8, 10))}
                   </span>
                   <span style={{ display: "flex", gap: 3 }}>
@@ -129,7 +129,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
                 </div>
                 {day && (
                   <div style={{ marginTop: 4 }}>
-                    <span style={{ ...cond, fontSize: 11, fontWeight: 700, color: "#0c0d0c", background: LIME, borderRadius: 4, padding: "1px 5px" }}>
+                    <span style={{ ...cond, fontSize: 11, fontWeight: 700, color: ON_ACCENT, background: LIME, borderRadius: 4, padding: "1px 5px" }}>
                       {day.count}×
                     </span>
                   </div>
@@ -139,7 +139,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
           })}
         </div>
         <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }}>
-          Cell shading = training load (sRPE) · <span style={{ color: VIOLET }}>●</span> assigned · <span style={{ color: AMBER }}>●</span> event
+          Cell shading = training load (sRPE) · <span style={{ color: txt(VIOLET) }}>●</span> assigned · <span style={{ color: txt(AMBER) }}>●</span> event
         </Mono>
       </Card>
 
@@ -165,7 +165,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
               {a.status === "completed" ? (
                 <Chip c={LIME}>done</Chip>
               ) : (
-                <button onClick={() => markDone(a.id)} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: LIME, background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
+                <button onClick={() => markDone(a.id)} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
                   Mark done
                 </button>
               )}

@@ -10,6 +10,7 @@ import {
   ASH,
   AMBER,
   RED,
+  ON_ACCENT,
   disp,
   cond,
   mono,
@@ -17,6 +18,7 @@ import {
   Card,
   Chip,
   Select,
+  txt,
 } from "@/lib/ui";
 
 type Announcement = {
@@ -158,7 +160,7 @@ export default function AdminAnnouncements() {
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Announcements not initialized</div>
         <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Announcement</b> table doesn&apos;t exist yet. Run{" "}
-          <span style={{ color: AMBER }}>reference/sql-announcement.sql</span> in the Supabase SQL Editor to
+          <span style={{ color: txt(AMBER) }}>reference/sql-announcement.sql</span> in the Supabase SQL Editor to
           create it, then reload.
         </Mono>
       </Card>
@@ -298,7 +300,7 @@ export default function AdminAnnouncements() {
               <button disabled={busy} onClick={() => patch(a.id, { pinned: !a.pinned })} style={miniBtn}>
                 {a.pinned ? "Unpin" : "Pin"}
               </button>
-              <button disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: RED, borderColor: `${RED}55` }}>
+              <button disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>
                 Delete
               </button>
             </div>
@@ -352,9 +354,9 @@ const baseBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
 };
-const primaryBtn: React.CSSProperties = { ...baseBtn, background: LIME, color: "#0c0d0c", border: `1px solid ${LIME}` };
+const primaryBtn: React.CSSProperties = { ...baseBtn, background: LIME, color: ON_ACCENT, border: `1px solid ${LIME}` };
 const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color: CHALK };
-const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: ASH };
+const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {
   ...cond,
   fontSize: 12,

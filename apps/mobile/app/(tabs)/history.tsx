@@ -4,11 +4,13 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, Loading, C, F } from "../../lib/ui";
+import { Screen, Card, Kicker, Mono, Chip, Loading, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 export default function History() {
+  const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
