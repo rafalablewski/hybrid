@@ -78,14 +78,14 @@ export function Card({
   style,
   span,
   onClick,
-  glass,
+  glass = true,
   variant,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   span?: number;
   onClick?: () => void;
-  /** Opt into the Liquid Glass surface (see globals.css `.liquid-glass`). */
+  /** Liquid Glass surface (default). Pass `glass={false}` for a solid card. */
   glass?: boolean;
   /** Glass variant — only applies when `glass` is set. */
   variant?: "thin" | "thick" | "vibrant";

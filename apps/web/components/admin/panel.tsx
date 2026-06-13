@@ -53,7 +53,13 @@ export default function AdminPanel() {
   const groups = [...new Set(SECTIONS.map((s) => s.group))];
 
   return (
-    <div style={{ ...disp, background: INK, color: CHALK, minHeight: "100vh", display: "flex" }}>
+    <div style={{ ...disp, background: INK, color: CHALK, minHeight: "100vh", display: "flex", position: "relative" }}>
+      {/* ambient field — drifting accent blobs the glass surfaces refract */}
+      <div className="lg-field" aria-hidden>
+        <div className="lg-blob lg-a" />
+        <div className="lg-blob lg-b" />
+        <div className="lg-blob lg-c" />
+      </div>
       {/* ---- sidebar ---- */}
       <aside
         style={{
@@ -67,6 +73,7 @@ export default function AdminPanel() {
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
+          zIndex: 1,
         }}
       >
         <div style={{ padding: "0 8px 4px" }}>
@@ -145,7 +152,7 @@ export default function AdminPanel() {
       </aside>
 
       {/* ---- main ---- */}
-      <main style={{ flex: 1, minWidth: 0, padding: "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
+      <main style={{ flex: 1, minWidth: 0, padding: "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <Mono s={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }} c={AMBER}>

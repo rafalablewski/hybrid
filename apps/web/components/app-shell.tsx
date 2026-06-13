@@ -158,6 +158,21 @@ export default function AppShell() {
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled } = useFlags();
   const { theme, toggle } = useTheme();
+  // Collapsible sidebar (persisted). Collapsed → an icon-only rail.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    if (typeof localStorage !== "undefined" && localStorage.getItem("hybrid-sidebar") === "1") setCollapsed(true);
+  }, []);
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem("hybrid-sidebar", next ? "1" : "0");
+      } catch {
+        /* storage disabled — collapse still works for the session */
+      }
+      return next;
+    });
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
@@ -208,9 +223,9 @@ export default function AppShell() {
       {/* sidebar */}
       <aside
         style={{
-          width: 240,
+          width: collapsed ? 72 : 240,
           borderRight: `1px solid ${LINE}`,
-          padding: "24px 16px",
+          padding: collapsed ? "24px 10px" : "24px 16px",
           position: "sticky",
           top: 0,
           height: "100vh",
@@ -218,10 +233,46 @@ export default function AppShell() {
           display: "flex",
           flexDirection: "column",
           zIndex: 1,
+          transition: "width .28s cubic-bezier(.22,1,.36,1), padding .28s cubic-bezier(.22,1,.36,1)",
         }}
       >
-        <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px", flexShrink: 0 }}>
-          HYBRID<span style={{ color: LIME_T }}>.</span>
+        {/* brand + collapse toggle */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "space-between",
+            padding: collapsed ? "0 0 22px" : "0 4px 22px",
+            flexShrink: 0,
+          }}
+        >
+          {!collapsed && (
+            <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em" }}>
+              HYBRID<span style={{ color: LIME_T }}>.</span>
+            </div>
+          )}
+          <button
+            onClick={toggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            style={{
+              width: 30,
+              height: 30,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 8,
+              border: `1px solid ${LINE}`,
+              background: INK2,
+              color: txt(ASH),
+              cursor: "pointer",
+              ...disp,
+              fontSize: 15,
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            {collapsed ? "»" : "«"}
+          </button>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {NAV_GROUPS.map(({ group, items }) => {
@@ -229,44 +280,61 @@ export default function AppShell() {
             if (visible.length === 0) return null;
             return (
               <div key={group} style={{ marginBottom: 14 }}>
-                <Mono
-                  s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
-                  c={ASH}
-                >
-                  {t(`nav.group.${group}`) === `nav.group.${group}` ? group : t(`nav.group.${group}`)}
-                </Mono>
-                {visible.map(([id, l, ic]) => (
-                  <button
-                    key={id}
-                    onClick={() => setScreen(id)}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "10px 12px",
-                      marginBottom: 2,
-                      borderRadius: 10,
-                      cursor: "pointer",
-                      border: "none",
-                      background: screen === id ? `${LIME}1a` : "transparent",
-                      color: txt(screen === id ? LIME : ASH),
-                      ...disp,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textAlign: "left",
-                    }}
+                {!collapsed && (
+                  <Mono
+                    s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
+                    c={ASH}
                   >
-                    <span style={{ fontSize: 16 }}>{ic}</span>
-                    {t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`)}
-                  </button>
-                ))}
+                    {t(`nav.group.${group}`) === `nav.group.${group}` ? group : t(`nav.group.${group}`)}
+                  </Mono>
+                )}
+                {visible.map(([id, l, ic]) => {
+                  const label = t(`nav.${id}`) === `nav.${id}` ? l : t(`nav.${id}`);
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setScreen(id)}
+                      title={collapsed ? label : undefined}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        gap: collapsed ? 0 : 12,
+                        padding: collapsed ? "10px 0" : "10px 12px",
+                        marginBottom: 2,
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        border: "none",
+                        background: screen === id ? `${LIME}1a` : "transparent",
+                        color: txt(screen === id ? LIME : ASH),
+                        ...disp,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: 16 }}>{ic}</span>
+                      {!collapsed && label}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
         </nav>
         <div style={{ flexShrink: 0, paddingTop: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: INK2 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              gap: 10,
+              padding: collapsed ? "8px 0" : "10px 12px",
+              borderRadius: 10,
+              background: collapsed ? "transparent" : INK2,
+            }}
+          >
             <div
               style={{
                 width: 32,
@@ -280,22 +348,27 @@ export default function AppShell() {
                 fontWeight: 700,
                 color: LIME_T,
                 fontSize: 14,
+                flexShrink: 0,
               }}
+              title={collapsed ? `${session.name} · ${session.role}` : undefined}
             >
               {initial}
             </div>
-            <div style={{ overflow: "hidden" }}>
-              <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}>
-                {session.name}
+            {!collapsed && (
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}>
+                  {session.name}
+                </div>
+                <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>
+                  {session.role}
+                </Mono>
               </div>
-              <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>
-                {session.role}
-              </Mono>
-            </div>
+            )}
           </div>
           {session.role === "admin" && (
             <button
               onClick={() => router.push("/admin")}
+              title={collapsed ? "Admin console" : undefined}
               style={{
                 width: "100%",
                 marginTop: 8,
@@ -312,7 +385,7 @@ export default function AppShell() {
                 cursor: "pointer",
               }}
             >
-              Admin console ↗
+              {collapsed ? "⬡" : "Admin console ↗"}
             </button>
           )}
           <button
@@ -320,6 +393,7 @@ export default function AppShell() {
               logout();
               router.replace("/login");
             }}
+            title={collapsed ? t("common.signout") : undefined}
             style={{
               width: "100%",
               marginTop: 8,
@@ -328,7 +402,7 @@ export default function AppShell() {
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: ".05em",
-              color: ASH,
+              color: txt(ASH),
               background: "transparent",
               border: `1px solid ${LINE}`,
               borderRadius: 10,
@@ -336,7 +410,7 @@ export default function AppShell() {
               cursor: "pointer",
             }}
           >
-            {t("common.signout")}
+            {collapsed ? "⏻" : t("common.signout")}
           </button>
         </div>
       </aside>
