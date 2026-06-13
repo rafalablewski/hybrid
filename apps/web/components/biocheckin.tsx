@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, disp, mono, Mono, Card } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 
 // Manual readiness check-in. Writes HRV / resting HR / sleep to the Biometric
 // table AND the Signal ontology (the path wearable sync will feed); readiness +
@@ -78,7 +78,7 @@ export default function BioCheckin({ onSaved }: { onSaved: () => void }) {
         <button
           onClick={save}
           disabled={saving}
-          style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 10, padding: "11px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
+          style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
         >
           {saving ? "…" : done ? "✓ Saved" : "Save"}
         </button>

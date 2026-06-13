@@ -10,7 +10,7 @@ import {
   toTrainingLog,
   type LoggedSession,
 } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator.
@@ -562,7 +562,7 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: ".04em",
-        color: txt(color === ASH ? ASH : "#0c0d0c"),
+        color: txt(color === ASH ? ASH : ON_ACCENT),
         background: color === ASH ? "transparent" : color,
         border: `1px solid ${color === ASH ? LINE : color}`,
         borderRadius: 8,

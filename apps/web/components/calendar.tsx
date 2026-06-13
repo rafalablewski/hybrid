@@ -6,7 +6,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, cond, mono, txt, Mono, Card, Chip,
+  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip,
 } from "@/lib/ui";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -129,7 +129,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
                 </div>
                 {day && (
                   <div style={{ marginTop: 4 }}>
-                    <span style={{ ...cond, fontSize: 11, fontWeight: 700, color: "#0c0d0c", background: LIME, borderRadius: 4, padding: "1px 5px" }}>
+                    <span style={{ ...cond, fontSize: 11, fontWeight: 700, color: ON_ACCENT, background: LIME, borderRadius: 4, padding: "1px 5px" }}>
                       {day.count}×
                     </span>
                   </div>

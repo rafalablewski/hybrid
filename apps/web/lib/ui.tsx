@@ -21,6 +21,11 @@ export const LIME = colors.lime,
   AMBER = colors.amber,
   RED = colors.red;
 
+// Fixed near-black for text/icons placed ON a bright accent fill (lime/amber/…).
+// Stays dark in BOTH themes (accent fills are bright in both), so it must NOT be
+// the themed INK var. Replaces the scattered "#0c0d0c" literals.
+export const ON_ACCENT = colors.ink;
+
 // Theme-aware FOREGROUND accent colours (for text). The bright accents above
 // stay fixed for backgrounds / borders / chart strokes / glows (and recharts,
 // which can't resolve var()); these darken on light so accent TEXT keeps WCAG
@@ -45,6 +50,19 @@ const ACCENT_TEXT: Record<string, string> = {
  *  else through unchanged. Accepts an optional colour (e.g. Mono's `c?`) and
  *  returns undefined for it. Use for inline accent TEXT: `color: txt(BLUE)`. */
 export const txt = (c?: string): string | undefined => (c ? ACCENT_TEXT[c] ?? c : undefined);
+
+/** The ambient Liquid Glass field — slow-drifting accent blobs that the glass
+ *  surfaces refract. Render once per page/shell, behind the content (the
+ *  styling + stacking live in globals.css `.lg-field`). */
+export function GlassField() {
+  return (
+    <div className="lg-field" aria-hidden>
+      <div className="lg-blob lg-a" />
+      <div className="lg-blob lg-b" />
+      <div className="lg-blob lg-c" />
+    </div>
+  );
+}
 
 export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
 export const cond: CSSProperties = { fontFamily: "'Archivo Narrow', sans-serif" };

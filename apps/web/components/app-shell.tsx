@@ -13,6 +13,7 @@ import {
   VIOLET,
   AMBER,
   LIME_T,
+  ON_ACCENT,
   txt,
   disp,
   cond,
@@ -20,7 +21,9 @@ import {
   Mono,
   Card,
   Select,
+  GlassField,
 } from "@/lib/ui";
+import { useCollapsible } from "@/lib/use-collapsible";
 import {
   AthleteAnalytics,
   CoachAnalytics,
@@ -158,21 +161,7 @@ export default function AppShell() {
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled } = useFlags();
   const { theme, toggle } = useTheme();
-  // Collapsible sidebar (persisted). Collapsed → an icon-only rail.
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    if (typeof localStorage !== "undefined" && localStorage.getItem("hybrid-sidebar") === "1") setCollapsed(true);
-  }, []);
-  const toggleCollapsed = () =>
-    setCollapsed((c) => {
-      const next = !c;
-      try {
-        localStorage.setItem("hybrid-sidebar", next ? "1" : "0");
-      } catch {
-        /* storage disabled — collapse still works for the session */
-      }
-      return next;
-    });
+  const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
@@ -214,11 +203,7 @@ export default function AppShell() {
       }}
     >
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
-      <div className="lg-field" aria-hidden>
-        <div className="lg-blob lg-a" />
-        <div className="lg-blob lg-b" />
-        <div className="lg-blob lg-c" />
-      </div>
+      <GlassField />
 
       {/* sidebar */}
       <aside
@@ -355,7 +340,7 @@ export default function AppShell() {
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: ".05em",
-                color: "#0c0d0c",
+                color: ON_ACCENT,
                 background: AMBER,
                 border: `1px solid ${AMBER}`,
                 borderRadius: 10,
@@ -488,7 +473,7 @@ export default function AppShell() {
                       cursor: "pointer",
                       border: `1px solid ${scope === id ? c : LINE}`,
                       background: scope === id ? c : "transparent",
-                      color: scope === id ? "#0c0d0c" : ASH,
+                      color: scope === id ? ON_ACCENT : ASH,
                     }}
                   >
                     {l}

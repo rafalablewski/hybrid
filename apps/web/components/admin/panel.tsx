@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
-import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt } from "@/lib/ui";
+import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { useCollapsible } from "@/lib/use-collapsible";
 import AdminOverview from "./overview";
 import AdminUsers from "./users";
 import AdminDirectory from "./directory";
@@ -48,20 +49,7 @@ export default function AdminPanel() {
   const router = useRouter();
   const { session, logout } = useSession();
   const [section, setSection] = useState<SectionId>("overview");
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    if (typeof localStorage !== "undefined" && localStorage.getItem("hybrid-admin-sidebar") === "1") setCollapsed(true);
-  }, []);
-  const toggleCollapsed = () =>
-    setCollapsed((c) => {
-      const next = !c;
-      try {
-        localStorage.setItem("hybrid-admin-sidebar", next ? "1" : "0");
-      } catch {
-        /* storage disabled */
-      }
-      return next;
-    });
+  const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-admin-sidebar");
 
   const active = SECTIONS.find((s) => s.id === section)!;
   const groups = [...new Set(SECTIONS.map((s) => s.group))];
@@ -69,11 +57,7 @@ export default function AdminPanel() {
   return (
     <div style={{ ...disp, background: INK, color: CHALK, minHeight: "100vh", display: "flex", position: "relative" }}>
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
-      <div className="lg-field" aria-hidden>
-        <div className="lg-blob lg-a" />
-        <div className="lg-blob lg-b" />
-        <div className="lg-blob lg-c" />
-      </div>
+      <GlassField />
       {/* ---- sidebar ---- */}
       <aside
         className="lg-sidebar"

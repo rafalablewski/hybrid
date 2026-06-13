@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LIME, CHALK, ASH, AMBER, BLUE, disp, Mono, Card, Chip } from "@/lib/ui";
+import { LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, Mono, Card, Chip } from "@/lib/ui";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };
@@ -101,7 +101,7 @@ function btn(bg: string): React.CSSProperties {
     fontWeight: 800,
     fontSize: 13,
     background: bg,
-    color: "#0c0d0c",
+    color: ON_ACCENT,
     border: "none",
     borderRadius: 10,
     padding: "9px 16px",

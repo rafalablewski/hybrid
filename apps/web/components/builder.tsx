@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { SessionBlock } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, VIOLET, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, VIOLET, RED, ON_ACCENT, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 
 const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
@@ -66,7 +66,7 @@ export default function Builder() {
 
         {msg && <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono>}
         <button onClick={save} disabled={saving || blocks.length === 0}
-          style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "13px 26px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
+          style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "13px 26px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
           {saving ? "Saving…" : "Save as template →"}
         </button>
       </div>

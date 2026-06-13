@@ -18,7 +18,7 @@ import {
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
 import {
-  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
+  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
@@ -241,7 +241,7 @@ function cta(color: string) {
     fontWeight: 800,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
-    color: "#0c0d0c",
+    color: ON_ACCENT,
     background: color,
     border: "none",
     borderRadius: 10,

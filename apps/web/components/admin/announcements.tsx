@@ -10,6 +10,7 @@ import {
   ASH,
   AMBER,
   RED,
+  ON_ACCENT,
   disp,
   cond,
   mono,
@@ -353,7 +354,7 @@ const baseBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
 };
-const primaryBtn: React.CSSProperties = { ...baseBtn, background: LIME, color: "#0c0d0c", border: `1px solid ${LIME}` };
+const primaryBtn: React.CSSProperties = { ...baseBtn, background: LIME, color: ON_ACCENT, border: `1px solid ${LIME}` };
 const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color: CHALK };
 const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {

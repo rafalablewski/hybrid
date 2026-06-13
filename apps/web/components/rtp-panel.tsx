@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import { evaluateRtp, STAGE_LABEL, type RtpStage } from "@hybrid/core";
 
 type AuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
@@ -100,7 +100,7 @@ export default function RtpPanel() {
                   {overrideFor === p.id && (
                     <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
                       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (logged to audit)" style={{ ...input, flex: 1, textTransform: "none" }} />
-                      <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: "#0c0d0c" }}>Force advance</button>
+                      <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: ON_ACCENT }}>Force advance</button>
                     </div>
                   )}
                 </>
@@ -135,4 +135,4 @@ function auditText(a: AuditEntry): string {
 }
 
 const input: React.CSSProperties = { ...mono, fontSize: 13, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, textTransform: "capitalize" };
-const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 9, padding: "8px 14px", cursor: "pointer" };
+const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "8px 14px", cursor: "pointer" };

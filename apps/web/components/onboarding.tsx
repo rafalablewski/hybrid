@@ -9,7 +9,7 @@ import {
   type Equipment,
 } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, VIOLET, RED,
+  INK2, LINE, LIME, CHALK, ASH, VIOLET, RED, ON_ACCENT,
   disp, cond, mono, Mono, Card, txt,
 } from "@/lib/ui";
 
@@ -107,7 +107,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
           <button
             onClick={start}
             disabled={enrolling}
-            style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "13px 26px", marginTop: 14, cursor: enrolling ? "default" : "pointer", opacity: enrolling ? 0.6 : 1 }}
+            style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "13px 26px", marginTop: 14, cursor: enrolling ? "default" : "pointer", opacity: enrolling ? 0.6 : 1 }}
           >
             {enrolling ? "Setting up…" : "Start this plan →"}
           </button>
@@ -120,7 +120,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
           </Mono>
           <button
             onClick={onEnrolled}
-            style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "13px 26px", marginTop: 14, cursor: "pointer" }}
+            style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "13px 26px", marginTop: 14, cursor: "pointer" }}
           >
             Continue to the app →
           </button>

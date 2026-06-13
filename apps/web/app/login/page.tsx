@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, disp, cond, mono, Mono, txt } from "@/lib/ui";
+import { INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
 
 // Ported from the prototype's Auth screen (reference/HybridApp.jsx).
 // When Supabase keys are present this drives real Apple/Google/email auth;
@@ -169,11 +169,7 @@ export default function LoginPage() {
       }}
     >
       {/* ambient field — drifting accent blobs the glass refracts */}
-      <div className="lg-field" aria-hidden>
-        <div className="lg-blob lg-a" />
-        <div className="lg-blob lg-b" />
-        <div className="lg-blob lg-c" />
-      </div>
+      <GlassField />
       <div className="liquid-glass" style={{ width: "100%", maxWidth: 380, position: "relative", zIndex: 1, padding: 30 }}>
         <span className="lg-sheen" />
         <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -207,7 +203,7 @@ export default function LoginPage() {
             <button
               disabled={busy || !isValidTotpCode(mfaCode)}
               onClick={verifyMfa}
-              style={{ ...disp, fontWeight: 800, fontSize: 15, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: "#0c0d0c" }}
+              style={{ ...disp, fontWeight: 800, fontSize: 15, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: ON_ACCENT }}
             >
               {busy ? "…" : "Verify →"}
             </button>
@@ -244,7 +240,7 @@ export default function LoginPage() {
                       cursor: "pointer",
                       border: `1px solid ${on ? r.accent : LINE}`,
                       background: on ? r.accent : "transparent",
-                      color: on ? "#0c0d0c" : ASH,
+                      color: on ? ON_ACCENT : ASH,
                     }}
                   >
                     {r.label}
@@ -342,7 +338,7 @@ export default function LoginPage() {
             opacity: busy ? 0.6 : 1,
             border: "none",
             background: LIME,
-            color: "#0c0d0c",
+            color: ON_ACCENT,
           }}
         >
           {busy ? "…" : mode === "signup" ? "Create account →" : "Sign in →"}

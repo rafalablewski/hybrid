@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { brand, CORE_VERSION } from "@hybrid/core";
+import { GlassField } from "@/lib/ui";
 
 const FEATURES = [
   {
@@ -23,11 +24,7 @@ export default function Landing() {
   return (
     <>
       {/* ambient field — drifting accent blobs the glass refracts */}
-      <div className="lg-field" aria-hidden>
-        <div className="lg-blob lg-a" />
-        <div className="lg-blob lg-b" />
-        <div className="lg-blob lg-c" />
-      </div>
+      <GlassField />
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-5xl px-6 pb-24">
       <header className="flex items-center justify-between py-6">
         <div className="font-display text-2xl font-black tracking-tight">

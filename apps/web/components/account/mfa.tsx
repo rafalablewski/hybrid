@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isValidTotpCode } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { LINE, LIME, CHALK, ASH, RED, AMBER, INK2, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, RED, AMBER, INK2, ON_ACCENT, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type Factor = { id: string; friendly_name?: string | null; status: string };
 type Enroll = { factorId: string; qr: string; secret: string };
@@ -174,7 +174,7 @@ const primaryBtn = {
   borderRadius: 10,
   border: "none",
   background: LIME,
-  color: "#0c0d0c",
+  color: ON_ACCENT,
   cursor: "pointer",
 } as const;
 

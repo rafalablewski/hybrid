@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Sport-driven training — pick a sport + level, the shared engine
 // (prescribeForSport in @hybrid/core) ranks the S&C work that makes you better
@@ -97,7 +97,7 @@ export default function SportScreen() {
                 cursor: "pointer",
                 border: `1px solid ${on ? BLUE : LINE}`,
                 background: on ? BLUE : "transparent",
-                color: on ? "#0c0d0c" : ASH,
+                color: on ? ON_ACCENT : ASH,
               }}
             >
               {l}

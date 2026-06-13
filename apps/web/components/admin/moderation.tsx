@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type PendingProfile = {
   id: string;
@@ -105,7 +105,7 @@ export default function AdminModeration() {
               cursor: "pointer",
               border: `1px solid ${tab === id ? LIME : LINE}`,
               background: tab === id ? LIME : "transparent",
-              color: txt(tab === id ? "#0c0d0c" : ASH),
+              color: txt(tab === id ? ON_ACCENT : ASH),
             }}
           >
             {label}
@@ -191,7 +191,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: 9,
   cursor: "pointer",
   background: LIME,
-  color: "#0c0d0c",
+  color: ON_ACCENT,
   border: `1px solid ${LIME}`,
 };
 const ghostBtn: React.CSSProperties = {

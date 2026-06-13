@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import {
   buildTeamTree,
   flattenTree,
@@ -328,7 +328,7 @@ const input: React.CSSProperties = {
   outline: "none",
 };
 function btn(bg: string): React.CSSProperties {
-  return { ...disp, fontWeight: 800, fontSize: 13, background: bg, color: "#0c0d0c", border: "none", borderRadius: 10, padding: "9px 16px", cursor: "pointer" };
+  return { ...disp, fontWeight: 800, fontSize: 13, background: bg, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "9px 16px", cursor: "pointer" };
 }
 function chip(active: boolean): React.CSSProperties {
   return { ...mono, fontSize: 12, padding: "7px 12px", borderRadius: 8, cursor: "pointer", background: active ? `${LIME}1a` : "transparent", color: txt(active ? LIME : ASH), border: `1px solid ${active ? LIME : LINE}` };

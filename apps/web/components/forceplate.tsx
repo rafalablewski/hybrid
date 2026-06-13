@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { parseForcePlateCsv, type Signal } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
+  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
@@ -85,7 +85,7 @@ export default function ForcePlate() {
             </div>
             {msg && <Mono s={{ fontSize: 12, display: "block", marginBottom: 6 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono>}
             <button onClick={doImport} disabled={importing || parsed.imported === 0}
-              style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 12, padding: "12px 24px", cursor: importing || !parsed.imported ? "default" : "pointer", opacity: importing || !parsed.imported ? 0.5 : 1 }}>
+              style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "12px 24px", cursor: importing || !parsed.imported ? "default" : "pointer", opacity: importing || !parsed.imported ? 0.5 : 1 }}>
               {importing ? "Importing…" : `Import ${parsed.imported} signals →`}
             </button>
           </div>

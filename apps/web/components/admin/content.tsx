@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LINE, LIME, CHALK, ASH, cond } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, ON_ACCENT, cond } from "@/lib/ui";
 import CapabilitiesScreen from "../capabilities";
 import DataNet from "../datanet";
 
@@ -33,7 +33,7 @@ export default function AdminContent() {
               cursor: "pointer",
               border: `1px solid ${tab === id ? LIME : LINE}`,
               background: tab === id ? LIME : "transparent",
-              color: tab === id ? "#0c0d0c" : ASH,
+              color: tab === id ? ON_ACCENT : ASH,
             }}
           >
             {label}

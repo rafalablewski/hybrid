@@ -12,7 +12,7 @@ import {
   type Signal,
 } from "@hybrid/core";
 import {
-  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
+  INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, Mono, Card, ChartFrame, txt,
 } from "@/lib/ui";
 
@@ -142,7 +142,7 @@ export default function Nutrition() {
           <button
             onClick={add}
             disabled={saving}
-            style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: "#0c0d0c", border: "none", borderRadius: 10, padding: "11px 22px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
+            style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 22px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
           >
             {saving ? "Adding…" : "Add →"}
           </button>

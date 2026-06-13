@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
 // the exact same source the mobile app renders. Goal → plans → full detail.
@@ -228,7 +228,7 @@ function PlanDetailView({
           fontWeight: 800,
           fontSize: 15,
           background: state === "done" ? INK2 : LIME,
-          color: state === "done" ? LIME : "#0c0d0c",
+          color: state === "done" ? LIME : ON_ACCENT,
           border: state === "done" ? `1px solid ${LIME}` : "none",
           borderRadius: 12,
           padding: "14px 28px",

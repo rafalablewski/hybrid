@@ -11,6 +11,7 @@ import {
   ASH,
   AMBER,
   RED,
+  ON_ACCENT,
   disp,
   cond,
   mono,
@@ -274,7 +275,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: 9,
   cursor: "pointer",
   background: LIME,
-  color: "#0c0d0c",
+  color: ON_ACCENT,
   border: `1px solid ${LIME}`,
 };
 const miniBtn: React.CSSProperties = {
