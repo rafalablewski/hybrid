@@ -11,8 +11,13 @@ import {
   type LoggedSession,
   type MuscleGroup,
   type TissueRisk,
+  colors,
 } from "@hybrid/core";
 import RtpPanel from "./rtp-panel";
+
+// Raw hex for SVG fills — these go on SVG presentation attributes where the
+// themed `var(--color-*)` constants from lib/ui can't resolve.
+const SVG_INK2 = colors.ink2;
 
 const bandColor = (b: string) =>
   b === "low" ? LIME : b === "moderate" ? BLUE : b === "elevated" ? AMBER : RED;
@@ -41,10 +46,10 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
   return (
     <div style={{ textAlign: "center" }}>
       <svg viewBox="0 0 120 200" style={{ width: 140, height: 233 }}>
-        <circle cx={60} cy={16} r={11} fill={INK2} stroke={LINE} />
+        <circle cx={60} cy={16} r={11} fill={SVG_INK2} stroke={LINE} />
         {regions.map((r, i) => {
           const t = byTissue[r.tissue];
-          const fill = t && t.risk > 0 ? `${bandColor(t.band)}55` : INK2;
+          const fill = t && t.risk > 0 ? `${bandColor(t.band)}55` : SVG_INK2;
           const stroke = t && t.risk > 0 ? bandColor(t.band) : LINE;
           return (
             <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={4} fill={fill} stroke={stroke} strokeWidth={1}>

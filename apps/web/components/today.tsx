@@ -108,7 +108,7 @@ export default function Today({
       )}
 
       {/* ON TRACK? — accountability */}
-      <Card style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
+      <Card glass style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={bandColor(acc.band)}>
             On track? · {acc.band}
@@ -133,7 +133,7 @@ export default function Today({
 
       {/* YOUR WEEK — recap */}
       {sessions.length > 0 && (
-        <Card style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+        <Card glass style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your week
@@ -195,7 +195,7 @@ export default function Today({
           </Mono>
         </ChartFrame>
       ) : (
-        <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
+        <Card glass style={{ borderLeft: `3px solid ${VIOLET}` }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Future self</Mono>
           <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
             Log a lift across a few sessions and we&apos;ll project where you&apos;re headed — your 12-week
@@ -206,7 +206,7 @@ export default function Today({
 
       {/* TWIN mini — only once there's real training to compute it from */}
       {sessions.length > 0 && (
-        <Card style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
+        <Card glass style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
             Performance State · Athlete Twin
           </Mono>

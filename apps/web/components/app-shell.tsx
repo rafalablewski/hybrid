@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, type Role } from "@/lib/session";
 import {
+  INK,
   INK2,
   LINE,
   LIME,
@@ -53,6 +54,7 @@ import ForcePlate from "./forceplate";
 import Progress from "./progress";
 import AccountSettings from "./account-settings";
 import AnnouncementBanner from "./announcement-banner";
+import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
@@ -153,6 +155,7 @@ export default function AppShell() {
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled } = useFlags();
+  const { theme, toggle } = useTheme();
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
@@ -186,12 +189,20 @@ export default function AppShell() {
     <div
       style={{
         ...disp,
-        background: "#0c0d0c",
+        background: INK,
         color: CHALK,
         minHeight: "100vh",
         display: "flex",
+        position: "relative",
       }}
     >
+      {/* ambient field — drifting accent blobs the glass surfaces refract */}
+      <div className="lg-field" aria-hidden>
+        <div className="lg-blob lg-a" />
+        <div className="lg-blob lg-b" />
+        <div className="lg-blob lg-c" />
+      </div>
+
       {/* sidebar */}
       <aside
         style={{
@@ -204,6 +215,7 @@ export default function AppShell() {
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
+          zIndex: 1,
         }}
       >
         <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px", flexShrink: 0 }}>
@@ -328,7 +340,7 @@ export default function AppShell() {
       </aside>
 
       {/* main */}
-      <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%" }}>
+      <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
@@ -339,16 +351,38 @@ export default function AppShell() {
               {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
             </h1>
           </div>
-          <Select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as "en" | "pl" | "de")}
-            variant="pill"
-            style={{ ...cond, fontWeight: 700 }}
-          >
-            <option value="en">EN</option>
-            <option value="pl">PL</option>
-            <option value="de">DE</option>
-          </Select>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={toggle}
+              title="Toggle theme"
+              aria-label="Toggle light/dark theme"
+              style={{
+                ...cond,
+                fontWeight: 700,
+                fontSize: 13,
+                textTransform: "uppercase",
+                letterSpacing: ".04em",
+                color: CHALK,
+                background: INK2,
+                border: `1px solid ${LINE}`,
+                borderRadius: 999,
+                padding: "8px 14px",
+                cursor: "pointer",
+              }}
+            >
+              {theme === "dark" ? "◐ Light" : "◑ Dark"}
+            </button>
+            <Select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as "en" | "pl" | "de")}
+              variant="pill"
+              style={{ ...cond, fontWeight: 700 }}
+            >
+              <option value="en">EN</option>
+              <option value="pl">PL</option>
+              <option value="de">DE</option>
+            </Select>
+          </div>
         </header>
 
         {screen === "analytics" && (

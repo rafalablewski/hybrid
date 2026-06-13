@@ -4,14 +4,17 @@ import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
 import { colors } from "@hybrid/core";
 
-// Ported 1:1 from reference/HybridWeb.jsx so the deployed app matches the
-// prototype exactly. Tokens come from @hybrid/core (the shared identity).
-export const INK = colors.ink,
-  INK2 = colors.ink2,
-  CARD = colors.card,
+// Tokens come from @hybrid/core (the shared identity). Surface + primary-text
+// tokens resolve through CSS variables (globals.css @theme + [data-theme])
+// so the app re-themes (dark ⇄ light) without touching inline styles. LINE,
+// ASH and the accents stay raw hex because they're also fed to recharts as SVG
+// presentation attributes, where CSS var() does not resolve.
+export const INK = "var(--color-ink)",
+  INK2 = "var(--color-ink2)",
+  CARD = "var(--color-card)",
   LINE = colors.line;
 export const LIME = colors.lime,
-  CHALK = colors.chalk,
+  CHALK = "var(--color-chalk)",
   ASH = colors.ash,
   BLUE = colors.blue,
   VIOLET = colors.violet,
@@ -297,7 +300,7 @@ export function Stat({
   c?: string;
 }) {
   return (
-    <Card>
+    <Card glass>
       <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>
         {label}
       </Mono>
@@ -339,7 +342,7 @@ export function ChartFrame({
   span?: number;
 }) {
   return (
-    <Card span={span}>
+    <Card span={span} glass>
       <div style={{ marginBottom: 14 }}>
         {kicker && (
           <Mono

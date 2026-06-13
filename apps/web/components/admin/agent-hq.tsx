@@ -628,7 +628,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
                   <XAxis dataKey="t" tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} />
                   <YAxis tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} width={40} />
                   <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
-                  {target != null && <ReferenceLine y={target} stroke={CHALK} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: 10, position: "insideTopRight" }} />}
+                  {target != null && <ReferenceLine y={target} stroke={ASH} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: 10, position: "insideTopRight" }} />}
                   <Line type="monotone" dataKey="value" stroke={LIME} strokeWidth={2} dot={{ r: 3, fill: LIME }} />
                 </LineChart>
               </ResponsiveContainer>
