@@ -3,7 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, Mono, Card } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
@@ -50,7 +50,7 @@ export function blockBtn(color: string) {
     fontWeight: 700,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
-    color,
+    color: txt(color),
     background: `${color}1f`,
     border: `1px solid ${color}55`,
     borderRadius: 8,
@@ -63,7 +63,7 @@ function iconBtn(color: string) {
     ...cond,
     fontSize: 13,
     fontWeight: 700,
-    color,
+    color: txt(color),
     background: "transparent",
     border: `1px solid ${color}55`,
     borderRadius: 8,
@@ -189,7 +189,7 @@ export default function WorkoutBlocks({
               {b.kind}
             </Mono>
             {ssLabels[idx] && (
-              <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: LIME, background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
+              <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
                 ⛓ {ssLabels[idx]}
               </span>
             )}
@@ -239,7 +239,7 @@ export default function WorkoutBlocks({
                 <button
                   onClick={() => setRpeHelp((v) => !v)}
                   title="What is RPE?"
-                  style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: rpeHelp ? LIME : ASH, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                  style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
                 >
                   rpe ⓘ
                 </button>
@@ -258,7 +258,7 @@ export default function WorkoutBlocks({
                       ...mono,
                       fontSize: s.drop ? 12 : 13,
                       fontWeight: 700,
-                      color: s.drop ? LIME : ASH,
+                      color: txt(s.drop ? LIME : ASH),
                       background: s.drop ? `${LIME}1f` : "transparent",
                       border: `1px solid ${s.drop ? LIME : LINE}`,
                       borderRadius: 8,

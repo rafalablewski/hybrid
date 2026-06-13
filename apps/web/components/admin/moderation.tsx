@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, Mono, Card, Chip } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type PendingProfile = {
   id: string;
@@ -79,7 +79,7 @@ export default function AdminModeration() {
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Moderation not initialized</div>
         <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The moderation tables aren&apos;t set up yet. Run{" "}
-          <span style={{ color: AMBER }}>reference/sql-moderation.sql</span> in the Supabase SQL Editor, then reload.
+          <span style={{ color: txt(AMBER) }}>reference/sql-moderation.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
       </Card>
     );
@@ -105,7 +105,7 @@ export default function AdminModeration() {
               cursor: "pointer",
               border: `1px solid ${tab === id ? LIME : LINE}`,
               background: tab === id ? LIME : "transparent",
-              color: tab === id ? "#0c0d0c" : ASH,
+              color: txt(tab === id ? "#0c0d0c" : ASH),
             }}
           >
             {label}
@@ -132,7 +132,7 @@ export default function AdminModeration() {
               </Mono>
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "approve")} style={primaryBtn}>Approve</button>
-                <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "reject")} style={{ ...ghostBtn, color: RED, borderColor: `${RED}55` }}>Reject</button>
+                <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "reject")} style={{ ...ghostBtn, color: txt(RED), borderColor: `${RED}55` }}>Reject</button>
               </div>
             </Card>
           ))}
@@ -204,6 +204,6 @@ const ghostBtn: React.CSSProperties = {
   borderRadius: 9,
   cursor: "pointer",
   background: "transparent",
-  color: ASH,
+  color: txt(ASH),
   border: `1px solid ${LINE}`,
 };

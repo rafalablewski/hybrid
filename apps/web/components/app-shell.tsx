@@ -12,6 +12,8 @@ import {
   ASH,
   VIOLET,
   AMBER,
+  LIME_T,
+  txt,
   disp,
   cond,
   mono,
@@ -219,7 +221,7 @@ export default function AppShell() {
         }}
       >
         <div style={{ ...disp, fontWeight: 900, fontSize: 22, letterSpacing: "-.04em", padding: "0 8px 24px", flexShrink: 0 }}>
-          HYBRID<span style={{ color: LIME }}>.</span>
+          HYBRID<span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {NAV_GROUPS.map(({ group, items }) => {
@@ -248,7 +250,7 @@ export default function AppShell() {
                       cursor: "pointer",
                       border: "none",
                       background: screen === id ? `${LIME}1a` : "transparent",
-                      color: screen === id ? LIME : ASH,
+                      color: txt(screen === id ? LIME : ASH),
                       ...disp,
                       fontSize: 14,
                       fontWeight: 600,
@@ -276,7 +278,7 @@ export default function AppShell() {
                 placeItems: "center",
                 ...disp,
                 fontWeight: 700,
-                color: LIME,
+                color: LIME_T,
                 fontSize: 14,
               }}
             >

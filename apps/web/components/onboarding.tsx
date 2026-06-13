@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import {
   INK2, LINE, LIME, CHALK, ASH, VIOLET, RED,
-  disp, cond, mono, Mono, Card,
+  disp, cond, mono, Mono, Card, txt,
 } from "@/lib/ui";
 
 const EXP: Experience[] = ["beginner", "intermediate", "advanced"];
@@ -68,7 +68,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
                   onClick={() => setGoal(g.id)}
                   style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12, border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}14` : "transparent" }}
                 >
-                  <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: goal === g.id ? LIME : CHALK }}>{g.label}</div>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: txt(goal === g.id ? LIME : CHALK) }}>{g.label}</div>
                   <Mono s={{ fontSize: 11 }}>{g.blurb}</Mono>
                 </button>
               ))}
@@ -139,7 +139,7 @@ function Pills({ options, value, onPick }: { options: string[]; value: string; o
         <button
           key={o}
           onClick={() => onPick(o)}
-          style={{ ...cond, fontSize: 13, fontWeight: 700, textTransform: "capitalize", padding: "6px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${value === o ? LIME : LINE}`, background: value === o ? `${LIME}1a` : "transparent", color: value === o ? LIME : ASH }}
+          style={{ ...cond, fontSize: 13, fontWeight: 700, textTransform: "capitalize", padding: "6px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${value === o ? LIME : LINE}`, background: value === o ? `${LIME}1a` : "transparent", color: txt(value === o ? LIME : ASH) }}
         >
           {o}
         </button>
@@ -150,5 +150,5 @@ function Pills({ options, value, onPick }: { options: string[]; value: string; o
 
 const step = {
   ...disp, fontWeight: 800, fontSize: 22, width: 46, height: 42, borderRadius: 10,
-  border: `1px solid ${LINE}`, background: INK2, color: LIME, cursor: "pointer",
+  border: `1px solid ${LINE}`, background: INK2, color: txt(LIME), cursor: "pointer",
 } as const;

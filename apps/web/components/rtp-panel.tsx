@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import { evaluateRtp, STAGE_LABEL, type RtpStage } from "@hybrid/core";
 
 type AuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
@@ -91,7 +91,7 @@ export default function RtpPanel() {
                     {!ev.canAdvance && (
                       <>
                         <Mono s={{ fontSize: 11 }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>
-                        <button onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: RED, border: `1px solid ${RED}` }}>
+                        <button onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: txt(RED), border: `1px solid ${RED}` }}>
                           Override
                         </button>
                       </>

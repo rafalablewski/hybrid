@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "@/lib/session";
-import { LINE, LIME, CHALK, ASH, RED, INK2, disp, mono, Mono, Card } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, RED, INK2, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 
 export default function AccountSettings() {
@@ -53,7 +53,7 @@ export default function AccountSettings() {
           Permanently deletes everything tied to your account — logged sessions, signals &amp;
           biometrics, check-ins, plans &amp; macrocycles, templates &amp; assignments, connected
           devices, coaching links, and progress photos. Your login stays; you&apos;ll land in a
-          fresh, empty account. <b style={{ color: RED }}>This cannot be undone.</b>
+          fresh, empty account. <b style={{ color: txt(RED) }}>This cannot be undone.</b>
         </Mono>
 
         <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>
@@ -104,7 +104,7 @@ export default function AccountSettings() {
           </button>
           <button
             onClick={() => void logout()}
-            style={{ ...mono, fontSize: 13, color: ASH, background: "none", border: "none", cursor: "pointer" }}
+            style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}
           >
             Sign out instead
           </button>

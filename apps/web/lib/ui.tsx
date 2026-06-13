@@ -21,6 +21,30 @@ export const LIME = colors.lime,
   AMBER = colors.amber,
   RED = colors.red;
 
+// Theme-aware FOREGROUND accent colours (for text). The bright accents above
+// stay fixed for backgrounds / borders / chart strokes / glows (and recharts,
+// which can't resolve var()); these darken on light so accent TEXT keeps WCAG
+// AA. Use *_T directly for inline accent text, or rely on Mono/Chip which map
+// a bright accent → its themed text colour automatically.
+export const LIME_T = "var(--lime-text)",
+  BLUE_T = "var(--blue-text)",
+  VIOLET_T = "var(--violet-text)",
+  AMBER_T = "var(--amber-text)",
+  RED_T = "var(--red-text)";
+
+const ACCENT_TEXT: Record<string, string> = {
+  [colors.lime]: LIME_T,
+  [colors.blue]: BLUE_T,
+  [colors.violet]: VIOLET_T,
+  [colors.amber]: AMBER_T,
+  [colors.red]: RED_T,
+  [colors.ash]: "var(--color-ash)",
+};
+
+/** Map a bright accent (or ash) to its theme-aware text colour; pass anything
+ *  else through unchanged. Use for inline accent TEXT: `color: txt(BLUE)`. */
+export const txt = (c: string): string => ACCENT_TEXT[c] ?? c;
+
 export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
 export const cond: CSSProperties = { fontFamily: "'Archivo Narrow', sans-serif" };
 export const mono: CSSProperties = { fontFamily: "'JetBrains Mono', monospace" };
@@ -43,7 +67,9 @@ export function Mono({
   s?: CSSProperties;
   c?: string;
 }) {
-  return <span style={{ ...mono, color: c, ...s }}>{children}</span>;
+  // Auto-map a bright accent (or ash) to its theme-aware text colour so every
+  // `Mono c={LIME}` across the app stays AA in light mode without edits.
+  return <span style={{ ...mono, color: txt(c), ...s }}>{children}</span>;
 }
 
 export function Card({
@@ -143,7 +169,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
         fontWeight: 600,
         letterSpacing: ".05em",
         textTransform: "uppercase",
-        color: c,
+        color: txt(c),
         background: `${c}1f`,
         padding: "3px 9px",
         borderRadius: 5,
@@ -309,7 +335,7 @@ export function Stat({
           ...disp,
           fontWeight: 800,
           fontSize: 34,
-          color: c,
+          color: txt(c),
           lineHeight: 1.1,
           margin: "6px 0 2px",
         }}

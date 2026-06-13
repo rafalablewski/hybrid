@@ -75,6 +75,13 @@ body {
   --grain-blend: overlay;
   --grain-opacity: 0.05;
   --accent-text: var(--color-lime); /* lime is readable on dark surfaces */
+  /* foreground accent text — bright on dark; the bright accents themselves
+     (LIME/BLUE/… in lib/ui) stay for backgrounds/borders/chart strokes */
+  --lime-text: #c4f035;
+  --blue-text: #7fd4e8;
+  --violet-text: #c9a9f0;
+  --amber-text: #f0b45e;
+  --red-text: #e0625e;
 }
 
 [data-theme="light"] {
@@ -98,6 +105,12 @@ body {
   --grain-blend: soft-light;
   --grain-opacity: 0.06;
   --accent-text: #4c6606; /* darker lime — AA on white (raw lime fails) */
+  /* darkened accents that pass AA on light surfaces (and on the 12% tint) */
+  --lime-text: #4c6606;
+  --blue-text: #176577;
+  --violet-text: #5f3f93;
+  --amber-text: #8a5a12;
+  --red-text: #a82e2a;
 }
 
 /* ---- core component ---- */

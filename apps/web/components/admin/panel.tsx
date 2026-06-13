@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
-import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono } from "@/lib/ui";
+import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt } from "@/lib/ui";
 import AdminOverview from "./overview";
 import AdminUsers from "./users";
 import AdminDirectory from "./directory";
@@ -71,7 +71,7 @@ export default function AdminPanel() {
       >
         <div style={{ padding: "0 8px 4px" }}>
           <div style={{ ...disp, fontWeight: 900, fontSize: 21, letterSpacing: "-.04em" }}>
-            HYBRID<span style={{ color: AMBER }}>.</span>
+            HYBRID<span style={{ color: txt(AMBER) }}>.</span>
           </div>
           <Mono s={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase" }} c={AMBER}>
             Admin console
@@ -102,7 +102,7 @@ export default function AdminPanel() {
                     cursor: "pointer",
                     border: "none",
                     background: section === s.id ? `${AMBER}1c` : "transparent",
-                    color: section === s.id ? AMBER : ASH,
+                    color: txt(section === s.id ? AMBER : ASH),
                     ...disp,
                     fontSize: 14,
                     fontWeight: 600,
@@ -159,7 +159,7 @@ export default function AdminPanel() {
             style={{
               ...mono,
               fontSize: 11,
-              color: ASH,
+              color: txt(ASH),
               border: `1px solid ${LINE}`,
               borderRadius: 999,
               padding: "6px 12px",
@@ -200,7 +200,7 @@ export default function AdminPanel() {
       fontWeight: 700,
       textTransform: "uppercase" as const,
       letterSpacing: ".05em",
-      color: danger ? ASH : CHALK,
+      color: txt(danger ? ASH : CHALK),
       background: danger ? "transparent" : INK2,
       border: `1px solid ${LINE}`,
       borderRadius: 9,

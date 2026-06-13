@@ -18,6 +18,7 @@ import {
   Card,
   Chip,
   Select,
+  txt,
 } from "@/lib/ui";
 
 type Exercise = {
@@ -188,7 +189,7 @@ export default function AdminExercises() {
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Exercise library not initialized</div>
         <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Exercise</b> table doesn&apos;t exist yet. Run{" "}
-          <span style={{ color: AMBER }}>reference/sql-exercise.sql</span> in the Supabase SQL Editor to create it,
+          <span style={{ color: txt(AMBER) }}>reference/sql-exercise.sql</span> in the Supabase SQL Editor to create it,
           then reload.
         </Mono>
       </Card>
@@ -277,7 +278,7 @@ export default function AdminExercises() {
                       cursor: "pointer",
                       border: `1px solid ${on ? LIME : LINE}`,
                       background: on ? LIME : "transparent",
-                      color: on ? "#0c0d0c" : ASH,
+                      color: txt(on ? "#0c0d0c" : ASH),
                     }}
                   >
                     {m}
@@ -343,7 +344,7 @@ export default function AdminExercises() {
                 <button disabled={busy} onClick={() => patch(x.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
               )}
               {x.status !== "archived" && <button disabled={busy} onClick={() => patch(x.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-              <button disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: RED, borderColor: `${RED}55` }}>Delete</button>
+              <button disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
             </div>
           </Card>
         ))}
@@ -396,7 +397,7 @@ const baseBtn: React.CSSProperties = {
 };
 const primaryBtn: React.CSSProperties = { ...baseBtn, background: LIME, color: "#0c0d0c", border: `1px solid ${LIME}` };
 const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color: CHALK };
-const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: ASH };
+const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {
   ...cond,
   fontSize: 12,

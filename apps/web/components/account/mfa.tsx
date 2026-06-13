@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isValidTotpCode } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { LINE, LIME, CHALK, ASH, RED, AMBER, INK2, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, RED, AMBER, INK2, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type Factor = { id: string; friendly_name?: string | null; status: string };
 type Enroll = { factorId: string; qr: string; secret: string };
@@ -181,7 +181,7 @@ const primaryBtn = {
 const removeBtn = {
   ...mono,
   fontSize: 12,
-  color: RED,
+  color: txt(RED),
   background: "transparent",
   border: `1px solid ${LINE}`,
   borderRadius: 8,

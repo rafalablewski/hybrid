@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { parseForcePlateCsv, type Signal } from "@hybrid/core";
 import {
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
-  disp, cond, mono, tip, Mono, Card, Chip, ChartFrame,
+  disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -63,7 +63,7 @@ export default function ForcePlate() {
           columns are skipped, never guessed.
         </Mono>
         <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <label style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", color: LIME, background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}>
+          <label style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}>
             Choose file
             <input type="file" accept=".csv,text/csv,text/plain" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
           </label>

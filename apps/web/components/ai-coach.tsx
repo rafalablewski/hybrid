@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LINE, LIME, VIOLET, ASH, CHALK, cond, Mono, Chip } from "@/lib/ui";
+import { LINE, LIME, VIOLET, ASH, CHALK, cond, Mono, Chip, txt } from "@/lib/ui";
 
 // Calls the server-side AI coach (/api/ai-coach). Shows the generated note and
 // whether it came from the LLM or the engine fallback.
@@ -41,7 +41,7 @@ export default function AskCoach() {
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: ".04em",
-          color: VIOLET,
+          color: txt(VIOLET),
           background: `${VIOLET}1f`,
           border: `1px solid ${VIOLET}55`,
           borderRadius: 8,

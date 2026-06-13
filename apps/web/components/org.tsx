@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import {
   buildTeamTree,
   flattenTree,
@@ -234,7 +234,7 @@ export default function Org() {
                         ) : (
                           m.name
                         )}
-                        {m.email ? <span style={{ color: ASH }}> · {m.email}</span> : null}
+                        {m.email ? <span style={{ color: txt(ASH) }}> · {m.email}</span> : null}
                       </Mono>
                       <Mono s={{ fontSize: 10 }} c={ASH}>{teamName(m.teamId)}</Mono>
                     </div>
@@ -272,7 +272,7 @@ export default function Org() {
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
                       <Mono s={{ fontSize: 12 }} c={ASH}>{iv.email} · {iv.role.toLowerCase()}</Mono>
-                      <span style={{ cursor: "pointer", color: AMBER, fontSize: 12 }} onClick={() => revokeInvite(iv.id)}>revoke</span>
+                      <span style={{ cursor: "pointer", color: txt(AMBER), fontSize: 12 }} onClick={() => revokeInvite(iv.id)}>revoke</span>
                     </div>
                   ))}
                 </div>
@@ -286,10 +286,10 @@ export default function Org() {
                 <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
                   Athlete Twin · {athlete.name}
                 </Mono>
-                <span style={{ cursor: "pointer", color: ASH, fontFamily: "monospace" }} onClick={() => setAthlete(null)}>✕</span>
+                <span style={{ cursor: "pointer", color: txt(ASH), fontFamily: "monospace" }} onClick={() => setAthlete(null)}>✕</span>
               </div>
               <div style={{ display: "flex", gap: 20, alignItems: "baseline", marginTop: 8 }}>
-                <div style={{ ...disp, fontWeight: 900, fontSize: 40, color: hpiColor(athlete.hpi.band) }}>{athlete.hpi.score}</div>
+                <div style={{ ...disp, fontWeight: 900, fontSize: 40, color: txt(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>
                 <div>
                   <Chip c={hpiColor(athlete.hpi.band)}>{athlete.hpi.band}</Chip>
                   <Chip c={AMBER}>limiter · {athlete.hpi.limiter}</Chip>
@@ -331,5 +331,5 @@ function btn(bg: string): React.CSSProperties {
   return { ...disp, fontWeight: 800, fontSize: 13, background: bg, color: "#0c0d0c", border: "none", borderRadius: 10, padding: "9px 16px", cursor: "pointer" };
 }
 function chip(active: boolean): React.CSSProperties {
-  return { ...mono, fontSize: 12, padding: "7px 12px", borderRadius: 8, cursor: "pointer", background: active ? `${LIME}1a` : "transparent", color: active ? LIME : ASH, border: `1px solid ${active ? LIME : LINE}` };
+  return { ...mono, fontSize: 12, padding: "7px 12px", borderRadius: 8, cursor: "pointer", background: active ? `${LIME}1a` : "transparent", color: txt(active ? LIME : ASH), border: `1px solid ${active ? LIME : LINE}` };
 }

@@ -39,6 +39,7 @@ import {
   cond,
   mono,
   tip,
+  txt,
   Mono,
   Card,
   Chip,
@@ -86,7 +87,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
       <Card style={{ textAlign: "center", padding: 60 }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No bar speed logged yet</div>
         <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>
-          Add a velocity (m/s) to a strength set in the <b style={{ color: LIME }}>Log session</b> tab —
+          Add a velocity (m/s) to a strength set in the <b style={{ color: txt(LIME) }}>Log session</b> tab —
           across a few loads — and your load–velocity profile, estimated 1RM, zones and the
           autoregulated load recommender build here from your real lifts.
         </Mono>
@@ -111,7 +112,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
               cursor: "pointer",
               border: `1px solid ${active === l ? LIME : LINE}`,
               background: active === l ? `${LIME}1a` : "transparent",
-              color: active === l ? LIME : ASH,
+              color: txt(active === l ? LIME : ASH),
             }}
           >
             {l}
@@ -127,7 +128,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
           </Mono>
           <div style={{ ...disp, fontWeight: 800, fontSize: 44, color: CHALK, lineHeight: 1.05, margin: "8px 0 2px" }}>
             {resolved ? profile.estimated1rm.toFixed(1) : "—"}
-            <span style={{ fontSize: 20, color: ASH }}> kg</span>
+            <span style={{ fontSize: 20, color: txt(ASH) }}> kg</span>
           </div>
           <Mono s={{ fontSize: 12 }}>
             {resolved
@@ -155,8 +156,8 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
           </div>
           {rec ? (
             <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 34, color: VIOLET }}>
-                {rec.load} <span style={{ fontSize: 16, color: ASH }}>kg</span>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 34, color: txt(VIOLET) }}>
+                {rec.load} <span style={{ fontSize: 16, color: txt(ASH) }}>kg</span>
               </div>
               <Mono s={{ fontSize: 13 }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</Mono>
               <Chip c={zoneColor(rec.zone.id)}>{rec.zone.label}</Chip>
@@ -206,8 +207,8 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
             </ComposedChart>
           </ResponsiveContainer>
           <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }}>
-            <span style={{ color: LIME }}>●</span> measured sets &nbsp;
-            <span style={{ color: VIOLET }}>—</span> fitted line → 1RM at MVT
+            <span style={{ color: txt(LIME) }}>●</span> measured sets &nbsp;
+            <span style={{ color: txt(VIOLET) }}>—</span> fitted line → 1RM at MVT
           </Mono>
         </ChartFrame>
       </div>
@@ -235,7 +236,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
         {/* recent sets / feedback */}
         <ChartFrame title="Recent sets" kicker="bar speed + velocity loss" c={LIME}>
           <RecentSets sessions={sessions} lift={active} />
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 10, color: ASH }}>
+          <Mono s={{ fontSize: 11, display: "block", marginTop: 10, color: txt(ASH) }}>
             Per-rep trajectory &amp; bar path (sagittal) need the bar sensor / camera capture —
             see Capabilities (blocked until the sensor SDK is wired).
           </Mono>

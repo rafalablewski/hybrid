@@ -19,7 +19,7 @@ import {
 import ReconciledWeek from "./reconciled-week";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
-  disp, cond, mono, tip, Mono, Card, Chip, ChartFrame,
+  disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
 const hpiColor = (b: string) =>
@@ -173,8 +173,8 @@ export default function Today({
         <ChartFrame title={`Future self · ${primaryLift}`} kicker="projected from your behavior" c={VIOLET}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: CHALK }}>{Math.round(projection.current)}</span>
-            <span style={{ color: ASH }}>→</span>
-            <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: VIOLET }}>
+            <span style={{ color: txt(ASH) }}>→</span>
+            <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: txt(VIOLET) }}>
               {Math.round(projection.series[projection.series.length - 1]!.value)}
             </span>
             <Mono s={{ fontSize: 12 }}>kg e1RM · 12 wks</Mono>
@@ -211,7 +211,7 @@ export default function Today({
             Performance State · Athlete Twin
           </Mono>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
-            <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>
+            <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
             <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
             <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
               <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
@@ -228,7 +228,7 @@ export default function Today({
 function Metric({ label, value, c }: { label: string; value: string; c: string }) {
   return (
     <div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: txt(c) }}>{value}</div>
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
