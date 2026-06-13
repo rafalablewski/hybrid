@@ -852,7 +852,7 @@ const primaryBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LIME}`,
   background: `${LIME}22`,
-  color: LIME,
+  color: txt(LIME),
 };
 const dangerBtn: React.CSSProperties = {
   ...cond,
@@ -865,7 +865,7 @@ const dangerBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: "transparent",
-  color: ASH,
+  color: txt(ASH),
 };
 const addBtn: React.CSSProperties = {
   ...cond,
@@ -877,7 +877,7 @@ const addBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px dashed ${LINE}`,
   background: "transparent",
-  color: ASH,
+  color: txt(ASH),
 };
 const removeBtn: React.CSSProperties = {
   ...mono,
@@ -889,7 +889,7 @@ const removeBtn: React.CSSProperties = {
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK2,
-  color: ASH,
+  color: txt(ASH),
 };
 const chipBtn: React.CSSProperties = {
   ...cond,
