@@ -23,7 +23,7 @@ import {
   type LoggedSession,
   type Macrocycle,
 } from "@hybrid/core";
-import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
+import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
@@ -58,16 +58,22 @@ export default function Home() {
   const [currentWeek, setCurrentWeek] = useState(1);
   const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
+  const [invites, setInvites] = useState<CoachInvite[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle()])
-      .then(([s, a, sig, m]) => {
+    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle(), fetchCoachInvites()])
+      .then(([s, a, sig, m, inv]) => {
         setSessions(s); setAssignments(a); setSignals(sig);
         setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1);
+        setInvites(inv);
       })
       .finally(() => setRefreshing(false));
+  };
+  const respondInvite = async (id: string, action: "accept" | "end") => {
+    setInvites((v) => v.filter((i) => i.id !== id));
+    await actCoachInvite(id, action);
   };
   // Reload whenever the Today tab gains focus — so returning here after logging
   // a workout refreshes sessions/assignments and the auto re-sync can fire.
@@ -224,6 +230,25 @@ export default function Home() {
           <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
         </Pressable>
       )}
+
+      {/* COACH INVITES — incoming mutual-consent links, any persona can accept */}
+      {invites.map((inv) => (
+        <Card key={inv.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
+          <Kicker color={C.violet}>Coach invite</Kicker>
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 6 }}>
+            {(inv.coach?.name || inv.coach?.email?.split("@")[0] || "A coach")} wants to coach you
+          </Text>
+          <Mono style={{ marginTop: 2, fontSize: 11, lineHeight: 16 }}>Accepting shares your training with them — end it anytime.</Mono>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+            <Pressable onPress={() => respondInvite(inv.id, "accept")} style={{ flex: 1, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime, borderRadius: 10, paddingVertical: 10, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>Accept</Text>
+            </Pressable>
+            <Pressable onPress={() => respondInvite(inv.id, "end")} style={{ paddingHorizontal: 16, paddingVertical: 10, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Decline</Text>
+            </Pressable>
+          </View>
+        </Card>
+      ))}
 
       {/* COACH — your athletes, front and centre */}
       {persona === "coach" && (

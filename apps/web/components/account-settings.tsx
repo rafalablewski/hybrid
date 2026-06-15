@@ -52,10 +52,11 @@ export default function AccountSettings() {
           <Mono s={{ fontSize: 13, display: "block", marginTop: 6 }} c={CHALK}>
             How much of the app you see. Switch anytime.
           </Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
             {([
               { id: "casual" as const, title: "Simple", sub: "track · review · share" },
               { id: "athlete" as const, title: "Full", sub: "plans · sport · deep stats" },
+              { id: "coach" as const, title: "Coach", sub: "athletes · squad · assign" },
             ]).map((m) => (
               <button
                 key={m.id}

@@ -62,6 +62,7 @@ import ForcePlate from "./forceplate";
 import Progress from "./progress";
 import AccountSettings from "./account-settings";
 import AnnouncementBanner from "./announcement-banner";
+import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
@@ -131,8 +132,8 @@ export default function AppShell() {
 
   // Pick the LANDING screen once, in priority order: a brand-new registrant
   // (flag set at signup) → onboarding to set persona/goal/prefs; otherwise a
-  // coach lands on their squad monitor (the screen they open every morning); a
-  // client/admin keeps the default Today.
+  // coach persona (role OR self-serve opt-in) lands on their Coach screen
+  // (roster + invite); a client/admin keeps the default Today.
   const landed = useRef(false);
   useEffect(() => {
     if (!ready || !session || landed.current) return;
@@ -146,8 +147,8 @@ export default function AppShell() {
     } catch {
       /* ignore */
     }
-    if (session.role === "coach") setScreen("squad");
-  }, [ready, session]);
+    if (persona === "coach") setScreen("coach");
+  }, [ready, session, persona]);
 
   if (!ready || !session) return null;
 
@@ -365,6 +366,7 @@ export default function AppShell() {
       {/* main */}
       <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
+        <CoachInviteBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>

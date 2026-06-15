@@ -54,10 +54,14 @@ The app now takes a different shape per persona, on both clients.
   credentials (see wearables / vbt-capture / video-intel).
 
 ### Phase 3 — The Coach (revenue)
-- ✅ Coach-first landing: web coaches land on the Squad monitor; mobile coaches
-  get a 'Your athletes' entry on Today.
-- ⏳ Self-serve coach onboarding + client invite.
-- ⛔ Unblock billing (Stripe) — needs provider keys.
+- ✅ Coach-first landing: coaches land on the Coach roster/invite screen (web);
+  mobile coaches get a 'Your athletes' entry on Today.
+- ✅ Self-serve coaching: a client opts into the coach persona (onboarding fork /
+  mode toggle) — no privileged role change (coach APIs are relationship-gated) —
+  invites clients via the existing API, and INCOMING invites surface to every
+  persona (web app-shell banner + mobile Today card) so any client can accept.
+- ⛔ Unblock billing (Stripe) — needs provider keys. The ONLY remaining
+  coach-revenue piece; everything around it is built.
 
 ### Cross-cutting / blocked (parallel)
 - Seed the **plan library** (content; don't fabricate).

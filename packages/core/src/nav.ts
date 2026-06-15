@@ -23,8 +23,10 @@ export type NavGroup = "home" | "train" | "analyze" | "recovery" | "teams" | "ac
  */
 export type Persona = "casual" | "athlete" | "coach" | "admin";
 
-/** The client-only sub-choice (coach/admin personas come from the role). */
-export type ClientPersona = "casual" | "athlete";
+/** The client-only sub-choice. A client can opt into the coach experience
+ *  (self-serve) — coaching others is relationship-gated, not a privileged role,
+ *  so no role change is needed. */
+export type ClientPersona = "casual" | "athlete" | "coach";
 
 export interface NavItem {
   /** stable id — also the web screen id, and the i18n key suffix (nav.<id>) */

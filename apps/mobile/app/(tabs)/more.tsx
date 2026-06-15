@@ -65,8 +65,9 @@ export default function More() {
           <Kicker>Mode</Kicker>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
             {([
-              { id: "casual" as const, label: "Simple", sub: "track · review · share" },
-              { id: "athlete" as const, label: "Full", sub: "plans · sport · deep stats" },
+              { id: "casual" as const, label: "Simple", sub: "track · share" },
+              { id: "athlete" as const, label: "Full", sub: "plans · stats" },
+              { id: "coach" as const, label: "Coach", sub: "athletes · squad" },
             ]).map((m) => {
               const active = (choice ?? "casual") === m.id;
               return (

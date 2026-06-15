@@ -66,6 +66,7 @@ export default function Onboarding() {
           {([
             { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app." },
             { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit." },
+            { id: "coach" as const, title: "I coach others", sub: "Invite athletes, monitor your squad, assign workouts — plus all your own training." },
           ]).map((o) => {
             const active = persona === o.id;
             return (
@@ -81,7 +82,7 @@ export default function Onboarding() {
           })}
         </View>
         <Mono color={C.ash} style={{ marginTop: 10, fontSize: 10, lineHeight: 14 }}>
-          You can switch anytime in More. Coaching others? Your coach tools appear automatically.
+          You can switch anytime in More.
         </Mono>
       </Card>
 

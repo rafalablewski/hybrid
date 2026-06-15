@@ -199,6 +199,34 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
   }
 }
 
+// Incoming coach invites (mutual consent) — so a client can accept/decline a
+// coach's link from anywhere, without the coach console.
+export type CoachInvite = { id: string; status: string; coach?: { name: string | null; email: string } };
+
+export async function fetchCoachInvites(): Promise<CoachInvite[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { asClient?: CoachInvite[] };
+    return (data.asClient ?? []).filter((l) => l.status === "PENDING");
+  } catch {
+    return [];
+  }
+}
+
+export async function actCoachInvite(id: string, action: "accept" | "end"): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ action }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Self-schedule: materialize the reconciled plan onto dated Assignments (the
 // athlete authoring their own). They show on the Calendar alongside coach work.
 // replace=true clears upcoming pending self-authored days first, so re-running

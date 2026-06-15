@@ -18,6 +18,10 @@ describe("persona resolution", () => {
     expect(resolvePersona("client", "casual")).toBe("casual");
     expect(resolvePersona("client", "athlete")).toBe("athlete");
   });
+
+  it("a client can self-serve opt into the coach experience", () => {
+    expect(resolvePersona("client", "coach")).toBe("coach");
+  });
 });
 
 describe("navForPersona", () => {
