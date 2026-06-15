@@ -1,0 +1,36 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Service-role Supabase client for trusted server code ONLY (never expose the
+ * key to the browser). Used to write auth `user_metadata` — e.g. mirroring the
+ * billing entitlement so both clients read it straight from their session.
+ *
+ * Returns null when the service-role key isn't configured, so callers degrade
+ * gracefully instead of throwing (the DB stays the source of truth regardless).
+ */
+export function createAdminClient(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+/**
+ * Merge a patch into a user's auth `user_metadata` (Supabase replaces the whole
+ * object on update, so we read-merge-write to avoid clobbering role/name/etc.).
+ * No-op when the admin client or authId is unavailable.
+ */
+export async function patchUserMetadata(
+  authId: string | null | undefined,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin || !authId) return;
+  const { data } = await admin.auth.admin.getUserById(authId);
+  const current = data.user?.user_metadata ?? {};
+  await admin.auth.admin.updateUserById(authId, {
+    user_metadata: { ...current, ...patch },
+  });
+}

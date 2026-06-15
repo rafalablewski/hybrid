@@ -1,5 +1,7 @@
-import { View, Text, Pressable } from "react-native";
+import { useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
+import { startCheckout } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -18,6 +20,22 @@ export default function Upgrade() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const subscribe = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    const res = await startCheckout();
+    setBusy(false);
+    if (res.ok && res.url) {
+      Linking.openURL(res.url);
+    } else {
+      setError(res.error ?? "Couldn't start checkout — try again.");
+    }
+  };
 
   return (
     <Screen>
@@ -43,15 +61,35 @@ export default function Upgrade() {
         </View>
       </Card>
 
-      {/* Billing isn't wired yet — be honest rather than dangle a dead button. */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.amber, marginTop: 16 }}>
-        <Kicker color={C.amber}>Coming soon</Kicker>
-        <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>
-          In-app purchase isn&apos;t live yet. Full will be a simple subscription — we&apos;ll
-          let you know the moment it opens. Nothing about your tracked training changes in the
-          meantime.
-        </Mono>
-      </Card>
+      {!!error && (
+        <Mono color={C.red} style={{ marginTop: 16, lineHeight: 19 }}>{error}</Mono>
+      )}
+
+      <Pressable
+        onPress={subscribe}
+        disabled={busy}
+        style={{
+          backgroundColor: C.lime,
+          borderRadius: 12,
+          paddingVertical: 15,
+          alignItems: "center",
+          marginTop: 16,
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        {busy ? (
+          <ActivityIndicator color={C.onAccent} />
+        ) : (
+          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>Subscribe</Text>
+        )}
+      </Pressable>
+
+      {/* On iOS, App Store rules route the final purchase through native In-App
+          Purchase — that IAP client is the remaining integration. */}
+      <Mono color={C.ash} style={{ marginTop: 10, lineHeight: 18, textAlign: "center" }}>
+        On iOS the final purchase completes through In-App Purchase. The native IAP client is the
+        remaining piece of this integration.
+      </Mono>
 
       <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: 18 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Maybe later</Text>

@@ -117,6 +117,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setReady(true);
   }, [live]);
 
+  // After a Stripe success redirect (/app?upgraded=1) the JWT still carries the
+  // old entitlement — refresh the session so the freshly-set "paid" metadata is
+  // picked up, then the flag can be ignored.
+  useEffect(() => {
+    if (!live) return;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("upgraded") !== "1") return;
+    createClient().auth.refreshSession().catch(() => {});
+  }, [live]);
+
   const login = (s: Session) => {
     // In live mode the Supabase listener owns session state; this is the demo path.
     setSession(s);

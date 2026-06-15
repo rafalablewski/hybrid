@@ -39,6 +39,13 @@ model User {
   language  String   @default("en")
   createdAt DateTime @default(now())
 
+  // Billing — the paid "Full" entitlement. entitlement is mirrored into the
+  // Supabase auth user_metadata so both clients read it from the session; these
+  // columns are the server-side source of truth + the Stripe linkage.
+  entitlement        String   @default("free") // free | paid
+  stripeCustomerId   String?  @unique
+  subscriptionStatus String?  // active | trialing | past_due | canceled | null
+
   sessions      Session[]
   macrocycles   Macrocycle[]
   biometrics    Biometric[]

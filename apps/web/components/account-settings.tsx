@@ -19,6 +19,58 @@ export default function AccountSettings() {
   // Mode toggle — Full (athlete) is a paid upgrade.
   const paid = entitlement === "paid";
 
+  // Billing — checkout to upgrade, portal to manage an existing subscription.
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingMsg, setBillingMsg] = useState<string | null>(null);
+  const [billingUnconfigured, setBillingUnconfigured] = useState(false);
+
+  const upgrade = async () => {
+    if (billingBusy) return;
+    setBillingBusy(true);
+    setBillingMsg(null);
+    try {
+      const res = await fetch("/api/billing/checkout", { method: "POST" });
+      const j = (await res.json().catch(() => ({}))) as { url?: string; configured?: boolean };
+      if (res.status === 503 || j.configured === false) {
+        setBillingUnconfigured(true);
+        setBillingBusy(false);
+        return;
+      }
+      if (res.ok && j.url) {
+        window.location.href = j.url;
+        return;
+      }
+      setBillingMsg("Couldn’t start checkout — try again.");
+    } catch {
+      setBillingMsg("Network error — try again.");
+    }
+    setBillingBusy(false);
+  };
+
+  const manageSubscription = async () => {
+    if (billingBusy) return;
+    setBillingBusy(true);
+    setBillingMsg(null);
+    try {
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const j = (await res.json().catch(() => ({}))) as { url?: string; configured?: boolean };
+      if (res.status === 503 || j.configured === false) {
+        setBillingUnconfigured(true);
+        setBillingBusy(false);
+        return;
+      }
+      if (res.ok && j.url) {
+        window.location.href = j.url;
+        return;
+      }
+      const e = j as { error?: string };
+      setBillingMsg(e.error ?? "Couldn’t open the billing portal — try again.");
+    } catch {
+      setBillingMsg("Network error — try again.");
+    }
+    setBillingBusy(false);
+  };
+
   // Become a coach — a client applies; an admin approves it (→ COACH role).
   const isClient = session?.role === "client";
   const [credentials, setCredentials] = useState("");
@@ -35,8 +87,10 @@ export default function AccountSettings() {
         if (r.status === 503) { if (live) setCoachUnavailable(true); return null; }
         return r.ok ? r.json() : null;
       })
-      .then((d: { status?: CoachStatus } | null) => {
-        if (live && d?.status) setCoachStatus(d.status);
+      .then((d: { application?: { status?: CoachStatus } | null; unavailable?: boolean } | null) => {
+        if (!live || !d) return;
+        if (d.unavailable) { setCoachUnavailable(true); return; }
+        if (d.application?.status) setCoachStatus(d.application.status);
       })
       .catch(() => {});
     return () => { live = false; };
@@ -59,8 +113,8 @@ export default function AccountSettings() {
         setCoachBusy(false);
         return;
       }
-      const j = (await res.json().catch(() => ({}))) as { status?: CoachStatus };
-      setCoachStatus(j.status ?? "pending");
+      const j = (await res.json().catch(() => ({}))) as { application?: { status?: CoachStatus } };
+      setCoachStatus(j.application?.status ?? "pending");
       setCredentials("");
     } catch {
       setCoachMsg("Network error — try again.");
@@ -136,10 +190,47 @@ export default function AccountSettings() {
               <Mono s={{ fontSize: 11 }}>plans · sport · deep stats</Mono>
             </button>
           </div>
-          {!paid && (
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
-              Full is a paid upgrade — billing coming soon.
-            </Mono>
+          {/* Billing actions — upgrade when free, manage when paid. */}
+          {!paid ? (
+            <>
+              <button
+                onClick={upgrade}
+                disabled={billingBusy}
+                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 10, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
+              >
+                {billingBusy ? "Starting…" : "Upgrade to Full"}
+              </button>
+              {billingUnconfigured ? (
+                <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+                  Billing isn’t configured yet — coming soon.
+                </Mono>
+              ) : (
+                <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+                  Unlocks plans, the sport engine &amp; deep stats.
+                </Mono>
+              )}
+              {billingMsg && (
+                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{billingMsg}</Mono>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={manageSubscription}
+                disabled={billingBusy}
+                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
+              >
+                {billingBusy ? "Opening…" : "Manage subscription"}
+              </button>
+              {billingUnconfigured && (
+                <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+                  Billing isn’t configured yet — coming soon.
+                </Mono>
+              )}
+              {billingMsg && (
+                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{billingMsg}</Mono>
+              )}
+            </>
           )}
         </Card>
       )}
