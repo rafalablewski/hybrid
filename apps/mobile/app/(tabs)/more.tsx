@@ -17,8 +17,8 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 // access to lives on the web app only — keep in sync with the HREF map in
 // components/liquid-glass.tsx.
 const MOBILE_NAV_IDS = new Set([
-  "today", "cockpit", "log", "history", "plans", "sport", "calendar",
-  "velocity", "running", "progress", "nutrition", "checkin", "coach",
+  "today", "cockpit", "log", "history", "plans", "periodize", "sport", "calendar",
+  "performance", "velocity", "running", "progress", "nutrition", "checkin", "coach",
   "settings", "onboarding",
 ]);
 
@@ -29,6 +29,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
     titleKey: "more.plan",
     links: [
       { id: "plans", labelKey: "nav.plans", sub: "browse & enroll", href: "/(tabs)/plans", color: C.lime },
+      { id: "periodize", labelKey: "nav.periodize", sub: "your season · phases", href: "/periodize", color: C.violet },
       { id: "sport", labelKey: "nav.sport", sub: "sport-specific S&C", href: "/(tabs)/sport", color: C.lime },
       { id: "calendar", labelKey: "nav.calendar", sub: "month view · load heat", href: "/calendar", color: C.blue },
       { id: "onboarding", labelKey: "nav.onboarding", sub: "4 questions → a plan", href: "/onboarding", color: C.violet },
@@ -37,6 +38,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
   {
     titleKey: "more.analyze",
     links: [
+      { id: "performance", labelKey: "nav.performance", sub: "HPI · twin · injury risk", href: "/performance", color: C.blue },
       { id: "velocity", labelKey: "nav.velocity", sub: "VBT · load–velocity", href: "/(tabs)/velocity", color: C.blue },
       { id: "running", labelKey: "nav.running", sub: "mileage · pace · easy/hard", href: "/(tabs)/running", color: C.blue },
       { id: "progress", labelKey: "nav.progress", sub: "body recomposition", href: "/progress", color: C.violet },

@@ -89,8 +89,8 @@ export default function Cockpit() {
         C={C}
         kicker="Goal & season"
         color={C.violet}
-        onOpen={() => router.push(macro ? "/calendar" : "/onboarding")}
-        openLabel={macro ? "Calendar →" : "Set up a plan →"}
+        onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}
+        openLabel={macro ? "Periodize →" : "Set up a plan →"}
       >
         {macro ? (
           <>
@@ -120,7 +120,7 @@ export default function Cockpit() {
       </Section>
 
       {/* 3 · PERFORMANCE (Twin / HPI) */}
-      <Section C={C} kicker="Performance · Athlete Twin" color={C.blue} onOpen={() => router.push("/(tabs)")} openLabel="Today →">
+      <Section C={C} kicker="Performance · Athlete Twin" color={C.blue} onOpen={() => router.push("/performance")} openLabel="Performance →">
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
