@@ -255,6 +255,64 @@ xcrun simctl launch booted app.hybrid.mobile`}</Cmd>
         </Note>
       </Card>
 
+      {/* keeping it current after we ship a change */}
+      <Card style={{ borderLeft: `3px solid ${LIME}` }}>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={LIME}>
+          After we change the app — get the latest &amp; reload
+        </Mono>
+        <p style={para}>
+          When we ship an update, here&rsquo;s how to see it. The good news: you usually <strong>do NOT</strong> have
+          to quit Expo or start over.
+        </p>
+        <Steps>
+          <Step n={1} title="Leave the engine running — open a NEW Terminal tab for git">
+            Keep the &ldquo;engine&rdquo; window (the one running Expo) open. Open a <strong>second</strong> tab with{" "}
+            <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>T</kbd> and do the git steps there.
+          </Step>
+          <Step n={2} title="Get the newest code">
+            In the new tab, paste these <strong>one line at a time</strong>:
+            <Cmd>{`cd hybrid
+git pull`}</Cmd>
+            Only run <code style={code}>pnpm install</code> afterwards if the update <em>added new pieces</em> (we&rsquo;ll
+            say when). <strong>Paste it on its OWN line — no notes after it</strong> (see the warning below).
+          </Step>
+          <Step n={3} title="Reload the pretend phone">
+            Click the <strong>Simulator</strong> window once, then press <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>R</kbd>.
+            (Or press <kbd style={kbd}>r</kbd> in the engine window.) Often you don&rsquo;t even need this — the app
+            refreshes by itself when files change (&ldquo;Fast Refresh&rdquo;).
+          </Step>
+        </Steps>
+        <Note c={AMBER}>
+          <strong>When pasting, don&rsquo;t add a note after a command on the same line.</strong> Your Mac&rsquo;s
+          Terminal (zsh) does <em>not</em> treat <code style={code}>#</code> as a comment — it feeds those words to the
+          command. So <code style={code}>pnpm install&nbsp;&nbsp;# only if deps changed</code> errors with{" "}
+          <code style={code}>ERR_PNPM_ADDING_TO_ROOT</code> (nothing actually broke). Just paste the command by itself:
+          <Cmd>{`pnpm install`}</Cmd>
+        </Note>
+        <Note c={ASH}>
+          <strong>Reload, or fully restart?</strong> A reload (<kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>R</kbd>) is
+          enough for normal code changes. You only need to <em>fully restart</em> — stop with{" "}
+          <kbd style={kbd}>Ctrl</kbd>+<kbd style={kbd}>C</kbd>, then redo step 6 (or, for the full build, step 10) — when
+          (a) <strong>new dependencies</strong> were added (you ran <code style={code}>pnpm install</code> and it
+          installed packages), or (b) <strong>native code</strong> changed (then rebuild with{" "}
+          <code style={code}>npx expo run:ios</code>). If it ever looks stale, restart with a clean cache:{" "}
+          <code style={code}>npx expo start -c</code>.
+        </Note>
+        <Note c={BLUE}>
+          <strong>Not every update touches the phone app.</strong> Changes to the <em>website</em> (like this admin
+          page) don&rsquo;t affect the app in the Simulator at all — there&rsquo;s nothing to pull or reload for those.
+          Only changes under <code style={code}>apps/mobile</code> (or the shared core) need the steps above.
+        </Note>
+        <Note c={VIOLET}>
+          <strong>Check which branch you&rsquo;re on / that you&rsquo;re current.</strong> In the Terminal:
+          <Cmd>{`git branch --show-current
+git status`}</Cmd>
+          The first prints your branch (usually <code style={code}>main</code>); <code style={code}>git status</code>{" "}
+          should say <strong>&ldquo;up to date with &lsquo;origin/main&rsquo;.&rdquo;</strong> On GitHub, the branch
+          dropdown at the top of the file list shows the same thing.
+        </Note>
+      </Card>
+
       {/* which one do I pick */}
       <Card>
         <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
@@ -328,6 +386,21 @@ pnpm start`}</Cmd>
             <code style={code}>npx expo start -c</code>. <strong>Remember:</strong> the Xcode method needs TWO things
             running — Metro <em>and</em> the app. (The easy Expo Go path, press <kbd style={kbd}>i</kbd>, starts Metro
             automatically, so you never see this.)
+          </Li>
+          <Li>
+            <strong>I pressed a key to reload and nothing happened (or a new Terminal tab opened).</strong>{" "}
+            <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>T</kbd> opens a new <em>Terminal</em> tab — it does NOT reload
+            the app. To reload: click the <strong>Simulator</strong> window once so it&rsquo;s in front, then press{" "}
+            <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>R</kbd> — or press <kbd style={kbd}>r</kbd> in the engine
+            (Expo) window. <kbd style={kbd}>⌘ Cmd</kbd>+<kbd style={kbd}>D</kbd> in the Simulator opens a menu with a
+            Reload button too.
+          </Li>
+          <Li>
+            <strong>A command errored with <code style={code}>ERR_PNPM_ADDING_TO_ROOT</code> (or it complained about
+            words from my note).</strong> You pasted a command with a <code style={code}>#</code> note after it on the
+            same line. The Mac Terminal doesn&rsquo;t treat <code style={code}>#</code> as a comment — it ran your note
+            as part of the command. Nothing broke; just paste the command on its own, e.g.{" "}
+            <code style={code}>pnpm install</code> by itself.
           </Li>
           <Li>
             <strong>It says <code style={code}>supabaseKey is required.</code></strong> This was an old bug — the
