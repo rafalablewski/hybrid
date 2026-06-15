@@ -35,9 +35,12 @@ The app now takes a different shape per persona, on both clients.
   welcome → train → finish → share, no onboarding wall; onboarding (persona +
   goal + prefs) appears only AFTER an account is created (pendingOnboarding flag,
   both clients; survives the email-confirm path). Returning sign-ins skip it.
-- ⏳ Make the post-workout **share the reward** (auto-prompt on PR/streak, better
-  templates, a first-workout hero card).
-- ⏳ Stop onboarding over-promising a plan.
+- ✅ Post-workout **share is the climax**: PR/first-workout-aware CTA ("🏆 Share
+  your PR" / "🎉 Share your first workout"), a "post it 👇" nudge + glow on a win,
+  a first-ever milestone header, and celebratory share text. Localized EN/PL/DE.
+  Guest flow structurally unchanged.
+- ✅ Onboarding no longer over-promises a plan (leads with the persona fork; the
+  empty-goal state honestly says "plans coming soon").
 
 ### Phase 2 — The Athlete (depth, organized + fed)
 - An athlete cockpit: sport → goal → season → today → performance → technique.

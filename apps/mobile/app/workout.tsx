@@ -105,6 +105,8 @@ type Summ = {
   minutes: number;
   guest: boolean;
   pending: boolean;
+  /** true when this is the athlete's first-ever logged session — a milestone. */
+  firstEver: boolean;
   bests: ShareBest[];
   prs: PrHit[];
   cardioPrs: CardioPrHit[];
@@ -517,6 +519,7 @@ export default function Workout() {
       minutes: Math.max(1, Math.round((now.getTime() - startedAt.current.getTime()) / 60000)),
       guest,
       pending,
+      firstEver: prior.current.length === 0,
       bests,
       prs,
       cardioPrs,
@@ -899,7 +902,16 @@ function Summary({
 }) {
   const C = useTheme().palette;
   const cardRef = useRef<View>(null);
-  const { title, prs, bests, cardioPrs } = summary;
+  const { title, prs, bests, cardioPrs, firstEver } = summary;
+  // A PR or a first-ever workout is the moment worth posting — the share is the
+  // climax (and our download engine), so the CTA leans into it.
+  const hasWin = prs.length > 0 || cardioPrs.length > 0;
+  const milestone = firstEver || hasWin;
+  const shareLabel = firstEver
+    ? t("summary.shareFirst")
+    : hasWin
+      ? t("summary.sharePr")
+      : t("summary.share");
 
   const prLine = (p: PrHit) =>
     p.previous == null
@@ -907,6 +919,7 @@ function Summary({
       : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
 
   const shareText = [
+    firstEver ? t("share.firstWorkout") : null,
     `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
     `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${summary.volume.toLocaleString()} kg`,
     prs[0]
@@ -926,9 +939,14 @@ function Summary({
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
         <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
           <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 34, color: txt(C, C.lime), fontFamily: F.black }}>✓</Text>
+            <Text style={{ fontSize: 34, color: txt(C, C.lime), fontFamily: F.black }}>{firstEver ? "🎉" : "✓"}</Text>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>{t("summary.complete")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>
+            {firstEver ? t("summary.firstTitle") : t("summary.complete")}
+          </Text>
+          {firstEver && (
+            <Mono color={C.ash} style={{ marginTop: 6, textAlign: "center" }}>{t("summary.firstSub")}</Mono>
+          )}
         </View>
 
         {/* PR celebration — the reason to keep coming back */}
@@ -967,11 +985,24 @@ function Summary({
           />
         </View>
 
+        {milestone && (
+          <Mono color={C.lime} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
+        )}
         <Pressable
           onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
-          style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
+          style={{
+            backgroundColor: C.lime,
+            borderRadius: 14,
+            paddingVertical: 16,
+            alignItems: "center",
+            marginTop: milestone ? 6 : 14,
+            // a stronger, glowing treatment when there's a win worth posting
+            ...(milestone
+              ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
+              : null),
+          }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("summary.share")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{shareLabel}</Text>
         </Pressable>
 
         <View style={{ flex: 1, minHeight: 24 }} />
