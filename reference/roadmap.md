@@ -71,7 +71,10 @@ The app now takes a different shape per persona, on both clients.
 - Per-USER grants: an admin unlocks an individual feature for ONE person (Admin →
   Users → drawer), beyond their persona — `User.featureGrants`, folded into
   /api/flags per request (server-trusted), audited. SQL: sql-user-feature-grants.sql.
-  (Optional next: a user-facing "request access → admin approves" flow.)
+- Request-access loop ✅: a user asks for a hidden feature (web Settings / mobile
+  More → "Request a feature"); the admin sees the queue atop Access control and
+  Approves (→ grant, audited) or Denies. AccessRequest model; SQL:
+  sql-access-requests.sql. The full self-serve-with-admin-approval path, closed.
 
 ### Cross-cutting / blocked (parallel)
 - Seed the **plan library** (content; don't fabricate).

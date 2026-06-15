@@ -200,6 +200,34 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
   }
 }
 
+// A user's own feature-access requests + the ask. Admin approval adds the
+// feature to their grants (which then flows back through the access map).
+export type MyAccessRequest = { id: string; navId: string; status: string };
+
+export async function fetchMyAccessRequests(): Promise<MyAccessRequest[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/access-requests`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { requests?: MyAccessRequest[] };
+    return data.requests ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function requestAccess(navId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/access-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ navId }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // The admin's per-persona nav-access override (which persona sees each feature),
 // read from the feature-flags value. Empty → code defaults.
 export async function fetchPersonaAccess(): Promise<PersonaAccess> {

@@ -5,6 +5,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { LINE, LIME, CHALK, ASH, RED, INK2, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
+import RequestAccess from "./request-access";
 
 export default function AccountSettings() {
   const { logout, session } = useSession();
@@ -70,6 +71,8 @@ export default function AccountSettings() {
           </div>
         </Card>
       )}
+
+      <RequestAccess />
 
       <MfaSettings />
 

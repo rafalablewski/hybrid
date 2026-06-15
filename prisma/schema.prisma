@@ -62,6 +62,21 @@ model User {
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
+// A user's request for access to a feature beyond their persona. Admin approves
+// → the navId is added to the user's featureGrants (see User.featureGrants).
+model AccessRequest {
+  id        String    @id @default(cuid())
+  userId    String
+  userEmail String
+  navId     String
+  status    String    @default("pending") // pending | approved | denied
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+
+  @@unique([userId, navId])
+  @@index([status])
+}
+
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
 // not by role label alone.
 model CoachLink {
