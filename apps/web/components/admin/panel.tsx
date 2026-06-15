@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
@@ -47,9 +47,25 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
 
 export default function AdminPanel() {
   const router = useRouter();
-  const { session, logout } = useSession();
+  const { session, ready, logout } = useSession();
   const [section, setSection] = useState<SectionId>("overview");
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-admin-sidebar");
+
+  // The operator console is admin-only. The `/api/admin/*` routes already
+  // enforce this server-side (requireAdmin), but the UI shell must not render
+  // for a non-admin (or signed-out) visitor — bounce them to login. Hooks above
+  // run unconditionally; this guard is the first early return.
+  const allowed = ready && session?.role === "admin";
+  useEffect(() => {
+    if (ready && session?.role !== "admin") router.replace("/login");
+  }, [ready, session, router]);
+  if (!allowed) {
+    return (
+      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: INK }}>
+        <Mono c={ASH}>{ready ? "Restricted · admin only — redirecting…" : "Checking access…"}</Mono>
+      </main>
+    );
+  }
 
   const active = SECTIONS.find((s) => s.id === section)!;
   const groups = [...new Set(SECTIONS.map((s) => s.group))];

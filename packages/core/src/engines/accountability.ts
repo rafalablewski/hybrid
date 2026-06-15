@@ -17,7 +17,7 @@ import { streak, sessionsInWeek, type StreakInfo } from "./habits";
 const DAY = 86_400_000;
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
-export type EngagementBand = "thriving" | "steady" | "wobbling" | "at-risk" | "dormant";
+export type EngagementBand = "new" | "thriving" | "steady" | "wobbling" | "at-risk" | "dormant";
 
 export type InterventionType = "onboard" | "celebrate" | "nudge" | "ease" | "winback";
 export type Urgency = "none" | "low" | "medium" | "high";
@@ -66,17 +66,19 @@ export function computeAccountability(
   const prev7 = sessionsInWeek(sessions, 1, now);
   const frequencyTrend = prev7 > 0 ? ((last7 - prev7) / prev7) * 100 : last7 > 0 ? 100 : 0;
 
-  // No history yet — a distinct "getting started" state, not a lapse.
+  // No history yet — a distinct "getting started" state, not a lapse. A
+  // brand-new user hasn't disengaged from anything, so risk is 0 and the band
+  // is "new" (NOT "wobbling", which would wrongly imply they're slipping).
   if (sessions.length === 0) {
     return {
-      risk: 50,
-      band: "wobbling",
+      risk: 0,
+      band: "new",
       daysSinceLast: null,
       sessionsLast7: 0,
       sessionsPrev7: 0,
       frequencyTrend: 0,
       streak: str,
-      drivers: [{ label: "No sessions logged yet", weight: 50 }],
+      drivers: [],
       intervention: {
         type: "onboard",
         urgency: "medium",

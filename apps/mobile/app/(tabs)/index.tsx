@@ -35,7 +35,9 @@ const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
 
 const bandColor = (b: string) =>
-  b === "thriving" || b === "steady" ? C.lime : b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
+  b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
+// "new" is the day-one state — show it as "getting started", not the raw key.
+const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 
 export default function Home() {
   const C = useTheme().palette;
@@ -325,7 +327,7 @@ export default function Home() {
       {/* ON TRACK? — accountability engine */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: bandColor(acc.band) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Kicker color={bandColor(acc.band)}>On track? · {acc.band}</Kicker>
+          <Kicker color={bandColor(acc.band)}>On track? · {bandLabel(acc.band)}</Kicker>
           <Chip color={bandColor(acc.band)}>{acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}</Chip>
         </View>
         <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 8 }}>{acc.intervention.headline}</Text>

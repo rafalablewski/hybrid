@@ -60,10 +60,15 @@ describe("habits — streaks", () => {
 });
 
 describe("accountability engine", () => {
-  it("flags a brand-new user as getting started (onboard)", () => {
+  it("flags a brand-new user as getting started (onboard), not a lapse", () => {
     const a = computeAccountability([], { now: NOW });
     expect(a.intervention.type).toBe("onboard");
     expect(a.daysSinceLast).toBeNull();
+    // A new user hasn't disengaged from anything: zero risk, a distinct "new"
+    // band — never "wobbling"/"at-risk", which would wrongly imply slipping.
+    expect(a.band).toBe("new");
+    expect(a.risk).toBe(0);
+    expect(a.drivers).toHaveLength(0);
   });
 
   it("scores a consistent athlete as low risk + celebrates", () => {

@@ -25,7 +25,9 @@ import {
 const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
 const bandColor = (b: string) =>
-  b === "thriving" || b === "steady" ? LIME : b === "wobbling" ? BLUE : b === "at-risk" ? AMBER : RED;
+  b === "thriving" || b === "steady" ? LIME : b === "new" || b === "wobbling" ? BLUE : b === "at-risk" ? AMBER : RED;
+// "new" is the day-one state — show it as "getting started", not the raw key.
+const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
   glutes: "Glutes",
@@ -111,7 +113,7 @@ export default function Today({
       <Card glass style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={bandColor(acc.band)}>
-            On track? · {acc.band}
+            On track? · {bandLabel(acc.band)}
           </Mono>
           <Chip c={bandColor(acc.band)}>{acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}</Chip>
         </div>

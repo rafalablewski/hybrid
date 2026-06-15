@@ -7,8 +7,14 @@ import type { Biometrics, Fatigue, Readiness } from "./types";
  */
 export function biometricAdjustment(bio: Biometrics): number {
   let adj = 0;
-  const dev = (m: { today: number; baseline: number }) =>
-    (m.today - m.baseline) / m.baseline;
+  // Relative deviation from baseline. Guarded against a zero / non-finite
+  // baseline (e.g. a brand-new user whose first reading IS the baseline, or a
+  // stray 0 value) so the adjustment can never become NaN and poison the score.
+  const dev = (m: { today: number; baseline: number }) => {
+    if (!Number.isFinite(m.baseline) || m.baseline === 0) return 0;
+    const d = (m.today - m.baseline) / m.baseline;
+    return Number.isFinite(d) ? d : 0;
+  };
   adj += dev(bio.hrv) * 40 * (bio.hrv.better === "high" ? 1 : -1);
   adj += dev(bio.restingHr) * 40 * (bio.restingHr.better === "high" ? 1 : -1);
   adj += dev(bio.sleep) * 25 * (bio.sleep.better === "high" ? 1 : -1);

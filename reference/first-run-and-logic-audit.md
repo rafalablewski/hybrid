@@ -41,6 +41,37 @@ from ~7/10 to genuinely strong.
 
 ---
 
+## Update (2026-06-15) — fixes applied
+
+A first pass of fixes landed in the same branch as this note:
+
+- **NaN-readiness bug (2.2) — fixed.** `biometricAdjustment` now guards a
+  zero/non-finite baseline so a stray `0` reading can't poison readiness/HPI.
+  Covered by a new test.
+- **Day-one accountability (2.6) — fixed.** A brand-new user is now `risk: 0`,
+  band **"new"** (shown as "getting started"), not `risk: 50` / "wobbling". Both
+  clients colour + label the new band. New test asserts it.
+- **Fabricated prescription defaults (2.4 / 2.5) — labelled.** The engine now
+  flags `loadEstimated` / `RunTarget.estimated` when the working load or run
+  pace is a generic starting default, and the `why` copy says so ("a starting
+  estimate — log this lift and I'll calibrate it"). New tests cover both.
+- **Fabricated social proof (§4) — removed** from the landing page.
+- **Open admin console (§4) — closed.** The public "Open the admin panel" link
+  is gone and the console shell now bounces any non-admin to `/login` (the
+  `/api/admin/*` routes were already `requireAdmin`-gated server-side — verified).
+- **HPI 100 / "peak" (2.1)** turned out to be already gated at the UI: both the
+  home Twin card and the Performance screen hide HPI until ≥1 session, so a
+  zero-session user never sees it. No engine change made.
+
+**Still open (not code-fixable here):** the **empty plan library (§2.8 / §3)** is
+a content gap — real plans must be uploaded per goal; faking plans would be the
+exact mock-data anti-pattern this audit flags, so it was left as the existing
+graceful "plans coming soon" degrade. **Push/reminders** remain blocked on
+credentials (capabilities `push-notifications`). The day-one orientation /
+progressive-disclosure improvements (§1) are UX work not yet done.
+
+---
+
 ## 1. Does a new user know what's going on? (comprehension)
 
 ### What works (keep it)

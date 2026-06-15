@@ -166,6 +166,12 @@ export interface Prescription {
   oneRm: number;
   /** Whether `oneRm` came from the velocity profile (autoregulated) or rep-based e1RM. */
   oneRmSource: "velocity" | "e1rm";
+  /**
+   * True when the working load rests on a generic starting default (no velocity
+   * profile and no logged e1RM for this lift yet) rather than the athlete's own
+   * data — so the UI can flag it as an estimate to calibrate.
+   */
+  loadEstimated: boolean;
   /** When autoregulated off bar speed: the mean concentric velocity to hit on the work sets (m/s). */
   velocityTarget?: number;
 }
