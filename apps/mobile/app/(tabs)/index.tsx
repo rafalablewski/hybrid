@@ -47,7 +47,8 @@ export default function Home() {
   // Shape the home to the persona: a casual user gets the lean logger + share
   // loop; an athlete/coach gets the full cockpit (plan, This week, Future Self,
   // Twin). Switchable from More.
-  const isAthlete = usePersona() !== "casual";
+  const persona = usePersona();
+  const isAthlete = persona !== "casual";
   const { draft } = useDraft();
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -219,6 +220,20 @@ export default function Home() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
             <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
+        </Pressable>
+      )}
+
+      {/* COACH — your athletes, front and centre */}
+      {persona === "coach" && (
+        <Pressable
+          onPress={() => router.push("/(tabs)/coach")}
+          style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✦ Your athletes</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>roster · check-ins · assign workouts</Mono>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
         </Pressable>

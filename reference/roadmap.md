@@ -47,15 +47,17 @@ The app now takes a different shape per persona, on both clients.
   performance (Twin/HPI) → sport → velocity/technique → endurance, each a live
   snapshot off real data linking to the deep screen. Athlete/coach personas only
   (Today entry + featured More card). `app/cockpit.tsx`.
-- ⏳ Web cockpit parity.
+- ✅ Web cockpit parity (a `cockpit` nav item + components/cockpit.tsx, athlete-
+  gated, same six live sections jumping to the deep web screens).
 - ⛔ Unblock one real input stream — Apple HealthKit (recovery) or camera
   pose-capture (technique engine): blocked on an EAS build + native modules /
   credentials (see wearables / vbt-capture / video-intel).
 
 ### Phase 3 — The Coach (revenue)
-- Coach-first landing (squad monitor as home).
-- Self-serve coach onboarding + client invite.
-- Unblock billing (Stripe).
+- ✅ Coach-first landing: web coaches land on the Squad monitor; mobile coaches
+  get a 'Your athletes' entry on Today.
+- ⏳ Self-serve coach onboarding + client invite.
+- ⛔ Unblock billing (Stripe) — needs provider keys.
 
 ### Cross-cutting / blocked (parallel)
 - Seed the **plan library** (content; don't fabricate).

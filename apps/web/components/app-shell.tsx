@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { groupedNav, navForPersona, type Persona } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
@@ -52,6 +52,7 @@ import Running from "./running";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
+import Cockpit from "./cockpit";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
 import Checkins from "./checkins";
@@ -128,18 +129,24 @@ export default function AppShell() {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
 
-  // A brand-new registrant (flag set at signup) lands in onboarding to choose
-  // their persona + goal + preferences. One-time, then cleared.
+  // Pick the LANDING screen once, in priority order: a brand-new registrant
+  // (flag set at signup) → onboarding to set persona/goal/prefs; otherwise a
+  // coach lands on their squad monitor (the screen they open every morning); a
+  // client/admin keeps the default Today.
+  const landed = useRef(false);
   useEffect(() => {
-    if (!ready || !session) return;
+    if (!ready || !session || landed.current) return;
+    landed.current = true;
     try {
       if (localStorage.getItem("hybrid.pendingOnboarding")) {
         localStorage.removeItem("hybrid.pendingOnboarding");
         setScreen("onboarding");
+        return;
       }
     } catch {
       /* ignore */
     }
+    if (session.role === "coach") setScreen("squad");
   }, [ready, session]);
 
   if (!ready || !session) return null;
@@ -478,6 +485,10 @@ export default function AppShell() {
 
         {screen === "today" && (
           <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} onStart={() => setScreen("log")} />
+        )}
+
+        {screen === "cockpit" && (
+          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} />
         )}
 
         {screen === "onboarding" && (

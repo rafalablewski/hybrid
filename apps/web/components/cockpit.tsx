@@ -1,0 +1,165 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  prescribeSession,
+  computePerformanceState,
+  runTotals,
+  toTrainingLog,
+  velocityProfiles,
+  LEVELS,
+  type Biometrics,
+  type LoggedSession,
+  type Macrocycle,
+} from "@hybrid/core";
+import { readSportSelection } from "@/lib/sport-store";
+import {
+  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
+  disp, mono, Mono, Card, txt,
+} from "@/lib/ui";
+
+const hpiColor = (b: string) =>
+  b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
+
+/**
+ * Web parity of the mobile Athlete Cockpit — one screen that sequences the
+ * data-athlete's path (goal/season → today → performance → sport → velocity →
+ * endurance), each a live snapshot off real data that jumps to the deep screen.
+ * Athlete/coach personas only (gated in the nav). (Phase 2.)
+ */
+export default function Cockpit({
+  sessions,
+  bio,
+  macro,
+  currentWeek = 1,
+  setScreen,
+}: {
+  sessions: LoggedSession[];
+  bio?: Biometrics;
+  macro?: Macrocycle | null;
+  currentWeek?: number;
+  setScreen: (id: string) => void;
+}) {
+  const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
+  useEffect(() => {
+    const s = readSportSelection();
+    if (s?.sport) setSport({ sport: s.sport, levelIdx: typeof s.levelIdx === "number" ? s.levelIdx : 0 });
+  }, []);
+
+  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
+  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const totals = useMemo(() => runTotals(sessions), [sessions]);
+  const hasData = sessions.length > 0;
+  const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
+
+  return (
+    <div style={{ maxWidth: 760 }}>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Athlete cockpit</h2>
+      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
+        Goal → season → today → performance → sport → technique → endurance, in one place.
+      </Mono>
+
+      <div style={{ display: "grid", gap: 14 }}>
+        <Section kicker="Goal & season" color={VIOLET} onOpen={() => setScreen(macro ? "periodize" : "onboarding")} openLabel={macro ? "Periodize →" : "Set up a plan →"}>
+          {macro ? (
+            <>
+              <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{macro.goalOrSport}</div>
+              <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={ASH}>
+                {phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}
+                {macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}
+              </Mono>
+            </>
+          ) : (
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>No season yet — enroll a goal and your periodized plan drives the weeks.</Mono>
+          )}
+        </Section>
+
+        <Section kicker={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color={LIME} onOpen={() => setScreen("log")} openLabel="Log session →">
+          <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>
+            {hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}
+          </div>
+          {hasData && <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 4 }} c={ASH}>{rx.why}</Mono>}
+        </Section>
+
+        <Section kicker="Performance · Athlete Twin" color={BLUE} onOpen={() => setScreen("performance")} openLabel="Performance →">
+          {hasData ? (
+            <>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                <span style={{ ...disp, fontWeight: 800, fontSize: 34, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
+                <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
+                <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
+                  <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
+                  <Mono s={{ fontSize: 12 }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
+                  <Mono s={{ fontSize: 12 }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+                </div>
+              </div>
+              {state.drivers[0] && <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>{state.drivers[0].detail}</Mono>}
+            </>
+          ) : (
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>Your HPI, readiness and tissue load build from real training — log a session.</Mono>
+          )}
+        </Section>
+
+        <Section kicker="Sport S&C" color={AMBER} onOpen={() => setScreen("sport")} openLabel="Sport →">
+          {sport ? (
+            <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div>
+          ) : (
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>Pick your sport — the engine ranks the strength &amp; conditioning that transfers.</Mono>
+          )}
+        </Section>
+
+        <Section kicker="Velocity & technique" color={BLUE} onOpen={() => setScreen("velocity")} openLabel="Velocity →">
+          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+            Bar speed → a velocity-estimated 1RM and autoregulated load. Force-plate &amp; video analysis feed the same Twin.
+          </Mono>
+        </Section>
+
+        <Section kicker="Endurance" color={LIME} onOpen={() => setScreen("running")} openLabel="Running →">
+          {totals.efforts > 0 ? (
+            <div style={{ display: "flex", gap: 22 }}>
+              <Stat label="efforts" value={`${totals.efforts}`} />
+              <Stat label="km" value={totals.distanceKm.toLocaleString()} />
+              <Stat label="min" value={totals.minutes.toLocaleString()} />
+            </div>
+          ) : (
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</Mono>
+          )}
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  kicker,
+  color,
+  children,
+  onOpen,
+  openLabel,
+}: {
+  kicker: string;
+  color: string;
+  children: React.ReactNode;
+  onOpen: () => void;
+  openLabel: string;
+}) {
+  return (
+    <Card style={{ borderLeft: `3px solid ${color}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={color}>{kicker}</Mono>
+        <button onClick={onOpen} style={{ ...mono, fontSize: 12, color: txt(color), background: "none", border: "none", cursor: "pointer" }}>{openLabel}</button>
+      </div>
+      {children}
+    </Card>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{value}</div>
+      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
+    </div>
+  );
+}

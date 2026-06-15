@@ -95,6 +95,7 @@ export function GlassTabBarBackground() {
 // icons/labels/grouping can't drift from web. Each id maps to an expo-router href.
 const HREF: Record<string, Href> = {
   today: "/(tabs)",
+  cockpit: "/cockpit",
   log: "/(tabs)/log",
   history: "/(tabs)/history",
   plans: "/(tabs)/plans",

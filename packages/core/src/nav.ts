@@ -47,6 +47,7 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 
 export const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", icon: "➤", group: "home" },
+  { id: "cockpit", label: "Cockpit", icon: "◈", group: "home", minPersona: "athlete" },
   { id: "dashboard", label: "Dashboard", icon: "◆", group: "home" },
   { id: "onboarding", label: "Get started", icon: "✦", group: "home" },
 
