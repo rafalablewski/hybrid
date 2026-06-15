@@ -47,10 +47,20 @@ export interface NavItem {
 /** Render order of the groups. */
 export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recovery", "teams", "account"];
 
+// DEFAULT ACCESS POLICY (the "done deal" — an admin can override any of this in
+// Access control). The guiding rule: don't overload retail.
+//   • CASUAL (Average Joe) — the lean loop only: train, review, share, basic
+//     health (today/log/history/calendar/nutrition/progress/check-in) + setup.
+//   • ATHLETE — adds the depth + analytics (cockpit/dashboard/plans/periodize/
+//     sport/competition/performance/velocity/running/force-plate/video/longevity/
+//     talent/connections/builder).
+//   • COACH — adds the coaching console (coach/squad/team-compare/org/tactical),
+//     on top of all the athlete depth (a coach trains too).
+//   • ADMIN — everything.
 export const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", icon: "➤", group: "home" },
   { id: "cockpit", label: "Cockpit", icon: "◈", group: "home", minPersona: "athlete" },
-  { id: "dashboard", label: "Dashboard", icon: "◆", group: "home" },
+  { id: "dashboard", label: "Dashboard", icon: "◆", group: "home", minPersona: "athlete" },
   { id: "onboarding", label: "Get started", icon: "✦", group: "home" },
 
   { id: "log", label: "Log session", icon: "✎", group: "train" },
@@ -82,7 +92,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "tactical", label: "Tactical", icon: "▰", group: "teams", minPersona: "coach" },
 
   { id: "connections", label: "Connections", icon: "⌁", group: "account", minPersona: "athlete" },
-  { id: "roles", label: "Roles & access", icon: "⚿", group: "account" },
+  { id: "roles", label: "Roles & access", icon: "⚿", group: "account", minPersona: "athlete" },
   { id: "settings", label: "Settings", icon: "⚙", group: "account" },
 ];
 

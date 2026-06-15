@@ -41,6 +41,12 @@ describe("navForPersona", () => {
     expect(ids).not.toContain("squad");
   });
 
+  it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
+    expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
+      ["calendar", "checkin", "history", "log", "nutrition", "onboarding", "progress", "settings", "today"],
+    );
+  });
+
   it("nests: each persona sees everything the lower one does, plus more", () => {
     const casual = new Set(navForPersona("casual").map((i) => i.id));
     const athlete = new Set(navForPersona("athlete").map((i) => i.id));
