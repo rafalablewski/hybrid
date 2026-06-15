@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
+import { usePersona } from "@/lib/persona";
 import {
   INK,
   INK2,
@@ -51,6 +52,7 @@ import Running from "./running";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
+import Cockpit from "./cockpit";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
 import Checkins from "./checkins";
@@ -60,6 +62,7 @@ import ForcePlate from "./forceplate";
 import Progress from "./progress";
 import AccountSettings from "./account-settings";
 import AnnouncementBanner from "./announcement-banner";
+import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
@@ -96,7 +99,12 @@ export default function AppShell() {
   const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
-  const { isEnabled } = useFlags();
+  const { isEnabled, value } = useFlags();
+  // Persona shapes the nav surface (casual ⊂ athlete ⊂ coach ⊂ admin); items are
+  // still additionally gated by their feature flag. The admin can override which
+  // persona sees each item (Access control → the access.personaNav flag value).
+  const persona = usePersona();
+  const navAccess = sanitizePersonaAccess(value("access.personaNav"));
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
@@ -123,6 +131,26 @@ export default function AppShell() {
   useEffect(() => {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
+
+  // Pick the LANDING screen once, in priority order: a brand-new registrant
+  // (flag set at signup) → onboarding to set persona/goal/prefs; otherwise a
+  // coach persona (role OR self-serve opt-in) lands on their Coach screen
+  // (roster + invite); a client/admin keeps the default Today.
+  const landed = useRef(false);
+  useEffect(() => {
+    if (!ready || !session || landed.current) return;
+    landed.current = true;
+    try {
+      if (localStorage.getItem("hybrid.pendingOnboarding")) {
+        localStorage.removeItem("hybrid.pendingOnboarding");
+        setScreen("onboarding");
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    if (persona === "coach") setScreen("coach");
+  }, [ready, session, persona]);
 
   if (!ready || !session) return null;
 
@@ -175,7 +203,7 @@ export default function AppShell() {
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {groupedNav().map(({ group, items }) => {
+          {groupedNav(navForPersona(persona, undefined, navAccess)).map(({ group, items }) => {
             const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
             if (visible.length === 0) return null;
             return (
@@ -340,6 +368,7 @@ export default function AppShell() {
       {/* main */}
       <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
+        <CoachInviteBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
@@ -462,8 +491,12 @@ export default function AppShell() {
           <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} onStart={() => setScreen("log")} />
         )}
 
+        {screen === "cockpit" && (
+          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} />
+        )}
+
         {screen === "onboarding" && (
-          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("periodize"); }} />
+          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
@@ -534,7 +567,7 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} t={t} />
+      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
     </div>
   );
 }
@@ -546,11 +579,15 @@ function CommandMenu({
   screen,
   setScreen,
   isEnabled,
+  persona,
+  access,
   t,
 }: {
   screen: string;
   setScreen: (id: string) => void;
   isEnabled: (flag: string) => boolean;
+  persona: Persona;
+  access: PersonaAccess;
   t: (key: string) => string;
 }) {
   const [open, setOpen] = useState(false);
@@ -568,8 +605,8 @@ function CommandMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Flatten the shared canonical nav into flag-enabled tiles.
-  const tiles = groupedNav().flatMap(({ group, items }) =>
+  // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles.
+  const tiles = groupedNav(navForPersona(persona, undefined, access)).flatMap(({ group, items }) =>
     items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group })),
   );
 

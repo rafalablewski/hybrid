@@ -18,6 +18,12 @@ export interface RunTarget {
   minutes: number;
   /** seconds per km */
   paceSecPerKm: number;
+  /**
+   * True when there's no run history yet, so distance/pace are a generic
+   * starting default rather than read off the athlete's own runs. Lets the UI
+   * label it as an estimate instead of presenting it as personalised.
+   */
+  estimated: boolean;
 }
 
 const median = (xs: number[]): number => {
@@ -46,12 +52,13 @@ export function easyRunTarget(log: TrainingLog, readiness: number): RunTarget {
   const dists = runs.map((r) => r.distance!);
   const medPace = median(paces);
   const medDist = median(dists);
+  const estimated = !runs.length;
   const paceSecPerKm = Number.isFinite(medPace) ? Math.round(medPace) : 390;
   const base = Number.isFinite(medDist) ? medDist : 5;
   const scale = readiness >= 70 ? 1 : readiness >= 50 ? 0.85 : 0.7;
   const distance = Math.max(2, Math.round(base * scale * 2) / 2);
   const minutes = Math.round((distance * paceSecPerKm) / 60);
-  return { distance, minutes, paceSecPerKm };
+  return { distance, minutes, paceSecPerKm, estimated };
 }
 
 export interface PrescribeOptions {
@@ -97,12 +104,15 @@ export function prescribeSession(
   const primary = scored[0]!;
 
   // load prescription from signal
-  const lastE1rm = (() => {
-    const h = log
-      .flatMap((s) => s.items)
-      .filter((i) => i.move === primary.move && i.e1rm !== undefined);
-    return h.length ? h[0]!.e1rm! : (MOVEMENTS[primary.move]!.baseLoad ?? 100) * 1.2;
-  })();
+  const loggedE1rm = log
+    .flatMap((s) => s.items)
+    .filter((i) => i.move === primary.move && i.e1rm !== undefined);
+  // No logged history for this lift → fall back to a generic starting load
+  // (flagged `loadEstimated` so the UI can say "starting estimate — log to
+  // calibrate" rather than presenting a guess as if it were measured).
+  const lastE1rm = loggedE1rm.length
+    ? loggedE1rm[0]!.e1rm!
+    : (MOVEMENTS[primary.move]?.baseLoad ?? 100) * 1.2;
   const pct =
     primary.sig.action === "progress"
       ? 0.8
@@ -116,6 +126,9 @@ export function prescribeSession(
   const profile = opts?.profiles?.[primary.move];
   const useVel = !!profile && profile.estimated1rm > 0;
   const oneRm = useVel ? profile!.estimated1rm : lastE1rm;
+  // The working load rests on a generic default only when we have neither a
+  // velocity profile nor any logged e1RM for this lift.
+  const loadEstimated = !useVel && loggedE1rm.length === 0;
   const workLoad = Math.round((oneRm * pct) / 2.5) * 2.5;
   const velocityTarget = useVel ? velocityAtLoad(profile!, workLoad) : undefined;
   const reps = primary.sig.action === "deload" ? 3 : 5;
@@ -177,7 +190,9 @@ export function prescribeSession(
 
   const loadBasis = useVel
     ? `${Math.round(pct * 100)}% of your velocity-estimated 1RM (${Math.round(oneRm)}kg, autoregulated to today's bar speed) — aim for ~${velocityTarget!.toFixed(2)} m/s on the work sets`
-    : `${Math.round(pct * 100)}% e1RM`;
+    : loadEstimated
+      ? `${Math.round(pct * 100)}% of a starting estimate — log this lift and I'll calibrate it to your real strength`
+      : `${Math.round(pct * 100)}% e1RM`;
 
   const why =
     `Readiness ${readiness}/100. ` +
@@ -185,7 +200,7 @@ export function prescribeSession(
     `so I prescribed ${sets}×${reps} @ ${workLoad}kg (${loadBasis}). ` +
     `Your ${pickSys} system is the freshest, so today's conditioning is ${
       run
-        ? `an easy ${run.distance} km run @ ~${formatPace(run.paceSecPerKm)} (≈${run.minutes} min, RPE 5)`
+        ? `an easy ${run.distance} km run @ ~${formatPace(run.paceSecPerKm)} (≈${run.minutes} min, RPE 5)${run.estimated ? " — a gentle starting pace until you log a run" : ""}`
         : `${condMove.toLowerCase()} (${condFormat.toLowerCase()})`
     } to balance the week.` +
     (bio && bioAdj !== 0
@@ -203,6 +218,7 @@ export function prescribeSession(
     bioAdj: bio ? bioAdj : 0,
     oneRm: Math.round(oneRm),
     oneRmSource: useVel ? "velocity" : "e1rm",
+    loadEstimated,
     velocityTarget,
   };
 }

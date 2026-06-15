@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — web changes preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#14161a; --card:#181b20; --card2:#1f232a;
+    --line:#2a2e34; --chalk:#ededea; --ash:#8b919b;
+    --lime:#c4f035; --blue:#5aa6ff; --violet:#b29bff; --amber:#f5b53d; --red:#ff5f5f;
+    --disp:'Archivo',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#10231022,transparent),var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  .mono{font-family:var(--mono)}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:999px;border:1px solid;}
+  .card{background:linear-gradient(180deg,#ffffff05,transparent),var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+  header.top{position:sticky;top:0;z-index:20;background:#0c0d0ccc;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;gap:18px;height:62px}
+  .logo{font-weight:900;font-size:22px;letter-spacing:-.5px}
+  .logo span{color:var(--lime)}
+  .pswitch{display:flex;gap:6px;margin-left:auto;background:var(--ink2);padding:5px;border-radius:12px;border:1px solid var(--line)}
+  .pswitch button{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ash);background:transparent;border:0;padding:8px 14px;border-radius:8px;cursor:pointer}
+  .pswitch button.on{background:var(--lime);color:var(--ink)}
+  .hero{padding:42px 0 12px}
+  .hero h1{font-size:40px;font-weight:900;letter-spacing:-1px;margin:6px 0 8px}
+  .hero p{color:var(--ash);max-width:720px;line-height:1.6;margin:0}
+  section{padding:26px 0;border-top:1px solid var(--line)}
+  .sechead{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+  .sechead h2{font-size:22px;font-weight:800;margin:0}
+  .note{color:var(--ash);font-size:13px}
+  /* shell mock */
+  .shell{display:grid;grid-template-columns:230px 1fr;gap:16px}
+  .side{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:14px;min-height:520px}
+  .side .brand{font-weight:900;font-size:20px;margin:4px 8px 14px}
+  .navgroup{margin-bottom:12px}
+  .navgroup .gl{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);padding:0 10px;margin-bottom:6px}
+  .nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-weight:600;font-size:13.5px;color:var(--ash);cursor:default}
+  .nav .i{width:18px;text-align:center;color:var(--ash)}
+  .nav.active{background:#c4f0351a;color:var(--lime)}
+  .nav.active .i{color:var(--lime)}
+  .navhide{display:none!important}
+  .badge{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ash)}
+  .side .role{margin-top:10px;border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;gap:10px}
+  .ava{width:30px;height:30px;border-radius:9px;background:#c4f03522;color:var(--lime);display:grid;place-items:center;font-weight:800}
+  .main{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;min-height:520px}
+  .countline{font-family:var(--mono);font-size:11px;color:var(--ash);margin-bottom:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .opt{border:1px solid var(--line);border-radius:12px;padding:13px;cursor:default}
+  .opt.sel{border-color:var(--lime);background:#c4f0350f}
+  .opt b{display:block;font-size:14.5px}
+  .opt small{color:var(--ash);font-size:11.5px;line-height:1.4;display:block;margin-top:3px}
+  .bar{height:8px;border-radius:4px;background:var(--ink2);overflow:hidden;position:relative;margin-top:6px}
+  .bar>i{position:absolute;left:0;top:0;bottom:0;display:block}
+  table{width:100%;border-collapse:collapse}
+  th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ash);text-align:left;padding:8px 8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px}
+  .sel-fake{font-family:var(--mono);font-size:12px;background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--chalk);display:inline-flex;gap:8px;align-items:center}
+  .btn{font-weight:800;font-size:13px;border:0;border-radius:9px;padding:9px 16px;cursor:default}
+  .btn.lime{background:var(--lime);color:var(--ink)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--chalk)}
+  .pill{font-family:var(--mono);font-size:11px;border:1px solid var(--lime);color:var(--lime);background:#c4f0351a;border-radius:9px;padding:6px 12px}
+  .before-after{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .tag{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+  .ann{font-size:12px;color:var(--ash);margin-top:8px;line-height:1.5}
+  .strike{position:relative}
+  footer{padding:40px 0;color:var(--ash);font-family:var(--mono);font-size:12px;text-align:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:8px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo">HYBRID<span>.</span></div>
+  <div class="kick">web changes preview</div>
+  <div class="pswitch" id="psw">
+    <button data-p="casual" class="on">Casual</button>
+    <button data-p="athlete">Athlete</button>
+    <button data-p="coach">Coach</button>
+    <button data-p="admin">Admin</button>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="kick">persona-aware app shape</div>
+    <h1>The app reshapes itself for who you are</h1>
+    <p>Flip the persona switch (top right). The sidebar below filters live — this is the core Phase 0 change, shared by web &amp; mobile. <b>Casual</b> gets a lean 9-item app; <b>Athlete</b> gains the depth; <b>Coach</b> gains the console; <b>Admin</b> sees everything. An admin can override any of this (see “Access control” below).</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--ash)"></i>casual</span>
+      <span><i class="dot" style="background:var(--blue)"></i>athlete</span>
+      <span><i class="dot" style="background:var(--violet)"></i>coach</span>
+      <span><i class="dot" style="background:var(--amber)"></i>admin</span>
+    </div>
+  </div>
+
+  <!-- LIVE SHELL -->
+  <section style="border-top:0">
+    <div class="shell">
+      <aside class="side">
+        <div class="brand">HYBRID<span style="color:var(--lime)">.</span></div>
+        <div id="navroot"></div>
+        <div class="role"><div class="ava">R</div><div><div style="font-size:13px;font-weight:600">Rafal</div><div class="mono" style="font-size:10px;color:var(--ash)" id="roleLabel">client</div></div></div>
+      </aside>
+      <div class="main">
+        <div class="kick" id="mainKick">today · readiness 72/100</div>
+        <h2 style="margin:8px 0 4px;font-size:26px;font-weight:800" id="mainTitle">Back Squat + Easy Run</h2>
+        <div class="countline" id="navCount"></div>
+        <div class="card" style="background:var(--ink2);border-left:3px solid var(--lime)">
+          <div class="kick" style="color:var(--lime)">On track? · <span id="bandLabel">getting started</span></div>
+          <div style="font-weight:700;font-size:17px;margin-top:8px" id="accHead">Start strong</div>
+          <div class="ann" id="accMsg">Log your first session today to start your streak — momentum begins with one.</div>
+          <div style="display:flex;gap:18px;margin-top:10px" class="mono" id="accStats"><span style="color:var(--blue)">risk 0</span><span style="color:var(--ash)">habit 0/100</span><span style="color:var(--ash)">this week 0/3</span></div>
+        </div>
+        <div class="ann" id="mainHint" style="margin-top:14px">▲ The home is shaped too: a casual user gets the lean Start→route→on-track→share home; the athlete/coach also get the cockpit cards (This week, Future Self, Twin).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ONBOARDING FORK -->
+  <section>
+    <div class="sechead"><div class="kick">phase 1</div><h2>Onboarding fork (after registering)</h2><span class="note">guests skip this entirely — it appears only after an account is created</span></div>
+    <div class="card" style="max-width:760px">
+      <div class="kick" style="color:var(--lime)">How do you want to use HYBRID?</div>
+      <div class="grid3" style="grid-template-columns:1fr 1fr 1fr;margin-top:12px">
+        <div class="opt sel"><b>Just track my training</b><small>Log fast, review at home, share your wins. The clean, simple app.</small></div>
+        <div class="opt"><b>Train for a goal — give me the data</b><small>Plans, sport S&amp;C, velocity, performance &amp; technique. The full toolkit.</small></div>
+        <div class="opt"><b>I coach others</b><small>Invite athletes, monitor your squad, assign workouts — plus your own training.</small></div>
+      </div>
+      <div class="ann">Switchable anytime — Settings (web) / More (mobile). Coach mode now persists across reloads (a bug the code review caught + we fixed).</div>
+    </div>
+  </section>
+
+  <!-- ADMIN ACCESS CONTROL -->
+  <section>
+    <div class="sechead"><div class="kick">admin governance</div><h2>Access control — who sees what (per persona)</h2></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="kick" style="color:var(--violet)">Analyze</div>
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><div><b style="font-size:14px">◈ Performance</b> <span class="chip" style="border-color:var(--amber);color:var(--amber);margin-left:6px">overridden</span><div class="mono" style="font-size:10px;color:var(--ash);margin-top:2px">performance · default: Athlete</div></div><div class="sel-fake">Visible from Casual ▾</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><div><b style="font-size:14px">⚡ Velocity (VBT)</b><div class="mono" style="font-size:10px;color:var(--ash);margin-top:2px">velocity · default: Athlete</div></div><div class="sel-fake">Visible from Athlete ▾</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><div><b style="font-size:14px">▷ Video</b><div class="mono" style="font-size:10px;color:var(--ash);margin-top:2px">video · default: Athlete</div></div><div class="sel-fake">Visible from Athlete ▾</div></div>
+        </div>
+        <div class="ann">Lower a feature’s minimum persona to hand it to more users (e.g. give a casual user the stats). Stored as a feature-flag value, every change audited.</div>
+      </div>
+      <div class="card">
+        <div class="kick" style="color:var(--violet)">Pending access requests · 2</div>
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)"><div><b style="font-size:14px">joe@email.com</b><div class="mono" style="font-size:11px;color:var(--ash);margin-top:2px">wants <b style="color:var(--chalk)">Performance</b></div></div><div style="display:flex;gap:8px"><span class="pill">Approve</span><span class="btn ghost" style="font-size:12px;padding:6px 12px">Deny</span></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0"><div><b style="font-size:14px">mia@email.com</b><div class="mono" style="font-size:11px;color:var(--ash);margin-top:2px">wants <b style="color:var(--chalk)">Velocity (VBT)</b></div></div><div style="display:flex;gap:8px"><span class="pill">Approve</span><span class="btn ghost" style="font-size:12px;padding:6px 12px">Deny</span></div></div>
+        </div>
+        <div class="ann">Users request a hidden feature from Settings/More → it lands here → Approve adds it to that user’s grants (one transaction, audited) and it appears for them on next load.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PER USER GRANTS + REQUEST -->
+  <section>
+    <div class="sechead"><div class="kick">admin governance</div><h2>Per-user grants &amp; the user-side request</h2></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="kick">Admin → Users → a user · Feature access</div>
+        <div class="ann" style="margin-bottom:10px">Unlock an individual feature for one person, beyond their persona.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <span class="opt sel" style="padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--lime)">✓ Performance</span>
+          <span class="opt" style="padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--ash)">+ Velocity (VBT)</span>
+          <span class="opt sel" style="padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--lime)">✓ Running</span>
+          <span class="opt" style="padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--ash)">+ Periodize</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="kick" style="color:var(--lime)">User → Settings · Request a feature</div>
+        <div class="ann" style="margin-bottom:10px">“Want a tool you don’t see? Ask an admin to unlock it for your account.”</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)"><span class="mono" style="font-size:13px">◈ Performance</span><span class="mono" style="font-size:12px;color:var(--ash)">Requested · pending</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)"><span class="mono" style="font-size:13px">⚡ Velocity (VBT)</span><span class="pill">Request</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span class="mono" style="font-size:13px">▲ Competition</span><span class="pill">Request</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COACH INVITE + MODE TOGGLE -->
+  <section>
+    <div class="sechead"><div class="kick">phase 3 · settings</div><h2>Coach invite loop &amp; the mode toggle</h2></div>
+    <div class="grid2">
+      <div class="card" style="border-left:3px solid var(--violet)">
+        <div class="kick" style="color:var(--violet)">Coach invite</div>
+        <div style="font-weight:700;font-size:16px;margin-top:6px">Coach Dawid wants to coach you</div>
+        <div class="ann">Accepting shares your training with them — you can end it anytime.</div>
+        <div style="display:flex;gap:8px;margin-top:12px"><span class="pill">Accept</span><span class="btn ghost" style="font-size:12px;padding:8px 16px">Decline</span></div>
+        <div class="ann">Surfaces to <b>any</b> persona (web app-shell banner / mobile Today) — fixed the loop so an invited client can always accept.</div>
+      </div>
+      <div class="card">
+        <div class="kick" style="color:var(--lime)">Mode</div>
+        <div class="ann" style="margin-bottom:10px">A client flips between the lean tracker and the full toolkit (or coach).</div>
+        <div class="grid3">
+          <div class="opt sel"><b style="color:var(--lime)">Simple</b><small>track · review · share</small></div>
+          <div class="opt"><b>Full</b><small>plans · sport · deep stats</small></div>
+          <div class="opt"><b>Coach</b><small>athletes · squad · assign</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST FIXES -->
+  <section>
+    <div class="sechead"><div class="kick">correctness &amp; trust fixes</div><h2>Before / after</h2></div>
+    <div class="before-after">
+      <div class="card" style="border-color:#ff5f5f44">
+        <span class="tag" style="color:var(--red)">before</span>
+        <div style="display:flex;gap:34px;margin:12px 0">
+          <div><div style="font-weight:800;font-size:22px">50K+</div><div class="mono" style="font-size:10px;color:var(--ash)">athletes</div></div>
+          <div><div style="font-weight:800;font-size:22px">1.2M</div><div class="mono" style="font-size:10px;color:var(--ash)">sessions</div></div>
+          <div><div style="font-weight:800;font-size:22px">4.9★</div><div class="mono" style="font-size:10px;color:var(--ash)">App Store</div></div>
+        </div>
+        <div style="display:flex;gap:10px"><span class="btn lime">Start training →</span><span class="btn ghost">Open the admin panel</span></div>
+        <div class="ann">Fabricated stats on a pre-launch app + a public admin link, and the day-one card read <b style="color:var(--amber)">“wobbling”</b> with risk 50.</div>
+      </div>
+      <div class="card" style="border-color:#c4f03544">
+        <span class="tag" style="color:var(--lime)">after</span>
+        <div class="ann" style="margin:12px 0">No fabricated numbers, no public admin link.</div>
+        <div style="display:flex;gap:10px"><span class="btn lime">Start training →</span></div>
+        <div class="card" style="background:var(--ink2);border-left:3px solid var(--blue);margin-top:14px;padding:12px">
+          <div class="kick" style="color:var(--blue)">On track? · getting started</div>
+          <div style="font-weight:700;margin-top:6px">Start strong</div>
+          <div class="mono" style="font-size:12px;color:var(--ash);margin-top:6px">risk 0 · honest day-one state</div>
+        </div>
+        <div class="ann">Plus: readiness NaN guard, and the AI route now labels guessed loads as “a starting estimate — log to calibrate”.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Standalone mockup · brand-faithful, illustrative. Real UI is React (Next.js) — open this file in any browser. · See <b>mobile.html</b> for the phone screens.</footer>
+</div>
+
+<script>
+  // Persona model — mirrors packages/core/src/nav.ts (curated defaults).
+  const RANK={casual:0,athlete:1,coach:2,admin:3};
+  const ROLE={casual:'client',athlete:'client',coach:'coach',admin:'admin'};
+  const NAV=[
+    ['home','Home',[['today','Today','➤','casual'],['cockpit','Cockpit','◈','athlete'],['dashboard','Dashboard','◆','athlete'],['onboarding','Get started','✦','casual']]],
+    ['train','Train',[['log','Log session','✎','casual'],['calendar','Calendar','▦','casual'],['builder','Builder','⊕','athlete'],['plans','Plans','▤','athlete'],['periodize','Periodize','◰','athlete'],['sport','Sport','◎','athlete'],['competition','Competition','▲','athlete']]],
+    ['analyze','Analyze',[['performance','Performance','◈','athlete'],['analytics','Analytics','◷','athlete'],['velocity','Velocity (VBT)','⚡','athlete'],['running','Running','🏃','athlete'],['forceplate','Force plate','◇','athlete'],['video','Video','▷','athlete'],['history','History','≣','casual']]],
+    ['recovery','Recovery',[['checkin','Check-in','✓','casual'],['nutrition','Nutrition','🍎','casual'],['progress','Progress','📸','casual'],['longevity','Longevity','❤','athlete']]],
+    ['teams','Teams',[['coach','Coach','✦','coach'],['squad','Squad monitor','◫','coach'],['teamcompare','Team compare','⚖','coach'],['org','Organization','⬡','coach'],['talent','Talent','✸','athlete'],['tactical','Tactical','▰','coach']]],
+    ['account','Account',[['connections','Connections','⌁','athlete'],['roles','Roles & access','⚿','athlete'],['settings','Settings','⚙','casual']]],
+  ];
+  const TIER={casual:'var(--ash)',athlete:'var(--blue)',coach:'var(--violet)',admin:'var(--amber)'};
+  function render(p){
+    const rank=RANK[p];let html='',count=0,total=0;
+    for(const [gid,gl,items] of NAV){
+      const vis=items.filter(it=>RANK[it[3]]<=rank);total+=items.length;
+      if(!vis.length)continue;
+      html+=`<div class="navgroup"><div class="gl">${gl}</div>`;
+      for(const [id,label,icon,min] of vis){count++;
+        const active=id==='today'?' active':'';
+        const badge=min==='casual'?'':`<span class="badge" style="color:${TIER[min]}">${min}</span>`;
+        html+=`<div class="nav${active}"><span class="i">${icon}</span>${label}${badge}</div>`;
+      }
+      html+='</div>';
+    }
+    document.getElementById('navroot').innerHTML=html;
+    document.getElementById('roleLabel').textContent=ROLE[p];
+    document.getElementById('navCount').textContent=`${count} of ${total} nav items visible · persona: ${p}`;
+    // home flavor
+    const k=document.getElementById('mainKick'),t=document.getElementById('mainTitle'),hint=document.getElementById('mainHint');
+    if(p==='coach'){k.textContent='coach · squad monitor';t.textContent='Your athletes';hint.textContent='▲ Coaches land on their roster/squad screen, not the athlete Today.';}
+    else{k.textContent='today · readiness 72/100';t.textContent='Back Squat + Easy Run';
+      hint.textContent = p==='casual' ? '▲ Lean home: Start → route → on-track → share. No This week / Future Self / Twin clutter.' : '▲ Athlete/coach also get the cockpit cards: This week (reconciled plan), Future Self projection, Athlete Twin (HPI).';}
+  }
+  document.getElementById('psw').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    document.querySelectorAll('#psw button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    render(b.dataset.p);
+  });
+  render('casual');
+</script>
+</body>
+</html>

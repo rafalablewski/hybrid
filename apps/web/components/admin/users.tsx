@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { NAV_ITEMS } from "@hybrid/core";
+import { INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+
+// Features worth granting a single user beyond their persona (everything that
+// isn't visible to a casual user by default).
+const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
 
 type Row = {
   id: string;
@@ -25,6 +30,7 @@ type Detail = {
   name: string | null;
   role: string;
   language: string;
+  featureGrants: string[];
   createdAt: string;
   linkedAuth: boolean;
   orgs: { id: string; name: string; role: string }[];
@@ -216,6 +222,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const [d, setD] = useState<Detail | null>(null);
   const [role, setRole] = useState("");
   const [language, setLanguage] = useState("");
+  const [grants, setGrants] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -226,11 +233,15 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
         setD(det);
         setRole(det.role);
         setLanguage(det.language);
+        setGrants(det.featureGrants ?? []);
       })
       .catch(() => setD(null));
   }, [id]);
 
-  const dirty = d && (role !== d.role || language !== d.language);
+  const grantsKey = (g: string[]) => [...g].sort().join(",");
+  const dirty = d && (role !== d.role || language !== d.language || grantsKey(grants) !== grantsKey(d.featureGrants ?? []));
+  const toggleGrant = (navId: string) =>
+    setGrants((g) => (g.includes(navId) ? g.filter((x) => x !== navId) : [...g, navId]));
 
   const save = async () => {
     setSaving(true);
@@ -238,12 +249,12 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
     const res = await fetch(`/api/admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, language }),
+      body: JSON.stringify({ role, language, featureGrants: grants }),
     });
     const body = await res.json().catch(() => ({}));
     setSaving(false);
     if (res.ok) {
-      setD((prev) => (prev ? { ...prev, role, language } : prev));
+      setD((prev) => (prev ? { ...prev, role, language, featureGrants: grants } : prev));
       setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
       onSaved();
     } else {
@@ -333,6 +344,36 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                     <option value="de">DE</option>
                   </Select>
                 </label>
+              </div>
+
+              {/* per-user feature grants — unlock a feature for THIS person on
+                  top of their persona (e.g. give a casual user the analytics). */}
+              <Mono s={{ fontSize: 11, display: "block", marginTop: 6, marginBottom: 8 }} c={ASH}>
+                Feature access — unlock individual features beyond this user&apos;s persona.
+              </Mono>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
+                {GRANTABLE.map((item) => {
+                  const on = grants.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => toggleGrant(item.id)}
+                      style={{
+                        ...mono,
+                        fontSize: 12,
+                        textAlign: "left",
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        border: `1px solid ${on ? LIME : LINE}`,
+                        background: on ? `${LIME}1a` : "transparent",
+                        color: txt(on ? LIME : ASH),
+                      }}
+                    >
+                      {on ? "✓ " : "+ "}{item.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {msg && (

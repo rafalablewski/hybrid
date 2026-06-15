@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useSession } from "@/lib/session";
+import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { LINE, LIME, CHALK, ASH, RED, INK2, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
+import RequestAccess from "./request-access";
 
 export default function AccountSettings() {
-  const { logout } = useSession();
+  const { logout, session } = useSession();
+  const personaChoice = useClientPersonaChoice() ?? "casual";
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -41,6 +44,35 @@ export default function AccountSettings() {
     <div style={{ maxWidth: 640 }}>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Settings</h2>
       <Mono s={{ fontSize: 13, display: "block", marginBottom: 20 }}>Account, security &amp; data.</Mono>
+
+      {/* Mode — a client flips between the lean tracker and the full athlete
+          toolkit. Coaches/admins get their surface from their role. */}
+      {session?.role === "client" && (
+        <Card style={{ marginBottom: 16 }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Mode</Mono>
+          <Mono s={{ fontSize: 13, display: "block", marginTop: 6 }} c={CHALK}>
+            How much of the app you see. Switch anytime.
+          </Mono>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
+            {([
+              { id: "casual" as const, title: "Simple", sub: "track · review · share" },
+              { id: "athlete" as const, title: "Full", sub: "plans · sport · deep stats" },
+              { id: "coach" as const, title: "Coach", sub: "athletes · squad · assign" },
+            ]).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setClientPersona(m.id)}
+                style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12, border: `1px solid ${personaChoice === m.id ? LIME : LINE}`, background: personaChoice === m.id ? `${LIME}14` : "transparent" }}
+              >
+                <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: txt(personaChoice === m.id ? LIME : CHALK) }}>{m.title}</div>
+                <Mono s={{ fontSize: 11 }}>{m.sub}</Mono>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <RequestAccess />
 
       <MfaSettings />
 

@@ -59,6 +59,31 @@ model User {
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
+// Admin-granted per-user feature access (nav ids) beyond the user's persona.
+// Deliberately its OWN table (not a column on User) so the hot-path user lookup
+// never depends on it — every read is soft-guarded, so the app runs fine before
+// this migration is applied (the feature just no-ops). Layered into /api/flags.
+model FeatureGrant {
+  userId    String   @id
+  navIds    String[] @default([])
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+// A user's request for access to a feature beyond their persona. Admin approves
+// → the navId is added to the user's FeatureGrant.navIds.
+model AccessRequest {
+  id        String    @id @default(cuid())
+  userId    String
+  userEmail String
+  navId     String
+  status    String    @default("pending") // pending | approved | denied
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+
+  @@unique([userId, navId])
+  @@index([status])
+}
+
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
 // not by role label alone.
 model CoachLink {

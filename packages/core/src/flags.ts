@@ -30,6 +30,7 @@ export interface FlagOverride {
  *  code on it with useFlags()/the /api/flags read. Keep keys dotted + stable. */
 export const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: "app.announcements", label: "In-app announcements", description: "Show the admin-authored announcement banner at the top of the app.", defaultEnabled: true },
+  { key: "access.personaNav", label: "Persona nav access", description: "Admin override of which persona can see each nav item. Its value is a { navId: minPersona } map layered over the code defaults — lower a feature's minimum persona to expose it to more users (e.g. give Velocity/Analytics to a casual user).", defaultEnabled: true },
   { key: "nav.nutrition", label: "Nutrition screen", description: "Expose the Nutrition feature in the app navigation.", defaultEnabled: true },
   { key: "nav.talent", label: "Talent graph", description: "Expose the Talent (benchmarks/discovery) screen.", defaultEnabled: true },
   { key: "nav.longevity", label: "Longevity screen", description: "Expose the performance-medicine / longevity screen.", defaultEnabled: true },

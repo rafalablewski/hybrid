@@ -12,6 +12,7 @@ import {
   INK2, LINE, LIME, CHALK, ASH, VIOLET, RED, ON_ACCENT,
   disp, cond, mono, Mono, Card, txt,
 } from "@/lib/ui";
+import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 
 const EXP: Experience[] = ["beginner", "intermediate", "advanced"];
 const EQUIP: Equipment[] = ["full", "home", "minimal"];
@@ -23,6 +24,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
   const [equipment, setEquipment] = useState<Equipment>("full");
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
+  const persona = useClientPersonaChoice();
 
   const plan = useMemo(
     () => (goal ? recommendPlan({ goal, experience, daysPerWeek: days, equipment }) : null),
@@ -51,10 +53,33 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginBottom: 4 }}>Let&apos;s build your first plan</div>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginBottom: 4 }}>Let&apos;s set you up</div>
       <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
-        Four quick questions — we&apos;ll match you to a plan you&apos;ll actually finish.
+        Tell us how you train — we&apos;ll shape the app around you.
       </Mono>
+
+      <Card style={{ marginBottom: 14, borderLeft: `3px solid ${LIME}` }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>How do you want to use HYBRID?</Mono>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 10 }}>
+          {([
+            { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app." },
+            { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit." },
+            { id: "coach" as const, title: "I coach others", sub: "Invite athletes, monitor your squad, assign workouts — plus your own training." },
+          ]).map((o) => (
+            <button
+              key={o.id}
+              onClick={() => setClientPersona(o.id)}
+              style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12, border: `1px solid ${persona === o.id ? LIME : LINE}`, background: persona === o.id ? `${LIME}14` : "transparent" }}
+            >
+              <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: txt(persona === o.id ? LIME : CHALK) }}>{o.title}</div>
+              <Mono s={{ fontSize: 11, lineHeight: 1.5 }}>{o.sub}</Mono>
+            </button>
+          ))}
+        </div>
+        <Mono s={{ fontSize: 10, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+          You can switch anytime in Settings.
+        </Mono>
+      </Card>
 
       <Card style={{ marginBottom: 14 }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>1 · Your main goal</Mono>

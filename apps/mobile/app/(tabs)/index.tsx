@@ -23,9 +23,10 @@ import {
   type LoggedSession,
   type Macrocycle,
 } from "@hybrid/core";
-import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
+import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
+import { usePersona } from "../../lib/persona";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
@@ -35,12 +36,19 @@ const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
 
 const bandColor = (b: string) =>
-  b === "thriving" || b === "steady" ? C.lime : b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
+  b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
+// "new" is the day-one state — show it as "getting started", not the raw key.
+const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 
 export default function Home() {
   const C = useTheme().palette;
   const router = useRouter();
   const { name, signOut } = useSession();
+  // Shape the home to the persona: a casual user gets the lean logger + share
+  // loop; an athlete/coach gets the full cockpit (plan, This week, Future Self,
+  // Twin). Switchable from More.
+  const persona = usePersona();
+  const isAthlete = persona !== "casual";
   const { draft } = useDraft();
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -50,16 +58,24 @@ export default function Home() {
   const [currentWeek, setCurrentWeek] = useState(1);
   const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
+  const [invites, setInvites] = useState<CoachInvite[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle()])
-      .then(([s, a, sig, m]) => {
+    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle(), fetchCoachInvites()])
+      .then(([s, a, sig, m, inv]) => {
         setSessions(s); setAssignments(a); setSignals(sig);
         setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1);
+        setInvites(inv);
       })
       .finally(() => setRefreshing(false));
+  };
+  const respondInvite = async (id: string, action: "accept" | "end") => {
+    const prev = invites;
+    setInvites((v) => v.filter((i) => i.id !== id)); // optimistic
+    const ok = await actCoachInvite(id, action);
+    if (!ok) setInvites(prev); // restore on failure
   };
   // Reload whenever the Today tab gains focus — so returning here after logging
   // a workout refreshes sessions/assignments and the auto re-sync can fire.
@@ -203,17 +219,66 @@ export default function Home() {
         </Text>
       </Pressable>
 
-      {/* personalize */}
-      <Pressable
-        onPress={() => router.push("/onboarding")}
-        style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
-        </View>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
-      </Pressable>
+      {/* personalize — athletes program toward a plan; casual users skip it */}
+      {isAthlete && (
+        <Pressable
+          onPress={() => router.push("/onboarding")}
+          style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
+        </Pressable>
+      )}
+
+      {/* COACH INVITES — incoming mutual-consent links, any persona can accept */}
+      {invites.map((inv) => (
+        <Card key={inv.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
+          <Kicker color={C.violet}>Coach invite</Kicker>
+          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 6 }}>
+            {(inv.coach?.name || inv.coach?.email?.split("@")[0] || "A coach")} wants to coach you
+          </Text>
+          <Mono style={{ marginTop: 2, fontSize: 11, lineHeight: 16 }}>Accepting shares your training with them — end it anytime.</Mono>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+            <Pressable onPress={() => respondInvite(inv.id, "accept")} style={{ flex: 1, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime, borderRadius: 10, paddingVertical: 10, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>Accept</Text>
+            </Pressable>
+            <Pressable onPress={() => respondInvite(inv.id, "end")} style={{ paddingHorizontal: 16, paddingVertical: 10, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Decline</Text>
+            </Pressable>
+          </View>
+        </Card>
+      ))}
+
+      {/* COACH — your athletes, front and centre */}
+      {persona === "coach" && (
+        <Pressable
+          onPress={() => router.push("/(tabs)/coach")}
+          style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✦ Your athletes</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>roster · check-ins · assign workouts</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
+        </Pressable>
+      )}
+
+      {/* COCKPIT — the athlete's organized depth hub */}
+      {isAthlete && (
+        <Pressable
+          onPress={() => router.push("/cockpit")}
+          style={{ marginTop: 16, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.blue) }}>◈ Athlete cockpit</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>goal · season · performance · sport · velocity · endurance</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.blue) }}>→</Text>
+        </Pressable>
+      )}
 
       {/* ASSIGNED — workouts the coach scheduled */}
       {upcoming.length > 0 && (
@@ -254,7 +319,7 @@ export default function Home() {
       </Card>
 
       {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {reconciled && (
+      {isAthlete && reconciled && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Kicker color={C.violet}>This week · {reconciled.phase.label} · wk {reconciled.phase.week}</Kicker>
@@ -325,7 +390,7 @@ export default function Home() {
       {/* ON TRACK? — accountability engine */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: bandColor(acc.band) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Kicker color={bandColor(acc.band)}>On track? · {acc.band}</Kicker>
+          <Kicker color={bandColor(acc.band)}>On track? · {bandLabel(acc.band)}</Kicker>
           <Chip color={bandColor(acc.band)}>{acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}</Chip>
         </View>
         <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 8 }}>{acc.intervention.headline}</Text>
@@ -353,8 +418,8 @@ export default function Home() {
         </View>
       )}
 
-      {/* FUTURE SELF */}
-      {primaryLift && projection && !projection.insufficient && projGoal ? (
+      {/* FUTURE SELF — athlete depth */}
+      {isAthlete && (primaryLift && projection && !projection.insufficient && projGoal ? (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
           <Kicker color={C.violet}>Future self · {primaryLift}</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 8 }}>
@@ -382,10 +447,10 @@ export default function Home() {
             strength, your goal ETA, and how likely you are to hit it.
           </Mono>
         </Card>
-      )}
+      ))}
 
-      {/* TWIN — only once there's real training to compute it from */}
-      {sessions.length > 0 && (
+      {/* TWIN — athlete depth, once there's real training to compute it from */}
+      {isAthlete && sessions.length > 0 && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
           <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>

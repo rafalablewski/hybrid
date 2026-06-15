@@ -1,10 +1,16 @@
-import type { LoggedSession, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment } from "@hybrid/core";
+import type { LoggedSession, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
+import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
 // The mobile client calls the SAME backend the web app uses (Vercel), with the
 // Supabase access token as a Bearer header. So a session logged on the phone
 // shows up on the web dashboard, and vice-versa.
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://hybrid-web-rosy.vercel.app";
+
+/** The HYBRID web app (same host) — for features that live on web only. */
+export const WEB_APP_URL = `${API_URL}/app`;
+/** The backend base (for browser-redirect flows like provider OAuth). */
+export const API_BASE = API_URL;
 
 async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -196,6 +202,218 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
     };
   } catch {
     return null;
+  }
+}
+
+// A user's own feature-access requests + the ask. Admin approval adds the
+// feature to their grants (which then flows back through the access map).
+export type MyAccessRequest = { id: string; navId: string; status: string };
+
+export async function fetchMyAccessRequests(): Promise<MyAccessRequest[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/access-requests`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { requests?: MyAccessRequest[] };
+    return data.requests ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function requestAccess(navId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/access-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ navId }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// The admin's per-persona nav-access override (which persona sees each feature),
+// read from the feature-flags value. Empty → code defaults.
+export async function fetchPersonaAccess(): Promise<PersonaAccess> {
+  try {
+    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { values?: Record<string, unknown> };
+    return sanitizePersonaAccess(data.values?.["access.personaNav"]);
+  } catch {
+    return {};
+  }
+}
+
+// Incoming coach invites (mutual consent) — so a client can accept/decline a
+// coach's link from anywhere, without the coach console.
+export type CoachInvite = { id: string; status: string; coach?: { name: string | null; email: string } };
+
+export async function fetchCoachInvites(): Promise<CoachInvite[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { asClient?: CoachInvite[] };
+    return (data.asClient ?? []).filter((l) => l.status === "PENDING");
+  } catch {
+    return [];
+  }
+}
+
+export async function actCoachInvite(id: string, action: "accept" | "end"): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ action }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// --- Ported screens: state / connections / events / video ---
+
+export type StateSnapshot = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
+export async function fetchState(): Promise<StateSnapshot | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/state`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    return (await res.json()) as StateSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+export type Conn = { id: string; provider: string; status: string; lastSyncAt?: string };
+export type Provider = { id: string; label: string; auth: "native" | "team" | "oauth"; provides: string[]; configured: boolean };
+export async function fetchConnections(): Promise<{ connections: Conn[]; providers: Provider[] }> {
+  try {
+    const res = await fetch(`${API_URL}/api/connections`, { headers: await authHeaders() });
+    if (!res.ok) return { connections: [], providers: [] };
+    const d = (await res.json()) as { connections?: Conn[]; providers?: Provider[] };
+    return { connections: d.connections ?? [], providers: d.providers ?? [] };
+  } catch {
+    return { connections: [], providers: [] };
+  }
+}
+export async function syncConnection(providerId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/connect/${providerId}/sync`, { method: "POST", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export type EventRow = { id: string; name: string; sport: string; date: string };
+export async function fetchEvents(): Promise<EventRow[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/events`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return (((await res.json()) as { events?: EventRow[] }).events) ?? [];
+  } catch {
+    return [];
+  }
+}
+export async function createEvent(name: string, sport: string, date: string): Promise<EventRow | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ name, sport, date }),
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as { event?: EventRow }).event ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type VideoAnalysis = {
+  id: string;
+  movement: string;
+  metrics: { movement: string; reps: number; minKneeAngle?: number; kneeAsymmetryPct?: number; techniqueScore: number; flags: string[] };
+  createdAt: string;
+};
+export async function fetchVideoAnalyses(): Promise<VideoAnalysis[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/video`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return (((await res.json()) as { analyses?: VideoAnalysis[] }).analyses) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// --- Talent graph + force-plate signal import ---
+
+export type TalentProfile = { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number>; moderationStatus?: string };
+export type TalentBench = { metric: string; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
+export type TalentReport = { cohort: { sport: string; sex: string; age: number }; benchmarks: TalentBench[]; overall: number; potential: number; modelVersion: string };
+export type TalentResult = { id: string; name: string; sport: string; age: number; sex: string; percentile: number; potential: number };
+
+export async function fetchTalent(): Promise<{ profile: TalentProfile | null; report: TalentReport | null; computedHpi: number }> {
+  try {
+    const res = await fetch(`${API_URL}/api/talent`, { headers: await authHeaders() });
+    if (!res.ok) return { profile: null, report: null, computedHpi: 0 };
+    return (await res.json()) as { profile: TalentProfile | null; report: TalentReport | null; computedHpi: number };
+  } catch {
+    return { profile: null, report: null, computedHpi: 0 };
+  }
+}
+
+export async function saveTalentProfile(body: { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number | undefined> }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/talent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function searchTalent(metric: string, minPct: string, sport?: string, byPotential?: boolean): Promise<TalentResult[]> {
+  try {
+    const p = new URLSearchParams({ metric, minPct, ...(sport ? { sport } : {}), ...(byPotential ? { byPotential: "1" } : {}) });
+    const res = await fetch(`${API_URL}/api/talent/search?${p.toString()}`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return (((await res.json()) as { results?: TalentResult[] }).results) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function reportProfile(targetId: string, reason: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/reports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ targetType: "talentProfile", targetId, reason }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Import one signal with an explicit ts/source (for CSV/force-plate import,
+ *  where historical timestamps must be preserved). */
+export async function importSignal(s: { kind: string; value: number; unit?: string; source?: string; ts?: string }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/signals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: s.source ?? "forceplate", ts: s.ts }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 

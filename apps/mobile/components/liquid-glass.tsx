@@ -11,8 +11,10 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRouter, type Href } from "expo-router";
-import { NAV_ITEMS } from "@hybrid/core";
+import { NAV_ITEMS, navVisibleTo } from "@hybrid/core";
 import { useLang } from "../lib/i18n";
+import { usePersona } from "../lib/persona";
+import { useNavAccess } from "../lib/access";
 import { useTheme } from "../lib/theme";
 import { F } from "../lib/ui";
 
@@ -94,11 +96,22 @@ export function GlassTabBarBackground() {
 // icons/labels/grouping can't drift from web. Each id maps to an expo-router href.
 const HREF: Record<string, Href> = {
   today: "/(tabs)",
+  cockpit: "/cockpit",
   log: "/(tabs)/log",
   history: "/(tabs)/history",
   plans: "/(tabs)/plans",
   sport: "/(tabs)/sport",
   calendar: "/calendar",
+  periodize: "/periodize",
+  performance: "/performance",
+  competition: "/competition",
+  longevity: "/longevity",
+  tactical: "/tactical",
+  video: "/video",
+  connections: "/connections",
+  talent: "/talent",
+  forceplate: "/forceplate",
+  roles: "/roles",
   velocity: "/(tabs)/velocity",
   running: "/(tabs)/running",
   progress: "/progress",
@@ -123,7 +136,12 @@ export function CommandMenu() {
   const a = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   const { t } = useLang();
+  const persona = usePersona();
+  const access = useNavAccess();
   const { scheme, palette } = useTheme();
+  // Shape the hub to the persona (honouring the admin's access override) — a
+  // casual user never sees the athlete/coach tiles unless an admin grants them.
+  const tiles = TILES.filter((tile) => navVisibleTo(persona, tile.id, access));
   const label = (k: string, fb: string) => (t(k) === k ? fb : t(k));
   // neutral chip/border tint that reads on either glass theme
   const neutral = (o: number) => (scheme === "light" ? `rgba(20,30,15,${o})` : `rgba(255,255,255,${o})`);
@@ -214,7 +232,7 @@ export function CommandMenu() {
                     </Pressable>
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                    {TILES.map((tile) => (
+                    {tiles.map((tile) => (
                       <Pressable
                         key={tile.id}
                         onPress={() => go(HREF[tile.id]!)}

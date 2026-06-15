@@ -82,6 +82,23 @@ describe("biometricAdjustment", () => {
     expect(extreme).toBeLessThanOrEqual(15);
     expect(extreme).toBeGreaterThanOrEqual(-15);
   });
+
+  it("never returns NaN when a baseline is zero (no divide-by-zero)", () => {
+    const adj = biometricAdjustment({
+      hrv: { today: 0, baseline: 0, unit: "ms", better: "high" },
+      restingHr: { today: 0, baseline: 0, unit: "bpm", better: "low" },
+      sleep: { today: 0, baseline: 0, unit: "h", better: "high" },
+    });
+    expect(Number.isNaN(adj)).toBe(false);
+    expect(adj).toBe(0);
+    // and the readiness score it feeds must stay a real number
+    const r = computeReadiness(computeFatigue([]), {
+      hrv: { today: 0, baseline: 0, unit: "ms", better: "high" },
+      restingHr: { today: 0, baseline: 0, unit: "bpm", better: "low" },
+      sleep: { today: 0, baseline: 0, unit: "h", better: "high" },
+    });
+    expect(Number.isNaN(r.score)).toBe(false);
+  });
 });
 
 describe("progressionSignal", () => {
@@ -126,6 +143,28 @@ describe("prescribeSession", () => {
     expect(deep.confidence).toBeGreaterThan(shallow.confidence);
   });
 
+  it("flags the working load as an estimate for a brand-new user and labels it honestly", () => {
+    const rx = prescribeSession([]);
+    expect(rx.loadEstimated).toBe(true);
+    expect(rx.why).toMatch(/starting estimate/);
+  });
+
+  it("does not flag the load estimated once every candidate lift has logged e1RM", () => {
+    const full: TrainingLog = [
+      {
+        daysAgo: 3,
+        items: [
+          { move: "Back Squat", e1rm: 150, topRpe: 8, hardSets: 3 },
+          { move: "Deadlift", e1rm: 180, topRpe: 8, hardSets: 3 },
+          { move: "Bench Press", e1rm: 120, topRpe: 8, hardSets: 3 },
+          { move: "Overhead Press", e1rm: 80, topRpe: 8, hardSets: 3 },
+        ],
+      },
+    ];
+    // whichever lift the engine picks as freshest, it has real history
+    expect(prescribeSession(full).loadEstimated).toBe(false);
+  });
+
   it("picks the freshest conditioning system", () => {
     // hammer the threshold system; engine should avoid it
     const log: TrainingLog = [
@@ -167,10 +206,17 @@ describe("easyRunTarget", () => {
     expect(fresh.paceSecPerKm).toBe(360); // 48 min / 8 km = 6:00/km
     expect(tired.distance).toBeLessThan(fresh.distance);
   });
-  it("falls back to a gentle default with no run history", () => {
+  it("falls back to a gentle default with no run history, flagged as an estimate", () => {
     const t = easyRunTarget([], 75);
     expect(t.distance).toBe(5);
     expect(t.paceSecPerKm).toBe(390);
+    expect(t.estimated).toBe(true);
+  });
+  it("is not flagged estimated once real runs exist", () => {
+    const log: TrainingLog = [
+      { daysAgo: 3, items: [{ move: "Easy Run", system: "aerobic", minutes: 48, rpe: 5, distance: 8 }] },
+    ];
+    expect(easyRunTarget(log, 80).estimated).toBe(false);
   });
 });
 

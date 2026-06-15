@@ -127,6 +127,10 @@ export default function LoginPage() {
         setBusy(false);
         return;
       }
+      // Fresh registration → land them in onboarding (consumed in the app shell)
+      // to set their persona + goal + preferences, whether the session is
+      // immediate or arrives after email confirm + sign in.
+      try { localStorage.setItem("hybrid.pendingOnboarding", "1"); } catch { /* ignore */ }
       if (data.session) {
         router.push("/app");
         return;

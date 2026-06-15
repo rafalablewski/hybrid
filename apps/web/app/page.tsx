@@ -60,25 +60,6 @@ export default function Landing() {
           >
             Start training →
           </Link>
-          <Link
-            href="/admin"
-            className="liquid-glass lg-hover inline-flex items-center px-7 py-3.5 font-display font-bold text-chalk"
-          >
-            <span className="lg-sheen" />
-            Open the admin panel
-          </Link>
-        </div>
-        <div className="mt-10 flex gap-10">
-          {[
-            ["50K+", "athletes"],
-            ["1.2M", "sessions"],
-            ["4.9★", "App Store"],
-          ].map(([a, b]) => (
-            <div key={b}>
-              <div className="font-display text-2xl font-extrabold">{a}</div>
-              <div className="font-mono text-[11px] uppercase tracking-wider text-ash">{b}</div>
-            </div>
-          ))}
         </div>
       </section>
 
