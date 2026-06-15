@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
+import type { Entitlement } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 // Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN).
@@ -17,11 +18,14 @@ export type Session = {
   name: string;
   email: string;
   role: Role;
+  entitlement: Entitlement;
   provider: "apple" | "google" | "email" | "demo";
 };
 
 type SessionContext = {
   session: Session | null;
+  /** The account's billing entitlement (free unless signed in & paid). */
+  entitlement: Entitlement;
   ready: boolean;
   /** True when real Supabase auth is active; false in demo mode. */
   live: boolean;
@@ -37,7 +41,12 @@ const KEY = "hybrid.session";
 function fromSupabaseUser(user: User): Session {
   const meta = user.user_metadata ?? {};
   const email = user.email ?? "";
-  const role = (meta.role as Role) ?? "client";
+  // The DB stores uppercase roles (CLIENT|COACH|ADMIN); normalize so strict
+  // equality against the lowercase Role type never silently fails.
+  const rawRole = String(meta.role ?? "client").toLowerCase();
+  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
+  const entitlement: Entitlement =
+    String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
   const name =
     (meta.name as string) ||
     (meta.full_name as string) ||
@@ -47,6 +56,7 @@ function fromSupabaseUser(user: User): Session {
     name: name.charAt(0).toUpperCase() + name.slice(1),
     email,
     role,
+    entitlement,
     provider: provider === "apple" || provider === "google" ? provider : "email",
   };
 }
@@ -62,13 +72,15 @@ async function resolveSession(user: User): Promise<Session> {
         name?: string | null;
         email?: string;
         role?: Role;
+        entitlement?: Entitlement;
       };
       return {
         name: me.name
           ? me.name.charAt(0).toUpperCase() + me.name.slice(1)
           : fallback.name,
         email: me.email ?? fallback.email,
-        role: me.role ?? fallback.role,
+        role: me.role ? ((me.role as string).toLowerCase() as Role) : fallback.role,
+        entitlement: me.entitlement ?? fallback.entitlement,
         provider: fallback.provider,
       };
     }
@@ -108,6 +120,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setReady(true);
   }, [live]);
 
+  // After a Stripe success redirect (/app?upgraded=1) the JWT still carries the
+  // old entitlement — refresh the session so the freshly-set "paid" metadata is
+  // picked up, then the flag can be ignored.
+  useEffect(() => {
+    if (!live) return;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("upgraded") !== "1") return;
+    createClient().auth.refreshSession().catch(() => {});
+  }, [live]);
+
   const login = (s: Session) => {
     // In live mode the Supabase listener owns session state; this is the demo path.
     setSession(s);
@@ -135,7 +157,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ session, ready, live, login, logout }}>
+    <Ctx.Provider value={{ session, entitlement: session?.entitlement ?? "free", ready, live, login, logout }}>
       {children}
     </Ctx.Provider>
   );

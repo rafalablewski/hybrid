@@ -39,6 +39,13 @@ model User {
   language  String   @default("en")
   createdAt DateTime @default(now())
 
+  // Billing — the paid "Full" entitlement. entitlement is mirrored into the
+  // Supabase auth user_metadata so both clients read it from the session; these
+  // columns are the server-side source of truth + the Stripe linkage.
+  entitlement        String   @default("free") // free | paid
+  stripeCustomerId   String?  @unique
+  subscriptionStatus String?  // active | trialing | past_due | canceled | null
+
   sessions      Session[]
   macrocycles   Macrocycle[]
   biometrics    Biometric[]
@@ -81,6 +88,20 @@ model AccessRequest {
   decidedAt DateTime?
 
   @@unique([userId, navId])
+  @@index([status])
+}
+
+// A user's application to become a COACH. Admin approves → the user's role is
+// promoted to COACH. Free-text credentials say who they are / certs / why.
+model CoachApplication {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  userEmail   String
+  credentials String    // free-text: who they are / certs / why
+  status      String    @default("pending") // pending | approved | denied
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+
   @@index([status])
 }
 

@@ -88,6 +88,7 @@ export default function LoginPage() {
       name: base.charAt(0).toUpperCase() + base.slice(1),
       email: email.trim() || `${role}@hybrid.app`,
       role,
+      entitlement: "free",
       provider,
     });
     router.push("/app");

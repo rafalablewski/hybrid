@@ -14,14 +14,25 @@ describe("persona resolution", () => {
     expect(resolvePersona("admin")).toBe("admin");
   });
 
-  it("a client is casual by default and athlete when they choose it", () => {
+  it("a client is casual by default, and only reaches athlete when paid", () => {
     expect(resolvePersona("client")).toBe("casual");
     expect(resolvePersona("client", "casual")).toBe("casual");
-    expect(resolvePersona("client", "athlete")).toBe("athlete");
+    // Full (athlete) is a paid upgrade — choosing it without a paid entitlement
+    // does NOT unlock the athlete surface.
+    expect(resolvePersona("client", "athlete")).toBe("casual");
+    expect(resolvePersona("client", "athlete", "free")).toBe("casual");
+    expect(resolvePersona("client", "athlete", "paid")).toBe("athlete");
+    // A paid entitlement alone doesn't force Full — the client still chooses it.
+    expect(resolvePersona("client", "casual", "paid")).toBe("casual");
   });
 
-  it("a client can self-serve opt into the coach experience", () => {
-    expect(resolvePersona("client", "coach")).toBe("coach");
+  it("entitlement never elevates a coach/admin role and never grants coach to a client", () => {
+    // role outranks entitlement
+    expect(resolvePersona("coach", "casual", "free")).toBe("coach");
+    expect(resolvePersona("admin", "casual", "free")).toBe("admin");
+    // a client can no longer self-select the coach surface at all
+    // @ts-expect-error "coach" is no longer a valid ClientPersona
+    expect(resolvePersona("client", "coach", "paid")).toBe("casual");
   });
 });
 

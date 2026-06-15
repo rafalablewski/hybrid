@@ -16,7 +16,7 @@ function readInitial(): ClientPersona | null {
   if (typeof window === "undefined") return null;
   try {
     const v = localStorage.getItem(KEY);
-    return v === "casual" || v === "athlete" || v === "coach" ? v : null;
+    return v === "casual" || v === "athlete" ? v : null;
   } catch {
     return null;
   }
@@ -54,5 +54,5 @@ export function useClientPersonaChoice(): ClientPersona | null {
 export function usePersona(): Persona {
   const { session } = useSession();
   const c = useClientPersonaChoice();
-  return resolvePersona(session?.role ?? "client", c ?? undefined);
+  return resolvePersona(session?.role ?? "client", c ?? undefined, session?.entitlement ?? "free");
 }
