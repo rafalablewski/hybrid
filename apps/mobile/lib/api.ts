@@ -348,6 +348,75 @@ export async function fetchVideoAnalyses(): Promise<VideoAnalysis[]> {
   }
 }
 
+// --- Talent graph + force-plate signal import ---
+
+export type TalentProfile = { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number>; moderationStatus?: string };
+export type TalentBench = { metric: string; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
+export type TalentReport = { cohort: { sport: string; sex: string; age: number }; benchmarks: TalentBench[]; overall: number; potential: number; modelVersion: string };
+export type TalentResult = { id: string; name: string; sport: string; age: number; sex: string; percentile: number; potential: number };
+
+export async function fetchTalent(): Promise<{ profile: TalentProfile | null; report: TalentReport | null; computedHpi: number }> {
+  try {
+    const res = await fetch(`${API_URL}/api/talent`, { headers: await authHeaders() });
+    if (!res.ok) return { profile: null, report: null, computedHpi: 0 };
+    return (await res.json()) as { profile: TalentProfile | null; report: TalentReport | null; computedHpi: number };
+  } catch {
+    return { profile: null, report: null, computedHpi: 0 };
+  }
+}
+
+export async function saveTalentProfile(body: { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number | undefined> }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/talent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function searchTalent(metric: string, minPct: string, sport?: string, byPotential?: boolean): Promise<TalentResult[]> {
+  try {
+    const p = new URLSearchParams({ metric, minPct, ...(sport ? { sport } : {}), ...(byPotential ? { byPotential: "1" } : {}) });
+    const res = await fetch(`${API_URL}/api/talent/search?${p.toString()}`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return (((await res.json()) as { results?: TalentResult[] }).results) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function reportProfile(targetId: string, reason: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/reports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ targetType: "talentProfile", targetId, reason }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Import one signal with an explicit ts/source (for CSV/force-plate import,
+ *  where historical timestamps must be preserved). */
+export async function importSignal(s: { kind: string; value: number; unit?: string; source?: string; ts?: string }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/signals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: s.source ?? "forceplate", ts: s.ts }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Self-schedule: materialize the reconciled plan onto dated Assignments (the
 // athlete authoring their own). They show on the Calendar alongside coach work.
 // replace=true clears upcoming pending self-authored days first, so re-running

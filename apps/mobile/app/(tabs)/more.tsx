@@ -18,8 +18,8 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 // components/liquid-glass.tsx.
 const MOBILE_NAV_IDS = new Set([
   "today", "cockpit", "log", "history", "plans", "periodize", "competition", "sport", "calendar",
-  "performance", "velocity", "running", "video", "tactical", "progress", "nutrition", "checkin",
-  "longevity", "connections", "coach", "roles", "settings", "onboarding",
+  "performance", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
+  "longevity", "connections", "talent", "coach", "roles", "settings", "onboarding",
 ]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
@@ -44,6 +44,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "running", labelKey: "nav.running", sub: "mileage · pace · easy/hard", href: "/(tabs)/running", color: C.blue },
       { id: "video", labelKey: "nav.video", sub: "technique · asymmetry", href: "/video", color: C.violet },
       { id: "tactical", labelKey: "nav.tactical", sub: "deployment readiness", href: "/tactical", color: C.amber },
+      { id: "forceplate", labelKey: "nav.forceplate", sub: "import jump CSV", href: "/forceplate", color: C.blue },
       { id: "progress", labelKey: "nav.progress", sub: "body recomposition", href: "/progress", color: C.violet },
     ],
   },
@@ -54,6 +55,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "checkin", labelKey: "nav.checkin", sub: "weekly review · coach reply", href: "/checkin", color: C.blue },
       { id: "longevity", labelKey: "nav.longevity", sub: "biological age · healthspan", href: "/longevity", color: C.violet },
       { id: "connections", labelKey: "nav.connections", sub: "wearables · sensors", href: "/connections", color: C.blue },
+      { id: "talent", labelKey: "nav.talent", sub: "benchmarks · discovery", href: "/talent", color: C.violet },
       { id: "coach", labelKey: "nav.coach", sub: "roster · notes · clients", href: "/(tabs)/coach", color: C.violet },
       { id: "roles", labelKey: "nav.roles", sub: "who can see what", href: "/roles", color: C.lime },
     ],
