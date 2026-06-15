@@ -356,7 +356,7 @@ export default function Home() {
       )}
 
       {/* quick links */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
         <Pressable
           onPress={() => router.push("/nutrition")}
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
@@ -388,7 +388,7 @@ export default function Home() {
       </View>
 
       {/* ON TRACK? — accountability engine */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: bandColor(acc.band) }}>
+      <Card style={{ borderLeftWidth: 3, borderLeftColor: bandColor(acc.band), marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Kicker color={bandColor(acc.band)}>On track? · {bandLabel(acc.band)}</Kicker>
           <Chip color={bandColor(acc.band)}>{acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}</Chip>
