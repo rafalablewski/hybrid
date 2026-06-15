@@ -84,6 +84,20 @@ export default function More() {
         </View>
       )}
 
+      {/* Athlete cockpit — the organized depth hub (athletes/coaches only) */}
+      {persona !== "casual" && (
+        <Pressable
+          onPress={() => router.push("/cockpit")}
+          style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.blue) }}>◈ Athlete cockpit</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>goal · season · performance · sport · velocity · endurance</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.blue) }}>→</Text>
+        </Pressable>
+      )}
+
       {sections.map((section) => (
         <View key={section.titleKey} style={{ marginTop: 18 }}>
           <Kicker>{t(section.titleKey)}</Kicker>

@@ -43,9 +43,14 @@ The app now takes a different shape per persona, on both clients.
   empty-goal state honestly says "plans coming soon").
 
 ### Phase 2 — The Athlete (depth, organized + fed)
-- An athlete cockpit: sport → goal → season → today → performance → technique.
-- Unblock one real input stream: Apple HealthKit (recovery) via EAS build, or
-  camera pose-capture (lights up the dormant technique engine).
+- ✅ Athlete cockpit (mobile): one screen sequencing goal/season → today's route →
+  performance (Twin/HPI) → sport → velocity/technique → endurance, each a live
+  snapshot off real data linking to the deep screen. Athlete/coach personas only
+  (Today entry + featured More card). `app/cockpit.tsx`.
+- ⏳ Web cockpit parity.
+- ⛔ Unblock one real input stream — Apple HealthKit (recovery) or camera
+  pose-capture (technique engine): blocked on an EAS build + native modules /
+  credentials (see wearables / vbt-capture / video-intel).
 
 ### Phase 3 — The Coach (revenue)
 - Coach-first landing (squad monitor as home).
