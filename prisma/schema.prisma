@@ -84,6 +84,20 @@ model AccessRequest {
   @@index([status])
 }
 
+// A user's application to become a COACH. Admin approves → the user's role is
+// promoted to COACH. Free-text credentials say who they are / certs / why.
+model CoachApplication {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  userEmail   String
+  credentials String    // free-text: who they are / certs / why
+  status      String    @default("pending") // pending | approved | denied
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+
+  @@index([status])
+}
+
 // The mutual-consent coach↔client relationship. Authorization is by THIS,
 // not by role label alone.
 model CoachLink {

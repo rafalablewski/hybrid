@@ -63,6 +63,45 @@ export async function createSession(payload: NewSession): Promise<boolean> {
   }
 }
 
+// Coach applications — a client applies to become a verified coach; an admin
+// approves (which promotes their role to COACH). Coach is no longer self-serve.
+export type CoachApplication = {
+  id: string;
+  status: "pending" | "approved" | "denied";
+  credentials: string;
+  createdAt: string;
+};
+
+export async function fetchCoachApplication(): Promise<CoachApplication | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/apply`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { application?: CoachApplication | null };
+    return data.application ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Submit (or re-open) a coach application. Returns { ok } plus an error
+ *  message when the backend rejects it (e.g. already a coach, not enabled). */
+export async function applyForCoach(
+  credentials: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ credentials }),
+    });
+    if (res.ok) return { ok: true };
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, error: data.error ?? "Couldn't submit — try again." };
+  } catch {
+    return { ok: false, error: "Couldn't submit — check your connection." };
+  }
+}
+
 // Wipe all of the signed-in user's data on the backend (keeps the login).
 export async function resetAccount(): Promise<boolean> {
   try {

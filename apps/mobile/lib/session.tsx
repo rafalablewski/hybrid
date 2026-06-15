@@ -10,6 +10,8 @@ import type { Session as SupaSession } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { flushGuestSessions } from "./guest";
 
+import type { Entitlement } from "@hybrid/core";
+
 type Role = "client" | "coach" | "admin";
 
 type Ctx = {
@@ -18,6 +20,8 @@ type Ctx = {
   name: string;
   /** auth role (CLIENT|COACH|ADMIN, lowercased); defaults to client. */
   role: Role;
+  /** billing entitlement — "paid" unlocks the Full (athlete) experience. */
+  entitlement: Entitlement;
   signOut: () => Promise<void>;
 };
 
@@ -58,10 +62,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     (session?.user.email ? session.user.email.split("@")[0]! : "Athlete");
   const rawRole = String(meta.role ?? "client").toLowerCase();
   const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
+  const entitlement: Entitlement =
+    String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
 
   return (
     <SessionCtx.Provider
-      value={{ session, ready, name, role, signOut: async () => void (await supabase.auth.signOut()) }}
+      value={{ session, ready, name, role, entitlement, signOut: async () => void (await supabase.auth.signOut()) }}
     >
       {children}
     </SessionCtx.Provider>

@@ -66,7 +66,7 @@ export default function More() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
-  const { signOut, role } = useSession();
+  const { signOut, role, entitlement } = useSession();
   const persona = usePersona();
   const choice = useClientPersonaChoice();
   const access = useNavAccess();
@@ -102,30 +102,39 @@ export default function More() {
       <H1>{t("more.title")}</H1>
       <Mono style={{ marginTop: 6 }}>{t("more.intro")}</Mono>
 
-      {/* Mode toggle — a client flips between the lean tracker and the full
-          athlete toolkit. Coaches/admins get their surface from their role. */}
+      {/* Mode toggle — a client picks the lean tracker (Simple, free) or the
+          full athlete toolkit (Full, a paid upgrade). Coaches/admins get their
+          surface from their role; Coach is no longer a self-serve mode. */}
       {role === "client" && (
         <View style={{ marginTop: 16 }}>
           <Kicker>Mode</Kicker>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
             {([
-              { id: "casual" as const, label: "Simple", sub: "track · share" },
-              { id: "athlete" as const, label: "Full", sub: "plans · stats" },
-              { id: "coach" as const, label: "Coach", sub: "athletes · squad" },
+              { id: "casual" as const, label: "Simple", sub: "track · share", paid: false },
+              { id: "athlete" as const, label: "Full", sub: "plans · stats", paid: true },
             ]).map((m) => {
               const active = (choice ?? "casual") === m.id;
+              const locked = m.paid && entitlement !== "paid";
               return (
                 <Pressable
                   key={m.id}
-                  onPress={() => setClientPersona(m.id)}
+                  // Full is gated: without a paid entitlement, tapping it opens
+                  // the upgrade screen instead of switching mode.
+                  onPress={() => (locked ? router.push("/upgrade") : setClientPersona(m.id))}
                   style={{ flex: 1, backgroundColor: active ? `${C.lime}1a` : C.card, borderWidth: 1, borderColor: active ? C.lime : C.line, borderRadius: 12, padding: 12 }}
                 >
-                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: active ? txt(C, C.lime) : C.chalk }}>{m.label}</Text>
-                  <Mono style={{ marginTop: 2, fontSize: 10 }}>{m.sub}</Mono>
+                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: active ? txt(C, C.lime) : C.chalk }}>
+                    {m.label}{locked ? " 🔒" : ""}
+                  </Text>
+                  <Mono style={{ marginTop: 2, fontSize: 10 }}>{locked ? "paid upgrade" : m.sub}</Mono>
                 </Pressable>
               );
             })}
           </View>
+          {/* Coach is verification-gated now — apply, an admin reviews. */}
+          <Pressable onPress={() => router.push("/coach-apply")} style={{ marginTop: 10 }}>
+            <Mono color={C.violet} style={{ fontSize: 11 }}>Coach others? Apply to become a verified coach →</Mono>
+          </Pressable>
         </View>
       )}
 

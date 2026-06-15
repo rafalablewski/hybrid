@@ -15,10 +15,11 @@ let choice: ClientPersona | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-// Hydrate once from storage; notify subscribers when it lands.
+// Hydrate once from storage; notify subscribers when it lands. (A legacy
+// "coach" choice is ignored — coach is no longer a self-serve persona.)
 AsyncStorage.getItem(KEY)
   .then((v) => {
-    if (v === "casual" || v === "athlete" || v === "coach") choice = v;
+    if (v === "casual" || v === "athlete") choice = v;
     emit();
   })
   .catch(() => {});
@@ -44,9 +45,10 @@ export function useClientPersonaChoice(): ClientPersona | null {
   );
 }
 
-/** The resolved persona for the signed-in user (role + client choice). */
+/** The resolved persona for the signed-in user (role + client choice +
+ *  billing entitlement — Full/athlete only unlocks with a paid entitlement). */
 export function usePersona(): Persona {
-  const { role } = useSession();
+  const { role, entitlement } = useSession();
   const c = useClientPersonaChoice();
-  return resolvePersona(role, c ?? undefined);
+  return resolvePersona(role, c ?? undefined, entitlement);
 }

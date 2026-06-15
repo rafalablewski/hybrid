@@ -23,10 +23,16 @@ export type NavGroup = "home" | "train" | "analyze" | "recovery" | "teams" | "ac
  */
 export type Persona = "casual" | "athlete" | "coach" | "admin";
 
-/** The client-only sub-choice. A client can opt into the coach experience
- *  (self-serve) — coaching others is relationship-gated, not a privileged role,
- *  so no role change is needed. */
-export type ClientPersona = "casual" | "athlete" | "coach";
+/** The client-only sub-choice. A client picks the lean tracker (casual, free)
+ *  or the full athlete toolkit (athlete, a PAID upgrade — see Entitlement).
+ *  Coach is NOT a self-serve choice: the coach surface comes only from a
+ *  verified COACH role (granted after an admin approves a coach application). */
+export type ClientPersona = "casual" | "athlete";
+
+/** Billing entitlement on the account. "paid" unlocks the athlete (Full)
+ *  experience; "free" is the default (casual/Simple only). Read from the auth
+ *  session on both clients; the real purchase flow is still pending (billing). */
+export type Entitlement = "free" | "paid";
 
 export interface NavItem {
   /** stable id — also the web screen id, and the i18n key suffix (nav.<id>) */
@@ -113,14 +119,19 @@ function effectiveMinPersona(item: NavItem, access?: PersonaAccess): Persona {
   return access?.[item.id] ?? item.minPersona ?? "casual";
 }
 
-/** Resolve the active persona from the auth role + a client's onboarding choice. */
+/** Resolve the active persona from the auth role, a client's mode choice, and
+ *  the account's billing entitlement. A coach/admin role outranks everything; a
+ *  client gets the athlete (Full) surface only when they've both chosen it AND
+ *  carry a paid entitlement — otherwise they stay casual (Simple, free). */
 export function resolvePersona(
   role: "client" | "coach" | "admin",
   clientChoice?: ClientPersona,
+  entitlement: Entitlement = "free",
 ): Persona {
   if (role === "admin") return "admin";
   if (role === "coach") return "coach";
-  return clientChoice ?? "casual";
+  if (clientChoice === "athlete" && entitlement === "paid") return "athlete";
+  return "casual";
 }
 
 /** The nav items a persona should see (nested — a higher persona sees more),

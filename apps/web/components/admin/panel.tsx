@@ -19,6 +19,7 @@ import AdminAuditLog from "./audit";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
 import AdminAccess from "./access";
+import CoachApplications from "./coach-applications";
 import AdminSimulator from "./simulator";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
@@ -221,7 +222,7 @@ export default function AdminPanel() {
         {section === "translations" && <AdminTranslations />}
         {section === "flags" && <AdminFlags />}
         {section === "content" && <AdminContent />}
-        {section === "access" && <AdminAccess />}
+        {section === "access" && <><CoachApplications /><AdminAccess /></>}
         {section === "security" && <AdminSecurity />}
         {section === "audit" && <AdminAuditLog />}
         {section === "system" && <AdminSystem />}

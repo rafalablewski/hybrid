@@ -64,9 +64,8 @@ export default function Onboarding() {
         <Kicker color={C.lime}>How do you want to use HYBRID?</Kicker>
         <View style={{ gap: 8, marginTop: 10 }}>
           {([
-            { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app." },
-            { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit." },
-            { id: "coach" as const, title: "I coach others", sub: "Invite athletes, monitor your squad, assign workouts — plus all your own training." },
+            { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app — free." },
+            { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit — a paid upgrade." },
           ]).map((o) => {
             const active = persona === o.id;
             return (

@@ -60,11 +60,10 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
 
       <Card style={{ marginBottom: 14, borderLeft: `3px solid ${LIME}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>How do you want to use HYBRID?</Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
           {([
             { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app." },
             { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit." },
-            { id: "coach" as const, title: "I coach others", sub: "Invite athletes, monitor your squad, assign workouts — plus your own training." },
           ]).map((o) => (
             <button
               key={o.id}
