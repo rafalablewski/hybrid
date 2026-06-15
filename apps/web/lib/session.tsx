@@ -41,7 +41,10 @@ const KEY = "hybrid.session";
 function fromSupabaseUser(user: User): Session {
   const meta = user.user_metadata ?? {};
   const email = user.email ?? "";
-  const role = (meta.role as Role) ?? "client";
+  // The DB stores uppercase roles (CLIENT|COACH|ADMIN); normalize so strict
+  // equality against the lowercase Role type never silently fails.
+  const rawRole = String(meta.role ?? "client").toLowerCase();
+  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
   const entitlement: Entitlement =
     String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
   const name =
@@ -76,7 +79,7 @@ async function resolveSession(user: User): Promise<Session> {
           ? me.name.charAt(0).toUpperCase() + me.name.slice(1)
           : fallback.name,
         email: me.email ?? fallback.email,
-        role: me.role ?? fallback.role,
+        role: me.role ? ((me.role as string).toLowerCase() as Role) : fallback.role,
         entitlement: me.entitlement ?? fallback.entitlement,
         provider: fallback.provider,
       };

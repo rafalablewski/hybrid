@@ -31,7 +31,11 @@ export default function Upgrade() {
     const res = await startCheckout();
     setBusy(false);
     if (res.ok && res.url) {
-      Linking.openURL(res.url);
+      try {
+        await Linking.openURL(res.url);
+      } catch {
+        setError("Couldn't open the checkout page.");
+      }
     } else {
       setError(res.error ?? "Couldn't start checkout — try again.");
     }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { patchUserMetadata } from "@/lib/supabase/admin";
 
 // Approve (→ promote the applicant to COACH) or deny a coach application.
 // Both audited. Admin-only.
@@ -25,10 +26,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (action === "approve") {
     // Promote the applicant to COACH AND mark the application approved in one
     // transaction so the two never drift.
-    await prisma.$transaction([
-      prisma.user.update({ where: { id: app.userId }, data: { role: "COACH" } }),
+    const [updated] = await prisma.$transaction([
+      prisma.user.update({ where: { id: app.userId }, data: { role: "COACH" }, select: { authId: true } }),
       prisma.coachApplication.update({ where: { id }, data: { status: "approved", decidedAt: new Date() } }),
     ]);
+    // Mirror the new role into Supabase auth metadata — both clients read the
+    // active role from the session, so without this the user wouldn't see the
+    // coach surface until they next re-authenticated.
+    await patchUserMetadata(updated.authId, { role: "coach" });
     await audit({
       actor: gate.admin,
       action: "coach.approve",

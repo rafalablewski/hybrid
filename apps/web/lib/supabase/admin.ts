@@ -28,9 +28,20 @@ export async function patchUserMetadata(
 ): Promise<void> {
   const admin = createAdminClient();
   if (!admin || !authId) return;
-  const { data } = await admin.auth.admin.getUserById(authId);
-  const current = data.user?.user_metadata ?? {};
-  await admin.auth.admin.updateUserById(authId, {
-    user_metadata: { ...current, ...patch },
-  });
+  try {
+    const { data, error } = await admin.auth.admin.getUserById(authId);
+    // Bail if we couldn't read the user — updating with an empty `current`
+    // would clobber existing metadata (name/role/provider/…).
+    if (error || !data?.user) {
+      console.error("[supabase] patchUserMetadata: could not read user", error);
+      return;
+    }
+    const current = data.user.user_metadata ?? {};
+    const { error: updateError } = await admin.auth.admin.updateUserById(authId, {
+      user_metadata: { ...current, ...patch },
+    });
+    if (updateError) console.error("[supabase] patchUserMetadata: update failed", updateError);
+  } catch (e) {
+    console.error("[supabase] patchUserMetadata: exception", e);
+  }
 }
