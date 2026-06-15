@@ -4,6 +4,7 @@ import {
   navForPersona,
   navVisibleTo,
   resolvePersona,
+  sanitizePersonaAccess,
 } from "./nav";
 
 describe("persona resolution", () => {
@@ -71,6 +72,34 @@ describe("navForPersona", () => {
     expect(ids).toContain("coach");
     expect(ids).toContain("squad");
     expect(ids).toContain("velocity"); // still an athlete themselves
+  });
+});
+
+describe("admin PersonaAccess overrides", () => {
+  it("an admin can drop a feature to casual so a retail user sees it", () => {
+    const access = { velocity: "casual" as const };
+    expect(navVisibleTo("casual", "velocity")).toBe(false); // code default
+    expect(navVisibleTo("casual", "velocity", access)).toBe(true); // overridden
+    expect(navForPersona("casual", undefined, access).map((i) => i.id)).toContain("velocity");
+  });
+
+  it("an admin can raise a feature to hide it from a persona", () => {
+    const access = { today: "athlete" as const };
+    expect(navVisibleTo("casual", "today")).toBe(true);
+    expect(navVisibleTo("casual", "today", access)).toBe(false);
+  });
+
+  it("sanitizePersonaAccess keeps only known ids mapped to valid personas", () => {
+    const clean = sanitizePersonaAccess({
+      velocity: "casual",
+      today: "bogus",
+      "not-an-id": "athlete",
+      coach: "coach",
+      junk: 5,
+    });
+    expect(clean).toEqual({ velocity: "casual", coach: "coach" });
+    expect(sanitizePersonaAccess(null)).toEqual({});
+    expect(sanitizePersonaAccess("nope")).toEqual({});
   });
 });
 

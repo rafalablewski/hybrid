@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, type Persona } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import {
@@ -99,10 +99,12 @@ export default function AppShell() {
   const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
-  const { isEnabled } = useFlags();
+  const { isEnabled, value } = useFlags();
   // Persona shapes the nav surface (casual ⊂ athlete ⊂ coach ⊂ admin); items are
-  // still additionally gated by their feature flag.
+  // still additionally gated by their feature flag. The admin can override which
+  // persona sees each item (Access control → the access.personaNav flag value).
   const persona = usePersona();
+  const navAccess = sanitizePersonaAccess(value("access.personaNav"));
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
@@ -201,7 +203,7 @@ export default function AppShell() {
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {groupedNav(navForPersona(persona)).map(({ group, items }) => {
+          {groupedNav(navForPersona(persona, undefined, navAccess)).map(({ group, items }) => {
             const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
             if (visible.length === 0) return null;
             return (
@@ -565,7 +567,7 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} t={t} />
+      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
     </div>
   );
 }
@@ -578,12 +580,14 @@ function CommandMenu({
   setScreen,
   isEnabled,
   persona,
+  access,
   t,
 }: {
   screen: string;
   setScreen: (id: string) => void;
   isEnabled: (flag: string) => boolean;
   persona: Persona;
+  access: PersonaAccess;
   t: (key: string) => string;
 }) {
   const [open, setOpen] = useState(false);
@@ -602,7 +606,7 @@ function CommandMenu({
   }, []);
 
   // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles.
-  const tiles = groupedNav(navForPersona(persona)).flatMap(({ group, items }) =>
+  const tiles = groupedNav(navForPersona(persona, undefined, access)).flatMap(({ group, items }) =>
     items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group })),
   );
 

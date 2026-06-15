@@ -87,6 +87,21 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 const PERSONA_RANK: Record<Persona, number> = { casual: 0, athlete: 1, coach: 2, admin: 3 };
+const ALL_PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
+
+/**
+ * Admin override of which persona each nav item is visible from — a sparse
+ * `{ navId: minPersona }` map layered over the code `minPersona` defaults, so an
+ * admin can (e.g.) drop Velocity/Analytics to `casual` to give a retail user the
+ * stats, or raise an item to hide it. Persisted as the `access.personaNav` flag
+ * value (see flags.ts). Empty = pure code defaults.
+ */
+export type PersonaAccess = Record<string, Persona>;
+
+/** The effective minimum persona for an item — admin override else code default. */
+function effectiveMinPersona(item: NavItem, access?: PersonaAccess): Persona {
+  return access?.[item.id] ?? item.minPersona ?? "casual";
+}
 
 /** Resolve the active persona from the auth role + a client's onboarding choice. */
 export function resolvePersona(
@@ -98,17 +113,32 @@ export function resolvePersona(
   return clientChoice ?? "casual";
 }
 
-/** The nav items a persona should see (nested — a higher persona sees more). */
-export function navForPersona(persona: Persona, items: NavItem[] = NAV_ITEMS): NavItem[] {
+/** The nav items a persona should see (nested — a higher persona sees more),
+ *  honouring any admin `PersonaAccess` override. */
+export function navForPersona(persona: Persona, items: NavItem[] = NAV_ITEMS, access?: PersonaAccess): NavItem[] {
   const rank = PERSONA_RANK[persona];
-  return items.filter((i) => PERSONA_RANK[i.minPersona ?? "casual"] <= rank);
+  return items.filter((i) => PERSONA_RANK[effectiveMinPersona(i, access)] <= rank);
 }
 
-/** Whether a single nav id is visible to a persona. */
-export function navVisibleTo(persona: Persona, id: string): boolean {
+/** Whether a single nav id is visible to a persona (admin override aware). */
+export function navVisibleTo(persona: Persona, id: string, access?: PersonaAccess): boolean {
   const item = NAV_ITEMS.find((i) => i.id === id);
   if (!item) return false;
-  return PERSONA_RANK[persona] >= PERSONA_RANK[item.minPersona ?? "casual"];
+  return PERSONA_RANK[persona] >= PERSONA_RANK[effectiveMinPersona(item, access)];
+}
+
+/** Validate raw JSON (e.g. a flag value) into a clean PersonaAccess — only known
+ *  nav ids mapped to valid personas survive, so a bad payload can't break nav. */
+export function sanitizePersonaAccess(raw: unknown): PersonaAccess {
+  const out: PersonaAccess = {};
+  if (!raw || typeof raw !== "object") return out;
+  const ids = new Set(NAV_ITEMS.map((i) => i.id));
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (ids.has(k) && typeof v === "string" && (ALL_PERSONAS as string[]).includes(v)) {
+      out[k] = v as Persona;
+    }
+  }
+  return out;
 }
 
 /** Group the items (optionally a filtered subset) in canonical group order. */

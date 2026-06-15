@@ -18,12 +18,13 @@ import AdminContent from "./content";
 import AdminAuditLog from "./audit";
 import AdminSystem from "./system";
 import AdminSecurity from "./security";
+import AdminAccess from "./access";
 import AdminSimulator from "./simulator";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "security" | "audit" | "system" | "simulator";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "simulator";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
@@ -39,6 +40,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "translations", label: "Localization", icon: "🌐", group: "Content" },
   { id: "flags", label: "Feature flags", icon: "⚑", group: "Content" },
   { id: "content", label: "Capabilities & data", icon: "⊞", group: "Content" },
+  { id: "access", label: "Access control", icon: "⚿", group: "Governance" },
   { id: "security", label: "Security", icon: "🛡", group: "Governance" },
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", group: "Governance" },
@@ -219,6 +221,7 @@ export default function AdminPanel() {
         {section === "translations" && <AdminTranslations />}
         {section === "flags" && <AdminFlags />}
         {section === "content" && <AdminContent />}
+        {section === "access" && <AdminAccess />}
         {section === "security" && <AdminSecurity />}
         {section === "audit" && <AdminAuditLog />}
         {section === "system" && <AdminSystem />}

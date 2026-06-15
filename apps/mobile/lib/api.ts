@@ -1,4 +1,5 @@
-import type { LoggedSession, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment } from "@hybrid/core";
+import type { LoggedSession, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
+import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
 // The mobile client calls the SAME backend the web app uses (Vercel), with the
@@ -196,6 +197,19 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
     };
   } catch {
     return null;
+  }
+}
+
+// The admin's per-persona nav-access override (which persona sees each feature),
+// read from the feature-flags value. Empty → code defaults.
+export async function fetchPersonaAccess(): Promise<PersonaAccess> {
+  try {
+    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { values?: Record<string, unknown> };
+    return sanitizePersonaAccess(data.values?.["access.personaNav"]);
+  } catch {
+    return {};
   }
 }
 

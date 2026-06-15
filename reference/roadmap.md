@@ -63,6 +63,12 @@ The app now takes a different shape per persona, on both clients.
 - ⛔ Unblock billing (Stripe) — needs provider keys. The ONLY remaining
   coach-revenue piece; everything around it is built.
 
+### Admin governance — who sees what ✅ *(shipped)*
+- Admin → Access control: a per-nav-item matrix where the admin sets the minimum
+  persona each feature is visible from (lower = more users). So retail isn't
+  overloaded, but an admin can grant e.g. stats to a casual user. Reuses the
+  feature-flags store (no new table); both clients honour it. `persona-access`.
+
 ### Cross-cutting / blocked (parallel)
 - Seed the **plan library** (content; don't fabricate).
 - **Mobile App Store + push** (Apple Developer + Expo token + Supabase key → EAS).

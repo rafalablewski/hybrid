@@ -3,6 +3,7 @@ import { useRouter, type Href } from "expo-router";
 import { navVisibleTo } from "@hybrid/core";
 import { useSession } from "../../lib/session";
 import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/persona";
+import { useNavAccess } from "../../lib/access";
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -44,12 +45,14 @@ export default function More() {
   const { signOut, role } = useSession();
   const persona = usePersona();
   const choice = useClientPersonaChoice();
+  const access = useNavAccess();
 
-  // Shape the hub to the persona: a casual retail user sees only the lean set,
-  // an athlete/coach sees the depth. Sections with nothing visible drop out.
+  // Shape the hub to the persona (honouring the admin's access override): a
+  // casual retail user sees only the lean set, an athlete/coach sees the depth.
+  // Sections with nothing visible drop out.
   const sections = SECTIONS.map((s) => ({
     ...s,
-    links: s.links.filter((l) => navVisibleTo(persona, l.id)),
+    links: s.links.filter((l) => navVisibleTo(persona, l.id, access)),
   })).filter((s) => s.links.length > 0);
 
   return (
@@ -85,8 +88,8 @@ export default function More() {
         </View>
       )}
 
-      {/* Athlete cockpit — the organized depth hub (athletes/coaches only) */}
-      {persona !== "casual" && (
+      {/* Athlete cockpit — the organized depth hub (persona/access gated) */}
+      {navVisibleTo(persona, "cockpit", access) && (
         <Pressable
           onPress={() => router.push("/cockpit")}
           style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
