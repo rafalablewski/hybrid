@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — mobile changes preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#14161a; --card:#1a1d22; --line:#2a2e34;
+    --chalk:#ededea; --ash:#8b919b; --lime:#c4f035; --blue:#5aa6ff; --violet:#b29bff; --amber:#f5b53d; --red:#ff5f5f;
+    --disp:'Archivo',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1000px 500px at 50% -10%,#10231022,transparent),#070807;color:var(--chalk);font-family:var(--disp)}
+  .wrap{max-width:1320px;margin:0 auto;padding:30px 22px 60px}
+  h1{font-size:34px;font-weight:900;letter-spacing:-1px;margin:6px 0 6px}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+  .lead{color:var(--ash);max-width:760px;line-height:1.6}
+  .row{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;align-items:flex-start}
+  .pcol{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .plabel{font-family:var(--mono);font-size:11px;color:var(--ash);text-align:center;max-width:300px}
+  .plabel b{color:var(--chalk)}
+  .phone{width:300px;height:620px;background:var(--ink);border:1px solid var(--line);border-radius:34px;padding:10px;box-shadow:0 30px 60px #000a, inset 0 0 0 6px #000;position:relative}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:110px;height:22px;background:#000;border-radius:0 0 14px 14px;z-index:5}
+  .screen{height:100%;background:radial-gradient(420px 220px at 80% -5%,#10231033,transparent),var(--ink);border-radius:26px;overflow:hidden;display:flex;flex-direction:column}
+  .sb{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-family:var(--mono);font-size:11px;color:var(--chalk)}
+  .body{flex:1;overflow:auto;padding:6px 14px 14px}
+  .body::-webkit-scrollbar{width:0}
+  .tabs{height:54px;border-top:1px solid var(--line);display:flex;background:#0c0d0cf2}
+  .tabs div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--mono);font-size:9px;color:var(--ash)}
+  .tabs div.on{color:var(--lime)}
+  .tabs .ic{font-size:15px}
+  .kk{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .h{font-weight:900;font-size:21px;margin:2px 0 4px}
+  .c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+  .c.l{border-left:3px solid var(--lime)} .c.b{border-left:3px solid var(--blue)} .c.v{border-left:3px solid var(--violet)} .c.a{border-left:3px solid var(--amber)}
+  .m{font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.5}
+  .start{background:var(--lime);color:var(--ink);border-radius:16px;padding:16px;text-align:center;margin-top:8px;font-weight:900;font-size:17px}
+  .start small{display:block;font-family:var(--mono);font-size:10px;font-weight:500;opacity:.7;margin-top:3px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}
+  .ql{width:calc(50% - 4px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px}
+  .ql b{font-size:13px}.ql small{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ash);margin-top:2px}
+  .barrow{display:flex;align-items:flex-end;gap:3px;height:64px;margin-top:8px}
+  .barrow i{flex:1;border-radius:2px;display:block}
+  .pillbtn{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid var(--lime);color:var(--lime);background:#c4f0351a;border-radius:9px;padding:7px 12px}
+  .glow{box-shadow:0 0 18px #c4f03566}
+  .seg{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+  .barmini{height:6px;border-radius:3px;background:var(--ink2);overflow:hidden;margin-top:4px}
+  .barmini>i{display:block;height:100%}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">mobile changes preview · Expo / React Native</div>
+  <h1>The phone screens</h1>
+  <p class="lead">Brand-faithful, standalone mockups of the key mobile changes. Open in any browser. The real app is React Native; these illustrate layout &amp; content 1:1.</p>
+
+  <div class="row">
+
+    <!-- TODAY CASUAL -->
+    <div class="pcol">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="sb"><span>9:41</span><span>● ▮▮</span></div>
+        <div class="body">
+          <div class="kk">Fitness GPS · today</div><div class="h">Ready to train?</div>
+          <div class="start">▶ Start your first workout<small>no account needed · ~30s</small></div>
+          <div class="c l">
+            <div class="kk" style="color:var(--lime)">Your route today</div>
+            <div style="font-weight:800;font-size:16px;margin:5px 0">Start your first session</div>
+            <div class="m">Log a workout and your route, readiness &amp; Twin build from your real training — nothing is pre-filled.</div>
+          </div>
+          <div class="c" style="border-left:3px solid var(--blue)">
+            <div class="kk" style="color:var(--blue)">On track? · getting started</div>
+            <div style="font-weight:700;font-size:14px;margin-top:6px">Start strong</div>
+            <div class="m" style="margin-top:3px">Log your first session today to start your streak.</div>
+            <div class="m" style="margin-top:8px;color:var(--ash)">habit 0/100 · this week 0/3</div>
+          </div>
+          <div class="row2" style="margin-top:10px">
+            <div class="ql"><b>Nutrition →</b><small>macros · targets</small></div>
+            <div class="ql"><b>Check-in →</b><small>weekly review</small></div>
+            <div class="ql"><b>Calendar →</b><small>month · load</small></div>
+            <div class="ql"><b>Progress →</b><small>photos</small></div>
+          </div>
+        </div>
+        <div class="tabs"><div class="on"><span class="ic">◆</span>Today</div><div><span class="ic">▶</span>Train</div><div><span class="ic">≣</span>History</div><div><span class="ic">⋯</span>More</div></div>
+      </div></div>
+      <div class="plabel"><b>Today — Casual</b><br>Lean: Start, route, on-track, share. No cockpit cards.</div>
+    </div>
+
+    <!-- TODAY ATHLETE -->
+    <div class="pcol">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="sb"><span>9:41</span><span>● ▮▮</span></div>
+        <div class="body">
+          <div class="kk">Fitness GPS · today</div><div class="h">Ready to train?</div>
+          <div class="start">▶ Start workout<small>AI-prescribed · readiness 72</small></div>
+          <div class="c" style="border-left:3px solid var(--violet);display:flex;justify-content:space-between;align-items:center">
+            <div><b style="color:var(--violet);font-size:13px">◈ Athlete cockpit</b><div class="m">goal · season · performance · sport · velocity</div></div><span style="color:var(--violet);font-weight:900">→</span>
+          </div>
+          <div class="c l"><div class="kk" style="color:var(--lime)">Your route today · readiness 72/100</div><div style="font-weight:800;font-size:16px;margin:5px 0">Back Squat + Easy Run</div><div class="m">Most-recovered heavy pattern; signal “progress”. 5×5 @ 90kg + easy 5 km.</div></div>
+          <div class="c v"><div class="kk" style="color:var(--violet)">This week · Accumulation · wk 2</div><div class="m" style="margin-top:6px">intensity 72 · load ×1.00 · vol ×1.05</div></div>
+          <div class="c b"><div class="kk" style="color:var(--blue)">Performance State · Twin</div><div style="display:flex;align-items:baseline;gap:8px;margin-top:4px"><span style="font-weight:900;font-size:30px;color:var(--lime)">78</span><span class="m">HPI · primed · limiter recovery</span></div></div>
+        </div>
+        <div class="tabs"><div class="on"><span class="ic">◆</span>Today</div><div><span class="ic">▶</span>Train</div><div><span class="ic">≣</span>History</div><div><span class="ic">⋯</span>More</div></div>
+      </div></div>
+      <div class="plabel"><b>Today — Athlete</b><br>Adds the cockpit entry, This week, Future Self &amp; Twin.</div>
+    </div>
+
+    <!-- SHARE CLIMAX -->
+    <div class="pcol">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="sb"><span>9:41</span><span>● ▮▮</span></div>
+        <div class="body" style="text-align:center">
+          <div style="width:64px;height:64px;border-radius:50%;border:2px solid var(--lime);background:#c4f0351f;display:grid;place-items:center;font-size:30px;margin:18px auto 8px">🎉</div>
+          <div style="font-weight:900;font-size:24px">Your first workout 💪</div>
+          <div class="m" style="margin-top:4px">This is the one you’ll remember. Share it.</div>
+          <div class="c l" style="text-align:left"><div class="kk" style="color:var(--lime)">🏆 1 new personal record</div><div class="m" style="margin-top:6px;color:var(--chalk)">Back Squat 100kg (first!)</div></div>
+          <div class="c" style="text-align:left"><div class="kk">HYBRID · workout</div><div style="display:flex;justify-content:space-around;margin-top:10px"><div><div style="font-weight:900;font-size:20px">38</div><div class="kk">min</div></div><div><div style="font-weight:900;font-size:20px">14</div><div class="kk">sets</div></div><div><div style="font-weight:900;font-size:20px">4,250</div><div class="kk">kg</div></div></div></div>
+          <div class="m" style="color:var(--lime);margin-top:12px">The moment to post 👇</div>
+          <div class="start glow" style="margin-top:6px">🎉 Share your first workout</div>
+          <div class="c" style="border-left:3px solid var(--violet);text-align:left;margin-top:14px"><div class="m" style="color:var(--violet)">✓ Saved on this phone</div></div>
+          <div style="background:var(--violet);color:#0c0d0c;border-radius:14px;padding:14px;text-align:center;margin-top:10px;font-weight:900">Save &amp; track progress</div>
+        </div>
+        <div class="tabs"><div><span class="ic">◆</span>Today</div><div class="on"><span class="ic">▶</span>Train</div><div><span class="ic">≣</span>History</div><div><span class="ic">⋯</span>More</div></div>
+      </div></div>
+      <div class="plabel"><b>Finish → Share (the acquisition climax)</b><br>PR / first-workout-aware CTA + glow. Guest flow unchanged.</div>
+    </div>
+
+    <!-- MORE -->
+    <div class="pcol">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="sb"><span>9:41</span><span>● ▮▮</span></div>
+        <div class="body">
+          <div class="kk">More</div><div class="h">Everything else</div>
+          <div class="kk" style="margin-top:8px">Mode</div>
+          <div class="row2" style="margin-top:6px"><div class="ql" style="width:calc(33% - 4px);border-color:var(--lime);background:#c4f0351a"><b style="color:var(--lime)">Simple</b><small>track · share</small></div><div class="ql" style="width:calc(33% - 4px)"><b>Full</b><small>plans · stats</small></div><div class="ql" style="width:calc(33% - 4px)"><b>Coach</b><small>athletes</small></div></div>
+          <div class="c v" style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"><div><b style="color:var(--violet);font-size:14px">◈ Athlete cockpit</b><div class="m">goal · season · performance</div></div><span style="color:var(--violet);font-weight:900">→</span></div>
+          <div class="kk" style="margin-top:16px">More in the web app</div>
+          <div class="m" style="margin-top:3px">You have access to these — they live in the web app for now.</div>
+          <div class="row2" style="margin-top:8px">
+            <span class="chip" style="border-color:var(--line);color:var(--chalk)">⊕ Builder</span>
+            <span class="chip" style="border-color:var(--line);color:var(--chalk)">⬡ Organization</span>
+            <span class="chip" style="border-color:var(--line);color:var(--chalk)">◷ Analytics</span>
+          </div>
+          <div style="background:#5aa6ff1f;border:1px solid var(--blue);color:var(--blue);border-radius:12px;padding:11px;text-align:center;margin-top:10px;font-weight:700;font-size:13px">Open the web app →</div>
+          <div class="kk" style="margin-top:16px">Request a feature</div>
+          <div class="seg"><span class="m" style="color:var(--chalk)">◈ Performance</span><span class="m">requested · pending</span></div>
+          <div class="seg" style="border:0"><span class="m" style="color:var(--chalk)">▲ Competition</span><span class="pillbtn">Request</span></div>
+        </div>
+        <div class="tabs"><div><span class="ic">◆</span>Today</div><div><span class="ic">▶</span>Train</div><div><span class="ic">≣</span>History</div><div class="on"><span class="ic">⋯</span>More</div></div>
+      </div></div>
+      <div class="plabel"><b>More — mode toggle, “web app” pointer &amp; request</b><br>Access you have but can’t use on mobile is shown, not hidden.</div>
+    </div>
+
+    <!-- PERFORMANCE -->
+    <div class="pcol">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="sb"><span>9:41</span><span>● ▮▮</span></div>
+        <div class="body">
+          <div class="kk">Performance · Athlete Twin</div><div class="h">Your state</div>
+          <div class="c b"><div class="kk" style="color:var(--blue)">HPI</div><div style="display:flex;align-items:baseline;gap:10px;margin-top:2px"><span style="font-weight:900;font-size:46px;color:var(--lime)">78</span><div><span class="chip" style="border-color:var(--lime);color:var(--lime)">primed</span><div class="m" style="margin-top:4px">limiter · recovery</div></div></div>
+            <div style="margin-top:10px"><div class="seg" style="border:0;padding:3px 0"><span class="m">Strength</span><span class="m" style="color:var(--lime)">82</span></div><div class="barmini"><i style="width:82%;background:var(--lime)"></i></div>
+            <div class="seg" style="border:0;padding:3px 0;margin-top:6px"><span class="m">Endurance</span><span class="m" style="color:var(--blue)">74</span></div><div class="barmini"><i style="width:74%;background:var(--blue)"></i></div>
+            <div class="seg" style="border:0;padding:3px 0;margin-top:6px"><span class="m">Recovery</span><span class="m" style="color:var(--violet)">+4</span></div><div class="barmini"><i style="width:60%;background:var(--violet)"></i></div></div>
+          </div>
+          <div class="c"><div class="kk">Trajectory · last 14 days</div>
+            <div class="barrow"><i style="height:50%;background:#c4f03566"></i><i style="height:58%;background:#c4f03566"></i><i style="height:54%;background:#c4f03566"></i><i style="height:62%;background:#c4f03566"></i><i style="height:60%;background:#c4f03566"></i><i style="height:68%;background:#c4f03566"></i><i style="height:64%;background:#c4f03566"></i><i style="height:72%;background:#c4f03566"></i><i style="height:70%;background:#c4f03566"></i><i style="height:78%;background:var(--lime)"></i></div>
+          </div>
+          <div class="c" style="border-left:3px solid var(--red)"><div class="kk" style="color:var(--red)">Injury risk · tissue</div>
+            <div class="seg"><span class="m" style="color:var(--chalk)">Quads</span><span class="chip" style="border-color:var(--amber);color:var(--amber)">31</span></div>
+            <div class="seg" style="border:0"><span class="m" style="color:var(--chalk)">Posterior</span><span class="chip" style="border-color:var(--lime);color:var(--lime)">12</span></div>
+          </div>
+        </div>
+        <div class="tabs"><div><span class="ic">◆</span>Today</div><div><span class="ic">▶</span>Train</div><div><span class="ic">≣</span>History</div><div class="on"><span class="ic">⋯</span>More</div></div>
+      </div></div>
+      <div class="plabel"><b>Performance (ported to mobile)</b><br>HPI cockpit, 14-day trajectory, tissue injury risk.</div>
+    </div>
+
+    <!-- PERIODIZE -->
+    <div class="pcol">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="sb"><span>9:41</span><span>● ▮▮</span></div>
+        <div class="body">
+          <div class="kk">Hybrid Athlete · enrolled</div><div class="h">16-week season</div>
+          <div class="m">Now in Accumulation · week 2/16</div>
+          <div class="c"><div style="display:flex;gap:3px;height:12px;border-radius:6px;overflow:hidden"><i style="flex:4;background:var(--blue)"></i><i style="flex:5;background:var(--lime)"></i><i style="flex:4;background:var(--amber)"></i><i style="flex:3;background:var(--violet)"></i></div>
+            <div class="row2" style="margin-top:10px"><span class="m"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--blue);margin-right:5px"></i>Accumulation</span><span class="m"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--lime);margin-right:5px"></i>Intensification</span><span class="m"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--amber);margin-right:5px"></i>Realization</span></div>
+          </div>
+          <div class="c" style="border-left:3px solid var(--blue)"><div style="display:flex;justify-content:space-between"><b style="color:var(--blue)">Accumulation</b><span class="m">wk 1–4</span></div><div class="m" style="margin:6px 0 10px">Build work capacity &amp; volume base.</div>
+            <div style="display:flex;gap:6px">
+              <div style="flex:1;text-align:center;background:#c4f0351a;border:1px solid var(--lime);border-radius:8px;padding:7px"><div class="m">W1</div><div class="barmini" style="width:70%;margin:4px auto 0"><i style="width:100%;background:var(--blue);opacity:.7"></i></div></div>
+              <div style="flex:1;text-align:center;background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:7px"><div class="m">W2</div><div class="barmini" style="width:70%;margin:4px auto 0"><i style="width:100%;background:var(--blue);opacity:.85"></i></div></div>
+              <div style="flex:1;text-align:center;background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:7px"><div class="m">W3</div><div class="barmini" style="width:70%;margin:4px auto 0"><i style="width:100%;background:var(--blue)"></i></div></div>
+              <div style="flex:1;text-align:center;background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:7px"><div class="m" style="color:var(--ash)">W4</div><div class="barmini" style="width:70%;margin:4px auto 0"><i style="width:100%;background:var(--ash);opacity:.5"></i></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabs"><div><span class="ic">◆</span>Today</div><div><span class="ic">▶</span>Train</div><div><span class="ic">≣</span>History</div><div class="on"><span class="ic">⋯</span>More</div></div>
+      </div></div>
+      <div class="plabel"><b>Periodize (ported to mobile)</b><br>Phase timeline + load/recovery microcycle bars.</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:40px;font-family:var(--mono);font-size:12px;color:var(--ash)">Standalone mockup · illustrative, brand-faithful. On-device rendering still needs an EAS/TestFlight build. · See <b style="color:var(--chalk)">web.html</b> for the web app + admin screens.</div>
+</div>
+</body>
+</html>

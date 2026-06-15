@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — changes preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#0c0d0c;--card:#181b20;--line:#2a2e34;--chalk:#ededea;--ash:#8b919b;--lime:#c4f035;--violet:#b29bff;--disp:'Archivo',system-ui,sans-serif;--mono:'JetBrains Mono',monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1000px 500px at 70% -10%,#10231022,transparent),var(--ink);color:var(--chalk);font-family:var(--disp);min-height:100vh}
+  .wrap{max-width:860px;margin:0 auto;padding:60px 24px}
+  .logo{font-weight:900;font-size:30px;letter-spacing:-1px}.logo span{color:var(--lime)}
+  .kick{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);margin-top:24px}
+  h1{font-size:40px;font-weight:900;letter-spacing:-1.5px;margin:6px 0 10px}
+  p.lead{color:var(--ash);line-height:1.65;max-width:640px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
+  a.card{display:block;text-decoration:none;color:inherit;background:linear-gradient(180deg,#ffffff05,transparent),var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;transition:.15s}
+  a.card:hover{border-color:var(--lime);transform:translateY(-2px)}
+  a.card .ic{font-size:30px}
+  a.card h2{font-size:20px;margin:12px 0 6px}
+  a.card p{color:var(--ash);font-size:13.5px;line-height:1.5;margin:0}
+  a.card .go{font-family:var(--mono);font-size:12px;color:var(--lime);margin-top:14px;display:inline-block}
+  ul{color:var(--ash);font-size:13.5px;line-height:1.8;margin-top:26px;padding-left:18px}
+  ul b{color:var(--chalk)}
+  .foot{margin-top:36px;font-family:var(--mono);font-size:12px;color:var(--ash);border-top:1px solid var(--line);padding-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">HYBRID<span>.</span></div>
+  <div class="kick">visual preview of this session’s changes</div>
+  <h1>What we built — at a glance</h1>
+  <p class="lead">Standalone, brand-faithful mockups of the key changes (no build, no install — just HTML). They illustrate layout &amp; content 1:1; the real app is React (web) and React&nbsp;Native (mobile).</p>
+
+  <div class="cards">
+    <a class="card" href="web.html">
+      <div class="ic">🖥️</div>
+      <h2>Web &amp; admin</h2>
+      <p>Persona-aware sidebar (interactive — flip the persona and watch it reshape), onboarding fork, the Access-control matrix, per-user grants, request queue, coach invite, and before/after of the trust fixes.</p>
+      <span class="go">Open web.html →</span>
+    </a>
+    <a class="card" href="mobile.html">
+      <div class="ic">📱</div>
+      <h2>Mobile</h2>
+      <p>Phone frames: the persona-shaped Today (Casual vs Athlete), the share-climax finish screen, the More hub (mode toggle, “More in the web app”, request), and two ported screens — Performance &amp; Periodize.</p>
+      <span class="go">Open mobile.html →</span>
+    </a>
+  </div>
+
+  <div class="kick" style="margin-top:38px">covered in these previews</div>
+  <ul>
+    <li><b>Persona-aware app shape</b> — one app, four shapes (casual / athlete / coach / admin).</li>
+    <li><b>Onboarding fork &amp; mode toggle</b> — choose how you train; switch anytime.</li>
+    <li><b>Admin access governance</b> — per-persona matrix, per-user grants, request→approve.</li>
+    <li><b>Coach</b> — coach-first landing, self-serve coaching, invite-accept banner.</li>
+    <li><b>Share-climax</b> — the post-workout finish as the acquisition moment.</li>
+    <li><b>Mobile parity</b> — “More in the web app” pointer + ported deep screens.</li>
+    <li><b>Trust &amp; correctness</b> — fabricated stats removed, honest day-one state, estimate labels.</li>
+  </ul>
+
+  <div class="foot">Open the two files in any browser. Fonts load from Google Fonts when online (graceful system fallback offline).</div>
+</div>
+</body>
+</html>
