@@ -16,7 +16,7 @@ function readInitial(): ClientPersona | null {
   if (typeof window === "undefined") return null;
   try {
     const v = localStorage.getItem(KEY);
-    return v === "casual" || v === "athlete" ? v : null;
+    return v === "casual" || v === "athlete" || v === "coach" ? v : null;
   } catch {
     return null;
   }

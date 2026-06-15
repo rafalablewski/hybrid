@@ -18,7 +18,7 @@ const emit = () => listeners.forEach((l) => l());
 // Hydrate once from storage; notify subscribers when it lands.
 AsyncStorage.getItem(KEY)
   .then((v) => {
-    if (v === "casual" || v === "athlete") choice = v;
+    if (v === "casual" || v === "athlete" || v === "coach") choice = v;
     emit();
   })
   .catch(() => {});
