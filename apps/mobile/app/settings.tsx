@@ -6,6 +6,7 @@ import { clearGuestSessions } from "../lib/guest";
 import { clearDraft } from "../lib/draft";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
+import type { Lang } from "@hybrid/core";
 import { useTheme, type ThemePref } from "../lib/theme";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 
@@ -15,9 +16,15 @@ const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "dark", label: "Dark" },
 ];
 
+const LANGUAGES: { id: Lang; label: string }[] = [
+  { id: "en", label: "English" },
+  { id: "pl", label: "Polski" },
+  { id: "de", label: "Deutsch" },
+];
+
 export default function Settings() {
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang, setLang } = useLang();
   const { signOut } = useSession();
   const { palette, pref, setPref } = useTheme();
   const C = palette;
@@ -59,6 +66,32 @@ export default function Settings() {
               <Pressable
                 key={opt.id}
                 onPress={() => setPref(opt.id)}
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  paddingVertical: 11,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: on ? C.lime : C.line,
+                  backgroundColor: on ? C.lime : "transparent",
+                }}
+              >
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: on ? C.onAccent : C.ash }}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      <Card style={{ marginTop: 16 }}>
+        <Kicker>Language</Kicker>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+          {LANGUAGES.map((opt) => {
+            const on = lang === opt.id;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => setLang(opt.id)}
                 style={{
                   flex: 1,
                   alignItems: "center",

@@ -43,14 +43,14 @@ const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 export default function Home() {
   const C = useTheme().palette;
   const router = useRouter();
-  const { name, signOut } = useSession();
+  const { name } = useSession();
   // Shape the home to the persona: a casual user gets the lean logger + share
   // loop; an athlete/coach gets the full cockpit (plan, This week, Future Self,
   // Twin). Switchable from More.
   const persona = usePersona();
   const isAthlete = persona !== "casual";
   const { draft } = useDraft();
-  const { lang, setLang, t } = useLang();
+  const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
@@ -187,25 +187,9 @@ export default function Home() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flex: 1 }}>
-          <Kicker>Fitness GPS · today</Kicker>
-          <H1>{t("home.ready")}</H1>
-        </View>
-        <View style={{ alignItems: "flex-end", gap: 8 }}>
-          <View style={{ flexDirection: "row", gap: 4 }}>
-            {(["en", "pl", "de"] as const).map((l) => (
-              <Pressable
-                key={l}
-                onPress={() => setLang(l)}
-                style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: lang === l ? C.lime : C.line, backgroundColor: lang === l ? C.lime : "transparent" }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: lang === l ? C.ink : C.ash }}>{l.toUpperCase()}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text onPress={signOut} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("common.signout")}</Text>
-        </View>
+      <View>
+        <Kicker>Fitness GPS · today</Kicker>
+        <H1>{t("home.ready")}</H1>
       </View>
 
       {/* START NOW — the one tap that matters in the gym */}
