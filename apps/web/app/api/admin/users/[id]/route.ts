@@ -20,7 +20,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       name: true,
       role: true,
       language: true,
-      featureGrants: true,
       createdAt: true,
       authId: true,
       memberships: { select: { role: true, org: { select: { id: true, name: true } } } },
@@ -58,13 +57,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     req: request,
   });
 
+  // Per-user feature grants live in their own (soft-guarded) table.
+  let featureGrants: string[] = [];
+  try {
+    featureGrants = (await prisma.featureGrant.findUnique({ where: { userId: id }, select: { navIds: true } }))?.navIds ?? [];
+  } catch {
+    /* FeatureGrant table not migrated yet */
+  }
+
   return NextResponse.json({
     id: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
     language: user.language,
-    featureGrants: user.featureGrants,
+    featureGrants,
     createdAt: user.createdAt,
     linkedAuth: Boolean(user.authId),
     orgs: user.memberships.map((m) => ({ id: m.org.id, name: m.org.name, role: m.role })),
@@ -99,14 +106,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const data: { role?: Role; language?: string; name?: string | null; featureGrants?: string[] } = {};
+  const data: { role?: Role; language?: string; name?: string | null } = {};
 
+  // Per-user feature grants — validated here, persisted to the (soft-guarded)
+  // FeatureGrant table below, separately from the User row.
+  let grants: string[] | undefined;
   if (body.featureGrants !== undefined) {
     if (!Array.isArray(body.featureGrants))
       return NextResponse.json({ error: "featureGrants must be an array" }, { status: 400 });
     const navIds = new Set(NAV_ITEMS.map((i) => i.id));
     // Only known nav ids survive (an admin can't grant a feature nothing reads).
-    data.featureGrants = [...new Set(body.featureGrants.filter((g): g is string => typeof g === "string" && navIds.has(g)))].slice(0, 40);
+    grants = [...new Set(body.featureGrants.filter((g): g is string => typeof g === "string" && navIds.has(g)))].slice(0, 40);
   }
 
   if (body.role !== undefined) {
@@ -134,10 +144,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (body.name !== undefined) data.name = body.name ? String(body.name).slice(0, 120) : null;
 
-  if (Object.keys(data).length === 0)
+  if (Object.keys(data).length === 0 && grants === undefined)
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
-  const updated = await prisma.user.update({ where: { id }, data });
+  const updated = Object.keys(data).length > 0 ? await prisma.user.update({ where: { id }, data }) : target;
+
+  let beforeGrants: string[] | undefined;
+  if (grants !== undefined) {
+    try {
+      beforeGrants = (await prisma.featureGrant.findUnique({ where: { userId: id }, select: { navIds: true } }))?.navIds ?? [];
+      await prisma.featureGrant.upsert({
+        where: { userId: id },
+        create: { userId: id, navIds: grants },
+        update: { navIds: grants },
+      });
+    } catch {
+      return NextResponse.json({ error: "Feature grants aren't enabled yet — run reference/sql-user-feature-grants.sql." }, { status: 503 });
+    }
+  }
 
   await audit({
     actor: gate.admin,
@@ -146,8 +170,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     targetId: id,
     summary: `Updated ${target.email}`,
     metadata: {
-      before: { role: target.role, language: target.language, name: target.name, featureGrants: target.featureGrants },
-      after: { role: updated.role, language: updated.language, name: updated.name, featureGrants: updated.featureGrants },
+      before: { role: target.role, language: target.language, name: target.name, ...(grants !== undefined ? { featureGrants: beforeGrants } : {}) },
+      after: { role: updated.role, language: updated.language, name: updated.name, ...(grants !== undefined ? { featureGrants: grants } : {}) },
     },
     req: request,
   });
@@ -158,5 +182,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     name: updated.name,
     role: updated.role,
     language: updated.language,
+    ...(grants !== undefined ? { featureGrants: grants } : {}),
   });
 }

@@ -37,9 +37,6 @@ model User {
   name      String?
   role      Role     @default(CLIENT) // a user can be COACH and CLIENT at once
   language  String   @default("en")
-  // Admin-granted extra feature access (nav ids) beyond this user's persona —
-  // e.g. give a retail user the analytics screen. Layered into /api/flags.
-  featureGrants String[] @default([])
   createdAt DateTime @default(now())
 
   sessions      Session[]
@@ -62,8 +59,18 @@ model User {
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
+// Admin-granted per-user feature access (nav ids) beyond the user's persona.
+// Deliberately its OWN table (not a column on User) so the hot-path user lookup
+// never depends on it — every read is soft-guarded, so the app runs fine before
+// this migration is applied (the feature just no-ops). Layered into /api/flags.
+model FeatureGrant {
+  userId    String   @id
+  navIds    String[] @default([])
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 // A user's request for access to a feature beyond their persona. Admin approves
-// → the navId is added to the user's featureGrants (see User.featureGrants).
+// → the navId is added to the user's FeatureGrant.navIds.
 model AccessRequest {
   id        String    @id @default(cuid())
   userId    String

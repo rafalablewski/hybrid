@@ -73,7 +73,8 @@ The app now takes a different shape per persona, on both clients.
   overloaded, but an admin can grant e.g. stats to a casual user. Reuses the
   feature-flags store (no new table); both clients honour it. `persona-access`.
 - Per-USER grants: an admin unlocks an individual feature for ONE person (Admin →
-  Users → drawer), beyond their persona — `User.featureGrants`, folded into
+  Users → drawer), beyond their persona — a dedicated `FeatureGrant` table (off
+  the User model + soft-guarded reads → deploy-safe in any order), folded into
   /api/flags per request (server-trusted), audited. SQL: sql-user-feature-grants.sql.
 - Request-access loop ✅: a user asks for a hidden feature (web Settings / mobile
   More → "Request a feature"); the admin sees the queue atop Access control and

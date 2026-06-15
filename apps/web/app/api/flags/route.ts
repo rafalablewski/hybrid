@@ -23,8 +23,15 @@ export async function GET(request: Request) {
   // Fold this user's personal feature grants into the persona-access map — each
   // granted nav id becomes visible-from-casual FOR THIS USER ONLY (the map is
   // per-request), so an admin can unlock a single feature for one person on top
-  // of the global per-persona policy.
-  const grants = Array.isArray(user.featureGrants) ? user.featureGrants : [];
+  // of the global per-persona policy. Soft-guarded: if the FeatureGrant table
+  // isn't migrated yet, there are simply no grants (the app still works).
+  let grants: string[] = [];
+  try {
+    const fg = await prisma.featureGrant.findUnique({ where: { userId: user.id }, select: { navIds: true } });
+    grants = fg?.navIds ?? [];
+  } catch {
+    // table not created yet — no per-user grants.
+  }
   if (grants.length > 0) {
     const access = sanitizePersonaAccess(values["access.personaNav"]);
     for (const id of grants) access[id] = "casual";

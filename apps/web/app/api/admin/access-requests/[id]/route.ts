@@ -23,15 +23,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!req) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   if (action === "approve") {
-    // Grant the feature to the user (dedup), then mark the request approved — in
-    // one transaction so the two never drift.
-    const target = await prisma.user.findUnique({ where: { id: req.userId }, select: { featureGrants: true, email: true } });
-    if (!target) return NextResponse.json({ error: "user not found" }, { status: 404 });
-    const grants = [...new Set([...(target.featureGrants ?? []), req.navId])].slice(0, 40);
-    await prisma.$transaction([
-      prisma.user.update({ where: { id: req.userId }, data: { featureGrants: grants } }),
-      prisma.accessRequest.update({ where: { id }, data: { status: "approved", decidedAt: new Date() } }),
-    ]);
+    // Add the feature to the user's grant row (dedup) AND mark the request
+    // approved in one transaction so the two never drift. Soft-guarded: if the
+    // FeatureGrant table isn't migrated, return a clear 503 (request untouched).
+    try {
+      const existing = (await prisma.featureGrant.findUnique({ where: { userId: req.userId }, select: { navIds: true } }))?.navIds ?? [];
+      const navIds = [...new Set([...existing, req.navId])].slice(0, 40);
+      await prisma.$transaction([
+        prisma.featureGrant.upsert({ where: { userId: req.userId }, create: { userId: req.userId, navIds }, update: { navIds } }),
+        prisma.accessRequest.update({ where: { id }, data: { status: "approved", decidedAt: new Date() } }),
+      ]);
+    } catch {
+      return NextResponse.json({ error: "Feature grants aren't enabled yet — run reference/sql-user-feature-grants.sql." }, { status: 503 });
+    }
     await audit({
       actor: gate.admin,
       action: "access.grant",
