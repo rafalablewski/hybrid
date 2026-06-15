@@ -31,10 +31,13 @@ The app now takes a different shape per persona, on both clients.
   (folds into Phase 1 / Phase 3).
 
 ### Phase 1 — Average Joe (acquisition)
-- Collapse his surface to Today / Train / History / Share.
-- Make the post-workout **share the reward** (auto-prompt on PR/streak, better
+- ✅ Registration routing nailed: the GUEST (no-account) flow is unchanged —
+  welcome → train → finish → share, no onboarding wall; onboarding (persona +
+  goal + prefs) appears only AFTER an account is created (pendingOnboarding flag,
+  both clients; survives the email-confirm path). Returning sign-ins skip it.
+- ⏳ Make the post-workout **share the reward** (auto-prompt on PR/streak, better
   templates, a first-workout hero card).
-- Stop onboarding over-promising a plan.
+- ⏳ Stop onboarding over-promising a plan.
 
 ### Phase 2 — The Athlete (depth, organized + fed)
 - An athlete cockpit: sport → goal → season → today → performance → technique.

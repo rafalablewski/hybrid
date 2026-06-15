@@ -128,6 +128,20 @@ export default function AppShell() {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
 
+  // A brand-new registrant (flag set at signup) lands in onboarding to choose
+  // their persona + goal + preferences. One-time, then cleared.
+  useEffect(() => {
+    if (!ready || !session) return;
+    try {
+      if (localStorage.getItem("hybrid.pendingOnboarding")) {
+        localStorage.removeItem("hybrid.pendingOnboarding");
+        setScreen("onboarding");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [ready, session]);
+
   if (!ready || !session) return null;
 
   const initial = session.name.charAt(0).toUpperCase();
@@ -467,7 +481,7 @@ export default function AppShell() {
         )}
 
         {screen === "onboarding" && (
-          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("periodize"); }} />
+          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}

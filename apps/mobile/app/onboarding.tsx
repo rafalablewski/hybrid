@@ -53,7 +53,7 @@ export default function Onboarding() {
     <Screen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Set up your plan</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>skip</Text>
+        <Text onPress={() => router.replace("/(tabs)")} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>skip</Text>
       </View>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 4, marginBottom: 4 }}>
         Let&apos;s build your first plan
