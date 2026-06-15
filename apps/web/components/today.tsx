@@ -17,6 +17,7 @@ import {
   type Macrocycle,
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
+import { usePersona } from "@/lib/persona";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
@@ -51,6 +52,9 @@ export default function Today({
   currentWeek?: number;
   onStart: () => void;
 }) {
+  // Casual users get the lean home; athletes/coaches get the deep cockpit cards
+  // (This week, Future Self, Twin). Switchable from Settings.
+  const isAthlete = usePersona() !== "casual";
   const log = toTrainingLog(sessions);
   const rx = useMemo(
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
@@ -105,7 +109,7 @@ export default function Today({
       )}
 
       {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {macro && sessions.length > 0 && (
+      {isAthlete && macro && sessions.length > 0 && (
         <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} style={{ gridColumn: "span 2" }} />
       )}
 
@@ -170,8 +174,8 @@ export default function Today({
         </Card>
       )}
 
-      {/* FUTURE SELF */}
-      {primaryLift && projection && !projection.insufficient && projGoal ? (
+      {/* FUTURE SELF — athlete depth */}
+      {isAthlete && (primaryLift && projection && !projection.insufficient && projGoal ? (
         <ChartFrame title={`Future self · ${primaryLift}`} kicker="projected from your behavior" c={VIOLET}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: CHALK }}>{Math.round(projection.current)}</span>
@@ -204,10 +208,10 @@ export default function Today({
             strength, your goal ETA, and how likely you are to hit it.
           </Mono>
         </Card>
-      )}
+      ))}
 
-      {/* TWIN mini — only once there's real training to compute it from */}
-      {sessions.length > 0 && (
+      {/* TWIN mini — athlete depth, once there's real training to compute it from */}
+      {isAthlete && sessions.length > 0 && (
         <Card glass style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
             Performance State · Athlete Twin

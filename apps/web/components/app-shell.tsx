@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav } from "@hybrid/core";
+import { groupedNav, navForPersona, type Persona } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
+import { usePersona } from "@/lib/persona";
 import {
   INK,
   INK2,
@@ -97,6 +98,9 @@ export default function AppShell() {
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled } = useFlags();
+  // Persona shapes the nav surface (casual ⊂ athlete ⊂ coach ⊂ admin); items are
+  // still additionally gated by their feature flag.
+  const persona = usePersona();
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
@@ -175,7 +179,7 @@ export default function AppShell() {
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {groupedNav().map(({ group, items }) => {
+          {groupedNav(navForPersona(persona)).map(({ group, items }) => {
             const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
             if (visible.length === 0) return null;
             return (
@@ -534,7 +538,7 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} t={t} />
+      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} t={t} />
     </div>
   );
 }
@@ -546,11 +550,13 @@ function CommandMenu({
   screen,
   setScreen,
   isEnabled,
+  persona,
   t,
 }: {
   screen: string;
   setScreen: (id: string) => void;
   isEnabled: (flag: string) => boolean;
+  persona: Persona;
   t: (key: string) => string;
 }) {
   const [open, setOpen] = useState(false);
@@ -568,8 +574,8 @@ function CommandMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Flatten the shared canonical nav into flag-enabled tiles.
-  const tiles = groupedNav().flatMap(({ group, items }) =>
+  // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles.
+  const tiles = groupedNav(navForPersona(persona)).flatMap(({ group, items }) =>
     items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group })),
   );
 

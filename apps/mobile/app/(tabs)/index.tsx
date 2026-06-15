@@ -26,6 +26,7 @@ import {
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
+import { usePersona } from "../../lib/persona";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
@@ -43,6 +44,10 @@ export default function Home() {
   const C = useTheme().palette;
   const router = useRouter();
   const { name, signOut } = useSession();
+  // Shape the home to the persona: a casual user gets the lean logger + share
+  // loop; an athlete/coach gets the full cockpit (plan, This week, Future Self,
+  // Twin). Switchable from More.
+  const isAthlete = usePersona() !== "casual";
   const { draft } = useDraft();
   const { lang, setLang, t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -205,17 +210,19 @@ export default function Home() {
         </Text>
       </Pressable>
 
-      {/* personalize */}
-      <Pressable
-        onPress={() => router.push("/onboarding")}
-        style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
-        </View>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
-      </Pressable>
+      {/* personalize — athletes program toward a plan; casual users skip it */}
+      {isAthlete && (
+        <Pressable
+          onPress={() => router.push("/onboarding")}
+          style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
+        </Pressable>
+      )}
 
       {/* ASSIGNED — workouts the coach scheduled */}
       {upcoming.length > 0 && (
@@ -256,7 +263,7 @@ export default function Home() {
       </Card>
 
       {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {reconciled && (
+      {isAthlete && reconciled && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Kicker color={C.violet}>This week · {reconciled.phase.label} · wk {reconciled.phase.week}</Kicker>
@@ -355,8 +362,8 @@ export default function Home() {
         </View>
       )}
 
-      {/* FUTURE SELF */}
-      {primaryLift && projection && !projection.insufficient && projGoal ? (
+      {/* FUTURE SELF — athlete depth */}
+      {isAthlete && (primaryLift && projection && !projection.insufficient && projGoal ? (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
           <Kicker color={C.violet}>Future self · {primaryLift}</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 8 }}>
@@ -384,10 +391,10 @@ export default function Home() {
             strength, your goal ETA, and how likely you are to hit it.
           </Mono>
         </Card>
-      )}
+      ))}
 
-      {/* TWIN — only once there's real training to compute it from */}
-      {sessions.length > 0 && (
+      {/* TWIN — athlete depth, once there's real training to compute it from */}
+      {isAthlete && sessions.length > 0 && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
           <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>

@@ -18,12 +18,17 @@ Consolidates `first-run-and-logic-audit.md` + `persona-gap-matrix.md`._
 
 ## The plan
 
-### Phase 0 — Persona-aware app shape *(the unlock — in progress)*
-Make the app take a different shape per persona. Mobile-first.
-- Persona model in `@hybrid/core` (shared so web + mobile agree), derived from
-  role + an onboarding choice (casual vs athlete); admin = god view.
-- Per-nav-item persona visibility; filter the mobile tabs + More hub (then web).
-- A persona fork at onboarding; a distinct home emphasis + primary action.
+### Phase 0 — Persona-aware app shape ✅ *(shipped)*
+The app now takes a different shape per persona, on both clients.
+- ✅ Persona model in `@hybrid/core` (casual ⊂ athlete ⊂ coach ⊂ admin), derived
+  from role + onboarding choice; `navForPersona`/`navVisibleTo` (7 tests).
+- ✅ Onboarding "How do you want to use HYBRID?" fork (mobile + web), persisted
+  per-device; reversible (mobile More toggle / web Settings toggle).
+- ✅ Nav filtered by persona: mobile More hub + CommandMenu; web sidebar + ⌘K hub.
+- ✅ Home shapes itself: casual gets the lean Start→route→on-track→share; athlete/
+  coach get the cockpit cards (plan, This week, Future Self, Twin).
+- ⏳ Remaining for later: per-persona PRIMARY ACTION / hero + a coach-first home
+  (folds into Phase 1 / Phase 3).
 
 ### Phase 1 — Average Joe (acquisition)
 - Collapse his surface to Today / Train / History / Share.
