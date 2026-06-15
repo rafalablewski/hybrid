@@ -30,8 +30,9 @@ what's going on?"**:
    own stated principle ("never a fabricated number", "no mock data — honestly
    empty").
 3. **Trust leaks**: the landing page advertises fabricated traction ("50K+
-   athletes · 1.2M sessions · 4.9★") and links anyone — logged-out included —
-   straight to the admin console UI.
+   athletes · 1.2M sessions · 4.9★") and publicly links to the operator console
+   (the `/admin` route is itself guarded server-side, so it's an optics problem,
+   not a data hole).
 
 Net: a new user _understands how to start_, but is then dropped into an
 **unguided, 28-screen app with no plan, some cards quietly judging them on no
@@ -56,9 +57,11 @@ A first pass of fixes landed in the same branch as this note:
   pace is a generic starting default, and the `why` copy says so ("a starting
   estimate — log this lift and I'll calibrate it"). New tests cover both.
 - **Fabricated social proof (§4) — removed** from the landing page.
-- **Open admin console (§4) — closed.** The public "Open the admin panel" link
-  is gone and the console shell now bounces any non-admin to `/login` (the
-  `/api/admin/*` routes were already `requireAdmin`-gated server-side — verified).
+- **Public admin link (§4) — removed.** The "Open the admin panel" link is gone
+  from the landing page. (Correction: the `/admin` route was already guarded —
+  `app/admin/layout.tsx` redirects non-admins server-side and `/api/admin/*` is
+  `requireAdmin`-gated — so this was an optics fix, not a security hole. The
+  client-side guard added to the panel shell is redundant belt-and-suspenders.)
 - **HPI 100 / "peak" (2.1)** turned out to be already gated at the UI: both the
   home Twin card and the Performance screen hide HPI until ≥1 session, so a
   zero-session user never sees it. No engine change made.
@@ -159,13 +162,13 @@ estimates rather than rendering them identically to earned numbers.
   1.2M sessions / 4.9★ on App Store" on a pre-launch app with no users. Directly
   contradicts the repo's "no mock data / honestly empty" ethos and is a
   credibility/own-goal risk if a real user or reviewer notices.
-- **Admin console UI open to anyone** (`apps/web/app/page.tsx:63` links
-  "Open the admin panel" → `/admin`; `app/admin/page.tsx` renders `<AdminPanel/>`
-  with no role guard; `components/admin/panel.tsx` only prints a cosmetic
-  "Restricted · admin only"). Data is presumably still protected at the API/RLS
-  layer (NOT verified here), but exposing the operator UI shell — and advertising
-  it from the public landing page — is a trust and surface-area problem. _Action:
-  verify every `/api/admin/*` route enforces the ADMIN role server-side._
+- **Public admin link is misleading** (`apps/web/app/page.tsx:63` links
+  "Open the admin panel" → `/admin` for every visitor, signed-out included).
+  CORRECTION to the first cut of this note: the route is NOT open — verified
+  that `app/admin/layout.tsx` calls `getAdmin()` and redirects any non-admin to
+  `/app` server-side before any admin UI/data is sent, and every `/api/admin/*`
+  route is `requireAdmin`-gated. So this is a trust/optics problem (advertising
+  an operator console to the public), not a data hole. _Action: drop the link._
 - **NaN path (2.2)** is a correctness bug: one zero-valued biometric breaks the
   headline readiness/HPI number with no guard.
 - **"Continue to the app" after empty onboarding** leaves the user with
@@ -201,5 +204,7 @@ estimates rather than rendering them identically to earned numbers.
 
 _Method: traced the unauthenticated→authenticated journey on both clients and
 the no-data behaviour of the shared engines; high-impact claims (HPI=100,
-NaN-readiness, neutral placeholders, fabricated stats, open admin route) were
-verified directly against source before inclusion._
+NaN-readiness, neutral placeholders, fabricated stats, the public admin link)
+were verified directly against source. NOTE: the first cut of this note wrongly
+called the `/admin` route unguarded; a later check found `app/admin/layout.tsx`
+guards it server-side — corrected above._
