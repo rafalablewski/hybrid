@@ -9,6 +9,8 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://hybrid-web-rosy.verc
 
 /** The HYBRID web app (same host) — for features that live on web only. */
 export const WEB_APP_URL = `${API_URL}/app`;
+/** The backend base (for browser-redirect flows like provider OAuth). */
+export const API_BASE = API_URL;
 
 async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -269,6 +271,80 @@ export async function actCoachInvite(id: string, action: "accept" | "end"): Prom
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+// --- Ported screens: state / connections / events / video ---
+
+export type StateSnapshot = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
+export async function fetchState(): Promise<StateSnapshot | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/state`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    return (await res.json()) as StateSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+export type Conn = { id: string; provider: string; status: string; lastSyncAt?: string };
+export type Provider = { id: string; label: string; auth: "native" | "team" | "oauth"; provides: string[]; configured: boolean };
+export async function fetchConnections(): Promise<{ connections: Conn[]; providers: Provider[] }> {
+  try {
+    const res = await fetch(`${API_URL}/api/connections`, { headers: await authHeaders() });
+    if (!res.ok) return { connections: [], providers: [] };
+    const d = (await res.json()) as { connections?: Conn[]; providers?: Provider[] };
+    return { connections: d.connections ?? [], providers: d.providers ?? [] };
+  } catch {
+    return { connections: [], providers: [] };
+  }
+}
+export async function syncConnection(providerId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/connect/${providerId}/sync`, { method: "POST", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export type EventRow = { id: string; name: string; sport: string; date: string };
+export async function fetchEvents(): Promise<EventRow[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/events`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return (((await res.json()) as { events?: EventRow[] }).events) ?? [];
+  } catch {
+    return [];
+  }
+}
+export async function createEvent(name: string, sport: string, date: string): Promise<EventRow | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ name, sport, date }),
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as { event?: EventRow }).event ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type VideoAnalysis = {
+  id: string;
+  movement: string;
+  metrics: { movement: string; reps: number; minKneeAngle?: number; kneeAsymmetryPct?: number; techniqueScore: number; flags: string[] };
+  createdAt: string;
+};
+export async function fetchVideoAnalyses(): Promise<VideoAnalysis[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/video`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return (((await res.json()) as { analyses?: VideoAnalysis[] }).analyses) ?? [];
+  } catch {
+    return [];
   }
 }
 

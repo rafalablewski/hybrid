@@ -17,9 +17,9 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 // access to lives on the web app only — keep in sync with the HREF map in
 // components/liquid-glass.tsx.
 const MOBILE_NAV_IDS = new Set([
-  "today", "cockpit", "log", "history", "plans", "periodize", "sport", "calendar",
-  "performance", "velocity", "running", "progress", "nutrition", "checkin", "coach",
-  "settings", "onboarding",
+  "today", "cockpit", "log", "history", "plans", "periodize", "competition", "sport", "calendar",
+  "performance", "velocity", "running", "video", "tactical", "progress", "nutrition", "checkin",
+  "longevity", "connections", "coach", "roles", "settings", "onboarding",
 ]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
@@ -30,6 +30,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
     links: [
       { id: "plans", labelKey: "nav.plans", sub: "browse & enroll", href: "/(tabs)/plans", color: C.lime },
       { id: "periodize", labelKey: "nav.periodize", sub: "your season · phases", href: "/periodize", color: C.violet },
+      { id: "competition", labelKey: "nav.competition", sub: "peak on the day", href: "/competition", color: C.amber },
       { id: "sport", labelKey: "nav.sport", sub: "sport-specific S&C", href: "/(tabs)/sport", color: C.lime },
       { id: "calendar", labelKey: "nav.calendar", sub: "month view · load heat", href: "/calendar", color: C.blue },
       { id: "onboarding", labelKey: "nav.onboarding", sub: "4 questions → a plan", href: "/onboarding", color: C.violet },
@@ -41,6 +42,8 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "performance", labelKey: "nav.performance", sub: "HPI · twin · injury risk", href: "/performance", color: C.blue },
       { id: "velocity", labelKey: "nav.velocity", sub: "VBT · load–velocity", href: "/(tabs)/velocity", color: C.blue },
       { id: "running", labelKey: "nav.running", sub: "mileage · pace · easy/hard", href: "/(tabs)/running", color: C.blue },
+      { id: "video", labelKey: "nav.video", sub: "technique · asymmetry", href: "/video", color: C.violet },
+      { id: "tactical", labelKey: "nav.tactical", sub: "deployment readiness", href: "/tactical", color: C.amber },
       { id: "progress", labelKey: "nav.progress", sub: "body recomposition", href: "/progress", color: C.violet },
     ],
   },
@@ -49,7 +52,10 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
     links: [
       { id: "nutrition", labelKey: "nav.nutrition", sub: "macros · adaptive targets", href: "/nutrition", color: C.lime },
       { id: "checkin", labelKey: "nav.checkin", sub: "weekly review · coach reply", href: "/checkin", color: C.blue },
+      { id: "longevity", labelKey: "nav.longevity", sub: "biological age · healthspan", href: "/longevity", color: C.violet },
+      { id: "connections", labelKey: "nav.connections", sub: "wearables · sensors", href: "/connections", color: C.blue },
       { id: "coach", labelKey: "nav.coach", sub: "roster · notes · clients", href: "/(tabs)/coach", color: C.violet },
+      { id: "roles", labelKey: "nav.roles", sub: "who can see what", href: "/roles", color: C.lime },
     ],
   },
 ];

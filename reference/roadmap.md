@@ -49,6 +49,10 @@ The app now takes a different shape per persona, on both clients.
   (Today entry + featured More card). `app/cockpit.tsx`.
 - ✅ Web cockpit parity (a `cockpit` nav item + components/cockpit.tsx, athlete-
   gated, same six live sections jumping to the deep web screens).
+- ✅ Mobile screen ports: Performance, Periodize, Competition, Longevity,
+  Tactical, Video, Connections, Roles now exist natively (so they drop off the
+  "More in the web app" list). Still web-only: Builder, Organization, Analytics/
+  Dashboard, Force plate, Talent (complex editors / desktop tools).
 - ⛔ Unblock one real input stream — Apple HealthKit (recovery) or camera
   pose-capture (technique engine): blocked on an EAS build + native modules /
   credentials (see wearables / vbt-capture / video-intel).
