@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FEATURE_FLAGS, evaluateFlags, flagValues, type FlagOverride } from "@hybrid/core";
+import { FEATURE_FLAGS, evaluateFlags, flagValues, sanitizePersonaAccess, type FlagOverride } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -18,8 +18,21 @@ export async function GET(request: Request) {
     // table not created yet — evaluate on the registry defaults alone.
   }
 
+  const values = flagValues(FEATURE_FLAGS, overrides, user.role);
+
+  // Fold this user's personal feature grants into the persona-access map — each
+  // granted nav id becomes visible-from-casual FOR THIS USER ONLY (the map is
+  // per-request), so an admin can unlock a single feature for one person on top
+  // of the global per-persona policy.
+  const grants = Array.isArray(user.featureGrants) ? user.featureGrants : [];
+  if (grants.length > 0) {
+    const access = sanitizePersonaAccess(values["access.personaNav"]);
+    for (const id of grants) access[id] = "casual";
+    values["access.personaNav"] = access;
+  }
+
   return NextResponse.json({
     flags: evaluateFlags(FEATURE_FLAGS, overrides, user.role),
-    values: flagValues(FEATURE_FLAGS, overrides, user.role),
+    values,
   });
 }

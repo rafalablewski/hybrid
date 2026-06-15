@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
-import { evaluateRoleChange, isValidLanguage, normalizeRole } from "@hybrid/core";
+import { evaluateRoleChange, isValidLanguage, normalizeRole, NAV_ITEMS } from "@hybrid/core";
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -20,6 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       name: true,
       role: true,
       language: true,
+      featureGrants: true,
       createdAt: true,
       authId: true,
       memberships: { select: { role: true, org: { select: { id: true, name: true } } } },
@@ -63,6 +64,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     name: user.name,
     role: user.role,
     language: user.language,
+    featureGrants: user.featureGrants,
     createdAt: user.createdAt,
     linkedAuth: Boolean(user.authId),
     orgs: user.memberships.map((m) => ({ id: m.org.id, name: m.org.name, role: m.role })),
@@ -90,14 +92,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
 
-  const parsed = await readJsonLimited<{ role?: string; language?: string; name?: string | null }>(request, 8 * 1024);
+  const parsed = await readJsonLimited<{ role?: string; language?: string; name?: string | null; featureGrants?: unknown }>(request, 8 * 1024);
   if (parsed.error) return parsed.error;
   const body = parsed.data;
 
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const data: { role?: Role; language?: string; name?: string | null } = {};
+  const data: { role?: Role; language?: string; name?: string | null; featureGrants?: string[] } = {};
+
+  if (body.featureGrants !== undefined) {
+    if (!Array.isArray(body.featureGrants))
+      return NextResponse.json({ error: "featureGrants must be an array" }, { status: 400 });
+    const navIds = new Set(NAV_ITEMS.map((i) => i.id));
+    // Only known nav ids survive (an admin can't grant a feature nothing reads).
+    data.featureGrants = [...new Set(body.featureGrants.filter((g): g is string => typeof g === "string" && navIds.has(g)))].slice(0, 40);
+  }
 
   if (body.role !== undefined) {
     // The lockout/escalation rule lives in @hybrid/core (pure + unit-tested).
@@ -136,8 +146,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     targetId: id,
     summary: `Updated ${target.email}`,
     metadata: {
-      before: { role: target.role, language: target.language, name: target.name },
-      after: { role: updated.role, language: updated.language, name: updated.name },
+      before: { role: target.role, language: target.language, name: target.name, featureGrants: target.featureGrants },
+      after: { role: updated.role, language: updated.language, name: updated.name, featureGrants: updated.featureGrants },
     },
     req: request,
   });

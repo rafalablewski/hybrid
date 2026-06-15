@@ -68,6 +68,10 @@ The app now takes a different shape per persona, on both clients.
   persona each feature is visible from (lower = more users). So retail isn't
   overloaded, but an admin can grant e.g. stats to a casual user. Reuses the
   feature-flags store (no new table); both clients honour it. `persona-access`.
+- Per-USER grants: an admin unlocks an individual feature for ONE person (Admin →
+  Users → drawer), beyond their persona — `User.featureGrants`, folded into
+  /api/flags per request (server-trusted), audited. SQL: sql-user-feature-grants.sql.
+  (Optional next: a user-facing "request access → admin approves" flow.)
 
 ### Cross-cutting / blocked (parallel)
 - Seed the **plan library** (content; don't fabricate).

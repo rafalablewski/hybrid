@@ -37,6 +37,9 @@ model User {
   name      String?
   role      Role     @default(CLIENT) // a user can be COACH and CLIENT at once
   language  String   @default("en")
+  // Admin-granted extra feature access (nav ids) beyond this user's persona —
+  // e.g. give a retail user the analytics screen. Layered into /api/flags.
+  featureGrants String[] @default([])
   createdAt DateTime @default(now())
 
   sessions      Session[]
