@@ -7,6 +7,9 @@ import { supabase } from "./supabase";
 // shows up on the web dashboard, and vice-versa.
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://hybrid-web-rosy.vercel.app";
 
+/** The HYBRID web app (same host) — for features that live on web only. */
+export const WEB_APP_URL = `${API_URL}/app`;
+
 async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;

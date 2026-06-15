@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { navVisibleTo, NAV_ITEMS } from "@hybrid/core";
 import { useSession } from "../../lib/session";
 import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
-import { fetchMyAccessRequests, requestAccess } from "../../lib/api";
+import { fetchMyAccessRequests, requestAccess, WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
 // Features worth requesting (everything not casual-by-default).
 const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
+
+// Nav ids that have a real mobile screen/route. Anything else the user has
+// access to lives on the web app only — keep in sync with the HREF map in
+// components/liquid-glass.tsx.
+const MOBILE_NAV_IDS = new Set([
+  "today", "cockpit", "log", "history", "plans", "sport", "calendar",
+  "velocity", "running", "progress", "nutrition", "checkin", "coach",
+  "settings", "onboarding",
+]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
 
@@ -65,6 +74,9 @@ export default function More() {
   };
   // Features the user can't currently see — offer to request them.
   const hidden = GRANTABLE.filter((i) => !navVisibleTo(persona, i.id, access));
+  // Features the user HAS access to but that only exist on the web app — surface
+  // them so the access isn't silently invisible on mobile.
+  const webOnly = NAV_ITEMS.filter((i) => navVisibleTo(persona, i.id, access) && !MOBILE_NAV_IDS.has(i.id));
 
   // Shape the hub to the persona (honouring the admin's access override): a
   // casual retail user sees only the lean set, an athlete/coach sees the depth.
@@ -138,6 +150,29 @@ export default function More() {
           </View>
         </View>
       ))}
+
+      {/* More in the web app — features the user has access to that live on web only */}
+      {webOnly.length > 0 && (
+        <View style={{ marginTop: 22 }}>
+          <Kicker>More in the web app</Kicker>
+          <Mono style={{ marginTop: 4, fontSize: 11 }}>
+            You have access to these — they live in the HYBRID web app for now.
+          </Mono>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+            {webOnly.map((item) => (
+              <View key={item.id} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{item.icon} {item.label}</Text>
+              </View>
+            ))}
+          </View>
+          <Pressable
+            onPress={() => Linking.openURL(WEB_APP_URL).catch(() => {})}
+            style={{ marginTop: 12, backgroundColor: `${C.blue}1f`, borderWidth: 1, borderColor: C.blue, borderRadius: 12, paddingVertical: 12, alignItems: "center" }}
+          >
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.blue) }}>Open the web app →</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Request a feature — ask an admin to unlock something beyond your persona */}
       {hidden.length > 0 && (
