@@ -46,12 +46,17 @@ export default function AdminAccess() {
   useEffect(load, [load]);
 
   const decide = async (id: string, action: "approve" | "deny") => {
-    setRequests((r) => r.filter((x) => x.id !== id));
-    await fetch(`/api/admin/access-requests/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action }),
-    }).catch(() => {});
+    setRequests((r) => r.filter((x) => x.id !== id)); // optimistic
+    try {
+      const res = await fetch(`/api/admin/access-requests/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      load(); // re-sync the queue from the server on failure
+    }
   };
 
   const codeDefault = (item: { minPersona?: Persona }): Persona => item.minPersona ?? "casual";

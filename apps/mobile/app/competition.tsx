@@ -24,7 +24,7 @@ export default function Competition() {
   useEffect(() => { load(); }, []);
 
   const add = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || Number.isNaN(Date.parse(date))) return;
     setBusy(true);
     const ev = await createEvent(name.trim(), sport, date);
     setBusy(false);

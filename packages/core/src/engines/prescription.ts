@@ -112,7 +112,7 @@ export function prescribeSession(
   // calibrate" rather than presenting a guess as if it were measured).
   const lastE1rm = loggedE1rm.length
     ? loggedE1rm[0]!.e1rm!
-    : (MOVEMENTS[primary.move]!.baseLoad ?? 100) * 1.2;
+    : (MOVEMENTS[primary.move]?.baseLoad ?? 100) * 1.2;
   const pct =
     primary.sig.action === "progress"
       ? 0.8

@@ -20,16 +20,21 @@ export default function ForcePlate() {
 
   const parse = () => {
     setMsg(null);
-    setParsed(parseForcePlateCsv(text, { athleteId: "me" }));
+    try {
+      setParsed(parseForcePlateCsv(text, { athleteId: "me" }));
+    } catch {
+      setParsed(null);
+      setMsg("Couldn't parse that CSV — check the format.");
+    }
   };
 
   const doImport = async () => {
     if (!parsed || parsed.signals.length === 0) return;
     setImporting(true);
-    let ok = 0;
-    for (const s of parsed.signals) {
-      if (await importSignal({ kind: s.kind, value: s.value, unit: s.unit, source: "forceplate", ts: s.ts })) ok++;
-    }
+    const results = await Promise.all(
+      parsed.signals.map((s) => importSignal({ kind: s.kind, value: s.value, unit: s.unit, source: "forceplate", ts: s.ts })),
+    );
+    const ok = results.filter(Boolean).length;
     setImporting(false);
     setMsg(`Imported ${ok} of ${parsed.signals.length} signals.`);
     setParsed(null);

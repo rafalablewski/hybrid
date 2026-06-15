@@ -147,20 +147,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (Object.keys(data).length === 0 && grants === undefined)
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
-  const updated = Object.keys(data).length > 0 ? await prisma.user.update({ where: { id }, data }) : target;
-
+  // Apply the role/name/language change and the grant change together, so a
+  // failure on either rolls back both (no half-applied state, no skipped audit).
+  let updated = target;
   let beforeGrants: string[] | undefined;
-  if (grants !== undefined) {
-    try {
-      beforeGrants = (await prisma.featureGrant.findUnique({ where: { userId: id }, select: { navIds: true } }))?.navIds ?? [];
-      await prisma.featureGrant.upsert({
-        where: { userId: id },
-        create: { userId: id, navIds: grants },
-        update: { navIds: grants },
-      });
-    } catch {
-      return NextResponse.json({ error: "Feature grants aren't enabled yet — run reference/sql-user-feature-grants.sql." }, { status: 503 });
-    }
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (Object.keys(data).length > 0) updated = await tx.user.update({ where: { id }, data });
+      if (grants !== undefined) {
+        beforeGrants = (await tx.featureGrant.findUnique({ where: { userId: id }, select: { navIds: true } }))?.navIds ?? [];
+        await tx.featureGrant.upsert({ where: { userId: id }, create: { userId: id, navIds: grants }, update: { navIds: grants } });
+      }
+    });
+  } catch {
+    return grants !== undefined
+      ? NextResponse.json({ error: "Couldn't save — feature grants need reference/sql-user-feature-grants.sql." }, { status: 503 })
+      : NextResponse.json({ error: "Update failed." }, { status: 500 });
   }
 
   await audit({

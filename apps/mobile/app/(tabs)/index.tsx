@@ -72,8 +72,10 @@ export default function Home() {
       .finally(() => setRefreshing(false));
   };
   const respondInvite = async (id: string, action: "accept" | "end") => {
-    setInvites((v) => v.filter((i) => i.id !== id));
-    await actCoachInvite(id, action);
+    const prev = invites;
+    setInvites((v) => v.filter((i) => i.id !== id)); // optimistic
+    const ok = await actCoachInvite(id, action);
+    if (!ok) setInvites(prev); // restore on failure
   };
   // Reload whenever the Today tab gains focus — so returning here after logging
   // a workout refreshes sessions/assignments and the auto re-sync can fire.
