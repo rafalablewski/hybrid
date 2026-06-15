@@ -10,10 +10,14 @@ import type { Session as SupaSession } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { flushGuestSessions } from "./guest";
 
+type Role = "client" | "coach" | "admin";
+
 type Ctx = {
   session: SupaSession | null;
   ready: boolean;
   name: string;
+  /** auth role (CLIENT|COACH|ADMIN, lowercased); defaults to client. */
+  role: Role;
   signOut: () => Promise<void>;
 };
 
@@ -52,10 +56,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const name =
     (meta.name as string) ||
     (session?.user.email ? session.user.email.split("@")[0]! : "Athlete");
+  const rawRole = String(meta.role ?? "client").toLowerCase();
+  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
 
   return (
     <SessionCtx.Provider
-      value={{ session, ready, name, signOut: async () => void (await supabase.auth.signOut()) }}
+      value={{ session, ready, name, role, signOut: async () => void (await supabase.auth.signOut()) }}
     >
       {children}
     </SessionCtx.Provider>

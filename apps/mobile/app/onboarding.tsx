@@ -10,6 +10,7 @@ import {
   type Equipment,
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
+import { useClientPersonaChoice, setClientPersona } from "../lib/persona";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
@@ -32,6 +33,7 @@ export default function Onboarding() {
   const [days, setDays] = useState(3);
   const [equipment, setEquipment] = useState<Equipment>("full");
   const [enrolling, setEnrolling] = useState(false);
+  const persona = useClientPersonaChoice();
 
   const plan = useMemo(
     () => (goal ? recommendPlan({ goal, experience, daysPerWeek: days, equipment }) : null),
@@ -56,7 +58,32 @@ export default function Onboarding() {
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 4, marginBottom: 4 }}>
         Let&apos;s build your first plan
       </Text>
-      <Mono style={{ lineHeight: 19 }}>Four quick questions — we&apos;ll match you to a plan you&apos;ll actually finish.</Mono>
+      <Mono style={{ lineHeight: 19 }}>Tell us how you train — we&apos;ll shape the app around you.</Mono>
+
+      <Card style={{ marginTop: 14, borderLeftWidth: 3, borderLeftColor: C.lime }}>
+        <Kicker color={C.lime}>How do you want to use HYBRID?</Kicker>
+        <View style={{ gap: 8, marginTop: 10 }}>
+          {([
+            { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app." },
+            { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit." },
+          ]).map((o) => {
+            const active = persona === o.id;
+            return (
+              <Pressable
+                key={o.id}
+                onPress={() => setClientPersona(o.id)}
+                style={{ borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? `${C.lime}14` : "transparent", borderRadius: 12, padding: 12 }}
+              >
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: active ? txt(C, C.lime) : C.chalk }}>{o.title}</Text>
+                <Mono style={{ marginTop: 2, fontSize: 11, lineHeight: 16 }}>{o.sub}</Mono>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Mono color={C.ash} style={{ marginTop: 10, fontSize: 10, lineHeight: 14 }}>
+          You can switch anytime in More. Coaching others? Your coach tools appear automatically.
+        </Mono>
+      </Card>
 
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>1 · Your main goal</Kicker>
