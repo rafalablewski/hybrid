@@ -167,9 +167,12 @@ echo 'EXPO_PUBLIC_SUPABASE_ANON_KEY=paste-your-anon-public-key-here' > .env`}</C
           <code style={code}>.gitignore</code>), which is exactly why we never paste the real key onto this page.
         </Note>
         <Note c={AMBER}>
-          One thing the pretend phone <strong>can&rsquo;t</strong> do this easy way: take photos with the camera or
-          save a workout picture. If you specifically need those, do the extra section just below. Otherwise you&rsquo;re
-          all set.
+          <strong>Got a red screen that says &ldquo;Native module is null, cannot access legacy storage&rdquo;?</strong>{" "}
+          That just means the pretend phone opened the app in <strong>Expo Go</strong>, a quick preview that
+          can&rsquo;t do a few things this app needs (remembering your login, the camera, save-a-photo). It is{" "}
+          <em>not</em> broken and <em>not</em> your fault. The fix is to build the full version once — do the{" "}
+          <strong>blue section just below (steps 9&ndash;10)</strong> and the red screen is gone for good. Only want a
+          quick peek and don&rsquo;t mind the red text? Tap <strong>Dismiss</strong> and look around.
         </Note>
       </Card>
 
@@ -177,13 +180,15 @@ echo 'EXPO_PUBLIC_SUPABASE_ANON_KEY=paste-your-anon-public-key-here' > .env`}</C
       <Card style={{ borderLeft: `3px solid ${BLUE}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
-            Extra — only if you need the camera or save-photo
+            Recommended — the full app (fixes the red &ldquo;Native module is null&rdquo; error)
           </Mono>
-          <Chip c={BLUE}>optional</Chip>
+          <Chip c={BLUE}>most reliable</Chip>
         </div>
         <p style={para}>
-          Do steps 1&ndash;5 above first. Then, instead of step 6&ndash;7, build a fuller version of the app. It
-          takes a few extra minutes the first time. Open the Terminal and paste these:
+          This is the version that <strong>actually works end-to-end</strong> — login, camera, and save-a-photo —
+          and it&rsquo;s what makes the red &ldquo;Native module is null&rdquo; error go away. Do steps 1&ndash;5
+          above first. Then, instead of steps 6&ndash;7, build the full version of the app. It takes a few extra
+          minutes the first time. Open the Terminal and paste these:
         </p>
         <Steps>
           <Step n={9} title="Install one more helper (once)">
@@ -257,8 +262,8 @@ xcrun simctl launch booted app.hybrid.mobile`}</Cmd>
         </Mono>
         <Matrix
           rows={[
-            ["I just want to look at the app + tap around", "Steps 1–8", LIME],
-            ["I need the camera or save-a-photo to work", "Also do 9–10", BLUE],
+            ["I want it to work properly (login, no red errors)", "Steps 1–5, then 9–10", BLUE],
+            ["I just want a quick peek (red errors are OK)", "Steps 1–8, tap Dismiss", LIME],
             ["Building on my computer is too slow", "Use the cloud robot", VIOLET],
             ["I only want to check it doesn't crash", "pnpm --filter @hybrid/mobile export:ios", ASH],
           ]}
@@ -271,6 +276,44 @@ xcrun simctl launch booted app.hybrid.mobile`}</Cmd>
           If something looks wrong (don&rsquo;t panic)
         </Mono>
         <ul style={list}>
+          <Li>
+            <strong>Red screen: &ldquo;Native module is null, cannot access legacy storage&rdquo;</strong>{" "}
+            (often with <code style={code}>AsyncStorageError</code>). The app opened in <strong>Expo Go</strong>, the
+            quick preview, which doesn&rsquo;t include everything this app needs. This is the most common one. The fix
+            is to build the full version once — do steps <strong>9&ndash;10</strong> (the blue section above):
+            <Cmd>{`cd apps/mobile
+npx expo run:ios`}</Cmd>
+            After that one build, the red screen is gone for good. (You can tap <strong>Dismiss</strong> to peek
+            around in the meantime, but login won&rsquo;t work until you build the full version.)
+          </Li>
+          <Li>
+            <strong>&ldquo;Verifying &lsquo;iOS&nbsp;…&nbsp;simruntime&rsquo;&rdquo; has been stuck for ages.</strong>{" "}
+            That&rsquo;s your Mac unpacking the pretend-iPhone files the very first time — it&rsquo;s several gigabytes,
+            so it can take <strong>5&ndash;20 minutes</strong> and the bar often looks frozen near the start.
+            Let it finish; don&rsquo;t cancel. It only does this once. (If it truly never moves, your Mac may be low on
+            free disk space.)
+          </Li>
+          <Li>
+            <strong>Lots of red &ldquo;CHHapticPattern&rdquo; / &ldquo;hapticpatternlibrary.plist&rdquo; lines, or
+            &ldquo;Failed to send CA Event for app launch measurements.&rdquo;</strong> These are <strong>safe to
+            ignore</strong> — the pretend phone has no buzzing/vibration hardware and no real-device stats, so it
+            grumbles. If you also see a line like <code style={code}>iOS Bundled … (NNNN modules)</code>, the app is
+            running fine. Nothing to fix.
+          </Li>
+          <Li>
+            <strong>Updating the code stops with &ldquo;Your local changes would be overwritten by merge.&rdquo;</strong>{" "}
+            Something edited a file on your computer and it&rsquo;s blocking <code style={code}>git pull</code>. To throw
+            away that local change and take the latest, paste:
+            <Cmd>{`git checkout -- apps/mobile/package.json
+git pull`}</Cmd>
+            (Swap in whatever filename the message named.) Then start again from step 6.
+          </Li>
+          <Li>
+            <strong>&ldquo;No package.json found&rdquo; or &ldquo;cd: no such file or directory: apps/mobile.&rdquo;</strong>{" "}
+            You&rsquo;re not inside the app&rsquo;s folder. Type <code style={code}>cd hybrid</code> first (that steps
+            into it), then redo the command. <code style={code}>pnpm install</code> must be run from the{" "}
+            <strong>hybrid</strong> folder, not your home folder.
+          </Li>
           <Li>
             <strong>Red screen: &ldquo;No script URL provided&rdquo;</strong> (it also says{" "}
             <code style={code}>unsanitizedScriptURLString = (null)</code>). The app built and opened fine, but{" "}
