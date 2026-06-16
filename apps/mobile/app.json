@@ -46,7 +46,6 @@
           "cameraPermission": "HYBRID uses the camera so you can take progress photos."
         }
       ],
-      "expo-notifications",
       "react-native-iap"
     ],
     "experiments": {
