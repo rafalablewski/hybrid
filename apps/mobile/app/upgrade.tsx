@@ -2,6 +2,8 @@ import { useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { startCheckout } from "../lib/api";
+import { iapAvailable, purchaseFull } from "../lib/iap";
+import { supabase } from "../lib/supabase";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -28,6 +30,23 @@ export default function Upgrade() {
     if (busy) return;
     setBusy(true);
     setError("");
+
+    // iOS: App Store rules require native In-App Purchase for digital goods.
+    if (iapAvailable()) {
+      const res = await purchaseFull();
+      if (res.ok) {
+        // Pull a fresh session so the mirrored 'paid' entitlement unlocks Full.
+        await supabase.auth.refreshSession().catch(() => {});
+        setBusy(false);
+        router.back();
+        return;
+      }
+      setBusy(false);
+      if (!res.cancelled) setError(res.error ?? "The purchase didn't complete — try again.");
+      return;
+    }
+
+    // Web / Android: hosted Stripe Checkout.
     const res = await startCheckout();
     setBusy(false);
     if (res.ok && res.url) {
@@ -88,11 +107,11 @@ export default function Upgrade() {
         )}
       </Pressable>
 
-      {/* On iOS, App Store rules route the final purchase through native In-App
-          Purchase — that IAP client is the remaining integration. */}
+      {/* iOS completes the purchase through native In-App Purchase; web/Android
+          use hosted Stripe Checkout. */}
       <Mono color={C.ash} style={{ marginTop: 10, lineHeight: 18, textAlign: "center" }}>
-        On iOS the final purchase completes through In-App Purchase. The native IAP client is the
-        remaining piece of this integration.
+        On iOS the purchase completes securely through the App Store. Cancel anytime in your
+        App Store subscriptions.
       </Mono>
 
       <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: 18 }}>
