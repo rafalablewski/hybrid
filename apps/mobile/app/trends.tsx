@@ -3,12 +3,15 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   weeklyVolumeTrend,
+  weeklyMuscleSets,
   exerciseTable,
   volumeStatus,
   volumeAdvice,
   type LoggedSession,
   type ExercisePeriod,
   type TrendDir,
+  type MuscleGroup,
+  type ExerciseTableRow,
 } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
 import { useLoggerPrefs } from "../lib/logger-prefs";
@@ -35,6 +38,8 @@ export default function Trends() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<ExercisePeriod>("all");
+  const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
+  const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
 
   const load = () => {
     setRefreshing(true);
@@ -48,6 +53,16 @@ export default function Trends() {
   const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
   const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
   const trained = muscles.some((m) => m.sets > 0);
+
+  const focusMuscle = selMuscle ?? advice[0]?.muscle ?? [...muscles].sort((a, b) => b.sets - a.sets)[0]?.muscle ?? "chest";
+  const muscleWeeks = useMemo(() => weeklyMuscleSets(sessions, focusMuscle, 8, Date.now(), iw), [sessions, focusMuscle, iw]);
+  const sortedTable = useMemo(() => {
+    const arr = [...table];
+    const { k, dir } = sort;
+    arr.sort((a, b) => (k === "name" ? dir * a.name.localeCompare(b.name) : dir * ((a[k] as number) - (b[k] as number))));
+    return arr;
+  }, [table, sort]);
+  const sortBy = (k: keyof ExerciseTableRow) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
 
   const TREND: Record<TrendDir, { g: string; c: string }> = {
     up: { g: "▲", c: C.lime },
@@ -98,12 +113,21 @@ export default function Trends() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
               {muscles.map((m) => {
                 const c = m.zone === "overreaching" ? C.red : m.zone === "under" ? C.amber : m.zone === "peak" ? C.blue : C.lime;
+                const on = m.muscle === focusMuscle;
                 return (
-                  <View key={m.muscle} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}14`, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
+                  <Pressable key={m.muscle} onPress={() => setSelMuscle(m.muscle)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: on ? c : `${c}55`, backgroundColor: `${c}${on ? "2e" : "14"}`, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
                     <Mono color={C.chalk} style={{ fontSize: 12 }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
                     <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "700", color: c }}>{m.sets}</Text>
-                  </View>
+                  </Pressable>
                 );
+              })}
+            </View>
+            {/* Per-muscle 8-week trend */}
+            <Mono style={{ fontSize: 9, letterSpacing: 1, textTransform: "uppercase", marginTop: 14 }}>{MUSCLE_LABEL[focusMuscle] ?? focusMuscle} · weekly sets · 8 wk</Mono>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
+              {muscleWeeks.map((s, i) => {
+                const mx = Math.max(...muscleWeeks, 1);
+                return <View key={i} style={{ flex: 1, height: 4 + (s / mx) * 48, borderRadius: 3, backgroundColor: i === muscleWeeks.length - 1 ? C.blue : `${C.blue}66` }} />;
               })}
             </View>
             {advice.length > 0 && (
@@ -128,12 +152,14 @@ export default function Trends() {
               })}
             </View>
             <View style={{ flexDirection: "row", marginTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Text style={{ flex: 2, fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>EXERCISE</Text>
-              <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>FREQ</Text>
-              <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>BEST</Text>
-              <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>↗</Text>
+              {([["EXERCISE", "name", 2, "left"], ["FREQ", "sessions", 1, "center"], ["BEST", "bestE1rm", 1, "center"]] as const).map(([h, k, fl, al]) => (
+                <Text key={h} onPress={() => sortBy(k)} style={{ flex: fl, textAlign: al, fontFamily: F.mono, fontSize: 9, color: sort.k === k ? C.lime : C.ash, letterSpacing: 1 }}>
+                  {h}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+                </Text>
+              ))}
+              <Text onPress={() => sortBy("volume")} style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: sort.k === "volume" ? C.lime : C.ash, letterSpacing: 1 }}>↗</Text>
             </View>
-            {table.map((r) => {
+            {sortedTable.map((r) => {
               const tr = TREND[r.trend];
               return (
                 <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercises", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>

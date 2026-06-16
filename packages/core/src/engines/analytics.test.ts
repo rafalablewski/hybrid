@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { weeklyVolumeTrend, exerciseTable } from "./analytics";
+import { weeklyVolumeTrend, exerciseTable, weeklyMuscleSets } from "./analytics";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-16T12:00:00.000Z").getTime();
@@ -57,6 +57,15 @@ describe("training analytics hub", () => {
     expect(bench.trend).toBe("up"); // 95 → 100 e1RM
     expect(run.kind).toBe("cardio");
     expect(run.volume).toBe(5); // distance km
+  });
+
+  it("weeklyMuscleSets returns per-week working sets for one muscle, oldest→newest", () => {
+    const chest = weeklyMuscleSets(sessions, "chest", 2, NOW);
+    expect(chest).toHaveLength(2);
+    expect(chest[1]).toBe(2); // this week: 2 working bench sets hit chest
+    expect(chest[0]).toBe(1); // last week: 1
+    // warm-ups excluded by default, included when asked
+    expect(weeklyMuscleSets(sessions, "chest", 2, NOW, true)[1]).toBe(3);
   });
 
   it("drops movements with no activity in the period", () => {

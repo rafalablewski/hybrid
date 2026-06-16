@@ -4,12 +4,15 @@ import { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   weeklyVolumeTrend,
+  weeklyMuscleSets,
   exerciseTable,
   volumeStatus,
   volumeAdvice,
   type LoggedSession,
   type ExercisePeriod,
   type TrendDir,
+  type MuscleGroup,
+  type ExerciseTableRow,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
@@ -41,12 +44,27 @@ export default function Trends({
   onOpenVolume?: () => void;
 }) {
   const [period, setPeriod] = useState<ExercisePeriod>("all");
+  const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
+  const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
   const { countWarmupsInVolume: iw } = useLoggerPrefs();
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
   const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
   const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
   const trained = muscles.some((m) => m.sets > 0);
+
+  // Default the per-muscle trend to the most-actionable muscle, else the biggest.
+  const focusMuscle = selMuscle ?? advice[0]?.muscle ?? [...muscles].sort((a, b) => b.sets - a.sets)[0]?.muscle ?? "chest";
+  const muscleWeeks = useMemo(() => weeklyMuscleSets(sessions, focusMuscle, 8, Date.now(), iw), [sessions, focusMuscle, iw]);
+
+  const sortedTable = useMemo(() => {
+    const arr = [...table];
+    const { k, dir } = sort;
+    arr.sort((a, b) => (k === "name" ? dir * a.name.localeCompare(b.name) : dir * ((a[k] as number) - (b[k] as number))));
+    return arr;
+  }, [table, sort]);
+  const sortBy = (k: keyof ExerciseTableRow) =>
+    setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
 
   const weekData = weeks.map((w) => ({ w: fmtWeek(w.weekStart), sets: w.sets, t: Math.round(w.tonnage / 100) / 10 }));
 
@@ -104,13 +122,28 @@ export default function Trends({
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           {muscles.map((m) => {
             const c = m.zone === "overreaching" ? RED : m.zone === "under" ? AMBER : m.zone === "peak" ? BLUE : LIME;
+            const on = m.muscle === focusMuscle;
             return (
-              <div key={m.muscle} style={{ display: "flex", alignItems: "center", gap: 6, border: `1px solid ${c}55`, background: `${c}14`, borderRadius: 8, padding: "5px 10px" }}>
+              <button key={m.muscle} onClick={() => setSelMuscle(m.muscle)} title="Show this muscle's 8-week trend"
+                style={{ display: "flex", alignItems: "center", gap: 6, border: `1px solid ${on ? c : `${c}55`}`, background: `${c}${on ? "2e" : "14"}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", outline: on ? `1px solid ${c}` : "none" }}>
                 <Mono s={{ fontSize: 12, color: CHALK }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
                 <span style={{ ...mono, fontSize: 12, fontWeight: 800, color: c }}>{m.sets}</span>
-              </div>
+              </button>
             );
           })}
+        </div>
+        {/* Per-muscle 8-week trend for the selected muscle */}
+        <div style={{ marginTop: 14 }}>
+          <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 4 }}>{MUSCLE_LABEL[focusMuscle] ?? focusMuscle} · weekly sets · 8 wk</Mono>
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={muscleWeeks.map((s, i) => ({ w: fmtWeek(weeks[i]?.weekStart ?? ""), sets: s }))}>
+              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 10 }} />
+              <YAxis stroke={ASH} style={{ ...mono, fontSize: 10 }} width={26} allowDecimals={false} />
+              <Tooltip contentStyle={tip} formatter={(v) => `${v} sets`} />
+              <Bar dataKey="sets" fill={BLUE} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
         {advice.length > 0 && (
           <Mono s={{ fontSize: 12, color: ASH, display: "block", marginTop: 10 }}>
@@ -138,11 +171,14 @@ export default function Trends({
         </div>
         <div style={{ marginTop: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${LINE}` }}>
-            {["exercise", "freq", "best e1RM", "volume", "trend"].map((h) => (
-              <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>{h}</Mono>
+            {([["exercise", "name"], ["freq", "sessions"], ["best e1RM", "bestE1rm"], ["volume", "volume"], ["trend", null]] as const).map(([h, k]) => (
+              <button key={h} disabled={!k} onClick={() => k && sortBy(k)}
+                style={{ ...mono, fontSize: 10, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? LIME : ASH }}>
+                {h}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+              </button>
             ))}
           </div>
-          {table.map((r) => {
+          {sortedTable.map((r) => {
             const tr = TREND_GLYPH[r.trend];
             return (
               <button

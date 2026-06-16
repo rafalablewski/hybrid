@@ -1,5 +1,7 @@
 import type { LoggedSession, PacePoint } from "./session";
+import type { MuscleGroup } from "./types";
 import { setsForVolume } from "./session";
+import { MOVEMENTS } from "./movements";
 import { exerciseHistory } from "./records";
 import { exerciseDashboard, type ExercisePeriod } from "./exercise";
 
@@ -50,6 +52,41 @@ export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Da
       }
     }
     out.push({ weekStart: new Date(from).toISOString(), sets, tonnage: Math.round(tonnage) });
+  }
+  return out;
+}
+
+/**
+ * Weekly working-set count for ONE muscle over the last `weeks` (rolling 7-day
+ * windows), oldest → newest — for a per-muscle volume trend line. Each set of a
+ * movement that trains the muscle counts one; honours the warm-up volume flag.
+ */
+export function weeklyMuscleSets(
+  sessions: LoggedSession[],
+  muscle: MuscleGroup,
+  weeks = 8,
+  now = Date.now(),
+  includeWarmups = false,
+): number[] {
+  const out: number[] = [];
+  for (let w = weeks - 1; w >= 0; w--) {
+    const to = now - w * WEEK;
+    const from = to - WEEK;
+    let sets = 0;
+    for (const s of sessions) {
+      const t = ms(s.startedAt);
+      if (t < from || t >= to) continue;
+      for (const b of s.blocks) {
+        if (b.kind !== "strength") continue;
+        const muscles = MOVEMENTS[b.name]?.muscles;
+        if (!muscles || !muscles.includes(muscle)) continue;
+        sets += setsForVolume(b, includeWarmups).filter((set) => {
+          const r = parseFloat(set.reps);
+          return Number.isFinite(r) && r > 0;
+        }).length;
+      }
+    }
+    out.push(sets);
   }
   return out;
 }
