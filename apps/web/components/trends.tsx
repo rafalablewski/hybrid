@@ -196,7 +196,7 @@ export default function Trends({
               <button
                 key={r.name}
                 onClick={() => onOpenExercise?.(r.name)}
-                style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, padding: "9px 0", borderTop: `1px solid ${LINE}`, background: "none", border: "none", borderTopColor: LINE, cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%" }}
+                style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, padding: "9px 0", border: "none", borderTop: `1px solid ${LINE}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%" }}
               >
                 <Mono s={{ fontSize: 13, color: onOpenExercise ? LIME : CHALK }}>{r.name}</Mono>
                 <Mono s={{ fontSize: 13 }}>{r.sessions}×</Mono>

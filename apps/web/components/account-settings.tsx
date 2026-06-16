@@ -62,25 +62,26 @@ export default function AccountSettings() {
   const [newEmail, setNewEmail] = useState("");
   const [newPw, setNewPw] = useState("");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
 
-  const runAuth = async (label: string, op: () => Promise<{ error: { message: string } | null }>) => {
-    if (!authOn) { setProfileMsg("Sign in with a real account to edit your profile."); return; }
+  const runAuth = async (label: string, setMsg: (m: string | null) => void, op: () => Promise<{ error: { message: string } | null }>) => {
+    if (!authOn) { setMsg("Sign in with a real account to edit your profile."); return; }
     setProfileBusy(true);
-    setProfileMsg(null);
+    setMsg(null);
     try {
       const { error } = await op();
-      setProfileMsg(error ? error.message : label);
+      setMsg(error ? error.message : label);
     } catch {
-      setProfileMsg("Network error — try again.");
+      setMsg("Network error — try again.");
     }
     setProfileBusy(false);
   };
-  const saveName = () => runAuth("✓ Name saved.", async () => createClient().auth.updateUser({ data: { name: name.trim() } }));
+  const saveName = () => runAuth("✓ Name saved.", setProfileMsg, async () => createClient().auth.updateUser({ data: { name: name.trim() } }));
   const changeEmail = () =>
-    runAuth("✓ Check your inbox to confirm the new email.", async () => createClient().auth.updateUser({ email: newEmail.trim() }));
+    runAuth("✓ Check your inbox to confirm the new email.", setProfileMsg, async () => createClient().auth.updateUser({ email: newEmail.trim() }));
   const changePassword = () =>
-    runAuth("✓ Password updated.", async () => createClient().auth.updateUser({ password: newPw }));
+    runAuth("✓ Password updated.", setPasswordMsg, async () => createClient().auth.updateUser({ password: newPw }));
   const signOutEverywhere = async () => {
     if (authOn) await createClient().auth.signOut({ scope: "global" }).catch(() => {});
     void logout();
@@ -344,7 +345,7 @@ export default function AccountSettings() {
                 <button
                   key={u}
                   onClick={() => setLoggerPref("units", u)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? LIME : ASH, background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
                 >
                   {u}
                 </button>
@@ -547,7 +548,7 @@ export default function AccountSettings() {
                 <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>Update</button>
               </div>
             )}
-            {profileMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
+            {passwordMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
           </Card>
           <Card style={{ marginTop: 16 }}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Active sessions</Mono>
