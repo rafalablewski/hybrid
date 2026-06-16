@@ -31,6 +31,17 @@ Apple Developer account + Expo token — not yet available).
   Postgres ports are blocked**. So the agent CANNOT run migrations or query the
   DB directly — hand the user SQL to run in the Supabase SQL Editor instead.
 
+## RULE: web ↔ mobile parity (always)
+This is ONE product on two clients. Whatever ships for **web must also ship for
+mobile**, and whatever ships for **mobile must also ship for web** — features,
+screens, visual treatments (e.g. Liquid Glass), nav, and behaviour. Put shared
+logic in `packages/core` so both clients consume the same source of truth.
+
+When you add or change something on one client, implement the equivalent on the
+other in the SAME change. If you genuinely can't reach parity in that change
+(e.g. a native-only constraint), record the gap explicitly in `capabilities.ts`
+(as `planned`/`blocked` with `blockedBy`) so the missing side is never lost.
+
 ## RULE: keep the Capabilities registry current (always)
 `packages/core/src/capabilities.ts` is the single source of truth for **every**
 app capability. It is surfaced in the web admin **Capabilities** screen

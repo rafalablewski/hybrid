@@ -21,11 +21,12 @@ import AdminSecurity from "./security";
 import AdminAccess from "./access";
 import CoachApplications from "./coach-applications";
 import AdminSimulator from "./simulator";
+import AdminGuidance from "./guidance";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "simulator";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "simulator" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
@@ -46,6 +47,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", group: "Governance" },
   { id: "simulator", label: "iOS simulator", icon: "📱", group: "Governance" },
+  { id: "guidance", label: "Guidance", icon: "📖", group: "Governance" },
 ];
 
 export default function AdminPanel() {
@@ -227,6 +229,7 @@ export default function AdminPanel() {
         {section === "audit" && <AdminAuditLog />}
         {section === "system" && <AdminSystem />}
         {section === "simulator" && <AdminSimulator />}
+        {section === "guidance" && <AdminGuidance />}
       </main>
     </div>
   );
