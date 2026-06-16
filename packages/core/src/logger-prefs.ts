@@ -4,6 +4,8 @@
 // it through a small store. Settings most users never touch default to today's
 // hardcoded behavior, so nothing changes until they opt in.
 
+import { sanitizeLandmarkOverrides, type LandmarkOverrides } from "./engines/landmarks";
+
 export interface LoggerPrefs {
   /** Detailed shows the RPE (and on web, velocity) column; Simple is load × reps. */
   detailed: boolean;
@@ -22,6 +24,8 @@ export interface LoggerPrefs {
   /** Count warm-up & cool-down sets toward working VOLUME (off = exclude them,
    *  the default). PRs/e1RM stay warm-up-excluded regardless. */
   countWarmupsInVolume: boolean;
+  /** Per-muscle overrides of the default volume landmarks (empty = use defaults). */
+  landmarkOverrides: LandmarkOverrides;
 }
 
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
@@ -33,6 +37,7 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   restTimer: true,
   restSeconds: 90,
   countWarmupsInVolume: false,
+  landmarkOverrides: {},
 };
 
 /** Allowed default-rest values (matches the in-workout presets). */
@@ -59,5 +64,6 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     restTimer: bool(r.restTimer, DEFAULT_LOGGER_PREFS.restTimer),
     restSeconds: seconds,
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
+    landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
   };
 }

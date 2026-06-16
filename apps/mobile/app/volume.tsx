@@ -3,6 +3,7 @@ import { View, Text, type DimensionValue } from "react-native";
 import {
   volumeStatus,
   volumeAdvice,
+  resolveLandmarks,
   type LoggedSession,
   type MuscleVolumeStatus,
   type VolumeZone,
@@ -38,9 +39,11 @@ export default function Volume() {
   };
   useEffect(load, []);
 
-  const iw = useLoggerPrefs().countWarmupsInVolume;
-  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const prefs = useLoggerPrefs();
+  const iw = prefs.countWarmupsInVolume;
+  const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
+  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
   const trained = rows.some((r) => r.sets > 0);
 
   const ZONE: Record<VolumeZone, { label: string; c: string }> = {

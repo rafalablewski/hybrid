@@ -8,6 +8,7 @@ import {
   exerciseTable,
   volumeStatus,
   volumeAdvice,
+  resolveLandmarks,
   type LoggedSession,
   type ExercisePeriod,
   type TrendDir,
@@ -46,11 +47,13 @@ export default function Trends({
   const [period, setPeriod] = useState<ExercisePeriod>("all");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
   const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
-  const { countWarmupsInVolume: iw } = useLoggerPrefs();
+  const prefs = useLoggerPrefs();
+  const iw = prefs.countWarmupsInVolume;
+  const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
-  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
+  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
   const trained = muscles.some((m) => m.sets > 0);
 
   // Default the per-muscle trend to the most-actionable muscle, else the biggest.

@@ -92,6 +92,47 @@ export function weeklySetsByMuscle(
   return map;
 }
 
+/** A user's partial overrides of the default landmarks, per muscle. */
+export type LandmarkOverrides = Partial<Record<MuscleGroup, Partial<VolumeLandmark>>>;
+
+/**
+ * Merge user overrides onto the defaults and clamp each muscle's values into a
+ * sane monotonic order (mv ≤ mev ≤ mavLow ≤ mavHigh ≤ mrv, all ≥ 0) — so a
+ * fat-fingered edit can never invert the zones. Returns a full landmark map.
+ */
+export function resolveLandmarks(overrides?: LandmarkOverrides): Record<MuscleGroup, VolumeLandmark> {
+  const out = {} as Record<MuscleGroup, VolumeLandmark>;
+  for (const m of ALL_MUSCLES) {
+    const d = VOLUME_LANDMARKS[m];
+    const o = overrides?.[m] ?? {};
+    const n = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : fallback);
+    let mv = n(o.mv, d.mv);
+    let mev = Math.max(mv, n(o.mev, d.mev));
+    let mavLow = Math.max(mev, n(o.mavLow, d.mavLow));
+    let mavHigh = Math.max(mavLow, n(o.mavHigh, d.mavHigh));
+    let mrv = Math.max(mavHigh, n(o.mrv, d.mrv));
+    out[m] = { mv, mev, mavLow, mavHigh, mrv };
+  }
+  return out;
+}
+
+/** Validate an untrusted overrides object — drop unknown muscles & non-numbers. */
+export function sanitizeLandmarkOverrides(raw: unknown): LandmarkOverrides {
+  const out: LandmarkOverrides = {};
+  if (!raw || typeof raw !== "object") return out;
+  const r = raw as Record<string, unknown>;
+  const KEYS: (keyof VolumeLandmark)[] = ["mv", "mev", "mavLow", "mavHigh", "mrv"];
+  for (const m of ALL_MUSCLES) {
+    const v = r[m];
+    if (!v || typeof v !== "object") continue;
+    const src = v as Record<string, unknown>;
+    const entry: Partial<VolumeLandmark> = {};
+    for (const k of KEYS) if (typeof src[k] === "number" && Number.isFinite(src[k]) && (src[k] as number) >= 0) entry[k] = Math.round(src[k] as number);
+    if (Object.keys(entry).length) out[m] = entry;
+  }
+  return out;
+}
+
 /** Which landmark zone a weekly set count falls in. */
 export function classifyVolume(sets: number, l: VolumeLandmark): VolumeZone {
   if (sets >= l.mrv) return "overreaching";
@@ -133,10 +174,11 @@ export function muscleVolumeStatus(
 /** Per-muscle weekly volume status for every muscle group, in display order. */
 export function volumeStatus(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number; includeWarmups?: boolean } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean; landmarks?: Record<MuscleGroup, VolumeLandmark> } = {},
 ): MuscleVolumeStatus[] {
   const counts = weeklySetsByMuscle(sessions, opts);
-  return ALL_MUSCLES.map((m) => muscleVolumeStatus(m, counts.get(m) ?? 0, VOLUME_LANDMARKS[m]));
+  const lm = opts.landmarks ?? VOLUME_LANDMARKS;
+  return ALL_MUSCLES.map((m) => muscleVolumeStatus(m, counts.get(m) ?? 0, lm[m]));
 }
 
 const ZONE_PRIORITY: Record<VolumeZone, number> = { overreaching: 0, under: 1, peak: 2, productive: 3 };
@@ -148,7 +190,7 @@ const ZONE_PRIORITY: Record<VolumeZone, number> = { overreaching: 0, under: 1, p
  */
 export function volumeAdvice(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number; includeWarmups?: boolean } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean; landmarks?: Record<MuscleGroup, VolumeLandmark> } = {},
 ): MuscleVolumeStatus[] {
   return volumeStatus(sessions, opts)
     .filter((s) => s.action === "add" || s.action === "reduce")

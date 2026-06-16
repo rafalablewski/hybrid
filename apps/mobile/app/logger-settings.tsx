@@ -5,7 +5,7 @@ import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds">;
+type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides">;
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },

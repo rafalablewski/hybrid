@@ -7,6 +7,7 @@ import {
   exerciseTable,
   volumeStatus,
   volumeAdvice,
+  resolveLandmarks,
   type LoggedSession,
   type ExercisePeriod,
   type TrendDir,
@@ -47,11 +48,13 @@ export default function Trends() {
   };
   useEffect(load, []);
 
-  const iw = useLoggerPrefs().countWarmupsInVolume;
+  const prefs = useLoggerPrefs();
+  const iw = prefs.countWarmupsInVolume;
+  const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
-  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
   const trained = muscles.some((m) => m.sets > 0);
 
   const focusMuscle = selMuscle ?? advice[0]?.muscle ?? [...muscles].sort((a, b) => b.sets - a.sets)[0]?.muscle ?? "chest";

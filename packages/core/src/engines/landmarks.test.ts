@@ -6,6 +6,8 @@ import {
   muscleVolumeStatus,
   volumeStatus,
   volumeAdvice,
+  resolveLandmarks,
+  sanitizeLandmarkOverrides,
 } from "./landmarks";
 import type { LoggedSession } from "./session";
 
@@ -83,6 +85,32 @@ describe("volume landmarks", () => {
     expect(s.action).toBe("reduce");
     expect(s.recommendedSets).toBe(VOLUME_LANDMARKS.chest.mavHigh);
     expect(s.deltaSets).toBeLessThan(0);
+  });
+
+  it("resolveLandmarks merges overrides onto defaults and clamps the ordering", () => {
+    const lm = resolveLandmarks({ chest: { mev: 12, mrv: 28 } });
+    expect(lm.chest.mev).toBe(12);
+    expect(lm.chest.mrv).toBe(28);
+    expect(lm.back).toEqual(VOLUME_LANDMARKS.back); // untouched
+    // an inverted edit is clamped monotonic (mev can't exceed mavLow→…)
+    const bad = resolveLandmarks({ quads: { mev: 99 } });
+    expect(bad.quads.mavLow).toBeGreaterThanOrEqual(bad.quads.mev);
+    expect(bad.quads.mrv).toBeGreaterThanOrEqual(bad.quads.mavHigh);
+  });
+
+  it("sanitizeLandmarkOverrides drops unknown muscles + non-numbers", () => {
+    const o = sanitizeLandmarkOverrides({ chest: { mev: 10, bogus: 1 }, notamuscle: { mev: 5 }, back: { mev: "x" } });
+    expect(o.chest).toEqual({ mev: 10 });
+    expect((o as Record<string, unknown>).notamuscle).toBeUndefined();
+    expect(o.back).toBeUndefined();
+  });
+
+  it("volumeStatus honours a custom landmark map", () => {
+    // raise chest MRV so 21 sets is no longer overreaching
+    const lm = resolveLandmarks({ chest: { mrv: 30, mavHigh: 26 } });
+    const block = { kind: "strength", name: "Bench Press", sets: Array.from({ length: 21 }, () => ({ load: "100", reps: "5" })) } as const;
+    const s = volumeStatus([{ id: "x", title: "P", startedAt: daysAgo(1), blocks: [block] }], { now: NOW, landmarks: lm }).find((r) => r.muscle === "chest")!;
+    expect(s.zone).not.toBe("overreaching");
   });
 
   it("volumeStatus returns one row per muscle group", () => {
