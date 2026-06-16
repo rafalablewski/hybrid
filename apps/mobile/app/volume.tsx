@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, type DimensionValue } from "react-native";
+import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import {
   volumeStatus,
   volumeAdvice,
   resolveLandmarks,
+  ALL_MUSCLES,
   type LoggedSession,
   type MuscleVolumeStatus,
   type VolumeZone,
+  type VolumeLandmark,
+  type MuscleGroup,
 } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
-import { useLoggerPrefs } from "../lib/logger-prefs";
+import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -45,6 +48,15 @@ export default function Volume() {
   const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
   const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
   const trained = rows.some((r) => r.sets > 0);
+  const [editing, setEditing] = useState(false);
+  const customized = Object.keys(prefs.landmarkOverrides).length > 0;
+  const editField = (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => {
+    const next = { ...prefs.landmarkOverrides, [m]: { ...prefs.landmarkOverrides[m] } };
+    if (raw.trim() === "") delete next[m]![k];
+    else next[m]![k] = Math.max(0, Math.round(Number(raw) || 0));
+    if (!Object.keys(next[m]!).length) delete next[m];
+    setLoggerPref("landmarkOverrides", next);
+  };
 
   const ZONE: Record<VolumeZone, { label: string; c: string }> = {
     under: { label: "below MEV", c: C.amber },
@@ -64,12 +76,53 @@ export default function Volume() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
-      <Kicker>{t("nav.volume")}</Kicker>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Kicker>{t("nav.volume")}</Kicker>
+        <Pressable onPress={() => setEditing((v) => !v)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: editing || customized ? C.lime : C.line, backgroundColor: editing || customized ? `${C.lime}1a` : "transparent" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? "Done" : customized ? "Landmarks ✎" : "Edit"}</Text>
+        </Pressable>
+      </View>
       <H1>Volume landmarks</H1>
       <Mono style={{ marginTop: 6, lineHeight: 18 }}>
         Weekly working sets per muscle vs MEV (grow) · MAV (productive) · MRV (ceiling). Warm-ups don&apos;t count. Last
         7 days.
       </Mono>
+
+      {editing && (
+        <Card style={{ marginTop: 14 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Kicker color={C.lime}>Your landmarks · weekly sets</Kicker>
+            {customized && (
+              <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Reset</Text>
+              </Pressable>
+            )}
+          </View>
+          <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 2 }}>
+            <View style={{ width: 96 }} />
+            {(["MV", "MEV", "MAVlo", "MAVhi", "MRV"] as const).map((h) => (
+              <Text key={h} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.5 }}>{h}</Text>
+            ))}
+          </View>
+          {ALL_MUSCLES.map((m) => (
+            <View key={m} style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
+              <Mono color={C.chalk} style={{ width: 96, fontSize: 11 }}>{MUSCLE_LABEL[m] ?? m}</Mono>
+              {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k) => (
+                <TextInput
+                  key={k}
+                  defaultValue={String(lm[m][k])}
+                  onEndEditing={(e) => editField(m, k, e.nativeEvent.text)}
+                  keyboardType="number-pad"
+                  style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }}
+                />
+              ))}
+            </View>
+          ))}
+          <Mono style={{ fontSize: 11, marginTop: 10, lineHeight: 16 }}>
+            Tune to your own recovery. Values clamp to a sane order; blank a field to restore its default.
+          </Mono>
+        </Card>
+      )}
 
       {!trained && (
         <Card style={{ marginTop: 14, alignItems: "center", paddingVertical: 30 }}>
