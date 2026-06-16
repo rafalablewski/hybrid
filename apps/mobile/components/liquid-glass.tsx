@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   Animated,
   Easing,
   StyleSheet,
-  type ViewStyle,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRouter, type Href } from "expo-router";
@@ -16,64 +15,11 @@ import { useLang } from "../lib/i18n";
 import { usePersona } from "../lib/persona";
 import { useNavAccess } from "../lib/access";
 import { useTheme } from "../lib/theme";
-import { F } from "../lib/ui";
+// GlassCard + glassShadow live in lib/ui (Card's glass-by-default base), so the
+// surface is defined once and shared with every screen.
+import { F, GlassCard, glassShadow } from "../lib/ui";
 
 const AnimatedBlur = Animated.createAnimatedComponent(BlurView);
-
-// Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
-const glassShadow: ViewStyle = {
-  shadowColor: "#000",
-  shadowOpacity: 0.5,
-  shadowRadius: 18,
-  shadowOffset: { width: 0, height: 12 },
-  elevation: 8,
-};
-
-/**
- * Liquid Glass surface for React Native. BlurView frosts whatever is behind it;
- * a brand tint film + a top rim-highlight + a soft border reproduce the web
- * `.liquid-glass` look (grain is omitted — no perf-free noise primitive on RN).
- * Mirrors the @hybrid/core palette so web and mobile stay in lockstep.
- */
-export function GlassCard({
-  children,
-  style,
-  intensity = 38,
-  tint,
-  accent,
-  padding = 16,
-}: {
-  children: ReactNode;
-  style?: ViewStyle;
-  intensity?: number;
-  /** Override the blur tint; defaults to the active theme. */
-  tint?: "dark" | "light";
-  /** Optional left accent bar (e.g. the lime accent) matching the web cards. */
-  accent?: string;
-  padding?: number;
-}) {
-  const { scheme } = useTheme();
-  const t = tint ?? scheme;
-  const light = t === "light";
-  const film = light ? "rgba(255,255,255,0.34)" : "rgba(22,24,22,0.34)";
-  const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.22)";
-  const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.10)";
-  return (
-    <View
-      style={[
-        { borderRadius: 18, overflow: "hidden", borderWidth: 1, borderColor: border, marginBottom: 12 },
-        glassShadow,
-        style,
-      ]}
-    >
-      <BlurView intensity={intensity} tint={t} style={StyleSheet.absoluteFill} />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
-      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-      {accent && <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent }} />}
-      <View style={{ padding }}>{children}</View>
-    </View>
-  );
-}
 
 /** Frosted background for the bottom tab bar (used via Tabs `tabBarBackground`). */
 export function GlassTabBarBackground() {
