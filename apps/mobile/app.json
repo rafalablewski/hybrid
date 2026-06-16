@@ -49,7 +49,8 @@
           "cameraPermission": "HYBRID uses the camera so you can take progress photos."
         }
       ],
-      "react-native-iap"
+      "react-native-iap",
+      "./plugins/with-no-aps-environment.js"
     ],
     "experiments": {
       "typedRoutes": true
