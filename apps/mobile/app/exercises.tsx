@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import {
   exerciseHistory,
   exerciseDashboard,
@@ -27,11 +28,17 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { m
 export default function Exercises() {
   const C = useTheme().palette;
   const { t } = useLang();
+  const params = useLocalSearchParams<{ name?: string }>();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("");
   const [period, setPeriod] = useState<ExercisePeriod>("all");
+
+  // Preselect a lift when the Trends hub deep-links into a movement.
+  useEffect(() => {
+    if (params.name) setSelected(params.name);
+  }, [params.name]);
 
   const load = () => {
     setRefreshing(true);

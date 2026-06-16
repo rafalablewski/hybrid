@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   exerciseHistory,
@@ -30,11 +30,16 @@ function Stat({ label, value, c = CHALK }: { label: string; value: string | numb
   );
 }
 
-export default function Exercises({ sessions }: { sessions: LoggedSession[] }) {
+export default function Exercises({ sessions, focus }: { sessions: LoggedSession[]; focus?: string }) {
   const history = useMemo(() => exerciseHistory(sessions), [sessions]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string>("");
   const [period, setPeriod] = useState<ExercisePeriod>("all");
+
+  // Focus a specific lift when the Trends hub deep-links into a movement.
+  useEffect(() => {
+    if (focus) setSelected(focus);
+  }, [focus]);
 
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));

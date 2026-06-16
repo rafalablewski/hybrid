@@ -18,7 +18,7 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 // components/liquid-glass.tsx.
 const MOBILE_NAV_IDS = new Set([
   "today", "cockpit", "log", "history", "plans", "periodize", "competition", "sport", "calendar",
-  "performance", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
+  "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "roles", "settings", "onboarding",
 ]);
 
@@ -40,6 +40,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
     titleKey: "more.analyze",
     links: [
       { id: "performance", labelKey: "nav.performance", sub: "HPI · twin · injury risk", href: "/performance", color: C.blue },
+      { id: "trends", labelKey: "nav.trends", sub: "volume · muscle · exercises", href: "/trends", color: C.lime },
       { id: "volume", labelKey: "nav.volume", sub: "sets/muscle · MEV–MRV", href: "/volume", color: C.lime },
       { id: "exercises", labelKey: "nav.exercises", sub: "per-lift progress · trends", href: "/exercises", color: C.lime },
       { id: "velocity", labelKey: "nav.velocity", sub: "VBT · load–velocity", href: "/(tabs)/velocity", color: C.blue },
