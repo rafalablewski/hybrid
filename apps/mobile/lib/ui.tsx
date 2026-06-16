@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   StyleSheet,
+  Animated,
+  Easing,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
@@ -85,6 +87,79 @@ export const F = {
   mono: "JetBrainsMono_400Regular",
 } as const;
 
+// Concentric rings fake a radial falloff — RN has no CSS blur or radial
+// gradient (and we add no native gradient dep), so we stack a few low-opacity
+// circles; the glass cards' BlurView softens them further as it frosts what's
+// behind. Cheap (a handful of Views) and good enough for an ambient backdrop.
+const FIELD_RINGS = [
+  { f: 1, o: 0.05 },
+  { f: 0.72, o: 0.06 },
+  { f: 0.5, o: 0.07 },
+  { f: 0.3, o: 0.09 },
+];
+
+function FieldBlob({
+  color,
+  size,
+  anchor,
+  dx,
+  dy,
+  ms,
+}: {
+  color: string;
+  size: number;
+  anchor: ViewStyle;
+  dx: number;
+  dy: number;
+  ms: number;
+}) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(a, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(a, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [a, ms]);
+  const translateX = a.interpolate({ inputRange: [0, 1], outputRange: [0, dx] });
+  const translateY = a.interpolate({ inputRange: [0, 1], outputRange: [0, dy] });
+  const scale = a.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        { position: "absolute", width: size, height: size, alignItems: "center", justifyContent: "center" },
+        anchor,
+        { transform: [{ translateX }, { translateY }, { scale }] },
+      ]}
+    >
+      {FIELD_RINGS.map((r, i) => (
+        <View
+          key={i}
+          style={{ position: "absolute", width: size * r.f, height: size * r.f, borderRadius: (size * r.f) / 2, backgroundColor: color, opacity: r.o }}
+        />
+      ))}
+    </Animated.View>
+  );
+}
+
+/** The ambient Liquid Glass field — slow-drifting accent blobs that the glass
+ *  surfaces refract. Mounted once behind every Screen (the mobile analog of the
+ *  web `.lg-field`), so the BlurView cards have real content to frost. */
+export function GlassField() {
+  const { palette } = useTheme();
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
+      <FieldBlob color={palette.lime} size={340} anchor={{ left: "-16%", top: "-10%" }} dx={70} dy={90} ms={19000} />
+      <FieldBlob color={palette.blue} size={300} anchor={{ right: "-18%", top: "4%" }} dx={-60} dy={110} ms={23000} />
+      <FieldBlob color={palette.violet} size={380} anchor={{ left: "26%", bottom: "-22%" }} dx={-50} dy={-60} ms={27000} />
+    </View>
+  );
+}
+
 export function Screen({
   children,
   refreshing,
@@ -97,6 +172,7 @@ export function Screen({
   const { palette } = useTheme();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
+      <GlassField />
       <ScrollView
         contentContainerStyle={{ padding: 18, paddingBottom: 48 }}
         refreshControl={
