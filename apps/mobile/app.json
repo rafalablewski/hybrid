@@ -54,6 +54,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "rafalablewski95",
+    "extra": {
+      "eas": {
+        "projectId": "ea345f54-13eb-464b-a7eb-ec916e5b7b30"
+      }
     }
   }
 }
