@@ -11,7 +11,7 @@
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.hybrid.mobile",
+      "bundleIdentifier": "com.hybriddomain.xyz",
       "buildNumber": "1"
     },
     "android": {
