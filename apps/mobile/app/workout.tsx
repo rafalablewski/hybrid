@@ -32,6 +32,9 @@ import {
   storeLoad,
   fmtWeight,
   fmtTonnage,
+  platesPerSide,
+  unitToKg,
+  kgToUnit,
   type WeightUnit,
   type SetRole,
   RPE_SCALE,
@@ -370,6 +373,18 @@ export default function Workout() {
     );
   const condField = (u: string, k: "minutes" | "rpe" | "distance", v: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
+  // Quick +/- the last set's load by the chosen increment (in display units).
+  const bumpLastLoad = (u: string, deltaDisplay: number) =>
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u || !x.sets.length) return x;
+        const i = x.sets.length - 1;
+        const curKg = parseFloat(x.sets[i]!.load) || 0;
+        const nextDisplay = Math.max(0, kgToUnit(curKg, prefs.units) + deltaDisplay);
+        const nextKg = String(Math.round(unitToKg(nextDisplay, prefs.units) * 100) / 100);
+        return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
+      }),
+    );
   const addSet = (u: string) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
@@ -758,6 +773,33 @@ export default function Workout() {
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.ash }}>{t("workout.dropSet")}</Text>
                   </Pressable>
                 </View>
+                {/* Quick-increment + plate hint for the last set's load */}
+                {(prefs.quickIncrement > 0 || prefs.plateCalc) && (() => {
+                  const last = x.sets[x.sets.length - 1];
+                  const loadKg = last ? parseFloat(last.load) : NaN;
+                  return (
+                    <View style={{ marginTop: 8, gap: 6 }}>
+                      {prefs.quickIncrement > 0 && (
+                        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                          {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
+                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line }}>
+                              <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
+                            </Pressable>
+                          ))}
+                          <Mono style={{ fontSize: 11 }}>{prefs.units}</Mono>
+                        </View>
+                      )}
+                      {prefs.plateCalc && Number.isFinite(loadKg) && loadKg > 0 && (() => {
+                        const pl = platesPerSide(loadKg, prefs.units);
+                        return (
+                          <Mono style={{ fontSize: 11 }}>
+                            {pl.perSide.length ? `Per side: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${prefs.units})`}
+                          </Mono>
+                        );
+                      })()}
+                    </View>
+                  );
+                })()}
               </>
             ) : x.kind === "cardio" ? (
               <>

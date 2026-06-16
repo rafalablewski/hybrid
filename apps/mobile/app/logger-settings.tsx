@@ -5,10 +5,11 @@ import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units">;
+type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },
+  { key: "plateCalc", titleKey: "loggerPrefs.plateCalc", descKey: "loggerPrefs.plateCalcDesc" },
   { key: "autoAdvance", titleKey: "loggerPrefs.autoAdvance", descKey: "loggerPrefs.autoAdvanceDesc" },
   { key: "rpeAsRir", titleKey: "loggerPrefs.rpeAsRir", descKey: "loggerPrefs.rpeAsRirDesc" },
   { key: "detailed", titleKey: "loggerPrefs.detailed", descKey: "loggerPrefs.detailedDesc" },
@@ -81,6 +82,21 @@ export default function LoggerSettings() {
             return (
               <Pressable key={u} onPress={() => setLoggerPref("units", u)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 13, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{u}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      {/* Quick-increment — +/- load stepper step, in the chosen unit. */}
+      <Card style={{ marginTop: 14 }}>
+        <Kicker color={C.lime}>{t("loggerPrefs.quickIncrement")}</Kicker>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+          {(prefs.units === "lb" ? [0, 5, 10] : [0, 2.5, 5]).map((inc) => {
+            const on = prefs.quickIncrement === inc;
+            return (
+              <Pressable key={inc} onPress={() => setLoggerPref("quickIncrement", inc)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 13, color: on ? txt(C, C.lime) : C.ash }}>{inc === 0 ? t("common.off") : `±${inc}`}</Text>
               </Pressable>
             );
           })}

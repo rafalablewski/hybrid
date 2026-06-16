@@ -213,6 +213,7 @@ export default function Logger({
         detailed={prefs.detailed}
         rirMode={prefs.rpeAsRir}
         units={prefs.units}
+        plateCalc={prefs.plateCalc}
       />
 
       {error && (

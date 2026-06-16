@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -90,6 +90,7 @@ export default function WorkoutBlocks({
   detailed = true,
   rirMode = false,
   units = "kg",
+  plateCalc = false,
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -103,6 +104,8 @@ export default function WorkoutBlocks({
   rirMode?: boolean;
   /** Weight unit for the load column (display + input). Storage stays kg. */
   units?: WeightUnit;
+  /** Show a barbell plates-per-side hint under each strength block. */
+  plateCalc?: boolean;
 }) {
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
@@ -324,6 +327,16 @@ export default function WorkoutBlocks({
                   + drop set
                 </button>
               </div>
+              {plateCalc && (() => {
+                const top = [...b.sets].map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n) && n > 0).sort((x, y) => y - x)[0];
+                if (!top) return null;
+                const pl = platesPerSide(top, units);
+                return (
+                  <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+                    {pl.perSide.length ? `Per side @ ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${units})`}
+                  </Mono>
+                );
+              })()}
             </>
           ) : b.kind === "cardio" ? (
             <>

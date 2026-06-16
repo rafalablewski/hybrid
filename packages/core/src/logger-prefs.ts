@@ -31,6 +31,10 @@ export interface LoggerPrefs {
   rpeAsRir: boolean;
   /** Weight unit for display + input. Storage stays kg regardless. */
   units: WeightUnit;
+  /** Show a barbell plates-per-side hint under each strength exercise. */
+  plateCalc: boolean;
+  /** Quick +/- load stepper increment, in the DISPLAY unit (0 = off). */
+  quickIncrement: number;
   /** Count warm-up & cool-down sets toward working VOLUME (off = exclude them,
    *  the default). PRs/e1RM stay warm-up-excluded regardless. */
   countWarmupsInVolume: boolean;
@@ -50,6 +54,8 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   defaultStart: "empty",
   rpeAsRir: false,
   units: "kg",
+  plateCalc: false,
+  quickIncrement: 0,
   countWarmupsInVolume: false,
   landmarkOverrides: {},
 };
@@ -93,6 +99,8 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     defaultStart: r.defaultStart === "ai" || r.defaultStart === "last" ? r.defaultStart : "empty",
     rpeAsRir: bool(r.rpeAsRir, DEFAULT_LOGGER_PREFS.rpeAsRir),
     units: r.units === "lb" ? "lb" : "kg",
+    plateCalc: bool(r.plateCalc, DEFAULT_LOGGER_PREFS.plateCalc),
+    quickIncrement: typeof r.quickIncrement === "number" && r.quickIncrement > 0 ? r.quickIncrement : 0,
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
     landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
   };
