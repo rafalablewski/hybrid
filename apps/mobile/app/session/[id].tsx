@@ -10,6 +10,8 @@ import {
   conditioningSummary,
   cardioSummary,
   supersetLabels,
+  setType,
+  setTypeBadge,
   paceSeries,
   paceClock,
   cardioPrsForSession,
@@ -151,15 +153,20 @@ export default function SessionDetail() {
 
             {b.kind === "strength" ? (
               <View style={{ marginTop: 8 }}>
-                {b.sets.map((s, j) => (
+                {b.sets.map((s, j) => {
+                  const st = setType(s);
+                  const stAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : C.ash;
+                  const stTag = st === "warmup" ? " · warm-up" : st === "cooldown" ? " · cool-down" : st === "drop" ? " · drop" : "";
+                  return (
                   <View key={j} style={{ flexDirection: "row", gap: 12, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
-                    <Mono color={s.drop ? C.lime : C.ash} style={{ width: 22 }}>{s.drop ? "↓" : j + 1}</Mono>
-                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}{s.drop ? " · drop" : ""}</Mono>
+                    <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
+                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}{stTag}</Mono>
                     {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("workout.restShort")}</Mono> : null}
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>
-                ))}
+                  );
+                })}
                 <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
               </View>
             ) : b.kind === "cardio" ? (

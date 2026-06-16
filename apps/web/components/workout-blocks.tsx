@@ -2,8 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge } from "@hybrid/core";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
@@ -25,6 +25,13 @@ const BASE_CATALOG = [
   "Pull-up",
   "Power Clean",
 ];
+
+const SET_TYPE_TITLE: Record<string, string> = {
+  working: "Working set",
+  warmup: "Warm-up set",
+  cooldown: "Cool-down set",
+  drop: "Drop set",
+};
 
 export type EditableBlock = SessionBlock & { uid: string };
 export const uid = () =>
@@ -146,13 +153,19 @@ export default function WorkoutBlocks({
     patch(u, (b) =>
       b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", drop: true }] } : b,
     );
+  // A warm-up ramp set — excluded from working volume/PRs, kept for the velocity
+  // profile. Add it pre-flagged; warm-ups are usually the first sets entered.
+  const addWarmupSet = (u: string) =>
+    patch(u, (b) =>
+      b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", role: "warmup" }] } : b,
+    );
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
-  // A drop set rides on the previous set (no rest, lighter) — a per-set flag.
-  const toggleDrop = (u: string, i: number) =>
+  // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
+  const cycleType = (u: string, i: number) =>
     patch(u, (b) =>
       b.kind === "strength"
-        ? { ...b, sets: b.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) }
+        ? { ...b, sets: b.sets.map((s, j) => (j === i ? cycleSetType(s) : s)) }
         : b,
     );
   // Superset: group this block with the one directly above it (A1/A2/A3…).
@@ -251,23 +264,29 @@ export default function WorkoutBlocks({
                   key={i}
                   style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
                 >
-                  <button
-                    onClick={() => toggleDrop(b.uid, i)}
-                    title={s.drop ? "Drop set — tap to make a normal set" : "Mark as a drop set (no rest, lighter)"}
-                    style={{
-                      ...mono,
-                      fontSize: s.drop ? 12 : 13,
-                      fontWeight: 700,
-                      color: txt(s.drop ? LIME : ASH),
-                      background: s.drop ? `${LIME}1f` : "transparent",
-                      border: `1px solid ${s.drop ? LIME : LINE}`,
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    {s.drop ? "↓" : i + 1}
-                  </button>
+                  {(() => {
+                    const st = setType(s);
+                    const accent = st === "warmup" ? AMBER : st === "cooldown" ? BLUE : st === "drop" ? LIME : null;
+                    return (
+                      <button
+                        onClick={() => cycleType(b.uid, i)}
+                        title={`${SET_TYPE_TITLE[st]} — tap to change (working → warm-up → cool-down → drop)`}
+                        style={{
+                          ...mono,
+                          fontSize: accent ? 12 : 13,
+                          fontWeight: 700,
+                          color: txt(accent ?? ASH),
+                          background: accent ? `${accent}1f` : "transparent",
+                          border: `1px solid ${accent ?? LINE}`,
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        {setTypeBadge(s, i)}
+                      </button>
+                    );
+                  })()}
                   <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={input} />
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
                   <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={input} />
@@ -277,9 +296,12 @@ export default function WorkoutBlocks({
                   </button>
                 </div>
               ))}
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
                   + set
+                </button>
+                <button onClick={() => addWarmupSet(b.uid)} style={blockBtn(AMBER)} title="Add a warm-up set — excluded from working volume & PRs, kept for the velocity profile">
+                  + warm-up
                 </button>
                 <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title="Add a drop set — a lighter continuation, no rest">
                   + drop set

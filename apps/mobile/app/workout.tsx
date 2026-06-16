@@ -24,6 +24,10 @@ import {
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
+  setType,
+  cycleSetType,
+  setTypeBadge,
+  type SetRole,
   RPE_SCALE,
   RPE_INTRO,
   MOVEMENTS,
@@ -57,7 +61,7 @@ Notifications.setNotificationHandler({
 
 type WKind = "strength" | "cardio" | "conditioning";
 
-type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
+type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; role?: SetRole; rest?: number };
 
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
@@ -354,9 +358,15 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), drop: true }] } : x)),
     );
-  const toggleDrop = (u: string, i: number) =>
+  // A warm-up ramp set — excluded from working volume/PRs, kept for the velocity profile.
+  const addWarmupSet = (u: string) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) } : x)),
+      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "warmup" as SetRole }] } : x)),
+    );
+  // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
+  const cycleType = (u: string, i: number) =>
+    setExercises((xs) =>
+      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? cycleSetType(s) : s)) } : x)),
     );
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
@@ -448,6 +458,7 @@ export default function Workout() {
             reps: s.reps.trim(),
             ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}),
             ...(s.drop ? { drop: true } : {}),
+            ...(s.role ? { role: s.role } : {}),
             ...(s.rest != null ? { rest: s.rest } : {}),
           }));
         if (sets.length) blocks.push({ kind: "strength", name: x.name, sets, ...(x.group ? { group: x.group } : {}) });
@@ -688,13 +699,19 @@ export default function Workout() {
                 {x.sets.map((s, i) => (
                   <SwipeRow key={s.uid ?? i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
                     <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-                    <Pressable
-                      onPress={() => toggleDrop(x.uid, i)}
-                      onLongPress={() => removeSet(x.uid, i)}
-                      style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: s.drop ? 1 : 0, borderColor: C.lime, backgroundColor: s.drop ? `${C.lime}1f` : "transparent" }}
-                    >
-                      <Text style={{ fontFamily: F.mono, fontSize: 13, color: s.drop ? txt(C, C.lime) : C.ash }}>{s.drop ? "↓" : i + 1}</Text>
-                    </Pressable>
+                    {(() => {
+                      const st = setType(s);
+                      const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
+                      return (
+                        <Pressable
+                          onPress={() => cycleType(x.uid, i)}
+                          onLongPress={() => removeSet(x.uid, i)}
+                          style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
+                        >
+                          <Text style={{ fontFamily: F.mono, fontSize: 13, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                        </Pressable>
+                      );
+                    })()}
                     <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     <Cell value={s.rpe} onChange={(v) => setSetField(x.uid, i, "rpe", v)} done={s.done} />
@@ -707,9 +724,12 @@ export default function Workout() {
                     </View>
                   </SwipeRow>
                 ))}
-                <View style={{ flexDirection: "row", gap: 16 }}>
+                <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
                   <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.lime) }}>{t("workout.set")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => addWarmupSet(x.uid)} style={{ paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupSet")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addDropSet(x.uid)} style={{ paddingVertical: 8 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.ash }}>{t("workout.dropSet")}</Text>
@@ -1062,6 +1082,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
             rpe: s.rpe ?? "",
             done: false,
             ...(s.drop ? { drop: true } : {}),
+            ...(s.role ? { role: s.role } : {}),
           })),
           minutes: "",
           rpe: "",

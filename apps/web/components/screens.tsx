@@ -51,6 +51,8 @@ import {
   liftNames,
   blockSummary,
   supersetLabels,
+  setType,
+  setTypeBadge,
   paceSeries,
   headlineRunMove,
   paceClock,
@@ -853,14 +855,19 @@ function SessionDetail({
             </div>
             {b.kind === "strength" ? (
               <div style={{ marginTop: 8 }}>
-                {b.sets.map((st, j) => (
+                {b.sets.map((st, j) => {
+                  const sType = setType(st);
+                  const sAccent = sType === "warmup" ? AMBER : sType === "cooldown" ? BLUE : sType === "drop" ? LIME : ASH;
+                  const sTag = sType === "warmup" ? " · warm-up" : sType === "cooldown" ? " · cool-down" : sType === "drop" ? " · drop" : "";
+                  return (
                   <div key={j} style={{ display: "flex", gap: 16, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
-                    <Mono s={{ fontSize: 13, width: 22 }} c={st.drop ? LIME : ASH}>{st.drop ? "↓" : j + 1}</Mono>
-                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}{st.drop ? " · drop" : ""}</Mono>
+                    <Mono s={{ fontSize: 13, width: 22 }} c={sAccent}>{setTypeBadge(st, j)}</Mono>
+                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}{sTag}</Mono>
                     {st.rpe ? <Mono s={{ fontSize: 13 }}>RPE {st.rpe}</Mono> : null}
                     {st.vel ? <Mono s={{ fontSize: 13 }} c={BLUE}>{st.vel} m/s</Mono> : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>{blockSummary(b)}</Mono>
