@@ -8,6 +8,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
@@ -18,6 +19,7 @@ export default function Train() {
   const router = useRouter();
   const { t } = useLang();
   const { draft, discard } = useDraft();
+  const { defaultStart } = useLoggerPrefs();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
 
@@ -63,9 +65,10 @@ export default function Train() {
         </Card>
       )}
 
-      {/* The one-tap hero — start a session right now (fresh if a draft exists) */}
+      {/* The one-tap hero — start a session right now (fresh if a draft exists),
+          opening with the athlete's preferred default (empty / AI / repeat-last) */}
       <Pressable
-        onPress={() => start(draft ? "new" : "empty")}
+        onPress={() => start(draft ? "new" : defaultStart)}
         style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 26, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.ink }}>▶  {draft ? t("train.startFresh") : t("train.startWorkout")}</Text>

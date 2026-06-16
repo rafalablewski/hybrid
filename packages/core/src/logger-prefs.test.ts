@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DEFAULT_LOGGER_PREFS, normalizeLoggerPrefs } from "./logger-prefs";
+import { DEFAULT_LOGGER_PREFS, normalizeLoggerPrefs, rpeRirSwap } from "./logger-prefs";
 
 describe("logger prefs", () => {
   it("returns defaults for empty/garbage input", () => {
@@ -29,5 +29,20 @@ describe("logger prefs", () => {
   it("defaults countWarmupsInVolume to off and accepts an override", () => {
     expect(normalizeLoggerPrefs(undefined).countWarmupsInVolume).toBe(false);
     expect(normalizeLoggerPrefs({ countWarmupsInVolume: true }).countWarmupsInVolume).toBe(true);
+  });
+
+  it("validates defaultStart and defaults the new flow toggles", () => {
+    expect(normalizeLoggerPrefs(undefined).defaultStart).toBe("empty");
+    expect(normalizeLoggerPrefs({ defaultStart: "ai" }).defaultStart).toBe("ai");
+    expect(normalizeLoggerPrefs({ defaultStart: "bogus" }).defaultStart).toBe("empty");
+    expect(normalizeLoggerPrefs(undefined).autoAdvance).toBe(false);
+    expect(normalizeLoggerPrefs(undefined).rpeAsRir).toBe(false);
+  });
+
+  it("rpeRirSwap converts RPE↔RIR symmetrically and passes through blanks", () => {
+    expect(rpeRirSwap("8", false)).toBe("8"); // off = unchanged
+    expect(rpeRirSwap("8", true)).toBe("2"); // RIR = 10 - RPE
+    expect(rpeRirSwap("2", true)).toBe("8"); // symmetric
+    expect(rpeRirSwap("", true)).toBe("");
   });
 });

@@ -5,10 +5,12 @@ import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides">;
+type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart">;
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },
+  { key: "autoAdvance", titleKey: "loggerPrefs.autoAdvance", descKey: "loggerPrefs.autoAdvanceDesc" },
+  { key: "rpeAsRir", titleKey: "loggerPrefs.rpeAsRir", descKey: "loggerPrefs.rpeAsRirDesc" },
   { key: "detailed", titleKey: "loggerPrefs.detailed", descKey: "loggerPrefs.detailedDesc" },
   { key: "countIn", titleKey: "loggerPrefs.countIn", descKey: "loggerPrefs.countInDesc" },
   { key: "restTimer", titleKey: "loggerPrefs.restTimer", descKey: "loggerPrefs.restTimerDesc" },
@@ -69,6 +71,25 @@ export default function LoggerSettings() {
           </View>
         </Card>
       )}
+
+      {/* Default start view — what the "Start workout" hero opens with. */}
+      <Card style={{ marginTop: 14 }}>
+        <Kicker color={C.lime}>{t("loggerPrefs.defaultStart")}</Kicker>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+          {([["empty", "Empty"], ["ai", "AI"], ["last", "Repeat last"]] as const).map(([id, label]) => {
+            const on = prefs.defaultStart === id;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => setLoggerPref("defaultStart", id)}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
     </Screen>
   );
 }

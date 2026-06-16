@@ -27,6 +27,7 @@ import {
   setType,
   cycleSetType,
   setTypeBadge,
+  rpeRirSwap,
   type SetRole,
   RPE_SCALE,
   RPE_INTRO,
@@ -411,6 +412,8 @@ export default function Workout() {
     // exercise of a superset — you keep moving; the rest comes after the
     // sequence (banking the last drop / the last superset exercise).
     const ex = exercises.find((x) => x.uid === u);
+    // Auto-advance: banking the last set appends a fresh one so you can keep going.
+    if (prefs.autoAdvance && ex && i === ex.sets.length - 1) addSet(u);
     const nextIsDrop = !!ex?.sets[i + 1]?.drop;
     let midSuperset = false;
     if (ex?.group) {
@@ -708,7 +711,7 @@ export default function Workout() {
                   <ColHead w={28}>#</ColHead>
                   <ColHead>KG</ColHead>
                   <ColHead>REPS</ColHead>
-                  {prefs.detailed && <ColHead>RPE</ColHead>}
+                  {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
                   <View style={{ width: 40 }} />
                 </View>
                 {x.sets.map((s, i) => (
@@ -729,7 +732,7 @@ export default function Workout() {
                     })()}
                     <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
-                    {prefs.detailed && <Cell value={s.rpe} onChange={(v) => setSetField(x.uid, i, "rpe", v)} done={s.done} />}
+                    {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
                       style={{ width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}

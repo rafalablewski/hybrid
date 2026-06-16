@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -88,6 +88,7 @@ export default function WorkoutBlocks({
   emptyHint,
   reorder = false,
   detailed = true,
+  rirMode = false,
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -97,6 +98,8 @@ export default function WorkoutBlocks({
   reorder?: boolean;
   /** Detailed shows the RPE + velocity columns; Simple hides them (load × reps). */
   detailed?: boolean;
+  /** Show the effort column as RIR (reps-in-reserve) instead of RPE. */
+  rirMode?: boolean;
 }) {
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
@@ -259,7 +262,7 @@ export default function WorkoutBlocks({
                       title="What is RPE?"
                       style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
                     >
-                      rpe ⓘ
+                      {rirMode ? "rir" : "rpe"} ⓘ
                     </button>
                     <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
                   </>
@@ -298,7 +301,7 @@ export default function WorkoutBlocks({
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
                   {detailed && (
                     <>
-                      <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={input} />
+                      <input value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
                       <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
                     </>
                   )}

@@ -28,6 +28,7 @@ import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { useDraft } from "../../lib/draft";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -50,6 +51,7 @@ export default function Home() {
   const persona = usePersona();
   const isAthlete = persona !== "casual";
   const { draft } = useDraft();
+  const { defaultStart } = useLoggerPrefs();
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -192,9 +194,9 @@ export default function Home() {
         <H1>{t("home.ready")}</H1>
       </View>
 
-      {/* START NOW — the one tap that matters in the gym */}
+      {/* START NOW — the one tap that matters in the gym (opens with your default) */}
       <Pressable
-        onPress={() => router.push("/workout?source=empty")}
+        onPress={() => router.push(`/workout?source=${draft ? "empty" : defaultStart}`)}
         style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 22, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  {draft ? t("train.resume") : t("home.startWorkout")}</Text>

@@ -21,6 +21,13 @@ export interface LoggerPrefs {
   restTimer: boolean;
   /** Default rest-countdown target, seconds. */
   restSeconds: number;
+  /** After banking a set, auto-append the next set (mobile live logger). */
+  autoAdvance: boolean;
+  /** What the "Start workout" hero opens with. */
+  defaultStart: "empty" | "ai" | "last";
+  /** Show the effort column as RIR (reps-in-reserve) instead of RPE. Stored as
+   *  RPE under the hood (RIR = 10 − RPE), so the engines are unaffected. */
+  rpeAsRir: boolean;
   /** Count warm-up & cool-down sets toward working VOLUME (off = exclude them,
    *  the default). PRs/e1RM stay warm-up-excluded regardless. */
   countWarmupsInVolume: boolean;
@@ -36,12 +43,27 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   carryOver: true,
   restTimer: true,
   restSeconds: 90,
+  autoAdvance: false,
+  defaultStart: "empty",
+  rpeAsRir: false,
   countWarmupsInVolume: false,
   landmarkOverrides: {},
 };
 
 /** Allowed default-rest values (matches the in-workout presets). */
 export const REST_SECONDS_CHOICES = [60, 90, 120, 180] as const;
+
+/**
+ * Convert between a stored RPE string and the value shown in the logger.
+ * RIR = 10 − RPE (and back); the conversion is symmetric, so one function does
+ * both display and input. Non-numeric / blank values pass through untouched.
+ */
+export function rpeRirSwap(value: string, asRir: boolean): string {
+  if (!asRir) return value;
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return value;
+  return String(Math.max(0, Math.round((10 - n) * 10) / 10));
+}
 
 /**
  * Merge a partial / untrusted stored object onto the defaults, type-safe — so a
@@ -63,6 +85,9 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     carryOver: bool(r.carryOver, DEFAULT_LOGGER_PREFS.carryOver),
     restTimer: bool(r.restTimer, DEFAULT_LOGGER_PREFS.restTimer),
     restSeconds: seconds,
+    autoAdvance: bool(r.autoAdvance, DEFAULT_LOGGER_PREFS.autoAdvance),
+    defaultStart: r.defaultStart === "ai" || r.defaultStart === "last" ? r.defaultStart : "empty",
+    rpeAsRir: bool(r.rpeAsRir, DEFAULT_LOGGER_PREFS.rpeAsRir),
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
     landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
   };

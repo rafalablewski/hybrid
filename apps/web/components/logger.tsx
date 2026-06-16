@@ -183,11 +183,20 @@ export default function Logger({
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-          style={{ ...mono, fontSize: 12, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}
+          style={{ ...mono, fontSize: 12, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer", marginRight: 8 }}
           title="Toggle the RPE + velocity columns"
         >
           {prefs.detailed ? "Detailed ▾" : "Simple ▸"}
         </button>
+        {prefs.detailed && (
+          <button
+            onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
+            style={{ ...mono, fontSize: 12, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}
+            title="Log effort as RPE or RIR (reps in reserve)"
+          >
+            {prefs.rpeAsRir ? "RIR" : "RPE"}
+          </button>
+        )}
       </div>
 
       <input
@@ -202,6 +211,7 @@ export default function Logger({
         setBlocks={setBlocks}
         emptyHint="Empty session — add blocks below, or pull today's prescription."
         detailed={prefs.detailed}
+        rirMode={prefs.rpeAsRir}
       />
 
       {error && (
