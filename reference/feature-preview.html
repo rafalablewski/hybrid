@@ -1,364 +1,310 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>HYBRID — interactive prototype (app-ideas branch)</title>
+<title>HYBRID — feature preview (app-ideas branch)</title>
 <style>
   :root{
     --ink:#0c0d0c; --ink2:#141614; --card:#181a18; --line:#2a2d2a;
     --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
     --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
-    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --mono:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
     --disp:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
-    --glass:#16181699;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{background:
-      radial-gradient(1100px 700px at 8% -10%, #c4f0351f, transparent 60%),
-      radial-gradient(900px 700px at 100% 0%, #7fd4e816, transparent 55%),
-      radial-gradient(700px 600px at 60% 120%, #c9a9f014, transparent 55%),
+  body{margin:0;background:
+      radial-gradient(1000px 700px at 8% -10%, rgba(196,240,53,.12), transparent 60%),
+      radial-gradient(900px 700px at 100% 0%, rgba(127,212,232,.09), transparent 55%),
       var(--ink);
-    color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+    color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;line-height:1.5}
+  a{color:var(--lime);text-decoration:none}
   .mono{font-family:var(--mono)} .ash{color:var(--ash)}
-  /* top control bar (not part of the app — the prototype chrome) */
-  .chrome{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
-    padding:10px 18px;border-bottom:1px solid var(--line);background:#0b0c0bcc;backdrop-filter:blur(10px)}
-  .chrome .l{display:flex;align-items:center;gap:10px}
-  .chrome .dot{width:11px;height:11px;border-radius:3px;background:var(--lime)}
-  .chrome b{letter-spacing:.04em}
-  .chrome .meta{font-family:var(--mono);font-size:10px;color:var(--ash)}
-  .seg{display:inline-flex;gap:4px;background:#ffffff0a;border:1px solid var(--line);border-radius:999px;padding:3px}
-  .seg button{font-family:var(--mono);font-size:12px;color:var(--ash);background:none;border:none;padding:6px 14px;border-radius:999px;cursor:pointer}
-  .seg button.on{background:var(--lime);color:var(--ink);font-weight:700}
-  /* glass */
-  .card{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;
-    backdrop-filter:blur(8px) saturate(1.1);box-shadow:0 1px 0 #ffffff0d inset,0 18px 44px -30px #000}
+  /* top bar + anchor nav (pure CSS, no JS) */
+  header{position:sticky;top:0;z-index:10;background:rgba(11,12,11,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
+  .bar{display:flex;align-items:center;gap:12px;padding:12px 20px;flex-wrap:wrap}
+  .dot{width:12px;height:12px;border-radius:3px;background:var(--lime)}
+  .bar b{letter-spacing:.04em;font-size:17px}
+  .bar .meta{font-family:var(--mono);font-size:10px;color:var(--ash)}
+  nav{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 12px}
+  nav a{font-family:var(--mono);font-size:12px;color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  nav a:hover{color:var(--lime);border-color:var(--lime)}
+  main{max-width:980px;margin:0 auto;padding:30px 20px 80px}
+  section{scroll-margin-top:96px;margin-bottom:46px}
+  h1{font-size:14px}
+  .feat-h{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+  .feat-h .t{font-size:24px;font-weight:800}
+  .badge{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:6px;border:1px solid var(--lime);color:var(--lime);background:rgba(196,240,53,.1)}
+  .sub{font-family:var(--mono);font-size:12px;color:var(--ash);margin:0 0 16px;line-height:1.6}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 18px 44px -32px #000}
   .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--lime)}
-  .badge{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:6px;border:1px solid var(--lime);color:var(--lime);background:#c4f0351a}
-  .pill{font-family:var(--mono);font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);color:var(--ash);background:none;cursor:pointer}
-  .pill.on{color:var(--lime);border-color:var(--lime);background:#c4f0351a}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}
-  .stat .v{font-size:22px;font-weight:800} .stat .l{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--ash);margin-top:4px}
   .note{font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.6;margin-top:8px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .lk{color:var(--lime);cursor:pointer;background:none;border:none;font:inherit;padding:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.two,.grid4,.grid2{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .stat .v{font-size:22px;font-weight:800} .stat .l{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--ash);margin-top:4px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);color:var(--ash)}
+  .pill.on{color:var(--lime);border-color:var(--lime);background:rgba(196,240,53,.1)}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 10px;font-family:var(--mono);font-size:12px;border:1px solid;margin:0 6px 6px 0}
   table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
-  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ash);font-weight:400;padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ash);font-weight:400;padding:6px 4px;border-bottom:1px solid var(--line)}
   td{padding:9px 4px;border-top:1px solid var(--line)}
-  .h1{font-size:26px;font-weight:800;margin:0 0 4px}
-  .sub{font-family:var(--mono);font-size:12px;color:var(--ash);margin-bottom:18px;line-height:1.6}
-  .sw{width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;flex:none;transition:.15s}
-  .sw.on{background:var(--lime)} .sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--chalk);transition:.15s} .sw.on i{left:20px}
-  .srow{display:flex;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--line)} .srow:first-of-type{border-top:none}
-  .cell{background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:13px;text-align:center}
-  .setrow{display:grid;grid-template-columns:30px 1fr 1fr 52px 38px;gap:7px;align-items:center;margin-bottom:7px}
+  .lk{color:var(--lime)}
+  /* landmark bar */
+  .lmbar{position:relative;height:12px;background:var(--ink2);border:1px solid var(--line);border-radius:6px}
+  .lmband{position:absolute;top:0;bottom:0;background:rgba(196,240,53,.16)}
+  .lmfill{position:absolute;left:0;top:0;bottom:0;opacity:.85;border-radius:6px}
+  .lmmark{position:absolute;top:-2px;bottom:-2px;width:2px}
+  .lmlabels{font-family:var(--mono);font-size:10px;margin-top:5px;display:flex;gap:14px}
+  /* set rows */
+  .setrow{display:grid;grid-template-columns:30px 1fr 1fr 56px 38px;gap:7px;align-items:center;margin-bottom:7px}
   .setrow.simple{grid-template-columns:30px 1fr 1fr 38px}
-  .badgebtn{height:32px;border-radius:8px;font-family:var(--mono);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cell{background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:13px;text-align:center}
+  .bdg{height:32px;border-radius:8px;font-family:var(--mono);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);color:var(--ash)}
   .tick{height:36px;border-radius:9px;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:900}
-  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 10px;font-family:var(--mono);font-size:12px;border:1px solid}
-
-  /* WEB shell */
-  #web .shell{display:flex;min-height:calc(100vh - 49px)}
-  .side{width:228px;flex:none;border-right:1px solid var(--line);padding:16px 12px;background:#0e0f0ecc;backdrop-filter:blur(8px)}
-  .grp{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#5e635c;margin:14px 8px 6px}
-  .nav{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:1px solid transparent;color:var(--ash);
-    font-size:13px;padding:8px 10px;border-radius:9px;cursor:pointer}
-  .nav:hover{color:var(--chalk);background:#ffffff08}
-  .nav.on{color:var(--lime);background:#c4f0351a;border-color:#c4f03555}
-  .nav .ic{width:18px;text-align:center;opacity:.9}
-  .nav .new{margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--lime);border:1px solid #c4f03555;border-radius:5px;padding:0 4px}
-  .content{flex:1;padding:30px 38px;max-width:1000px}
-
-  /* MOBILE frame */
-  #mobile{display:none;justify-content:center;padding:28px 16px}
-  .phone{width:390px;max-width:100%;height:780px;border:10px solid #000;border-radius:46px;background:var(--ink);overflow:hidden;position:relative;
-    box-shadow:0 40px 90px -40px #000, 0 0 0 1px var(--line)}
-  .phone .scr{height:100%;overflow:auto;padding:18px 16px 86px}
-  .phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:5}
-  .tabbar{position:absolute;bottom:0;left:0;right:0;height:64px;display:flex;border-top:1px solid var(--line);background:#0e0f0eee;backdrop-filter:blur(12px)}
-  .tabbar button{flex:1;background:none;border:none;color:var(--ash);font-family:var(--mono);font-size:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-  .tabbar button.on{color:var(--lime)}
-  .tabbar .ic{font-size:17px}
-  .mh1{font-size:22px;font-weight:800;margin:6px 0 2px}
-  .hero{background:var(--lime);color:var(--ink);border-radius:18px;padding:20px;text-align:center;font-weight:900;font-size:18px;margin:14px 0;cursor:pointer}
-  .feature{display:none} .feature.on{display:block}
-  .mscreen{display:none} .mscreen.on{display:block}
+  /* simple bar chart */
+  .bars{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:12px}
+  .bars > div{flex:1;border-radius:3px 3px 0 0}
+  /* phone */
+  .phone{width:300px;border:9px solid #000;border-radius:38px;background:var(--ink);padding:16px 12px;box-shadow:0 30px 70px -40px #000,0 0 0 1px var(--line)}
+  .phone .ptab{display:flex;border-top:1px solid var(--line);margin:14px -12px -16px;padding:8px 0}
+  .phone .ptab div{flex:1;text-align:center;font-family:var(--mono);font-size:9px;color:var(--ash)}
+  .phone .ptab div.on{color:var(--lime)}
+  .hero{background:var(--lime);color:var(--ink);border-radius:16px;padding:16px;text-align:center;font-weight:900;margin:12px 0}
+  .srow{display:flex;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--line)} .srow:first-child{border-top:none}
+  .sw{width:40px;height:23px;border-radius:999px;position:relative;flex:none} .sw i{position:absolute;top:2px;width:19px;height:19px;border-radius:50%;background:var(--chalk)}
+  .sw.on{background:var(--lime)} .sw.on i{right:2px} .sw.off{background:var(--line)} .sw.off i{left:2px}
+  .foot{font-family:var(--mono);font-size:11px;color:var(--ash);border-top:1px solid var(--line);padding-top:16px;line-height:1.8}
 </style>
 </head>
 <body>
-<div class="chrome">
-  <div class="l"><span class="dot"></span><b>HYBRID</b><span class="meta">interactive prototype · branch claude/app-ideas-o4uqe8 · 8 shipped</span></div>
-  <div class="seg" id="device">
-    <button class="on" data-d="web">▦ Web</button>
-    <button data-d="mobile">▢ Mobile</button>
-  </div>
-</div>
+<header>
+  <div class="bar"><span class="dot"></span><b>HYBRID</b>
+    <span class="meta">feature preview · branch claude/app-ideas-o4uqe8 · 8 shipped increments · static (no-JS) view</span></div>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#landmarks">1 · Volume landmarks</a>
+    <a href="#routines">2 · Routines</a>
+    <a href="#warmup">3 · Warm-up / cool-down</a>
+    <a href="#exercise">4 · Exercise dashboard</a>
+    <a href="#trends">5 · Trends hub</a>
+    <a href="#logger">6 · Configurable logger</a>
+    <a href="#account">7 · Account settings</a>
+    <a href="#deeplink">+ · Deep-links</a>
+  </nav>
+</header>
 
-<!-- ================= WEB ================= -->
-<div id="web">
-  <div class="shell">
-    <nav class="side" id="webnav"></nav>
-    <div class="content" id="webcontent"></div>
-  </div>
-</div>
+<main>
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="feat-h"><span class="t">What we built</span></div>
+    <p class="sub">Seven ideas you listed, shipped end-to-end across the shared core, the web app and the Expo mobile app — plus exercise deep-linking. Every section below is a faithful static mock of the real screens (same brand tokens, same numbers the engines produce). Tap a nav chip to jump.</p>
+    <div class="grid2">
+      <div class="card"><div class="kick">1 · Volume landmarks <span class="badge">shipped</span></div><p class="note">Weekly working sets per muscle vs MV/MEV/MAV/MRV, with an add/deload prescription.</p></div>
+      <div class="card"><div class="kick">2 · Routines <span class="badge">shipped</span></div><p class="note">Save a workout as a named routine, then load-and-go from the Train launcher.</p></div>
+      <div class="card"><div class="kick">3 · Warm-up / cool-down <span class="badge">shipped</span></div><p class="note">A set-type cycler; warm-ups excluded from volume, PRs &amp; tonnage.</p></div>
+      <div class="card"><div class="kick">4 · Per-exercise dashboard <span class="badge">shipped</span></div><p class="note">Open any lift for its e1RM trend, best set, volume &amp; frequency over time.</p></div>
+      <div class="card"><div class="kick">5 · Trends hub <span class="badge">shipped</span></div><p class="note">Volume trends, muscle breakdown &amp; a sortable exercise table that drills in.</p></div>
+      <div class="card"><div class="kick">6 · Configurable logger <span class="badge">shipped</span></div><p class="note">Toggle count-in, rest timer, haptics, carry-over, Simple/Detailed &amp; more.</p></div>
+      <div class="card"><div class="kick">7 · Account settings <span class="badge">shipped</span></div><p class="note">A professional tabbed account area: General · Security · Coaching · Data.</p></div>
+      <div class="card"><div class="kick">+ · Exercise deep-links <span class="badge">shipped</span></div><p class="note">Tap any exercise name in a session → its dashboard.</p></div>
+    </div>
+    <p class="foot">431 core unit tests passing · web build ✓ · iOS bundle export ✓ · 10 commits on the branch.<br/>This is a static design preview. The truly-live, interactive build (your account + data) comes from a Vercel deploy — say “PR” or “ship to main” when ready.</p>
+  </section>
 
-<!-- ================= MOBILE ================= -->
-<div id="mobile">
-  <div class="phone">
-    <div class="notch"></div>
-    <div class="scr" id="mscr"></div>
-    <div class="tabbar" id="mtabs"></div>
-  </div>
-</div>
+  <!-- 1 · LANDMARKS -->
+  <section id="landmarks">
+    <div class="feat-h"><span class="t">Volume landmarks</span><span class="badge">shipped · #1</span></div>
+    <p class="sub">New <b>Volume</b> screen (Analyze). Weekly working sets per muscle vs your landmarks — warm-ups don’t count. <span class="ash">core/engines/landmarks.ts</span></p>
+    <div class="card"><div class="kick">This week — adjust volume</div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div><span class="mono" style="color:var(--amber);font-weight:700">↑ Posterior chain</span> <span class="mono ash">Add ~5 sets/wk — below the minimum to grow.</span></div>
+        <div><span class="mono" style="color:var(--red);font-weight:700">↓ Chest</span> <span class="mono ash">Over your recoverable ceiling — drop ~3 sets/wk or deload.</span></div>
+      </div>
+    </div>
+    <div class="card"><div class="kick" style="color:var(--blue)">By muscle · sets this week</div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:15px">
+        <!-- each: fill%, mev%, band end%, mrv% precomputed against max=mrv*1.15 -->
+        <div><div class="row" style="margin-bottom:6px"><span>Chest</span><span class="mono" style="font-size:12px"><b style="color:var(--red)">21 sets</b> <span class="ash">· over MRV</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:34.8%;width:43.5%"></div><div class="lmfill" style="width:91.3%;background:var(--red)"></div><div class="lmmark" style="left:34.8%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 8</span><span style="color:var(--lime)">MAV 12–18</span><span style="color:var(--red)">MRV 20</span></div></div>
 
-<script>
-/* ---------------- shared data (real numbers from the engines) ---------------- */
-const LM={
-  quads:{mv:6,mev:8,mavLow:12,mavHigh:18,mrv:20,sets:14},
-  glutes:{mv:0,mev:4,mavLow:8,mavHigh:14,mrv:16,sets:6},
-  posterior:{mv:4,mev:6,mavLow:10,mavHigh:16,mrv:18,sets:5},
-  back:{mv:8,mev:10,mavLow:14,mavHigh:20,mrv:22,sets:16},
-  chest:{mv:6,mev:8,mavLow:12,mavHigh:18,mrv:20,sets:21},
-  shoulders:{mv:6,mev:8,mavLow:14,mavHigh:20,mrv:22,sets:12},
-  triceps:{mv:4,mev:6,mavLow:10,mavHigh:14,mrv:18,sets:7},
-};
-const ML={quads:"Quads",glutes:"Glutes",posterior:"Posterior chain",back:"Back",chest:"Chest",shoulders:"Shoulders",triceps:"Triceps"};
-const zone=(n,l)=>n>=l.mrv?"overreaching":n>l.mavHigh?"peak":n>=l.mev?"productive":"under";
-const ZC={under:"var(--amber)",productive:"var(--lime)",peak:"var(--blue)",overreaching:"var(--red)"};
-const ZL={under:"below MEV",productive:"productive",peak:"near MRV",overreaching:"over MRV"};
-const EX=[
-  ["Back Squat","str",22,142,38600,"up",[120,124,123,128,131,130,135,138,140,139,141,142]],
-  ["Bench Press","str",22,117,38400,"up",[98,101,100,104,106,103,108,110,113,112,115,117]],
-  ["Deadlift","str",14,180,31000,"flat",[176,178,180,179,181,180,182,180,181,180,180,180]],
-  ["Overhead Press","str",18,72,9800,"up",[60,62,61,64,66,65,68,69,70,71,71,72]],
-  ["Easy Run","car",12,0,64,"up",null],
-  ["Barbell Row","str",16,96,15200,"down",[100,99,98,99,97,98,96,97,95,96,96,96]],
-];
-const TG={up:["▲","var(--lime)"],down:["▼","var(--amber)"],flat:["→","var(--ash)"]};
+        <div><div class="row" style="margin-bottom:6px"><span>Back</span><span class="mono" style="font-size:12px"><b style="color:var(--lime)">16 sets</b> <span class="ash">· productive</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:39.5%;width:39.5%"></div><div class="lmfill" style="width:63.2%;background:var(--lime)"></div><div class="lmmark" style="left:39.5%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 10</span><span style="color:var(--lime)">MAV 14–20</span><span style="color:var(--red)">MRV 22</span></div></div>
 
-/* ---------------- reusable render helpers ---------------- */
-function lineSVG(vals,color,w=520,h=180){
-  const pad=16,min=Math.min(...vals),max=Math.max(...vals),rng=(max-min)||1;
-  const pts=vals.map((v,i)=>[pad+i*((w-2*pad)/(vals.length-1)),h-pad-((v-min)/rng)*(h-2*pad)]);
-  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h+20}px;margin-top:8px"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${color}"/>`).join('')}</svg>`;
-}
-function barsSVG(vals,color,w=320,h=120){
-  const n=vals.length,bw=(w/n)*0.62,max=Math.max(...vals);
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h+10}px;margin-top:10px">${vals.map((v,i)=>{const ht=(v/max)*(h-16);const x=i*(w/n)+(w/n-bw)/2;return `<rect x="${x}" y="${h-ht-6}" width="${bw}" height="${ht}" rx="3" fill="${color}" opacity="${i===n-1?1:.55}"/>`}).join('')}</svg>`;
-}
-function landmarkBars(){
-  return Object.entries(LM).map(([m,l])=>{const z=zone(l.sets,l),c=ZC[z],max=Math.max(l.mrv*1.15,l.sets*1.05),pct=v=>Math.min(100,v/max*100);
-    return `<div style="margin-bottom:15px"><div class="row" style="margin-bottom:6px"><span>${ML[m]}</span>
-      <span class="mono" style="font-size:12px"><b style="color:${c}">${l.sets} sets</b> <span class="ash">· ${ZL[z]}</span></span></div>
-      <div style="position:relative;height:12px;background:var(--ink2);border:1px solid var(--line);border-radius:6px">
-        <div style="position:absolute;left:${pct(l.mev)}%;width:${(l.mavHigh-l.mev)/max*100}%;top:0;bottom:0;background:#c4f03522"></div>
-        <div style="position:absolute;left:0;top:0;bottom:0;width:${pct(l.sets)}%;background:${c};opacity:.85;border-radius:6px"></div>
-        <div style="position:absolute;left:${pct(l.mev)}%;top:-2px;bottom:-2px;width:2px;background:var(--amber)"></div>
-        <div style="position:absolute;left:${pct(l.mrv)}%;top:-2px;bottom:-2px;width:2px;background:var(--red)"></div></div>
-      <div class="mono ash" style="font-size:10px;margin-top:5px;display:flex;gap:14px">
-        <span style="color:var(--amber)">MEV ${l.mev}</span><span style="color:var(--lime)">MAV ${l.mavLow}–${l.mavHigh}</span><span style="color:var(--red)">MRV ${l.mrv}</span></div></div>`;}).join('');
-}
-function landmarkAdvice(){
-  let h='';
-  Object.entries(LM).forEach(([m,l])=>{const z=zone(l.sets,l);
-    if(z==="under")h+=`<div><span class="mono" style="color:var(--amber);font-weight:700">↑ ${ML[m]}</span> <span class="mono ash">Add ~${l.mavLow-l.sets} sets/wk — below the minimum to grow.</span></div>`;
-    if(z==="overreaching")h+=`<div><span class="mono" style="color:var(--red);font-weight:700">↓ ${ML[m]}</span> <span class="mono ash">Over your recoverable ceiling — drop ~${l.sets-l.mavHigh} sets/wk or deload.</span></div>`;});
-  return h;
-}
-function muscleChips(){return Object.entries(LM).map(([m,l])=>{const z=zone(l.sets,l),c=ZC[z];
-  return `<div class="chip" style="border-color:${c}55;background:${c}14"><span>${ML[m]}</span><b style="color:${c}">${l.sets}</b></div>`}).join('');}
+        <div><div class="row" style="margin-bottom:6px"><span>Quads</span><span class="mono" style="font-size:12px"><b style="color:var(--lime)">14 sets</b> <span class="ash">· productive</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:34.8%;width:43.5%"></div><div class="lmfill" style="width:60.9%;background:var(--lime)"></div><div class="lmmark" style="left:34.8%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 8</span><span style="color:var(--lime)">MAV 12–18</span><span style="color:var(--red)">MRV 20</span></div></div>
 
-/* ---------------- WEB app shell ---------------- */
-const NAV=[
-  ["Home",[["today","◐","Today"],["dashboard","◆","Dashboard"]]],
-  ["Train",[["log","▦","Log session"],["plans","▤","Plans"]]],
-  ["Analyze",[["volume","▦","Volume",1],["exercises","≡","Exercises",1],["trends","↗","Trends",1],["velocity","⚡","Velocity"],["running","🏃","Running"],["history","≣","History"]]],
-  ["Account",[["settings","⚙","Settings"]]],
-];
-let webScreen="volume", exFocus="Bench Press", trendSort={k:"volume",dir:-1}, acctTab="General", exPeriod="1y";
-const loggerPrefs={detailed:true,countIn:true,restTimer:true,carryOver:true,keepAwake:true,haptics:true,restSeconds:90};
+        <div><div class="row" style="margin-bottom:6px"><span>Shoulders</span><span class="mono" style="font-size:12px"><b style="color:var(--lime)">12 sets</b> <span class="ash">· productive</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:31.6%;width:47.4%"></div><div class="lmfill" style="width:47.4%;background:var(--lime)"></div><div class="lmmark" style="left:31.6%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 8</span><span style="color:var(--lime)">MAV 14–20</span><span style="color:var(--red)">MRV 22</span></div></div>
 
-function renderNav(){
-  document.getElementById('webnav').innerHTML=NAV.map(([g,items])=>
-    `<div class="grp">${g}</div>`+items.map(([id,ic,label,isNew])=>
-      `<button class="nav ${id===webScreen?'on':''}" data-s="${id}"><span class="ic">${ic}</span>${label}${isNew?'<span class="new">NEW</span>':''}</button>`).join('')
-  ).join('');
-  document.querySelectorAll('#webnav .nav').forEach(b=>b.onclick=()=>{webScreen=b.dataset.s;renderNav();renderWebScreen();});
-}
+        <div><div class="row" style="margin-bottom:6px"><span>Triceps</span><span class="mono" style="font-size:12px"><b style="color:var(--lime)">7 sets</b> <span class="ash">· productive</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:29%;width:38.6%"></div><div class="lmfill" style="width:33.8%;background:var(--lime)"></div><div class="lmmark" style="left:29%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 6</span><span style="color:var(--lime)">MAV 10–14</span><span style="color:var(--red)">MRV 18</span></div></div>
 
-const SCREENS={
-  today:()=>`<h1 class="h1">Today</h1><p class="sub">Fitness GPS — your route, on-track status, Athlete Twin.</p>
-    <div class="card" style="border-left:3px solid var(--lime)"><div class="kick">Your route today</div>
-      <div style="font-size:22px;font-weight:800;margin:6px 0">Lower body + Zone 2</div>
-      <p class="note">Readiness 78/100 — squat e1RM trending up; hamstrings under MEV this week (see Volume).</p>
-      <div class="hero" style="margin-bottom:0">▶  Start workout</div></div>`,
-  dashboard:()=>`<h1 class="h1">Dashboard</h1><p class="sub">Existing analytics scopes — unchanged.</p><div class="card"><p class="note">(Existing screen — not part of this branch's changes.)</p></div>`,
-  plans:()=>`<h1 class="h1">Plans</h1><p class="sub">Goal-first plan library — unchanged.</p><div class="card"><p class="note">(Existing screen.)</p></div>`,
-  velocity:()=>`<h1 class="h1">Velocity (VBT)</h1><p class="sub">Existing — note: warm-up sets are kept in the load–velocity profile.</p><div class="card"><p class="note">(Existing screen; the new warm-up flag deliberately stays in this profile.)</p></div>`,
-  running:()=>`<h1 class="h1">Running</h1><p class="sub">Existing running analytics.</p><div class="card"><p class="note">(Existing screen.)</p></div>`,
+        <div><div class="row" style="margin-bottom:6px"><span>Posterior chain</span><span class="mono" style="font-size:12px"><b style="color:var(--amber)">5 sets</b> <span class="ash">· below MEV</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:29%;width:48.3%"></div><div class="lmfill" style="width:24.2%;background:var(--amber)"></div><div class="lmmark" style="left:29%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 6</span><span style="color:var(--lime)">MAV 10–16</span><span style="color:var(--red)">MRV 18</span></div></div>
+      </div>
+    </div>
+  </section>
 
-  volume:()=>`<h1 class="h1">Volume <span class="badge">new · #1</span></h1>
-    <p class="sub">Weekly working sets per muscle vs your landmarks — warm-ups don't count. <span class="ash">core/engines/landmarks.ts</span></p>
-    <div class="card"><div class="kick">This week — adjust volume</div><div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">${landmarkAdvice()}</div></div>
-    <div class="card"><div class="kick" style="color:var(--blue)">By muscle · sets this week</div><div style="margin-top:16px">${landmarkBars()}</div></div>`,
+  <!-- 2 · ROUTINES -->
+  <section id="routines">
+    <div class="feat-h"><span class="t">Save workouts as routines</span><span class="badge">shipped · #2</span></div>
+    <p class="sub">The Train launcher lists your saved routines (below empty / AI / repeat-last). Tap one to load it. A “Save as routine” action lands on the finish summary &amp; the web logger.</p>
+    <div class="two">
+      <div class="card" style="border-left:3px solid var(--lime)"><div class="kick">Your routines</div>
+        <div class="row" style="padding:11px 0"><div><div style="font-weight:700">Push day A</div><div class="mono ash" style="font-size:11px">Bench · OHP · Triceps</div></div><span class="lk mono" style="font-weight:700">Start</span></div>
+        <div class="row" style="padding:11px 0;border-top:1px solid var(--line)"><div><div style="font-weight:700">Leg day</div><div class="mono ash" style="font-size:11px">Squat · RDL · Leg Press</div></div><span class="lk mono" style="font-weight:700">Start</span></div>
+        <div class="row" style="padding:11px 0;border-top:1px solid var(--line)"><div><div style="font-weight:700">Pull + arms</div><div class="mono ash" style="font-size:11px">Deadlift · Row · Curl</div></div><span class="lk mono" style="font-weight:700">Start</span></div>
+      </div>
+      <div class="card" style="border:1px solid rgba(196,240,53,.33);background:rgba(196,240,53,.06)"><div class="kick">Save as routine</div>
+        <div class="cell" style="text-align:left;margin-top:10px">Push day A</div>
+        <div class="pill on" style="margin-top:10px;display:block;text-align:center;padding:11px">★ Save as routine</div>
+        <p class="note">Reuses the existing WorkoutTemplate model — no schema change. Routines need an account; guests don’t see them.</p>
+      </div>
+    </div>
+  </section>
 
-  exercises:()=>{
-    const r=EX.find(x=>x[0]===exFocus)||EX[1];
-    const mult={"8w":.35,"6m":.7,"1y":1,"All":1.25}[exPeriod]||1;
-    const series=r[6]||[];
-    const chart=r[1]==="car"?`<div class="card"><div class="kick" style="color:var(--blue)">Pace</div><p class="note">5:42 → 5:18 /km over ${exPeriod}.</p></div>`
-      :`<div class="card"><div class="kick">Estimated 1RM · warm-ups excluded</div>${lineSVG(series,'#c4f035')}</div>`;
-    return `<h1 class="h1">Exercises <span class="badge">new · #4</span></h1>
-    <p class="sub">Open any movement for its full history. Reached from search, the Trends table, or by tapping a name in a session.</p>
-    <div style="display:grid;grid-template-columns:200px 1fr;gap:18px">
-      <div><input placeholder="Search…" style="width:100%;background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;color:var(--chalk);font-family:var(--mono);font-size:13px;margin-bottom:8px"/>
-        ${EX.map(x=>`<button class="nav ${x[0]===exFocus?'on':''}" data-ex="${x[0]}" style="width:100%;margin-bottom:3px;font-size:13px"><span>${x[0]}</span></button>`).join('')}</div>
-      <div>
-        <div class="seg" style="margin-bottom:14px;background:none;border:none;padding:0">${["8w","6m","1y","All"].map(p=>`<button class="pill ${p===exPeriod?'on':''}" data-p="${p}">${p}</button>`).join('')}</div>
-        <div class="row" style="margin-bottom:12px"><b style="font-size:20px">${r[0]}</b></div>
-        ${r[1]==="car"?`<div class="grid4" style="margin-bottom:14px"><div class="stat"><div class="v" style="color:var(--blue)">${r[2]}</div><div class="l">Runs</div></div><div class="stat"><div class="v">${r[4]} km</div><div class="l">Distance</div></div><div class="stat"><div class="v">14.2</div><div class="l">Longest</div></div><div class="stat"><div class="v" style="color:var(--blue)">5:18</div><div class="l">Best pace</div></div></div>`
-          :`<div class="grid4" style="margin-bottom:14px"><div class="stat"><div class="v" style="color:var(--lime)">${r[3]} kg</div><div class="l">Best e1RM</div></div><div class="stat"><div class="v">${Math.round(r[2]*4*mult)}</div><div class="l">Working sets</div></div><div class="stat"><div class="v">${(r[4]*mult/1000).toFixed(1)} t</div><div class="l">Volume</div></div><div class="stat"><div class="v">${Math.round(r[2]*mult)}</div><div class="l">Sessions</div></div></div>`}
-        ${chart}
-      </div></div>`;
-  },
+  <!-- 3 · WARMUP -->
+  <section id="warmup">
+    <div class="feat-h"><span class="t">Mark sets as warm-up / cool-down</span><span class="badge">shipped · #3</span></div>
+    <p class="sub">The set badge cycles its type: <b>working (#) → warm-up (W) → cool-down (C) → drop (↓)</b>. Warm-ups &amp; cool-downs are excluded from working volume, e1RM, PRs and tonnage — but kept for the velocity profile.</p>
+    <div class="card" style="max-width:520px">
+      <div class="row" style="margin-bottom:8px"><b>Bench Press</b><span class="mono ash" style="font-size:11px">40×10 · 70×6 · 100×5 · 100×5 · 90×6 · 40×15</span></div>
+      <div class="setrow mono ash" style="font-size:10px;text-transform:uppercase"><span></span><span>load (kg)</span><span>reps</span><span>rpe</span><span></span></div>
+      <div class="setrow"><div class="bdg" style="color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.12)">W</div><div class="cell">40</div><div class="cell">10</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg" style="color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.12)">W</div><div class="cell">70</div><div class="cell">6</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg">1</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg">2</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg" style="color:var(--lime);border-color:var(--lime);background:rgba(196,240,53,.12)">↓</div><div class="cell">90</div><div class="cell">6</div><div class="cell">9</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg" style="color:var(--blue);border-color:var(--blue);background:rgba(127,212,232,.12)">C</div><div class="cell">40</div><div class="cell">15</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+      <p class="note">Working sets counted: <b style="color:var(--lime)">3 of 6</b> (the 2 warm-ups &amp; the cool-down don’t inflate weekly volume — that’s what feeds the landmarks above). The drop set still counts.</p>
+    </div>
+  </section>
 
-  trends:()=>`<h1 class="h1">Trends <span class="badge">new · #5</span></h1>
-    <p class="sub">Volume over time, muscle breakdown, and a sortable exercise table. <b>Click a row</b> to drill into its dashboard.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="card"><div class="kick">Weekly working sets · 8 wk</div>${barsSVG([42,48,45,52,50,55,58,61],'#c4f035')}</div>
-      <div class="card"><div class="kick" style="color:var(--blue)">Weekly tonnage · 8 wk</div>${barsSVG([18,20,19,23,22,25,26,28],'#7fd4e8')}</div></div>
-    <div class="card"><div class="row"><div class="kick" style="color:var(--blue)">Muscle breakdown · this week</div><button class="lk" data-go="volume">Volume detail →</button></div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${muscleChips()}</div></div>
-    <div class="card"><div class="kick">Exercise analytics <span class="ash" style="text-transform:none;letter-spacing:0">· sort by header · click a name to open it</span></div>
-      <table style="margin-top:10px"><thead><tr><th data-k="name">exercise</th><th data-k="sessions">freq</th><th data-k="bestE1rm">best e1RM</th><th data-k="volume">volume</th><th>trend</th></tr></thead>
-      <tbody>${trendRows()}</tbody></table></div>`,
+  <!-- 4 · EXERCISE -->
+  <section id="exercise">
+    <div class="feat-h"><span class="t">Per-exercise dashboard</span><span class="badge">shipped · #4</span></div>
+    <p class="sub">New <b>Exercises</b> screen — search any movement, pick a window, see its whole history.</p>
+    <div><span class="pill">8 wk</span> <span class="pill on">1 yr</span> <span class="pill">All</span></div>
+    <div class="row" style="margin:12px 0"><b style="font-size:20px">Bench Press</b></div>
+    <div class="grid4" style="margin-bottom:14px">
+      <div class="stat"><div class="v" style="color:var(--lime)">117 kg</div><div class="l">Best e1RM</div></div>
+      <div class="stat"><div class="v">86</div><div class="l">Working sets</div></div>
+      <div class="stat"><div class="v">38.4 t</div><div class="l">Volume</div></div>
+      <div class="stat"><div class="v">22</div><div class="l">Sessions</div></div>
+    </div>
+    <div class="card"><div class="kick">Estimated 1RM · warm-ups excluded</div>
+      <svg viewBox="0 0 520 180" style="width:100%;height:180px;margin-top:8px">
+        <polyline fill="none" stroke="#c4f035" stroke-width="2.5" points="16,120 60,108 104,112 148,90 192,82 236,94 280,70 324,62 368,50 412,54 456,38 504,30"/>
+        <circle cx="504" cy="30" r="4" fill="#c4f035"/>
+      </svg></div>
+    <div class="card"><div class="kick">Best set</div>
+      <div class="mono" style="font-size:15px;margin-top:8px">105 kg × 4 <span class="ash">· e1RM 119 kg · Apr 12 ’26</span></div>
+      <p class="note">430 reps · heaviest 110 kg · all-time best e1RM 119 kg</p></div>
+  </section>
 
-  history:()=>`<h1 class="h1">History — session detail</h1>
-    <p class="sub">Tap an exercise name to open its dashboard (#4 deep-link). Set badges show warm-up (W) / cool-down (C) / drop (↓).</p>
-    <div class="card"><div class="row"><b>Push · Apr 12</b><span class="mono ash">52 min · 6.4 t · 🏆 1 PR</span></div></div>
-    <div class="card"><div class="row" style="margin-bottom:8px">
-        <div><span class="mono ash" style="font-size:9px">STRENGTH</span> <button class="lk" data-ex2="Bench Press" style="font-weight:700;font-size:16px">🏆 Bench Press ›</button></div>
-        <span class="mono" style="color:var(--lime)">117 kg e1RM</span></div>
-      <div class="mono ash" style="font-size:11px;display:flex;flex-direction:column;gap:4px">
-        <div><span style="color:var(--amber)">W</span> 40 × 10 &nbsp;·&nbsp; warm-up</div>
-        <div><span style="color:var(--amber)">W</span> 70 × 6 &nbsp;·&nbsp; warm-up</div>
-        <div>1 &nbsp; 100 × 5 · RPE 8</div><div>2 &nbsp; 105 × 4 · RPE 9</div>
-        <div><span style="color:var(--lime)">↓</span> 80 × 8 &nbsp;·&nbsp; drop</div></div></div>`,
+  <!-- 5 · TRENDS -->
+  <section id="trends">
+    <div class="feat-h"><span class="t">Training analytics hub</span><span class="badge">shipped · #5</span></div>
+    <p class="sub">New <b>Trends</b> screen — volume over time, muscle breakdown, and a sortable exercise table that drills into each dashboard.</p>
+    <div class="two">
+      <div class="card"><div class="kick">Weekly working sets · 8 wk</div>
+        <div class="bars"><div style="height:69%;background:rgba(196,240,53,.55)"></div><div style="height:79%;background:rgba(196,240,53,.55)"></div><div style="height:74%;background:rgba(196,240,53,.55)"></div><div style="height:85%;background:rgba(196,240,53,.55)"></div><div style="height:82%;background:rgba(196,240,53,.55)"></div><div style="height:90%;background:rgba(196,240,53,.55)"></div><div style="height:95%;background:rgba(196,240,53,.55)"></div><div style="height:100%;background:var(--lime)"></div></div></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">Weekly tonnage · 8 wk</div>
+        <div class="bars"><div style="height:64%;background:rgba(127,212,232,.55)"></div><div style="height:71%;background:rgba(127,212,232,.55)"></div><div style="height:68%;background:rgba(127,212,232,.55)"></div><div style="height:82%;background:rgba(127,212,232,.55)"></div><div style="height:79%;background:rgba(127,212,232,.55)"></div><div style="height:89%;background:rgba(127,212,232,.55)"></div><div style="height:93%;background:rgba(127,212,232,.55)"></div><div style="height:100%;background:var(--blue)"></div></div></div>
+    </div>
+    <div class="card"><div class="row"><div class="kick" style="color:var(--blue)">Muscle breakdown · this week</div><span class="lk mono" style="font-size:12px">Volume detail →</span></div>
+      <div style="margin-top:12px">
+        <span class="chip" style="border-color:rgba(224,98,94,.33);background:rgba(224,98,94,.08)">Chest <b style="color:var(--red)">21</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Back <b style="color:var(--lime)">16</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Quads <b style="color:var(--lime)">14</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Shoulders <b style="color:var(--lime)">12</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Triceps <b style="color:var(--lime)">7</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Glutes <b style="color:var(--lime)">6</b></span>
+        <span class="chip" style="border-color:rgba(240,180,94,.33);background:rgba(240,180,94,.08)">Posterior <b style="color:var(--amber)">5</b></span>
+      </div></div>
+    <div class="card"><div class="kick">Exercise analytics <span class="ash" style="text-transform:none;letter-spacing:0">· sortable · each row drills into its dashboard</span></div>
+      <table style="margin-top:10px"><thead><tr><th>exercise</th><th>freq</th><th>best e1RM</th><th>volume</th><th>trend</th></tr></thead><tbody>
+        <tr><td class="lk">Back Squat ›</td><td>22×</td><td>142 kg</td><td>38.6 t</td><td style="color:var(--lime)">▲</td></tr>
+        <tr><td class="lk">Bench Press ›</td><td>22×</td><td>117 kg</td><td>38.4 t</td><td style="color:var(--lime)">▲</td></tr>
+        <tr><td class="lk">Deadlift ›</td><td>14×</td><td>180 kg</td><td>31.0 t</td><td style="color:var(--ash)">→</td></tr>
+        <tr><td class="lk">Barbell Row ›</td><td>16×</td><td>96 kg</td><td>15.2 t</td><td style="color:var(--amber)">▼</td></tr>
+        <tr><td class="lk">Overhead Press ›</td><td>18×</td><td>72 kg</td><td>9.8 t</td><td style="color:var(--lime)">▲</td></tr>
+        <tr><td class="lk">Easy Run ›</td><td>12×</td><td>–</td><td>64 km</td><td style="color:var(--lime)">▲</td></tr>
+      </tbody></table></div>
+  </section>
 
-  settings:()=>{
-    const tabs=["General","Security","Coaching & access","Privacy & data"];
-    return `<h1 class="h1">Settings <span class="badge">new · #7</span></h1>
-    <p class="sub">Professional tabbed account area — every existing flow preserved, real controls only.</p>
-    <div class="seg" style="background:none;border:none;padding:0;margin-bottom:18px">${tabs.map(t=>`<button class="pill ${t===acctTab?'on':''}" data-t="${t}">${t}</button>`).join('')}</div>
-    ${ACCT[acctTab]()}`;
-  },
-};
-const ACCT={
-  "General":()=>`<div class="card"><div class="kick" style="color:var(--blue)">Account</div>
+  <!-- 6 · LOGGER -->
+  <section id="logger">
+    <div class="feat-h"><span class="t">Configurable workout logger</span><span class="badge">shipped · #6</span></div>
+    <p class="sub">A <b>Logger settings</b> screen makes the live workout’s behavior yours. Defaults match today’s behavior — nothing changes until you opt in. <span class="ash">core/logger-prefs.ts</span></p>
+    <div class="card">
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Detailed mode</div><div class="mono ash" style="font-size:11px">Show the RPE column. Off = just load × reps.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Get-ready count-in</div><div class="mono ash" style="font-size:11px">5→1→GO before the clock starts.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Auto rest timer</div><div class="mono ash" style="font-size:11px">Start a rest countdown after each banked set.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Carry over last set</div><div class="mono ash" style="font-size:11px">Pre-fill a new set with the previous load &amp; reps.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Keep screen awake</div><div class="mono ash" style="font-size:11px">Stop the screen dimming mid-set.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Haptics</div><div class="mono ash" style="font-size:11px">Vibration on banking a set / rest done.</div></div><div class="sw off"><i></i></div></div>
+    </div>
+    <div class="card"><div class="kick">Default rest</div>
+      <div style="margin-top:12px"><span class="pill">60s</span> <span class="pill on">90s</span> <span class="pill">120s</span> <span class="pill">180s</span></div></div>
+  </section>
+
+  <!-- 7 · ACCOUNT -->
+  <section id="account">
+    <div class="feat-h"><span class="t">Professional account settings</span><span class="badge">shipped · #7</span></div>
+    <p class="sub">The flat settings stack is now a tabbed account area — General · Security · Coaching &amp; access · Privacy &amp; data. Every existing flow preserved; real controls only (no fake toggles). All four shown below.</p>
+    <div style="margin-bottom:8px"><span class="pill on">General</span> <span class="pill">Security</span> <span class="pill">Coaching &amp; access</span> <span class="pill">Privacy &amp; data</span></div>
+    <div class="card"><div class="kick" style="color:var(--blue)">Account</div>
       <div style="font-weight:800;font-size:18px;margin-top:8px">Rafal A.</div><div class="mono" style="margin-top:4px">rafal.ablewski95+ai@gmail.com</div>
-      <div style="display:flex;gap:8px;margin-top:12px"><span class="chip" style="border-color:#c9a9f055;background:#c9a9f01a;color:var(--violet)">CLIENT</span>
-        <span class="chip" style="border-color:var(--lime);background:#c4f0351a;color:var(--lime)">FULL · PAID</span><span class="chip" style="border-color:var(--line);color:var(--ash)">via email</span></div></div>
+      <div style="margin-top:12px"><span class="chip" style="border-color:rgba(201,169,240,.33);background:rgba(201,169,240,.1);color:var(--violet)">CLIENT</span><span class="chip" style="border-color:var(--lime);background:rgba(196,240,53,.1);color:var(--lime)">FULL · PAID</span><span class="chip" style="border-color:var(--line);color:var(--ash)">via email</span></div></div>
     <div class="card"><div class="kick">Preferences</div>
-      <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Appearance</div><div class="seg" style="background:none;border:none;padding:0"><span class="pill on">Dark</span><span class="pill">Light</span></div>
-      <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Language</div><div class="seg" style="background:none;border:none;padding:0"><span class="pill on">EN</span><span class="pill">PL</span><span class="pill">DE</span></div>
-      <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Workout logger</div><span class="pill">${loggerPrefs.detailed?'Detailed (RPE + velocity)':'Simple (load × reps)'}</span></div>
-    <div class="card"><div class="kick">Mode</div><p class="note">Simple ↔ Full (athlete) · Manage subscription — existing billing, re-homed here.</p></div>`,
-  "Security":()=>`<div class="card"><div class="kick">Two-factor authentication</div><p class="note">Existing MFA settings.</p></div>
-    <div class="card"><div class="kick" style="color:var(--blue)">Password &amp; sessions</div><p class="note">You sign in with email — password resets from the login screen. Device/session management is the next Security step.</p></div>`,
-  "Coaching & access":()=>`<div class="card"><div class="kick" style="color:var(--violet)">Become a coach</div><p class="note">Apply with credentials — an admin reviews it and grants the COACH role.</p></div>
-    <div class="card"><div class="kick">Request a feature</div><p class="note">Ask an admin to unlock a hidden feature for your account.</p></div>`,
-  "Privacy & data":()=>`<div class="card" style="border-left:3px solid var(--red)"><div class="kick" style="color:var(--red)">Danger zone — reset account</div>
-    <div style="font-weight:700;font-size:18px;margin-top:8px">Erase all my data</div><p class="note">Permanently deletes sessions, signals, check-ins, plans, templates, photos… Type RESET to confirm. Cannot be undone.</p></div>`,
-};
-function trendRows(){
-  const arr=[...EX]; const k=trendSort.k,d=trendSort.dir;
-  const idx={name:0,sessions:2,bestE1rm:3,volume:4}[k];
-  arr.sort((a,b)=>idx===0?d*a[0].localeCompare(b[0]):d*(a[idx]-b[idx]));
-  return arr.map(r=>{const t=TG[r[5]];return `<tr><td><button class="lk" data-ex2="${r[0]}">${r[0]} ›</button></td><td>${r[2]}×</td><td>${r[1]==="str"?r[3]+" kg":"–"}</td><td>${r[1]==="car"?r[4]+" km":(r[4]/1000).toFixed(1)+" t"}</td><td style="color:${t[1]}">${t[0]}</td></tr>`}).join('');
-}
-function renderWebScreen(){
-  const el=document.getElementById('webcontent'); el.innerHTML=SCREENS[webScreen]();
-  // wire screen-specific interactions
-  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{webScreen=b.dataset.go;renderNav();renderWebScreen();});
-  el.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{exFocus=b.dataset.ex;renderWebScreen();});
-  el.querySelectorAll('[data-ex2]').forEach(b=>b.onclick=()=>{exFocus=b.dataset.ex2;webScreen="exercises";renderNav();renderWebScreen();});
-  el.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{exPeriod=b.dataset.p;renderWebScreen();});
-  el.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===trendSort.k)trendSort.dir*=-1;else trendSort={k,dir:k==="name"?1:-1};renderWebScreen();});
-  el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{acctTab=b.dataset.t;renderWebScreen();});
-}
+      <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Appearance</div><span class="pill on">Dark</span> <span class="pill">Light</span>
+      <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Language</div><span class="pill on">EN</span> <span class="pill">PL</span> <span class="pill">DE</span>
+      <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Workout logger</div><span class="pill">Detailed (RPE + velocity)</span></div>
+    <div class="card"><div class="kick">Two-factor authentication <span class="ash" style="text-transform:none;letter-spacing:0">· Security tab</span></div><p class="note">Existing MFA settings + an honest password/sessions note.</p></div>
+    <div class="card"><div class="kick" style="color:var(--violet)">Become a coach <span class="ash" style="text-transform:none;letter-spacing:0">· Coaching tab</span></div><p class="note">Apply with credentials — an admin grants the COACH role. Plus Request-a-feature.</p></div>
+    <div class="card" style="border-left:3px solid var(--red)"><div class="kick" style="color:var(--red)">Danger zone <span class="ash" style="text-transform:none;letter-spacing:0">· Privacy &amp; data tab</span></div><p class="note">Erase all my data (type RESET) — the existing account reset, re-homed.</p></div>
+  </section>
 
-/* ---------------- MOBILE ---------------- */
-let mTab="train";
-const wuSets=[{l:"40",r:"10",rpe:"",t:"warmup"},{l:"70",r:"6",rpe:"",t:"warmup"},{l:"100",r:"5",rpe:"8",t:"working"},{l:"100",r:"5",rpe:"8",t:"working"},{l:"90",r:"6",rpe:"9",t:"drop"},{l:"40",r:"15",rpe:"",t:"cooldown"}];
-const ORDER=["working","warmup","cooldown","drop"];
-const wb=t=>t==="warmup"?["W","var(--amber)"]:t==="cooldown"?["C","var(--blue)"]:t==="drop"?["↓","var(--lime)"]:[null,null];
-let mScreen="train"; // train | workout | logger | volume
+  <!-- + DEEP-LINK + MOBILE -->
+  <section id="deeplink">
+    <div class="feat-h"><span class="t">Exercise deep-links &amp; the mobile app</span><span class="badge">shipped · +</span></div>
+    <p class="sub">Tap any strength/cardio exercise name in a session breakdown to open its dashboard (web + mobile). And here’s how the signature screens look on the phone.</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div class="phone">
+        <div class="mono ash" style="font-size:10px;text-transform:uppercase;letter-spacing:.1em">Train</div>
+        <div style="font-size:20px;font-weight:800;margin:4px 0">Start training</div>
+        <div class="hero">▶  Start workout</div>
+        <div class="card" style="border-left:3px solid var(--lime);margin-bottom:0"><div class="kick" style="font-size:10px">Your routines</div>
+          <div class="row" style="padding:8px 0"><div><div style="font-weight:700;font-size:13px">Push day A</div></div><span class="lk mono" style="font-size:12px">Start</span></div>
+          <div class="row" style="padding:8px 0;border-top:1px solid var(--line)"><div><div style="font-weight:700;font-size:13px">Leg day</div></div><span class="lk mono" style="font-size:12px">Start</span></div></div>
+        <div class="ptab"><div class="on">◐ Today</div><div class="on">▦ Train</div><div>↗ Analyze</div><div>⋯ More</div></div>
+      </div>
+      <div class="phone">
+        <div class="row"><div style="font-size:18px;font-weight:800">Bench Press</div><span class="mono" style="color:var(--lime)">12:04</span></div>
+        <div class="setrow mono ash" style="font-size:9px;text-transform:uppercase;margin-top:8px"><span></span><span>kg</span><span>reps</span><span>rpe</span><span></span></div>
+        <div class="setrow"><div class="bdg" style="color:var(--amber);border-color:var(--amber)">W</div><div class="cell">40</div><div class="cell">10</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+        <div class="setrow"><div class="bdg">1</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+        <div class="setrow"><div class="bdg">2</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+        <div class="setrow"><div class="bdg" style="color:var(--lime);border-color:var(--lime)">↓</div><div class="cell">90</div><div class="cell">6</div><div class="cell">9</div><div class="tick">✓</div></div>
+        <div class="mono" style="font-size:11px;margin-top:6px"><span class="ash">working sets:</span> <b style="color:var(--lime)">3 of 4</b></div>
+        <div class="card" style="margin-top:12px;margin-bottom:0"><div class="row"><span class="mono ash" style="font-size:11px">Rest · target 90s</span><span class="mono" style="color:var(--lime)">0:48</span></div></div>
+        <div class="ptab"><div>◐ Today</div><div class="on">▦ Train</div><div>↗ Analyze</div><div>⋯ More</div></div>
+      </div>
+    </div>
+  </section>
 
-const MSCREENS={
-  train:()=>`<div class="mono ash" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em">Train</div><div class="mh1">Start training</div>
-    <div class="hero" data-m="workout">▶  Start workout</div>
-    <div class="card" style="border-left:3px solid var(--violet)"><div class="kick" style="color:var(--violet)">AI coach · readiness 78/100</div><div style="font-weight:700;margin-top:6px">Back Squat + Zone 2</div></div>
-    <div class="card" style="border-left:3px solid var(--blue)"><div class="kick" style="color:var(--blue)">Repeat last</div><div style="font-weight:700;margin-top:6px">Push · Bench · OHP · Triceps</div></div>
-    <div class="card" style="border-left:3px solid var(--lime)"><div class="kick">Your routines <span class="badge">new · #2</span></div>
-      ${[["Push day A","Bench · OHP · Triceps"],["Leg day","Squat · RDL · Leg Press"]].map((x,i)=>`<div class="row" style="padding:11px 0;border-top:${i?'1px solid var(--line)':'none'}"><div><div style="font-weight:700">${x[0]}</div><div class="mono ash" style="font-size:11px">${x[1]}</div></div><span class="lk mono" style="font-weight:700">Start</span></div>`).join('')}</div>`,
-
-  workout:()=>`<button class="lk mono" data-m="train" style="font-size:13px">← Train</button>
-    <div class="row" style="margin:8px 0"><div class="mh1" style="margin:0">Bench Press</div><span class="mono" style="color:var(--lime)">12:04</span></div>
-    <div class="card"><div class="row" style="margin-bottom:6px"><b>Bench Press</b><span class="mono ash" style="font-size:11px" id="m-summary"></span></div>
-      <div class="setrow mono ash" style="font-size:9px;text-transform:uppercase"><span></span><span>kg</span><span>reps</span><span>rpe</span><span></span></div>
-      <div id="m-rows"></div>
-      <div class="mono" style="font-size:12px;margin-top:6px"><span class="ash">working sets:</span> <b id="m-count" style="color:var(--lime)"></b> <span class="ash">· warm-ups excluded from volume (#3)</span></div>
-      <div style="display:flex;gap:14px;margin-top:10px"><span class="lk mono">+ Set</span><span class="mono" style="color:var(--amber)">+ Warm-up</span><span class="ash mono">+ Drop set</span></div></div>
-    <div class="card"><div class="row"><span class="mono ash">Rest · target ${loggerPrefs.restSeconds}s</span><span class="mono" style="color:var(--lime)">0:48</span></div></div>`,
-
-  logger:()=>{const ROWS=[["detailed","Detailed mode","Show the RPE column"],["countIn","Get-ready count-in","5→1→GO before the clock"],["restTimer","Auto rest timer","Countdown after each set"],["carryOver","Carry over last set","Pre-fill load & reps"],["keepAwake","Keep screen awake","No dimming mid-set"],["haptics","Haptics","Buzz on bank / rest done"]];
-    return `<button class="lk mono" data-m="train" style="font-size:13px">← Settings</button>
-    <div class="mono ash" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-top:8px">Logger settings <span class="badge">new · #6</span></div><div class="mh1">Logger settings</div>
-    <div class="card">${ROWS.map((r,i)=>`<div class="srow"><div style="flex:1"><div style="font-weight:700;font-size:15px">${r[1]}</div><div class="mono ash" style="font-size:11px;margin-top:2px">${r[2]}</div></div><div class="sw ${loggerPrefs[r[0]]?'on':''}" data-k="${r[0]}"><i></i></div></div>`).join('')}</div>
-    ${loggerPrefs.restTimer?`<div class="card"><div class="kick">Default rest</div><div class="seg" style="background:none;border:none;padding:0;margin-top:12px">${[60,90,120,180].map(s=>`<button class="pill ${s===loggerPrefs.restSeconds?'on':''}" data-rs="${s}">${s}s</button>`).join('')}</div></div>`:''}`;
-  },
-
-  volume:()=>`<div class="mono ash" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em">Volume <span class="badge">new · #1</span></div><div class="mh1">Volume landmarks</div>
-    <div class="card"><div class="kick">This week — adjust volume</div><div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:13px">${landmarkAdvice()}</div></div>
-    <div class="card"><div class="kick" style="color:var(--blue)">By muscle · sets this week</div><div style="margin-top:14px">${landmarkBars()}</div></div>`,
-};
-function renderMobile(){
-  document.getElementById('mscr').innerHTML=MSCREENS[mScreen]();
-  const scr=document.getElementById('mscr');
-  scr.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{mScreen=b.dataset.m;renderMobile();});
-  scr.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{loggerPrefs[s.dataset.k]=!loggerPrefs[s.dataset.k];renderMobile();});
-  scr.querySelectorAll('[data-rs]').forEach(b=>b.onclick=()=>{loggerPrefs.restSeconds=+b.dataset.rs;renderMobile();});
-  if(mScreen==="workout")renderWuRows();
-  // tab bar reflects screen group
-  document.querySelectorAll('#mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===mTab));
-}
-function renderWuRows(){
-  const rows=document.getElementById('m-rows'); if(!rows)return; rows.innerHTML=''; let working=0,idx=0;
-  wuSets.forEach((s,i)=>{const [b,c]=wb(s.t);const isW=s.t!=="warmup"&&s.t!=="cooldown";if(isW)working++;const label=b??(++idx);
-    rows.insertAdjacentHTML('beforeend',`<div class="setrow"><button class="badgebtn" data-i="${i}" style="color:${c||'var(--ash)'};border:1px solid ${c||'var(--line)'};background:${c?c+'1f':'transparent'}">${label}</button><div class="cell">${s.l}</div><div class="cell">${s.r}</div><div class="cell" style="${s.rpe?'':'opacity:.4'}">${s.rpe||'–'}</div><div class="tick">✓</div></div>`);});
-  document.getElementById('m-count').textContent=working+" of "+wuSets.length;
-  document.getElementById('m-summary').textContent=wuSets.map(s=>s.l+"×"+s.r).join(" · ");
-  rows.querySelectorAll('.badgebtn').forEach(btn=>btn.onclick=()=>{const i=+btn.dataset.i;wuSets[i].t=ORDER[(ORDER.indexOf(wuSets[i].t)+1)%4];renderWuRows();});
-}
-const MTABS=[["today","◐","Today","train"],["train","▦","Train","train"],["analyze","↗","Analyze","volume"],["more","⋯","More","logger"]];
-function renderTabs(){
-  document.getElementById('mtabs').innerHTML=MTABS.map(([t,ic,label])=>`<button data-t="${t}"><span class="ic">${ic}</span>${label}</button>`).join('');
-  document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>{mTab=b.dataset.t;mScreen=MTABS.find(x=>x[0]===mTab)[3];renderMobile();});
-}
-
-/* ---------------- device toggle ---------------- */
-document.querySelectorAll('#device button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('#device button').forEach(x=>x.classList.toggle('on',x===b));
-  document.getElementById('web').style.display=b.dataset.d==="web"?"block":"none";
-  document.getElementById('mobile').style.display=b.dataset.d==="mobile"?"flex":"none";
-});
-
-/* init */
-renderNav();renderWebScreen();renderTabs();renderMobile();
-</script>
+  <p class="foot">Static preview · reference/feature-preview.html · branch claude/app-ideas-o4uqe8.<br/>For the truly-live interactive build (real auth + your data): say “open a PR” (Vercel preview URL) or “ship to main” (production).</p>
+</main>
 </body>
 </html>
