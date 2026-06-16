@@ -3,15 +3,34 @@
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
-import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { useTheme } from "@/lib/use-theme";
+import { useLang } from "@/lib/i18n";
+import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
 
 type CoachStatus = "pending" | "approved" | "denied";
+type Section = "general" | "security" | "coaching" | "data";
+const SECTIONS: { id: Section; label: string }[] = [
+  { id: "general", label: "General" },
+  { id: "security", label: "Security" },
+  { id: "coaching", label: "Coaching & access" },
+  { id: "data", label: "Privacy & data" },
+];
+const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
+  { id: "en", label: "EN" },
+  { id: "pl", label: "PL" },
+  { id: "de", label: "DE" },
+];
 
 export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
+  const { theme, setTheme } = useTheme();
+  const { lang, setLang } = useLang();
+  const prefs = useLoggerPrefs();
+  const [section, setSection] = useState<Section>("general");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -149,9 +168,82 @@ export default function AccountSettings() {
   };
 
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div style={{ maxWidth: 720 }}>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Settings</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 20 }}>Account, security &amp; data.</Mono>
+      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>Account, preferences, security &amp; data.</Mono>
+
+      {/* Section nav — a professional, tabbed account area. */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, borderBottom: `1px solid ${LINE}`, paddingBottom: 12 }}>
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setSection(s.id)}
+            style={{ ...mono, fontSize: 13, padding: "7px 14px", borderRadius: 999, cursor: "pointer", color: section === s.id ? txt(LIME) : txt(ASH), background: section === s.id ? `${LIME}1a` : "transparent", border: `1px solid ${section === s.id ? LIME : LINE}` }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ---- GENERAL ---- */}
+      {section === "general" && (
+        <>
+          {/* Account identity */}
+          <Card style={{ marginBottom: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Account</Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginTop: 8 }}>{session?.name || session?.email || "Your account"}</div>
+            <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>{session?.email}</Mono>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}55`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
+              <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? "Full · paid" : "Free"}</span>
+              {session?.provider && <span style={{ ...mono, fontSize: 11, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>via {session.provider}</span>}
+            </div>
+            <button onClick={() => void logout()} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer", marginTop: 14, padding: 0 }}>
+              Sign out
+            </button>
+          </Card>
+
+          {/* Preferences — appearance, language, workout logger */}
+          <Card style={{ marginBottom: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Preferences</Mono>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Appearance</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["dark", "light"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setTheme(m)}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Language</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              {LANGS.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => setLang(l.id)}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Workout logger</Mono>
+            <button
+              onClick={() => setLoggerPref("detailed", !prefs.detailed)}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
+            >
+              {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
+            </button>
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+              The logger also offers a Simple/Detailed toggle inline; more per-device options live in the mobile app.
+            </Mono>
+          </Card>
 
       {/* Mode — a client flips between the lean tracker and the full athlete
           toolkit. Full is a paid upgrade. Coaches/admins get their surface
@@ -234,7 +326,12 @@ export default function AccountSettings() {
           )}
         </Card>
       )}
+        </>
+      )}
 
+      {/* ---- COACHING & ACCESS ---- */}
+      {section === "coaching" && (
+        <>
       {/* Become a coach — a client applies with credentials; an admin reviews
           it in the admin queue, granting the COACH role on approval. */}
       {isClient && (
@@ -275,10 +372,27 @@ export default function AccountSettings() {
         </Card>
       )}
 
-      <RequestAccess />
+          <RequestAccess />
+        </>
+      )}
 
-      <MfaSettings />
+      {/* ---- SECURITY ---- */}
+      {section === "security" && (
+        <>
+          <MfaSettings />
+          <Card style={{ marginTop: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Password &amp; sessions</Mono>
+            <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+              {session?.provider && session.provider !== "email"
+                ? `You sign in with ${session.provider} — manage your password and active devices there.`
+                : "Password resets are handled from the login screen (“Forgot password”). Device/session management is coming as the next Security step."}
+            </Mono>
+          </Card>
+        </>
+      )}
 
+      {/* ---- PRIVACY & DATA ---- */}
+      {section === "data" && (
       <Card style={{ borderLeft: `3px solid ${RED}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
           Danger zone — reset account
@@ -345,6 +459,7 @@ export default function AccountSettings() {
           </button>
         </div>
       </Card>
+      )}
     </div>
   );
 }

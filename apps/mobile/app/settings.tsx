@@ -25,7 +25,7 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 export default function Settings() {
   const router = useRouter();
   const { t, lang, setLang } = useLang();
-  const { signOut } = useSession();
+  const { signOut, name, role, entitlement } = useSession();
   const { palette, pref, setPref } = useTheme();
   const C = palette;
   const [confirm, setConfirm] = useState("");
@@ -56,6 +56,20 @@ export default function Settings() {
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 10 }}>{t("settings.title")}</Text>
+
+      {/* Account identity */}
+      <Card style={{ marginTop: 16 }}>
+        <Kicker color={C.blue}>Account</Kicker>
+        <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 8 }}>{name}</Text>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+          <View style={{ borderWidth: 1, borderColor: `${C.violet}55`, backgroundColor: `${C.violet}1a`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.violet, letterSpacing: 0.5 }}>{role.toUpperCase()}</Text>
+          </View>
+          <View style={{ borderWidth: 1, borderColor: entitlement === "paid" ? C.lime : C.line, backgroundColor: entitlement === "paid" ? `${C.lime}1a` : "transparent", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, color: entitlement === "paid" ? C.lime : C.ash, letterSpacing: 0.5 }}>{entitlement === "paid" ? "FULL · PAID" : "FREE"}</Text>
+          </View>
+        </View>
+      </Card>
 
       <Card style={{ marginTop: 16 }}>
         <Kicker>Appearance</Kicker>
