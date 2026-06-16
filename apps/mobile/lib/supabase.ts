@@ -3,10 +3,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
 // Same Supabase project as the web app — same users, same data.
-// URL is public; the anon (publishable) key is set at build time via EAS env.
+// URL + anon (publishable) key are PUBLIC (the web app ships the same anon key
+// openly; row-level security is what protects the data). Defaulted here so the
+// app works in any build; EXPO_PUBLIC_* env vars still override if set.
 const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "https://hgufkvwccodogieqygyy.supabase.co";
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const SUPABASE_ANON_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhndWZrdndjY29kb2dpZXF5Z3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzOTY5MDYsImV4cCI6MjA5NTk3MjkwNn0.TvyLtZvVS6w8qtA4uWVT4wkDpZhjkLQdc6sWl1Po4gc";
 
 export const isSupabaseConfigured = () => Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
