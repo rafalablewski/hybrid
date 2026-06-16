@@ -22,6 +22,10 @@ export interface LoggerPrefs {
   restTimer: boolean;
   /** Default rest-countdown target, seconds. */
   restSeconds: number;
+  /** Fire a background notification when the rest countdown ends (mobile). */
+  restNotify: boolean;
+  /** Play a sound with the rest cue / notification (mobile). */
+  restSound: boolean;
   /** After banking a set, auto-append the next set (mobile live logger). */
   autoAdvance: boolean;
   /** What the "Start workout" hero opens with. */
@@ -52,6 +56,8 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   carryOver: true,
   restTimer: true,
   restSeconds: 90,
+  restNotify: true,
+  restSound: true,
   autoAdvance: false,
   defaultStart: "empty",
   rpeAsRir: false,
@@ -98,6 +104,8 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     carryOver: bool(r.carryOver, DEFAULT_LOGGER_PREFS.carryOver),
     restTimer: bool(r.restTimer, DEFAULT_LOGGER_PREFS.restTimer),
     restSeconds: seconds,
+    restNotify: bool(r.restNotify, DEFAULT_LOGGER_PREFS.restNotify),
+    restSound: bool(r.restSound, DEFAULT_LOGGER_PREFS.restSound),
     autoAdvance: bool(r.autoAdvance, DEFAULT_LOGGER_PREFS.autoAdvance),
     defaultStart: r.defaultStart === "ai" || r.defaultStart === "last" ? r.defaultStart : "empty",
     rpeAsRir: bool(r.rpeAsRir, DEFAULT_LOGGER_PREFS.rpeAsRir),

@@ -253,12 +253,12 @@ export default function Workout() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (phase !== "active" || restSince == null || restTarget == null) return;
+      if (phase !== "active" || restSince == null || restTarget == null || !prefs.restNotify) return;
       const remaining = restTarget - Math.floor((Date.now() - restSince) / 1000);
       if (remaining <= 0) return;
       try {
         const idn = await Notifications.scheduleNotificationAsync({
-          content: { title: t("workout.restDone"), body: t("notif.restBody"), sound: true },
+          content: { title: t("workout.restDone"), body: t("notif.restBody"), sound: prefs.restSound },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: remaining },
         });
         if (cancelled) await Notifications.cancelScheduledNotificationAsync(idn).catch(() => {});
@@ -278,7 +278,7 @@ export default function Workout() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restSince, restTarget, phase]);
+  }, [restSince, restTarget, phase, prefs.restNotify, prefs.restSound]);
 
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
   // AI / repeat-last start. Guests read their own on-device history. An empty
