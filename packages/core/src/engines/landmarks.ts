@@ -66,13 +66,14 @@ const hasReps = (reps: string): boolean => {
  * Working sets counted toward each muscle over the last `days` (default 7, up to
  * `now`). Each performed WORKING strength set (warm-ups/cool-downs already
  * dropped, empty sets skipped) counts one set toward EVERY muscle the movement
- * trains per the MOVEMENTS map — so a compound contributes to each muscle it
- * hits. A deliberately simple v1; fractional secondary-muscle weighting can come
- * later. Custom movements with no muscle data are skipped.
+ * trains per the MOVEMENTS map. By default a compound contributes one full set
+ * to EVERY muscle it hits; with `fractional` on, the movement's PRIMARY muscle
+ * (first in its list) counts 1.0 and secondaries count 0.5 — closer to how RP
+ * counts indirect work. Custom movements with no muscle data are skipped.
  */
 export function weeklySetsByMuscle(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number; includeWarmups?: boolean } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean; fractional?: boolean } = {},
 ): Map<MuscleGroup, number> {
   const now = opts.now ?? Date.now();
   const cutoff = now - (opts.days ?? 7) * 86_400_000;
@@ -86,9 +87,14 @@ export function weeklySetsByMuscle(
       if (!muscles || muscles.length === 0) continue;
       const n = setsForVolume(b, opts.includeWarmups).filter((set) => hasReps(set.reps)).length;
       if (n === 0) continue;
-      for (const m of muscles) map.set(m, (map.get(m) ?? 0) + n);
+      muscles.forEach((m, idx) => {
+        const weight = opts.fractional && idx > 0 ? 0.5 : 1;
+        map.set(m, (map.get(m) ?? 0) + n * weight);
+      });
     }
   }
+  // Tidy fractional totals to 0.5 precision.
+  for (const [m, v] of map) map.set(m, Math.round(v * 2) / 2);
   return map;
 }
 
@@ -174,7 +180,7 @@ export function muscleVolumeStatus(
 /** Per-muscle weekly volume status for every muscle group, in display order. */
 export function volumeStatus(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number; includeWarmups?: boolean; landmarks?: Record<MuscleGroup, VolumeLandmark> } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean; fractional?: boolean; landmarks?: Record<MuscleGroup, VolumeLandmark> } = {},
 ): MuscleVolumeStatus[] {
   const counts = weeklySetsByMuscle(sessions, opts);
   const lm = opts.landmarks ?? VOLUME_LANDMARKS;
@@ -190,7 +196,7 @@ const ZONE_PRIORITY: Record<VolumeZone, number> = { overreaching: 0, under: 1, p
  */
 export function volumeAdvice(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number; includeWarmups?: boolean; landmarks?: Record<MuscleGroup, VolumeLandmark> } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean; fractional?: boolean; landmarks?: Record<MuscleGroup, VolumeLandmark> } = {},
 ): MuscleVolumeStatus[] {
   return volumeStatus(sessions, opts)
     .filter((s) => s.action === "add" || s.action === "reduce")

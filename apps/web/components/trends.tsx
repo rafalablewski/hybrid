@@ -53,16 +53,17 @@ export default function Trends({
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;
   const units = prefs.units;
+  const fr = prefs.fractionalVolume;
   const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
-  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
+  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
   const trained = muscles.some((m) => m.sets > 0);
 
   // Default the per-muscle trend to the most-actionable muscle, else the biggest.
   const focusMuscle = selMuscle ?? advice[0]?.muscle ?? [...muscles].sort((a, b) => b.sets - a.sets)[0]?.muscle ?? "chest";
-  const muscleWeeks = useMemo(() => weeklyMuscleSets(sessions, focusMuscle, 8, Date.now(), iw), [sessions, focusMuscle, iw]);
+  const muscleWeeks = useMemo(() => weeklyMuscleSets(sessions, focusMuscle, 8, Date.now(), iw, fr), [sessions, focusMuscle, iw, fr]);
 
   const sortedTable = useMemo(() => {
     const arr = [...table];

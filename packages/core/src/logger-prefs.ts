@@ -38,6 +38,8 @@ export interface LoggerPrefs {
   /** Count warm-up & cool-down sets toward working VOLUME (off = exclude them,
    *  the default). PRs/e1RM stay warm-up-excluded regardless. */
   countWarmupsInVolume: boolean;
+  /** Weight a movement's secondary muscles at 0.5 sets (vs 1.0) for volume. */
+  fractionalVolume: boolean;
   /** Per-muscle overrides of the default volume landmarks (empty = use defaults). */
   landmarkOverrides: LandmarkOverrides;
 }
@@ -57,6 +59,7 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   plateCalc: false,
   quickIncrement: 0,
   countWarmupsInVolume: false,
+  fractionalVolume: false,
   landmarkOverrides: {},
 };
 
@@ -102,6 +105,7 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     plateCalc: bool(r.plateCalc, DEFAULT_LOGGER_PREFS.plateCalc),
     quickIncrement: typeof r.quickIncrement === "number" && r.quickIncrement > 0 ? r.quickIncrement : 0,
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
+    fractionalVolume: bool(r.fractionalVolume, DEFAULT_LOGGER_PREFS.fractionalVolume),
     landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
   };
 }

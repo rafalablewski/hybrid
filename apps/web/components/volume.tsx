@@ -34,9 +34,9 @@ const ZONE: Record<VolumeZone, { label: string; c: string }> = {
 
 function adviceLine(s: MuscleVolumeStatus): string {
   if (s.action === "add")
-    return `Add ~${s.deltaSets} set${s.deltaSets === 1 ? "" : "s"}/wk — below the minimum to grow${s.maintaining ? " (only maintaining)" : ""}.`;
+    return `Add ~${Math.round(s.deltaSets)} set${Math.round(s.deltaSets) === 1 ? "" : "s"}/wk — below the minimum to grow${s.maintaining ? " (only maintaining)" : ""}.`;
   if (s.action === "reduce")
-    return `Over your recoverable ceiling — drop ~${Math.abs(s.deltaSets)} set${Math.abs(s.deltaSets) === 1 ? "" : "s"}/wk or deload.`;
+    return `Over your recoverable ceiling — drop ~${Math.round(Math.abs(s.deltaSets))} set${Math.round(Math.abs(s.deltaSets)) === 1 ? "" : "s"}/wk or deload.`;
   if (s.action === "progress") return `In the productive range — room to add ~${s.deltaSets} more if recovery allows.`;
   return "At the top of your productive range — hold here.";
 }
@@ -45,8 +45,9 @@ export default function Volume({ sessions }: { sessions: LoggedSession[] }) {
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;
   const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
-  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, landmarks: lm }), [sessions, iw, lm]);
+  const fr = prefs.fractionalVolume;
+  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
   const trained = rows.some((r) => r.sets > 0);
   const [editing, setEditing] = useState(false);
   const customized = Object.keys(prefs.landmarkOverrides).length > 0;

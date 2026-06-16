@@ -67,6 +67,7 @@ export function weeklyMuscleSets(
   weeks = 8,
   now = Date.now(),
   includeWarmups = false,
+  fractional = false,
 ): number[] {
   const out: number[] = [];
   for (let w = weeks - 1; w >= 0; w--) {
@@ -80,13 +81,14 @@ export function weeklyMuscleSets(
         if (b.kind !== "strength") continue;
         const muscles = MOVEMENTS[b.name]?.muscles;
         if (!muscles || !muscles.includes(muscle)) continue;
-        sets += setsForVolume(b, includeWarmups).filter((set) => {
+        const n = setsForVolume(b, includeWarmups).filter((set) => {
           const r = parseFloat(set.reps);
           return Number.isFinite(r) && r > 0;
         }).length;
+        sets += n * (fractional && muscles[0] !== muscle ? 0.5 : 1);
       }
     }
-    out.push(sets);
+    out.push(Math.round(sets * 2) / 2);
   }
   return out;
 }

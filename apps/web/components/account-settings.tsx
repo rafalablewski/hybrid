@@ -264,6 +264,15 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
               Controls whether warm-up &amp; cool-down sets count in the Volume landmarks, Trends and per-exercise volume. Off by default (RP-style). PRs &amp; e1RM always exclude warm-ups.
             </Mono>
+            <button
+              onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
+            >
+              {prefs.fractionalVolume ? "Secondary muscles = 0.5 sets" : "Every muscle = 1 set"}
+            </button>
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+              Fractional volume counts a lift&apos;s secondary muscles as half a set (primary = the first muscle it trains).
+            </Mono>
           </Card>
 
       {/* Mode — a client flips between the lean tracker and the full athlete

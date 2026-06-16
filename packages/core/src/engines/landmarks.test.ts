@@ -52,6 +52,16 @@ describe("volume landmarks", () => {
     expect(included.get("chest")).toBe(4); // + the warm-up
   });
 
+  it("fractional weighting halves secondary muscles (primary = first listed)", () => {
+    // Bench Press muscles: [chest (primary), triceps, shoulders]
+    const full = weeklySetsByMuscle([bench(daysAgo(1))], { now: NOW });
+    const frac = weeklySetsByMuscle([bench(daysAgo(1))], { now: NOW, fractional: true });
+    expect(full.get("chest")).toBe(3);
+    expect(full.get("triceps")).toBe(3);
+    expect(frac.get("chest")).toBe(3); // primary unchanged
+    expect(frac.get("triceps")).toBe(1.5); // secondary halved
+  });
+
   it("ignores sessions outside the window", () => {
     const counts = weeklySetsByMuscle([bench(daysAgo(1)), bench(daysAgo(20))], { now: NOW });
     expect(counts.get("chest")).toBe(3); // only the recent one

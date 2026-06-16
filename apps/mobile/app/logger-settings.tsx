@@ -9,6 +9,7 @@ type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" 
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },
+  { key: "fractionalVolume", titleKey: "loggerPrefs.fractionalVolume", descKey: "loggerPrefs.fractionalVolumeDesc" },
   { key: "plateCalc", titleKey: "loggerPrefs.plateCalc", descKey: "loggerPrefs.plateCalcDesc" },
   { key: "autoAdvance", titleKey: "loggerPrefs.autoAdvance", descKey: "loggerPrefs.autoAdvanceDesc" },
   { key: "rpeAsRir", titleKey: "loggerPrefs.rpeAsRir", descKey: "loggerPrefs.rpeAsRirDesc" },
