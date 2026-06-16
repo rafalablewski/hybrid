@@ -109,6 +109,16 @@ export default function Settings() {
         </View>
       </Card>
 
+      <Pressable onPress={() => router.push("/logger-settings")}>
+        <Card style={{ marginTop: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ flex: 1 }}>
+            <Kicker>{t("loggerPrefs.title")}</Kicker>
+            <Mono style={{ marginTop: 4, fontSize: 11 }}>{t("loggerPrefs.intro")}</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash, marginLeft: 10 }}>→</Text>
+        </Card>
+      </Pressable>
+
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.red, marginTop: 16 }}>
         <Kicker color={C.red}>{t("settings.dangerZone")}</Kicker>
         <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 8 }}>{t("settings.resetTitle")}</Text>

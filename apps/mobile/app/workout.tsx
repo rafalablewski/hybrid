@@ -42,6 +42,7 @@ import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
+import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
@@ -139,6 +140,7 @@ export default function Workout() {
   const { t } = useLang();
   const { session } = useSession();
   const guest = !session;
+  const prefs = useLoggerPrefs();
   const { source, templateId } = useLocalSearchParams<{ source?: string; templateId?: string }>();
 
   const [title, setTitle] = useState("Workout");
@@ -181,7 +183,7 @@ export default function Workout() {
         // Buzz once when the chosen rest target is reached — eyes-off cue.
         if (restTarget && rn >= restTarget && !restFired.current) {
           restFired.current = true;
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          if (prefs.haptics) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         }
       }
     }, 1000);
@@ -198,10 +200,10 @@ export default function Workout() {
       const id = setTimeout(() => setCountdown(null), 700);
       return () => clearTimeout(id);
     }
-    Haptics.selectionAsync().catch(() => {});
+    if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
     const id = setTimeout(() => setCountdown((c) => (c == null ? null : c - 1)), 1000);
     return () => clearTimeout(id);
-  }, [countdown]);
+  }, [countdown, prefs.haptics]);
 
   // Show the one-time logging guide until the athlete has banked a set before.
   useEffect(() => {
@@ -215,12 +217,18 @@ export default function Workout() {
   // Keep the screen on while logging — no dimming/sleep mid-set (chalky hands,
   // no taps). Released the moment the workout finishes or the screen unmounts.
   useEffect(() => {
-    if (phase !== "active") return;
+    if (phase !== "active" || !prefs.keepAwake) return;
     activateKeepAwakeAsync("workout").catch(() => {});
     return () => {
       deactivateKeepAwake("workout").catch(() => {});
     };
-  }, [phase]);
+  }, [phase, prefs.keepAwake]);
+
+  // Apply the default rest target from prefs (and clear it entirely when the
+  // auto rest timer is turned off). Runs when prefs land/change, not mid-set.
+  useEffect(() => {
+    setRestTarget(prefs.restTimer ? prefs.restSeconds : null);
+  }, [prefs.restTimer, prefs.restSeconds]);
 
   // Ask for notification permission once (best-effort) so the rest-done alert
   // can fire while the app is backgrounded / the phone is locked.
@@ -314,7 +322,7 @@ export default function Workout() {
       if (!resumedDraft && !didCountdown.current) {
         didCountdown.current = true;
         startedAt.current = new Date();
-        setCountdown(5);
+        if (prefs.countIn) setCountdown(5); // else the clock just starts now
       }
       setRestored(true);
     })();
@@ -358,7 +366,7 @@ export default function Workout() {
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
   const addSet = (u: string) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(x.sets[x.sets.length - 1])] } : x)),
+      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
     );
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
@@ -398,7 +406,7 @@ export default function Workout() {
     );
     if (!val) return;
     if (showTip) dismissTip(); // first banked set — the guide has done its job
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     // No rest when this set flows straight into a drop set, or into the next
     // exercise of a superset — you keep moving; the rest comes after the
     // sequence (banking the last drop / the last superset exercise).
@@ -409,8 +417,8 @@ export default function Workout() {
       const members = exercises.filter((x) => x.group === ex.group);
       midSuperset = members[members.length - 1]?.uid !== ex.uid;
     }
-    if (nextIsDrop || midSuperset) {
-      setRestSince(null); // suppress any lingering rest banner
+    if (nextIsDrop || midSuperset || !prefs.restTimer) {
+      setRestSince(null); // suppress any lingering rest banner (or timer disabled)
       return;
     }
     setRestSince(Date.now());
@@ -433,7 +441,7 @@ export default function Workout() {
       pausedAt.current = Date.now();
       setPaused(true);
     }
-    Haptics.selectionAsync().catch(() => {});
+    if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
   };
 
   const buildBlocks = (): SessionBlock[] => {
@@ -700,7 +708,7 @@ export default function Workout() {
                   <ColHead w={28}>#</ColHead>
                   <ColHead>KG</ColHead>
                   <ColHead>REPS</ColHead>
-                  <ColHead>RPE</ColHead>
+                  {prefs.detailed && <ColHead>RPE</ColHead>}
                   <View style={{ width: 40 }} />
                 </View>
                 {x.sets.map((s, i) => (
@@ -721,7 +729,7 @@ export default function Workout() {
                     })()}
                     <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
-                    <Cell value={s.rpe} onChange={(v) => setSetField(x.uid, i, "rpe", v)} done={s.done} />
+                    {prefs.detailed && <Cell value={s.rpe} onChange={(v) => setSetField(x.uid, i, "rpe", v)} done={s.done} />}
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
                       style={{ width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}

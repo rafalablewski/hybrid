@@ -87,6 +87,7 @@ export default function WorkoutBlocks({
   setBlocks,
   emptyHint,
   reorder = false,
+  detailed = true,
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -94,6 +95,8 @@ export default function WorkoutBlocks({
   emptyHint: string;
   /** Show per-block move/duplicate controls (the Builder wants them). */
   reorder?: boolean;
+  /** Detailed shows the RPE + velocity columns; Simple hides them (load × reps). */
+  detailed?: boolean;
 }) {
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
@@ -245,24 +248,28 @@ export default function WorkoutBlocks({
 
           {b.kind === "strength" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
                 <span />
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load (kg)</Mono>
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>reps</Mono>
-                <button
-                  onClick={() => setRpeHelp((v) => !v)}
-                  title="What is RPE?"
-                  style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
-                >
-                  rpe ⓘ
-                </button>
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
+                {detailed && (
+                  <>
+                    <button
+                      onClick={() => setRpeHelp((v) => !v)}
+                      title="What is RPE?"
+                      style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                    >
+                      rpe ⓘ
+                    </button>
+                    <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
+                  </>
+                )}
                 <span />
               </div>
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
+                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -289,8 +296,12 @@ export default function WorkoutBlocks({
                   })()}
                   <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={input} />
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
-                  <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={input} />
-                  <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
+                  {detailed && (
+                    <>
+                      <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={input} />
+                      <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
+                    </>
+                  )}
                   <button onClick={() => removeSet(b.uid, i)} style={{ ...iconBtn(ASH), padding: 0 }}>
                     −
                   </button>

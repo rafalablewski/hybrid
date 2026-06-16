@@ -10,6 +10,7 @@ import {
 } from "@hybrid/core";
 import { INK2, LINE, CHALK, ASH, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { blockBtn, uid, type EditableBlock } from "@/components/workout-blocks";
+import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 
 type Routine = { id: string; name: string; blocks: SessionBlock[] };
 
@@ -39,6 +40,7 @@ export default function Logger({
   const [error, setError] = useState("");
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineMsg, setRoutineMsg] = useState("");
+  const prefs = useLoggerPrefs();
 
   // The user's saved routines (WorkoutTemplates) — load one to start, or save
   // the current workout as a new one.
@@ -178,6 +180,16 @@ export default function Logger({
         </Card>
       )}
 
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <button
+          onClick={() => setLoggerPref("detailed", !prefs.detailed)}
+          style={{ ...mono, fontSize: 12, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}
+          title="Toggle the RPE + velocity columns"
+        >
+          {prefs.detailed ? "Detailed ▾" : "Simple ▸"}
+        </button>
+      </div>
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -189,6 +201,7 @@ export default function Logger({
         blocks={blocks}
         setBlocks={setBlocks}
         emptyHint="Empty session — add blocks below, or pull today's prescription."
+        detailed={prefs.detailed}
       />
 
       {error && (
