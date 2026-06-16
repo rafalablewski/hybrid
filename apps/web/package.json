@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.100.1",
+    "@apple/app-store-server-library": "^3.1.0",
     "@hybrid/core": "workspace:*",
     "@prisma/client": "6.19.3",
     "@supabase/ssr": "0.10.3",
