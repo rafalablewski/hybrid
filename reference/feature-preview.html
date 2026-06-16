@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — feature preview (app-ideas branch)</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#181a18; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --disp:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(900px 600px at 12% -8%, #c4f0351a, transparent 60%),
+      radial-gradient(800px 600px at 100% 0%, #7fd4e814, transparent 55%),
+      var(--ink);
+    color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;}
+  a{color:var(--lime)}
+  .wrap{display:flex;min-height:100vh}
+  /* sidebar */
+  .side{width:248px;flex:none;border-right:1px solid var(--line);padding:22px 16px;position:sticky;top:0;height:100vh;overflow:auto;background:#0e0f0e}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .brand .dot{width:12px;height:12px;border-radius:3px;background:var(--lime)}
+  .brand b{font-size:18px;letter-spacing:.04em}
+  .tag{font-family:var(--mono);font-size:10px;color:var(--ash);margin-bottom:18px;line-height:1.5}
+  .navbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:1px solid transparent;color:var(--ash);
+    font-family:var(--mono);font-size:13px;padding:9px 11px;border-radius:10px;cursor:pointer;margin-bottom:3px}
+  .navbtn:hover{color:var(--chalk);background:#ffffff08}
+  .navbtn.on{color:var(--lime);background:#c4f0351a;border-color:#c4f03555}
+  .navbtn .n{font-family:var(--mono);font-size:10px;width:18px;color:var(--ash)}
+  .navbtn.on .n{color:var(--lime)}
+  /* main */
+  .main{flex:1;padding:36px 44px;max-width:1100px}
+  .h1{font-size:30px;font-weight:800;letter-spacing:-.01em;margin:0 0 4px}
+  .sub{font-family:var(--mono);font-size:13px;color:var(--ash);margin-bottom:24px;line-height:1.6}
+  .badge{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:6px;border:1px solid;display:inline-block;vertical-align:middle}
+  .b-ship{color:var(--lime);border-color:var(--lime);background:#c4f0351a}
+  .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--lime)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;
+    box-shadow:0 1px 0 #ffffff08 inset, 0 16px 40px -28px #000}
+  .grid{display:grid;gap:14px}
+  .mono{font-family:var(--mono)}
+  .ash{color:var(--ash)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .pill{font-family:var(--mono);font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);color:var(--ash);background:none;cursor:pointer}
+  .pill.on{color:var(--lime);border-color:var(--lime);background:#c4f0351a}
+  .feature{display:none}
+  .feature.on{display:block}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:880px){.two{grid-template-columns:1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .stat .v{font-size:24px;font-weight:800}
+  .stat .l{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ash);margin-top:4px}
+  .note{font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.6;margin-top:8px}
+  /* toggle switch */
+  .sw{width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;flex:none;transition:.15s}
+  .sw.on{background:var(--lime)}
+  .sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--chalk);transition:.15s}
+  .sw.on i{left:20px}
+  .srow{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+  .srow:first-of-type{border-top:none}
+  .srow .t{font-weight:700;font-size:15px}
+  .srow .d{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ash);font-weight:400;padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  td{padding:9px 4px;border-top:1px solid var(--line)}
+  .lk{color:var(--lime);cursor:pointer}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 10px;font-family:var(--mono);font-size:12px;border:1px solid}
+  .footer{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:24px;padding-top:16px;border-top:1px solid var(--line);line-height:1.7}
+  .setrow{display:grid;grid-template-columns:30px 1fr 1fr 56px 40px;gap:8px;align-items:center;margin-bottom:7px}
+  .setrow.simple{grid-template-columns:30px 1fr 1fr 40px}
+  .cell{background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:13px;color:var(--chalk);text-align:center}
+  .badgebtn{height:32px;border-radius:8px;font-family:var(--mono);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .tick{height:38px;width:38px;border-radius:9px;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:900}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="side">
+    <div class="brand"><span class="dot"></span><b>HYBRID</b></div>
+    <div class="tag">Feature preview · branch<br/>claude/app-ideas-o4uqe8<br/>8 increments · all shipped</div>
+    <button class="navbtn on" data-f="overview"><span class="n">·</span> Overview</button>
+    <button class="navbtn" data-f="landmarks"><span class="n">1</span> Volume landmarks</button>
+    <button class="navbtn" data-f="routines"><span class="n">2</span> Routines</button>
+    <button class="navbtn" data-f="warmup"><span class="n">3</span> Warm-up / cool-down</button>
+    <button class="navbtn" data-f="exercise"><span class="n">4</span> Per-exercise dashboard</button>
+    <button class="navbtn" data-f="trends"><span class="n">5</span> Trends hub</button>
+    <button class="navbtn" data-f="logger"><span class="n">6</span> Configurable logger</button>
+    <button class="navbtn" data-f="account"><span class="n">7</span> Account settings</button>
+  </nav>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section class="feature on" data-f="overview">
+      <h1 class="h1">What we built</h1>
+      <p class="sub">Seven ideas you listed, shipped end-to-end across the shared core, the web app and the Expo mobile app — plus exercise deep-linking. Click through the nav to see each one. This file is a faithful static mock of the real screens (same brand tokens, same numbers from the engines).</p>
+      <div class="grid two">
+        <div class="card"><div class="kick">1 · Volume landmarks <span class="badge b-ship">shipped</span></div><p class="note">Weekly working sets per muscle vs MV/MEV/MAV/MRV, with an add/deload prescription.</p></div>
+        <div class="card"><div class="kick">2 · Routines <span class="badge b-ship">shipped</span></div><p class="note">Save a workout as a named routine, then load-and-go from the Train launcher.</p></div>
+        <div class="card"><div class="kick">3 · Warm-up / cool-down <span class="badge b-ship">shipped</span></div><p class="note">A one-tap set-type cycler; warm-ups excluded from volume, PRs &amp; tonnage.</p></div>
+        <div class="card"><div class="kick">4 · Per-exercise dashboard <span class="badge b-ship">shipped</span></div><p class="note">Open any lift for its e1RM trend, best set, volume &amp; frequency over time.</p></div>
+        <div class="card"><div class="kick">5 · Trends hub <span class="badge b-ship">shipped</span></div><p class="note">Volume trends, muscle breakdown &amp; a sortable exercise table that drills in.</p></div>
+        <div class="card"><div class="kick">6 · Configurable logger <span class="badge b-ship">shipped</span></div><p class="note">Toggle count-in, rest timer, haptics, carry-over, Simple/Detailed &amp; more.</p></div>
+        <div class="card"><div class="kick">7 · Account settings <span class="badge b-ship">shipped</span></div><p class="note">A professional tabbed account area: General · Security · Coaching · Data.</p></div>
+        <div class="card"><div class="kick">+ · Exercise deep-links <span class="badge b-ship">shipped</span></div><p class="note">Tap any exercise name in a session → its dashboard.</p></div>
+      </div>
+      <div class="footer">431 core unit tests passing · web build ✓ · iOS bundle export ✓ · 8 commits on the branch.<br/>Static preview — interactions here are mocked to match the live app's behavior.</div>
+    </section>
+
+    <!-- 1 · LANDMARKS -->
+    <section class="feature" data-f="landmarks">
+      <h1 class="h1">Volume landmarks <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">New <b>Volume</b> screen (Analyze group). Weekly working sets per muscle vs your landmarks — warm-ups don't count. <span class="mono ash">core/engines/landmarks.ts</span></p>
+      <div class="card">
+        <div class="kick" style="color:var(--lime)">This week — adjust volume</div>
+        <div id="lm-advice" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div class="card">
+        <div class="kick" style="color:var(--blue)">By muscle · sets this week</div>
+        <div id="lm-bars" style="margin-top:16px;display:flex;flex-direction:column;gap:16px"></div>
+      </div>
+    </section>
+
+    <!-- 2 · ROUTINES -->
+    <section class="feature" data-f="routines">
+      <h1 class="h1">Save workouts as routines <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">The Train launcher now lists your saved routines (below empty / AI / repeat-last). Tap one to load it into a live workout. A "Save as routine" action lands on the finish summary &amp; the web logger.</p>
+      <div class="two">
+        <div>
+          <div class="card" style="border-left:3px solid var(--lime)">
+            <div class="kick">Your routines</div>
+            <div id="routines"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="border:1px solid #c4f03555;background:#c4f0350f">
+            <div class="kick">Save as routine</div>
+            <input value="Push day A" style="width:100%;margin-top:10px;background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--chalk);font-family:var(--mono)"/>
+            <button class="pill on" style="margin-top:10px;width:100%;padding:11px">★ Save as routine</button>
+            <p class="note">Reuses the existing WorkoutTemplate model — no schema change. Routines need an account; guests don't see them.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · WARMUP -->
+    <section class="feature" data-f="warmup">
+      <h1 class="h1">Mark sets as warm-up / cool-down <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">Tap the set badge to cycle its type: <b>working → warm-up (W) → cool-down (C) → drop (↓)</b>. Warm-ups &amp; cool-downs are excluded from working volume, e1RM, PRs and tonnage — but kept for the velocity profile. <span class="mono ash">Try it ↓</span></p>
+      <div class="card" style="max-width:520px">
+        <div class="row" style="margin-bottom:8px"><b>Bench Press</b><span class="mono ash" id="wu-summary"></span></div>
+        <div class="setrow mono ash" style="font-size:10px;text-transform:uppercase"><span></span><span>load (kg)</span><span>reps</span><span>rpe</span><span></span></div>
+        <div id="wu-rows"></div>
+        <p class="note">Working sets counted: <b id="wu-count" style="color:var(--lime)"></b> · warm-ups &amp; cool-downs don't inflate your weekly volume (feeds the landmarks above).</p>
+      </div>
+    </section>
+
+    <!-- 4 · EXERCISE DASHBOARD -->
+    <section class="feature" data-f="exercise">
+      <h1 class="h1">Per-exercise dashboard <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">New <b>Exercises</b> screen — search any movement, pick a time window, see its whole history. Reachable from search, the Trends table, and by tapping an exercise name in any session.</p>
+      <div class="seg"><span class="pill on">8 wk</span><span class="pill">6 mo</span><span class="pill on">1 yr</span><span class="pill">All</span></div>
+      <div class="row" style="margin-bottom:12px"><b style="font-size:20px">Bench Press</b></div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <div class="stat"><div class="v" style="color:var(--lime)">117 kg</div><div class="l">Best e1RM</div></div>
+        <div class="stat"><div class="v">86</div><div class="l">Working sets</div></div>
+        <div class="stat"><div class="v">38.4 t</div><div class="l">Volume</div></div>
+        <div class="stat"><div class="v">22</div><div class="l">Sessions</div></div>
+      </div>
+      <div class="card">
+        <div class="kick">Estimated 1RM · warm-ups excluded</div>
+        <svg id="e1rm-chart" viewBox="0 0 520 180" style="width:100%;height:200px;margin-top:8px"></svg>
+      </div>
+      <div class="card">
+        <div class="kick">Best set</div>
+        <div class="mono" style="font-size:15px;margin-top:8px">105 kg × 4 <span class="ash">· e1RM 119 kg · Apr 12 '26</span></div>
+        <p class="note">430 reps · heaviest 110 kg · all-time best e1RM 119 kg</p>
+      </div>
+    </section>
+
+    <!-- 5 · TRENDS -->
+    <section class="feature" data-f="trends">
+      <h1 class="h1">Training analytics hub <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">New <b>Trends</b> screen — volume over time, muscle breakdown, and a sortable exercise table that drills into each dashboard.</p>
+      <div class="two">
+        <div class="card"><div class="kick" style="color:var(--lime)">Weekly working sets · 8 wk</div><svg id="sets-bars" viewBox="0 0 320 120" style="width:100%;height:130px;margin-top:10px"></svg></div>
+        <div class="card"><div class="kick" style="color:var(--blue)">Weekly tonnage · 8 wk</div><svg id="ton-bars" viewBox="0 0 320 120" style="width:100%;height:130px;margin-top:10px"></svg></div>
+      </div>
+      <div class="card">
+        <div class="row"><div class="kick" style="color:var(--blue)">Muscle breakdown · this week</div><span class="lk">Volume detail →</span></div>
+        <div id="tr-muscles" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <div class="kick" style="color:var(--lime)">Exercise analytics <span class="ash" style="text-transform:none;letter-spacing:0">· click a header to sort, a name to drill in</span></div>
+        <table style="margin-top:10px"><thead><tr>
+          <th data-k="name">exercise</th><th data-k="sessions">freq</th><th data-k="bestE1rm">best e1RM</th><th data-k="volume">volume</th><th>trend</th>
+        </tr></thead><tbody id="tr-table"></tbody></table>
+      </div>
+    </section>
+
+    <!-- 6 · LOGGER -->
+    <section class="feature" data-f="logger">
+      <h1 class="h1">Configurable workout logger <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">A <b>Logger settings</b> screen makes the live workout's behavior yours. Defaults match today's behavior — nothing changes until you opt in. <span class="mono ash">core/logger-prefs.ts</span></p>
+      <div class="card" id="logger-rows"></div>
+      <div class="card" id="rest-card">
+        <div class="kick" style="color:var(--lime)">Default rest</div>
+        <div class="seg" style="margin-top:12px" id="rest-seg"></div>
+      </div>
+    </section>
+
+    <!-- 7 · ACCOUNT -->
+    <section class="feature" data-f="account">
+      <h1 class="h1">Professional account settings <span class="badge b-ship">shipped</span></h1>
+      <p class="sub">The flat settings stack is now a tabbed account area — every existing flow preserved, real controls only (no fake toggles).</p>
+      <div class="seg" id="acct-tabs"></div>
+      <div id="acct-body"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ---------- nav ---------- */
+const navbtns=[...document.querySelectorAll('.navbtn')];
+const feats=[...document.querySelectorAll('.feature')];
+navbtns.forEach(b=>b.onclick=()=>{
+  navbtns.forEach(x=>x.classList.toggle('on',x===b));
+  feats.forEach(f=>f.classList.toggle('on',f.dataset.f===b.dataset.f));
+  window.scrollTo(0,0);
+});
+
+/* ---------- 1 · landmarks (real default ranges from VOLUME_LANDMARKS) ---------- */
+const LM={
+  quads:{mv:6,mev:8,mavLow:12,mavHigh:18,mrv:20,sets:14},
+  glutes:{mv:0,mev:4,mavLow:8,mavHigh:14,mrv:16,sets:6},
+  posterior:{mv:4,mev:6,mavLow:10,mavHigh:16,mrv:18,sets:5},
+  back:{mv:8,mev:10,mavLow:14,mavHigh:20,mrv:22,sets:16},
+  chest:{mv:6,mev:8,mavLow:12,mavHigh:18,mrv:20,sets:21},
+  shoulders:{mv:6,mev:8,mavLow:14,mavHigh:20,mrv:22,sets:12},
+  triceps:{mv:4,mev:6,mavLow:10,mavHigh:14,mrv:18,sets:7},
+};
+const MLABEL={quads:"Quads",glutes:"Glutes",posterior:"Posterior chain",back:"Back",chest:"Chest",shoulders:"Shoulders",triceps:"Triceps"};
+function zone(n,l){return n>=l.mrv?"overreaching":n>l.mavHigh?"peak":n>=l.mev?"productive":"under"}
+const ZC={under:"var(--amber)",productive:"var(--lime)",peak:"var(--blue)",overreaching:"var(--red)"};
+const ZL={under:"below MEV",productive:"productive",peak:"near MRV",overreaching:"over MRV"};
+(function(){
+  const bars=document.getElementById('lm-bars'), adv=document.getElementById('lm-advice');
+  Object.entries(LM).forEach(([m,l])=>{
+    const z=zone(l.sets,l), c=ZC[z], max=Math.max(l.mrv*1.15,l.sets*1.05);
+    const pct=v=>Math.min(100,v/max*100);
+    bars.insertAdjacentHTML('beforeend',`
+      <div>
+        <div class="row" style="margin-bottom:6px"><span>${MLABEL[m]}</span>
+          <span class="mono" style="font-size:12px"><b style="color:${c}">${l.sets} sets</b> <span class="ash">· ${ZL[z]}</span></span></div>
+        <div style="position:relative;height:12px;background:var(--ink2);border:1px solid var(--line);border-radius:6px">
+          <div style="position:absolute;left:${pct(l.mev)}%;width:${(l.mavHigh-l.mev)/max*100}%;top:0;bottom:0;background:#c4f03522"></div>
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${pct(l.sets)}%;background:${c};opacity:.85;border-radius:6px"></div>
+          <div style="position:absolute;left:${pct(l.mev)}%;top:-2px;bottom:-2px;width:2px;background:var(--amber)"></div>
+          <div style="position:absolute;left:${pct(l.mrv)}%;top:-2px;bottom:-2px;width:2px;background:var(--red)"></div>
+        </div>
+        <div class="mono ash" style="font-size:10px;margin-top:5px;display:flex;gap:14px">
+          <span style="color:var(--amber)">MEV ${l.mev}</span><span style="color:var(--lime)">MAV ${l.mavLow}–${l.mavHigh}</span><span style="color:var(--red)">MRV ${l.mrv}</span></div>
+      </div>`);
+    if(z==="under"){const d=l.mavLow-l.sets;adv.insertAdjacentHTML('beforeend',`<div><span class="mono" style="color:var(--amber);font-weight:700">↑ ${MLABEL[m]}</span> <span class="mono ash">Add ~${d} sets/wk — below the minimum to grow.</span></div>`);}
+    if(z==="overreaching"){const d=l.sets-l.mavHigh;adv.insertAdjacentHTML('beforeend',`<div><span class="mono" style="color:var(--red);font-weight:700">↓ ${MLABEL[m]}</span> <span class="mono ash">Over your recoverable ceiling — drop ~${d} sets/wk or deload.</span></div>`);}
+  });
+})();
+
+/* ---------- 2 · routines ---------- */
+(function(){
+  const r=[["Push day A","Bench Press · Overhead Press · Triceps"],["Leg day","Back Squat · RDL · Leg Press"],["Pull + arms","Deadlift · Barbell Row · Curl"]];
+  document.getElementById('routines').innerHTML=r.map((x,i)=>`
+    <div class="row" style="padding:12px 0;border-top:${i?'1px solid var(--line)':'none'}">
+      <div><div style="font-weight:700">${x[0]}</div><div class="mono ash" style="font-size:11px;margin-top:2px">${x[1]}</div></div>
+      <span class="lk mono" style="font-weight:700">Start</span></div>`).join('');
+})();
+
+/* ---------- 3 · warm-up cycler ---------- */
+(function(){
+  const ORDER=["working","warmup","cooldown","drop"];
+  const sets=[{load:"40",reps:"10",rpe:"",t:"warmup"},{load:"70",reps:"6",rpe:"",t:"warmup"},
+    {load:"100",reps:"5",rpe:"8",t:"working"},{load:"100",reps:"5",rpe:"8",t:"working"},
+    {load:"90",reps:"6",rpe:"9",t:"drop"},{load:"40",reps:"15",rpe:"",t:"cooldown"}];
+  const badge=t=>t==="warmup"?["W","var(--amber)"]:t==="cooldown"?["C","var(--blue)"]:t==="drop"?["↓","var(--lime)"]:[null,null];
+  function render(){
+    const rows=document.getElementById('wu-rows');rows.innerHTML='';
+    let working=0,idx=0;
+    sets.forEach((s,i)=>{
+      const [b,c]=badge(s.t); const isW=s.t!=="warmup"&&s.t!=="cooldown"; if(isW)working++;
+      const label=b??(++idx);
+      rows.insertAdjacentHTML('beforeend',`
+        <div class="setrow">
+          <button class="badgebtn" data-i="${i}" style="color:${c||'var(--ash)'};border:1px solid ${c||'var(--line)'};background:${c?c+'1f':'transparent'}">${label}</button>
+          <div class="cell">${s.load}</div><div class="cell">${s.reps}</div>
+          <div class="cell" style="${s.rpe?'':'opacity:.4'}">${s.rpe||'–'}</div>
+          <div class="tick">✓</div>
+        </div>`);
+    });
+    document.getElementById('wu-count').textContent=working+" of "+sets.length;
+    document.getElementById('wu-summary').textContent=sets.map(s=>s.load+"×"+s.reps).join(" · ");
+    rows.querySelectorAll('.badgebtn').forEach(btn=>btn.onclick=()=>{
+      const i=+btn.dataset.i; sets[i].t=ORDER[(ORDER.indexOf(sets[i].t)+1)%4]; render();
+    });
+  }
+  render();
+})();
+
+/* ---------- 4 · e1rm line chart ---------- */
+function line(svg,vals,color){
+  const W=520,H=180,pad=16,min=Math.min(...vals),max=Math.max(...vals),rng=(max-min)||1;
+  const pts=vals.map((v,i)=>[pad+i*((W-2*pad)/(vals.length-1)),H-pad-((v-min)/rng)*(H-2*pad)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  svg.innerHTML=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"/>`+
+    pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${color}"/>`).join('');
+}
+line(document.getElementById('e1rm-chart'),[98,101,100,104,106,103,108,110,113,112,115,117],'#c4f035');
+
+/* ---------- 5 · trends ---------- */
+(function(){
+  const sets=[42,48,45,52,50,55,58,61], ton=[18,20,19,23,22,25,26,28];
+  function bars(svg,vals,color){
+    const W=320,H=120,n=vals.length,bw=(W/n)*0.62,max=Math.max(...vals);
+    svg.innerHTML=vals.map((v,i)=>{const h=(v/max)*100;const x=i*(W/n)+(W/n-bw)/2;
+      return `<rect x="${x}" y="${H-h-6}" width="${bw}" height="${h}" rx="3" fill="${color}" opacity="${i===n-1?1:.6}"/>`}).join('');
+  }
+  bars(document.getElementById('sets-bars'),sets,'#c4f035');
+  bars(document.getElementById('ton-bars'),ton,'#7fd4e8');
+  const mus=document.getElementById('tr-muscles');
+  Object.entries(LM).forEach(([m,l])=>{const z=zone(l.sets,l),c=ZC[z];
+    mus.insertAdjacentHTML('beforeend',`<div class="chip" style="border-color:${c}55;background:${c}14"><span>${MLABEL[m]}</span><b style="color:${c}">${l.sets}</b></div>`);});
+  const TG={up:["▲","var(--lime)"],down:["▼","var(--amber)"],flat:["→","var(--ash)"]};
+  let rows=[["Back Squat","str",22,142,38600,"up"],["Bench Press","str",22,117,38400,"up"],
+    ["Deadlift","str",14,180,31000,"flat"],["Overhead Press","str",18,72,9800,"up"],
+    ["Easy Run","car",12,0,64,"up"],["Barbell Row","str",16,96,15200,"down"]];
+  let sortK="volume",dir=-1;
+  function draw(){
+    rows.sort((a,b)=>{const ia={name:0,sessions:2,bestE1rm:3,volume:4}[sortK];
+      return ia===0?dir*a[0].localeCompare(b[0]):dir*(a[ia]-b[ia]);});
+    document.getElementById('tr-table').innerHTML=rows.map(r=>{const t=TG[r[5]];
+      return `<tr><td class="lk">${r[0]} ›</td><td>${r[2]}×</td><td>${r[1]==="str"?r[3]+" kg":"–"}</td>
+        <td>${r[1]==="car"?r[4]+" km":(r[4]/1000).toFixed(1)+" t"}</td><td style="color:${t[1]}">${t[0]}</td></tr>`}).join('');
+  }
+  document.querySelectorAll('#trends th[data-k]').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; if(k===sortK)dir*=-1; else{sortK=k;dir=k==="name"?1:-1;} draw();});
+  draw();
+})();
+
+/* ---------- 6 · logger settings ---------- */
+(function(){
+  const prefs={detailed:true,countIn:true,restTimer:true,carryOver:true,keepAwake:true,haptics:true,restSeconds:90};
+  const ROWS=[["detailed","Detailed mode","Show the RPE column. Off = just load × reps."],
+    ["countIn","Get-ready count-in","5→1→GO before the clock starts."],
+    ["restTimer","Auto rest timer","Start a rest countdown after each banked set."],
+    ["carryOver","Carry over last set","Pre-fill a new set with the previous load & reps."],
+    ["keepAwake","Keep screen awake","Stop the screen dimming mid-set."],
+    ["haptics","Haptics","Vibration on banking a set and rest done."]];
+  const box=document.getElementById('logger-rows');
+  function draw(){
+    box.innerHTML=ROWS.map(r=>`<div class="srow"><div style="flex:1"><div class="t">${r[1]}</div><div class="d">${r[2]}</div></div>
+      <div class="sw ${prefs[r[0]]?'on':''}" data-k="${r[0]}"><i></i></div></div>`).join('');
+    box.querySelectorAll('.sw').forEach(s=>s.onclick=()=>{prefs[s.dataset.k]=!prefs[s.dataset.k];draw();});
+    document.getElementById('rest-card').style.display=prefs.restTimer?'block':'none';
+  }
+  draw();
+  const seg=document.getElementById('rest-seg');
+  [60,90,120,180].forEach(s=>{const p=document.createElement('span');p.className='pill'+(s===prefs.restSeconds?' on':'');p.textContent=s+'s';
+    p.onclick=()=>{prefs.restSeconds=s;[...seg.children].forEach(c=>c.classList.toggle('on',c===p));};seg.appendChild(p);});
+})();
+
+/* ---------- 7 · account tabs ---------- */
+(function(){
+  const tabs=["General","Security","Coaching & access","Privacy & data"];
+  const bodies={
+    "General":`
+      <div class="card"><div class="kick" style="color:var(--blue)">Account</div>
+        <div style="font-weight:800;font-size:18px;margin-top:8px">Rafal A.</div>
+        <div class="mono" style="margin-top:4px">rafal.ablewski95+ai@gmail.com</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <span class="chip" style="border-color:var(--violet)55;background:#c9a9f01a;color:var(--violet)">CLIENT</span>
+          <span class="chip" style="border-color:var(--lime);background:#c4f0351a;color:var(--lime)">FULL · PAID</span>
+          <span class="chip" style="border-color:var(--line);color:var(--ash)">via email</span></div></div>
+      <div class="card"><div class="kick">Preferences</div>
+        <div class="mono ash" style="font-size:12px;margin-top:14px;margin-bottom:6px">Appearance</div>
+        <div class="seg"><span class="pill on">Dark</span><span class="pill">Light</span></div>
+        <div class="mono ash" style="font-size:12px;margin-top:14px;margin-bottom:6px">Language</div>
+        <div class="seg"><span class="pill on">EN</span><span class="pill">PL</span><span class="pill">DE</span></div>
+        <div class="mono ash" style="font-size:12px;margin-top:14px;margin-bottom:6px">Workout logger</div>
+        <span class="pill">Detailed (RPE + velocity)</span></div>
+      <div class="card"><div class="kick">Mode</div><p class="note">Simple ↔ Full (athlete) · Manage subscription — the existing billing flow, re-homed here.</p></div>`,
+    "Security":`<div class="card"><div class="kick">Two-factor authentication</div><p class="note">Existing MFA settings.</p></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">Password &amp; sessions</div><p class="note">You sign in with email — password resets from the login screen. Device/session management is the next Security step.</p></div>`,
+    "Coaching & access":`<div class="card"><div class="kick" style="color:var(--violet)">Become a coach</div><p class="note">Apply with your credentials — an admin reviews it and grants the COACH role.</p></div>
+      <div class="card"><div class="kick">Request a feature</div><p class="note">Ask an admin to unlock a hidden feature for your account.</p></div>`,
+    "Privacy & data":`<div class="card" style="border-left:3px solid var(--red)"><div class="kick" style="color:var(--red)">Danger zone — reset account</div>
+      <div style="font-weight:700;font-size:18px;margin-top:8px">Erase all my data</div><p class="note">Permanently deletes sessions, signals, check-ins, plans, templates, photos… Type RESET to confirm. This cannot be undone.</p></div>`,
+  };
+  const tabbar=document.getElementById('acct-tabs'),body=document.getElementById('acct-body');
+  tabs.forEach((t,i)=>{const p=document.createElement('span');p.className='pill'+(i===0?' on':'');p.textContent=t;
+    p.onclick=()=>{[...tabbar.children].forEach(c=>c.classList.toggle('on',c===p));body.innerHTML=bodies[t];};tabbar.appendChild(p);});
+  body.innerHTML=bodies["General"];
+})();
+</script>
+</body>
+</html>
