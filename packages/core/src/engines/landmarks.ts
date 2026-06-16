@@ -1,6 +1,6 @@
 import type { MuscleGroup } from "./types";
 import type { LoggedSession } from "./session";
-import { workingSets } from "./session";
+import { setsForVolume } from "./session";
 import { MOVEMENTS, ALL_MUSCLES } from "./movements";
 
 // Volume landmarks (Renaissance-Periodization model): the weekly working-set
@@ -72,7 +72,7 @@ const hasReps = (reps: string): boolean => {
  */
 export function weeklySetsByMuscle(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean } = {},
 ): Map<MuscleGroup, number> {
   const now = opts.now ?? Date.now();
   const cutoff = now - (opts.days ?? 7) * 86_400_000;
@@ -84,7 +84,7 @@ export function weeklySetsByMuscle(
       if (b.kind !== "strength") continue;
       const muscles = MOVEMENTS[b.name]?.muscles;
       if (!muscles || muscles.length === 0) continue;
-      const n = workingSets(b).filter((set) => hasReps(set.reps)).length;
+      const n = setsForVolume(b, opts.includeWarmups).filter((set) => hasReps(set.reps)).length;
       if (n === 0) continue;
       for (const m of muscles) map.set(m, (map.get(m) ?? 0) + n);
     }
@@ -133,7 +133,7 @@ export function muscleVolumeStatus(
 /** Per-muscle weekly volume status for every muscle group, in display order. */
 export function volumeStatus(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean } = {},
 ): MuscleVolumeStatus[] {
   const counts = weeklySetsByMuscle(sessions, opts);
   return ALL_MUSCLES.map((m) => muscleVolumeStatus(m, counts.get(m) ?? 0, VOLUME_LANDMARKS[m]));
@@ -148,7 +148,7 @@ const ZONE_PRIORITY: Record<VolumeZone, number> = { overreaching: 0, under: 1, p
  */
 export function volumeAdvice(
   sessions: LoggedSession[],
-  opts: { now?: number; days?: number } = {},
+  opts: { now?: number; days?: number; includeWarmups?: boolean } = {},
 ): MuscleVolumeStatus[] {
   return volumeStatus(sessions, opts)
     .filter((s) => s.action === "add" || s.action === "reduce")

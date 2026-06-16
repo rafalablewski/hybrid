@@ -25,4 +25,9 @@ describe("logger prefs", () => {
     expect(normalizeLoggerPrefs({ restSeconds: 120 }).restSeconds).toBe(120);
     expect(normalizeLoggerPrefs({ restSeconds: 47 }).restSeconds).toBe(DEFAULT_LOGGER_PREFS.restSeconds);
   });
+
+  it("defaults countWarmupsInVolume to off and accepts an override", () => {
+    expect(normalizeLoggerPrefs(undefined).countWarmupsInVolume).toBe(false);
+    expect(normalizeLoggerPrefs({ countWarmupsInVolume: true }).countWarmupsInVolume).toBe(true);
+  });
 });

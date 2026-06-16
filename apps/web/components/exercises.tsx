@@ -11,6 +11,7 @@ import {
   type ExerciseStats,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 
 const PERIODS: { id: ExercisePeriod; label: string }[] = [
   { id: "8w", label: "8 wk" },
@@ -43,9 +44,10 @@ export default function Exercises({ sessions, focus }: { sessions: LoggedSession
 
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
+  const { countWarmupsInVolume: iw } = useLoggerPrefs();
   const stats = useMemo(
-    () => (active ? exerciseDashboard(sessions, active, period) : null),
-    [sessions, active, period],
+    () => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null),
+    [sessions, active, period, iw],
   );
 
   if (history.length === 0) {

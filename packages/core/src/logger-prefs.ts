@@ -19,6 +19,9 @@ export interface LoggerPrefs {
   restTimer: boolean;
   /** Default rest-countdown target, seconds. */
   restSeconds: number;
+  /** Count warm-up & cool-down sets toward working VOLUME (off = exclude them,
+   *  the default). PRs/e1RM stay warm-up-excluded regardless. */
+  countWarmupsInVolume: boolean;
 }
 
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
@@ -29,6 +32,7 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   carryOver: true,
   restTimer: true,
   restSeconds: 90,
+  countWarmupsInVolume: false,
 };
 
 /** Allowed default-rest values (matches the in-workout presets). */
@@ -54,5 +58,6 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     carryOver: bool(r.carryOver, DEFAULT_LOGGER_PREFS.carryOver),
     restTimer: bool(r.restTimer, DEFAULT_LOGGER_PREFS.restTimer),
     restSeconds: seconds,
+    countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
   };
 }

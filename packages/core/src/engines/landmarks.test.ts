@@ -43,6 +43,13 @@ describe("volume landmarks", () => {
     expect(counts.get("quads")).toBeUndefined();
   });
 
+  it("includeWarmups counts warm-up/cool-down sets toward volume when opted in", () => {
+    const excluded = weeklySetsByMuscle([bench(daysAgo(1))], { now: NOW });
+    const included = weeklySetsByMuscle([bench(daysAgo(1))], { now: NOW, includeWarmups: true });
+    expect(excluded.get("chest")).toBe(3); // 3 working sets
+    expect(included.get("chest")).toBe(4); // + the warm-up
+  });
+
   it("ignores sessions outside the window", () => {
     const counts = weeklySetsByMuscle([bench(daysAgo(1)), bench(daysAgo(20))], { now: NOW });
     expect(counts.get("chest")).toBe(3); // only the recent one

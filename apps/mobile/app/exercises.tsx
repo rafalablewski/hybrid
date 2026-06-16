@@ -10,6 +10,7 @@ import {
   type ExerciseStats,
 } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
+import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -49,7 +50,8 @@ export default function Exercises() {
   const history = useMemo(() => exerciseHistory(sessions), [sessions]);
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
-  const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period) : null), [sessions, active, period]);
+  const iw = useLoggerPrefs().countWarmupsInVolume;
+  const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null), [sessions, active, period, iw]);
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>

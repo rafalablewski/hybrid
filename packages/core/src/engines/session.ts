@@ -57,6 +57,14 @@ export const isWorkingSet = (s: { role?: SetRole }): boolean =>
 /** The working sets of a strength block (warm-up / cool-down removed). */
 export const workingSets = (b: StrengthBlock): StrengthSet[] => b.sets.filter(isWorkingSet);
 
+/**
+ * The sets that count toward VOLUME — working sets by default, or every set when
+ * `includeWarmups` is on (the user setting "count warm-up & cool-down sets in
+ * volume"). One helper so every volume computation honours the same rule.
+ */
+export const setsForVolume = (b: StrengthBlock, includeWarmups = false): StrengthSet[] =>
+  includeWarmups ? b.sets : workingSets(b);
+
 /** The mutually-exclusive UI type of a set, derived from its role + drop flag. */
 export function setType(s: RoleDrop): SetType {
   if (s.role === "warmup") return "warmup";
@@ -395,12 +403,16 @@ export function toggleSuperset<T extends { kind: string; group?: string; superse
   );
 }
 
-/** Tonnage (load × reps) summed across a session's WORKING strength sets. */
-export function sessionVolume(blocks: SessionBlock[]): number {
+/**
+ * Tonnage (load × reps) summed across a session's strength sets. Working sets
+ * only by default; pass `includeWarmups` to count warm-up/cool-down sets too
+ * (the user volume setting).
+ */
+export function sessionVolume(blocks: SessionBlock[], includeWarmups = false): number {
   let v = 0;
   for (const b of blocks) {
     if (!isStrength(b)) continue;
-    for (const s of workingSets(b)) {
+    for (const s of setsForVolume(b, includeWarmups)) {
       const load = num(s.load);
       const reps = num(s.reps);
       if (!Number.isNaN(load) && !Number.isNaN(reps)) v += load * reps;

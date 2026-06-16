@@ -8,6 +8,7 @@ import { useTheme, txt } from "../lib/theme";
 type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds">;
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
+  { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },
   { key: "detailed", titleKey: "loggerPrefs.detailed", descKey: "loggerPrefs.detailedDesc" },
   { key: "countIn", titleKey: "loggerPrefs.countIn", descKey: "loggerPrefs.countInDesc" },
   { key: "restTimer", titleKey: "loggerPrefs.restTimer", descKey: "loggerPrefs.restTimerDesc" },

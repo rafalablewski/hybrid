@@ -12,6 +12,7 @@ import {
   type TrendDir,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const TREND_GLYPH: Record<TrendDir, { g: string; c: string }> = {
@@ -40,10 +41,11 @@ export default function Trends({
   onOpenVolume?: () => void;
 }) {
   const [period, setPeriod] = useState<ExercisePeriod>("all");
-  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8), [sessions]);
-  const table = useMemo(() => exerciseTable(sessions, period), [sessions, period]);
-  const advice = useMemo(() => volumeAdvice(sessions), [sessions]);
-  const muscles = useMemo(() => volumeStatus(sessions), [sessions]);
+  const { countWarmupsInVolume: iw } = useLoggerPrefs();
+  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
+  const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
   const trained = muscles.some((m) => m.sets > 0);
 
   const weekData = weeks.map((w) => ({ w: fmtWeek(w.weekStart), sets: w.sets, t: Math.round(w.tonnage / 100) / 10 }));

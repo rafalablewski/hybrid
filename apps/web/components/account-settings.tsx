@@ -240,8 +240,16 @@ export default function AccountSettings() {
             >
               {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
             </button>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
+            <button
+              onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
+            >
+              {prefs.countWarmupsInVolume ? "Warm-ups count toward volume" : "Warm-ups excluded from volume"}
+            </button>
             <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
-              The logger also offers a Simple/Detailed toggle inline; more per-device options live in the mobile app.
+              Controls whether warm-up &amp; cool-down sets count in the Volume landmarks, Trends and per-exercise volume. Off by default (RP-style). PRs &amp; e1RM always exclude warm-ups.
             </Mono>
           </Card>
 

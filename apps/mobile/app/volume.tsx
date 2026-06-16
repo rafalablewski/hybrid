@@ -8,6 +8,7 @@ import {
   type VolumeZone,
 } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
+import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -37,8 +38,9 @@ export default function Volume() {
   };
   useEffect(load, []);
 
-  const rows = useMemo(() => volumeStatus(sessions), [sessions]);
-  const advice = useMemo(() => volumeAdvice(sessions), [sessions]);
+  const iw = useLoggerPrefs().countWarmupsInVolume;
+  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
   const trained = rows.some((r) => r.sets > 0);
 
   const ZONE: Record<VolumeZone, { label: string; c: string }> = {

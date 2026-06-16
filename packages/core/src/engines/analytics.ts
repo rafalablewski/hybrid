@@ -1,5 +1,5 @@
 import type { LoggedSession, PacePoint } from "./session";
-import { workingSets } from "./session";
+import { setsForVolume } from "./session";
 import { exerciseHistory } from "./records";
 import { exerciseDashboard, type ExercisePeriod } from "./exercise";
 
@@ -28,7 +28,7 @@ export interface WeekVolume {
  * Overall weekly WORKING-set count + tonnage over the last `weeks` (rolling
  * 7-day windows ending now), oldest → newest — the volume-trend chart's data.
  */
-export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Date.now()): WeekVolume[] {
+export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Date.now(), includeWarmups = false): WeekVolume[] {
   const out: WeekVolume[] = [];
   for (let w = weeks - 1; w >= 0; w--) {
     const to = now - w * WEEK;
@@ -40,7 +40,7 @@ export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Da
       if (t < from || t >= to) continue;
       for (const b of s.blocks) {
         if (b.kind !== "strength") continue;
-        for (const set of workingSets(b)) {
+        for (const set of setsForVolume(b, includeWarmups)) {
           const reps = num(set.reps);
           if (!Number.isFinite(reps) || reps <= 0) continue;
           sets += 1;
@@ -87,10 +87,11 @@ export function exerciseTable(
   sessions: LoggedSession[],
   period: ExercisePeriod = "all",
   now = Date.now(),
+  includeWarmups = false,
 ): ExerciseTableRow[] {
   return exerciseHistory(sessions)
     .map((e) => {
-      const d = exerciseDashboard(sessions, e.name, period, now);
+      const d = exerciseDashboard(sessions, e.name, period, now, includeWarmups);
       if (d.kind === "cardio") {
         return {
           name: e.name,

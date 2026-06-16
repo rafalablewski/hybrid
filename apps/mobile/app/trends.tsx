@@ -11,6 +11,7 @@ import {
   type TrendDir,
 } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
+import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
@@ -41,10 +42,11 @@ export default function Trends() {
   };
   useEffect(load, []);
 
-  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8), [sessions]);
-  const table = useMemo(() => exerciseTable(sessions, period), [sessions, period]);
-  const muscles = useMemo(() => volumeStatus(sessions), [sessions]);
-  const advice = useMemo(() => volumeAdvice(sessions), [sessions]);
+  const iw = useLoggerPrefs().countWarmupsInVolume;
+  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
+  const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
+  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
   const trained = muscles.some((m) => m.sets > 0);
 
   const TREND: Record<TrendDir, { g: string; c: string }> = {

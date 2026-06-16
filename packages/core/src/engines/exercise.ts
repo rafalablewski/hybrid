@@ -1,5 +1,5 @@
 import type { LoggedSession } from "./session";
-import { e1rm, blockBestE1rm, workingSets, e1rmSeries, paceSeries, type E1rmPoint, type PacePoint } from "./session";
+import { e1rm, blockBestE1rm, setsForVolume, isWorkingSet, e1rmSeries, paceSeries, type E1rmPoint, type PacePoint } from "./session";
 import { runStats } from "./running";
 
 // Per-exercise dashboard: everything about ONE movement over a chosen time
@@ -95,6 +95,7 @@ export function exerciseDashboard(
   name: string,
   period: ExercisePeriod = "all",
   now = Date.now(),
+  includeWarmups = false,
 ): ExerciseStats {
   const cutoff = periodCutoff(period, now);
   const win = inWindow(sessions, cutoff, now);
@@ -132,7 +133,7 @@ export function exerciseDashboard(
     for (const b of s.blocks) {
       if (b.kind !== "strength" || b.name !== name) continue;
       trainedHere = true;
-      for (const set of workingSets(b)) {
+      for (const set of setsForVolume(b, includeWarmups)) {
         const load = num(set.load);
         const reps = num(set.reps);
         if (Number.isNaN(load) || Number.isNaN(reps) || reps <= 0) continue;
@@ -140,10 +141,14 @@ export function exerciseDashboard(
         totalReps += reps;
         volume += load * reps;
         heaviestLoad = Math.max(heaviestLoad, load);
-        const est = e1rm(load, reps);
-        if (est > bestE1rm) {
-          bestE1rm = est;
-          bestSet = { load, reps, e1rm: Math.round(est), when: s.startedAt };
+        // e1RM / best-set stay warm-up-excluded regardless of the volume setting
+        // (a light ramp can't be your best set).
+        if (isWorkingSet(set)) {
+          const est = e1rm(load, reps);
+          if (est > bestE1rm) {
+            bestE1rm = est;
+            bestSet = { load, reps, e1rm: Math.round(est), when: s.startedAt };
+          }
         }
       }
     }

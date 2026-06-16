@@ -9,6 +9,7 @@ import {
   type VolumeZone,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, Mono, Card } from "@/lib/ui";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -37,8 +38,9 @@ function adviceLine(s: MuscleVolumeStatus): string {
 }
 
 export default function Volume({ sessions }: { sessions: LoggedSession[] }) {
-  const rows = useMemo(() => volumeStatus(sessions), [sessions]);
-  const advice = useMemo(() => volumeAdvice(sessions), [sessions]);
+  const { countWarmupsInVolume: iw } = useLoggerPrefs();
+  const rows = useMemo(() => volumeStatus(sessions, { includeWarmups: iw }), [sessions, iw]);
+  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw }), [sessions, iw]);
   const trained = rows.some((r) => r.sets > 0);
 
   return (
