@@ -30,6 +30,9 @@ import {
   rpeRirSwap,
   displayLoad,
   storeLoad,
+  fmtWeight,
+  fmtTonnage,
+  type WeightUnit,
   type SetRole,
   RPE_SCALE,
   RPE_INTRO,
@@ -564,7 +567,7 @@ export default function Workout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
-  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
+  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} />;
 
   const ssLabels = supersetLabels(exercises);
 
@@ -935,10 +938,12 @@ function Summary({
   summary,
   router,
   t,
+  units,
 }: {
   summary: Summ;
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
+  units: WeightUnit;
 }) {
   const C = useTheme().palette;
   const cardRef = useRef<View>(null);
@@ -955,19 +960,19 @@ function Summary({
 
   const prLine = (p: PrHit) =>
     p.previous == null
-      ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})`
-      : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+      ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
+      : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
 
   const shareText = [
     firstEver ? t("share.firstWorkout") : null,
     `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
-    `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${summary.volume.toLocaleString()} kg`,
+    `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${fmtTonnage(summary.volume, units)}`,
     prs[0]
       ? `\u{1F3C6} ${prLine(prs[0])}`
       : cardioPrs[0]
         ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
         : bests[0]
-          ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg`
+          ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}`
           : null,
     t("share.tracked"),
   ]
@@ -1021,6 +1026,7 @@ function Summary({
           <WorkoutShareCard
             ref={cardRef}
             t={t}
+            units={units}
             stats={{ title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }}
           />
         </View>

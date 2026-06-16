@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 import { View, Text, Share } from "react-native";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, type WeeklyRecap } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
 import { C, F, Kicker } from "./ui";
 
 const MUSCLE_LABEL: Record<string, string> = {
@@ -27,8 +27,8 @@ export type ShareStats = {
 
 // The branded card that gets captured to a PNG for social. Rendered visibly in
 // the summary + session-detail screens; `ref` points at the exact node to grab.
-export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: string) => string }>(
-  ({ stats, t }, ref) => (
+export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: string) => string; units?: WeightUnit }>(
+  ({ stats, t, units = "kg" }, ref) => (
     <View
       ref={ref}
       collapsable={false}
@@ -45,7 +45,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         <Stat label={t("summary.minutes")} value={String(stats.minutes)} />
         <Stat label={t("summary.sets")} value={String(stats.sets)} />
-        <Stat label={t("summary.kgMoved")} value={stats.volume.toLocaleString()} />
+        <Stat label={t("summary.volumeMoved")} value={fmtTonnage(stats.volume, units)} />
       </View>
       {stats.bests.length > 0 && (
         <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
@@ -55,7 +55,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
               <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>
                 {b.pr ? "🏆 " : ""}{b.name}
               </Text>
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: b.pr ? C.lime : C.chalk }}>{b.e1rm} kg</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.e1rm, units)}</Text>
             </View>
           ))}
         </View>
@@ -66,8 +66,8 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
 WorkoutShareCard.displayName = "WorkoutShareCard";
 
 // Branded "this week" recap card — also captured to a PNG for social.
-export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: string) => string }>(
-  ({ recap, t }, ref) => {
+export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: string) => string; units?: WeightUnit }>(
+  ({ recap, t, units = "kg" }, ref) => {
     const hasPrev = recap.prevSessions > 0 || recap.prevVolume > 0;
     return (
       <View
@@ -84,7 +84,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
           <Stat label={t("recap.sessions")} value={String(recap.sessions)} />
-          <Stat label={t("summary.kgMoved")} value={recap.volume.toLocaleString()} />
+          <Stat label={t("summary.volumeMoved")} value={fmtTonnage(recap.volume, units)} />
           <Stat label={t("recap.prs")} value={String(recap.prs.length)} />
         </View>
         <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, flexDirection: "row", justifyContent: "space-between" }}>
@@ -104,7 +104,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
         </View>
         {hasPrev && (
           <Text style={{ fontFamily: F.bold, fontSize: 12, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
-            {signed(recap.sessionsDelta)} {t("recap.sessions")} · {signed(recap.volumeDelta)} kg {t("recap.vsLastWeek")}
+            {signed(recap.sessionsDelta)} {t("recap.sessions")} · {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} {t("recap.vsLastWeek")}
           </Text>
         )}
       </View>
@@ -113,11 +113,11 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
 );
 RecapShareCard.displayName = "RecapShareCard";
 
-export function recapShareText(recap: WeeklyRecap, t: (k: string) => string): string {
+export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, units: WeightUnit = "kg"): string {
   return [
     `\u{1F4C8} ${t("recap.title")} — HYBRID`,
-    `${recap.sessions} ${t("recap.sessions")} · ${recap.volume.toLocaleString()} kg · ${recap.prs.length} ${t("recap.prs")}`,
-    recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${recap.prs[0].e1rm}kg` : null,
+    `${recap.sessions} ${t("recap.sessions")} · ${fmtTonnage(recap.volume, units)} · ${recap.prs.length} ${t("recap.prs")}`,
+    recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].e1rm, units)}` : null,
     t("share.tracked"),
   ]
     .filter(Boolean)

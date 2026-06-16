@@ -51,7 +51,7 @@ export default function Home() {
   const persona = usePersona();
   const isAthlete = persona !== "casual";
   const { draft } = useDraft();
-  const { defaultStart } = useLoggerPrefs();
+  const { defaultStart, units } = useLoggerPrefs();
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -390,10 +390,10 @@ export default function Home() {
       {/* YOUR WEEK — recap + share (only once there's something to recap) */}
       {sessions.length > 0 && (
         <View style={{ marginBottom: 12 }}>
-          <RecapShareCard ref={recapRef} recap={recap} t={t} />
+          <RecapShareCard ref={recapRef} recap={recap} t={t} units={units} />
           {recap.sessions > 0 ? (
             <Pressable
-              onPress={() => shareWorkout(recapRef, recapShareText(recap, t), t("recap.share"))}
+              onPress={() => shareWorkout(recapRef, recapShareText(recap, t, units), t("recap.share"))}
               style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
             >
               <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{t("recap.share")}</Text>

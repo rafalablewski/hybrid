@@ -16,6 +16,7 @@ import {
   fmtTonnage,
   displayLoad,
   kgToUnit,
+  type WeightUnit,
   paceSeries,
   paceClock,
   cardioPrsForSession,
@@ -92,8 +93,8 @@ export default function SessionDetail() {
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
-    `${minutes ? `${minutes} min · ` : ""}${sets} ${t("summary.sets").toLowerCase()} · ${sessionVolume(session.blocks).toLocaleString()} kg`,
-    prs[0] ? `\u{1F3C6} ${prLine(prs[0], t)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg` : null,
+    `${minutes ? `${minutes} min · ` : ""}${sets} ${t("summary.sets").toLowerCase()} · ${fmtTonnage(sessionVolume(session.blocks), units)}`,
+    prs[0] ? `\u{1F3C6} ${prLine(prs[0], t, units)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}` : null,
     t("share.tracked"),
   ]
     .filter(Boolean)
@@ -119,7 +120,7 @@ export default function SessionDetail() {
         <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 16 }}>
           <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
           {prs.slice(0, 6).map((p) => (
-            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t)}</Text>
+            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t, units)}</Text>
           ))}
         </View>
       )}
@@ -199,7 +200,7 @@ export default function SessionDetail() {
       {strength.length > 0 && (
         <>
           <View style={{ marginTop: 6 }}>
-            <WorkoutShareCard ref={cardRef} t={t} stats={{ title: session.title, minutes: minutes ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
+            <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
           </View>
           <Pressable
             onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
@@ -213,8 +214,10 @@ export default function SessionDetail() {
   );
 }
 
-const prLine = (p: PrHit, t: (k: string) => string) =>
-  p.previous == null ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
+  p.previous == null
+    ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
+    : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
 
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
   if (p.kind === "distance")
