@@ -37,7 +37,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, type NewSession } from "../lib/api";
+import { fetchSessions, createSession, fetchRoutines, createRoutine, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
@@ -139,7 +139,7 @@ export default function Workout() {
   const { t } = useLang();
   const { session } = useSession();
   const guest = !session;
-  const { source } = useLocalSearchParams<{ source?: string }>();
+  const { source, templateId } = useLocalSearchParams<{ source?: string; templateId?: string }>();
 
   const [title, setTitle] = useState("Workout");
   const [exercises, setExercises] = useState<WExercise[]>([]);
@@ -290,6 +290,13 @@ export default function Workout() {
         setReadiness(rx.readiness);
         setTitle("AI session");
         setExercises(blocksToExercises(rx.blocks as SessionBlock[]));
+      } else if (source === "template" && templateId) {
+        await clearDraft();
+        const routine = (await fetchRoutines()).find((r) => r.id === templateId);
+        if (routine) {
+          setTitle(routine.name || "Workout");
+          setExercises(blocksToExercises(routine.blocks));
+        }
       } else if (source === "new") {
         // Deliberate fresh start — drop any interrupted draft.
         await clearDraft();
@@ -311,7 +318,7 @@ export default function Workout() {
       }
       setRestored(true);
     })();
-  }, [source, guest]);
+  }, [source, guest, templateId]);
 
   // Persist the in-progress draft as it changes (debounced) so it survives a
   // crash / kill. Only after the initial restore, so we never clobber a draft.
@@ -1051,6 +1058,7 @@ function Summary({
           </>
         ) : (
           <>
+            <SaveRoutine title={title} blocks={summary.blocks} t={t} />
             <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
             <Pressable
               onPress={() => router.replace("/(tabs)/history")}
@@ -1065,6 +1073,54 @@ function Summary({
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Save the just-finished workout as a reusable routine (WorkoutTemplate) so it
+// can be loaded and started next time. Non-guest only (routines need an account).
+function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock[]; t: (k: string) => string }) {
+  const C = useTheme().palette;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(title || "Routine");
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+
+  if (state === "saved")
+    return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("summary.routineSaved")}</Mono>;
+
+  if (!open)
+    return (
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 18 }}
+      >
+        <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
+      </Pressable>
+    );
+
+  const save = async () => {
+    setState("saving");
+    const ok = await createRoutine(name.trim() || "Routine", blocks);
+    setState(ok ? "saved" : "idle");
+  };
+
+  return (
+    <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, padding: 14, marginTop: 18 }}>
+      <Mono color={C.lime} style={{ fontSize: 11, letterSpacing: 1 }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="Routine name"
+        placeholderTextColor={C.ash}
+        style={{ marginTop: 8, fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+      />
+      <Pressable
+        onPress={save}
+        disabled={state === "saving"}
+        style={{ backgroundColor: C.lime, borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+      </Pressable>
+    </View>
   );
 }
 
