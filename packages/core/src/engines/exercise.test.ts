@@ -77,6 +77,37 @@ describe("per-exercise dashboard", () => {
     expect(d.bestE1rmAllTime).toBe(Math.round(e1rm(100, 5)));
   });
 
+  it("surfaces a velocity-estimated 1RM when bar speed is logged at ≥2 loads", () => {
+    const velSessions: LoggedSession[] = [
+      {
+        id: "v1",
+        title: "Speed",
+        startedAt: daysAgo(2),
+        blocks: [
+          {
+            kind: "strength",
+            name: "Back Squat",
+            sets: [
+              { load: "80", reps: "3", vel: "0.80" },
+              { load: "120", reps: "1", vel: "0.40" },
+            ],
+          },
+        ],
+      },
+    ];
+    const d = exerciseDashboard(velSessions, "Back Squat", "all", NOW);
+    if (d.kind !== "strength") throw new Error("expected strength");
+    expect(d.velocity).toBeDefined();
+    expect(d.velocity!.e1rm).toBeGreaterThan(0);
+    expect(d.velocity!.n).toBe(2);
+  });
+
+  it("omits velocity when there's no bar speed", () => {
+    const d = exerciseDashboard(sessions, "Bench Press", "all", NOW);
+    if (d.kind !== "strength") throw new Error("expected strength");
+    expect(d.velocity).toBeUndefined();
+  });
+
   it("cardio dashboard reports distance/pace/longest + a pace series", () => {
     const d = exerciseDashboard(sessions, "Easy Run", "all", NOW);
     if (d.kind !== "cardio") throw new Error("expected cardio");

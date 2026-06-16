@@ -17,7 +17,7 @@ import { fetchSessions } from "../lib/api";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 
 const PERIODS: { id: ExercisePeriod; label: string }[] = [
   { id: "8w", label: "8 wk" },
@@ -171,6 +171,15 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
           </Text>
           <Mono style={{ fontSize: 11, marginTop: 8 }}>
             {stats.totalReps} reps · heaviest {fmtWeight(stats.heaviestLoad, units)} · all-time best {fmtWeight(stats.bestE1rmAllTime, units)}
+          </Mono>
+        </Card>
+      )}
+      {stats.velocity && (
+        <Card style={{ marginTop: 14 }}>
+          <Kicker color={C.blue}>Velocity profile</Kicker>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.blue), marginTop: 6 }}>{fmtWeight(stats.velocity.e1rm, units)}</Text>
+          <Mono style={{ fontSize: 11, marginTop: 4 }}>
+            velocity-estimated 1RM · fit r² {stats.velocity.r2} · {stats.velocity.n} loads
           </Mono>
         </Card>
       )}

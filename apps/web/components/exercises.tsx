@@ -215,6 +215,15 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
           </Mono>
         </Card>
       )}
+      {stats.velocity && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Velocity profile</Mono>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: BLUE, marginTop: 8 }}>{fmtWeight(stats.velocity.e1rm, units)}</div>
+          <Mono s={{ fontSize: 11, color: ASH, display: "block", marginTop: 4 }}>
+            velocity-estimated 1RM · fit r² {stats.velocity.r2} · {stats.velocity.n} loads · from logged bar speed
+          </Mono>
+        </Card>
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import type { LoggedSession } from "./session";
 import { e1rm, blockBestE1rm, setsForVolume, isWorkingSet, e1rmSeries, paceSeries, type E1rmPoint, type PacePoint } from "./session";
 import { runStats } from "./running";
+import { velocityProfileFor } from "./velocity";
 
 // Per-exercise dashboard: everything about ONE movement over a chosen time
 // window. Pure aggregation over the existing session helpers (e1rmSeries,
@@ -55,6 +56,8 @@ export interface StrengthExerciseStats {
   bestSet?: BestSet;
   /** e1RM trend in the window, oldest → newest */
   e1rm: E1rmPoint[];
+  /** Load–velocity profile (when bar speed is logged): velocity-estimated 1RM. */
+  velocity?: { e1rm: number; r2: number; n: number };
   lastPerformed?: string;
 }
 
@@ -162,6 +165,10 @@ export function exerciseDashboard(
   let bestAll = 0;
   for (const s of sessions) for (const b of s.blocks) if (b.kind === "strength" && b.name === name) bestAll = Math.max(bestAll, blockBestE1rm(b));
 
+  // Load–velocity profile from logged bar speed in the window (needs ≥2 loads).
+  const lv = velocityProfileFor(win, name);
+  const velocity = lv.n >= 2 && lv.estimated1rm > 0 ? { e1rm: Math.round(lv.estimated1rm), r2: Math.round(lv.r2 * 100) / 100, n: lv.n } : undefined;
+
   return {
     kind: "strength",
     name,
@@ -175,6 +182,7 @@ export function exerciseDashboard(
     heaviestLoad,
     bestSet,
     e1rm: e1rmSeries(win, name),
+    velocity,
     lastPerformed: last,
   };
 }
