@@ -137,9 +137,17 @@ export default function SessionDetail() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
-                <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
-                  {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
-                </Text>
+                {b.kind === "conditioning" ? (
+                  <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
+                    {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                  </Text>
+                ) : (
+                  <Pressable onPress={() => router.push({ pathname: "/exercises", params: { name: b.name } })}>
+                    <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
+                      {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name} <Text style={{ color: C.ash, fontSize: 13 }}>›</Text>
+                    </Text>
+                  </Pressable>
+                )}
                 {ssLabels[i] && (
                   <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}

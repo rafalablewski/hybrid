@@ -625,7 +625,7 @@ export function PeriodizeScreen({
 }
 
 // ---------- HISTORY (real logged sessions) ----------
-export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
+export function HistoryScreen({ sessions, onOpenExercise }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   if (sessions.length === 0)
@@ -640,7 +640,7 @@ export function HistoryScreen({ sessions }: { sessions: LoggedSession[] }) {
     );
 
   const open = openId ? sessions.find((s) => s.id === openId) : null;
-  if (open) return <SessionDetail session={open} all={sessions} onBack={() => setOpenId(null)} />;
+  if (open) return <SessionDetail session={open} all={sessions} onBack={() => setOpenId(null)} onOpenExercise={onOpenExercise} />;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -694,10 +694,12 @@ function SessionDetail({
   session,
   all,
   onBack,
+  onOpenExercise,
 }: {
   session: LoggedSession;
   all: LoggedSession[];
   onBack: () => void;
+  onOpenExercise?: (name: string) => void;
 }) {
   const prs = prsForSession(all, session.id);
   const cardioPrs = cardioPrsForSession(all, session.id);
@@ -846,7 +848,18 @@ function SessionDetail({
           <Card key={i}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
-                {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                {prSet.has(b.name) ? "🏆 " : ""}
+                {onOpenExercise && b.kind !== "conditioning" ? (
+                  <button
+                    onClick={() => onOpenExercise(b.name)}
+                    style={{ ...disp, fontWeight: 700, fontSize: 16, color: txt(LIME), background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                    title="Open this exercise's dashboard"
+                  >
+                    {b.name} ›
+                  </button>
+                ) : (
+                  b.name
+                )}
                 {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
