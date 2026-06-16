@@ -8,13 +8,42 @@ import { LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/li
 // runbooks that live in @hybrid/core (guidance.ts) so the copy stays the single
 // source of truth and a future mobile admin can render the same words.
 export default function AdminGuidance() {
-  const guide: Guide = GUIDES[0]!;
+  const [guideId, setGuideId] = useState(GUIDES[0]!.id);
+  const guide: Guide = GUIDES.find((g) => g.id === guideId) ?? GUIDES[0]!;
   const [active, setActive] = useState(guide.sections[0]!.id);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "230px 1fr", gap: 20, alignItems: "start" }}>
       {/* sticky table of contents */}
       <Card style={{ position: "sticky", top: 16, padding: 14 }}>
+        {/* guide switcher — only when there's more than one guide */}
+        {GUIDES.length > 1 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${LINE}` }}>
+            {GUIDES.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => {
+                  setGuideId(g.id);
+                  setActive(g.sections[0]!.id);
+                }}
+                style={{
+                  ...mono,
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: ".08em",
+                  padding: "5px 9px",
+                  borderRadius: 7,
+                  cursor: "pointer",
+                  border: `1px solid ${g.id === guideId ? `${AMBER}66` : LINE}`,
+                  background: g.id === guideId ? `${AMBER}1c` : "transparent",
+                  color: txt(g.id === guideId ? AMBER : ASH),
+                }}
+              >
+                {g.id}
+              </button>
+            ))}
+          </div>
+        )}
         <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
           {guide.title}
         </Mono>

@@ -220,5 +220,161 @@ export const DEPLOY_GUIDE: Guide = {
   ],
 };
 
+/**
+ * "Accounts & identity" — the source-of-truth map of every account HYBRID runs
+ * on: what's registered where, which email owns what, and the accounts still to
+ * create. Tuned to the real setup: domain on GoDaddy, mail on Google Workspace,
+ * Apple via an Organization (LLC, to be formed), production domain still hybrid.app.
+ */
+export const ACCOUNTS_GUIDE: Guide = {
+  id: "accounts",
+  title: "Accounts & identity — what's registered where",
+  updated: "2026-06-16",
+  sections: [
+    {
+      id: "map",
+      icon: "⬡",
+      title: "The account map (source of truth)",
+      summary: "Every service needs an account and an owner email — here's the running inventory.",
+      blocks: [
+        {
+          t: "p",
+          text: "HYBRID runs on a handful of external services, each with its own login. Keeping one map of 'what's on which account' is what stops the 'wait, which email was that under?' problem later. This is that map — update it whenever an account is created or moved.",
+        },
+        {
+          t: "note",
+          text: "Domain naming: hybriddomain.xyz is the WORKING/placeholder domain we hold today; hybrid.app is the intended PRODUCTION domain (not acquired yet). The app's code uses hybrid.app names (app.hybrid.app, admin.hybrid.app) as placeholders — they'll point at the real domain once it's live. Don't treat the .xyz as final.",
+        },
+        {
+          t: "term",
+          term: "Domain — hybriddomain.xyz · GoDaddy · REGISTERED",
+          text: "Registered through GoDaddy under the personal account Rafal.ablewski95@gmail.com. GoDaddy is the registrar AND where the DNS records live, so this is where you point the domain at a host (Vercel) or change email records. Note: the domain sits on a PERSONAL login — fine for now, but consider transferring it to the chosen business identity later so the whole stack lives under one owner.",
+        },
+        {
+          t: "term",
+          term: "Email — contact@hybriddomain.xyz · Google Workspace · LIVE",
+          text: "The business mailbox, hosted on Google Workspace. Use it as the outward contact address, and it's the strongest candidate to OWN the product accounts below. Google Workspace also means the domain's MX/SPF/DKIM email records are already set in DNS — leave those alone when you wire the domain to a web host.",
+        },
+        {
+          t: "term",
+          term: "Code — github.com/rafalablewski/hybrid · LIVE",
+          text: "The monorepo (core + web + mobile). Vercel deploys the web app from here; CI runs typecheck/tests + the iOS bundle export on every PR. If you move to a business identity, you can transfer the repo into a GitHub Organization owned by that account.",
+        },
+        {
+          t: "term",
+          term: "Web host — Vercel · hosts apps/web + /api",
+          text: "Hosts the Next.js web app and the shared /api the mobile app calls; auto-deploys the main branch. The production domain gets attached here (Vercel → Domains) once it's live. Database stays on Supabase regardless.",
+        },
+        {
+          t: "term",
+          term: "Database/auth — Supabase · backend",
+          text: "Postgres + auth for the whole product. Connection + service keys live as env vars in Vercel (and are referenced by the mobile app via the same API). Owned by whichever email you create the Supabase org under — fold it into the identity decision.",
+        },
+      ],
+    },
+    {
+      id: "identity",
+      icon: "⦿",
+      title: "Which email owns what — DECIDE THIS FIRST",
+      summary: "You haven't picked the account-owner email yet; choose before creating more accounts.",
+      blocks: [
+        {
+          t: "p",
+          text: "Before you open the Apple, Expo, Vercel or Supabase accounts, decide ONE email that owns them. Changing the owner of an Apple or Vercel account later is painful, so it's worth a minute now. This is currently UNDECIDED.",
+        },
+        {
+          t: "term",
+          term: "Recommendation",
+          text: "Use a single business mailbox on the domain — contact@hybriddomain.xyz today, or a dedicated owner@/admin@ alias — as the owner of every product/business account (Apple Developer, Expo, Vercel, Supabase, GitHub org). Reasons: it survives team changes, isn't tied to anyone's personal inbox, and keeps the whole stack under one recoverable identity. Keep the personal gmail ONLY for the GoDaddy domain registration (and transfer even that over later if you want everything unified).",
+        },
+        {
+          t: "note",
+          text: "Whatever you pick, use it CONSISTENTLY and store the logins in a password manager with recovery set up. Mixing a personal gmail and a business address across services is exactly what creates the confusion. Once chosen, write the owner email next to each account in the map above.",
+        },
+      ],
+    },
+    {
+      id: "todo",
+      icon: "⚑",
+      title: "Accounts still to create",
+      summary: "The two that block the mobile launch, plus the keys the AI features need.",
+      blocks: [
+        {
+          t: "term",
+          term: "Apple Developer (Organization) — NOT STARTED · mobile blocker #1",
+          text: "Enrolling as a COMPANY (your choice), so the app lists under the business name. This needs an LLC + a D-U-N-S number first — see the next section. $99/year. Until this exists, the iPhone app cannot be signed, TestFlight-tested or submitted.",
+        },
+        {
+          t: "term",
+          term: "Expo account + access token — NOT STARTED · mobile blocker #2",
+          text: "A free account at expo.dev plus an access token, so EAS can build and submit the app on your behalf. Create it under the chosen identity email. This is the second of the two mobile blockers.",
+        },
+        {
+          t: "term",
+          term: "Anthropic API key — for the AI features",
+          text: "ANTHROPIC_API_KEY (set server-side in Vercel) powers the AI coach and the admin AI agents. Create the Anthropic account under the identity email; scheduled agent runs additionally need CRON_SECRET. Not a launch blocker for the core app — only the AI surfaces need it.",
+        },
+        {
+          t: "term",
+          term: "Optional — Slack workspace",
+          text: "Only if you want the admin AI-agent digests/approvals delivered to Slack (SLACK_WEBHOOK_URL / SLACK_SIGNING_SECRET). Skip until you want those notifications.",
+        },
+      ],
+    },
+    {
+      id: "llc",
+      icon: "▲",
+      title: "The LLC → Apple Organization path",
+      summary: "What forming the company and getting a D-U-N-S looks like, in order.",
+      blocks: [
+        {
+          t: "p",
+          text: "Because you chose the Organization route, the company has to exist (and be verifiable) before Apple will enroll it. Plan for this to take a couple of weeks of mostly waiting. Order of operations:",
+        },
+        {
+          t: "steps",
+          items: [
+            "Form the LLC (or your local equivalent) — register the entity in your jurisdiction; you'll get a registered legal name and number.",
+            "Request a D-U-N-S number for that exact legal name — it's free from Dun & Bradstreet (Apple links to the request at developer.apple.com/enroll). Apple uses it to confirm the company is real. Issuance takes a few days to ~2 weeks; you can't enroll the org without it.",
+            "Make sure the company's legal name, address and phone match across the LLC registration, the D-U-N-S record and what you enter at Apple — mismatches are the #1 cause of enrollment delays.",
+            "Enroll the Organization in the Apple Developer Program using the chosen identity email and the D-U-N-S number; confirm you have authority to bind the company. $99/year.",
+            "Create the Expo account + token (no LLC needed for this), then follow the App Store runbook in the other guide — build with EAS, submit to App Store Connect, test via TestFlight, submit for review.",
+          ],
+        },
+        {
+          t: "note",
+          text: "Faster alternative if you get impatient: you can enroll as an INDIVIDUAL now (approved in ~a day) to start TestFlight/build work, then switch to the Organization later. It's extra rework, so only do it if waiting on the LLC/D-U-N-S is blocking you.",
+        },
+      ],
+    },
+    {
+      id: "dns",
+      icon: "🌐",
+      title: "Pointing the domain at the app (DNS)",
+      summary: "How the GoDaddy domain connects to Vercel — without breaking Workspace email.",
+      blocks: [
+        {
+          t: "p",
+          text: "DNS records (managed in GoDaddy) decide where the domain sends traffic. Web hosting uses A/CNAME records; email uses MX/TXT records. They're independent — you can wire the web host without touching email, as long as you ONLY add the records the host asks for.",
+        },
+        {
+          t: "steps",
+          items: [
+            "In Vercel → Project → Domains, add the domain (the placeholder app.hybriddomain.xyz now to preview, or hybrid.app + app./admin. once you own it). Vercel shows the exact records to set.",
+            "In GoDaddy DNS, add those records: typically an A record on the root pointing to Vercel's IP (76.76.21.21) and a CNAME on each subdomain (app, admin) pointing to cname.vercel-dns.com. Use the values Vercel displays — they're authoritative.",
+            "Leave the Google Workspace email records (MX, plus SPF/DKIM TXT) exactly as they are so contact@ keeps working.",
+            "Wait for DNS to propagate (minutes to a few hours), then Vercel auto-issues the HTTPS certificate. The app is then live on the domain.",
+            "Point the mobile app's API base URL at the same domain's /api so both clients hit one backend.",
+          ],
+        },
+        {
+          t: "note",
+          text: "Golden rule: only ADD/EDIT the A and CNAME records the web host gives you. Never delete the MX or email TXT records — that's what silently breaks contact@hybriddomain.xyz.",
+        },
+      ],
+    },
+  ],
+};
+
 /** All guides surfaced in the admin Guidance tab (room to add more later). */
-export const GUIDES: Guide[] = [DEPLOY_GUIDE];
+export const GUIDES: Guide[] = [DEPLOY_GUIDE, ACCOUNTS_GUIDE];
