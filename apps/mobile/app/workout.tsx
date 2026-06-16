@@ -27,6 +27,7 @@ import {
   setType,
   cycleSetType,
   setTypeBadge,
+  warmupRamp,
   rpeRirSwap,
   displayLoad,
   storeLoad,
@@ -399,6 +400,21 @@ export default function Workout() {
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "warmup" as SetRole }] } : x)),
     );
+  // Auto warm-up ramp: prepend ~40/60/80% sets up to the heaviest working load.
+  const addWarmupRamp = (u: string) =>
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        const workingMax = Math.max(
+          0,
+          ...x.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
+        );
+        const ramp = warmupRamp(workingMax);
+        if (!ramp.length) return x;
+        const rampSets: WSet[] = ramp.map((step) => ({ uid: uid(), load: String(step.load), reps: String(step.reps), rpe: "", done: false, role: "warmup" }));
+        return { ...x, sets: [...rampSets, ...x.sets] };
+      }),
+    );
   // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
   const cycleType = (u: string, i: number) =>
     setExercises((xs) =>
@@ -768,6 +784,9 @@ export default function Workout() {
                   </Pressable>
                   <Pressable onPress={() => addWarmupSet(x.uid)} style={{ paddingVertical: 8 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupSet")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => addWarmupRamp(x.uid)} style={{ paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupRamp")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addDropSet(x.uid)} style={{ paddingVertical: 8 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.ash }}>{t("workout.dropSet")}</Text>

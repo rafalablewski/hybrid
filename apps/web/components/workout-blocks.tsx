@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -171,6 +171,16 @@ export default function WorkoutBlocks({
     patch(u, (b) =>
       b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", role: "warmup" }] } : b,
     );
+  // Prepend an auto warm-up ramp up to the block's heaviest working load.
+  const addWarmupRamp = (u: string) =>
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      const workingMax = Math.max(0, ...b.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)));
+      const ramp = warmupRamp(workingMax);
+      if (!ramp.length) return b;
+      const rampSets: StrengthSet[] = ramp.map((step) => ({ load: String(step.load), reps: String(step.reps), rpe: "", role: "warmup" }));
+      return { ...b, sets: [...rampSets, ...b.sets] };
+    });
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
   // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
@@ -322,6 +332,9 @@ export default function WorkoutBlocks({
                 </button>
                 <button onClick={() => addWarmupSet(b.uid)} style={blockBtn(AMBER)} title="Add a warm-up set — excluded from working volume & PRs, kept for the velocity profile">
                   + warm-up
+                </button>
+                <button onClick={() => addWarmupRamp(b.uid)} style={blockBtn(AMBER)} title="Auto warm-up ramp (~40/60/80%) up to your working load">
+                  + ramp
                 </button>
                 <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title="Add a drop set — a lighter continuation, no rest">
                   + drop set

@@ -25,6 +25,7 @@ import {
   setType,
   cycleSetType,
   setTypeBadge,
+  warmupRamp,
   blockBestE1rm,
 } from "./session";
 import type { LoggedSession, StrengthBlock } from "./session";
@@ -274,6 +275,13 @@ describe("set roles (warm-up / cool-down)", () => {
     expect(setType(s)).toBe("working");
     expect(s.role).toBeUndefined();
     expect(s.drop).toBeUndefined();
+  });
+
+  it("warmupRamp builds a plate-friendly ramp to the working load", () => {
+    const ramp = warmupRamp(100);
+    expect(ramp.map((s) => s.load)).toEqual([40, 60, 80]);
+    expect(ramp.map((s) => s.reps)).toEqual([8, 5, 3]);
+    expect(warmupRamp(20)).toEqual([]); // nothing to ramp for a light/bodyweight load
   });
 
   it("setTypeBadge shows the index for working, else W / C / ↓", () => {

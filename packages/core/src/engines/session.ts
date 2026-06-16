@@ -94,6 +94,27 @@ export function setTypeBadge(s: RoleDrop, index: number): string {
   return t === "warmup" ? "W" : t === "cooldown" ? "C" : t === "drop" ? "↓" : String(index + 1);
 }
 
+export interface WarmupStep {
+  /** load in kg */
+  load: number;
+  reps: number;
+}
+
+/**
+ * A warm-up ramp up to a working load (kg) — three sets at ~40/60/80% for 8/5/3
+ * reps, rounded to plate-friendly 2.5 kg. Returns [] for bodyweight / near-empty
+ * loads (nothing to ramp). Pure; the logger turns these into warm-up sets.
+ */
+export function warmupRamp(workingKg: number): WarmupStep[] {
+  if (!Number.isFinite(workingKg) || workingKg <= 25) return [];
+  const steps: [number, number][] = [
+    [0.4, 8],
+    [0.6, 5],
+    [0.8, 3],
+  ];
+  return steps.map(([pct, reps]) => ({ load: Math.round((workingKg * pct) / 2.5) * 2.5, reps }));
+}
+
 export interface StrengthBlock {
   kind: "strength";
   name: string;
