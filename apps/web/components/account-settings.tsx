@@ -6,6 +6,7 @@ import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
@@ -24,6 +25,9 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "de", label: "DE" },
 ];
 
+const editInput = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 12px", outline: "none" } as const;
+const editBtn = (c: string) => ({ ...mono, fontSize: 13, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: 10, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
+
 export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
@@ -34,6 +38,38 @@ export default function AccountSettings() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Profile editing — uses the user's OWN Supabase auth (no admin/backend route):
+  // name lives in user_metadata, email/password are first-class auth fields.
+  const authOn = isSupabaseConfigured();
+  const [name, setName] = useState(session?.name ?? "");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [profileBusy, setProfileBusy] = useState(false);
+
+  const runAuth = async (label: string, op: () => Promise<{ error: { message: string } | null }>) => {
+    if (!authOn) { setProfileMsg("Sign in with a real account to edit your profile."); return; }
+    setProfileBusy(true);
+    setProfileMsg(null);
+    try {
+      const { error } = await op();
+      setProfileMsg(error ? error.message : label);
+    } catch {
+      setProfileMsg("Network error — try again.");
+    }
+    setProfileBusy(false);
+  };
+  const saveName = () => runAuth("✓ Name saved.", async () => createClient().auth.updateUser({ data: { name: name.trim() } }));
+  const changeEmail = () =>
+    runAuth("✓ Check your inbox to confirm the new email.", async () => createClient().auth.updateUser({ email: newEmail.trim() }));
+  const changePassword = () =>
+    runAuth("✓ Password updated.", async () => createClient().auth.updateUser({ password: newPw }));
+  const signOutEverywhere = async () => {
+    if (authOn) await createClient().auth.signOut({ scope: "global" }).catch(() => {});
+    void logout();
+  };
+  const exportData = () => { window.location.href = "/api/account/export"; };
 
   // Mode toggle — Full (athlete) is a paid upgrade.
   const paid = entitlement === "paid";
@@ -201,6 +237,23 @@ export default function AccountSettings() {
             <button onClick={() => void logout()} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer", marginTop: 14, padding: 0 }}>
               Sign out
             </button>
+          </Card>
+
+          {/* Edit profile — name / email (own Supabase auth) */}
+          <Card style={{ marginBottom: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Edit profile</Mono>
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 12, marginBottom: 6 }} c={ASH}>Display name</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={{ ...editInput, flex: 1 }} />
+              <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>Save</button>
+            </div>
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Change email</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={session?.email ?? "new@email.com"} type="email" style={{ ...editInput, flex: 1 }} />
+              <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>Update</button>
+            </div>
+            {profileMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
+            {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>Profile editing needs a real signed-in account.</Mono>}
           </Card>
 
           {/* Preferences — appearance, language, workout logger */}
@@ -411,18 +464,39 @@ export default function AccountSettings() {
         <>
           <MfaSettings />
           <Card style={{ marginTop: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Password &amp; sessions</Mono>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Change password</Mono>
+            {session?.provider && session.provider !== "email" ? (
+              <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+                You sign in with {session.provider} — manage your password there.
+              </Mono>
+            ) : (
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password" type="password" style={{ ...editInput, flex: 1 }} />
+                <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>Update</button>
+              </div>
+            )}
+            {profileMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
+          </Card>
+          <Card style={{ marginTop: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Active sessions</Mono>
             <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
-              {session?.provider && session.provider !== "email"
-                ? `You sign in with ${session.provider} — manage your password and active devices there.`
-                : "Password resets are handled from the login screen (“Forgot password”). Device/session management is coming as the next Security step."}
+              Sign out of every device — revokes all other sessions and ends this one.
             </Mono>
+            <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>Sign out everywhere</button>
           </Card>
         </>
       )}
 
       {/* ---- PRIVACY & DATA ---- */}
       {section === "data" && (
+      <>
+      <Card style={{ marginBottom: 16 }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Export my data</Mono>
+        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+          Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.
+        </Mono>
+        <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>Download my data (JSON)</button>
+      </Card>
       <Card style={{ borderLeft: `3px solid ${RED}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
           Danger zone — reset account
@@ -489,6 +563,7 @@ export default function AccountSettings() {
           </button>
         </div>
       </Card>
+      </>
       )}
     </div>
   );
