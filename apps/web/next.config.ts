@@ -16,6 +16,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // @hybrid/core is shipped as TypeScript source, so Next must transpile it.
   transpilePackages: ["@hybrid/core"],
+  // The Apple IAP route reads root-CA cert files at runtime; force them into the
+  // serverless bundle (they're otherwise invisible to Next's dependency tracer).
+  outputFileTracingIncludes: {
+    "/api/billing/iap/verify": ["./lib/apple-root-certs/**"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
