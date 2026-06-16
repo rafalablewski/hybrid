@@ -34,6 +34,8 @@ import {
   ChartFrame,
   txt,
 } from "@/lib/ui";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
   buildMacrocycle,
   currentPhase,
@@ -98,16 +100,17 @@ export function AthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[]
 }
 
 function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
+  const units = useLoggerPrefs().units;
   const vol = totalVolume(sessions);
   const prs = bestE1rmByLift(sessions).slice(0, 6);
   const topLift = liftNames(sessions)[0];
   const series = topLift
-    ? e1rmSeries(sessions, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm }))
+    ? e1rmSeries(sessions, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) }))
     : [];
   const volSeries = [...sessions]
     .slice(0, 8)
     .reverse()
-    .map((s) => ({ w: fmtDate(s.startedAt), vol: sessionVolume(s.blocks) }));
+    .map((s) => ({ w: fmtDate(s.startedAt), vol: Math.round(kgToUnit(sessionVolume(s.blocks), units)) }));
   const lastReadiness =
     sessions.find((s) => typeof s.readiness === "number")?.readiness ?? null;
   const best = prs[0];
@@ -115,10 +118,10 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
       <Stat label="Sessions" value={sessions.length} c={LIME} />
-      <Stat label="Total volume" value={`${(vol / 1000).toFixed(1)}k`} sub="kg" />
+      <Stat label="Total volume" value={fmtTonnage(vol, units)} />
       <Stat
         label={best ? `${best.lift} e1RM` : "Best e1RM"}
-        value={best ? `${best.e1rm}kg` : "—"}
+        value={best ? fmtWeight(best.e1rm, units) : "—"}
         c={LIME}
       />
       <Stat label="Last readiness" value={lastReadiness ?? "—"} c={BLUE} />
@@ -179,7 +182,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
                     {p.lift}
                   </td>
                   <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
-                    {p.e1rm} kg
+                    {fmtWeight(p.e1rm, units)}
                   </td>
                   <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     {fmtDate(p.when)}
@@ -627,6 +630,7 @@ export function PeriodizeScreen({
 // ---------- HISTORY (real logged sessions) ----------
 export function HistoryScreen({ sessions, onOpenExercise }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const units = useLoggerPrefs().units;
 
   if (sessions.length === 0)
     return (
@@ -653,7 +657,7 @@ export function HistoryScreen({ sessions, onOpenExercise }: { sessions: LoggedSe
               <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
-              <Chip c={BLUE}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
+              <Chip c={BLUE}>{fmtTonnage(sessionVolume(s.blocks), units)}</Chip>
               <Chip c={ASH}>{s.blocks.length} blocks</Chip>
               {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
               {prCount > 0 && <Chip c={LIME}>🏆 {prCount} PR</Chip>}
@@ -701,6 +705,7 @@ function SessionDetail({
   onBack: () => void;
   onOpenExercise?: (name: string) => void;
 }) {
+  const units = useLoggerPrefs().units;
   const prs = prsForSession(all, session.id);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
@@ -717,14 +722,14 @@ function SessionDetail({
     .filter((b) => b.kind === "strength")
     .map((b) => ({ name: b.name, e: blockBestE1rm(b) }))
     .sort((a, b) => b.e - a.e)[0]?.name;
-  const series = topLift ? e1rmSeries(all, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm })) : [];
+  const series = topLift ? e1rmSeries(all, topLift).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
 
   // The session's headline run → its pace (sec/km) trend across all history.
   const runMove = headlineRunMove(session.blocks);
   const paceData = runMove ? paceSeries(all, runMove).map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm })) : [];
 
   const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
-    p.previous == null ? `${p.lift} ${p.e1rm}kg (first!)` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+    p.previous == null ? `${p.lift} ${fmtWeight(p.e1rm, units)} (first!)` : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
   const cardioPrLine = (p: CardioPrHit) => {
     if (p.kind === "distance")
       return p.previous == null
@@ -754,7 +759,7 @@ function SessionDetail({
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
         <Stat label="Sets" value={sets} />
-        <Stat label="Kg moved" value={sessionVolume(session.blocks).toLocaleString()} c={LIME} />
+        <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks), units)} c={LIME} />
       </div>
 
       {prs.length > 0 && (
@@ -795,7 +800,7 @@ function SessionDetail({
                 <div key={m.muscle}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <Mono s={{ fontSize: 13 }} c={CHALK}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
-                    <Mono s={{ fontSize: 12 }}>{m.volume.toLocaleString()} kg</Mono>
+                    <Mono s={{ fontSize: 12 }}>{fmtWeight(m.volume, units)}</Mono>
                   </div>
                   <div style={{ height: 8, borderRadius: 4, background: INK2, overflow: "hidden" }}>
                     <div style={{ width: `${Math.max(6, (m.volume / muscleMax) * 100)}%`, height: 8, borderRadius: 4, background: LIME }} />
@@ -863,7 +868,7 @@ function SessionDetail({
                 {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
-                <Mono s={{ fontSize: 13 }} c={LIME}>{Math.round(blockBestE1rm(b))} kg e1RM</Mono>
+                <Mono s={{ fontSize: 13 }} c={LIME}>{fmtWeight(blockBestE1rm(b), units)} e1RM</Mono>
               )}
             </div>
             {b.kind === "strength" ? (
@@ -875,7 +880,7 @@ function SessionDetail({
                   return (
                   <div key={j} style={{ display: "flex", gap: 16, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
                     <Mono s={{ fontSize: 13, width: 22 }} c={sAccent}>{setTypeBadge(st, j)}</Mono>
-                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load || "–"} kg × {st.reps || "–"}{sTag}</Mono>
+                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load ? `${displayLoad(st.load, units)} ${units}` : "–"} × {st.reps || "–"}{sTag}</Mono>
                     {st.rpe ? <Mono s={{ fontSize: 13 }}>RPE {st.rpe}</Mono> : null}
                     {st.vel ? <Mono s={{ fontSize: 13 }} c={BLUE}>{st.vel} m/s</Mono> : null}
                   </div>

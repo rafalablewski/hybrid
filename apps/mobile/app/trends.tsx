@@ -8,6 +8,7 @@ import {
   volumeStatus,
   volumeAdvice,
   resolveLandmarks,
+  fmtWeight,
   type LoggedSession,
   type ExercisePeriod,
   type TrendDir,
@@ -50,6 +51,7 @@ export default function Trends() {
 
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;
+  const units = prefs.units;
   const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
@@ -169,7 +171,7 @@ export default function Trends() {
                   <Mono color={C.lime} style={{ flex: 2, fontSize: 13 }}>{r.name}</Mono>
                   <Mono style={{ flex: 1, textAlign: "center", fontSize: 13 }}>{r.sessions}×</Mono>
                   <Mono color={r.kind === "strength" ? C.chalk : C.ash} style={{ flex: 1, textAlign: "center", fontSize: 13 }}>
-                    {r.kind === "strength" ? `${r.bestE1rm}` : `${r.volume}km`}
+                    {r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : `${r.volume}km`}
                   </Mono>
                   <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: tr.c }}>{tr.g}</Text>
                 </Pressable>

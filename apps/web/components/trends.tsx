@@ -9,6 +9,9 @@ import {
   volumeStatus,
   volumeAdvice,
   resolveLandmarks,
+  fmtWeight,
+  fmtTonnage,
+  kgToUnit,
   type LoggedSession,
   type ExercisePeriod,
   type TrendDir,
@@ -49,6 +52,7 @@ export default function Trends({
   const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;
+  const units = prefs.units;
   const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw), [sessions, iw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw), [sessions, period, iw]);
@@ -69,7 +73,11 @@ export default function Trends({
   const sortBy = (k: keyof ExerciseTableRow) =>
     setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
 
-  const weekData = weeks.map((w) => ({ w: fmtWeek(w.weekStart), sets: w.sets, t: Math.round(w.tonnage / 100) / 10 }));
+  const weekData = weeks.map((w) => ({
+    w: fmtWeek(w.weekStart),
+    sets: w.sets,
+    t: Number(((units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000).toFixed(1)),
+  }));
 
   if (!trained) {
     return (
@@ -99,13 +107,13 @@ export default function Trends({
             </BarChart>
           </ResponsiveContainer>
         </ChartFrame>
-        <ChartFrame title="Weekly tonnage" kicker="Last 8 weeks · ×100 kg" c={BLUE}>
+        <ChartFrame title="Weekly tonnage" kicker={`Last 8 weeks · ${units === "kg" ? "tonnes" : "k lb"}`} c={BLUE}>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weekData}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
               <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
               <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} width={32} />
-              <Tooltip contentStyle={tip} formatter={(v) => `${(Number(v) / 10).toFixed(1)} t`} />
+              <Tooltip contentStyle={tip} formatter={(v) => `${v} ${units === "kg" ? "t" : "k lb"}`} />
               <Bar dataKey="t" fill={BLUE} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -191,8 +199,8 @@ export default function Trends({
               >
                 <Mono s={{ fontSize: 13, color: onOpenExercise ? LIME : CHALK }}>{r.name}</Mono>
                 <Mono s={{ fontSize: 13 }}>{r.sessions}×</Mono>
-                <Mono s={{ fontSize: 13 }} c={r.kind === "strength" ? CHALK : ASH}>{r.kind === "strength" ? `${r.bestE1rm} kg` : "–"}</Mono>
-                <Mono s={{ fontSize: 13 }}>{r.kind === "cardio" ? `${r.volume} km` : `${(r.volume / 1000).toFixed(1)} t`}</Mono>
+                <Mono s={{ fontSize: 13 }} c={r.kind === "strength" ? CHALK : ASH}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : "–"}</Mono>
+                <Mono s={{ fontSize: 13 }}>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</Mono>
                 <span style={{ ...mono, fontSize: 13, color: tr.c }}>{tr.g}</span>
               </button>
             );

@@ -12,6 +12,10 @@ import {
   supersetLabels,
   setType,
   setTypeBadge,
+  fmtWeight,
+  fmtTonnage,
+  displayLoad,
+  kgToUnit,
   paceSeries,
   paceClock,
   cardioPrsForSession,
@@ -22,6 +26,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
@@ -34,6 +39,7 @@ export default function SessionDetail() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
+  const units = useLoggerPrefs().units;
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
   const [all, setAll] = useState<LoggedSession[] | null>(null);
@@ -106,7 +112,7 @@ export default function SessionDetail() {
       <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
         <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
         <Metric label={t("summary.sets")} value={String(sets)} />
-        <Metric label={t("summary.kgMoved")} value={sessionVolume(session.blocks).toLocaleString()} />
+        <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks), units)} />
       </View>
 
       {prs.length > 0 && (
@@ -154,7 +160,7 @@ export default function SessionDetail() {
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>
-                  {Math.round(blockBestE1rm(b))} kg e1RM
+                  {fmtWeight(blockBestE1rm(b), units)} e1RM
                 </Text>
               )}
             </View>
@@ -168,14 +174,14 @@ export default function SessionDetail() {
                   return (
                   <View key={j} style={{ flexDirection: "row", gap: 12, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
                     <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
-                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}{stTag}</Mono>
+                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load ? `${displayLoad(s.load, units)} ${units}` : "–"} × {s.reps || "–"}{stTag}</Mono>
                     {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("workout.restShort")}</Mono> : null}
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>
                   );
                 })}
-                <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
+                <Trend series={e1rmSeries(all, b.name).map((p) => Math.round(kgToUnit(p.e1rm, units)))} t={t} />
               </View>
             ) : b.kind === "cardio" ? (
               <>
