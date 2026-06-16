@@ -7,17 +7,33 @@ import { useTheme } from "@/lib/use-theme";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
 
 type CoachStatus = "pending" | "approved" | "denied";
-type Section = "general" | "security" | "coaching" | "data";
+type Section = "general" | "notifications" | "privacy" | "security" | "coaching" | "data";
 const SECTIONS: { id: Section; label: string }[] = [
   { id: "general", label: "General" },
+  { id: "notifications", label: "Notifications" },
+  { id: "privacy", label: "Privacy" },
   { id: "security", label: "Security" },
   { id: "coaching", label: "Coaching & access" },
-  { id: "data", label: "Privacy & data" },
+  { id: "data", label: "Data" },
+];
+
+const NOTIF_DEFAULTS: Record<string, boolean> = { weeklyRecap: true, coachMessages: true, checkinReminders: true, productUpdates: false };
+const PRIVACY_DEFAULTS: Record<string, boolean> = { coachCanSeeDetail: true, discoverable: false, analyticsOptOut: false };
+const NOTIF_ROWS: [string, string, string][] = [
+  ["weeklyRecap", "Weekly recap", "Your Sunday training summary."],
+  ["coachMessages", "Coach messages", "When your coach replies to a check-in or assigns work."],
+  ["checkinReminders", "Check-in reminders", "A nudge when your weekly check-in is due."],
+  ["productUpdates", "Product updates", "Occasional news about new features."],
+];
+const PRIVACY_ROWS: [string, string, string][] = [
+  ["coachCanSeeDetail", "Share detail with my coach", "Let a linked coach see your full session detail, not just summaries."],
+  ["discoverable", "Discoverable in Talent", "Appear in coach talent searches (your benchmarks, never raw logs)."],
+  ["analyticsOptOut", "Opt out of product analytics", "Don't include my usage in aggregate product analytics."],
 ];
 const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "en", label: "EN" },
@@ -70,6 +86,34 @@ export default function AccountSettings() {
     void logout();
   };
   const exportData = () => { window.location.href = "/api/account/export"; };
+
+  // Notification + privacy preferences live in Supabase auth user_metadata, so
+  // they persist + sync across this user's devices (no extra table). updateUser
+  // shallow-merges the provided keys, leaving name/entitlement/etc. intact.
+  const [notif, setNotif] = useState<Record<string, boolean>>(NOTIF_DEFAULTS);
+  const [priv, setPriv] = useState<Record<string, boolean>>(PRIVACY_DEFAULTS);
+  useEffect(() => {
+    if (!authOn) return;
+    let live = true;
+    createClient().auth.getUser().then(({ data }) => {
+      if (!live || !data.user) return;
+      const m = data.user.user_metadata ?? {};
+      if (typeof m.name === "string") setName(m.name);
+      setNotif({ ...NOTIF_DEFAULTS, ...(m.notifications ?? {}) });
+      setPriv({ ...PRIVACY_DEFAULTS, ...(m.privacy ?? {}) });
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [authOn]);
+  const toggleNotif = (k: string) => {
+    const next = { ...notif, [k]: !notif[k] };
+    setNotif(next);
+    if (authOn) createClient().auth.updateUser({ data: { notifications: next } }).catch(() => {});
+  };
+  const togglePriv = (k: string) => {
+    const next = { ...priv, [k]: !priv[k] };
+    setPriv(next);
+    if (authOn) createClient().auth.updateUser({ data: { privacy: next } }).catch(() => {});
+  };
 
   // Mode toggle — Full (athlete) is a paid upgrade.
   const paid = entitlement === "paid";
@@ -412,6 +456,34 @@ export default function AccountSettings() {
         </>
       )}
 
+      {/* ---- NOTIFICATIONS ---- */}
+      {section === "notifications" && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Notifications</Mono>
+          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Mono>
+          <div style={{ marginTop: 12 }}>
+            {NOTIF_ROWS.map(([k, title, desc]) => (
+              <PrefRow key={k} title={title} desc={desc} on={!!notif[k]} onToggle={() => toggleNotif(k)} disabled={!authOn} />
+            ))}
+          </div>
+          {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+        </Card>
+      )}
+
+      {/* ---- PRIVACY ---- */}
+      {section === "privacy" && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Privacy</Mono>
+          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>You control what you share. Saved to your account &amp; synced across devices.</Mono>
+          <div style={{ marginTop: 12 }}>
+            {PRIVACY_ROWS.map(([k, title, desc]) => (
+              <PrefRow key={k} title={title} desc={desc} on={!!priv[k]} onToggle={() => togglePriv(k)} disabled={!authOn} />
+            ))}
+          </div>
+          {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+        </Card>
+      )}
+
       {/* ---- COACHING & ACCESS ---- */}
       {section === "coaching" && (
         <>
@@ -565,6 +637,26 @@ export default function AccountSettings() {
       </Card>
       </>
       )}
+    </div>
+  );
+}
+
+/** A labelled preference row with an on/off pill — used by Notifications + Privacy. */
+function PrefRow({ title, desc, on, onToggle, disabled }: { title: string; desc: string; on: boolean; onToggle: () => void; disabled?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderTop: `1px solid ${LINE}` }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{title}</div>
+        <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>
+      </div>
+      <button
+        onClick={onToggle}
+        disabled={disabled}
+        aria-pressed={on}
+        style={{ flex: "none", width: 46, height: 26, borderRadius: 999, border: `1px solid ${on ? LIME : LINE}`, background: on ? LIME : "transparent", position: "relative", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1, transition: "0.15s" }}
+      >
+        <span style={{ position: "absolute", top: 2, left: on ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: on ? ON_ACCENT : ASH, transition: "0.15s" }} />
+      </button>
     </div>
   );
 }
