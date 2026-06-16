@@ -273,6 +273,61 @@ export const ACCOUNTS_GUIDE: Guide = {
       ],
     },
     {
+      id: "plan",
+      icon: "❖",
+      title: "Domain & email plan (decided)",
+      summary: "The target architecture once hybrid.app is live; *@hybriddomain.xyz stands in until then.",
+      blocks: [
+        {
+          t: "p",
+          text: "This is the agreed layout. It supersedes the first-draft naming — web.hybrid.app became app.hybrid.app (to match the code + SaaS convention), and customerservice@ became support@. Everything below targets hybrid.app; until that domain is acquired, the equivalent @hybriddomain.xyz addresses stand in.",
+        },
+        {
+          t: "term",
+          term: "hybrid.app — landing",
+          text: "The marketing/landing page with the funnel hook: a free first exercise and free signup, no card up front. Lives on the root domain.",
+        },
+        {
+          t: "term",
+          term: "app.hybrid.app — web client",
+          text: "The signed-in web app (apps/web). Chosen over 'web.hybrid.app' because the code already uses app.hybrid.app and 'app.' is the universal convention for the product — there is no other client on a subdomain (mobile ships via the App Store).",
+        },
+        {
+          t: "term",
+          term: "admin.hybrid.app — admin console",
+          text: "The operator console — already supported in the code via a middleware host rewrite. Admin-only, gated server-side.",
+        },
+        {
+          t: "term",
+          term: "no-reply@hybrid.app — transactional",
+          text: "Confirmations, password resets, receipts. Set Reply-To: support@ so replies still reach a human. Sent through a transactional email provider (Resend / Postmark / SES) authenticated on hybrid.app — NOT Google Workspace SMTP.",
+        },
+        {
+          t: "term",
+          term: "marketing@hybrid.app — campaigns",
+          text: "Newsletters and lifecycle marketing. A Google Workspace inbox (a human reads replies).",
+        },
+        {
+          t: "term",
+          term: "support@hybrid.app — customer service",
+          text: "Support inbox (shortened from 'customerservice@'). A Google Workspace inbox, and the Reply-To target for the no-reply transactional mail.",
+        },
+        {
+          t: "note",
+          text: "Keep product and email on the SAME domain. Sending confirmations from @hybriddomain.xyz while the app is hybrid.app reads as phishing and hurts deliverability (SPF/DKIM/DMARC are configured per-domain). So when hybrid.app is acquired, move Google Workspace to hybrid.app and send from @hybrid.app; hybriddomain.xyz then becomes a redirect/placeholder only.",
+        },
+        {
+          t: "note",
+          text: "Two email 'pipes', both authenticated on hybrid.app: Google Workspace = mailboxes humans read (marketing@, support@); a transactional provider = automated machine mail (no-reply@). Don't push bulk automated confirmations through Workspace SMTP.",
+        },
+        {
+          t: "term",
+          term: "OPEN DECISION — cross-subdomain session",
+          text: "Do you want a login on the landing page (hybrid.app) to carry into the web client (app.hybrid.app) already authenticated? If YES, the auth cookie must be scoped to .hybrid.app (a parent-domain cookie shared by all subdomains). Decide this before wiring the domains — it shapes the auth/cookie setup.",
+        },
+      ],
+    },
+    {
       id: "identity",
       icon: "⦿",
       title: "Which email owns what — DECIDE THIS FIRST",
