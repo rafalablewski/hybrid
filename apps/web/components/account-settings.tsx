@@ -241,6 +241,19 @@ export default function AccountSettings() {
               {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
             </button>
 
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Units</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["kg", "lb"] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => setLoggerPref("units", u)}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? LIME : ASH, background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+
             <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
             <button
               onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)}

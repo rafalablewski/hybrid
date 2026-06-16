@@ -5,7 +5,7 @@ import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart">;
+type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units">;
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },
@@ -71,6 +71,21 @@ export default function LoggerSettings() {
           </View>
         </Card>
       )}
+
+      {/* Units — kg / lb (storage stays kg). */}
+      <Card style={{ marginTop: 14 }}>
+        <Kicker color={C.lime}>{t("loggerPrefs.units")}</Kicker>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+          {(["kg", "lb"] as const).map((u) => {
+            const on = prefs.units === u;
+            return (
+              <Pressable key={u} onPress={() => setLoggerPref("units", u)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 13, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{u}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
 
       {/* Default start view — what the "Start workout" hero opens with. */}
       <Card style={{ marginTop: 14 }}>

@@ -212,6 +212,7 @@ export default function Logger({
         emptyHint="Empty session — add blocks below, or pull today's prescription."
         detailed={prefs.detailed}
         rirMode={prefs.rpeAsRir}
+        units={prefs.units}
       />
 
       {error && (

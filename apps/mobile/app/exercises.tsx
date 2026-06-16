@@ -5,9 +5,13 @@ import {
   exerciseHistory,
   exerciseDashboard,
   paceClock,
+  fmtWeight,
+  fmtTonnage,
+  kgToUnit,
   type LoggedSession,
   type ExercisePeriod,
   type ExerciseStats,
+  type WeightUnit,
 } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
 import { useLoggerPrefs } from "../lib/logger-prefs";
@@ -50,7 +54,7 @@ export default function Exercises() {
   const history = useMemo(() => exerciseHistory(sessions), [sessions]);
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
-  const iw = useLoggerPrefs().countWarmupsInVolume;
+  const { countWarmupsInVolume: iw, units } = useLoggerPrefs();
   const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null), [sessions, active, period, iw]);
 
   return (
@@ -106,14 +110,14 @@ export default function Exercises() {
             })}
           </View>
 
-          {stats && <Dashboard stats={stats} />}
+          {stats && <Dashboard stats={stats} units={units} />}
         </>
       )}
     </Screen>
   );
 }
 
-function Dashboard({ stats }: { stats: ExerciseStats }) {
+function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }) {
   const C = useTheme().palette;
 
   if (stats.kind === "cardio") {
@@ -149,24 +153,24 @@ function Dashboard({ stats }: { stats: ExerciseStats }) {
   return (
     <>
       <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-        <Metric label="BEST e1RM" value={`${stats.bestE1rm}`} color={C.lime} />
+        <Metric label="BEST e1RM" value={fmtWeight(stats.bestE1rm, units)} color={C.lime} />
         <Metric label="SETS" value={String(stats.workingSets)} />
-        <Metric label="VOLUME" value={`${(stats.volume / 1000).toFixed(1)}t`} />
+        <Metric label="VOLUME" value={fmtTonnage(stats.volume, units)} />
         <Metric label="SESSIONS" value={String(stats.sessions)} />
       </View>
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>Estimated 1RM · warm-ups excluded</Kicker>
-        <TrendBars series={stats.e1rm.map((p) => p.e1rm)} color={C.lime} unit="kg" />
+        <TrendBars series={stats.e1rm.map((p) => Math.round(kgToUnit(p.e1rm, units)))} color={C.lime} unit={units} />
       </Card>
       {stats.bestSet && (
         <Card style={{ marginTop: 14 }}>
           <Kicker color={C.lime}>Best set</Kicker>
           <Text style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, marginTop: 8 }}>
-            {stats.bestSet.load} kg × {stats.bestSet.reps}
-            <Text style={{ color: C.ash }}> · e1RM {stats.bestSet.e1rm} kg · {fmtDate(stats.bestSet.when)}</Text>
+            {fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps}
+            <Text style={{ color: C.ash }}> · e1RM {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</Text>
           </Text>
           <Mono style={{ fontSize: 11, marginTop: 8 }}>
-            {stats.totalReps} reps · heaviest {stats.heaviestLoad} kg · all-time best {stats.bestE1rmAllTime} kg
+            {stats.totalReps} reps · heaviest {fmtWeight(stats.heaviestLoad, units)} · all-time best {fmtWeight(stats.bestE1rmAllTime, units)}
           </Mono>
         </Card>
       )}
@@ -175,7 +179,7 @@ function Dashboard({ stats }: { stats: ExerciseStats }) {
 }
 
 // Dependency-free trend bars. For kg, taller = bigger; for pace, lower = taller.
-function TrendBars({ series, color, lowerIsBetter = false, unit }: { series: number[]; color: string; lowerIsBetter?: boolean; unit: "kg" | "pace" }) {
+function TrendBars({ series, color, lowerIsBetter = false, unit }: { series: number[]; color: string; lowerIsBetter?: boolean; unit: WeightUnit | "pace" }) {
   const C = useTheme().palette;
   if (series.length < 2) return <Mono style={{ marginTop: 12 }}>Log this a few times to see a trend.</Mono>;
   const max = Math.max(...series);
@@ -183,7 +187,7 @@ function TrendBars({ series, color, lowerIsBetter = false, unit }: { series: num
   const range = max - min || 1;
   const latest = series[series.length - 1]!;
   const delta = latest - series[0]!;
-  const fmt = (v: number) => (unit === "pace" ? `${paceClock(v)} /km` : `${v} kg`);
+  const fmt = (v: number) => (unit === "pace" ? `${paceClock(v)} /km` : `${v} ${unit}`);
   const good = lowerIsBetter ? delta <= 0 : delta >= 0;
   return (
     <View style={{ marginTop: 12 }}>

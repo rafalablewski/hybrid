@@ -6,9 +6,13 @@ import {
   exerciseHistory,
   exerciseDashboard,
   paceClock,
+  fmtWeight,
+  fmtTonnage,
+  kgToUnit,
   type LoggedSession,
   type ExercisePeriod,
   type ExerciseStats,
+  type WeightUnit,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
@@ -44,7 +48,7 @@ export default function Exercises({ sessions, focus }: { sessions: LoggedSession
 
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
-  const { countWarmupsInVolume: iw } = useLoggerPrefs();
+  const { countWarmupsInVolume: iw, units } = useLoggerPrefs();
   const stats = useMemo(
     () => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null),
     [sessions, active, period, iw],
@@ -124,13 +128,13 @@ export default function Exercises({ sessions, focus }: { sessions: LoggedSession
             ))}
           </div>
         </div>
-        {stats && <Dashboard stats={stats} />}
+        {stats && <Dashboard stats={stats} units={units} />}
       </div>
     </div>
   );
 }
 
-function Dashboard({ stats }: { stats: ExerciseStats }) {
+function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }) {
   if (stats.kind === "cardio") {
     const paceData = stats.pace.map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm }));
     const empty = stats.efforts === 0;
@@ -167,7 +171,7 @@ function Dashboard({ stats }: { stats: ExerciseStats }) {
     );
   }
 
-  const e1rmData = stats.e1rm.map((p) => ({ w: fmtDate(p.date), e1rm: p.e1rm }));
+  const e1rmData = stats.e1rm.map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) }));
   if (stats.workingSets === 0) {
     return (
       <Card style={{ textAlign: "center", padding: 32 }}>
@@ -178,9 +182,9 @@ function Dashboard({ stats }: { stats: ExerciseStats }) {
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-        <Stat label="Best e1RM" value={`${stats.bestE1rm} kg`} c={LIME} />
+        <Stat label="Best e1RM" value={fmtWeight(stats.bestE1rm, units)} c={LIME} />
         <Stat label="Working sets" value={stats.workingSets} />
-        <Stat label="Volume" value={`${(stats.volume / 1000).toFixed(1)} t`} />
+        <Stat label="Volume" value={fmtTonnage(stats.volume, units)} />
         <Stat label="Sessions" value={stats.sessions} />
       </div>
       {e1rmData.length > 1 ? (
@@ -190,7 +194,7 @@ function Dashboard({ stats }: { stats: ExerciseStats }) {
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
               <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
               <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} domain={["auto", "auto"]} width={44} />
-              <Tooltip contentStyle={tip} formatter={(v) => `${v} kg`} />
+              <Tooltip contentStyle={tip} formatter={(v) => `${v} ${units}`} />
               <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
@@ -204,10 +208,10 @@ function Dashboard({ stats }: { stats: ExerciseStats }) {
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Best set</Mono>
           <div style={{ ...mono, fontSize: 15, color: CHALK, marginTop: 8 }}>
-            {stats.bestSet.load} kg × {stats.bestSet.reps} <span style={{ color: ASH }}>· e1RM {stats.bestSet.e1rm} kg · {fmtDate(stats.bestSet.when)}</span>
+            {fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps} <span style={{ color: ASH }}>· e1RM {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</span>
           </div>
           <Mono s={{ fontSize: 11, color: ASH, display: "block", marginTop: 8 }}>
-            {stats.totalReps} reps · heaviest {stats.heaviestLoad} kg · all-time best e1RM {stats.bestE1rmAllTime} kg
+            {stats.totalReps} reps · heaviest {fmtWeight(stats.heaviestLoad, units)} · all-time best e1RM {fmtWeight(stats.bestE1rmAllTime, units)}
           </Mono>
         </Card>
       )}

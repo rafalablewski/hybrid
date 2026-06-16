@@ -28,6 +28,8 @@ import {
   cycleSetType,
   setTypeBadge,
   rpeRirSwap,
+  displayLoad,
+  storeLoad,
   type SetRole,
   RPE_SCALE,
   RPE_INTRO,
@@ -709,7 +711,7 @@ export default function Workout() {
                 })()}
                 <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
-                  <ColHead>KG</ColHead>
+                  <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
                   <ColHead>REPS</ColHead>
                   {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
                   <View style={{ width: 40 }} />
@@ -730,7 +732,7 @@ export default function Workout() {
                         </Pressable>
                       );
                     })()}
-                    <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
+                    <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     <Pressable

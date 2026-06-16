@@ -29,6 +29,7 @@ export * from "./longevity";
 export * from "./theme";
 export * from "./contrast";
 export * from "./nav";
+export * from "./units";
 export * from "./logger-prefs";
 
 /** Sprint marker so both clients can show what's wired up. */

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap } from "@hybrid/core";
+import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -89,6 +89,7 @@ export default function WorkoutBlocks({
   reorder = false,
   detailed = true,
   rirMode = false,
+  units = "kg",
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -100,6 +101,8 @@ export default function WorkoutBlocks({
   detailed?: boolean;
   /** Show the effort column as RIR (reps-in-reserve) instead of RPE. */
   rirMode?: boolean;
+  /** Weight unit for the load column (display + input). Storage stays kg. */
+  units?: WeightUnit;
 }) {
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
@@ -253,7 +256,7 @@ export default function WorkoutBlocks({
             <>
               <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
                 <span />
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load (kg)</Mono>
+                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load ({units})</Mono>
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>reps</Mono>
                 {detailed && (
                   <>
@@ -297,7 +300,7 @@ export default function WorkoutBlocks({
                       </button>
                     );
                   })()}
-                  <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={input} />
+                  <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={units === "lb" ? "225" : "100"} style={input} />
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
                   {detailed && (
                     <>

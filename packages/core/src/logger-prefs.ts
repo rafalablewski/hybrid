@@ -5,6 +5,7 @@
 // hardcoded behavior, so nothing changes until they opt in.
 
 import { sanitizeLandmarkOverrides, type LandmarkOverrides } from "./engines/landmarks";
+import type { WeightUnit } from "./units";
 
 export interface LoggerPrefs {
   /** Detailed shows the RPE (and on web, velocity) column; Simple is load × reps. */
@@ -28,6 +29,8 @@ export interface LoggerPrefs {
   /** Show the effort column as RIR (reps-in-reserve) instead of RPE. Stored as
    *  RPE under the hood (RIR = 10 − RPE), so the engines are unaffected. */
   rpeAsRir: boolean;
+  /** Weight unit for display + input. Storage stays kg regardless. */
+  units: WeightUnit;
   /** Count warm-up & cool-down sets toward working VOLUME (off = exclude them,
    *  the default). PRs/e1RM stay warm-up-excluded regardless. */
   countWarmupsInVolume: boolean;
@@ -46,6 +49,7 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   autoAdvance: false,
   defaultStart: "empty",
   rpeAsRir: false,
+  units: "kg",
   countWarmupsInVolume: false,
   landmarkOverrides: {},
 };
@@ -88,6 +92,7 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     autoAdvance: bool(r.autoAdvance, DEFAULT_LOGGER_PREFS.autoAdvance),
     defaultStart: r.defaultStart === "ai" || r.defaultStart === "last" ? r.defaultStart : "empty",
     rpeAsRir: bool(r.rpeAsRir, DEFAULT_LOGGER_PREFS.rpeAsRir),
+    units: r.units === "lb" ? "lb" : "kg",
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
     landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
   };
