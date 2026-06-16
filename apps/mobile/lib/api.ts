@@ -178,6 +178,23 @@ export async function startCheckout(): Promise<{ ok: boolean; url?: string; erro
   }
 }
 
+/** Verify a completed App Store purchase server-side (App Store Server API) and
+ *  grant Full. Pass the StoreKit transactionId; returns ok or an error string. */
+export async function verifyIapPurchase(transactionId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/billing/iap/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ transactionId }),
+    });
+    if (res.ok) return { ok: true };
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, error: data.error ?? "Couldn't verify the purchase." };
+  } catch {
+    return { ok: false, error: "Couldn't reach the server to verify the purchase." };
+  }
+}
+
 // Wipe all of the signed-in user's data on the backend (keeps the login).
 export async function resetAccount(): Promise<boolean> {
   try {
