@@ -1,10 +1,20 @@
 // One-off generator: renders the @hybrid/core guidance data into a standalone,
 // brand-styled HTML preview of the admin Guidance tab (reference/ snapshot).
-// Run: npx tsc packages/core/src/guidance.ts --outDir /tmp/gc --module commonjs
-//      --target es2020 --skipLibCheck && node reference/build-guidance-preview.cjs
+// Run: node reference/build-guidance-preview.cjs
+// Self-contained + cross-platform: compiles guidance.ts into an OS temp dir
+// (no hardcoded /tmp) and loads it, so it works on Windows too.
 const fs = require("fs");
 const path = require("path");
-const { GUIDES } = require("/tmp/gc/guidance.js");
+const os = require("os");
+const { execSync } = require("child_process");
+
+const root = path.resolve(__dirname, "..");
+const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "hybrid-guidance-"));
+execSync(`npx tsc packages/core/src/guidance.ts --outDir "${outDir}" --module commonjs --target es2020 --skipLibCheck`, {
+  cwd: root,
+  stdio: "inherit",
+});
+const { GUIDES } = require(path.join(outDir, "guidance.js"));
 
 const C = {
   ink: "#0c0d0c", card: "#161816", line: "#2a2d2a", lime: "#c4f035",

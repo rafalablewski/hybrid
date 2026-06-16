@@ -13,7 +13,7 @@ export default function AdminGuidance() {
   const [active, setActive] = useState(guide.sections[0]!.id);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "230px 1fr", gap: 20, alignItems: "start" }}>
+    <div className="grid grid-cols-1 lg:grid-cols-[230px_1fr] gap-5 items-start">
       {/* sticky table of contents */}
       <Card style={{ position: "sticky", top: 16, padding: 14 }}>
         {/* guide switcher — only when there's more than one guide */}
@@ -86,8 +86,10 @@ export default function AdminGuidance() {
       {/* sections */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {guide.sections.map((s) => (
-          <Card key={s.id} style={{ scrollMarginTop: 16 }}>
-            <div id={`guide-${s.id}`} style={{ scrollMarginTop: 16 }}>
+          // id + scrollMarginTop on the WRAPPER so the whole card (border +
+          // padding) clears the viewport top when jumped to from the TOC.
+          <div key={s.id} id={`guide-${s.id}`} style={{ scrollMarginTop: 16 }}>
+            <Card>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: s.summary ? 4 : 12 }}>
                 <span style={{ fontSize: 18, color: txt(LIME) }}>{s.icon}</span>
                 <h2 style={{ ...disp, fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", color: CHALK, margin: 0 }}>
@@ -104,8 +106,8 @@ export default function AdminGuidance() {
                   <Block key={i} b={b} />
                 ))}
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         ))}
       </div>
     </div>

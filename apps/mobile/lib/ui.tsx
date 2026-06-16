@@ -57,19 +57,20 @@ export function GlassCard({
   const film = light ? "rgba(255,255,255,0.34)" : "rgba(22,24,22,0.34)";
   const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.22)";
   const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.10)";
+  // `overflow: hidden` (needed to clip the blur to the radius) would also clip
+  // the drop shadow on iOS, so keep them on separate views: the OUTER view
+  // carries the shadow (and matches its radius for a rounded shadow), the INNER
+  // view does the clipping. Honour a caller-supplied borderRadius on both.
+  const radius = typeof style?.borderRadius === "number" ? style.borderRadius : 18;
   return (
-    <View
-      style={[
-        { borderRadius: 18, overflow: "hidden", borderWidth: 1, borderColor: border, marginBottom: 12 },
-        glassShadow,
-        style,
-      ]}
-    >
-      <BlurView intensity={intensity} tint={t} style={StyleSheet.absoluteFill} />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
-      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-      {accent && <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent }} />}
-      <View style={{ padding }}>{children}</View>
+    <View style={[glassShadow, { marginBottom: 12, borderRadius: radius }, style]}>
+      <View style={{ borderRadius: radius, overflow: "hidden", borderWidth: 1, borderColor: border }}>
+        <BlurView intensity={intensity} tint={t} style={StyleSheet.absoluteFill} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
+        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
+        {accent && <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent }} />}
+        <View style={{ padding }}>{children}</View>
+      </View>
     </View>
   );
 }
