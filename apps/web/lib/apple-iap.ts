@@ -47,10 +47,10 @@ let _cfg: AppleIapConfig | null | undefined;
 let _client: AppStoreServerAPIClient | null = null;
 let _verifier: SignedDataVerifier | null = null;
 
-/** Read every Apple root CA cert file from APPLE_ROOT_CERTS_DIR (best-effort). */
+/** Read every Apple root CA cert file from the certs dir (best-effort). */
 function loadRootCerts(): Buffer[] {
-  const dir = process.env.APPLE_ROOT_CERTS_DIR;
-  if (!dir) return [];
+  // Defaults to the in-repo folder; override with APPLE_ROOT_CERTS_DIR.
+  const dir = process.env.APPLE_ROOT_CERTS_DIR || "lib/apple-root-certs";
   const abs = path.isAbsolute(dir) ? dir : path.join(process.cwd(), dir);
   try {
     return fs
