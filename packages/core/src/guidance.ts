@@ -257,18 +257,18 @@ export const ACCOUNTS_GUIDE: Guide = {
         },
         {
           t: "term",
-          term: "Code — github.com/rafalablewski/hybrid · LIVE",
-          text: "The monorepo (core + web + mobile). Vercel deploys the web app from here; CI runs typecheck/tests + the iOS bundle export on every PR. If you move to a business identity, you can transfer the repo into a GitHub Organization owned by that account.",
+          term: "Code — github.com/rafalablewski/hybrid · on Rafal.ablewski95@gmail.com · MIGRATE LATER",
+          text: "The monorepo (core + web + mobile). Currently on the PERSONAL gmail; to be migrated to the business identity later. Vercel deploys the web app from here; CI runs typecheck/tests + the iOS bundle export on every PR. When you migrate, transfer the repo into a GitHub Organization owned by the chosen account.",
         },
         {
           t: "term",
-          term: "Web host — Vercel · hosts apps/web + /api",
-          text: "Hosts the Next.js web app and the shared /api the mobile app calls; auto-deploys the main branch. The production domain gets attached here (Vercel → Domains) once it's live. Database stays on Supabase regardless.",
+          term: "Web host — Vercel · on Rafal.ablewski95@gmail.com · MIGRATE LATER",
+          text: "Hosts the Next.js web app and the shared /api the mobile app calls; auto-deploys the main branch. Currently on the PERSONAL gmail; to be migrated later. The production domain gets attached here (Vercel → Domains) once it's live. Database stays on Supabase regardless.",
         },
         {
           t: "term",
-          term: "Database/auth — Supabase · backend",
-          text: "Postgres + auth for the whole product. Connection + service keys live as env vars in Vercel (and are referenced by the mobile app via the same API). Owned by whichever email you create the Supabase org under — fold it into the identity decision.",
+          term: "Database/auth — Supabase · on Rafal.ablewski95@gmail.com · MIGRATE LATER",
+          text: "Postgres + auth for the whole product. Currently on the PERSONAL gmail; to be migrated later. Connection + service keys live as env vars in Vercel (and are referenced by the mobile app via the same API).",
         },
       ],
     },
@@ -286,6 +286,10 @@ export const ACCOUNTS_GUIDE: Guide = {
           t: "term",
           term: "Recommendation",
           text: "Use a single business mailbox on the domain — contact@hybriddomain.xyz today, or a dedicated owner@/admin@ alias — as the owner of every product/business account (Apple Developer, Expo, Vercel, Supabase, GitHub org). Reasons: it survives team changes, isn't tied to anyone's personal inbox, and keeps the whole stack under one recoverable identity. Keep the personal gmail ONLY for the GoDaddy domain registration (and transfer even that over later if you want everything unified).",
+        },
+        {
+          t: "note",
+          text: "Current state: the domain (GoDaddy), GitHub, Vercel and Supabase are ALL on the personal Rafal.ablewski95@gmail.com today — flagged to migrate to the chosen business identity later. New accounts (Apple, Expo, Anthropic) should be created under the business email from the start so you're not migrating those too.",
         },
         {
           t: "note",
