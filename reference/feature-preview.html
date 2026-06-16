@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — feature preview (app-ideas branch)</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#181a18; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --mono:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+    --disp:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1000px 700px at 8% -10%, rgba(196,240,53,.12), transparent 60%),
+      radial-gradient(900px 700px at 100% 0%, rgba(127,212,232,.09), transparent 55%),
+      var(--ink);
+    color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased;line-height:1.5}
+  a{color:var(--lime);text-decoration:none}
+  .mono{font-family:var(--mono)} .ash{color:var(--ash)}
+  header{position:sticky;top:0;z-index:10;background:rgba(11,12,11,.93);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
+  .bar{display:flex;align-items:center;gap:12px;padding:12px 20px;flex-wrap:wrap}
+  .dot{width:12px;height:12px;border-radius:3px;background:var(--lime)}
+  .bar b{letter-spacing:.04em;font-size:17px}
+  .bar .meta{font-family:var(--mono);font-size:10px;color:var(--ash)}
+  nav{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 12px}
+  nav a{font-family:var(--mono);font-size:12px;color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
+  nav a:hover{color:var(--lime);border-color:var(--lime)}
+  main{max-width:1000px;margin:0 auto;padding:30px 20px 90px}
+  section{scroll-margin-top:104px;margin-bottom:46px}
+  .feat-h{display:flex;align-items:baseline;gap:10px;margin:0 0 6px;flex-wrap:wrap}
+  .feat-h .t{font-size:24px;font-weight:800}
+  .badge{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:6px;border:1px solid var(--lime);color:var(--lime);background:rgba(196,240,53,.1)}
+  .sub{font-family:var(--mono);font-size:12px;color:var(--ash);margin:0 0 16px;line-height:1.6}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 18px 44px -32px #000}
+  .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--lime)}
+  .note{font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.6;margin-top:8px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.two,.grid4,.grid2{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .stat .v{font-size:22px;font-weight:800} .stat .l{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--ash);margin-top:4px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);color:var(--ash);margin:0 2px}
+  .pill.on{color:var(--lime);border-color:var(--lime);background:rgba(196,240,53,.1)}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 10px;font-family:var(--mono);font-size:12px;border:1px solid;margin:0 6px 6px 0}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ash);font-weight:400;padding:6px 4px;border-bottom:1px solid var(--line)}
+  th.sort{color:var(--lime);cursor:default}
+  td{padding:9px 4px;border-top:1px solid var(--line)}
+  .lk{color:var(--lime)}
+  .lmbar{position:relative;height:12px;background:var(--ink2);border:1px solid var(--line);border-radius:6px}
+  .lmband{position:absolute;top:0;bottom:0;background:rgba(196,240,53,.16)}
+  .lmfill{position:absolute;left:0;top:0;bottom:0;opacity:.85;border-radius:6px}
+  .lmmark{position:absolute;top:-2px;bottom:-2px;width:2px}
+  .lmlabels{font-family:var(--mono);font-size:10px;margin-top:5px;display:flex;gap:14px}
+  .setrow{display:grid;grid-template-columns:30px 1fr 1fr 56px 38px;gap:7px;align-items:center;margin-bottom:7px}
+  .cell{background:var(--ink2);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:13px;text-align:center}
+  .bdg{height:32px;border-radius:8px;font-family:var(--mono);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);color:var(--ash)}
+  .tick{height:36px;border-radius:9px;background:var(--lime);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:900}
+  .bars{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:12px}
+  .bars > div{flex:1;border-radius:3px 3px 0 0}
+  .srow{display:flex;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--line)} .srow:first-child{border-top:none}
+  .sw{width:44px;height:24px;border-radius:999px;position:relative;flex:none;border:1px solid var(--line)} .sw i{position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:var(--ash)}
+  .sw.on{background:var(--lime);border-color:var(--lime)} .sw.on i{right:2px;background:var(--ink)} .sw.off i{left:2px}
+  .inp{background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-family:var(--mono);font-size:13px;color:var(--chalk)}
+  .phone{width:300px;border:9px solid #000;border-radius:38px;background:var(--ink);padding:16px 12px;box-shadow:0 30px 70px -40px #000,0 0 0 1px var(--line)}
+  .phone .ptab{display:flex;border-top:1px solid var(--line);margin:14px -12px -16px;padding:8px 0}
+  .phone .ptab div{flex:1;text-align:center;font-family:var(--mono);font-size:9px;color:var(--ash)}
+  .phone .ptab div.on{color:var(--lime)}
+  .hero{background:var(--lime);color:var(--ink);border-radius:16px;padding:16px;text-align:center;font-weight:900;margin:12px 0}
+  .foot{font-family:var(--mono);font-size:11px;color:var(--ash);border-top:1px solid var(--line);padding-top:16px;line-height:1.8}
+  h3.s{font-size:13px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ash);margin:22px 0 8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar"><span class="dot"></span><b>HYBRID</b>
+    <span class="meta">feature preview · branch claude/app-ideas-o4uqe8 · 34 commits · static (no-JS) view · 451 core tests green</span></div>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#landmarks">Volume landmarks</a>
+    <a href="#routines">Routines</a>
+    <a href="#warmup">Warm-up/cool-down</a>
+    <a href="#exercise">Exercise dashboard</a>
+    <a href="#trends">Trends</a>
+    <a href="#logger">Configurable logger</a>
+    <a href="#units">Units kg/lb</a>
+    <a href="#account">Account settings</a>
+    <a href="#mobile">Mobile</a>
+  </nav>
+</header>
+
+<main>
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="feat-h"><span class="t">What we built</span></div>
+    <p class="sub">Your 7 ideas plus the full follow-up backlog — shipped end-to-end across the shared core, the web app and the Expo mobile app. Every section below is a faithful static mock of the real screens (same brand tokens, same numbers the engines produce). Tap a nav chip to jump.</p>
+    <div class="grid2">
+      <div class="card"><div class="kick">1 · Volume landmarks <span class="badge">shipped</span></div><p class="note">Weekly working sets/muscle vs MV/MEV/MAV/MRV + add/deload advice. Per-user editable landmarks; optional fractional weighting.</p></div>
+      <div class="card"><div class="kick">2 · Routines <span class="badge">shipped</span></div><p class="note">Save a workout as a named routine, load-and-go from the Train launcher.</p></div>
+      <div class="card"><div class="kick">3 · Warm-up / cool-down <span class="badge">shipped</span></div><p class="note">Set-type cycler + auto warm-up ramp. Excluded from volume/PRs (configurable).</p></div>
+      <div class="card"><div class="kick">4 · Per-exercise dashboard <span class="badge">shipped</span></div><p class="note">e1RM trend, best set, volume, frequency, velocity profile — over time windows.</p></div>
+      <div class="card"><div class="kick">5 · Trends hub <span class="badge">shipped</span></div><p class="note">Volume trends, muscle breakdown, sortable exercise table that drills in.</p></div>
+      <div class="card"><div class="kick">6 · Configurable logger <span class="badge">shipped</span></div><p class="note">Units, plate calc, quick-increment, count-in, rest timer/alert, RPE↔RIR, auto-advance…</p></div>
+      <div class="card"><div class="kick">7 · Account settings <span class="badge">shipped</span></div><p class="note">6-tab area: profile edit, notifications, privacy, password, export, danger zone.</p></div>
+      <div class="card"><div class="kick">+ · Units (kg/lb) & deep-links <span class="badge">shipped</span></div><p class="note">kg/lb across every weight surface; tap any exercise name → its dashboard.</p></div>
+    </div>
+    <p class="foot">451 core unit tests passing · web build ✓ · iOS bundle export ✓.<br/>Static design preview — the truly-live interactive build (your account + data) comes from a Vercel deploy. Say “open a PR” or “ship to main” when ready.</p>
+  </section>
+
+  <!-- 1 · LANDMARKS -->
+  <section id="landmarks">
+    <div class="feat-h"><span class="t">Volume landmarks</span><span class="badge">shipped · #1</span></div>
+    <p class="sub">New <b>Volume</b> screen (Analyze). Weekly working sets per muscle vs your landmarks — warm-ups don’t count (configurable). <span class="ash">core/engines/landmarks.ts</span></p>
+    <div class="card"><div class="kick">This week — adjust volume</div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div><span class="mono" style="color:var(--amber);font-weight:700">↑ Posterior chain</span> <span class="mono ash">Add ~5 sets/wk — below the minimum to grow.</span></div>
+        <div><span class="mono" style="color:var(--red);font-weight:700">↓ Chest</span> <span class="mono ash">Over your recoverable ceiling — drop ~3 sets/wk or deload.</span></div>
+      </div>
+    </div>
+    <div class="card"><div class="kick" style="color:var(--blue)">By muscle · sets this week</div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:15px">
+        <div><div class="row" style="margin-bottom:6px"><span>Chest</span><span class="mono" style="font-size:12px"><b style="color:var(--red)">21 sets</b> <span class="ash">· over MRV</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:34.8%;width:43.5%"></div><div class="lmfill" style="width:91.3%;background:var(--red)"></div><div class="lmmark" style="left:34.8%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 8</span><span style="color:var(--lime)">MAV 12–18</span><span style="color:var(--red)">MRV 20</span></div></div>
+        <div><div class="row" style="margin-bottom:6px"><span>Back</span><span class="mono" style="font-size:12px"><b style="color:var(--lime)">16 sets</b> <span class="ash">· productive</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:39.5%;width:39.5%"></div><div class="lmfill" style="width:63.2%;background:var(--lime)"></div><div class="lmmark" style="left:39.5%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 10</span><span style="color:var(--lime)">MAV 14–20</span><span style="color:var(--red)">MRV 22</span></div></div>
+        <div><div class="row" style="margin-bottom:6px"><span>Posterior chain</span><span class="mono" style="font-size:12px"><b style="color:var(--amber)">5 sets</b> <span class="ash">· below MEV</span></span></div>
+          <div class="lmbar"><div class="lmband" style="left:29%;width:48.3%"></div><div class="lmfill" style="width:24.2%;background:var(--amber)"></div><div class="lmmark" style="left:29%;background:var(--amber)"></div><div class="lmmark" style="left:87%;background:var(--red)"></div></div>
+          <div class="lmlabels"><span style="color:var(--amber)">MEV 6</span><span style="color:var(--lime)">MAV 10–16</span><span style="color:var(--red)">MRV 18</span></div></div>
+      </div>
+    </div>
+    <h3 class="s">Editable landmarks <span class="badge">new</span> &nbsp;·&nbsp; personalize the defaults (web + mobile)</h3>
+    <div class="card">
+      <div class="row"><div class="kick">Your landmarks · weekly sets</div><span class="lk mono" style="font-size:12px">Reset to defaults</span></div>
+      <table style="margin-top:10px">
+        <thead><tr><th></th><th>MV</th><th>MEV</th><th>MAV lo</th><th>MAV hi</th><th>MRV</th></tr></thead>
+        <tbody>
+          <tr><td class="ash">Chest</td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">6</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">8</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">12</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">18</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">20</span></td></tr>
+          <tr><td class="ash">Back</td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">8</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">10</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">14</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">20</span></td><td><span class="cell" style="display:inline-block;width:48px;padding:4px">22</span></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Values clamp to a sane order automatically; blank a field to restore its default. Also: a “Count warm-ups in volume” and a “Fractional muscle volume” (secondary muscles = 0.5 set) toggle in Logger settings change these counts.</p>
+    </div>
+  </section>
+
+  <!-- 2 · ROUTINES -->
+  <section id="routines">
+    <div class="feat-h"><span class="t">Save workouts as routines</span><span class="badge">shipped · #2</span></div>
+    <p class="sub">The Train launcher lists your saved routines (below empty / AI / repeat-last). Tap one to load it. “Save as routine” lands on the finish summary &amp; the web logger.</p>
+    <div class="two">
+      <div class="card" style="border-left:3px solid var(--lime)"><div class="kick">Your routines</div>
+        <div class="row" style="padding:11px 0"><div><div style="font-weight:700">Push day A</div><div class="mono ash" style="font-size:11px">Bench · OHP · Triceps</div></div><span class="lk mono" style="font-weight:700">Start</span></div>
+        <div class="row" style="padding:11px 0;border-top:1px solid var(--line)"><div><div style="font-weight:700">Leg day</div><div class="mono ash" style="font-size:11px">Squat · RDL · Leg Press</div></div><span class="lk mono" style="font-weight:700">Start</span></div>
+      </div>
+      <div class="card" style="border:1px solid rgba(196,240,53,.33);background:rgba(196,240,53,.06)"><div class="kick">Save as routine</div>
+        <div class="cell" style="text-align:left;margin-top:10px">Push day A</div>
+        <div class="pill on" style="margin-top:10px;display:block;text-align:center;padding:11px">★ Save as routine</div>
+        <p class="note">Reuses the existing WorkoutTemplate model — no schema change.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WARMUP -->
+  <section id="warmup">
+    <div class="feat-h"><span class="t">Warm-up / cool-down + auto ramp</span><span class="badge">shipped · #3</span></div>
+    <p class="sub">The set badge cycles <b>working (#) → warm-up (W) → cool-down (C) → drop (↓)</b>. Warm-ups/cool-downs are excluded from working volume, e1RM, PRs &amp; tonnage (kept for the velocity profile). “+ ramp” auto-builds a warm-up.</p>
+    <div class="card" style="max-width:540px">
+      <div class="row" style="margin-bottom:8px"><b>Bench Press</b><span class="mono ash" style="font-size:11px">auto ramp → 40 · 60 · 80 · working</span></div>
+      <div class="setrow"><div class="bdg" style="color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.12)">W</div><div class="cell">40</div><div class="cell">8</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg" style="color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.12)">W</div><div class="cell">60</div><div class="cell">5</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg" style="color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.12)">W</div><div class="cell">80</div><div class="cell">3</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg">1</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+      <div class="setrow"><div class="bdg" style="color:var(--lime);border-color:var(--lime);background:rgba(196,240,53,.12)">↓</div><div class="cell">90</div><div class="cell">6</div><div class="cell">9</div><div class="tick">✓</div></div>
+      <div style="display:flex;gap:14px;margin-top:4px"><span class="lk mono" style="font-size:13px">+ set</span><span class="mono" style="font-size:13px;color:var(--amber)">+ warm-up</span><span class="mono" style="font-size:13px;color:var(--amber)">+ ramp</span><span class="ash mono" style="font-size:13px">+ drop set</span></div>
+      <p class="note">Working sets counted: <b style="color:var(--lime)">2</b> (the 3 ramp warm-ups don’t inflate weekly volume → feeds the landmarks). The drop set still counts. Plate calc + quick-increment shown in the logger section.</p>
+    </div>
+  </section>
+
+  <!-- 4 · EXERCISE -->
+  <section id="exercise">
+    <div class="feat-h"><span class="t">Per-exercise dashboard</span><span class="badge">shipped · #4</span></div>
+    <p class="sub">New <b>Exercises</b> screen — search any movement, pick a window, see its whole history. Reached from search, the Trends table, or tapping a name in a session.</p>
+    <div><span class="pill">8 wk</span> <span class="pill on">1 yr</span> <span class="pill">All</span></div>
+    <div class="row" style="margin:12px 0"><b style="font-size:20px">Bench Press</b></div>
+    <div class="grid4" style="margin-bottom:14px">
+      <div class="stat"><div class="v" style="color:var(--lime)">117 kg</div><div class="l">Best e1RM</div></div>
+      <div class="stat"><div class="v">86</div><div class="l">Working sets</div></div>
+      <div class="stat"><div class="v">38.4 t</div><div class="l">Volume</div></div>
+      <div class="stat"><div class="v">22</div><div class="l">Sessions</div></div>
+    </div>
+    <div class="card"><div class="kick">Estimated 1RM · warm-ups excluded</div>
+      <svg viewBox="0 0 520 170" style="width:100%;height:170px;margin-top:8px">
+        <polyline fill="none" stroke="#c4f035" stroke-width="2.5" points="16,116 60,104 104,108 148,86 192,78 236,90 280,66 324,58 368,48 412,52 456,36 504,28"/>
+        <circle cx="504" cy="28" r="4" fill="#c4f035"/></svg></div>
+    <div class="two">
+      <div class="card"><div class="kick">Best set</div>
+        <div class="mono" style="font-size:15px;margin-top:8px">105 kg × 4 <span class="ash">· e1RM 119 kg · Apr 12 ’26</span></div>
+        <p class="note">430 reps · heaviest 110 kg · all-time best 119 kg</p></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">Velocity profile <span class="badge">new</span></div>
+        <div style="font-size:22px;font-weight:800;color:var(--blue);margin-top:8px">121 kg</div>
+        <p class="note">velocity-estimated 1RM · fit r² 0.97 · 4 loads · from logged bar speed</p></div>
+    </div>
+  </section>
+
+  <!-- 5 · TRENDS -->
+  <section id="trends">
+    <div class="feat-h"><span class="t">Training analytics hub</span><span class="badge">shipped · #5</span></div>
+    <p class="sub">New <b>Trends</b> screen — volume over time, muscle breakdown, and a <b>sortable</b> exercise table. Tap a muscle chip for its 8-week trend; tap a row to open its dashboard.</p>
+    <div class="two">
+      <div class="card"><div class="kick">Weekly working sets · 8 wk</div>
+        <div class="bars"><div style="height:69%;background:rgba(196,240,53,.55)"></div><div style="height:79%;background:rgba(196,240,53,.55)"></div><div style="height:74%;background:rgba(196,240,53,.55)"></div><div style="height:85%;background:rgba(196,240,53,.55)"></div><div style="height:82%;background:rgba(196,240,53,.55)"></div><div style="height:90%;background:rgba(196,240,53,.55)"></div><div style="height:95%;background:rgba(196,240,53,.55)"></div><div style="height:100%;background:var(--lime)"></div></div></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">Weekly tonnage · 8 wk</div>
+        <div class="bars"><div style="height:64%;background:rgba(127,212,232,.55)"></div><div style="height:71%;background:rgba(127,212,232,.55)"></div><div style="height:68%;background:rgba(127,212,232,.55)"></div><div style="height:82%;background:rgba(127,212,232,.55)"></div><div style="height:79%;background:rgba(127,212,232,.55)"></div><div style="height:89%;background:rgba(127,212,232,.55)"></div><div style="height:93%;background:rgba(127,212,232,.55)"></div><div style="height:100%;background:var(--blue)"></div></div></div>
+    </div>
+    <div class="card"><div class="row"><div class="kick" style="color:var(--blue)">Muscle breakdown · this week</div><span class="lk mono" style="font-size:12px">Volume detail →</span></div>
+      <div style="margin-top:12px">
+        <span class="chip" style="border-color:rgba(224,98,94,.33);background:rgba(224,98,94,.08)">Chest <b style="color:var(--red)">21</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Back <b style="color:var(--lime)">16</b></span>
+        <span class="chip" style="border-color:rgba(196,240,53,.33);background:rgba(196,240,53,.08)">Quads <b style="color:var(--lime)">14</b></span>
+        <span class="chip" style="border-color:rgba(240,180,94,.33);background:rgba(240,180,94,.08)">Posterior <b style="color:var(--amber)">5</b></span>
+      </div>
+      <h3 class="s" style="margin:14px 0 4px">Chest · weekly sets · 8 wk <span class="badge">per-muscle trend</span></h3>
+      <div class="bars" style="height:60px"><div style="height:55%;background:rgba(127,212,232,.55)"></div><div style="height:60%;background:rgba(127,212,232,.55)"></div><div style="height:65%;background:rgba(127,212,232,.55)"></div><div style="height:70%;background:rgba(127,212,232,.55)"></div><div style="height:80%;background:rgba(127,212,232,.55)"></div><div style="height:85%;background:rgba(127,212,232,.55)"></div><div style="height:92%;background:rgba(127,212,232,.55)"></div><div style="height:100%;background:var(--blue)"></div></div>
+    </div>
+    <div class="card"><div class="kick">Exercise analytics <span class="ash" style="text-transform:none;letter-spacing:0">· click a header to sort · click a name to open it</span></div>
+      <table style="margin-top:10px"><thead><tr><th>exercise</th><th>freq</th><th>best e1RM</th><th class="sort">volume ↓</th><th>trend</th></tr></thead><tbody>
+        <tr><td class="lk">Back Squat ›</td><td>22×</td><td>142 kg</td><td>38.6 t</td><td style="color:var(--lime)">▲</td></tr>
+        <tr><td class="lk">Bench Press ›</td><td>22×</td><td>117 kg</td><td>38.4 t</td><td style="color:var(--lime)">▲</td></tr>
+        <tr><td class="lk">Deadlift ›</td><td>14×</td><td>180 kg</td><td>31.0 t</td><td style="color:var(--ash)">→</td></tr>
+        <tr><td class="lk">Barbell Row ›</td><td>16×</td><td>96 kg</td><td>15.2 t</td><td style="color:var(--amber)">▼</td></tr>
+        <tr><td class="lk">Easy Run ›</td><td>12×</td><td>–</td><td>64 km</td><td style="color:var(--lime)">▲</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
+  <!-- 6 · LOGGER -->
+  <section id="logger">
+    <div class="feat-h"><span class="t">Configurable workout logger</span><span class="badge">shipped · #6</span></div>
+    <p class="sub">A <b>Logger settings</b> screen makes the live workout yours. Defaults match today’s behavior — nothing changes until you opt in. <span class="ash">core/logger-prefs.ts</span></p>
+    <div class="card">
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Detailed mode</div><div class="mono ash" style="font-size:11px">Show the RPE column. Off = just load × reps.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Show RIR instead of RPE</div><div class="mono ash" style="font-size:11px">Log reps-in-reserve (RIR = 10 − RPE). Stored as RPE.</div></div><div class="sw off"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Auto-advance sets</div><div class="mono ash" style="font-size:11px">Banking the last set adds a fresh one.</div></div><div class="sw off"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Get-ready count-in</div><div class="mono ash" style="font-size:11px">5→1→GO before the clock starts.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Auto rest timer</div><div class="mono ash" style="font-size:11px">Rest countdown after each banked set.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Background rest alert · sound</div><div class="mono ash" style="font-size:11px">Notify (with sound) when rest ends, app pocketed.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Carry over last set · Keep screen awake · Haptics</div><div class="mono ash" style="font-size:11px">In-gym ergonomics, each toggleable.</div></div><div class="sw on"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Plate calculator</div><div class="mono ash" style="font-size:11px">Barbell plates per side under each lift.</div></div><div class="sw off"><i></i></div></div>
+      <div class="srow"><div style="flex:1"><div style="font-weight:700">Count warm-ups in volume · Fractional muscle volume</div><div class="mono ash" style="font-size:11px">How volume is counted for the landmarks.</div></div><div class="sw off"><i></i></div></div>
+    </div>
+    <div class="two">
+      <div class="card"><div class="kick">Default rest</div><div style="margin-top:12px"><span class="pill">60s</span><span class="pill on">90s</span><span class="pill">120s</span><span class="pill">180s</span></div></div>
+      <div class="card"><div class="kick">Default start · Quick ± step</div><div style="margin-top:12px"><span class="pill on">Empty</span><span class="pill">AI</span><span class="pill">Repeat last</span> &nbsp; <span class="pill">off</span><span class="pill on">±2.5</span><span class="pill">±5</span></div></div>
+    </div>
+    <div class="card" style="max-width:540px"><div class="kick">Live logger · plate hint + quick-increment</div>
+      <div class="setrow" style="margin-top:10px"><div class="bdg">1</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+      <div style="display:flex;gap:8px;align-items:center"><span class="pill">−2.5</span><span class="pill">+2.5</span><span class="mono ash" style="font-size:11px">kg</span></div>
+      <p class="note" style="color:var(--chalk)">Per side @ 100 kg: 25 · 15 &nbsp;<span class="ash">(off a 20 kg bar)</span></p>
+    </div>
+  </section>
+
+  <!-- UNITS -->
+  <section id="units">
+    <div class="feat-h"><span class="t">Units — kg / lb</span><span class="badge">shipped</span></div>
+    <p class="sub">Storage stays canonical kilograms; conversion happens only at the display/input boundary, applied across <b>every</b> weight surface — loggers, dashboards, Trends, session detail, share cards, summary, recap. <span class="ash">core/units.ts</span></p>
+    <div class="two">
+      <div class="card"><div class="kick">In kg</div>
+        <div class="setrow" style="margin-top:10px"><div class="bdg">1</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+        <p class="note">Best e1RM 117 kg · Volume 38.4 t · Per side: 25 · 15</p></div>
+      <div class="card"><div class="kick">In lb</div>
+        <div class="setrow" style="margin-top:10px"><div class="bdg">1</div><div class="cell">225</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+        <p class="note">Best e1RM 258 lb · Volume 84,700 lb · Per side: 45 · 35 · 5</p></div>
+    </div>
+  </section>
+
+  <!-- 7 · ACCOUNT -->
+  <section id="account">
+    <div class="feat-h"><span class="t">Professional account settings</span><span class="badge">shipped · #7</span></div>
+    <p class="sub">A tabbed account area. Profile/notification/privacy prefs use your own Supabase auth — no new tables. Export gathers all your data; nothing here pretends to do something it doesn’t.</p>
+    <div style="margin-bottom:10px"><span class="pill on">General</span><span class="pill">Notifications</span><span class="pill">Privacy</span><span class="pill">Security</span><span class="pill">Coaching</span><span class="pill">Data</span></div>
+    <div class="two">
+      <div class="card"><div class="kick" style="color:var(--blue)">Account · General</div>
+        <div style="font-weight:800;font-size:18px;margin-top:8px">Rafal A.</div><div class="mono" style="margin-top:4px">rafal.ablewski95+ai@gmail.com</div>
+        <div style="margin-top:10px"><span class="chip" style="border-color:rgba(201,169,240,.33);background:rgba(201,169,240,.1);color:var(--violet)">CLIENT</span><span class="chip" style="border-color:var(--lime);background:rgba(196,240,53,.1);color:var(--lime)">FULL · PAID</span></div>
+        <h3 class="s" style="margin:14px 0 6px">Edit profile</h3>
+        <div style="display:flex;gap:8px"><span class="inp" style="flex:1">Rafal A.</span><span class="pill on">Save</span></div>
+        <div style="display:flex;gap:8px;margin-top:8px"><span class="inp" style="flex:1;color:var(--ash)">new@email.com</span><span class="pill">Update</span></div>
+        <div class="mono ash" style="font-size:12px;margin:14px 0 6px">Appearance · Language · Units · Logger</div>
+        <span class="pill on">Dark</span><span class="pill">Light</span> &nbsp; <span class="pill on">EN</span><span class="pill">PL</span><span class="pill">DE</span> &nbsp; <span class="pill on">kg</span><span class="pill">lb</span></div>
+      <div class="card"><div class="kick">Notifications &amp; Privacy</div>
+        <div class="srow"><div style="flex:1"><div style="font-weight:700">Weekly recap</div></div><div class="sw on"><i></i></div></div>
+        <div class="srow"><div style="flex:1"><div style="font-weight:700">Coach messages</div></div><div class="sw on"><i></i></div></div>
+        <div class="srow"><div style="flex:1"><div style="font-weight:700">Check-in reminders</div></div><div class="sw on"><i></i></div></div>
+        <div class="srow"><div style="flex:1"><div style="font-weight:700">Share detail with my coach</div></div><div class="sw on"><i></i></div></div>
+        <div class="srow"><div style="flex:1"><div style="font-weight:700">Discoverable in Talent</div></div><div class="sw off"><i></i></div></div>
+        <p class="note">Saved to your account &amp; synced across devices.</p></div>
+    </div>
+    <div class="two">
+      <div class="card"><div class="kick" style="color:var(--blue)">Security</div>
+        <div style="display:flex;gap:8px;margin-top:10px"><span class="inp" style="flex:1;color:var(--ash)">New password</span><span class="pill on">Update</span></div>
+        <p class="note">Two-factor (MFA) · <span style="color:var(--chalk)">Sign out everywhere</span> revokes all other sessions.</p></div>
+      <div class="card"><div class="kick">Data</div>
+        <div class="pill on" style="margin-top:10px;display:inline-block">Download my data (JSON)</div>
+        <p class="note"><span style="color:var(--red)">Danger zone:</span> Erase all my data (type RESET). <span class="ash">GET /api/account/export gathers every owned table.</span></p></div>
+    </div>
+  </section>
+
+  <!-- MOBILE -->
+  <section id="mobile">
+    <div class="feat-h"><span class="t">On the phone</span><span class="badge">Expo / iOS</span></div>
+    <p class="sub">The signature gym screens. Everything above ships on mobile too (the live logger, Volume/Trends/Exercises, Logger settings, the landmark editor).</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div class="phone">
+        <div class="mono ash" style="font-size:10px;text-transform:uppercase;letter-spacing:.1em">Train</div>
+        <div style="font-size:20px;font-weight:800;margin:4px 0">Start training</div>
+        <div class="hero">▶  Start workout</div>
+        <div class="card" style="border-left:3px solid var(--lime);margin-bottom:0"><div class="kick" style="font-size:10px">Your routines</div>
+          <div class="row" style="padding:8px 0"><div style="font-weight:700;font-size:13px">Push day A</div><span class="lk mono" style="font-size:12px">Start</span></div></div>
+        <div class="ptab"><div class="on">◐ Today</div><div class="on">▦ Train</div><div>↗ Analyze</div><div>⋯ More</div></div>
+      </div>
+      <div class="phone">
+        <div class="row"><div style="font-size:18px;font-weight:800">Bench Press</div><span class="mono" style="color:var(--lime)">12:04</span></div>
+        <div class="setrow" style="margin-top:8px"><div class="bdg" style="color:var(--amber);border-color:var(--amber)">W</div><div class="cell">40</div><div class="cell">10</div><div class="cell" style="opacity:.4">–</div><div class="tick">✓</div></div>
+        <div class="setrow"><div class="bdg">1</div><div class="cell">100</div><div class="cell">5</div><div class="cell">8</div><div class="tick">✓</div></div>
+        <div class="setrow"><div class="bdg" style="color:var(--lime);border-color:var(--lime)">↓</div><div class="cell">90</div><div class="cell">6</div><div class="cell">9</div><div class="tick">✓</div></div>
+        <div style="display:flex;gap:8px"><span class="pill">−2.5</span><span class="pill">+2.5</span></div>
+        <div class="mono" style="font-size:11px;margin-top:8px"><span class="ash">working sets:</span> <b style="color:var(--lime)">2 of 3</b> · per side: 25·15</div>
+        <div class="card" style="margin-top:12px;margin-bottom:0"><div class="row"><span class="mono ash" style="font-size:11px">Rest · 90s</span><span class="mono" style="color:var(--lime)">0:48</span></div></div>
+        <div class="ptab"><div>◐ Today</div><div class="on">▦ Train</div><div>↗ Analyze</div><div>⋯ More</div></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">Static preview · reference/feature-preview.html · branch claude/app-ideas-o4uqe8 (34 commits, not yet merged).<br/>For the truly-live interactive build with your real data + auth: say “open a PR” (Vercel preview URL) or “ship to main” (production).</p>
+</main>
+</body>
+</html>

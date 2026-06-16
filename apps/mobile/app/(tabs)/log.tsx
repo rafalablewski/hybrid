@@ -7,7 +7,8 @@ import {
   velocityProfiles,
   type LoggedSession,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
@@ -18,10 +19,13 @@ export default function Train() {
   const router = useRouter();
   const { t } = useLang();
   const { draft, discard } = useDraft();
+  const { defaultStart } = useLoggerPrefs();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  const [routines, setRoutines] = useState<Routine[]>([]);
 
   useEffect(() => {
     fetchSessions().then(setSessions);
+    fetchRoutines().then(setRoutines);
   }, []);
 
   const rx = useMemo(
@@ -61,9 +65,10 @@ export default function Train() {
         </Card>
       )}
 
-      {/* The one-tap hero — start a session right now (fresh if a draft exists) */}
+      {/* The one-tap hero — start a session right now (fresh if a draft exists),
+          opening with the athlete's preferred default (empty / AI / repeat-last) */}
       <Pressable
-        onPress={() => start(draft ? "new" : "empty")}
+        onPress={() => start(draft ? "new" : defaultStart)}
         style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 26, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.ink }}>▶  {draft ? t("train.startFresh") : t("train.startWorkout")}</Text>
@@ -100,6 +105,26 @@ export default function Train() {
             </Mono>
           </Card>
         </Pressable>
+      )}
+
+      {/* Your routines — saved workouts to load and go */}
+      {routines.length > 0 && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
+          <Kicker color={C.lime}>{t("train.routines")}</Kicker>
+          {routines.map((r, i) => (
+            <Pressable
+              key={r.id}
+              onPress={() => router.push(`/workout?source=template&templateId=${r.id}`)}
+              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: i ? 10 : 8, paddingTop: i ? 10 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{r.name}</Text>
+                <Mono style={{ fontSize: 11, marginTop: 2 }}>{r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}</Mono>
+              </View>
+              <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>{t("train.start")}</Text>
+            </Pressable>
+          ))}
+        </Card>
       )}
 
       <Mono style={{ marginTop: 8, lineHeight: 19 }}>{t("train.finishedNote")}</Mono>

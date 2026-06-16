@@ -24,6 +24,20 @@ import {
   supersetLabels,
   toggleSuperset,
   isSupersettedWithPrev,
+  setType,
+  cycleSetType,
+  setTypeBadge,
+  warmupRamp,
+  rpeRirSwap,
+  displayLoad,
+  storeLoad,
+  fmtWeight,
+  fmtTonnage,
+  platesPerSide,
+  unitToKg,
+  kgToUnit,
+  type WeightUnit,
+  type SetRole,
   RPE_SCALE,
   RPE_INTRO,
   MOVEMENTS,
@@ -33,11 +47,12 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, type NewSession } from "../lib/api";
+import { fetchSessions, createSession, fetchRoutines, createRoutine, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
+import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
@@ -57,7 +72,7 @@ Notifications.setNotificationHandler({
 
 type WKind = "strength" | "cardio" | "conditioning";
 
-type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; rest?: number };
+type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolean; drop?: boolean; role?: SetRole; rest?: number };
 
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
@@ -135,7 +150,8 @@ export default function Workout() {
   const { t } = useLang();
   const { session } = useSession();
   const guest = !session;
-  const { source } = useLocalSearchParams<{ source?: string }>();
+  const prefs = useLoggerPrefs();
+  const { source, templateId } = useLocalSearchParams<{ source?: string; templateId?: string }>();
 
   const [title, setTitle] = useState("Workout");
   const [exercises, setExercises] = useState<WExercise[]>([]);
@@ -177,7 +193,7 @@ export default function Workout() {
         // Buzz once when the chosen rest target is reached — eyes-off cue.
         if (restTarget && rn >= restTarget && !restFired.current) {
           restFired.current = true;
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          if (prefs.haptics) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         }
       }
     }, 1000);
@@ -194,10 +210,10 @@ export default function Workout() {
       const id = setTimeout(() => setCountdown(null), 700);
       return () => clearTimeout(id);
     }
-    Haptics.selectionAsync().catch(() => {});
+    if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
     const id = setTimeout(() => setCountdown((c) => (c == null ? null : c - 1)), 1000);
     return () => clearTimeout(id);
-  }, [countdown]);
+  }, [countdown, prefs.haptics]);
 
   // Show the one-time logging guide until the athlete has banked a set before.
   useEffect(() => {
@@ -211,12 +227,18 @@ export default function Workout() {
   // Keep the screen on while logging — no dimming/sleep mid-set (chalky hands,
   // no taps). Released the moment the workout finishes or the screen unmounts.
   useEffect(() => {
-    if (phase !== "active") return;
+    if (phase !== "active" || !prefs.keepAwake) return;
     activateKeepAwakeAsync("workout").catch(() => {});
     return () => {
       deactivateKeepAwake("workout").catch(() => {});
     };
-  }, [phase]);
+  }, [phase, prefs.keepAwake]);
+
+  // Apply the default rest target from prefs (and clear it entirely when the
+  // auto rest timer is turned off). Runs when prefs land/change, not mid-set.
+  useEffect(() => {
+    setRestTarget(prefs.restTimer ? prefs.restSeconds : null);
+  }, [prefs.restTimer, prefs.restSeconds]);
 
   // Ask for notification permission once (best-effort) so the rest-done alert
   // can fire while the app is backgrounded / the phone is locked.
@@ -231,12 +253,12 @@ export default function Workout() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (phase !== "active" || restSince == null || restTarget == null) return;
+      if (phase !== "active" || restSince == null || restTarget == null || !prefs.restNotify) return;
       const remaining = restTarget - Math.floor((Date.now() - restSince) / 1000);
       if (remaining <= 0) return;
       try {
         const idn = await Notifications.scheduleNotificationAsync({
-          content: { title: t("workout.restDone"), body: t("notif.restBody"), sound: true },
+          content: { title: t("workout.restDone"), body: t("notif.restBody"), sound: prefs.restSound },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: remaining },
         });
         if (cancelled) await Notifications.cancelScheduledNotificationAsync(idn).catch(() => {});
@@ -256,7 +278,7 @@ export default function Workout() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restSince, restTarget, phase]);
+  }, [restSince, restTarget, phase, prefs.restNotify, prefs.restSound]);
 
   // Load prior sessions once — to detect PRs at the finish, and to prefill an
   // AI / repeat-last start. Guests read their own on-device history. An empty
@@ -286,6 +308,13 @@ export default function Workout() {
         setReadiness(rx.readiness);
         setTitle("AI session");
         setExercises(blocksToExercises(rx.blocks as SessionBlock[]));
+      } else if (source === "template" && templateId) {
+        await clearDraft();
+        const routine = (await fetchRoutines()).find((r) => r.id === templateId);
+        if (routine) {
+          setTitle(routine.name || "Workout");
+          setExercises(blocksToExercises(routine.blocks));
+        }
       } else if (source === "new") {
         // Deliberate fresh start — drop any interrupted draft.
         await clearDraft();
@@ -303,11 +332,11 @@ export default function Workout() {
       if (!resumedDraft && !didCountdown.current) {
         didCountdown.current = true;
         startedAt.current = new Date();
-        setCountdown(5);
+        if (prefs.countIn) setCountdown(5); // else the clock just starts now
       }
       setRestored(true);
     })();
-  }, [source, guest]);
+  }, [source, guest, templateId]);
 
   // Persist the in-progress draft as it changes (debounced) so it survives a
   // crash / kill. Only after the initial restore, so we never clobber a draft.
@@ -345,18 +374,51 @@ export default function Workout() {
     );
   const condField = (u: string, k: "minutes" | "rpe" | "distance", v: string) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
+  // Quick +/- the last set's load by the chosen increment (in display units).
+  const bumpLastLoad = (u: string, deltaDisplay: number) =>
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u || !x.sets.length) return x;
+        const i = x.sets.length - 1;
+        const curKg = parseFloat(x.sets[i]!.load) || 0;
+        const nextDisplay = Math.max(0, kgToUnit(curKg, prefs.units) + deltaDisplay);
+        const nextKg = String(Math.round(unitToKg(nextDisplay, prefs.units) * 100) / 100);
+        return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
+      }),
+    );
   const addSet = (u: string) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(x.sets[x.sets.length - 1])] } : x)),
+      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
     );
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), drop: true }] } : x)),
     );
-  const toggleDrop = (u: string, i: number) =>
+  // A warm-up ramp set — excluded from working volume/PRs, kept for the velocity profile.
+  const addWarmupSet = (u: string) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) } : x)),
+      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "warmup" as SetRole }] } : x)),
+    );
+  // Auto warm-up ramp: prepend ~40/60/80% sets up to the heaviest working load.
+  const addWarmupRamp = (u: string) =>
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        const workingMax = Math.max(
+          0,
+          ...x.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
+        );
+        const ramp = warmupRamp(workingMax);
+        if (!ramp.length) return x;
+        const rampSets: WSet[] = ramp.map((step) => ({ uid: uid(), load: String(step.load), reps: String(step.reps), rpe: "", done: false, role: "warmup" }));
+        return { ...x, sets: [...rampSets, ...x.sets] };
+      }),
+    );
+  // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
+  const cycleType = (u: string, i: number) =>
+    setExercises((xs) =>
+      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? cycleSetType(s) : s)) } : x)),
     );
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
@@ -381,19 +443,21 @@ export default function Workout() {
     );
     if (!val) return;
     if (showTip) dismissTip(); // first banked set — the guide has done its job
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     // No rest when this set flows straight into a drop set, or into the next
     // exercise of a superset — you keep moving; the rest comes after the
     // sequence (banking the last drop / the last superset exercise).
     const ex = exercises.find((x) => x.uid === u);
+    // Auto-advance: banking the last set appends a fresh one so you can keep going.
+    if (prefs.autoAdvance && ex && i === ex.sets.length - 1) addSet(u);
     const nextIsDrop = !!ex?.sets[i + 1]?.drop;
     let midSuperset = false;
     if (ex?.group) {
       const members = exercises.filter((x) => x.group === ex.group);
       midSuperset = members[members.length - 1]?.uid !== ex.uid;
     }
-    if (nextIsDrop || midSuperset) {
-      setRestSince(null); // suppress any lingering rest banner
+    if (nextIsDrop || midSuperset || !prefs.restTimer) {
+      setRestSince(null); // suppress any lingering rest banner (or timer disabled)
       return;
     }
     setRestSince(Date.now());
@@ -416,7 +480,7 @@ export default function Workout() {
       pausedAt.current = Date.now();
       setPaused(true);
     }
-    Haptics.selectionAsync().catch(() => {});
+    if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
   };
 
   const buildBlocks = (): SessionBlock[] => {
@@ -448,6 +512,7 @@ export default function Workout() {
             reps: s.reps.trim(),
             ...(s.rpe.trim() ? { rpe: s.rpe.trim() } : {}),
             ...(s.drop ? { drop: true } : {}),
+            ...(s.role ? { role: s.role } : {}),
             ...(s.rest != null ? { rest: s.rest } : {}),
           }));
         if (sets.length) blocks.push({ kind: "strength", name: x.name, sets, ...(x.group ? { group: x.group } : {}) });
@@ -533,7 +598,7 @@ export default function Workout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
-  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} />;
+  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} />;
 
   const ssLabels = supersetLabels(exercises);
 
@@ -680,24 +745,30 @@ export default function Workout() {
                 })()}
                 <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
-                  <ColHead>KG</ColHead>
+                  <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
                   <ColHead>REPS</ColHead>
-                  <ColHead>RPE</ColHead>
+                  {prefs.detailed && <ColHead>{prefs.rpeAsRir ? "RIR" : "RPE"}</ColHead>}
                   <View style={{ width: 40 }} />
                 </View>
                 {x.sets.map((s, i) => (
                   <SwipeRow key={s.uid ?? i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
                     <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-                    <Pressable
-                      onPress={() => toggleDrop(x.uid, i)}
-                      onLongPress={() => removeSet(x.uid, i)}
-                      style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: s.drop ? 1 : 0, borderColor: C.lime, backgroundColor: s.drop ? `${C.lime}1f` : "transparent" }}
-                    >
-                      <Text style={{ fontFamily: F.mono, fontSize: 13, color: s.drop ? txt(C, C.lime) : C.ash }}>{s.drop ? "↓" : i + 1}</Text>
-                    </Pressable>
-                    <Cell value={s.load} onChange={(v) => setSetField(x.uid, i, "load", v)} done={s.done} />
+                    {(() => {
+                      const st = setType(s);
+                      const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
+                      return (
+                        <Pressable
+                          onPress={() => cycleType(x.uid, i)}
+                          onLongPress={() => removeSet(x.uid, i)}
+                          style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
+                        >
+                          <Text style={{ fontFamily: F.mono, fontSize: 13, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                        </Pressable>
+                      );
+                    })()}
+                    <Cell value={displayLoad(s.load, prefs.units)} onChange={(v) => setSetField(x.uid, i, "load", storeLoad(v, prefs.units))} done={s.done} />
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
-                    <Cell value={s.rpe} onChange={(v) => setSetField(x.uid, i, "rpe", v)} done={s.done} />
+                    {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
                       style={{ width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
@@ -707,14 +778,47 @@ export default function Workout() {
                     </View>
                   </SwipeRow>
                 ))}
-                <View style={{ flexDirection: "row", gap: 16 }}>
+                <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
                   <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.lime) }}>{t("workout.set")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => addWarmupSet(x.uid)} style={{ paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupSet")}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => addWarmupRamp(x.uid)} style={{ paddingVertical: 8 }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupRamp")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addDropSet(x.uid)} style={{ paddingVertical: 8 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.ash }}>{t("workout.dropSet")}</Text>
                   </Pressable>
                 </View>
+                {/* Quick-increment + plate hint for the last set's load */}
+                {(prefs.quickIncrement > 0 || prefs.plateCalc) && (() => {
+                  const last = x.sets[x.sets.length - 1];
+                  const loadKg = last ? parseFloat(last.load) : NaN;
+                  return (
+                    <View style={{ marginTop: 8, gap: 6 }}>
+                      {prefs.quickIncrement > 0 && (
+                        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                          {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
+                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line }}>
+                              <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
+                            </Pressable>
+                          ))}
+                          <Mono style={{ fontSize: 11 }}>{prefs.units}</Mono>
+                        </View>
+                      )}
+                      {prefs.plateCalc && Number.isFinite(loadKg) && loadKg > 0 && (() => {
+                        const pl = platesPerSide(loadKg, prefs.units);
+                        return (
+                          <Mono style={{ fontSize: 11 }}>
+                            {pl.perSide.length ? `Per side: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${prefs.units})`}
+                          </Mono>
+                        );
+                      })()}
+                    </View>
+                  );
+                })()}
               </>
             ) : x.kind === "cardio" ? (
               <>
@@ -895,10 +999,12 @@ function Summary({
   summary,
   router,
   t,
+  units,
 }: {
   summary: Summ;
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
+  units: WeightUnit;
 }) {
   const C = useTheme().palette;
   const cardRef = useRef<View>(null);
@@ -915,19 +1021,19 @@ function Summary({
 
   const prLine = (p: PrHit) =>
     p.previous == null
-      ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})`
-      : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+      ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
+      : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
 
   const shareText = [
     firstEver ? t("share.firstWorkout") : null,
     `\u{1F4AA} ${title || "Workout"} — ${t("share.done")}`,
-    `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${summary.volume.toLocaleString()} kg`,
+    `${summary.minutes} min · ${summary.sets} ${t("summary.sets").toLowerCase()} · ${fmtTonnage(summary.volume, units)}`,
     prs[0]
       ? `\u{1F3C6} ${prLine(prs[0])}`
       : cardioPrs[0]
         ? `\u{1F3C3} ${cardioPrLine(cardioPrs[0], t)}`
         : bests[0]
-          ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg`
+          ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}`
           : null,
     t("share.tracked"),
   ]
@@ -981,6 +1087,7 @@ function Summary({
           <WorkoutShareCard
             ref={cardRef}
             t={t}
+            units={units}
             stats={{ title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }}
           />
         </View>
@@ -1031,6 +1138,7 @@ function Summary({
           </>
         ) : (
           <>
+            <SaveRoutine title={title} blocks={summary.blocks} t={t} />
             <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
             <Pressable
               onPress={() => router.replace("/(tabs)/history")}
@@ -1048,6 +1156,54 @@ function Summary({
   );
 }
 
+// Save the just-finished workout as a reusable routine (WorkoutTemplate) so it
+// can be loaded and started next time. Non-guest only (routines need an account).
+function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock[]; t: (k: string) => string }) {
+  const C = useTheme().palette;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(title || "Routine");
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+
+  if (state === "saved")
+    return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("summary.routineSaved")}</Mono>;
+
+  if (!open)
+    return (
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 18 }}
+      >
+        <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
+      </Pressable>
+    );
+
+  const save = async () => {
+    setState("saving");
+    const ok = await createRoutine(name.trim() || "Routine", blocks);
+    setState(ok ? "saved" : "idle");
+  };
+
+  return (
+    <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, padding: 14, marginTop: 18 }}>
+      <Mono color={C.lime} style={{ fontSize: 11, letterSpacing: 1 }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="Routine name"
+        placeholderTextColor={C.ash}
+        style={{ marginTop: 8, fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+      />
+      <Pressable
+        onPress={save}
+        disabled={state === "saving"}
+        style={{ backgroundColor: C.lime, borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
   return blocks.map((b) =>
     b.kind === "strength"
@@ -1062,6 +1218,7 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
             rpe: s.rpe ?? "",
             done: false,
             ...(s.drop ? { drop: true } : {}),
+            ...(s.role ? { role: s.role } : {}),
           })),
           minutes: "",
           rpe: "",

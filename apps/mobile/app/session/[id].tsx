@@ -10,6 +10,13 @@ import {
   conditioningSummary,
   cardioSummary,
   supersetLabels,
+  setType,
+  setTypeBadge,
+  fmtWeight,
+  fmtTonnage,
+  displayLoad,
+  kgToUnit,
+  type WeightUnit,
   paceSeries,
   paceClock,
   cardioPrsForSession,
@@ -20,6 +27,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
@@ -32,6 +40,7 @@ export default function SessionDetail() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
+  const units = useLoggerPrefs().units;
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
   const [all, setAll] = useState<LoggedSession[] | null>(null);
@@ -84,8 +93,8 @@ export default function SessionDetail() {
 
   const shareText = [
     `\u{1F4AA} ${session.title || "Workout"} — ${t("share.done")}`,
-    `${minutes ? `${minutes} min · ` : ""}${sets} ${t("summary.sets").toLowerCase()} · ${sessionVolume(session.blocks).toLocaleString()} kg`,
-    prs[0] ? `\u{1F3C6} ${prLine(prs[0], t)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${bests[0].e1rm}kg` : null,
+    `${minutes ? `${minutes} min · ` : ""}${sets} ${t("summary.sets").toLowerCase()} · ${fmtTonnage(sessionVolume(session.blocks), units)}`,
+    prs[0] ? `\u{1F3C6} ${prLine(prs[0], t, units)}` : bests[0] ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].e1rm, units)}` : null,
     t("share.tracked"),
   ]
     .filter(Boolean)
@@ -104,14 +113,14 @@ export default function SessionDetail() {
       <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
         <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
         <Metric label={t("summary.sets")} value={String(sets)} />
-        <Metric label={t("summary.kgMoved")} value={sessionVolume(session.blocks).toLocaleString()} />
+        <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks), units)} />
       </View>
 
       {prs.length > 0 && (
         <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 16 }}>
           <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
           {prs.slice(0, 6).map((p) => (
-            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t)}</Text>
+            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t, units)}</Text>
           ))}
         </View>
       )}
@@ -135,32 +144,45 @@ export default function SessionDetail() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
-                <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
-                  {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name}
-                </Text>
+                {b.kind === "conditioning" ? (
+                  <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
+                    {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                  </Text>
+                ) : (
+                  <Pressable onPress={() => router.push({ pathname: "/exercises", params: { name: b.name } })}>
+                    <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
+                      {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name} <Text style={{ color: C.ash, fontSize: 13 }}>›</Text>
+                    </Text>
+                  </Pressable>
+                )}
                 {ssLabels[i] && (
                   <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>
-                  {Math.round(blockBestE1rm(b))} kg e1RM
+                  {fmtWeight(blockBestE1rm(b), units)} e1RM
                 </Text>
               )}
             </View>
 
             {b.kind === "strength" ? (
               <View style={{ marginTop: 8 }}>
-                {b.sets.map((s, j) => (
+                {b.sets.map((s, j) => {
+                  const st = setType(s);
+                  const stAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : C.ash;
+                  const stTag = st === "warmup" ? " · warm-up" : st === "cooldown" ? " · cool-down" : st === "drop" ? " · drop" : "";
+                  return (
                   <View key={j} style={{ flexDirection: "row", gap: 12, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
-                    <Mono color={s.drop ? C.lime : C.ash} style={{ width: 22 }}>{s.drop ? "↓" : j + 1}</Mono>
-                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load || "–"} kg × {s.reps || "–"}{s.drop ? " · drop" : ""}</Mono>
+                    <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
+                    <Mono color={C.chalk} style={{ flex: 1 }}>{s.load ? `${displayLoad(s.load, units)} ${units}` : "–"} × {s.reps || "–"}{stTag}</Mono>
                     {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("workout.restShort")}</Mono> : null}
                     {s.rpe ? <Mono color={C.ash}>RPE {s.rpe}</Mono> : null}
                     {s.vel ? <Mono color={C.blue}>{s.vel} m/s</Mono> : null}
                   </View>
-                ))}
-                <Trend series={e1rmSeries(all, b.name).map((p) => p.e1rm)} t={t} />
+                  );
+                })}
+                <Trend series={e1rmSeries(all, b.name).map((p) => Math.round(kgToUnit(p.e1rm, units)))} t={t} />
               </View>
             ) : b.kind === "cardio" ? (
               <>
@@ -178,7 +200,7 @@ export default function SessionDetail() {
       {strength.length > 0 && (
         <>
           <View style={{ marginTop: 6 }}>
-            <WorkoutShareCard ref={cardRef} t={t} stats={{ title: session.title, minutes: minutes ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
+            <WorkoutShareCard ref={cardRef} t={t} units={units} stats={{ title: session.title, minutes: minutes ?? 0, sets, volume: sessionVolume(session.blocks), bests }} />
           </View>
           <Pressable
             onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
@@ -192,8 +214,10 @@ export default function SessionDetail() {
   );
 }
 
-const prLine = (p: PrHit, t: (k: string) => string) =>
-  p.previous == null ? `${p.lift} ${p.e1rm}kg (${t("summary.firstTime")})` : `${p.lift} ${p.e1rm}kg (+${p.e1rm - p.previous})`;
+const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
+  p.previous == null
+    ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
+    : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
 
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
   if (p.kind === "distance")

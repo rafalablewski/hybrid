@@ -79,6 +79,9 @@ export const NAV_ITEMS: NavItem[] = [
 
   { id: "performance", label: "Performance", icon: "◈", group: "analyze", minPersona: "athlete" },
   { id: "analytics", label: "Analytics", icon: "◷", group: "analyze", minPersona: "athlete" },
+  { id: "volume", label: "Volume", icon: "▦", group: "analyze", minPersona: "athlete" },
+  { id: "exercises", label: "Exercises", icon: "≡", group: "analyze", minPersona: "athlete" },
+  { id: "trends", label: "Trends", icon: "↗", group: "analyze", minPersona: "athlete" },
   { id: "velocity", label: "Velocity (VBT)", icon: "⚡", group: "analyze", minPersona: "athlete" },
   { id: "running", label: "Running", icon: "🏃", group: "analyze", minPersona: "athlete" },
   { id: "forceplate", label: "Force plate", icon: "◇", group: "analyze", minPersona: "athlete" },

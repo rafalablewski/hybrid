@@ -20,8 +20,15 @@ import {
   migrateBlocks,
   inferBlockKind,
   lastStrengthByLift,
+  isWorkingSet,
+  workingSets,
+  setType,
+  cycleSetType,
+  setTypeBadge,
+  warmupRamp,
+  blockBestE1rm,
 } from "./session";
-import type { LoggedSession } from "./session";
+import type { LoggedSession, StrengthBlock } from "./session";
 
 const sessions: LoggedSession[] = [
   {
@@ -206,5 +213,81 @@ describe("session stats", () => {
     const squat = log[1]!.items.find((i) => i.move === "Back Squat");
     expect(squat?.e1rm).toBe(Math.round(e1rm(120, 3)));
     expect(squat?.topRpe).toBe(8);
+  });
+});
+
+describe("set roles (warm-up / cool-down)", () => {
+  const block: StrengthBlock = {
+    kind: "strength",
+    name: "Bench Press",
+    sets: [
+      { load: "40", reps: "8", role: "warmup" },
+      { load: "60", reps: "5", role: "warmup" },
+      { load: "100", reps: "3", rpe: "9" }, // working (role absent)
+      { load: "90", reps: "5", drop: true }, // drop set — still working
+      { load: "20", reps: "12", role: "cooldown" },
+    ],
+  };
+
+  it("isWorkingSet treats absent role and drop sets as work, excludes warm-up/cool-down", () => {
+    expect(isWorkingSet({})).toBe(true);
+    expect(isWorkingSet({ role: "working" })).toBe(true);
+    expect(isWorkingSet({ role: "warmup" })).toBe(false);
+    expect(isWorkingSet({ role: "cooldown" })).toBe(false);
+    expect(workingSets(block).map((s) => s.load)).toEqual(["100", "90"]);
+  });
+
+  it("blockBestE1rm ignores warm-up ramps (a heavy warm-up can't set the block best)", () => {
+    const sneaky: StrengthBlock = {
+      kind: "strength",
+      name: "Deadlift",
+      sets: [
+        { load: "200", reps: "1", role: "warmup" }, // would be the best if counted
+        { load: "150", reps: "3" },
+      ],
+    };
+    expect(blockBestE1rm(sneaky)).toBe(e1rm(150, 3));
+  });
+
+  it("sessionVolume + working e1RM exclude warm-up / cool-down tonnage", () => {
+    const vol = sessionVolume([block]);
+    expect(vol).toBe(100 * 3 + 90 * 5); // only the working + drop sets
+    expect(blockBestE1rm(block)).toBe(e1rm(100, 3));
+  });
+
+  it("setType folds role + drop into one mutually-exclusive choice", () => {
+    expect(setType({})).toBe("working");
+    expect(setType({ role: "warmup" })).toBe("warmup");
+    expect(setType({ role: "cooldown" })).toBe("cooldown");
+    expect(setType({ drop: true })).toBe("drop");
+  });
+
+  it("cycleSetType walks working → warm-up → cool-down → drop → working, preserving other fields", () => {
+    let s: { load: string; reps: string; role?: "warmup" | "working" | "cooldown"; drop?: boolean } = { load: "100", reps: "5" };
+    s = cycleSetType(s);
+    expect(setType(s)).toBe("warmup");
+    expect(s.load).toBe("100"); // untouched
+    s = cycleSetType(s);
+    expect(setType(s)).toBe("cooldown");
+    s = cycleSetType(s);
+    expect(setType(s)).toBe("drop");
+    s = cycleSetType(s);
+    expect(setType(s)).toBe("working");
+    expect(s.role).toBeUndefined();
+    expect(s.drop).toBeUndefined();
+  });
+
+  it("warmupRamp builds a plate-friendly ramp to the working load", () => {
+    const ramp = warmupRamp(100);
+    expect(ramp.map((s) => s.load)).toEqual([40, 60, 80]);
+    expect(ramp.map((s) => s.reps)).toEqual([8, 5, 3]);
+    expect(warmupRamp(20)).toEqual([]); // nothing to ramp for a light/bodyweight load
+  });
+
+  it("setTypeBadge shows the index for working, else W / C / ↓", () => {
+    expect(setTypeBadge({}, 0)).toBe("1");
+    expect(setTypeBadge({ role: "warmup" }, 1)).toBe("W");
+    expect(setTypeBadge({ role: "cooldown" }, 2)).toBe("C");
+    expect(setTypeBadge({ drop: true }, 3)).toBe("↓");
   });
 });

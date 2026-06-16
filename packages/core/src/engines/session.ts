@@ -26,6 +26,93 @@ export interface StrengthSet {
    * sessions logged without the live timer (web editor, imports) are unaffected.
    */
   rest?: number;
+  /**
+   * Set role. Absent (or "working") = a working set: it counts as training
+   * volume and can set PRs. "warmup" (ramp/prep sets) and "cooldown" (light
+   * back-off work) are EXCLUDED from working-set volume, tonnage, e1RM and PR
+   * detection — but kept for the load–velocity profile (useful sub-maximal
+   * points). Optional + additive, so every pre-existing session reads as working.
+   * Orthogonal to `drop`: a drop set is still a working set.
+   */
+  role?: SetRole;
+}
+
+/** A strength set's role. Absent is treated as "working". */
+export type SetRole = "warmup" | "working" | "cooldown";
+
+/**
+ * The single "type" a set presents in the logger — its role plus the drop flag
+ * folded into one mutually-exclusive choice, since a set is exactly one of these.
+ * Stored as two backward-compatible fields (`role` + `drop`); this is the UI view.
+ */
+export type SetType = "working" | "warmup" | "cooldown" | "drop";
+
+type RoleDrop = { role?: SetRole; drop?: boolean };
+const SET_TYPE_ORDER: SetType[] = ["working", "warmup", "cooldown", "drop"];
+
+/** A set counts as training work unless it's a warm-up or cool-down (drops count). */
+export const isWorkingSet = (s: { role?: SetRole }): boolean =>
+  s.role !== "warmup" && s.role !== "cooldown";
+
+/** The working sets of a strength block (warm-up / cool-down removed). */
+export const workingSets = (b: StrengthBlock): StrengthSet[] => b.sets.filter(isWorkingSet);
+
+/**
+ * The sets that count toward VOLUME — working sets by default, or every set when
+ * `includeWarmups` is on (the user setting "count warm-up & cool-down sets in
+ * volume"). One helper so every volume computation honours the same rule.
+ */
+export const setsForVolume = (b: StrengthBlock, includeWarmups = false): StrengthSet[] =>
+  includeWarmups ? b.sets : workingSets(b);
+
+/** The mutually-exclusive UI type of a set, derived from its role + drop flag. */
+export function setType(s: RoleDrop): SetType {
+  if (s.role === "warmup") return "warmup";
+  if (s.role === "cooldown") return "cooldown";
+  if (s.drop) return "drop";
+  return "working";
+}
+
+/**
+ * Advance a set to the next type in the cycle (working → warm-up → cool-down →
+ * drop → working), returning a NEW set with `role`/`drop` set accordingly and
+ * every other field preserved. Generic so the web editor and mobile logger,
+ * whose set shapes differ, share one source of truth and can't drift.
+ */
+export function cycleSetType<T extends RoleDrop>(s: T): T {
+  const next = SET_TYPE_ORDER[(SET_TYPE_ORDER.indexOf(setType(s)) + 1) % SET_TYPE_ORDER.length];
+  return {
+    ...s,
+    role: next === "warmup" ? "warmup" : next === "cooldown" ? "cooldown" : undefined,
+    drop: next === "drop" ? true : undefined,
+  };
+}
+
+/** The leftmost badge a set shows: its index for working, else W / C / ↓. */
+export function setTypeBadge(s: RoleDrop, index: number): string {
+  const t = setType(s);
+  return t === "warmup" ? "W" : t === "cooldown" ? "C" : t === "drop" ? "↓" : String(index + 1);
+}
+
+export interface WarmupStep {
+  /** load in kg */
+  load: number;
+  reps: number;
+}
+
+/**
+ * A warm-up ramp up to a working load (kg) — three sets at ~40/60/80% for 8/5/3
+ * reps, rounded to plate-friendly 2.5 kg. Returns [] for bodyweight / near-empty
+ * loads (nothing to ramp). Pure; the logger turns these into warm-up sets.
+ */
+export function warmupRamp(workingKg: number): WarmupStep[] {
+  if (!Number.isFinite(workingKg) || workingKg <= 25) return [];
+  const steps: [number, number][] = [
+    [0.4, 8],
+    [0.6, 5],
+    [0.8, 3],
+  ];
+  return steps.map(([pct, reps]) => ({ load: Math.round((workingKg * pct) / 2.5) * 2.5, reps }));
 }
 
 export interface StrengthBlock {
@@ -96,10 +183,10 @@ export function e1rm(load: number, reps: number): number {
   return reps <= 0 ? 0 : load * (1 + reps / 30);
 }
 
-/** Best estimated 1RM across a strength block's sets. */
+/** Best estimated 1RM across a strength block's WORKING sets (warm-ups excluded). */
 export function blockBestE1rm(b: StrengthBlock): number {
   let best = 0;
-  for (const s of b.sets) {
+  for (const s of workingSets(b)) {
     const load = num(s.load);
     const reps = num(s.reps);
     if (!Number.isNaN(load) && !Number.isNaN(reps)) best = Math.max(best, e1rm(load, reps));
@@ -337,12 +424,16 @@ export function toggleSuperset<T extends { kind: string; group?: string; superse
   );
 }
 
-/** Tonnage (load × reps) summed across all strength sets in a session. */
-export function sessionVolume(blocks: SessionBlock[]): number {
+/**
+ * Tonnage (load × reps) summed across a session's strength sets. Working sets
+ * only by default; pass `includeWarmups` to count warm-up/cool-down sets too
+ * (the user volume setting).
+ */
+export function sessionVolume(blocks: SessionBlock[], includeWarmups = false): number {
   let v = 0;
   for (const b of blocks) {
     if (!isStrength(b)) continue;
-    for (const s of b.sets) {
+    for (const s of setsForVolume(b, includeWarmups)) {
       const load = num(s.load);
       const reps = num(s.reps);
       if (!Number.isNaN(load) && !Number.isNaN(reps)) v += load * reps;
@@ -415,8 +506,9 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
     const items = s.blocks.map((b) => {
       if (b.kind === "strength") {
         const est = Math.round(blockBestE1rm(b));
+        const working = workingSets(b);
         let topRpe = 0;
-        for (const st of b.sets) {
+        for (const st of working) {
           const r = num(st.rpe);
           if (!Number.isNaN(r)) topRpe = Math.max(topRpe, r);
         }
@@ -424,7 +516,7 @@ export function toTrainingLog(sessions: LoggedSession[], now = Date.now()): Trai
           move: b.name,
           e1rm: est || undefined,
           topRpe: topRpe || undefined,
-          hardSets: b.sets.length,
+          hardSets: working.length,
         };
       }
       if (b.kind === "cardio") {

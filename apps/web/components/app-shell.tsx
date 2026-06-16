@@ -49,6 +49,9 @@ import Tactical from "./tactical";
 import Longevity from "./longevity";
 import Velocity from "./velocity";
 import Running from "./running";
+import Volume from "./volume";
+import Exercises from "./exercises";
+import Trends from "./trends";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
@@ -115,6 +118,9 @@ export default function AppShell() {
     refreshSignals();
   }, [refreshBiometrics, refreshSignals]);
   const [screen, setScreen] = useState("today");
+  // When the Trends hub opens a specific lift, focus it on the Exercises screen.
+  const [exerciseFocus, setExerciseFocus] = useState("");
+  const openExercise = (name: string) => { setExerciseFocus(name); setScreen("exercises"); };
 
   const allowedScopes = useMemo<Scope[]>(
     () => (session ? SCOPES_FOR[session.role] : ["athlete"]),
@@ -505,6 +511,12 @@ export default function AppShell() {
 
         {screen === "running" && <Running sessions={sessions} />}
 
+        {screen === "volume" && <Volume sessions={sessions} />}
+
+        {screen === "exercises" && <Exercises sessions={sessions} focus={exerciseFocus} />}
+
+        {screen === "trends" && <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
+
         {screen === "forceplate" && <ForcePlate />}
 
         {screen === "nutrition" && <Nutrition />}
@@ -548,7 +560,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <HistoryScreen sessions={sessions} />}
+        {screen === "history" && <HistoryScreen sessions={sessions} onOpenExercise={openExercise} />}
 
         {screen === "coach" && <CoachScreen />}
 

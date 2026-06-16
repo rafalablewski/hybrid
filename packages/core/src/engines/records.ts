@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock, StrengthBlock } from "./session";
-import { blockBestE1rm } from "./session";
+import { blockBestE1rm, setsForVolume } from "./session";
 import { MOVEMENTS } from "./movements";
 import type { MuscleGroup } from "./types";
 
@@ -144,17 +144,18 @@ export interface MuscleVolume {
 /**
  * Tonnage (load × reps) attributed to each muscle a session trained, using the
  * MOVEMENTS map — each strength set's volume counts toward every muscle the
- * movement touches. Answers "what did this session actually work?" Strongest
- * first; custom movements with no muscle data are skipped.
+ * movement touches. Working sets only by default (warm-up / cool-down excluded);
+ * pass `includeWarmups` to count them too. Strongest first; custom movements
+ * with no muscle data are skipped.
  */
-export function volumeByMuscle(blocks: SessionBlock[]): MuscleVolume[] {
+export function volumeByMuscle(blocks: SessionBlock[], includeWarmups = false): MuscleVolume[] {
   const map = new Map<MuscleGroup, number>();
   for (const b of blocks) {
     if (b.kind !== "strength") continue;
     const muscles = MOVEMENTS[b.name]?.muscles;
     if (!muscles || muscles.length === 0) continue;
     let tonnage = 0;
-    for (const s of b.sets) {
+    for (const s of setsForVolume(b, includeWarmups)) {
       const load = parseFloat(s.load);
       const reps = parseFloat(s.reps);
       if (Number.isFinite(load) && Number.isFinite(reps)) tonnage += load * reps;

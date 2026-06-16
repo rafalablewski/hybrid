@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { SessionBlock, StrengthSet } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
+import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp } from "@hybrid/core";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
@@ -25,6 +25,13 @@ const BASE_CATALOG = [
   "Pull-up",
   "Power Clean",
 ];
+
+const SET_TYPE_TITLE: Record<string, string> = {
+  working: "Working set",
+  warmup: "Warm-up set",
+  cooldown: "Cool-down set",
+  drop: "Drop set",
+};
 
 export type EditableBlock = SessionBlock & { uid: string };
 export const uid = () =>
@@ -80,6 +87,10 @@ export default function WorkoutBlocks({
   setBlocks,
   emptyHint,
   reorder = false,
+  detailed = true,
+  rirMode = false,
+  units = "kg",
+  plateCalc = false,
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -87,6 +98,14 @@ export default function WorkoutBlocks({
   emptyHint: string;
   /** Show per-block move/duplicate controls (the Builder wants them). */
   reorder?: boolean;
+  /** Detailed shows the RPE + velocity columns; Simple hides them (load × reps). */
+  detailed?: boolean;
+  /** Show the effort column as RIR (reps-in-reserve) instead of RPE. */
+  rirMode?: boolean;
+  /** Weight unit for the load column (display + input). Storage stays kg. */
+  units?: WeightUnit;
+  /** Show a barbell plates-per-side hint under each strength block. */
+  plateCalc?: boolean;
 }) {
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
@@ -146,13 +165,29 @@ export default function WorkoutBlocks({
     patch(u, (b) =>
       b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", drop: true }] } : b,
     );
+  // A warm-up ramp set — excluded from working volume/PRs, kept for the velocity
+  // profile. Add it pre-flagged; warm-ups are usually the first sets entered.
+  const addWarmupSet = (u: string) =>
+    patch(u, (b) =>
+      b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", role: "warmup" }] } : b,
+    );
+  // Prepend an auto warm-up ramp up to the block's heaviest working load.
+  const addWarmupRamp = (u: string) =>
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      const workingMax = Math.max(0, ...b.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)));
+      const ramp = warmupRamp(workingMax);
+      if (!ramp.length) return b;
+      const rampSets: StrengthSet[] = ramp.map((step) => ({ load: String(step.load), reps: String(step.reps), rpe: "", role: "warmup" }));
+      return { ...b, sets: [...rampSets, ...b.sets] };
+    });
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
-  // A drop set rides on the previous set (no rest, lighter) — a per-set flag.
-  const toggleDrop = (u: string, i: number) =>
+  // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
+  const cycleType = (u: string, i: number) =>
     patch(u, (b) =>
       b.kind === "strength"
-        ? { ...b, sets: b.sets.map((s, j) => (j === i ? { ...s, drop: !s.drop } : s)) }
+        ? { ...b, sets: b.sets.map((s, j) => (j === i ? cycleSetType(s) : s)) }
         : b,
     );
   // Superset: group this block with the one directly above it (A1/A2/A3…).
@@ -232,59 +267,89 @@ export default function WorkoutBlocks({
 
           {b.kind === "strength" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
                 <span />
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load (kg)</Mono>
+                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load ({units})</Mono>
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>reps</Mono>
-                <button
-                  onClick={() => setRpeHelp((v) => !v)}
-                  title="What is RPE?"
-                  style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
-                >
-                  rpe ⓘ
-                </button>
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
+                {detailed && (
+                  <>
+                    <button
+                      onClick={() => setRpeHelp((v) => !v)}
+                      title="What is RPE?"
+                      style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                    >
+                      {rirMode ? "rir" : "rpe"} ⓘ
+                    </button>
+                    <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
+                  </>
+                )}
                 <span />
               </div>
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: "26px 1fr 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
+                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
                 >
-                  <button
-                    onClick={() => toggleDrop(b.uid, i)}
-                    title={s.drop ? "Drop set — tap to make a normal set" : "Mark as a drop set (no rest, lighter)"}
-                    style={{
-                      ...mono,
-                      fontSize: s.drop ? 12 : 13,
-                      fontWeight: 700,
-                      color: txt(s.drop ? LIME : ASH),
-                      background: s.drop ? `${LIME}1f` : "transparent",
-                      border: `1px solid ${s.drop ? LIME : LINE}`,
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    {s.drop ? "↓" : i + 1}
-                  </button>
-                  <input value={s.load} onChange={(e) => updateSet(b.uid, i, "load", e.target.value)} placeholder="100" style={input} />
+                  {(() => {
+                    const st = setType(s);
+                    const accent = st === "warmup" ? AMBER : st === "cooldown" ? BLUE : st === "drop" ? LIME : null;
+                    return (
+                      <button
+                        onClick={() => cycleType(b.uid, i)}
+                        title={`${SET_TYPE_TITLE[st]} — tap to change (working → warm-up → cool-down → drop)`}
+                        style={{
+                          ...mono,
+                          fontSize: accent ? 12 : 13,
+                          fontWeight: 700,
+                          color: txt(accent ?? ASH),
+                          background: accent ? `${accent}1f` : "transparent",
+                          border: `1px solid ${accent ?? LINE}`,
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        {setTypeBadge(s, i)}
+                      </button>
+                    );
+                  })()}
+                  <input value={displayLoad(s.load, units)} onChange={(e) => updateSet(b.uid, i, "load", storeLoad(e.target.value, units))} placeholder={units === "lb" ? "225" : "100"} style={input} />
                   <input value={s.reps} onChange={(e) => updateSet(b.uid, i, "reps", e.target.value)} placeholder="5" style={input} />
-                  <input value={s.rpe ?? ""} onChange={(e) => updateSet(b.uid, i, "rpe", e.target.value)} placeholder="8" style={input} />
-                  <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
+                  {detailed && (
+                    <>
+                      <input value={rpeRirSwap(s.rpe ?? "", rirMode)} onChange={(e) => updateSet(b.uid, i, "rpe", rpeRirSwap(e.target.value, rirMode))} placeholder={rirMode ? "2" : "8"} style={input} />
+                      <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
+                    </>
+                  )}
                   <button onClick={() => removeSet(b.uid, i)} style={{ ...iconBtn(ASH), padding: 0 }}>
                     −
                   </button>
                 </div>
               ))}
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
                   + set
+                </button>
+                <button onClick={() => addWarmupSet(b.uid)} style={blockBtn(AMBER)} title="Add a warm-up set — excluded from working volume & PRs, kept for the velocity profile">
+                  + warm-up
+                </button>
+                <button onClick={() => addWarmupRamp(b.uid)} style={blockBtn(AMBER)} title="Auto warm-up ramp (~40/60/80%) up to your working load">
+                  + ramp
                 </button>
                 <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title="Add a drop set — a lighter continuation, no rest">
                   + drop set
                 </button>
               </div>
+              {plateCalc && (() => {
+                const top = [...b.sets].map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n) && n > 0).sort((x, y) => y - x)[0];
+                if (!top) return null;
+                const pl = platesPerSide(top, units);
+                return (
+                  <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+                    {pl.perSide.length ? `Per side @ ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${units})`}
+                  </Mono>
+                );
+              })()}
             </>
           ) : b.kind === "cardio" ? (
             <>

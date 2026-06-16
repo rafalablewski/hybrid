@@ -3,18 +3,118 @@
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
-import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { useTheme } from "@/lib/use-theme";
+import { useLang } from "@/lib/i18n";
+import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
 
 type CoachStatus = "pending" | "approved" | "denied";
+type Section = "general" | "notifications" | "privacy" | "security" | "coaching" | "data";
+const SECTIONS: { id: Section; label: string }[] = [
+  { id: "general", label: "General" },
+  { id: "notifications", label: "Notifications" },
+  { id: "privacy", label: "Privacy" },
+  { id: "security", label: "Security" },
+  { id: "coaching", label: "Coaching & access" },
+  { id: "data", label: "Data" },
+];
+
+const NOTIF_DEFAULTS: Record<string, boolean> = { weeklyRecap: true, coachMessages: true, checkinReminders: true, productUpdates: false };
+const PRIVACY_DEFAULTS: Record<string, boolean> = { coachCanSeeDetail: true, discoverable: false, analyticsOptOut: false };
+const NOTIF_ROWS: [string, string, string][] = [
+  ["weeklyRecap", "Weekly recap", "Your Sunday training summary."],
+  ["coachMessages", "Coach messages", "When your coach replies to a check-in or assigns work."],
+  ["checkinReminders", "Check-in reminders", "A nudge when your weekly check-in is due."],
+  ["productUpdates", "Product updates", "Occasional news about new features."],
+];
+const PRIVACY_ROWS: [string, string, string][] = [
+  ["coachCanSeeDetail", "Share detail with my coach", "Let a linked coach see your full session detail, not just summaries."],
+  ["discoverable", "Discoverable in Talent", "Appear in coach talent searches (your benchmarks, never raw logs)."],
+  ["analyticsOptOut", "Opt out of product analytics", "Don't include my usage in aggregate product analytics."],
+];
+const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
+  { id: "en", label: "EN" },
+  { id: "pl", label: "PL" },
+  { id: "de", label: "DE" },
+];
+
+const editInput = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 12px", outline: "none" } as const;
+const editBtn = (c: string) => ({ ...mono, fontSize: 13, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: 10, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
 
 export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
+  const { theme, setTheme } = useTheme();
+  const { lang, setLang } = useLang();
+  const prefs = useLoggerPrefs();
+  const [section, setSection] = useState<Section>("general");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Profile editing — uses the user's OWN Supabase auth (no admin/backend route):
+  // name lives in user_metadata, email/password are first-class auth fields.
+  const authOn = isSupabaseConfigured();
+  const [name, setName] = useState(session?.name ?? "");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
+  const [profileBusy, setProfileBusy] = useState(false);
+
+  const runAuth = async (label: string, setMsg: (m: string | null) => void, op: () => Promise<{ error: { message: string } | null }>) => {
+    if (!authOn) { setMsg("Sign in with a real account to edit your profile."); return; }
+    setProfileBusy(true);
+    setMsg(null);
+    try {
+      const { error } = await op();
+      setMsg(error ? error.message : label);
+    } catch {
+      setMsg("Network error — try again.");
+    }
+    setProfileBusy(false);
+  };
+  const saveName = () => runAuth("✓ Name saved.", setProfileMsg, async () => createClient().auth.updateUser({ data: { name: name.trim() } }));
+  const changeEmail = () =>
+    runAuth("✓ Check your inbox to confirm the new email.", setProfileMsg, async () => createClient().auth.updateUser({ email: newEmail.trim() }));
+  const changePassword = () =>
+    runAuth("✓ Password updated.", setPasswordMsg, async () => createClient().auth.updateUser({ password: newPw }));
+  const signOutEverywhere = async () => {
+    if (authOn) await createClient().auth.signOut({ scope: "global" }).catch(() => {});
+    void logout();
+  };
+  const exportData = () => { window.location.href = "/api/account/export"; };
+
+  // Notification + privacy preferences live in Supabase auth user_metadata, so
+  // they persist + sync across this user's devices (no extra table). updateUser
+  // shallow-merges the provided keys, leaving name/entitlement/etc. intact.
+  const [notif, setNotif] = useState<Record<string, boolean>>(NOTIF_DEFAULTS);
+  const [priv, setPriv] = useState<Record<string, boolean>>(PRIVACY_DEFAULTS);
+  useEffect(() => {
+    if (!authOn) return;
+    let live = true;
+    createClient().auth.getUser().then(({ data }) => {
+      if (!live || !data.user) return;
+      const m = data.user.user_metadata ?? {};
+      if (typeof m.name === "string") setName(m.name);
+      setNotif({ ...NOTIF_DEFAULTS, ...(m.notifications ?? {}) });
+      setPriv({ ...PRIVACY_DEFAULTS, ...(m.privacy ?? {}) });
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [authOn]);
+  const toggleNotif = (k: string) => {
+    const next = { ...notif, [k]: !notif[k] };
+    setNotif(next);
+    if (authOn) createClient().auth.updateUser({ data: { notifications: next } }).catch(() => {});
+  };
+  const togglePriv = (k: string) => {
+    const next = { ...priv, [k]: !priv[k] };
+    setPriv(next);
+    if (authOn) createClient().auth.updateUser({ data: { privacy: next } }).catch(() => {});
+  };
 
   // Mode toggle — Full (athlete) is a paid upgrade.
   const paid = entitlement === "paid";
@@ -149,9 +249,129 @@ export default function AccountSettings() {
   };
 
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div style={{ maxWidth: 720 }}>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Settings</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 20 }}>Account, security &amp; data.</Mono>
+      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>Account, preferences, security &amp; data.</Mono>
+
+      {/* Section nav — a professional, tabbed account area. */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, borderBottom: `1px solid ${LINE}`, paddingBottom: 12 }}>
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setSection(s.id)}
+            style={{ ...mono, fontSize: 13, padding: "7px 14px", borderRadius: 999, cursor: "pointer", color: section === s.id ? txt(LIME) : txt(ASH), background: section === s.id ? `${LIME}1a` : "transparent", border: `1px solid ${section === s.id ? LIME : LINE}` }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ---- GENERAL ---- */}
+      {section === "general" && (
+        <>
+          {/* Account identity */}
+          <Card style={{ marginBottom: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Account</Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginTop: 8 }}>{session?.name || session?.email || "Your account"}</div>
+            <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>{session?.email}</Mono>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}55`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
+              <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? "Full · paid" : "Free"}</span>
+              {session?.provider && <span style={{ ...mono, fontSize: 11, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>via {session.provider}</span>}
+            </div>
+            <button onClick={() => void logout()} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer", marginTop: 14, padding: 0 }}>
+              Sign out
+            </button>
+          </Card>
+
+          {/* Edit profile — name / email (own Supabase auth) */}
+          <Card style={{ marginBottom: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Edit profile</Mono>
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 12, marginBottom: 6 }} c={ASH}>Display name</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={{ ...editInput, flex: 1 }} />
+              <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>Save</button>
+            </div>
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Change email</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={session?.email ?? "new@email.com"} type="email" style={{ ...editInput, flex: 1 }} />
+              <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>Update</button>
+            </div>
+            {profileMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
+            {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>Profile editing needs a real signed-in account.</Mono>}
+          </Card>
+
+          {/* Preferences — appearance, language, workout logger */}
+          <Card style={{ marginBottom: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Preferences</Mono>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Appearance</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["dark", "light"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setTheme(m)}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Language</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              {LANGS.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => setLang(l.id)}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Workout logger</Mono>
+            <button
+              onClick={() => setLoggerPref("detailed", !prefs.detailed)}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
+            >
+              {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
+            </button>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Units</Mono>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["kg", "lb"] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => setLoggerPref("units", u)}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
+            <button
+              onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
+            >
+              {prefs.countWarmupsInVolume ? "Warm-ups count toward volume" : "Warm-ups excluded from volume"}
+            </button>
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+              Controls whether warm-up &amp; cool-down sets count in the Volume landmarks, Trends and per-exercise volume. Off by default (RP-style). PRs &amp; e1RM always exclude warm-ups.
+            </Mono>
+            <button
+              onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
+            >
+              {prefs.fractionalVolume ? "Secondary muscles = 0.5 sets" : "Every muscle = 1 set"}
+            </button>
+            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+              Fractional volume counts a lift&apos;s secondary muscles as half a set (primary = the first muscle it trains).
+            </Mono>
+          </Card>
 
       {/* Mode — a client flips between the lean tracker and the full athlete
           toolkit. Full is a paid upgrade. Coaches/admins get their surface
@@ -234,7 +454,40 @@ export default function AccountSettings() {
           )}
         </Card>
       )}
+        </>
+      )}
 
+      {/* ---- NOTIFICATIONS ---- */}
+      {section === "notifications" && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Notifications</Mono>
+          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Mono>
+          <div style={{ marginTop: 12 }}>
+            {NOTIF_ROWS.map(([k, title, desc]) => (
+              <PrefRow key={k} title={title} desc={desc} on={!!notif[k]} onToggle={() => toggleNotif(k)} disabled={!authOn} />
+            ))}
+          </div>
+          {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+        </Card>
+      )}
+
+      {/* ---- PRIVACY ---- */}
+      {section === "privacy" && (
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Privacy</Mono>
+          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>You control what you share. Saved to your account &amp; synced across devices.</Mono>
+          <div style={{ marginTop: 12 }}>
+            {PRIVACY_ROWS.map(([k, title, desc]) => (
+              <PrefRow key={k} title={title} desc={desc} on={!!priv[k]} onToggle={() => togglePriv(k)} disabled={!authOn} />
+            ))}
+          </div>
+          {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+        </Card>
+      )}
+
+      {/* ---- COACHING & ACCESS ---- */}
+      {section === "coaching" && (
+        <>
       {/* Become a coach — a client applies with credentials; an admin reviews
           it in the admin queue, granting the COACH role on approval. */}
       {isClient && (
@@ -275,10 +528,48 @@ export default function AccountSettings() {
         </Card>
       )}
 
-      <RequestAccess />
+          <RequestAccess />
+        </>
+      )}
 
-      <MfaSettings />
+      {/* ---- SECURITY ---- */}
+      {section === "security" && (
+        <>
+          <MfaSettings />
+          <Card style={{ marginTop: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Change password</Mono>
+            {session?.provider && session.provider !== "email" ? (
+              <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+                You sign in with {session.provider} — manage your password there.
+              </Mono>
+            ) : (
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password" type="password" style={{ ...editInput, flex: 1 }} />
+                <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>Update</button>
+              </div>
+            )}
+            {passwordMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
+          </Card>
+          <Card style={{ marginTop: 16 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Active sessions</Mono>
+            <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+              Sign out of every device — revokes all other sessions and ends this one.
+            </Mono>
+            <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>Sign out everywhere</button>
+          </Card>
+        </>
+      )}
 
+      {/* ---- PRIVACY & DATA ---- */}
+      {section === "data" && (
+      <>
+      <Card style={{ marginBottom: 16 }}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Export my data</Mono>
+        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+          Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.
+        </Mono>
+        <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>Download my data (JSON)</button>
+      </Card>
       <Card style={{ borderLeft: `3px solid ${RED}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
           Danger zone — reset account
@@ -345,6 +636,28 @@ export default function AccountSettings() {
           </button>
         </div>
       </Card>
+      </>
+      )}
+    </div>
+  );
+}
+
+/** A labelled preference row with an on/off pill — used by Notifications + Privacy. */
+function PrefRow({ title, desc, on, onToggle, disabled }: { title: string; desc: string; on: boolean; onToggle: () => void; disabled?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderTop: `1px solid ${LINE}` }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{title}</div>
+        <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>
+      </div>
+      <button
+        onClick={onToggle}
+        disabled={disabled}
+        aria-pressed={on}
+        style={{ flex: "none", width: 46, height: 26, borderRadius: 999, border: `1px solid ${on ? LIME : LINE}`, background: on ? LIME : "transparent", position: "relative", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1, transition: "0.15s" }}
+      >
+        <span style={{ position: "absolute", top: 2, left: on ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: on ? ON_ACCENT : ASH, transition: "0.15s" }} />
+      </button>
     </div>
   );
 }

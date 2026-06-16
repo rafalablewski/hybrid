@@ -1,4 +1,4 @@
-import type { LoggedSession, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
@@ -57,6 +57,49 @@ export async function createSession(payload: NewSession): Promise<boolean> {
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(payload),
     });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Reusable workout routines (WorkoutTemplate) the user owns — save a workout,
+// then load it to start a live session.
+export type Routine = {
+  id: string;
+  name: string;
+  description?: string | null;
+  blocks: SessionBlock[];
+  createdAt: string;
+};
+
+export async function fetchRoutines(): Promise<Routine[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/templates`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { templates?: Routine[] };
+    return data.templates ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createRoutine(name: string, blocks: unknown[]): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/templates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ name, blocks }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteRoutine(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/templates/${id}`, { method: "DELETE", headers: await authHeaders() });
     return res.ok;
   } catch {
     return false;
