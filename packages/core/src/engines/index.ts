@@ -18,6 +18,7 @@ export * from "./session";
 export * from "./running";
 export * from "./records";
 export * from "./landmarks";
+export * from "./exercise";
 export * from "./recap";
 export * from "./velocity";
 export * from "./habits";

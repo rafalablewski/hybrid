@@ -50,6 +50,7 @@ import Longevity from "./longevity";
 import Velocity from "./velocity";
 import Running from "./running";
 import Volume from "./volume";
+import Exercises from "./exercises";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
@@ -507,6 +508,8 @@ export default function AppShell() {
         {screen === "running" && <Running sessions={sessions} />}
 
         {screen === "volume" && <Volume sessions={sessions} />}
+
+        {screen === "exercises" && <Exercises sessions={sessions} />}
 
         {screen === "forceplate" && <ForcePlate />}
 
