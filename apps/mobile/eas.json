@@ -19,9 +19,19 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "device": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleTeamId": "T4WC9M8Y3S"
+      }
+    }
   }
 }
