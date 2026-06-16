@@ -88,6 +88,11 @@ export const DEPLOY_GUIDE: Guide = {
         },
         {
           t: "term",
+          term: "Apple Developer — Individual vs Organization",
+          text: "You enroll in the program in one of two ways. INDIVIDUAL: enroll as yourself with your Apple ID — fastest (usually approved in a day), but the app is listed on the store under your personal name and you alone control the account. ORGANIZATION: enroll as a company/LLC — the app is listed under the business name, you can add team members with separate roles, and it shields your personal name. The org route needs (a) a legally registered entity (e.g. an LLC), (b) a D-U-N-S number — a free business identifier from Dun & Bradstreet that Apple uses to verify the company exists (request it at developer.apple.com/enroll; it can take a few days to a couple of weeks to issue), and (c) authority to bind the company. Both cost the same $99/year. Rule of thumb: shipping under a personal brand or just want to move now → Individual; shipping under a company/LLC, want the business name on the listing, or plan to add teammates → Organization. You can start Individual and migrate to Organization later, but it's smoother to pick the right one up front.",
+        },
+        {
+          t: "term",
           term: "App Store Connect",
           text: "Apple's website (appstoreconnect.apple.com) for managing your apps once you have a developer account. It's where the app's store listing lives — name, screenshots, description, privacy answers — and where you manage TestFlight beta testers and press 'Submit for Review.' Our upload tool (EAS Submit) drops the built binary here; you finish the listing in the browser.",
         },
@@ -121,7 +126,7 @@ export const DEPLOY_GUIDE: Guide = {
         {
           t: "steps",
           items: [
-            "Enroll in the Apple Developer Program ($99/year) with your Apple ID at developer.apple.com — this unlocks everything below.",
+            "Enroll in the Apple Developer Program ($99/year) at developer.apple.com — choose Individual (fast, listed under your name) or Organization (listed under your LLC/company, needs a D-U-N-S number; see the glossary). This unlocks everything below.",
             "Create a free Expo account at expo.dev, then generate an access token (Account → Settings → Access tokens). That token is what lets the build tools act on your behalf.",
             "On your computer, install the EAS command-line tool and sign in: `npm i -g eas-cli`, then `eas login`.",
             "Configure the project once: `eas build:configure` (sets up eas.json) and confirm the iOS bundle identifier (e.g. app.hybrid) in the Expo app config.",
