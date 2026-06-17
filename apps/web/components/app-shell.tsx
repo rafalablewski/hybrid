@@ -60,6 +60,7 @@ import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
+import AuroraOnboarding from "./aurora/onboarding";
 import Upgrade from "./upgrade";
 import Checkins from "./checkins";
 import Calendar from "./calendar";
@@ -545,7 +546,9 @@ export default function AppShell() {
         )}
 
         {screen === "onboarding" && (
-          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          aurora
+            ? <AuroraOnboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+            : <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
