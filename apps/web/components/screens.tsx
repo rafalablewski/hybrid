@@ -655,17 +655,24 @@ export function HistoryScreen({
     }
   };
 
-  // PATCH archived flag (archive or restore), then refresh both lists.
+  // PATCH archived flag (archive or restore), then refresh both lists. Surfaces
+  // a failure instead of silently reloading as if it had worked.
   const setArchivedFlag = async (id: string, value: boolean) => {
     setBusy(id);
     try {
-      await fetch(`/api/sessions/${id}`, {
+      const res = await fetch(`/api/sessions/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ archived: value }),
       });
+      if (!res.ok) {
+        alert(`Couldn't ${value ? "archive" : "restore"} the workout — try again.`);
+        return;
+      }
       onChanged?.();
       if (showArchived || value) await loadArchived();
+    } catch {
+      alert("Network error — try again.");
     } finally {
       setBusy(null);
     }
@@ -675,9 +682,15 @@ export function HistoryScreen({
     if (!window.confirm(`Permanently delete “${title}”? This can't be undone.`)) return;
     setBusy(id);
     try {
-      await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Couldn't delete the workout — try again.");
+        return;
+      }
       onChanged?.();
       if (showArchived) await loadArchived();
+    } catch {
+      alert("Network error — try again.");
     } finally {
       setBusy(null);
     }

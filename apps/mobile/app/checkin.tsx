@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../lib/api";
@@ -40,7 +40,7 @@ export default function CheckinScreen() {
 
   const submit = async () => {
     setSaving(true);
-    await createCheckin({
+    const ok = await createCheckin({
       weekOf: new Date().toISOString(),
       bodyMassKg: form.bodyMassKg ? parseFloat(form.bodyMassKg) : null,
       energy: form.energy, sleep: form.sleep, soreness: form.soreness, mood: form.mood,
@@ -48,8 +48,13 @@ export default function CheckinScreen() {
       note: form.note || null,
       sharedWithCoach: paid ? form.sharedWithCoach : false,
     });
-    setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     setSaving(false);
+    if (!ok) {
+      // Don't clear the form on failure — the athlete keeps their entry to retry.
+      Alert.alert("Couldn't submit", "Your check-in didn't save. Please try again.");
+      return;
+    }
+    setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     load();
   };
 

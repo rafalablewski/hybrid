@@ -73,7 +73,25 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     prisma.coachLink.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
   );
   await wipe("featureGrant", () => prisma.featureGrant.deleteMany({ where: { userId: id } }));
-  await wipe("user", () => prisma.user.delete({ where: { id } }));
+
+  // The User row is the PRIMARY action — never swallow its failure (that would
+  // return a false success while the account still exists). Their AdminAudit
+  // actor rows are set to null by the relation (onDelete: SetNull; actorEmail
+  // keeps the trail readable), so an admin who performed audited actions can
+  // still be deleted.
+  try {
+    await prisma.user.delete({ where: { id } });
+  } catch (err) {
+    console.error("[admin user delete] failed to delete user:", err);
+    return NextResponse.json(
+      {
+        error:
+          "Couldn't delete the account — its data was cleared but the user row failed (if this user has audit history, apply reference/sql-adminaudit-actor-nullable.sql).",
+        skipped,
+      },
+      { status: 500 },
+    );
+  }
 
   await audit({
     actor: gate.admin,

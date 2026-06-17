@@ -750,8 +750,10 @@ model Report {
 // whom, when, and what changed. Never deleted or mutated.
 model AdminAudit {
   id         String   @id @default(cuid())
-  actor      User     @relation("adminAuditActor", fields: [actorId], references: [id])
-  actorId    String
+  // Nullable + SetNull so the audit row OUTLIVES a deleted actor (the trail must
+  // survive an account deletion); actorEmail below keeps it human-readable.
+  actor      User?    @relation("adminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
   actorEmail String // denormalized so the log survives a user rename/delete
   action     String // dotted verb, e.g. "user.role.update", "user.view"
   targetType String? // "user" | "org" | "coachLink" | ...

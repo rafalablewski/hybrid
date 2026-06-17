@@ -35,9 +35,10 @@ export default function History() {
 
   const onArchive = async (id: string, archived: boolean) => {
     setBusy(id);
-    await archiveSession(id, archived);
+    const ok = await archiveSession(id, archived);
     setBusy(null);
-    load();
+    if (ok) load();
+    else Alert.alert("Error", `Couldn't ${archived ? "archive" : "restore"} the workout. Please try again.`);
   };
   const onDelete = (s: LoggedSession) => {
     Alert.alert(
@@ -50,9 +51,10 @@ export default function History() {
           style: "destructive",
           onPress: async () => {
             setBusy(s.id);
-            await deleteSession(s.id);
+            const ok = await deleteSession(s.id);
             setBusy(null);
-            load();
+            if (ok) load();
+            else Alert.alert("Error", "Couldn't delete the workout. Please try again.");
           },
         },
       ],
