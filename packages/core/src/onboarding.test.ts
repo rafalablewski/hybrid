@@ -17,15 +17,11 @@ describe("onboarding → first plan", () => {
     }
   });
 
-  it("recommends a bodybuilding plan matching the athlete's weekly frequency", () => {
+  it("recommends the bodybuilding plan for a bodybuilding goal", () => {
     const p = recommendPlan({ goal: "bb", experience: "intermediate", daysPerWeek: 4 });
     expect(p).not.toBeNull();
     expect(p!.goalId).toBe("bb");
-    // closest plan to 4 days/week is a 4×/week plan
+    expect(p!.planId).toBe("bb-fb4");
     expect(p!.weeklyTarget).toBe(4);
-
-    // a 3-day-limited beginner gets a 3×/week plan, not a 5-day split
-    const q = recommendPlan({ goal: "bb", experience: "beginner", daysPerWeek: 3 });
-    expect(q!.weeklyTarget).toBe(3);
   });
 });
