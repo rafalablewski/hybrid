@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Persona funnel + Access control — full walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:'Archivo',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+  .app{display:flex;min-height:100vh}
+
+  /* ── sidebar ─────────────────────────────────────────── */
+  .side{width:236px;flex:none;border-right:1px solid var(--line);background:var(--ink2);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.04em;padding:16px 16px 8px}
+  .brand span{color:var(--lime)}
+  .persona-pick{padding:6px 12px 12px;border-bottom:1px solid var(--line)}
+  .persona-pick .lab{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin:6px 2px}
+  .pp-row{display:flex;gap:5px}
+  .pp{flex:1;font-family:var(--mono);font-size:11px;color:var(--ash);background:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:7px 0;cursor:pointer;text-align:center}
+  .pp.on{background:var(--lime);color:var(--ink);border-color:var(--lime);font-weight:700}
+  nav{padding:10px 8px;flex:1}
+  .grp{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);padding:0 10px;margin:12px 0 6px}
+  .nav-item{width:100%;display:flex;align-items:center;gap:11px;padding:9px 10px;margin-bottom:2px;border-radius:9px;
+    border:none;background:none;color:var(--ash);font-family:var(--disp);font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
+  .nav-item:hover{background:rgba(255,255,255,.03)}
+  .nav-item.active{background:rgba(196,240,53,.10);color:var(--chalk)}
+  .nav-item .ic{font-size:15px;width:18px;text-align:center}
+  .nav-item .lk{margin-left:auto;font-size:11px}
+
+  /* ── main ────────────────────────────────────────────── */
+  main{flex:1;min-width:0;padding:26px 30px 80px;max-width:880px}
+  .scr-kick{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  h1{font-family:var(--disp);font-weight:900;font-size:27px;margin:4px 0 0}
+  .lead{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:var(--chalk);margin:10px 0 0;max-width:640px}
+
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+  .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:10px}
+  .k-violet{color:var(--violet)} .k-amber{color:var(--amber)} .k-blue{color:var(--blue)} .k-lime{color:var(--lime)} .k-ash{color:var(--ash)}
+  .mono{font-family:var(--mono);color:var(--ash);font-size:12px;line-height:1.6}
+  .chalk{color:var(--chalk)}
+  .big{font-family:var(--disp);font-weight:800;font-size:20px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .role .nm{font-family:var(--disp);font-weight:800;font-size:18px}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 6px;border-bottom:1px solid var(--line);font-size:12.5px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+  th.l,td.l{text-align:left;font-family:var(--disp);font-weight:600;font-size:13px}
+  td.c{font-family:var(--mono);text-align:center}
+
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .feat .name{font-family:var(--disp);font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .feat .sub{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:2px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid}
+  .chip.amber{color:var(--amber);border-color:var(--amber)} .chip.blue{color:var(--blue);border-color:var(--blue)}
+  .controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  select{font-family:var(--mono);font-size:12px;color:var(--chalk);background:var(--ink);border:1px solid var(--line);border-radius:9px;padding:7px 10px;cursor:pointer;appearance:none}
+  select.cas{color:var(--ash)} select.cas.locked{color:var(--blue);border-color:var(--blue)}
+  select:focus{outline:none;border-color:var(--lime)}
+
+  .cta{font-family:var(--disp);font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--ink);background:var(--lime);border:none;border-radius:11px;padding:12px 22px;cursor:pointer}
+  .btn-ghost{font-family:var(--mono);font-size:12px;color:var(--ash);background:none;border:1px solid var(--line);border-radius:10px;padding:11px 16px;cursor:pointer}
+  .teaserCard{opacity:.72;display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:30}
+  .ov.show{display:flex}
+  .dialog{max-width:420px;width:100%}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">HYBRID<span>.</span></div>
+    <div class="persona-pick">
+      <div class="lab">View as (demo)</div>
+      <div class="pp-row">
+        <button class="pp" data-p="casual">Casual</button>
+        <button class="pp" data-p="athlete">Athlete</button>
+        <button class="pp on" data-p="admin">Admin</button>
+      </div>
+      <div class="lab" id="ent-lab" style="margin-top:8px">Entitlement</div>
+      <div class="pp-row" id="ent-row">
+        <button class="pp on" data-e="free">Free</button>
+        <button class="pp" data-e="paid">Paid</button>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+
+  <main id="main"></main>
+</div>
+
+<div class="ov" id="ov"><div class="dialog" id="dialog"></div></div>
+
+<script>
+/* ── shared canonical nav (packages/core/src/nav.ts) ─────────────────── */
+const GROUPS = [
+  ["home","Home",[["today","➤","Today","casual"],["cockpit","◈","Cockpit","athlete"]]],
+  ["train","Train",[["log","✎","Log session","casual"],["calendar","▦","Calendar","casual"],["builder","⊕","Builder","athlete"],["plans","▤","Plans","athlete"],["periodize","◰","Periodize","athlete"],["sport","◎","Sport","athlete"],["competition","▲","Competition","athlete"]]],
+  ["analyze","Analyze",[["performance","◈","Performance","athlete"],["analytics","◷","Analytics","athlete"],["volume","▦","Volume","athlete"],["exercises","≡","Exercises","athlete"],["trends","↗","Trends","athlete"],["velocity","⚡","Velocity (VBT)","athlete"],["running","🏃","Running","athlete"],["forceplate","◇","Force plate","athlete"],["video","▷","Video","athlete"],["history","≣","History","casual"]]],
+  ["recovery","Recovery",[["checkin","✓","Check-in","casual"],["nutrition","🍎","Nutrition","casual"],["progress","📸","Progress photos","casual"],["longevity","❤","Longevity","athlete"]]],
+  ["teams","Teams",[["coach","✦","Coach","coach"],["squad","◫","Squad monitor","coach"],["teamcompare","⚖","Team compare","coach"],["org","⬡","Organization","coach"],["talent","✸","Talent","athlete"],["tactical","▰","Tactical","coach"]]],
+  ["account","Account",[["connections","⌁","Connections","athlete"],["roles","⚿","Roles & access","athlete"],["settings","⚙","Settings","casual"]]],
+];
+const RANK = { casual:0, athlete:1, coach:2, admin:3 };
+const PLABEL = { casual:"Casual", athlete:"Athlete", coach:"Coach", admin:"Admin" };
+const ALL = GROUPS.flatMap(g => g[2].map(it => ({ id:it[0], icon:it[1], label:it[2], def:it[3], group:g[1] })));
+const byId = id => ALL.find(i => i.id === id);
+
+/* admin-configurable state */
+const OVERRIDES = {};          // navId -> persona
+const LOCKED = new Set(["cockpit"]); // access.upsellNav default
+
+/* demo session state */
+let persona = "admin";   // resolved view
+let modeChoice = "athlete";
+let entitlement = "free";
+let screen = "roles";
+
+const minPersona = id => OVERRIDES[id] ?? byId(id).def;
+const visibleTo = (p,id) => RANK[p] >= RANK[minPersona(id)];
+const isUpsell = (p,id) => LOCKED.has(id) && !visibleTo(p,id);
+
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+
+/* ── sidebar nav ─────────────────────────────────────────────────────── */
+function renderNav(){
+  const nav = document.getElementById("nav"); nav.innerHTML="";
+  GROUPS.forEach(([key,label,items])=>{
+    const shown = items.filter(it => visibleTo(persona,it[0]) || isUpsell(persona,it[0]));
+    if(!shown.length) return;
+    nav.appendChild(el("div","grp",label));
+    shown.forEach(it=>{
+      const [id,icon,lab] = it;
+      const locked = !visibleTo(persona,id) && isUpsell(persona,id);
+      const b = el("button","nav-item"+(screen===id?" active":""));
+      b.innerHTML = `<span class="ic">${icon}</span><span>${lab}</span>${locked?'<span class="lk">🔒</span>':''}`;
+      b.onclick = ()=> openNav(id,locked);
+      nav.appendChild(b);
+    });
+  });
+}
+function openNav(id,locked){
+  if(locked && id!=="cockpit"){ openDialog(byId(id).label); return; }
+  screen = id; render();
+}
+
+/* ── persona / entitlement pickers ───────────────────────────────────── */
+function resolve(){
+  // role is "client" in this demo; admin button forces admin view
+  if(viewRole==="admin") return "admin";
+  return (modeChoice==="athlete" && entitlement==="paid") ? "athlete" : "casual";
+}
+let viewRole = "admin";
+document.querySelectorAll(".pp[data-p]").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".pp[data-p]").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    const p=b.dataset.p;
+    if(p==="admin"){ viewRole="admin"; }
+    else { viewRole="client"; modeChoice = (p==="athlete")?"athlete":"casual"; entitlement = (p==="athlete")?"paid":"free"; syncEnt(); }
+    persona = resolve();
+    if(!visibleTo(persona,screen) && !isUpsell(persona,screen)) screen = "today";
+    render();
+  };
+});
+function syncEnt(){
+  document.querySelectorAll(".pp[data-e]").forEach(x=>x.classList.toggle("on", x.dataset.e===entitlement));
+}
+document.querySelectorAll(".pp[data-e]").forEach(b=>{
+  b.onclick=()=>{ entitlement=b.dataset.e; syncEnt(); if(viewRole==="client"){ persona=resolve(); render(); } };
+});
+
+/* ── upsell dialog (generic locked feature) ──────────────────────────── */
+function openDialog(label){
+  const paid = entitlement==="paid";
+  document.getElementById("dialog").innerHTML = `
+    <div class="card" style="border-left:3px solid var(--amber);margin:0">
+      <span class="kick k-amber">Full feature 🔒</span>
+      <div class="big" style="margin:2px 0 6px">${label} is part of Full</div>
+      <div class="mono chalk">${paid?"You're already paid — switch your mode to Full to unlock it and the rest of the athlete toolkit.":"Upgrade to Full to unlock this and the whole athlete toolkit — plans, analytics, sport, velocity and the Cockpit."}</div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="cta" id="dlg-up">${paid?"Switch to Full →":"Upgrade to Full →"}</button>
+        <button class="btn-ghost" id="dlg-no">Not now</button>
+      </div>
+    </div>`;
+  document.getElementById("ov").classList.add("show");
+  document.getElementById("dlg-no").onclick=closeDialog;
+  document.getElementById("dlg-up").onclick=()=>{ closeDialog(); doUpgrade(); };
+}
+function closeDialog(){ document.getElementById("ov").classList.remove("show"); }
+document.getElementById("ov").onclick=e=>{ if(e.target.id==="ov") closeDialog(); };
+function doUpgrade(){
+  if(entitlement==="paid"){ modeChoice="athlete"; } else { entitlement="paid"; modeChoice="athlete"; }
+  viewRole="client"; syncEnt();
+  document.querySelectorAll(".pp[data-p]").forEach(x=>x.classList.toggle("on",x.dataset.p==="athlete"));
+  persona=resolve(); render();
+}
+
+/* ── screens ─────────────────────────────────────────────────────────── */
+function render(){ renderNav(); document.getElementById("main").innerHTML = SCREENS[screen] ? SCREENS[screen]() : placeholder(); bindRoles(); }
+
+const placeholder = ()=>`<div class="scr-kick">${(byId(screen)||{}).group||""}</div><h1>${(byId(screen)||{label:screen}).label}</h1>
+  <div class="card"><div class="mono chalk">This screen exists in the real app — stubbed here so the walkthrough stays about the persona funnel + access control.</div></div>`;
+
+const SCREENS = {
+  today: ()=>`
+    <div class="scr-kick">Fitness GPS · today</div><h1>Ready to train.</h1>
+    <div class="card" style="border-left:3px solid var(--lime)">
+      <span class="kick k-lime">Your plan today · readiness 78/100</span>
+      <div class="big">Hybrid Strength-Endurance</div>
+      <div class="mono" style="color:var(--violet)">Lower power · day 2/4 · Build wk 5/16</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--lime)">
+      <span class="kick k-lime">On track? · steady</span>
+      <div class="mono chalk">You're locked in — three sessions this week. 6-day streak.</div>
+    </div>
+    <div class="mono" style="margin-top:14px">${persona==="casual"?"You're on the free plan — Today is yours. Cockpit shows in the sidebar as a 🔒 upgrade bait.":"Athlete view — Today carries the full depth (season, Twin, injury risk)."}</div>`,
+
+  cockpit: ()=> persona==="casual" ? cockpitTeaser() : cockpitFull(),
+
+  roles: ()=> rolesPage(),
+};
+
+function cockpitFull(){
+  const S=[["Goal & season","var(--violet)","Hybrid strength-endurance · Build · wk 5/16 · event in 11 wk"],
+  ["Today · readiness 78/100","var(--lime)","Lower power + Tempo intervals"],
+  ["Performance · Athlete Twin","var(--blue)","HPI 71 · primed · limiter endurance · STR 78 / END 61 / REC +73"],
+  ["Sport S&C","var(--amber)","Sprint / 100m · Regional"],
+  ["Velocity & technique","var(--blue)","Bar-speed 1RM, autoregulated load, force-plate & video"],
+  ["Endurance","var(--lime)","12 efforts · 86 km · 412 min"]];
+  return `<div class="scr-kick">Athlete cockpit</div><h1>Your command center</h1>
+    <div class="lead">Goal → season → today → performance → sport → technique → endurance, in one place.</div>
+    ${S.map(([k,c,b])=>`<div class="card" style="border-left:3px solid ${c}"><span class="kick" style="color:${c}">${k}</span><div class="mono chalk">${b}</div></div>`).join("")}`;
+}
+function cockpitTeaser(){
+  const paid = entitlement==="paid";
+  const S=[["Goal & season","var(--violet)","Your periodized macrocycle — phase, week and event countdown."],
+  ["Today's route","var(--lime)","A velocity-aware daily prescription tuned to your readiness."],
+  ["Performance · Athlete Twin","var(--blue)","Your HPI, its pillars and limiter — your training's digital twin."],
+  ["Sport S&C","var(--amber)","The strength & conditioning that transfers to your sport, ranked."],
+  ["Velocity & technique","var(--blue)","Bar-speed 1RM, autoregulated load, force-plate & video analysis."],
+  ["Endurance","var(--lime)","Mileage, pace zones and running PRs from your whole history."]];
+  return `<div class="scr-kick" style="color:var(--amber)">Athlete cockpit · Full</div><h1>Unlock your command center 🔒</h1>
+    <div class="lead">Goal, season, your performance Twin, sport S&C, velocity and endurance — assembled into one screen. It's part of <b style="color:var(--lime)">Full</b>. Keep logging free; upgrade whenever you want the depth.</div>
+    ${S.map(([k,c,b])=>`<div class="card teaserCard" style="border-left:3px solid ${c}"><div><span class="kick" style="color:${c};margin-bottom:4px">${k}</span><div class="mono chalk">${b}</div></div><span style="font-size:16px">🔒</span></div>`).join("")}
+    <button class="cta" style="margin-top:18px" onclick="doUpgrade()">${paid?"Switch to Full →":"Upgrade to Full →"}</button>
+    <div class="mono" style="margin-top:10px">${paid?"You're already paid — switch to Full to unlock everything.":"Full unlocks the Cockpit, plans, analytics, sport, velocity and more."}</div>`;
+}
+
+/* ── ROLES & ACCESS (the whole page) ─────────────────────────────────── */
+const ROLE_CARDS = [
+  ["Client","var(--lime)","Owns their own data. Sees only themselves. Private coach notes stay hidden."],
+  ["Coach","var(--violet)","Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
+  ["Admin","var(--amber)","Platform aggregates & content. No silent access to private training data; support access is audited."],
+];
+const PERMS = [
+  ["Own training data","full","consented","—"],
+  ["See other athletes","—","consented","aggregate"],
+  ["Private coach notes","—","yes (+private)","—"],
+  ["Assign workouts","—","yes","yes"],
+  ["Platform analytics","—","—","full"],
+  ["Manage roles & access","—","—","full"],
+  ["Billing / entitlement","self","self","all"],
+];
+const permCell = v => { const no=v==="—"; const yes=v==="full"||v==="yes"||v==="yes (+private)";
+  return `<td class="c" style="color:${no?"var(--ash)":yes?"var(--lime)":"var(--amber)"}">${no?"—":v}</td>`; };
+
+function rolesPage(){
+  return `<div class="scr-kick">Account</div><h1>Roles &amp; access</h1>
+  <div class="lead">Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not role label alone.</div>
+
+  <div class="grid3" style="margin-top:16px">
+    ${ROLE_CARDS.map(([n,c,d])=>`<div class="card role" style="border-left:3px solid ${c};margin-top:0"><div class="nm" style="color:${c}">${n}</div><div class="mono chalk" style="margin-top:8px">${d}</div></div>`).join("")}
+  </div>
+
+  <div class="card">
+    <span class="kick k-ash">Permission matrix</span>
+    <table>
+      <thead><tr><th class="l">Capability</th><th style="color:var(--lime)">Client</th><th style="color:var(--violet)">Coach</th><th style="color:var(--amber)">Admin</th></tr></thead>
+      <tbody>${PERMS.map(p=>`<tr><td class="l">${p[0]}</td>${permCell(p[1])}${permCell(p[2])}${permCell(p[3])}</tr>`).join("")}</tbody>
+    </table>
+  </div>
+
+  ${ persona==="admin" ? adminAccessBlock() : `<div class="card" style="border-left:3px solid var(--ash)"><div class="mono chalk">The editable access-control matrix below is admin-only. Switch the demo view (top-left) to <b style="color:var(--amber)">Admin</b> to edit who sees what.</div></div>` }`;
+}
+
+function adminAccessBlock(){
+  return `<div class="card" style="border-left:3px solid var(--amber)">
+    <span class="kick k-amber">Access control · admin</span>
+    <div class="big" style="margin-bottom:8px">Set permissions per feature</div>
+    <div class="mono chalk" style="margin-bottom:12px">
+      Set the <b>minimum persona</b> for each feature (right). For anything <i>above</i> casual you also choose what a
+      free user sees (left): <b>hidden</b>, or <b style="color:var(--blue)">locked 🔒</b> — a teaser that baits the Full upgrade.
+    </div>
+    <div class="mono" id="ac-counts" style="margin-bottom:8px"></div>
+    <div id="ac-groups"></div>
+  </div>`;
+}
+
+/* build the editable matrix after the roles HTML lands */
+function bindRoles(){
+  if(screen!=="roles" || persona!=="admin") return;
+  const host = document.getElementById("ac-groups"); if(!host) return;
+  host.innerHTML="";
+  GROUPS.forEach(([key,label,items])=>{
+    const card = el("div","card"); card.style.marginTop="12px";
+    card.appendChild(el("div","kick k-violet",label));
+    items.forEach(it=>card.appendChild(acRow(it)));
+    host.appendChild(card);
+  });
+  acCounts();
+}
+function acCounts(){
+  const ov=Object.keys(OVERRIDES).length, ba=LOCKED.size;
+  const n=document.getElementById("ac-counts"); if(n) n.textContent=`${ov} persona override${ov===1?"":"s"} · ${ba} casual bait${ba===1?"":"s"} active.`;
+}
+function acRow(item){
+  const [id,icon,label,def]=item;
+  const row=el("div","row"); const feat=el("div","feat");
+  const name=el("div","name",`${icon} ${label}`);
+  const ov=el("span","chip amber","overridden"); ov.style.display="none";
+  const bait=el("span","chip blue","🔒 casual bait");
+  name.appendChild(ov); name.appendChild(bait);
+  feat.appendChild(name); feat.appendChild(el("div","sub",`${id} · default: ${PLABEL[def]}`));
+  row.appendChild(feat);
+
+  const controls=el("div","controls");
+  const aware=()=> (OVERRIDES[id]||def)!=="casual" && id!=="today";
+  const cas=el("select","cas"); cas.innerHTML=`<option value="hidden">Casual: hidden</option><option value="locked">Casual: locked 🔒</option>`;
+  const sync=()=>{ const a=aware(); cas.style.display=a?"":"none"; const lk=LOCKED.has(id)&&a; cas.value=lk?"locked":"hidden"; cas.classList.toggle("locked",lk); bait.style.display=lk?"":"none"; };
+  cas.onchange=()=>{ cas.value==="locked"?LOCKED.add(id):LOCKED.delete(id); sync(); acCounts(); renderNav(); };
+  controls.appendChild(cas);
+
+  const ps=el("select");
+  ["casual","athlete","coach","admin"].forEach(p=>{const o=el("option");o.value=p;o.textContent=`Visible from ${PLABEL[p]}`;if((OVERRIDES[id]||def)===p)o.selected=true;ps.appendChild(o);});
+  ps.onchange=()=>{ ps.value===def?delete OVERRIDES[id]:OVERRIDES[id]=ps.value; ov.style.display=OVERRIDES[id]?"":"none"; if((OVERRIDES[id]||def)==="casual")LOCKED.delete(id); sync(); acCounts(); renderNav(); };
+  controls.appendChild(ps);
+
+  row.appendChild(controls); sync(); return row;
+}
+
+/* boot */
+persona = resolve();
+render();
+</script>
+</body>
+</html>
