@@ -188,35 +188,37 @@ function PlanDetailView({
         </div>
       </Card>
 
-      <Card style={{ marginBottom: 16 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
-          Sample · {d.sample.day}
-        </Mono>
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
-          <thead>
-            <tr>
-              {["Exercise", "Sets×Reps", "Rest", "RPE"].map((h) => (
-                <th
-                  key={h}
-                  style={{ ...mono, fontSize: 11, color: ASH, textTransform: "uppercase", textAlign: "left", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {d.sample.items.map((it, i) => (
-              <tr key={i}>
-                <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.name}</td>
-                <td style={{ ...mono, fontSize: 13, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.sr}</td>
-                <td style={{ ...mono, fontSize: 13, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rest}</td>
-                <td style={{ ...mono, fontSize: 13, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rpe}</td>
+      {d.days.map((session, di) => (
+        <Card key={di} style={{ marginBottom: 16 }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+            {session.day}
+          </Mono>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
+            <thead>
+              <tr>
+                {["Exercise", "Sets×Reps", "Rest", "RPE"].map((h) => (
+                  <th
+                    key={h}
+                    style={{ ...mono, fontSize: 11, color: ASH, textTransform: "uppercase", textAlign: "left", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+            </thead>
+            <tbody>
+              {session.items.map((it, i) => (
+                <tr key={i}>
+                  <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.name}</td>
+                  <td style={{ ...mono, fontSize: 13, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.sr}</td>
+                  <td style={{ ...mono, fontSize: 13, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rest}</td>
+                  <td style={{ ...mono, fontSize: 13, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rpe}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      ))}
 
       <Info label="Progression" value={d.progression} />
 
