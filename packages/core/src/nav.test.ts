@@ -54,8 +54,16 @@ describe("navForPersona", () => {
 
   it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["calendar", "checkin", "history", "log", "nutrition", "onboarding", "progress", "settings", "today"],
+      ["calendar", "checkin", "history", "log", "nutrition", "progress", "settings", "today"],
     );
+  });
+
+  it("casual never sees athlete+ features in nav (the upgrade lives on one page)", () => {
+    const casual = navForPersona("casual").map((i) => i.id);
+    expect(casual).not.toContain("cockpit");
+    expect(casual).not.toContain("velocity");
+    expect(navVisibleTo("casual", "cockpit")).toBe(false);
+    expect(navVisibleTo("athlete", "cockpit")).toBe(true);
   });
 
   it("nests: each persona sees everything the lower one does, plus more", () => {

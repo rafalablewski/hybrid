@@ -11,6 +11,7 @@ import {
   weekNeedsResync,
   planToday,
   computePerformanceState,
+  computeInjuryRisk,
   computeAccountability,
   habitStrength,
   projectLift,
@@ -21,11 +22,13 @@ import {
   weeklyRecap,
   SPORTS,
   LEVELS,
+  FUNNEL,
   type LoggedSession,
   type Macrocycle,
   type Experience,
   type Equipment,
 } from "@hybrid/core";
+import { track } from "../../lib/track";
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
@@ -43,6 +46,10 @@ const bandColor = (b: string) =>
   b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
 // "new" is the day-one state — show it as "getting started", not the raw key.
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
+// Injury-risk band → brand color (theme-aware). Folded in from the web Dashboard
+// retirement so mobile keeps web↔mobile parity on the tissue panel.
+const riskColor = (b: string, P: ReturnType<typeof useTheme>["palette"]) =>
+  b === "low" ? P.lime : b === "moderate" ? P.blue : b === "elevated" ? P.amber : P.red;
 
 export default function Home() {
   const C = useTheme().palette;
@@ -132,6 +139,13 @@ export default function Home() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
+  // The current macrocycle block (for the season phase timeline bar) — absorbed
+  // from the retired web Dashboard, driven by the real enrolled season.
+  const seasonBlock = useMemo(
+    () => (macro ? macro.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro.blocks[0] : null),
+    [macro, currentWeek],
+  );
 
   // The reconciled week: the macrocycle phase arbitrates the daily route + sport
   // transfer into one session (overlap deduped, deload weeks trimmed).
@@ -254,6 +268,21 @@ export default function Home() {
         </Pressable>
       )}
 
+      {/* UNLOCK FULL — the single, value-labeled upgrade on-ramp for casual users.
+          No scattered locks elsewhere; this one card carries the whole pitch. */}
+      {!isAthlete && (
+        <Pressable
+          onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today" }); router.push("/upgrade"); }}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}14` }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
+      )}
+
       {/* COACH INVITES — incoming mutual-consent links, any persona can accept */}
       {invites.map((inv) => (
         <Card key={inv.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
@@ -284,20 +313,6 @@ export default function Home() {
             <Mono style={{ marginTop: 2, fontSize: 11 }}>roster · check-ins · assign workouts</Mono>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
-        </Pressable>
-      )}
-
-      {/* COCKPIT — the athlete's organized depth hub */}
-      {isAthlete && (
-        <Pressable
-          onPress={() => router.push("/cockpit")}
-          style={{ marginTop: 16, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.blue) }}>◈ Athlete cockpit</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>goal · season · performance · sport · velocity · endurance</Mono>
-          </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.blue) }}>→</Text>
         </Pressable>
       )}
 
@@ -383,6 +398,22 @@ export default function Home() {
           </View>
         </Card>
       </ScrollView>
+
+      {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
+          absorbed from the retired web Dashboard, driven by the real season. */}
+      {isAthlete && macro && seasonBlock && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
+          <Kicker color={C.lime}>Training for · {macro.goalOrSport} · {seasonBlock.label} phase</Kicker>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 6 }}>
+            Week {currentWeek} of {macro.totalWeeks} · {seasonBlock.focus.toLowerCase()}
+          </Text>
+          <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+            {macro.blocks.map((b) => (
+              <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === seasonBlock.key ? b.color : `${b.color}33` }} />
+            ))}
+          </View>
+        </Card>
+      )}
 
       {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
       {isAthlete && reconciled && (
@@ -527,6 +558,23 @@ export default function Home() {
             <Mono color={C.lime}>STR {state.hpi.components.strength}</Mono>
             <Mono color={C.blue}>END {state.hpi.components.endurance}</Mono>
             <Mono color={C.violet}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+          </View>
+          {/* INJURY RISK · by tissue — absorbed from the retired web Dashboard. */}
+          <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+            <Mono color={C.ash} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Injury risk · by tissue</Mono>
+            {risk.flagged.length === 0 ? (
+              <Mono color={C.lime} style={{ marginTop: 6 }}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
+            ) : (
+              <View style={{ marginTop: 6, gap: 6 }}>
+                {risk.flagged.map((tr) => (
+                  <View key={tr.tissue} style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+                    <Chip color={riskColor(tr.band, C)}>{tr.risk}</Chip>
+                    <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.chalk, textTransform: "capitalize" }}>{tr.tissue}</Text>
+                    <Mono color={C.ash} style={{ fontSize: 11 }}>{tr.drivers[0]?.label ?? ""}</Mono>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </Card>
       )}

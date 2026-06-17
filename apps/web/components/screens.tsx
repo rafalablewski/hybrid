@@ -37,12 +37,7 @@ import {
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
-  buildMacrocycle,
   currentPhase,
-  prescribeSession,
-  computePerformanceState,
-  computeInjuryRisk,
-  toTrainingLog,
   totalVolume,
   sessionVolume,
   bestE1rmByLift,
@@ -65,8 +60,9 @@ import {
   type Biometrics,
 } from "@hybrid/core";
 import type { RosterRow } from "@/lib/use-roster";
-import BioCheckin from "./biocheckin";
+import { usePersona } from "@/lib/persona";
 import AskCoach from "./ai-coach";
+import AdminAccess from "./admin/access";
 import ReconciledWeek from "./reconciled-week";
 
 const fmtDate = (iso: string) =>
@@ -345,179 +341,6 @@ type AdminStats = {
   planPopularity: { goal: string; n: number }[];
   langSplit: { lang: string; n: number }[];
 };
-
-// ---------- DASHBOARD (mirror of the mobile home) ----------
-// Real engine output from @hybrid/core — not mock copy.
-const SEASON_WEEK = 5;
-
-export function DashboardMirror({
-  sessions = [],
-  bio,
-  onCheckin,
-}: {
-  sessions?: LoggedSession[];
-  bio?: Biometrics | null;
-  onCheckin?: () => void;
-}) {
-  if (sessions.length === 0)
-    return (
-      <Card style={{ textAlign: "center", padding: 60 }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>Your dashboard is empty</div>
-        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
-          Log a workout from the <b style={{ color: txt(LIME) }}>Log session</b> tab — your route, Athlete
-          Twin, injury risk and trends are all computed from your real sessions.
-        </Mono>
-      </Card>
-    );
-
-  const macro = buildMacrocycle("Hybrid");
-  const { block: phase, micro } = currentPhase(macro, SEASON_WEEK);
-  const log = toTrainingLog(sessions);
-  const theBio = bio ?? undefined;
-  const rx = prescribeSession(log, theBio);
-  const state = computePerformanceState(log, theBio);
-  const risk = computeInjuryRisk(log, theBio);
-  const primaryName = rx.blocks[0]!.name;
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-      <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          Training for · {macro.goalOrSport} · {phase.label} phase
-        </Mono>
-        <div style={{ ...disp, fontWeight: 900, fontSize: 26, margin: "8px 0 4px" }}>
-          Today · {primaryName} + Engine
-        </div>
-        <Mono s={{ fontSize: 13 }}>
-          Week {SEASON_WEEK} of {macro.totalWeeks} · {micro.kind} week · {phase.focus.toLowerCase()}
-        </Mono>
-        <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", margin: "16px 0" }}>
-          {macro.blocks.map((b) => (
-            <div
-              key={b.key}
-              title={`${b.label} · ${b.weeks} wk`}
-              style={{
-                flex: b.weeks,
-                background: b.key === phase.key ? b.color : `${b.color}33`,
-              }}
-            />
-          ))}
-        </div>
-        <button
-          style={{
-            fontFamily: "'Archivo', sans-serif",
-            fontWeight: 800,
-            fontSize: 15,
-            background: LIME,
-            color: INK2,
-            border: "none",
-            borderRadius: 12,
-            padding: "14px 28px",
-            cursor: "pointer",
-          }}
-        >
-          Start session →
-        </button>
-      </Card>
-      <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
-          AI Coach
-        </Mono>
-        <div style={{ ...disp, fontWeight: 700, fontSize: 18, margin: "8px 0 6px" }}>
-          Readiness {rx.readiness}/100
-        </div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.5 }}>{rx.why}</Mono>
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
-          confidence {Math.round(rx.confidence * 100)}% · grows as you log
-        </Mono>
-        <AskCoach />
-      </Card>
-
-      <Card span={2} style={{ borderLeft: `3px solid ${BLUE}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
-          <div>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-              Performance State · Athlete Twin
-            </Mono>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "8px 0 2px" }}>
-              <div style={{ ...disp, fontWeight: 900, fontSize: 44, color: txt(BAND_COLOR(state.hpi.band)) }}>
-                {state.hpi.score}
-              </div>
-              <div>
-                <Mono s={{ fontSize: 13 }}>HPI · Hybrid Performance Index</Mono>
-                <div style={{ marginTop: 4 }}>
-                  <Chip c={BAND_COLOR(state.hpi.band)}>{state.hpi.band}</Chip>
-                  <Chip c={AMBER}>limiter · {state.hpi.limiter}</Chip>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style={{ minWidth: 200, flex: 1, maxWidth: 320 }}>
-            {(
-              [
-                ["Strength", state.hpi.components.strength, LIME],
-                ["Endurance", state.hpi.components.endurance, BLUE],
-                ["Recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), VIOLET],
-              ] as const
-            ).map(([label, val, color]) => (
-              <div key={label} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Mono s={{ fontSize: 11 }}>{label}</Mono>
-                  <Mono s={{ fontSize: 11 }} c={color}>{val}</Mono>
-                </div>
-                <div style={{ height: 6, borderRadius: 3, background: INK2, marginTop: 3, overflow: "hidden" }}>
-                  <div style={{ width: `${val}%`, height: "100%", background: color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", margin: "6px 0 12px" }} c={CHALK}>
-          {state.summary}
-        </Mono>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Why · top drivers</Mono>
-            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-              {state.drivers.map((d, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                  <span style={{ color: txt(d.impact === "positive" ? LIME : AMBER), fontWeight: 900 }}>
-                    {d.impact === "positive" ? "+" : "−"}
-                  </span>
-                  <Mono s={{ fontSize: 12 }} c={CHALK}>{d.factor}</Mono>
-                  <Mono s={{ fontSize: 11 }} c={ASH}>{d.detail}</Mono>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Injury risk · by tissue</Mono>
-            <div style={{ marginTop: 8 }}>
-              {risk.flagged.length === 0 ? (
-                <Mono s={{ fontSize: 12 }} c={LIME}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {risk.flagged.map((t) => (
-                    <div key={t.tissue} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                      <Chip c={BAND_COLOR(t.band)}>{t.risk}</Chip>
-                      <Mono s={{ fontSize: 12, textTransform: "capitalize" }} c={CHALK}>{t.tissue}</Mono>
-                      <Mono s={{ fontSize: 11 }} c={ASH}>{t.drivers[0]?.label ?? ""}</Mono>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {onCheckin && <BioCheckin onSaved={onCheckin} />}
-
-    </div>
-  );
-}
 
 // ---------- PERIODIZE (real macrocycle from the engine) ----------
 export function PeriodizeScreen({
@@ -1056,6 +879,7 @@ const PERMISSIONS = [
 ];
 
 export function RolesScreen() {
+  const persona = usePersona();
   const cell = (v: string) => {
     const yes = v === "full" || v === "yes" || v === "yes (+private)";
     const no = v === "no";
@@ -1136,6 +960,19 @@ export function RolesScreen() {
           </tbody>
         </table>
       </Card>
+
+      {/* ADMIN — the editable permission matrix: per-feature minimum persona +
+          what a casual (free) user sees (hidden vs. locked upgrade bait). The
+          read-only matrix above is the role model; this is where it's tuned. */}
+      {persona === "admin" && (
+        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginTop: 20 }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }} c={AMBER}>
+            Access control · admin
+          </Mono>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Set permissions per feature</div>
+          <AdminAccess />
+        </Card>
+      )}
     </div>
   );
 }

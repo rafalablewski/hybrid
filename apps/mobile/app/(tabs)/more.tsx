@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { navVisibleTo, NAV_ITEMS } from "@hybrid/core";
+import { navVisibleTo, NAV_ITEMS, FUNNEL } from "@hybrid/core";
+import { track } from "../../lib/track";
 import { useSession } from "../../lib/session";
 import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
@@ -94,9 +95,12 @@ export default function More() {
   // Shape the hub to the persona (honouring the admin's access override): a
   // casual retail user sees only the lean set, an athlete/coach sees the depth.
   // Sections with nothing visible drop out.
+  // `onboarding` is the universal setup flow — it's no longer a nav item (so
+  // navVisibleTo can't gate it), but every persona can re-run it, so it always
+  // shows. Everything else is persona/access gated as before.
   const sections = SECTIONS.map((s) => ({
     ...s,
-    links: s.links.filter((l) => navVisibleTo(persona, l.id, access)),
+    links: s.links.filter((l) => l.id === "onboarding" || navVisibleTo(persona, l.id, access)),
   })).filter((s) => s.links.length > 0);
 
   return (
@@ -141,10 +145,25 @@ export default function More() {
         </View>
       )}
 
+      {/* UNLOCK FULL — the single upgrade on-ramp for casual users (parity with
+          the web sidebar's pinned entry); no scattered locks elsewhere. */}
+      {persona === "casual" && (
+        <Pressable
+          onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "more" }); router.push("/upgrade"); }}
+          style={{ marginTop: 18, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
+      )}
+
       {/* Athlete cockpit — the organized depth hub (persona/access gated) */}
       {navVisibleTo(persona, "cockpit", access) && (
         <Pressable
-          onPress={() => router.push("/cockpit")}
+          onPress={() => router.push("/(tabs)/cockpit")}
           style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>

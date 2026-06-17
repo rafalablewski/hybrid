@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
+import { track } from "@/lib/track";
 import {
   INK,
   INK2,
@@ -30,7 +31,6 @@ import {
   AthleteAnalytics,
   CoachAnalytics,
   OperatorAnalytics,
-  DashboardMirror,
   PeriodizeScreen,
   HistoryScreen,
   RolesScreen,
@@ -58,6 +58,7 @@ import Today from "./today";
 import Cockpit from "./cockpit";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
+import Upgrade from "./upgrade";
 import Checkins from "./checkins";
 import Calendar from "./calendar";
 import Builder from "./builder";
@@ -98,8 +99,8 @@ export default function AppShell() {
   const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
-  const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
-  const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
+  const { bio: bioFromBiometrics } = useBiometrics();
+  const { bio: bioFromSignals } = useSignals();
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled, value } = useFlags();
@@ -108,15 +109,16 @@ export default function AppShell() {
   // persona sees each item (Access control → the access.personaNav flag value).
   const persona = usePersona();
   const navAccess = sanitizePersonaAccess(value("access.personaNav"));
+  // Freemium funnel: a casual (free) user keeps a CLEAN nav (no scattered
+  // padlocks). The whole paid toolkit is sold on ONE "Unlock Full" page reached
+  // from a single pinned entry — so the upgrade's full value is clear without
+  // cluttering the lean app. Shown only to the casual persona.
+  const showUpgradeEntry = persona === "casual";
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
-  const refreshBio = useCallback(() => {
-    refreshBiometrics();
-    refreshSignals();
-  }, [refreshBiometrics, refreshSignals]);
   const [screen, setScreen] = useState("today");
   // Seed blocks for the logger when "Start" comes from an enrolled named plan
   // (the plan day prefills the session). Cleared on any manual nav so a normal
@@ -260,6 +262,38 @@ export default function AppShell() {
               </div>
             );
           })}
+
+          {/* ONE upgrade entry — value-labeled, not a feature tab. Casual only;
+              opens the single Full bundle page. Keeps the nav clean (no locks). */}
+          {showUpgradeEntry && isEnabled("nav.upgrade") && (
+            <button
+              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); setPendingBlocks(undefined); setScreen("upgrade"); }}
+              title={collapsed ? "Unlock Full" : undefined}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: collapsed ? "center" : "flex-start",
+                gap: collapsed ? 0 : 11,
+                padding: collapsed ? "12px 0" : "12px",
+                marginTop: 8,
+                borderRadius: 12,
+                cursor: "pointer",
+                border: `1px solid ${LIME}80`,
+                background: `linear-gradient(135deg, ${LIME}24, ${VIOLET}1a)`,
+                color: txt(CHALK),
+                textAlign: "left",
+              }}
+            >
+              <span style={{ fontSize: 16 }}>✦</span>
+              {!collapsed && (
+                <span style={{ flex: 1 }}>
+                  <span style={{ ...disp, fontWeight: 800, fontSize: 14, display: "block" }}>Unlock Full</span>
+                  <Mono s={{ fontSize: 10.5, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
+                </span>
+              )}
+            </button>
+          )}
         </nav>
         <div style={{ flexShrink: 0, paddingTop: 16 }}>
           <div
@@ -493,16 +527,14 @@ export default function AppShell() {
           </>
         )}
 
-        {screen === "dashboard" && (
-          <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
-        )}
-
         {screen === "today" && (
           <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
         )}
 
+        {screen === "upgrade" && <Upgrade onUpgraded={() => setScreen("today")} />}
+
         {screen === "cockpit" && (
-          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} />
+          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (

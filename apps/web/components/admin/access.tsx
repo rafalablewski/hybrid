@@ -34,8 +34,8 @@ export default function AdminAccess() {
       .then((r) => r.json())
       .then((d) => {
         setUnavailable(Boolean(d.unavailable));
-        const row = (d.flags as FlagRow[] | undefined)?.find((f) => f.key === KEY);
-        setOverrides(sanitizePersonaAccess(row?.value));
+        const rows = d.flags as FlagRow[] | undefined;
+        setOverrides(sanitizePersonaAccess(rows?.find((f) => f.key === KEY)?.value));
       })
       .catch(() => setOverrides({}));
     fetch("/api/admin/access-requests")
@@ -114,7 +114,9 @@ export default function AdminAccess() {
 
       <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
         Set the <b>minimum persona</b> for each feature. Personas nest (Casual ⊂ Athlete ⊂ Coach ⊂ Admin),
-        so lowering a feature exposes it to <i>more</i> users. Changes take effect on the next client load — no deploy.
+        so lowering a feature exposes it to <i>more</i> users. Anything above casual is hidden from a free user — the
+        paid upgrade is sold on the single <b style={{ color: txt(LIME) }}>Unlock Full</b> page, not as per-feature locks.
+        Changes take effect on the next client load — no deploy.
         {busy ? " · saving…" : ""}
       </Mono>
       <Mono s={{ fontSize: 11, display: "block", marginBottom: 16 }} c={ASH}>

@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import {
   prescribeSession,
   computePerformanceState,
+  computeInjuryRisk,
   computeAccountability,
   habitStrength,
   projectLift,
@@ -31,6 +32,10 @@ import {
 
 const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
+// Injury-risk band → brand color (low good ⇄ high alert). Mirrors the retired
+// Dashboard's tissue panel, now folded into Today's Twin card.
+const riskColor = (b: string) =>
+  b === "low" ? LIME : b === "moderate" ? BLUE : b === "elevated" ? AMBER : RED;
 const bandColor = (b: string) =>
   b === "thriving" || b === "steady" ? LIME : b === "new" || b === "wobbling" ? BLUE : b === "at-risk" ? AMBER : RED;
 // "new" is the day-one state — show it as "getting started", not the raw key.
@@ -77,6 +82,7 @@ export default function Today({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
@@ -208,6 +214,29 @@ export default function Today({
         </Card>
       </div>
 
+      {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
+          absorbed from the retired Dashboard but now driven by the athlete's REAL
+          enrolled macro/week instead of demo data. */}
+      {isAthlete && macro && phase && (
+        <Card glass style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+            Training for · {macro.goalOrSport} · {phase.block.label} phase
+          </Mono>
+          <div style={{ ...disp, fontWeight: 900, fontSize: 22, margin: "8px 0 4px" }}>
+            Week {currentWeek} of {macro.totalWeeks} · {phase.micro.kind} week · {phase.block.focus.toLowerCase()}
+          </div>
+          <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+            {macro.blocks.map((b) => (
+              <div
+                key={b.key}
+                title={`${b.label} · ${b.weeks} wk`}
+                style={{ flex: b.weeks, background: b.key === phase.block.key ? b.color : `${b.color}33` }}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport).
           Shown from session zero once enrolled, so the plan is visible before the
           first logged workout (it just reads cold-start defaults until then). */}
@@ -326,6 +355,24 @@ export default function Today({
               <Mono s={{ fontSize: 12 }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
               <Mono s={{ fontSize: 12 }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
             </div>
+          </div>
+          {/* INJURY RISK · by tissue — absorbed from the retired Dashboard so the
+              tissue-level risk panel isn't lost when the screen goes away. */}
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
+            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Injury risk · by tissue</Mono>
+            {risk.flagged.length === 0 ? (
+              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={LIME}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
+            ) : (
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                {risk.flagged.map((t) => (
+                  <div key={t.tissue} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                    <Chip c={riskColor(t.band)}>{t.risk}</Chip>
+                    <Mono s={{ fontSize: 12, textTransform: "capitalize" }} c={CHALK}>{t.tissue}</Mono>
+                    <Mono s={{ fontSize: 11 }} c={ASH}>{t.drivers[0]?.label ?? ""}</Mono>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
       )}

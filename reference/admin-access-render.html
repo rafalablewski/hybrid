@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Admin · Access control (permission matrix)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:'Archivo',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 18px 80px}
+  .crumb{font-family:var(--mono);font-size:11px;color:var(--ash);letter-spacing:.08em;text-transform:uppercase}
+  h1{font-family:var(--disp);font-weight:900;font-size:26px;margin:6px 0 0}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+  .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:12px}
+  .k-violet{color:var(--violet)} .k-amber{color:var(--amber)} .k-blue{color:var(--blue)}
+  .mono{font-family:var(--mono);color:var(--ash);font-size:12px;line-height:1.6}
+  .chalk{color:var(--chalk)}
+  .intro{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:var(--chalk)}
+  .intro b.blue{color:var(--blue)}
+  .meta{font-family:var(--mono);font-size:11px;color:var(--ash);margin:10px 0 4px}
+
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .feat{min-width:0}
+  .feat .name{font-family:var(--disp);font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .feat .sub{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:2px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid}
+  .chip.amber{color:var(--amber);border-color:var(--amber)}
+  .chip.blue{color:var(--blue);border-color:var(--blue)}
+  .controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  select{font-family:var(--mono);font-size:12px;color:var(--chalk);background:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:7px 10px;cursor:pointer;appearance:none}
+  select.cas{color:var(--ash)} select.cas.locked{color:var(--blue);border-color:var(--blue)}
+  select:focus{outline:none;border-color:var(--lime)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px}
+  .legend span{font-family:var(--mono);font-size:11px;color:var(--ash)}
+  .swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">Admin · Governance / Roles &amp; access</div>
+  <h1>Access control</h1>
+
+  <div class="card">
+    <p class="intro" style="margin:0">
+      Set the <b>minimum persona</b> for each feature (right). Personas nest (Casual ⊂ Athlete ⊂ Coach ⊂ Admin),
+      so lowering a feature exposes it to <i>more</i> users. For anything <i>above</i> casual you also choose what a
+      free user sees (left): <b>hidden</b>, or <b class="blue">locked 🔒</b> — a teaser that baits the Full upgrade.
+      Changes take effect on the next client load — no deploy.
+    </p>
+    <div class="meta" id="counts">1 persona override · 1 casual bait active.</div>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--lime)"></i>shown / available</span>
+      <span><i class="swatch" style="background:var(--blue)"></i>locked bait (casual sees a teaser)</span>
+      <span><i class="swatch" style="background:var(--ash)"></i>hidden from casual</span>
+    </div>
+  </div>
+
+  <div id="matrix"></div>
+</div>
+
+<script>
+  // The shared canonical nav (packages/core/src/nav.ts) — id, icon, label, group,
+  // and the code-default minimum persona.
+  const GROUPS = [
+    ["Home", [
+      ["today","➤","Today","casual"],
+      ["cockpit","◈","Cockpit","athlete"],
+    ]],
+    ["Train", [
+      ["log","✎","Log session","casual"],
+      ["calendar","▦","Calendar","casual"],
+      ["builder","⊕","Builder","athlete"],
+      ["plans","▤","Plans","athlete"],
+      ["periodize","◰","Periodize","athlete"],
+      ["sport","◎","Sport","athlete"],
+      ["competition","▲","Competition","athlete"],
+    ]],
+    ["Analyze", [
+      ["performance","◈","Performance","athlete"],
+      ["analytics","◷","Analytics","athlete"],
+      ["volume","▦","Volume","athlete"],
+      ["exercises","≡","Exercises","athlete"],
+      ["trends","↗","Trends","athlete"],
+      ["velocity","⚡","Velocity (VBT)","athlete"],
+      ["running","🏃","Running","athlete"],
+      ["forceplate","◇","Force plate","athlete"],
+      ["video","▷","Video","athlete"],
+      ["history","≣","History","casual"],
+    ]],
+    ["Recovery", [
+      ["checkin","✓","Check-in","casual"],
+      ["nutrition","🍎","Nutrition","casual"],
+      ["progress","📸","Progress photos","casual"],
+      ["longevity","❤","Longevity","athlete"],
+    ]],
+    ["Teams", [
+      ["coach","✦","Coach","coach"],
+      ["squad","◫","Squad monitor","coach"],
+      ["teamcompare","⚖","Team compare","coach"],
+      ["org","⬡","Organization","coach"],
+      ["talent","✸","Talent","athlete"],
+      ["tactical","▰","Tactical","coach"],
+    ]],
+    ["Account", [
+      ["connections","⌁","Connections","athlete"],
+      ["roles","⚿","Roles & access","athlete"],
+      ["settings","⚙","Settings","casual"],
+    ]],
+  ];
+  const PLABEL = { casual:"Casual", athlete:"Athlete", coach:"Coach", admin:"Admin" };
+  // Default admin config: Cockpit is the casual locked bait (access.upsellNav = [cockpit]).
+  const LOCKED = new Set(["cockpit"]);
+  const OVERRIDES = {}; // navId -> persona (changed from default)
+
+  const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
+
+  function refreshCounts(){
+    const ov = Object.keys(OVERRIDES).length;
+    const ba = LOCKED.size;
+    document.getElementById("counts").textContent =
+      `${ov} persona override${ov===1?"":"s"} · ${ba} casual bait${ba===1?"":"s"} active.`;
+  }
+
+  function makeRow(item){
+    const [id, icon, label, def] = item;
+    const row = el("div","row");
+
+    // left — feature identity + live chips
+    const feat = el("div","feat");
+    const name = el("div","name", `${icon} ${label}`);
+    const ovChip = el("span","chip amber","overridden"); ovChip.style.display="none";
+    const baitChip = el("span","chip blue","🔒 casual bait");
+    name.appendChild(ovChip); name.appendChild(baitChip);
+    feat.appendChild(name);
+    feat.appendChild(el("div","sub", `${id} · default: ${PLABEL[def]}`));
+    row.appendChild(feat);
+
+    // right — controls
+    const controls = el("div","controls");
+
+    // casual select (only when the feature is above casual)
+    const casSel = el("select","cas");
+    casSel.innerHTML = `<option value="hidden">Casual: hidden</option><option value="locked">Casual: locked 🔒</option>`;
+    const isCasualAware = () => (OVERRIDES[id] || def) !== "casual" && id !== "today";
+    const syncBait = () => {
+      const aware = isCasualAware();
+      casSel.style.display = aware ? "" : "none";
+      const locked = LOCKED.has(id) && aware;
+      casSel.value = locked ? "locked" : "hidden";
+      casSel.classList.toggle("locked", locked);
+      baitChip.style.display = locked ? "" : "none";
+    };
+    casSel.onchange = () => {
+      if (casSel.value === "locked") LOCKED.add(id); else LOCKED.delete(id);
+      syncBait(); refreshCounts();
+    };
+    controls.appendChild(casSel);
+
+    // persona (visible-from) select
+    const pSel = el("select");
+    ["casual","athlete","coach","admin"].forEach(p => {
+      const o = el("option"); o.value = p; o.textContent = `Visible from ${PLABEL[p]}`;
+      if ((OVERRIDES[id]||def) === p) o.selected = true;
+      pSel.appendChild(o);
+    });
+    pSel.onchange = () => {
+      if (pSel.value === def) delete OVERRIDES[id]; else OVERRIDES[id] = pSel.value;
+      ovChip.style.display = OVERRIDES[id] ? "" : "none";
+      // if it drops to casual it can't be a bait anymore
+      if ((OVERRIDES[id]||def) === "casual") LOCKED.delete(id);
+      syncBait(); refreshCounts();
+    };
+    controls.appendChild(pSel);
+
+    row.appendChild(controls);
+    syncBait();
+    return row;
+  }
+
+  const matrix = document.getElementById("matrix");
+  GROUPS.forEach(([group, items]) => {
+    const card = el("div","card");
+    card.appendChild(el("div","kick k-violet", group));
+    items.forEach(it => card.appendChild(makeRow(it)));
+    matrix.appendChild(card);
+  });
+  refreshCounts();
+</script>
+</body>
+</html>

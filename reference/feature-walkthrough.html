@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Persona funnel + Access control — full walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:'Archivo',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+  .app{display:flex;align-items:flex-start}
+  a{color:inherit}
+
+  /* ── sidebar ─────────────────────────────────────────── */
+  .side{width:230px;flex:none;border-right:1px solid var(--line);background:var(--ink2);
+    position:sticky;top:0;align-self:stretch;min-height:100vh;padding-bottom:20px}
+  .brand{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.04em;padding:16px 16px 10px}
+  .brand span{color:var(--lime)}
+  .grp{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);padding:0 16px;margin:14px 0 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:9px 16px;color:var(--ash);font-family:var(--disp);font-size:13.5px;font-weight:600}
+  .nav-item.active{background:rgba(196,240,53,.10);color:var(--chalk);border-left:2px solid var(--lime)}
+  .nav-item .ic{font-size:15px;width:18px;text-align:center}
+  .nav-item .lk{margin-left:auto;font-size:11px;color:var(--amber)}
+
+  main{flex:1;min-width:0;padding:24px 30px 90px;max-width:900px}
+  .scr-kick{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  h1{font-family:var(--disp);font-weight:900;font-size:27px;margin:4px 0 0}
+  h2.sec{font-family:var(--disp);font-weight:900;font-size:19px;margin:40px 0 0;padding-top:22px;border-top:1px solid var(--line)}
+  .lead{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:var(--chalk);margin:10px 0 0;max-width:660px}
+
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+  .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:10px}
+  .k-violet{color:var(--violet)} .k-amber{color:var(--amber)} .k-blue{color:var(--blue)} .k-lime{color:var(--lime)} .k-ash{color:var(--ash)}
+  .mono{font-family:var(--mono);color:var(--ash);font-size:12px;line-height:1.6}
+  .chalk{color:var(--chalk)}
+  .big{font-family:var(--disp);font-weight:800;font-size:20px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .role .nm{font-family:var(--disp);font-weight:800;font-size:18px}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 6px;border-bottom:1px solid var(--line);font-size:12.5px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+  th.l,td.l{text-align:left;font-family:var(--disp);font-weight:600;font-size:13px}
+  td.c{font-family:var(--mono);text-align:center}
+
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .feat .name{font-family:var(--disp);font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .feat .sub{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:2px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid}
+  .chip.amber{color:var(--amber);border-color:var(--amber)} .chip.blue{color:var(--blue);border-color:var(--blue)}
+  .controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  /* selects render as static styled pills (no JS needed) */
+  .sel{font-family:var(--mono);font-size:12px;color:var(--chalk);background:var(--ink);border:1px solid var(--line);border-radius:9px;padding:7px 24px 7px 10px;position:relative;white-space:nowrap}
+  .sel::after{content:"▾";position:absolute;right:9px;color:var(--ash)}
+  .sel.cas{color:var(--ash)} .sel.cas.locked{color:var(--blue);border-color:var(--blue)}
+
+  .cta{display:inline-block;font-family:var(--disp);font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--ink);background:var(--lime);border:none;border-radius:11px;padding:12px 22px;margin-top:18px}
+  .teaserCard{opacity:.72;display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+  .mini{background:var(--ink2);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .mini .h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);padding:10px 14px;border-bottom:1px solid var(--line)}
+  .mini .it{display:flex;align-items:center;gap:10px;padding:8px 14px;font-family:var(--disp);font-size:13px;font-weight:600;color:var(--ash)}
+  .mini .it.on{color:var(--chalk)}
+  .mini .it .ic{width:16px;text-align:center}
+  .mini .it .lk{margin-left:auto;font-size:11px;color:var(--amber)}
+  .note{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:8px;line-height:1.6}
+  .pillrow{display:flex;gap:6px;margin:6px 14px 12px}
+  .pill{font-family:var(--mono);font-size:10px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:var(--ash)}
+  .pill.on{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR — admin view (sees everything) -->
+  <aside class="side">
+    <div class="brand">HYBRID<span>.</span></div>
+    <div class="grp">Home</div>
+    <div class="nav-item"><span class="ic">➤</span><span>Today</span></div>
+    <div class="nav-item"><span class="ic">◈</span><span>Cockpit</span></div>
+    <div class="grp">Train</div>
+    <div class="nav-item"><span class="ic">✎</span><span>Log session</span></div>
+    <div class="nav-item"><span class="ic">▤</span><span>Plans</span></div>
+    <div class="nav-item"><span class="ic">◰</span><span>Periodize</span></div>
+    <div class="grp">Analyze</div>
+    <div class="nav-item"><span class="ic">◈</span><span>Performance</span></div>
+    <div class="nav-item"><span class="ic">⚡</span><span>Velocity</span></div>
+    <div class="grp">Account</div>
+    <div class="nav-item active"><span class="ic">⚿</span><span>Roles &amp; access</span></div>
+    <div class="nav-item"><span class="ic">⚙</span><span>Settings</span></div>
+  </aside>
+
+  <main>
+    <!-- ════════ ROLES & ACCESS (the whole admin page) ════════ -->
+    <div class="scr-kick">Account · Admin</div>
+    <h1>Roles &amp; access</h1>
+    <div class="lead">Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not role label alone.</div>
+
+    <div class="grid3">
+      <div class="card role" style="border-left:3px solid var(--lime);margin-top:0"><div class="nm" style="color:var(--lime)">Client</div><div class="mono chalk" style="margin-top:8px">Owns their own data. Sees only themselves. Private coach notes stay hidden.</div></div>
+      <div class="card role" style="border-left:3px solid var(--violet);margin-top:0"><div class="nm" style="color:var(--violet)">Coach</div><div class="mono chalk" style="margin-top:8px">Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client.</div></div>
+      <div class="card role" style="border-left:3px solid var(--amber);margin-top:0"><div class="nm" style="color:var(--amber)">Admin</div><div class="mono chalk" style="margin-top:8px">Platform aggregates &amp; content. No silent access to private training data; support access is audited.</div></div>
+    </div>
+
+    <div class="card">
+      <span class="kick k-ash">Permission matrix</span>
+      <table>
+        <thead><tr><th class="l">Capability</th><th style="color:var(--lime)">Client</th><th style="color:var(--violet)">Coach</th><th style="color:var(--amber)">Admin</th></tr></thead>
+        <tbody>
+          <tr><td class="l">Own training data</td><td class="c" style="color:var(--lime)">full</td><td class="c" style="color:var(--amber)">consented</td><td class="c" style="color:var(--ash)">—</td></tr>
+          <tr><td class="l">See other athletes</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--amber)">consented</td><td class="c" style="color:var(--amber)">aggregate</td></tr>
+          <tr><td class="l">Private coach notes</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--lime)">yes (+private)</td><td class="c" style="color:var(--ash)">—</td></tr>
+          <tr><td class="l">Assign workouts</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--lime)">yes</td><td class="c" style="color:var(--lime)">yes</td></tr>
+          <tr><td class="l">Platform analytics</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--lime)">full</td></tr>
+          <tr><td class="l">Manage roles &amp; access</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--ash)">—</td><td class="c" style="color:var(--lime)">full</td></tr>
+          <tr><td class="l">Billing / entitlement</td><td class="c" style="color:var(--amber)">self</td><td class="c" style="color:var(--amber)">self</td><td class="c" style="color:var(--lime)">all</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- editable access-control matrix (admin) -->
+    <div class="card" style="border-left:3px solid var(--amber)">
+      <span class="kick k-amber">Access control · admin</span>
+      <div class="big" style="margin-bottom:8px">Set permissions per feature</div>
+      <div class="mono chalk" style="margin-bottom:8px">
+        Set the <b>minimum persona</b> for each feature (right). For anything <i>above</i> casual you also choose what a
+        free user sees (left): <b>hidden</b>, or <b style="color:var(--blue)">locked 🔒</b> — a teaser that baits the Full upgrade.
+      </div>
+      <div class="mono" style="margin-bottom:6px">1 casual bait active.</div>
+
+      <div class="card" style="margin-top:12px">
+        <span class="kick k-violet">Home</span>
+        <div class="row">
+          <div class="feat"><div class="name">➤ Today</div><div class="sub">today · default: Casual · shown to everyone</div></div>
+          <div class="controls"><span class="sel">Visible from Casual</span></div>
+        </div>
+        <div class="row">
+          <div class="feat"><div class="name">◈ Cockpit <span class="chip blue">🔒 casual bait</span></div><div class="sub">cockpit · default: Athlete</div></div>
+          <div class="controls"><span class="sel cas locked">Casual: locked 🔒</span><span class="sel">Visible from Athlete</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <span class="kick k-violet">Train</span>
+        <div class="row"><div class="feat"><div class="name">✎ Log session</div><div class="sub">log · default: Casual</div></div><div class="controls"><span class="sel">Visible from Casual</span></div></div>
+        <div class="row"><div class="feat"><div class="name">▤ Plans</div><div class="sub">plans · default: Athlete</div></div><div class="controls"><span class="sel cas">Casual: hidden</span><span class="sel">Visible from Athlete</span></div></div>
+        <div class="row"><div class="feat"><div class="name">◰ Periodize</div><div class="sub">periodize · default: Athlete</div></div><div class="controls"><span class="sel cas">Casual: hidden</span><span class="sel">Visible from Athlete</span></div></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <span class="kick k-violet">Analyze</span>
+        <div class="row"><div class="feat"><div class="name">◈ Performance</div><div class="sub">performance · default: Athlete</div></div><div class="controls"><span class="sel cas">Casual: hidden</span><span class="sel">Visible from Athlete</span></div></div>
+        <div class="row"><div class="feat"><div class="name">⚡ Velocity (VBT)</div><div class="sub">velocity · default: Athlete</div></div><div class="controls"><span class="sel cas">Casual: hidden</span><span class="sel">Visible from Athlete</span></div></div>
+        <div class="row"><div class="feat"><div class="name">≣ History</div><div class="sub">history · default: Casual</div></div><div class="controls"><span class="sel">Visible from Casual</span></div></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <span class="kick k-violet">Teams</span>
+        <div class="row"><div class="feat"><div class="name">✦ Coach</div><div class="sub">coach · default: Coach</div></div><div class="controls"><span class="sel cas">Casual: hidden</span><span class="sel">Visible from Coach</span></div></div>
+        <div class="row"><div class="feat"><div class="name">◫ Squad monitor</div><div class="sub">squad · default: Coach</div></div><div class="controls"><span class="sel cas">Casual: hidden</span><span class="sel">Visible from Coach</span></div></div>
+      </div>
+    </div>
+
+    <!-- ════════ WHAT THE CLIENT SEES ════════ -->
+    <h2 class="sec">What the client sees — the freemium funnel</h2>
+    <div class="lead">Today is the free tab. Cockpit isn't hidden from a free user — it shows as a locked bait that opens a teaser and drives the Full upgrade. Athlete (Full + paid) gets it for real.</div>
+
+    <div class="grid2">
+      <div>
+        <div class="mini">
+          <div class="h">Casual (free) — sidebar</div>
+          <div class="it on"><span class="ic">➤</span>Today</div>
+          <div class="it"><span class="ic">◈</span>Cockpit<span class="lk">🔒</span></div>
+          <div class="it"><span class="ic">✎</span>Log session</div>
+          <div class="it"><span class="ic">▦</span>Calendar</div>
+          <div class="it"><span class="ic">≣</span>History</div>
+          <div class="it"><span class="ic">✓</span>Check-in</div>
+          <div class="it"><span class="ic">⚙</span>Settings</div>
+        </div>
+        <div class="note">Lean set + a 🔒 Cockpit bait. Velocity / Plans / Performance are hidden (admin set them "Casual: hidden").</div>
+      </div>
+      <div>
+        <div class="mini">
+          <div class="h">Athlete (Full + paid) — sidebar</div>
+          <div class="it on"><span class="ic">➤</span>Today</div>
+          <div class="it on"><span class="ic">◈</span>Cockpit</div>
+          <div class="it"><span class="ic">✎</span>Log session</div>
+          <div class="it"><span class="ic">▤</span>Plans</div>
+          <div class="it"><span class="ic">◰</span>Periodize</div>
+          <div class="it"><span class="ic">◈</span>Performance</div>
+          <div class="it"><span class="ic">⚡</span>Velocity</div>
+        </div>
+        <div class="note">Cockpit is a real tab; the full depth (plans, performance, velocity…) unlocks.</div>
+      </div>
+    </div>
+
+    <!-- Cockpit: teaser vs live -->
+    <div class="grid2">
+      <div class="card" style="margin-top:16px">
+        <span class="kick k-amber">Casual opens Cockpit → the bait</span>
+        <div class="big" style="margin:2px 0 6px">Unlock your command center 🔒</div>
+        <div class="mono chalk" style="margin-bottom:10px">Goal, season, your Twin, sport, velocity and endurance — assembled into one screen. Part of Full.</div>
+        <div class="card teaserCard" style="margin-top:8px;border-left:3px solid var(--violet)"><div><span class="kick k-violet" style="margin-bottom:4px">Goal &amp; season</span><div class="mono chalk">Your periodized macrocycle — phase, week, event countdown.</div></div><span style="font-size:16px">🔒</span></div>
+        <div class="card teaserCard" style="margin-top:10px;border-left:3px solid var(--blue)"><div><span class="kick k-blue" style="margin-bottom:4px">Performance · Athlete Twin</span><div class="mono chalk">Your HPI, its pillars and limiter.</div></div><span style="font-size:16px">🔒</span></div>
+        <a class="cta">Upgrade to Full →</a>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <span class="kick k-lime">Athlete opens Cockpit → the real thing</span>
+        <div class="big" style="margin:2px 0 6px">Your command center</div>
+        <div class="card" style="margin-top:8px;border-left:3px solid var(--violet)"><span class="kick k-violet">Goal &amp; season</span><div class="mono chalk">Hybrid strength-endurance · Build · wk 5/16 · event in 11 wk</div></div>
+        <div class="card" style="margin-top:10px;border-left:3px solid var(--blue)"><span class="kick k-blue">Performance · Athlete Twin</span><div class="mono chalk">HPI 71 · primed · limiter endurance · STR 78 / END 61 / REC +73</div></div>
+        <div class="card" style="margin-top:10px;border-left:3px solid var(--lime)"><span class="kick k-lime">Endurance</span><div class="mono chalk">12 efforts · 86 km · 412 min</div></div>
+      </div>
+    </div>
+
+    <!-- generic locked dialog (non-cockpit bait) -->
+    <h2 class="sec">Any other locked feature → upgrade dialog</h2>
+    <div class="lead">If an admin marks a non-Cockpit feature as a casual bait, a free click opens a generic upgrade prompt — it never leaks into the real athlete screen.</div>
+    <div class="card" style="border-left:3px solid var(--amber);max-width:420px">
+      <span class="kick k-amber">Full feature 🔒</span>
+      <div class="big" style="margin:2px 0 6px">Velocity (VBT) is part of Full</div>
+      <div class="mono chalk">Upgrade to Full to unlock this and the whole athlete toolkit — plans, analytics, sport, velocity and the Cockpit.</div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <a class="cta" style="margin-top:0">Upgrade to Full →</a>
+        <span class="sel" style="padding:12px 16px;color:var(--ash)">Not now</span>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
