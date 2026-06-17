@@ -210,6 +210,7 @@ export default function Logger({
         blocks={blocks}
         setBlocks={setBlocks}
         emptyHint="Empty session — add blocks below, or pull today's prescription."
+        reorder
         detailed={prefs.detailed}
         rirMode={prefs.rpeAsRir}
         units={prefs.units}

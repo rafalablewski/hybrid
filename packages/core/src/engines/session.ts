@@ -94,6 +94,33 @@ export function setTypeBadge(s: RoleDrop, index: number): string {
   return t === "warmup" ? "W" : t === "cooldown" ? "C" : t === "drop" ? "↓" : String(index + 1);
 }
 
+/**
+ * Move the item at `index` one slot in `dir` (-1 up / +1 down), clamped to the
+ * ends (a no-op past either edge). Pure — returns a NEW array. Shared by the web
+ * + mobile editors so reordering sets AND exercises has one source of truth (the
+ * arrow controls), and can't drift between the two clients.
+ */
+export function moveItem<T>(arr: T[], index: number, dir: -1 | 1): T[] {
+  const j = index + dir;
+  if (index < 0 || index >= arr.length || j < 0 || j >= arr.length) return arr;
+  const next = arr.slice();
+  [next[index], next[j]] = [next[j]!, next[index]!];
+  return next;
+}
+
+/**
+ * Move the item from `from` to `to`, sliding the rest along (the drag-and-drop
+ * reorder — drop an item anywhere, not just one slot). Pure — returns a NEW
+ * array; a no-op when the indices are equal or out of range.
+ */
+export function moveItemTo<T>(arr: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || from >= arr.length || to < 0 || to >= arr.length) return arr;
+  const next = arr.slice();
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item as T);
+  return next;
+}
+
 export interface WarmupStep {
   /** load in kg */
   load: number;
