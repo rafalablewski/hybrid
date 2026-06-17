@@ -88,9 +88,9 @@ export default function AuroraHome() {
             <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
               <AuroraIcon name="search" size={22} color={palette.ash} />
             </View>
-            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
+            <Pressable onPress={() => router.push("/notifications")} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
               <AuroraIcon name="bell" size={22} color={palette.ash} />
-            </View>
+            </Pressable>
           </View>
         </View>
 

@@ -31,6 +31,7 @@ export * from "./theme";
 export * from "./templates";
 export * from "./aurora-icons";
 export * from "./interval";
+export * from "./activity";
 export * from "./contrast";
 export * from "./nav";
 export * from "./analytics";
