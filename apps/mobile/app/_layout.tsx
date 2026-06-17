@@ -12,6 +12,7 @@ import {
 import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
+import { TemplateProvider } from "../lib/template";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import { C } from "../lib/ui";
 
@@ -42,11 +43,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <SessionProvider>
-          <LanguageProvider>
-            <Shell />
-          </LanguageProvider>
-        </SessionProvider>
+        <TemplateProvider>
+          <SessionProvider>
+            <LanguageProvider>
+              <Shell />
+            </LanguageProvider>
+          </SessionProvider>
+        </TemplateProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

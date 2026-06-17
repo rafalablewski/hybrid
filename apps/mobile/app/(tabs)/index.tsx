@@ -38,6 +38,8 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraHome from "../../components/aurora/home";
 
 const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
@@ -52,6 +54,11 @@ const riskColor = (b: string, P: ReturnType<typeof useTheme>["palette"]) =>
   b === "low" ? P.lime : b === "moderate" ? P.blue : b === "elevated" ? P.amber : P.red;
 
 export default function Home() {
+  if (useTemplate().template === "aurora") return <AuroraHome />;
+  return <ClassicHome />;
+}
+
+function ClassicHome() {
   const C = useTheme().palette;
   const router = useRouter();
   const { name } = useSession();

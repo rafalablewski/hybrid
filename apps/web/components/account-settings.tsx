@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
+import { useTemplate } from "@/lib/use-template";
+import { TEMPLATES } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -48,6 +50,7 @@ export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
   const { theme, setTheme } = useTheme();
+  const { template, setTemplate } = useTemplate();
   const { lang, setLang } = useLang();
   const prefs = useLoggerPrefs();
   const [section, setSection] = useState<Section>("general");
@@ -314,6 +317,20 @@ export default function AccountSettings() {
                   style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
                 >
                   {m}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Template</Mono>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => setTemplate(tpl.id)}
+                  title={tpl.description}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: template === tpl.id ? txt(LIME) : txt(ASH), background: template === tpl.id ? `${LIME}1a` : "transparent", border: `1px solid ${template === tpl.id ? LIME : LINE}` }}
+                >
+                  {tpl.label}
                 </button>
               ))}
             </div>

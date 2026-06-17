@@ -28,6 +28,7 @@ export * from "./datanet";
 export * from "./tactical";
 export * from "./longevity";
 export * from "./theme";
+export * from "./templates";
 export * from "./contrast";
 export * from "./nav";
 export * from "./analytics";

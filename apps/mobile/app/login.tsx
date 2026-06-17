@@ -13,8 +13,15 @@ const PENDING_ONBOARDING = "hybrid.pendingOnboarding";
 import { useLang } from "../lib/i18n";
 import { F, Button } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraLogin from "../components/aurora/login";
 
 export default function Login() {
+  if (useTemplate().template === "aurora") return <AuroraLogin />;
+  return <ClassicLogin />;
+}
+
+function ClassicLogin() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();

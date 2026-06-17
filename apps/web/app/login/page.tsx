@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useTemplate } from "@/lib/use-template";
+import AuroraLogin from "@/components/aurora/login";
 import { INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
 
 // Ported from the prototype's Auth screen (reference/HybridApp.jsx).
@@ -17,6 +19,12 @@ const ROLE_INFO: { id: Role; label: string; accent: string; blurb: string }[] = 
 ];
 
 export default function LoginPage() {
+  const { template } = useTemplate();
+  if (template === "aurora") return <AuroraLogin />;
+  return <ClassicLoginPage />;
+}
+
+function ClassicLoginPage() {
   const router = useRouter();
   const { login } = useSession();
   const live = isSupabaseConfigured();
