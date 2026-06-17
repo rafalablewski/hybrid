@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
+import { FUNNEL } from "@hybrid/core";
+import { track } from "../lib/track";
 import { startCheckout } from "../lib/api";
 import { iapAvailable, purchaseFull } from "../lib/iap";
 import { supabase } from "../lib/supabase";
@@ -25,8 +27,11 @@ export default function Upgrade() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => { track(FUNNEL.upgradePageView, { client: "mobile" }); }, []);
+
   const subscribe = async () => {
     if (busy) return;
+    track(FUNNEL.upgradeCtaClick, { client: "mobile" });
     setBusy(true);
     setError("");
 

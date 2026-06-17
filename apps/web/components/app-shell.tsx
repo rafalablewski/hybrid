@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
+import { track } from "@/lib/track";
 import {
   INK,
   INK2,
@@ -266,7 +267,7 @@ export default function AppShell() {
               opens the single Full bundle page. Keeps the nav clean (no locks). */}
           {showUpgradeEntry && isEnabled("nav.upgrade") && (
             <button
-              onClick={() => { setPendingBlocks(undefined); setScreen("upgrade"); }}
+              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); setPendingBlocks(undefined); setScreen("upgrade"); }}
               title={collapsed ? "Unlock Full" : undefined}
               style={{
                 width: "100%",

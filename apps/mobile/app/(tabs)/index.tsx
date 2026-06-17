@@ -22,11 +22,13 @@ import {
   weeklyRecap,
   SPORTS,
   LEVELS,
+  FUNNEL,
   type LoggedSession,
   type Macrocycle,
   type Experience,
   type Equipment,
 } from "@hybrid/core";
+import { track } from "../../lib/track";
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
@@ -270,7 +272,7 @@ export default function Home() {
           No scattered locks elsewhere; this one card carries the whole pitch. */}
       {!isAthlete && (
         <Pressable
-          onPress={() => router.push("/upgrade")}
+          onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today" }); router.push("/upgrade"); }}
           style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}14` }}
         >
           <View style={{ flex: 1 }}>

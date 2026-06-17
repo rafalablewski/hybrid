@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { FUNNEL } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { setClientPersona } from "@/lib/persona";
+import { track } from "@/lib/track";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT,
   disp, cond, Mono, Card, txt,
@@ -55,7 +57,10 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  useEffect(() => { track(FUNNEL.upgradePageView, { client: "web" }); }, []);
+
   const act = async () => {
+    track(FUNNEL.upgradeCtaClick, { client: "web", paid });
     // Paid-but-Simple: no charge — just flip the mode to Full.
     if (paid) { setClientPersona("athlete"); onUpgraded?.(); return; }
     setBusy(true); setMsg(null);
@@ -74,7 +79,7 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
       disabled={busy}
       style={{ ...cond, fontWeight: 800, fontSize: 15, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 12, padding: "13px 26px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
     >
-      {busy ? "Starting…" : paid ? "Switch to Full →" : "Start free trial →"}
+      {busy ? "Starting…" : paid ? "Switch to Full →" : "Upgrade to Full →"}
     </button>
   );
 
@@ -93,8 +98,7 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
           12+ pro tools · one subscription
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
-          <span style={{ ...disp, fontWeight: 900, fontSize: 30 }}>€9<span style={{ fontSize: 16 }}>.99</span></span>
-          <Mono s={{ fontSize: 12 }}>/ month · cancel anytime · 7-day free trial</Mono>
+          <Mono s={{ fontSize: 12 }}>One subscription · cancel anytime · pricing shown at checkout</Mono>
         </div>
         <div style={{ marginTop: 14 }}>{CTA}</div>
         {msg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={AMBER}>{msg}</Mono>}

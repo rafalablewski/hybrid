@@ -30,6 +30,7 @@ export * from "./longevity";
 export * from "./theme";
 export * from "./contrast";
 export * from "./nav";
+export * from "./analytics";
 export * from "./units";
 export * from "./plates";
 export * from "./logger-prefs";

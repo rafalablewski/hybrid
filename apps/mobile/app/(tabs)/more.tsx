@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { navVisibleTo, NAV_ITEMS } from "@hybrid/core";
+import { navVisibleTo, NAV_ITEMS, FUNNEL } from "@hybrid/core";
+import { track } from "../../lib/track";
 import { useSession } from "../../lib/session";
 import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
@@ -142,6 +143,21 @@ export default function More() {
             <Mono color={C.violet} style={{ fontSize: 11 }}>Coach others? Apply to become a verified coach →</Mono>
           </Pressable>
         </View>
+      )}
+
+      {/* UNLOCK FULL — the single upgrade on-ramp for casual users (parity with
+          the web sidebar's pinned entry); no scattered locks elsewhere. */}
+      {persona === "casual" && (
+        <Pressable
+          onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "more" }); router.push("/upgrade"); }}
+          style={{ marginTop: 18, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
       )}
 
       {/* Athlete cockpit — the organized depth hub (persona/access gated) */}
