@@ -58,6 +58,7 @@ export default function AuroraHome() {
   // Today's prescribed blocks become the "Today's Activity" schedule rows.
   const todayItems = rx.blocks.slice(0, 3).map((b) => ({
     name: b.name,
+    kind: b.kind,
     sub:
       b.kind === "strength"
         ? "Primary lift"
@@ -65,6 +66,11 @@ export default function AuroraHome() {
           ? b.format
           : `${b.distance ? `${b.distance} km` : "Steady cardio"}`,
   }));
+  // Conditioning opens the interval timer; everything else opens the logger.
+  const startItem = (it: { name: string; kind: string }) =>
+    it.kind === "conditioning"
+      ? router.push(`/interval-timer?title=${encodeURIComponent(it.name)}`)
+      : router.push("/workout?source=ai");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
@@ -140,7 +146,7 @@ export default function AuroraHome() {
               title={it.name}
               sub={it.sub}
               accent={palette.lime}
-              onStart={() => router.push("/workout?source=ai")}
+              onStart={() => startItem(it)}
             />
           ))
         ) : upcoming.length === 0 ? (

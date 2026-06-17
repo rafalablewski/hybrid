@@ -1,0 +1,158 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, Pressable } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import {
+  buildIntervalPlan,
+  intervalTotalSeconds,
+  locateInterval,
+  formatClock,
+  type IntervalPhaseKind,
+} from "@hybrid/core";
+import { useTheme, txt } from "../lib/theme";
+import { F } from "../lib/ui";
+import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
+import { AuroraIcon } from "../components/aurora/icons";
+
+/**
+ * Interval timer — a real work/rest stopwatch (the Figma "Workout" screen).
+ * The pure sequencing/clock math lives in @hybrid/core (interval.ts); this owns
+ * the tick. Configurable rounds/work/rest; play · pause · reset.
+ */
+export default function IntervalTimer() {
+  const { palette: C } = useTheme();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ title?: string }>();
+  const title = params.title || "Interval session";
+
+  const [rounds, setRounds] = useState(3);
+  const [workSec, setWorkSec] = useState(40);
+  const [restSec, setRestSec] = useState(20);
+  const [elapsed, setElapsed] = useState(0);
+  const [running, setRunning] = useState(false);
+  const tick = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const plan = useMemo(
+    () => buildIntervalPlan({ rounds, workSec, restSec, prepSec: 10 }),
+    [rounds, workSec, restSec],
+  );
+  const total = useMemo(() => intervalTotalSeconds(plan), [plan]);
+  const pos = locateInterval(plan, elapsed);
+  const phase = pos.done ? null : plan[pos.phaseIndex]!;
+  const kind: IntervalPhaseKind | "done" = phase ? phase.kind : "done";
+
+  // The tick: advance once per second while running; stop at the end.
+  useEffect(() => {
+    if (!running) return;
+    tick.current = setInterval(() => {
+      setElapsed((e) => {
+        if (e + 1 >= total) {
+          setRunning(false);
+          return total;
+        }
+        return e + 1;
+      });
+    }, 1000);
+    return () => {
+      if (tick.current) clearInterval(tick.current);
+    };
+  }, [running, total]);
+
+  const reset = () => {
+    setRunning(false);
+    setElapsed(0);
+  };
+  const editable = elapsed === 0 && !running;
+
+  const kindColor = kind === "work" ? C.lime : kind === "rest" ? C.blue : kind === "prep" ? C.amber : C.violet;
+  const kindLabel = kind === "work" ? "Work" : kind === "rest" ? "Rest" : kind === "prep" ? "Get ready" : "Done";
+  const progress = total > 0 ? elapsed / total : 0;
+
+  return (
+    <AuroraScreen scroll={false}>
+      {/* header */}
+      <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+        <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name="back" size={20} color={C.chalk} />
+        </Pressable>
+        <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <AuroraIcon name="play" size={18} color={C.ash} />
+          <View>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{title}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{rounds} rounds · {workSec}s / {restSec}s</Text>
+          </View>
+        </View>
+      </View>
+
+      <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, textAlign: "center", marginTop: 16 }}>
+        {pos.done ? "Done!" : "Go!"}
+      </Text>
+
+      {/* ring */}
+      <View style={{ alignItems: "center", marginTop: 8 }}>
+        <View style={{ width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: txt(C, kindColor), opacity: 0.25 }} />
+          <Text style={{ fontFamily: F.mono, fontSize: 12, textTransform: "uppercase", letterSpacing: 2, color: txt(C, kindColor) }}>{kindLabel}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 56, color: C.chalk }}>{formatClock(pos.remaining)}</Text>
+          {!pos.done && phase && phase.round > 0 && (
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Round {phase.round}/{phase.totalRounds}</Text>
+          )}
+        </View>
+        {/* linear progress of whole session */}
+        <View style={{ width: 230, height: 6, borderRadius: 3, backgroundColor: C.line, marginTop: 18, overflow: "hidden" }}>
+          <View style={{ width: `${Math.round(progress * 100)}%`, height: "100%", backgroundColor: C.lime }} />
+        </View>
+      </View>
+
+      {/* controls */}
+      <View style={{ flexDirection: "row", gap: 12, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
+        <Pressable onPress={reset} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>↺</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => (pos.done ? reset() : setRunning((r) => !r))}
+          style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ fontFamily: F.black, fontSize: 24, color: C.onAccent }}>{running ? "❚❚" : pos.done ? "↺" : "▶"}</Text>
+        </Pressable>
+        <View style={{ width: 56 }} />
+      </View>
+
+      {/* config (only before start) */}
+      {editable && (
+        <View style={{ marginTop: 24, gap: 10 }}>
+          <Stepper label="Rounds" value={rounds} onChange={(d) => setRounds((v) => Math.max(1, Math.min(20, v + d)))} suffix="" />
+          <Stepper label="Work" value={workSec} onChange={(d) => setWorkSec((v) => Math.max(5, Math.min(300, v + d * 5)))} suffix="s" step={5} />
+          <Stepper label="Rest" value={restSec} onChange={(d) => setRestSec((v) => Math.max(0, Math.min(300, v + d * 5)))} suffix="s" step={5} />
+          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, textAlign: "center", marginTop: 4 }}>
+            Total {formatClock(total)} · 10s lead-in
+          </Text>
+        </View>
+      )}
+
+      {!editable && pos.done && (
+        <View style={{ marginTop: 24 }}>
+          <APill label="Finish" onPress={() => router.back()} />
+        </View>
+      )}
+    </AuroraScreen>
+  );
+}
+
+function Stepper({ label, value, onChange, suffix, step = 1 }: { label: string; value: number; onChange: (dir: number) => void; suffix: string; step?: number }) {
+  const { palette: C } = useTheme();
+  const btn = (t: string, d: number) => (
+    <Pressable onPress={() => onChange(d)} style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontFamily: F.black, fontSize: 20, color: txt(C, C.lime) }}>{t}</Text>
+    </Pressable>
+  );
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+      <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        {btn("−", -1)}
+        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
+        {btn("+", 1)}
+      </View>
+    </View>
+  );
+}

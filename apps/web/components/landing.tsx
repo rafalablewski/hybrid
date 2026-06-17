@@ -72,6 +72,7 @@ function AuroraLanding() {
           <div className="mt-8 flex flex-col items-center gap-3">
             <Link href="/login?mode=signup" style={{ ...pillLight, width: "100%", maxWidth: 360 }}>Register</Link>
             <Link href="/login" style={{ ...pillSoft, width: "100%", maxWidth: 360 }}>Login</Link>
+            <Link href="/timer" className="font-display text-sm font-bold text-ash underline mt-1">Try the interval timer →</Link>
           </div>
         </section>
 
