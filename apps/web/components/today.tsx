@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import {
   prescribeSession,
@@ -20,6 +20,7 @@ import {
 import ReconciledWeek from "./reconciled-week";
 import AskCoach from "./ai-coach";
 import { usePersona } from "@/lib/persona";
+import { readIntake, type Intake } from "@/lib/intake";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
@@ -57,10 +58,18 @@ export default function Today({
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Twin). Switchable from Settings.
   const isAthlete = usePersona() !== "casual";
+  // The onboarding intake (experience + equipment) tailors the prescription —
+  // read client-side after mount to avoid an SSR mismatch.
+  const [intake, setIntake] = useState<Intake>({});
+  useEffect(() => setIntake(readIntake()), []);
   const log = toTrainingLog(sessions);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
-    [log, bio, sessions],
+    () => prescribeSession(log, bio, {
+      profiles: velocityProfiles(sessions),
+      experience: intake.experience,
+      equipment: intake.equipment,
+    }),
+    [log, bio, sessions, intake.experience, intake.equipment],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
@@ -112,11 +121,24 @@ export default function Today({
               </Mono>
               <button onClick={onStart} style={cta(LIME)}>Start session →</button>
             </div>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Start your first session</div>
-            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
-              Log a workout and your plan, readiness, Athlete Twin and trends all build from your real
-              training — nothing here is pre-filled.
-            </Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+              {phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+            </div>
+            {/* Enrolled but not yet logged: show the plan/phase + today's session
+                from session zero, so onboarding visibly "did something". */}
+            {phase ? (
+              <>
+                <Mono s={{ fontSize: 11, display: "block", marginBottom: 4 }} c={VIOLET}>
+                  Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
+                </Mono>
+                <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+              </>
+            ) : (
+              <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+                Log a workout and your plan, readiness, Athlete Twin and trends all build from your real
+                training — nothing here is pre-filled.
+              </Mono>
+            )}
           </Card>
         ) : (
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
@@ -155,9 +177,11 @@ export default function Today({
         </Card>
       </div>
 
-      {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {isAthlete && macro && sessions.length > 0 && (
-        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} style={{ gridColumn: "span 2" }} />
+      {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport).
+          Shown from session zero once enrolled, so the plan is visible before the
+          first logged workout (it just reads cold-start defaults until then). */}
+      {isAthlete && macro && (
+        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} style={{ gridColumn: "span 2" }} />
       )}
 
       {/* ON TRACK? — accountability */}

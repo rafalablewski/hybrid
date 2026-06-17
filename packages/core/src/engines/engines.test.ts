@@ -194,6 +194,34 @@ describe("prescribeSession", () => {
     }
     expect(rx.why).toContain("km run");
   });
+
+  it("picks bodyweight movements + a 'BW' load for minimal equipment", () => {
+    const rx = prescribeSession([], undefined, { equipment: "minimal" });
+    const strength = rx.blocks[0]!;
+    expect(strength.kind).toBe("strength");
+    expect(["Bodyweight Squat", "Single-Leg RDL", "Push-Up", "Pike Push-Up"]).toContain(strength.name);
+    if (strength.kind === "strength") expect(strength.sets[0]!.load).toBe("BW");
+    expect(rx.loadEstimated).toBe(false); // bodyweight isn't a load "estimate"
+    expect(rx.oneRm).toBe(0);
+    expect(rx.why).toContain("bodyweight");
+  });
+
+  it("picks dumbbell movements for home equipment", () => {
+    const rx = prescribeSession([], undefined, { equipment: "home" });
+    expect(["Goblet Squat", "DB Romanian Deadlift", "DB Bench Press", "DB Overhead Press"]).toContain(rx.blocks[0]!.name);
+  });
+
+  it("doses more conservatively for a beginner than an advanced athlete", () => {
+    const begin = prescribeSession([], undefined, { experience: "beginner" });
+    const adv = prescribeSession([], undefined, { experience: "advanced" });
+    const beginStr = begin.blocks[0]!;
+    const advStr = adv.blocks[0]!;
+    if (beginStr.kind === "strength" && advStr.kind === "strength") {
+      // fewer work sets and a lighter load for the beginner
+      expect(beginStr.sets.length).toBeLessThan(advStr.sets.length);
+      expect(Number(beginStr.sets[0]!.load)).toBeLessThan(Number(advStr.sets[0]!.load));
+    }
+  });
 });
 
 describe("easyRunTarget", () => {

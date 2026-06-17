@@ -15,6 +15,8 @@ import {
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
+  type Experience,
+  type Equipment,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
 import { LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
@@ -30,17 +32,21 @@ export default function ReconciledWeek({
   currentWeek = 1,
   sessions,
   bio,
+  experience,
+  equipment,
   style,
 }: {
   macro: Macrocycle;
   currentWeek?: number;
   sessions: LoggedSession[];
   bio?: Biometrics;
+  experience?: Experience;
+  equipment?: Equipment;
   style?: React.CSSProperties;
 }) {
   const rx = useMemo(
-    () => prescribeSession(toTrainingLog(sessions), bio, { profiles: velocityProfiles(sessions) }),
-    [sessions, bio],
+    () => prescribeSession(toTrainingLog(sessions), bio, { profiles: velocityProfiles(sessions), experience, equipment }),
+    [sessions, bio, experience, equipment],
   );
 
   // the athlete's saved sport selection (client-only — avoids an SSR mismatch).
@@ -67,10 +73,13 @@ export default function ReconciledWeek({
     () => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined),
     [sportSel, sessions],
   );
-  const reconciled = useMemo(() => {
-    if (sessions.length === 0) return null;
-    return reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek });
-  }, [macro, rx, sportRx, sessions, currentWeek]);
+  // Render from session zero: reconcilePlan only needs the macro phase + a daily
+  // prescription (cold-start until there's history), so the enrolled plan shows
+  // immediately after onboarding instead of staying hidden until the first log.
+  const reconciled = useMemo(
+    () => reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek }),
+    [macro, rx, sportRx, currentWeek],
+  );
 
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState<string | null>(null);
@@ -87,6 +96,8 @@ export default function ReconciledWeek({
         profiles: velocityProfiles(sessions),
         sport: sportRx,
         daysPerWeek,
+        experience,
+        equipment,
       });
       const res = await fetch("/api/assignments", {
         method: "POST",
