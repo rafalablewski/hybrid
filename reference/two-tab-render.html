@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · two-tab home (Today + Cockpit)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Archivo+Narrow:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ── brand tokens (packages/core/src/brand.ts) ───────────────────────── */
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:'Archivo',sans-serif; --cond:'Archivo Narrow',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:880px;margin:0 auto;padding:0 18px 80px}
+
+  /* ── top bar + tabs ──────────────────────────────────────────────────── */
+  header{position:sticky;top:0;z-index:20;background:rgba(12,13,12,.86);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line)}
+  .bar{max-width:880px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;gap:16px}
+  .logo{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.04em}
+  .logo span{color:var(--lime)}
+  .tabs{display:flex;gap:6px;margin-left:auto;background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:4px}
+  .tab{font-family:var(--cond);font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--ash);background:none;border:none;padding:9px 18px;border-radius:10px;cursor:pointer}
+  .tab.active{background:var(--lime);color:var(--ink)}
+  .tab .gl{margin-right:6px}
+
+  /* ── cards / typography ──────────────────────────────────────────────── */
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px;position:relative}
+  .card.lime{border-left:3px solid var(--lime)}
+  .card.violet{border-left:3px solid var(--violet)}
+  .card.blue{border-left:3px solid var(--blue)}
+  .card.amber{border-left:3px solid var(--amber)}
+  .card.red{border-left:3px solid var(--red)}
+  .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+  .k-lime{color:var(--lime)} .k-violet{color:var(--violet)} .k-blue{color:var(--blue)} .k-amber{color:var(--amber)} .k-red{color:var(--red)} .k-ash{color:var(--ash)}
+  .mono{font-family:var(--mono);color:var(--ash);font-size:12px;line-height:1.6}
+  .chalk{color:var(--chalk)}
+  h1.disp{font-family:var(--disp);font-weight:900;font-size:30px;margin:2px 0 0}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  .big{font-family:var(--disp);font-weight:800;font-size:26px;margin:8px 0 2px}
+  .huge{font-family:var(--disp);font-weight:900;font-size:44px;line-height:1}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chip{display:inline-block;font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid;margin-right:6px}
+  .cta{font-family:var(--cond);font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--ink);background:var(--lime);border:none;border-radius:10px;padding:9px 16px;cursor:pointer}
+  .ghost{background:none;border:none;font-family:var(--mono);font-size:12px;cursor:pointer}
+  .metric .v{font-family:var(--disp);font-weight:800;font-size:22px}
+  .metric .l{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ash)}
+  .metrics{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px}
+  .listrow{display:flex;justify-content:space-between;gap:12px;padding-top:6px;margin-top:6px;border-top:1px solid var(--line)}
+  .listrow:first-of-type{border-top:none;margin-top:8px}
+  .bar-seg{display:flex;gap:3px;height:8px;border-radius:4px;overflow:hidden;margin:16px 0}
+  .meter{height:6px;border-radius:3px;background:var(--ink);margin-top:3px;overflow:hidden}
+  .meter > i{display:block;height:100%}
+  .pill{font-family:var(--cond);font-weight:700;font-size:13px;text-transform:capitalize;padding:6px 14px;
+    border-radius:999px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ash);margin:0 6px 6px 0}
+  .pill.on{border-color:var(--lime);background:rgba(196,240,53,.10);color:var(--lime)}
+  .opt{text-align:left;cursor:pointer;border-radius:12px;padding:12px;border:1px solid var(--line);background:transparent;width:100%}
+  .opt.on{border-color:var(--lime);background:rgba(196,240,53,.08)}
+  .opt .t{font-family:var(--disp);font-weight:700;font-size:15px}
+  .opt.on .t{color:var(--lime)}
+  .startnow{background:var(--lime);border-radius:18px;padding:22px;text-align:center;border:none;width:100%;cursor:pointer;margin-top:16px}
+  .startnow b{font-family:var(--disp);font-weight:900;font-size:20px;color:var(--ink)}
+  .startnow small{display:block;font-family:var(--mono);font-size:11px;color:var(--ink);opacity:.7;margin-top:4px}
+  .sec{margin-top:14px}
+  .step{font-family:var(--disp);font-weight:800;font-size:22px;width:46px;height:42px;border-radius:10px;
+    border:1px solid var(--line);background:var(--ink);color:var(--lime);cursor:pointer}
+
+  /* ── "absorbed from …" provenance badges ─────────────────────────────── */
+  .from{position:absolute;top:-9px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+    text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px dashed;display:none}
+  body.show-prov .from{display:inline-block}
+  .from.dash{color:var(--blue);border-color:var(--blue);background:rgba(127,212,232,.08)}
+  .from.onb{color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.08)}
+  body.show-prov [data-prov]{outline:1px dashed transparent}
+
+  .legend{border:1px solid var(--line);background:var(--ink2);border-radius:14px;padding:14px 16px;margin-top:16px}
+  .legend h3{font-family:var(--disp);font-weight:800;font-size:14px;margin:0 0 6px}
+  .legend .mono{font-size:11.5px}
+  .toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ash);cursor:pointer}
+  .switch{width:34px;height:18px;border-radius:999px;background:var(--line);position:relative;transition:.15s}
+  .switch i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--chalk);transition:.15s}
+  body.show-prov .switch{background:var(--lime)} body.show-prov .switch i{left:18px;background:var(--ink)}
+  .pane{display:none} .pane.active{display:block}
+  .note{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:6px}
+  hr.soft{border:none;border-top:1px solid var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo">HYBRID<span>.</span></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="today"><span class="gl">➤</span>Today</button>
+      <button class="tab" data-tab="cockpit"><span class="gl">◈</span>Cockpit</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- consolidation legend -->
+  <div class="legend">
+    <div class="row">
+      <h3>Home, consolidated to two tabs — nothing dropped</h3>
+      <div class="toggle" id="provToggle"><span>highlight absorbed content</span><span class="switch"><i></i></span></div>
+    </div>
+    <div class="mono">
+      <span style="color:var(--blue)">Dashboard</span> is retired — its unique parts (the season phase timeline + injury-risk-by-tissue, both badged <b style="color:var(--blue)">from Dashboard</b>) fold into <b style="color:var(--lime)">Today</b>.<br/>
+      <span style="color:var(--amber)">Get started</span> leaves the nav and becomes the <b style="color:var(--amber)">from Get started</b> flow inside Cockpit's “Goal &amp; season” (still auto-shown on first run). Toggle above to see exactly what moved where.
+    </div>
+  </div>
+
+  <!-- ════════════════════════ TODAY ════════════════════════ -->
+  <section class="pane active" id="today">
+    <div style="margin-top:18px">
+      <div class="kick k-ash">Fitness GPS · today</div>
+      <h1 class="disp">Ready to train.</h1>
+    </div>
+
+    <!-- start now (mobile-parity CTA, kept) -->
+    <button class="startnow"><b>▶  Start workout</b><small>opens with your default · readiness 78/100</small></button>
+
+    <!-- plan today + AI coach -->
+    <div class="grid2">
+      <div class="card lime">
+        <div class="row">
+          <div class="kick k-lime">Your plan today · readiness 78/100</div>
+          <button class="cta">Start session →</button>
+        </div>
+        <div class="big">Hybrid Strength-Endurance</div>
+        <div class="mono" style="color:var(--violet);margin-bottom:8px">Lower power day · day 2/4 · Build wk 5/16</div>
+        <div class="listrow"><span style="font-weight:600">Back squat</span><span class="mono">4×5 · RPE 8</span></div>
+        <div class="listrow"><span style="font-weight:600">Trap-bar jump</span><span class="mono">5×3</span></div>
+        <div class="listrow"><span style="font-weight:600">Tempo intervals</span><span class="mono">6×400m</span></div>
+      </div>
+      <div class="card violet">
+        <div class="kick k-violet">AI coach</div>
+        <div class="big">Ask your coach</div>
+        <div class="mono chalk">Claude reads your real readiness, fatigue and velocity and writes today's call — what to push, what to hold back.</div>
+        <button class="cta" style="background:var(--violet);margin-top:14px">Open AI coach →</button>
+      </div>
+    </div>
+
+    <!-- season phase timeline — ABSORBED FROM DASHBOARD -->
+    <div class="card lime" data-prov>
+      <span class="from dash">from Dashboard</span>
+      <div class="kick k-lime">Training for · Hybrid strength-endurance · Build phase</div>
+      <div class="big">Week 5 of 16 · load week · build the engine</div>
+      <div class="bar-seg">
+        <div style="flex:4;background:rgba(196,240,53,.2)" title="Base · 4wk"></div>
+        <div style="flex:6;background:var(--lime)" title="Build · 6wk (current)"></div>
+        <div style="flex:4;background:rgba(201,169,240,.2)" title="Peak · 4wk"></div>
+        <div style="flex:2;background:rgba(240,180,94,.2)" title="Taper · 2wk"></div>
+      </div>
+      <div class="mono">Base · Build · Peak · Taper — your enrolled season drives the weeks.</div>
+    </div>
+
+    <!-- this week (reconciled) -->
+    <div class="card violet">
+      <div class="row">
+        <div class="kick k-violet">This week · Build · wk 5</div>
+        <span class="chip" style="color:var(--lime);border-color:var(--lime)">load</span>
+      </div>
+      <div class="metrics" style="gap:16px">
+        <span class="mono">intensity 0.82</span><span class="mono">load ×1.05</span><span class="mono">vol ×1.10</span>
+      </div>
+      <div class="listrow" style="align-items:center"><div><div style="font-weight:700">Lower power</div><div class="mono">primary lift</div></div><span class="chip" style="color:var(--lime);border-color:var(--lime)">4×5</span></div>
+      <div class="listrow" style="align-items:center"><div><div style="font-weight:700">Sprint mechanics</div><div class="mono" style="color:var(--amber)">sport · acceleration</div></div><span class="chip" style="color:var(--amber);border-color:var(--amber)">6×20m</span></div>
+      <div class="mono" style="margin-top:10px">Phase says build; your last session was fresh, so today carries the load. Sport transfer folded in, overlap deduped.</div>
+      <button class="cta" style="background:var(--violet);margin-top:14px;color:var(--ink)">Schedule / re-sync week · 4d →</button>
+    </div>
+
+    <!-- on track? -->
+    <div class="card lime">
+      <div class="row">
+        <div class="kick k-lime">On track? · steady</div>
+        <span class="chip" style="color:var(--lime);border-color:var(--lime)">6-day streak</span>
+      </div>
+      <div style="font-family:var(--disp);font-weight:700;font-size:18px;margin-top:10px">You're locked in — three sessions this week.</div>
+      <div class="mono chalk">Keep the cadence: one more easy aerobic day hits your weekly target without adding fatigue.</div>
+      <div class="metrics">
+        <div class="metric"><div class="v" style="color:var(--lime)">18</div><div class="l">Risk</div></div>
+        <div class="metric"><div class="v">74</div><div class="l">Habit strength</div></div>
+        <div class="metric"><div class="v">3/3</div><div class="l">This week</div></div>
+      </div>
+    </div>
+
+    <!-- your week recap -->
+    <div class="card lime">
+      <div class="row">
+        <div class="kick k-lime">Your week</div>
+        <div><span class="chip" style="color:var(--lime);border-color:var(--lime)">🏆 2 PR</span><span class="chip" style="color:var(--blue);border-color:var(--blue)">🏃 1 PR</span></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="v">4</div><div class="l">Sessions</div></div>
+        <div class="metric"><div class="v" style="color:var(--lime)">31,240 kg</div><div class="l">Volume</div></div>
+        <div class="metric"><div class="v">62</div><div class="l">Sets</div></div>
+        <div class="metric"><div class="v" style="color:var(--blue)">18 km</div><div class="l">Distance</div></div>
+        <div class="metric"><div class="v">5</div><div class="l">Active days</div></div>
+      </div>
+      <div class="mono" style="color:var(--lime);margin-top:12px">+1 sessions · +3,100 kg vs last week</div>
+      <div class="mono chalk" style="margin-top:8px">Back squat 162.5kg (+5) · Deadlift 200kg (first!)</div>
+    </div>
+
+    <!-- future self -->
+    <div class="card violet">
+      <div class="kick k-violet">Future self · back squat</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0">
+        <span class="huge" style="font-size:30px">162</span><span style="color:var(--ash)">→</span>
+        <span class="huge" style="font-size:30px;color:var(--violet)">181</span><span class="mono">kg e1RM · 12 wks</span>
+      </div>
+      <svg viewBox="0 0 320 110" width="100%" height="110" style="margin-top:4px">
+        <line x1="0" y1="90" x2="320" y2="90" stroke="var(--line)"/>
+        <line x1="0" y1="28" x2="320" y2="28" stroke="var(--amber)" stroke-dasharray="4 4"/>
+        <text x="316" y="22" fill="var(--amber)" font-size="10" text-anchor="end" font-family="monospace">goal 180</text>
+        <polyline fill="none" stroke="var(--violet)" stroke-width="2.5"
+          points="0,80 53,72 106,63 160,52 213,43 266,33 320,24"/>
+        <g fill="var(--violet)"><circle cx="0" cy="80" r="3"/><circle cx="106" cy="63" r="3"/><circle cx="213" cy="43" r="3"/><circle cx="320" cy="24" r="3"/></g>
+      </svg>
+      <div class="mono chalk" style="margin-top:6px">+1.6kg/wk · reach 180kg in ~11 wks · 72% likely · consistency ×0.94</div>
+    </div>
+
+    <!-- performance state · twin — ABSORBED & EXPANDED FROM DASHBOARD (incl. injury risk) -->
+    <div class="card blue" data-prov>
+      <span class="from dash">from Dashboard</span>
+      <div class="kick k-blue">Performance State · Athlete Twin</div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:8px">
+        <div style="display:flex;align-items:baseline;gap:12px">
+          <div class="huge" style="color:var(--lime)">71</div>
+          <div>
+            <div class="mono chalk">HPI · Hybrid Performance Index</div>
+            <div style="margin-top:4px">
+              <span class="chip" style="color:var(--lime);border-color:var(--lime)">primed</span>
+              <span class="chip" style="color:var(--amber);border-color:var(--amber)">limiter · endurance</span>
+            </div>
+          </div>
+        </div>
+        <div style="min-width:220px;flex:1;max-width:320px">
+          <div class="row"><span class="mono">Strength</span><span class="mono" style="color:var(--lime)">78</span></div>
+          <div class="meter"><i style="width:78%;background:var(--lime)"></i></div>
+          <div class="row" style="margin-top:8px"><span class="mono">Endurance</span><span class="mono" style="color:var(--blue)">61</span></div>
+          <div class="meter"><i style="width:61%;background:var(--blue)"></i></div>
+          <div class="row" style="margin-top:8px"><span class="mono">Recovery</span><span class="mono" style="color:var(--violet)">73</span></div>
+          <div class="meter"><i style="width:73%;background:var(--violet)"></i></div>
+        </div>
+      </div>
+      <div class="mono chalk" style="margin:10px 0 12px">Strength is your engine; endurance is the limiter. Recovery's good — there's room to push aerobic volume this block.</div>
+      <div class="grid2">
+        <div>
+          <div class="kick k-ash">Why · top drivers</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            <div class="mono"><span style="color:var(--lime);font-weight:900">+</span> <span class="chalk">Squat e1RM trend</span> · +6% over 4 wks</div>
+            <div class="mono"><span style="color:var(--amber);font-weight:900">−</span> <span class="chalk">Weekly mileage</span> · below aerobic base target</div>
+            <div class="mono"><span style="color:var(--lime);font-weight:900">+</span> <span class="chalk">HRV vs baseline</span> · recovered</div>
+          </div>
+        </div>
+        <div data-prov style="position:relative">
+          <span class="from dash" style="top:-22px">from Dashboard</span>
+          <div class="kick k-ash">Injury risk · by tissue</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            <div class="mono"><span class="chip" style="color:var(--amber);border-color:var(--amber)">41</span> <span class="chalk" style="text-transform:capitalize">Patellar tendon</span> · load spike wk-on-wk</div>
+            <div class="mono"><span class="chip" style="color:var(--lime);border-color:var(--lime)">12</span> <span class="chalk" style="text-transform:capitalize">Posterior chain</span> · nominal</div>
+            <div class="mono" style="color:var(--lime)">Overall 22/100 (low) · monitor knees on jumps</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">Signed in as Rafal. Logged sessions sync with the web app.</p>
+  </section>
+
+  <!-- ════════════════════════ COCKPIT ════════════════════════ -->
+  <section class="pane" id="cockpit">
+    <div style="margin-top:18px">
+      <div class="kick k-ash">Athlete cockpit</div>
+      <h1 class="disp">Your command center</h1>
+      <div class="mono" style="margin-top:6px">Goal → season → today → performance → sport → technique → endurance, in one place.</div>
+    </div>
+
+    <!-- 1 · GOAL & SEASON  (+ the Get started flow folded in) -->
+    <div class="card violet sec">
+      <div class="row">
+        <div class="kick k-violet">Goal &amp; season</div>
+        <button class="ghost" style="color:var(--violet)">Periodize →</button>
+      </div>
+      <div class="big" style="font-size:20px">Hybrid strength-endurance</div>
+      <div class="mono">Build · week 5/16 · event in 11 wk</div>
+      <hr class="soft"/>
+      <!-- ABSORBED FROM GET STARTED -->
+      <div data-prov style="position:relative">
+        <span class="from onb">from Get started</span>
+        <div class="row">
+          <div class="kick k-amber">Set up / change plan</div>
+          <button class="ghost" id="onbToggle" style="color:var(--amber)">Open setup →</button>
+        </div>
+        <div class="mono" style="margin-top:4px">4 questions → a plan you'll finish. Shown automatically on first run.</div>
+
+        <div id="onbBody" style="display:none;margin-top:14px">
+          <!-- persona -->
+          <div class="kick k-lime">How do you want to use HYBRID?</div>
+          <div class="grid2" style="margin-top:10px">
+            <button class="opt"><div class="t">Just track my training</div><div class="mono">Log fast, review, share. The clean, simple app.</div></button>
+            <button class="opt on"><div class="t">Train for a goal — give me the data</div><div class="mono">Plans, sport S&amp;C, velocity, performance. The full toolkit.</div></button>
+          </div>
+          <!-- 1 goal -->
+          <div class="kick k-lime" style="margin-top:16px">1 · Your main goal</div>
+          <div class="grid2" style="margin-top:8px">
+            <button class="opt on"><div class="t">Hybrid (strength + endurance)</div><div class="mono">Lift heavy and run far.</div></button>
+            <button class="opt"><div class="t">Get stronger</div><div class="mono">Max strength, powerlifts.</div></button>
+            <button class="opt"><div class="t">First marathon</div><div class="mono">Build the aerobic base.</div></button>
+            <button class="opt"><div class="t">Sport performance</div><div class="mono">S&amp;C that transfers.</div></button>
+          </div>
+          <!-- 2 experience / 4 equipment -->
+          <div class="grid2" style="margin-top:14px">
+            <div>
+              <div class="kick k-lime">2 · Experience</div>
+              <div style="margin-top:10px"><button class="pill">beginner</button><button class="pill on">intermediate</button><button class="pill">advanced</button></div>
+            </div>
+            <div>
+              <div class="kick k-lime">3 · Equipment</div>
+              <div style="margin-top:10px"><button class="pill on">full</button><button class="pill">home</button><button class="pill">minimal</button></div>
+            </div>
+          </div>
+          <!-- days -->
+          <div class="kick k-lime" style="margin-top:16px">4 · Days per week</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:10px">
+            <button class="step">−</button>
+            <span class="huge" style="font-size:26px;min-width:48px;text-align:center">4×</span>
+            <button class="step">+</button>
+          </div>
+          <!-- plan preview -->
+          <div class="card lime" style="margin-top:16px;border-left:3px solid var(--violet)">
+            <div class="kick k-violet">Your plan</div>
+            <div class="big" style="font-size:22px">Hybrid Strength-Endurance</div>
+            <div class="mono">Hybrid · 4×/wk · 16 weeks · strength · power · aerobic base</div>
+            <div class="mono chalk" style="margin-top:10px">Periodized build toward your event: heavy lower-body power early, aerobic volume layered through, a taper into race week.</div>
+            <button class="cta" style="font-family:var(--disp);font-size:15px;padding:13px 26px;margin-top:14px">Start this plan →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · TODAY'S ROUTE -->
+    <div class="card lime sec">
+      <div class="row"><div class="kick k-lime">Today · readiness 78/100</div><button class="ghost" style="color:var(--lime)">Start session →</button></div>
+      <div class="big" style="font-size:18px">Lower power + Tempo intervals</div>
+      <div class="mono">Fresh after a rest day; phase says build, so today carries load — heavy triples then a tempo run.</div>
+    </div>
+
+    <!-- 3 · PERFORMANCE -->
+    <div class="card blue sec">
+      <div class="row"><div class="kick k-blue">Performance · Athlete Twin</div><button class="ghost" style="color:var(--blue)">Performance →</button></div>
+      <div style="display:flex;align-items:baseline;gap:12px;margin-top:4px">
+        <span class="huge" style="font-size:34px;color:var(--lime)">71</span>
+        <span class="mono">HPI · primed · limiter endurance</span>
+        <span style="margin-left:auto;display:flex;gap:14px">
+          <span class="mono" style="color:var(--lime)">STR 78</span><span class="mono" style="color:var(--blue)">END 61</span><span class="mono" style="color:var(--violet)">REC +73</span>
+        </span>
+      </div>
+      <div class="mono chalk" style="margin-top:6px">Squat e1RM up 6% over 4 weeks; endurance is the limiter.</div>
+    </div>
+
+    <!-- 4 · SPORT -->
+    <div class="card amber sec">
+      <div class="row"><div class="kick k-amber">Sport S&amp;C</div><button class="ghost" style="color:var(--amber)">Sport →</button></div>
+      <div class="big" style="font-size:16px;font-weight:700">Sprint / 100m · Regional</div>
+    </div>
+
+    <!-- 5 · VELOCITY -->
+    <div class="card blue sec">
+      <div class="row"><div class="kick k-blue">Velocity &amp; technique</div><button class="ghost" style="color:var(--blue)">Velocity →</button></div>
+      <div class="mono chalk">Bar speed → a velocity-estimated 1RM and autoregulated load. Force-plate &amp; video analysis feed the same Twin.</div>
+    </div>
+
+    <!-- 6 · ENDURANCE -->
+    <div class="card lime sec">
+      <div class="row"><div class="kick k-lime">Endurance</div><button class="ghost" style="color:var(--lime)">Running →</button></div>
+      <div class="metrics">
+        <div class="metric"><div class="v">12</div><div class="l">efforts</div></div>
+        <div class="metric"><div class="v">86</div><div class="l">km</div></div>
+        <div class="metric"><div class="v">412</div><div class="l">min</div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // tab switch
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});
+      document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('active')});
+      t.classList.add('active');
+      document.getElementById(t.dataset.tab).classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+  // provenance highlight toggle
+  document.getElementById('provToggle').addEventListener('click', function(){
+    document.body.classList.toggle('show-prov');
+  });
+  // onboarding flow expand
+  var ob = document.getElementById('onbToggle'), body = document.getElementById('onbBody');
+  ob.addEventListener('click', function(){
+    var open = body.style.display === 'block';
+    body.style.display = open ? 'none' : 'block';
+    ob.textContent = open ? 'Open setup →' : 'Close setup ✕';
+  });
+  // pill / option toggles (cosmetic)
+  document.querySelectorAll('.pill').forEach(function(p){
+    p.addEventListener('click', function(){
+      Array.from(p.parentElement.children).forEach(function(s){s.classList.remove('on')});
+      p.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>
