@@ -67,7 +67,8 @@ export interface PlanDetail {
   sessionLength: string;
   equipment: string;
   split: string[];
-  sample: PlanSample;
+  /** Every training day in the plan, each fully spec'd. */
+  days: PlanSample[];
   progression: string;
 }
 
@@ -88,7 +89,9 @@ export const GOAL_TREE: GoalNode[] = [
     plans: [] },
   // ---- Physique ----
   { id: "bb", name: "Bodybuilding", icon: "■", color: VIOLET, category: "Physique", blurb: "Maximize muscle. Train splits, chase volume and progressive overload.",
-    plans: [] },
+    plans: [
+      { id: "bb-fb4", name: "4-Day Full Body", weeks: 12, sessions: 4, tag: "Full Body", desc: "The recommended pick. Two strength days, two hypertrophy days, every muscle hit 4×/week.", focus: ["Strength", "Hypertrophy"], hot: true },
+    ] },
   { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
     plans: [] },
   // ---- Endurance ----
@@ -147,9 +150,50 @@ export const GOAL_GROUPS: GoalGroup[] = GOAL_CATEGORIES.map((category) => ({
 //  a fully-spec'd sample session, progression, equipment.
 // ============================================================
 
-// Emptied with the demo plans. Real plan detail will be added alongside the
-// uploaded plans. `planDetail()` below fills sane defaults for any missing id.
-export const PLAN_DETAIL: Record<string, PlanDetail> = {};
+export const PLAN_DETAIL: Record<string, PlanDetail> = {
+  // ---- Bodybuilding ----
+  "bb-fb4": {
+    level: "Intermediate",
+    forWho: "Lifters with 6+ months under the bar who can train 4 days/week and want the best all-round driver of size and strength.",
+    outcome: "Strength on the big lifts and visible muscle everywhere — every group trained 4×/week for maximum weekly stimulus.",
+    sessionLength: "60–75 min",
+    equipment: "Full gym (barbell, dumbbells, cables, machines)",
+    split: ["Day 1", "Day 2", "Rest", "Day 3", "Day 4", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Strength", items: [
+        { name: "Back Squat", sr: "5 × 3–5", rest: "3:00", rpe: "8" },
+        { name: "Bench Press", sr: "5 × 3–5", rest: "3:00", rpe: "8" },
+        { name: "Weighted Pull-Up", sr: "4 × 5–8", rest: "2:30", rpe: "8" },
+        { name: "Leg Curl", sr: "3 × 10–15", rest: "1:30", rpe: "9" },
+        { name: "Plank", sr: "3 × 45–60 sec", rest: "1:00", rpe: "—" },
+      ] },
+      { day: "Day 2 — Hypertrophy", items: [
+        { name: "Romanian Deadlift", sr: "4 × 8–10", rest: "2:00", rpe: "8" },
+        { name: "Incline DB Press", sr: "4 × 8–12", rest: "2:00", rpe: "8" },
+        { name: "Cable Row", sr: "4 × 8–12", rest: "2:00", rpe: "8" },
+        { name: "Lateral Raise", sr: "4 × 12–20", rest: "1:00", rpe: "9" },
+        { name: "EZ Curl", sr: "3 × 10–15", rest: "1:00", rpe: "9" },
+        { name: "Rope Pushdown", sr: "3 × 10–15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 3 — Strength", items: [
+        { name: "Deadlift", sr: "4 × 3–5", rest: "3:00", rpe: "8" },
+        { name: "Overhead Press", sr: "5 × 3–5", rest: "3:00", rpe: "8" },
+        { name: "Weighted Chin-Up", sr: "4 × 5–8", rest: "2:30", rpe: "8" },
+        { name: "Walking Lunge", sr: "3 × 8–10", rest: "2:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "3 × 10–15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 4 — Hypertrophy", items: [
+        { name: "Leg Press", sr: "4 × 10–15", rest: "2:00", rpe: "9" },
+        { name: "Machine Chest Press", sr: "4 × 8–12", rest: "2:00", rpe: "8" },
+        { name: "Seated Row", sr: "4 × 8–12", rest: "2:00", rpe: "8" },
+        { name: "Rear Delt Fly", sr: "4 × 12–20", rest: "1:00", rpe: "9" },
+        { name: "Incline Curl", sr: "3 × 10–15", rest: "1:00", rpe: "9" },
+        { name: "Overhead Triceps Extension", sr: "3 × 10–15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Double progression on the hypertrophy days — add reps within the range, then load. On strength days add a small load each week when you hit all reps. Deload every 4th week.",
+  },
+};
 
 // resolve a plan id to its full detail, filling any gaps with sane defaults
 export function planDetail(id: string, _plan?: unknown): PlanDetail {
@@ -161,7 +205,7 @@ export function planDetail(id: string, _plan?: unknown): PlanDetail {
     sessionLength: d.sessionLength || "60 min",
     equipment: d.equipment || "Basic gym",
     split: d.split || ["Train", "Rest", "Train", "Rest", "Train", "Rest", "Rest"],
-    sample: d.sample || { day: "Sample day", items: [{ name: "—", sr: "—", rest: "—", rpe: "—" }] },
+    days: Array.isArray(d.days) && d.days.length ? d.days : [{ day: "Sample day", items: [{ name: "—", sr: "—", rest: "—", rpe: "—" }] }],
     progression: d.progression || "Progressive overload week to week, with a deload every 4th week.",
   };
 }
