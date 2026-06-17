@@ -187,7 +187,7 @@ export const DEPLOY_GUIDE: Guide = {
         {
           t: "steps",
           items: [
-            "Make sure your LOCAL clone is on the branch you actually merged into — usually `main`. EAS builds from your computer's COMMITTED git state, NOT from GitHub, so run `cd ~/hybrid && git checkout main && git pull` FIRST. (Skipping this is the #1 cause of 'I rebuilt but the new features aren't there' — you just rebuilt old code. The web app looks updated because Vercel deploys from GitHub automatically; your Mac clone only updates when you pull.)",
+            "Make sure your LOCAL clone is on the branch you actually merged into — usually `main`. EAS builds from your computer's COMMITTED git state, NOT from GitHub, so from your project folder (wherever you cloned it — e.g. `cd ~/hybrid`) run `git checkout main && git pull` FIRST. (Skipping this is the #1 cause of 'I rebuilt but the new features aren't there' — you just rebuilt old code. The web app looks updated because Vercel deploys from GitHub automatically; your Mac clone only updates when you pull.)",
             "Confirm the commit: `git log --oneline -1` should show the latest merge you expect. If it doesn't, stop — you're about to build stale code.",
             "`pnpm install` (dependencies may have changed across the merged PRs), then `cd apps/mobile`.",
             "Build for a real device: `npx eas build --platform ios --profile device` (internal distribution — NOT the simulator profiles).",
@@ -207,7 +207,7 @@ export const DEPLOY_GUIDE: Guide = {
         {
           t: "term",
           term: "Trap 2 — Apple login fails on a security key",
-          text: "If `eas build` dies on Apple sign-in saying two-factor 'cannot be handled' and lists Security Keys, it's because EAS/Fastlane can't complete a physical-security-key challenge. Fix: authenticate with an App Store Connect API KEY instead of an interactive login. In App Store Connect → Users and Access → Integrations → App Store Connect API, generate a Team key (App Manager role), download the .p8 ONCE, then in the same terminal export `EXPO_ASC_API_KEY_PATH` (path to the .p8), `EXPO_ASC_KEY_ID` and `EXPO_ASC_ISSUER_ID` before running the build — no password, no 2FA prompt. (Adding a trusted phone number to the Apple ID also lets Apple fall back to an SMS code, which EAS CAN handle; the API key is the durable fix and the one this project uses.)",
+          text: "If `eas build` dies on Apple sign-in saying two-factor 'cannot be handled' and lists Security Keys, it's because EAS/Fastlane can't complete a physical-security-key challenge. Fix: authenticate with an App Store Connect API KEY instead of an interactive login. In App Store Connect → Users and Access → Integrations → App Store Connect API, generate a Team key with the ADMIN role (App Manager is NOT enough — only an Admin key can reach the Certificates / Identifiers / Profiles API that EAS uses to create certs, register the device via `eas device:create`, and sync capabilities), download the .p8 ONCE, then in the same terminal export `EXPO_ASC_API_KEY_PATH` (path to the .p8), `EXPO_ASC_KEY_ID` and `EXPO_ASC_ISSUER_ID` before running the build — no password, no 2FA prompt. (Adding a trusted phone number to the Apple ID also lets Apple fall back to an SMS code, which EAS CAN handle; the API key is the durable fix and the one this project uses.)",
         },
       ],
     },
@@ -249,7 +249,7 @@ export const DEPLOY_GUIDE: Guide = {
           t: "steps",
           items: [
             "Public submission: `eas build --profile production --platform ios` then `eas submit` to push a build to App Store Connect / TestFlight, fill in the store listing (screenshots, description, privacy answers), and submit for review.",
-            "Re-enable push: the expo-notifications plugin was stripped so the API-key build could ship — re-add it once a provisioning profile WITH the Push Notifications capability is provisioned (under API-key-only auth EAS skips capability syncing).",
+            "Re-enable push: the expo-notifications plugin was stripped so the API-key build could ship — re-add it once the Push Notifications capability is on the Bundle ID. With an ADMIN-role App Store Connect API key EAS can sync that capability + provisioning profile for you (the earlier build skipped it because the key lacked that access); verify the profile actually includes it.",
           ],
         },
         {
