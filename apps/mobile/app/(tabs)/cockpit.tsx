@@ -15,7 +15,9 @@ import {
   type Macrocycle,
 } from "@hybrid/core";
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
-import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
+import { useSession } from "../../lib/session";
+import { usePersona, setClientPersona } from "../../lib/persona";
+import { Screen, Card, Kicker, Mono, H1, Button, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
 const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
@@ -28,6 +30,18 @@ const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
  * athlete's real data and links out to the deep screen. (Phase 2.)
  */
 export default function Cockpit() {
+  // Freemium funnel: casual users reach the Cockpit tab as a LOCKED bait — show
+  // the upgrade teaser; athlete/coach get the live cockpit below.
+  const persona = usePersona();
+  const { entitlement } = useSession();
+  const router = useRouter();
+  if (persona === "casual") {
+    return <CockpitTeaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : router.push("/upgrade"))} />;
+  }
+  return <CockpitFull />;
+}
+
+function CockpitFull() {
   const C = useTheme().palette;
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -232,5 +246,52 @@ function Stat({ C, label, value }: { C: ReturnType<typeof useTheme>["palette"]; 
       <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{value}</Text>
       <Mono color={C.ash} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>{label}</Mono>
     </View>
+  );
+}
+
+// What's inside the Cockpit — the bait list shown to a freemium (casual) user.
+const TEASE: { kicker: string; blurb: string; color: (C: ReturnType<typeof useTheme>["palette"]) => string }[] = [
+  { kicker: "Goal & season", color: (C) => C.violet, blurb: "Your periodized macrocycle — phase, week and event countdown." },
+  { kicker: "Today's route", color: (C) => C.lime, blurb: "A velocity-aware daily prescription tuned to your readiness." },
+  { kicker: "Performance · Athlete Twin", color: (C) => C.blue, blurb: "Your HPI, its pillars and limiter — your training's digital twin." },
+  { kicker: "Sport S&C", color: (C) => C.amber, blurb: "The strength & conditioning that transfers to your sport, ranked." },
+  { kicker: "Velocity & technique", color: (C) => C.blue, blurb: "Bar-speed 1RM, autoregulated load, force-plate & video analysis." },
+  { kicker: "Endurance", color: (C) => C.lime, blurb: "Mileage, pace zones and running PRs from your whole history." },
+];
+
+/**
+ * The freemium BAIT: casual users open the Cockpit tab and see a locked teaser
+ * of everything inside + an upgrade CTA. A paid user in Simple mode flips to
+ * Full; a free user is sent to the upgrade screen.
+ */
+function CockpitTeaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
+  const C = useTheme().palette;
+  return (
+    <Screen>
+      <Kicker color={C.amber}>Athlete cockpit · Full</Kicker>
+      <H1>Unlock your command center 🔒</H1>
+      <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
+        Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen.
+        It&apos;s part of Full. Keep logging free; upgrade whenever you want the depth.
+      </Mono>
+
+      {TEASE.map((s) => (
+        <Card key={s.kicker} style={{ borderLeftWidth: 3, borderLeftColor: s.color(C), marginTop: 12, opacity: 0.7, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Kicker color={s.color(C)}>{s.kicker}</Kicker>
+            <Mono color={C.chalk} style={{ marginTop: 4, lineHeight: 18 }}>{s.blurb}</Mono>
+          </View>
+          <Text style={{ fontSize: 16 }}>🔒</Text>
+        </Card>
+      ))}
+
+      <View style={{ marginTop: 18 }}>
+        <Button label={paid ? "Switch to Full →" : "Upgrade to Full →"} onPress={onUnlock} />
+      </View>
+      <Mono color={C.ash} style={{ marginTop: 10, textAlign: "center" }}>
+        {paid ? "You're already paid — switch to Full to unlock everything." : "Full unlocks the Cockpit, plans, analytics, sport, velocity and more."}
+      </Mono>
+      <View style={{ height: 16 }} />
+    </Screen>
   );
 }

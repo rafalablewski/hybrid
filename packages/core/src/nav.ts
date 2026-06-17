@@ -155,6 +155,28 @@ export function navVisibleTo(persona: Persona, id: string, access?: PersonaAcces
   return PERSONA_RANK[persona] >= PERSONA_RANK[effectiveMinPersona(item, access)];
 }
 
+/**
+ * The freemium FUNNEL. These nav ids are NOT hidden from a casual (free) user —
+ * they're shown as a LOCKED upsell anchor (a teaser of the paid Athlete tier)
+ * that baits the Full upgrade, instead of vanishing. The Cockpit is the flagship
+ * bait: casual gets the lean Today plus a locked Cockpit it can peek into.
+ */
+export const UPSELL_NAV_IDS: string[] = ["cockpit"];
+
+/** Whether `id` should appear to `persona` as a LOCKED upsell (visible-but-gated
+ *  teaser) rather than either fully shown or fully hidden — true only when the
+ *  persona can't actually see it AND it's a funnel/upsell id. */
+export function navIsUpsell(persona: Persona, id: string, access?: PersonaAccess): boolean {
+  return UPSELL_NAV_IDS.includes(id) && !navVisibleTo(persona, id, access);
+}
+
+/** The locked upsell anchors a persona should be TEASED with (the funnel ids it
+ *  can't yet see) — appended to navForPersona by the clients and rendered with a
+ *  lock. Empty for athlete+ (they have the real screens). */
+export function upsellNavItems(persona: Persona, items: NavItem[] = NAV_ITEMS, access?: PersonaAccess): NavItem[] {
+  return items.filter((i) => navIsUpsell(persona, i.id, access));
+}
+
 /** Validate raw JSON (e.g. a flag value) into a clean PersonaAccess — only known
  *  nav ids mapped to valid personas survive, so a bad payload can't break nav. */
 export function sanitizePersonaAccess(raw: unknown): PersonaAccess {

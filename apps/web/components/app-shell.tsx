@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, upsellNavItems, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import {
@@ -107,6 +107,10 @@ export default function AppShell() {
   // persona sees each item (Access control → the access.personaNav flag value).
   const persona = usePersona();
   const navAccess = sanitizePersonaAccess(value("access.personaNav"));
+  // Freemium funnel: items a casual user can't truly access but should be TEASED
+  // with (the Cockpit) — appended to the sidebar/⌘K as locked upsell anchors.
+  const upsellItems = useMemo(() => upsellNavItems(persona, undefined, navAccess), [persona, navAccess]);
+  const lockedNavIds = useMemo(() => new Set(upsellItems.map((i) => i.id)), [upsellItems]);
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
@@ -208,7 +212,7 @@ export default function AppShell() {
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-          {groupedNav(navForPersona(persona, undefined, navAccess)).map(({ group, items }) => {
+          {groupedNav([...navForPersona(persona, undefined, navAccess), ...upsellItems]).map(({ group, items }) => {
             const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
             if (visible.length === 0) return null;
             return (
@@ -223,11 +227,14 @@ export default function AppShell() {
                 )}
                 {visible.map(({ id, label: fallback, icon: ic }) => {
                   const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
+                  // Locked upsell anchors (e.g. Cockpit for a freemium user) get a
+                  // lock cue but still navigate — the screen shows the teaser/paywall.
+                  const locked = lockedNavIds.has(id);
                   return (
                     <button
                       key={id}
                       onClick={() => { setPendingBlocks(undefined); setScreen(id); }}
-                      title={collapsed ? label : undefined}
+                      title={collapsed ? `${label}${locked ? " · Full" : ""}` : undefined}
                       style={{
                         width: "100%",
                         display: "flex",
@@ -248,7 +255,8 @@ export default function AppShell() {
                       }}
                     >
                       <span style={{ fontSize: 16 }}>{ic}</span>
-                      {!collapsed && label}
+                      {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
+                      {!collapsed && locked && <span style={{ fontSize: 11, color: txt(AMBER) }} title="Full upgrade">🔒</span>}
                     </button>
                   );
                 })}
@@ -614,9 +622,13 @@ function CommandMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles.
-  const tiles = groupedNav(navForPersona(persona, undefined, access)).flatMap(({ group, items }) =>
-    items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group })),
+  // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles —
+  // plus the locked upsell anchors (Cockpit for freemium), so the bait shows in
+  // the ⌘K hub too. lockedTile marks the upsell ones for the lock cue.
+  const upsells = upsellNavItems(persona, undefined, access);
+  const lockedTileIds = new Set(upsells.map((i) => i.id));
+  const tiles = groupedNav([...navForPersona(persona, undefined, access), ...upsells]).flatMap(({ group, items }) =>
+    items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group, locked: lockedTileIds.has(it.id) })),
   );
 
   const label = (id: string, fallback: string) =>
@@ -665,12 +677,12 @@ function CommandMenu({
                 }}
               >
                 <span className="lg-sheen" aria-hidden />
-                <span className="cmd-ic">{glyph(tile.icon)}</span>
+                <span className="cmd-ic">{tile.locked ? "🔒" : glyph(tile.icon)}</span>
                 <span className="cmd-lb" style={disp}>
                   {label(tile.id, tile.label)}
                 </span>
                 <span className="cmd-gp" style={mono}>
-                  {groupLabel(tile.group)}
+                  {tile.locked ? "Full" : groupLabel(tile.group)}
                 </span>
               </button>
             ))}

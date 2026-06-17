@@ -3,6 +3,8 @@ import {
   NAV_ITEMS,
   navForPersona,
   navVisibleTo,
+  navIsUpsell,
+  upsellNavItems,
   resolvePersona,
   sanitizePersonaAccess,
 } from "./nav";
@@ -56,6 +58,19 @@ describe("navForPersona", () => {
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
       ["calendar", "checkin", "history", "log", "nutrition", "progress", "settings", "today"],
     );
+  });
+
+  it("freemium funnel: Cockpit is a LOCKED upsell for casual, the real thing for athlete+", () => {
+    // casual can't actually see it, but it's teased (locked) rather than hidden
+    expect(navVisibleTo("casual", "cockpit")).toBe(false);
+    expect(navIsUpsell("casual", "cockpit")).toBe(true);
+    expect(upsellNavItems("casual").map((i) => i.id)).toEqual(["cockpit"]);
+    // athlete/coach/admin have it for real — nothing to upsell
+    expect(navIsUpsell("athlete", "cockpit")).toBe(false);
+    expect(upsellNavItems("athlete")).toEqual([]);
+    expect(upsellNavItems("coach")).toEqual([]);
+    // a non-funnel locked item (e.g. velocity) is NOT teased — stays hidden
+    expect(navIsUpsell("casual", "velocity")).toBe(false);
   });
 
   it("nests: each persona sees everything the lower one does, plus more", () => {
