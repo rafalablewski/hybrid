@@ -55,6 +55,8 @@ import Trends from "./trends";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
+import AuroraToday from "./aurora/today";
+import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
 import Nutrition from "./nutrition";
 import Onboarding from "./onboarding";
@@ -115,6 +117,7 @@ export default function AppShell() {
   // cluttering the lean app. Shown only to the casual persona.
   const showUpgradeEntry = persona === "casual";
   const { theme, toggle } = useTheme();
+  const aurora = useTemplate().template === "aurora";
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
@@ -528,7 +531,11 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+          aurora ? (
+            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+          ) : (
+            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+          )
         )}
 
         {screen === "upgrade" && <Upgrade onUpgraded={() => setScreen("today")} />}
