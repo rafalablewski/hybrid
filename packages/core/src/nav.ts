@@ -57,17 +57,21 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 // Access control). The guiding rule: don't overload retail.
 //   • CASUAL (Average Joe) — the lean loop only: train, review, share, basic
 //     health (today/log/history/calendar/nutrition/progress/check-in) + setup.
-//   • ATHLETE — adds the depth + analytics (cockpit/dashboard/plans/periodize/
+//   • ATHLETE — adds the depth + analytics (cockpit/plans/periodize/
 //     sport/competition/performance/velocity/running/force-plate/video/longevity/
 //     talent/connections/builder).
 //   • COACH — adds the coaching console (coach/squad/team-compare/org/tactical),
 //     on top of all the athlete depth (a coach trains too).
 //   • ADMIN — everything.
+//
+// The home group is two tabs: Today (the live daily home) + Cockpit (the athlete
+// depth hub). The old Dashboard is retired — its unique surfaces (the season
+// phase timeline + injury-risk-by-tissue) live on Today now. Onboarding ("Get
+// started") is no longer a standalone tab either: it's a reachable flow (first
+// run, and Cockpit's "Set up / change plan"), not a persistent nav item.
 export const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", icon: "➤", group: "home" },
   { id: "cockpit", label: "Cockpit", icon: "◈", group: "home", minPersona: "athlete" },
-  { id: "dashboard", label: "Dashboard", icon: "◆", group: "home", minPersona: "athlete" },
-  { id: "onboarding", label: "Get started", icon: "✦", group: "home" },
 
   { id: "log", label: "Log session", icon: "✎", group: "train" },
   { id: "calendar", label: "Calendar", icon: "▦", group: "train" },

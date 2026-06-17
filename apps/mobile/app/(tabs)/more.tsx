@@ -94,9 +94,12 @@ export default function More() {
   // Shape the hub to the persona (honouring the admin's access override): a
   // casual retail user sees only the lean set, an athlete/coach sees the depth.
   // Sections with nothing visible drop out.
+  // `onboarding` is the universal setup flow — it's no longer a nav item (so
+  // navVisibleTo can't gate it), but every persona can re-run it, so it always
+  // shows. Everything else is persona/access gated as before.
   const sections = SECTIONS.map((s) => ({
     ...s,
-    links: s.links.filter((l) => navVisibleTo(persona, l.id, access)),
+    links: s.links.filter((l) => l.id === "onboarding" || navVisibleTo(persona, l.id, access)),
   })).filter((s) => s.links.length > 0);
 
   return (

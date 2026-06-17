@@ -13,6 +13,7 @@ import {
   type Macrocycle,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
+import Onboarding from "./onboarding";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
   disp, mono, Mono, Card, txt,
@@ -33,14 +34,21 @@ export default function Cockpit({
   macro,
   currentWeek = 1,
   setScreen,
+  onEnrolled,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
   macro?: Macrocycle | null;
   currentWeek?: number;
   setScreen: (id: string) => void;
+  /** Called after the inline "Set up / change plan" flow enrolls a macrocycle —
+   *  app-shell refreshes the macro and lands the athlete back on Today. */
+  onEnrolled: () => void;
 }) {
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
+  // The onboarding ("Get started") funnel is no longer a standalone tab — it
+  // lives here, under Goal & season, as an expandable setup flow.
+  const [setupOpen, setSetupOpen] = useState(false);
   useEffect(() => {
     const s = readSportSelection();
     if (s?.sport) setSport({ sport: s.sport, levelIdx: typeof s.levelIdx === "number" ? s.levelIdx : 0 });
@@ -61,7 +69,7 @@ export default function Cockpit({
       </Mono>
 
       <div style={{ display: "grid", gap: 14 }}>
-        <Section kicker="Goal & season" color={VIOLET} onOpen={() => setScreen(macro ? "periodize" : "onboarding")} openLabel={macro ? "Periodize →" : "Set up a plan →"}>
+        <Section kicker="Goal & season" color={VIOLET} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))} openLabel={macro ? "Periodize →" : "Set up a plan →"}>
           {macro ? (
             <>
               <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{macro.goalOrSport}</div>
@@ -73,6 +81,27 @@ export default function Cockpit({
           ) : (
             <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>No season yet — enroll a goal and your periodized plan drives the weeks.</Mono>
           )}
+
+          {/* SET UP / CHANGE PLAN — the onboarding funnel, folded in (no longer a
+              standalone "Get started" tab). Expands inline; enrolling refreshes
+              the macro and returns to Today via onEnrolled. */}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Set up / change plan</Mono>
+              <button
+                onClick={() => setSetupOpen((v) => !v)}
+                style={{ ...mono, fontSize: 12, color: txt(AMBER), background: "none", border: "none", cursor: "pointer" }}
+              >
+                {setupOpen ? "Close setup ✕" : "Open setup →"}
+              </button>
+            </div>
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={ASH}>4 questions → a plan you&apos;ll finish.</Mono>
+            {setupOpen && (
+              <div style={{ marginTop: 14 }}>
+                <Onboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} />
+              </div>
+            )}
+          </div>
         </Section>
 
         <Section kicker={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color={LIME} onOpen={() => setScreen("log")} openLabel="Log session →">

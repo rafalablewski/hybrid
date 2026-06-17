@@ -103,6 +103,18 @@ export default function Cockpit() {
         ) : (
           <Mono color={C.chalk} style={{ lineHeight: 19 }}>No season yet — enroll a goal and your periodized plan drives the weeks.</Mono>
         )}
+        {/* SET UP / CHANGE PLAN — the onboarding funnel folded under Goal & season
+            (no longer a standalone tab), the mobile analog of the web expander. */}
+        <Pressable
+          onPress={() => router.push("/onboarding")}
+          style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
+            <Mono color={C.ash} style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish.</Mono>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.amber) }}>Open setup →</Text>
+        </Pressable>
       </Section>
 
       {/* 2 · TODAY'S ROUTE */}

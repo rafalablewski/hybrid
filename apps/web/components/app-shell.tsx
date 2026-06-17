@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
@@ -30,7 +30,6 @@ import {
   AthleteAnalytics,
   CoachAnalytics,
   OperatorAnalytics,
-  DashboardMirror,
   PeriodizeScreen,
   HistoryScreen,
   RolesScreen,
@@ -98,8 +97,8 @@ export default function AppShell() {
   const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
-  const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
-  const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
+  const { bio: bioFromBiometrics } = useBiometrics();
+  const { bio: bioFromSignals } = useSignals();
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled, value } = useFlags();
@@ -113,10 +112,6 @@ export default function AppShell() {
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
-  const refreshBio = useCallback(() => {
-    refreshBiometrics();
-    refreshSignals();
-  }, [refreshBiometrics, refreshSignals]);
   const [screen, setScreen] = useState("today");
   // Seed blocks for the logger when "Start" comes from an enrolled named plan
   // (the plan day prefills the session). Cleared on any manual nav so a normal
@@ -493,16 +488,12 @@ export default function AppShell() {
           </>
         )}
 
-        {screen === "dashboard" && (
-          <DashboardMirror sessions={sessions} bio={bio} onCheckin={refreshBio} />
-        )}
-
         {screen === "today" && (
           <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
         )}
 
         {screen === "cockpit" && (
-          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} />
+          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
