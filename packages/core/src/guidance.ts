@@ -38,7 +38,7 @@ export type Guide = {
 export const DEPLOY_GUIDE: Guide = {
   id: "deploy",
   title: "Shipping HYBRID — web & the App Store",
-  updated: "2026-06-16",
+  updated: "2026-06-17",
   sections: [
     {
       id: "big-picture",
@@ -156,7 +156,7 @@ export const DEPLOY_GUIDE: Guide = {
         {
           t: "term",
           term: "JavaScript / content only (most PRs)",
-          text: "If the PR only touched TypeScript, React components, styling or assets, use EAS Update (over-the-air): run `eas update --branch production` (or let CI do it). Installed apps quietly download the new bundle on next launch — no new build, no App Review, live in minutes. This is the phone-app equivalent of Vercel auto-deploy.",
+          text: "EAS Update (over-the-air) is the EVENTUAL fast path for JS-only changes — `eas update` pushes a new bundle that installed apps pull on next launch, no rebuild and no App Review. IMPORTANT: it is NOT wired up in this repo yet (no expo-updates package or `updates`/`runtimeVersion` config), so TODAY even a pure TypeScript/React/styling change needs a fresh EAS Build. Until OTA is configured, treat EVERY mobile change as 'needs a build' — see the SANDBOX build section below for the internal-testing loop.",
         },
         {
           t: "term",
@@ -170,7 +170,44 @@ export const DEPLOY_GUIDE: Guide = {
         },
         {
           t: "note",
-          text: "Rule of thumb: changed only TypeScript/React/assets → EAS Update (instant, no review). Changed anything native → new EAS Build + Submit + Apple review.",
+          text: "Rule of thumb TODAY (no OTA configured): ANY change under apps/mobile → a fresh EAS Build. Backend/web changes ride the Vercel deploy and need no mobile build. And ALWAYS build from the branch you merged into — `git pull` first — because EAS bundles your local committed code, not what's on GitHub (see the SANDBOX build section).",
+        },
+      ],
+    },
+    {
+      id: "sandbox-build",
+      icon: "▣",
+      title: "Updating the iOS SANDBOX build (internal testing on your iPhone)",
+      summary: "Getting merged changes onto the internal-distribution build on your own device — and the two traps that bite.",
+      blocks: [
+        {
+          t: "p",
+          text: "This is the day-to-day loop BEFORE the App Store: an internal-distribution build (the `device` profile in eas.json) you install straight on your iPhone via a QR code — no TestFlight, no review. Because there is NO over-the-air update wired up in this repo, every mobile change needs a fresh build of this kind to appear on the phone.",
+        },
+        {
+          t: "steps",
+          items: [
+            "Make sure your LOCAL clone is on the branch you actually merged into — usually `main`. EAS builds from your computer's COMMITTED git state, NOT from GitHub, so run `cd ~/hybrid && git checkout main && git pull` FIRST. (Skipping this is the #1 cause of 'I rebuilt but the new features aren't there' — you just rebuilt old code. The web app looks updated because Vercel deploys from GitHub automatically; your Mac clone only updates when you pull.)",
+            "Confirm the commit: `git log --oneline -1` should show the latest merge you expect. If it doesn't, stop — you're about to build stale code.",
+            "`pnpm install` (dependencies may have changed across the merged PRs), then `cd apps/mobile`.",
+            "Build for a real device: `npx eas build --platform ios --profile device` (internal distribution — NOT the simulator profiles).",
+            "First time only: register the iPhone with `npx eas device:create` (follow the link on the phone to add its UDID), then re-run the build.",
+            "When it finishes, open the QR / install link (terminal output or expo.dev → Builds) on the iPhone and install over the existing app.",
+          ],
+        },
+        {
+          t: "note",
+          text: "No version bump needed for internal builds — `ios.buildNumber` only has to INCREASE for TestFlight / App Store uploads, not for internal-distribution installs. Rebuild as often as you like.",
+        },
+        {
+          t: "term",
+          term: "Trap 1 — you rebuilt but nothing changed",
+          text: "Almost always a STALE CHECKOUT: your Mac was on an old branch, so EAS faithfully built old mobile code. Web looked fine because Vercel deploys from GitHub, not your laptop. Fix: `git checkout main && git pull` (then `pnpm install`) before every build, and verify with `git log --oneline -1`. Note: backend/API-only changes need no build at all — the app calls the same live Vercel /api — so only changes under apps/mobile (or core code that runs in the app) require a rebuild.",
+        },
+        {
+          t: "term",
+          term: "Trap 2 — Apple login fails on a security key",
+          text: "If `eas build` dies on Apple sign-in saying two-factor 'cannot be handled' and lists Security Keys, it's because EAS/Fastlane can't complete a physical-security-key challenge. Fix: authenticate with an App Store Connect API KEY instead of an interactive login. In App Store Connect → Users and Access → Integrations → App Store Connect API, generate a Team key (App Manager role), download the .p8 ONCE, then in the same terminal export `EXPO_ASC_API_KEY_PATH` (path to the .p8), `EXPO_ASC_KEY_ID` and `EXPO_ASC_ISSUER_ID` before running the build — no password, no 2FA prompt. (Adding a trusted phone number to the Apple ID also lets Apple fall back to an SMS code, which EAS CAN handle; the API key is the durable fix and the one this project uses.)",
         },
       ],
     },
@@ -202,18 +239,22 @@ export const DEPLOY_GUIDE: Guide = {
       blocks: [
         {
           t: "p",
-          text: "WEB is live and ships automatically: merge to main → Vercel deploys. MOBILE is built and its iOS bundle is verified by CI on every PR, but it has never been signed, submitted or run on a real device — because that needs two accounts we don't have yet.",
+          text: "WEB is live and ships automatically: merge to main → Vercel deploys. MOBILE has now been SIGNED and RUN ON A REAL iPhone via an internal EAS build — the Apple Developer and Expo accounts both exist, Apple is authenticated with an App Store Connect API key (hardware-key 2FA blocks interactive login), and the build installs over a QR code. So the old 'two missing accounts' blockers are CLEARED; the day-to-day internal-testing loop is the SANDBOX build section above.",
+        },
+        {
+          t: "p",
+          text: "What's left is the PUBLIC App Store path (a TestFlight build + Apple's review) and a couple of follow-ons:",
         },
         {
           t: "steps",
           items: [
-            "Apple Developer Program membership ($99/year) — required to sign and submit the iPhone app and to use TestFlight.",
-            "An Expo account + access token — required for EAS to build and submit on our behalf.",
+            "Public submission: `eas build --profile production --platform ios` then `eas submit` to push a build to App Store Connect / TestFlight, fill in the store listing (screenshots, description, privacy answers), and submit for review.",
+            "Re-enable push: the expo-notifications plugin was stripped so the API-key build could ship — re-add it once a provisioning profile WITH the Push Notifications capability is provisioned (under API-key-only auth EAS skips capability syncing).",
           ],
         },
         {
           t: "note",
-          text: "Once both exist, the 'How to deploy to the App Store' steps above are the entire path — there is no hidden extra work on our side. These blockers are also tracked in the Capabilities registry (mobile-preview / liquid-glass-mobile).",
+          text: "Status is tracked in the Capabilities registry: on-device builds are now SHIPPED (mobile-preview); push notifications remain blocked on push credentials (push-notifications).",
         },
       ],
     },
