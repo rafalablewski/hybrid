@@ -11,6 +11,7 @@ import { useTheme, txt, type ThemePref } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import { TEMPLATES } from "@hybrid/core";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import AuroraSettings from "../components/aurora/settings";
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "system", label: "System" },
@@ -25,6 +26,11 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 ];
 
 export default function Settings() {
+  if (useTemplate().template === "aurora") return <AuroraSettings />;
+  return <ClassicSettings />;
+}
+
+function ClassicSettings() {
   const router = useRouter();
   const { t, lang, setLang } = useLang();
   const { signOut, name, role, entitlement } = useSession();
