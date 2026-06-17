@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition,
@@ -11,6 +11,7 @@ import {
   type NutritionGoal,
   type Signal,
 } from "@hybrid/core";
+import { useSession } from "@/lib/session";
 import {
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, Mono, Card, ChartFrame, txt,
@@ -30,6 +31,50 @@ export default function Nutrition() {
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { entitlement } = useSession();
+  const isPaid = entitlement === "paid";
+  const [mfpMsg, setMfpMsg] = useState<string | null>(null);
+  const [scanMsg, setScanMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Connect MyFitnessPal (every user). The diary-sync flow is built but the API
+  // is partner-only, so this degrades to an honest "not enabled yet" until creds.
+  const connectMfp = async () => {
+    setMfpMsg(null);
+    try {
+      const res = await fetch("/api/integrations/myfitnesspal", { method: "POST" });
+      const j = (await res.json().catch(() => ({}))) as { url?: string; error?: string; note?: string };
+      if (res.ok && j.url) { window.location.href = j.url; return; }
+      setMfpMsg(j.note ? `${j.error ?? "Not available yet."} ${j.note}` : (j.error ?? "Couldn’t connect."));
+    } catch { setMfpMsg("Network error — try again."); }
+  };
+
+  // Scan a label (athlete+): read the image, let Claude extract macros, save them.
+  const onScanFile = async (file: File) => {
+    setScanning(true); setScanMsg(null);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(new Error("read failed"));
+        r.readAsDataURL(file);
+      });
+      const res = await fetch("/api/nutrition/scan", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { saved?: boolean; food?: string; kcal?: number; protein?: number; carbs?: number; fat?: number; error?: string };
+      if (res.status === 403) { setScanMsg({ text: j.error ?? "Scanning is part of Full.", ok: false }); }
+      else if (res.status === 503) { setScanMsg({ text: j.error ?? "AI isn’t configured yet.", ok: false }); }
+      else if (!res.ok || !j.saved) { setScanMsg({ text: j.error ?? "Couldn’t read that image.", ok: false }); }
+      else {
+        setScanMsg({ text: `Logged ${j.food}: ${j.kcal} kcal · ${j.protein}P / ${j.carbs}C / ${j.fat}F`, ok: true });
+        await load();
+      }
+    } catch { setScanMsg({ text: "Couldn’t scan — try again.", ok: false }); }
+    setScanning(false);
+  };
 
   const load = useCallback(async () => {
     try {
@@ -98,6 +143,38 @@ export default function Nutrition() {
           </button>
         ))}
       </div>
+
+      {/* Connect MyFitnessPal (everyone) + AI label scan (athlete+) */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Import your diet</Mono>
+            <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
+              Connect MyFitnessPal to pull your food diary into HYBRID.
+            </Mono>
+            <button onClick={connectMfp} style={{ ...cond, fontSize: 13, fontWeight: 800, color: txt(BLUE), background: `${BLUE}1a`, border: `1px solid ${BLUE}66`, borderRadius: 10, padding: "9px 16px", cursor: "pointer", marginTop: 10 }}>
+              Connect MyFitnessPal →
+            </button>
+            {mfpMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8, lineHeight: 1.5 }} c={AMBER}>{mfpMsg}</Mono>}
+          </div>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Scan a label · AI {isPaid ? "" : "· Full"}</Mono>
+            <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
+              Snap a product label or meal — AI reads the macros and logs them.
+            </Mono>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onScanFile(f); e.target.value = ""; }} />
+            <button
+              onClick={() => (isPaid ? fileRef.current?.click() : setScanMsg({ text: "Scanning is part of Full — upgrade to scan labels.", ok: false }))}
+              disabled={scanning}
+              style={{ ...cond, fontSize: 13, fontWeight: 800, color: ON_ACCENT, background: LIME, border: "none", borderRadius: 10, padding: "9px 16px", cursor: scanning ? "default" : "pointer", opacity: scanning ? 0.6 : 1, marginTop: 10 }}
+            >
+              {scanning ? "Analysing…" : isPaid ? "Scan a label →" : "Scan a label (Full) →"}
+            </button>
+            {scanMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8, lineHeight: 1.5 }} c={scanMsg.ok ? LIME : AMBER}>{scanMsg.text}</Mono>}
+          </div>
+        </div>
+      </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <ChartFrame title="Today vs adaptive target" kicker="macros" c={LIME}>

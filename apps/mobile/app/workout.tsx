@@ -51,7 +51,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession } from "../lib/api";
+import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, fetchExercises, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
@@ -176,6 +176,10 @@ export default function Workout() {
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
+  // The published library + the user's OWN custom exercises (athlete+), folded
+  // into the picker on top of the built-in MOVEMENTS so custom moves appear.
+  const [libNames, setLibNames] = useState<string[]>([]);
+  useEffect(() => { fetchExercises().then((xs) => setLibNames(xs.map((x) => x.name))); }, []);
   const [rpeHelp, setRpeHelp] = useState(false);
   const [showTip, setShowTip] = useState(false);
   // Get-ready countdown on entering a fresh workout (5→1→GO) before the clock
@@ -968,9 +972,12 @@ export default function Workout() {
           const q = custom.trim().toLowerCase();
           const match = (n: string) => !q || n.toLowerCase().includes(q);
           const recentNames = new Set(recent.map((r) => r.name));
+          // Built-in movements + library/custom exercises (deduped), minus the
+          // ones already shown under "your lifts".
+          const allLib = [...new Set([...Object.keys(MOVEMENTS), ...libNames])];
           const recentShown = recent.filter((r) => match(r.name)).slice(0, 10);
-          const libShown = Object.keys(MOVEMENTS).filter((n) => !recentNames.has(n) && match(n));
-          const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
+          const libShown = allLib.filter((n) => !recentNames.has(n) && match(n));
+          const exact = [...recentNames, ...allLib].some((n) => n.toLowerCase() === q);
           const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
           const chip = (name: string, kind: WKind, key: string) => {
             const c = kindColor(kind);

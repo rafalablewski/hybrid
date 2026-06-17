@@ -361,6 +361,87 @@ export async function updateAssignment(id: string, status: "completed" | "skippe
   }
 }
 
+// Connect MyFitnessPal (every user). Built but partner-API-gated → returns a
+// not-configured message until credentials land.
+export async function connectMyFitnessPal(): Promise<{ ok: boolean; url?: string; message?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/integrations/myfitnesspal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    });
+    const j = (await res.json().catch(() => ({}))) as { url?: string; error?: string; note?: string };
+    if (res.ok && j.url) return { ok: true, url: j.url };
+    return { ok: false, message: j.note ? `${j.error ?? "Not available yet."} ${j.note}` : (j.error ?? "Couldn't connect.") };
+  } catch {
+    return { ok: false, message: "Network error — try again." };
+  }
+}
+
+// Scan a nutrition label (athlete+): Claude reads macros and the server logs them.
+export async function scanNutrition(base64: string, mediaType: string): Promise<{ ok: boolean; food?: string; kcal?: number; protein?: number; carbs?: number; fat?: number; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/nutrition/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ image: base64, mediaType }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { saved?: boolean; food?: string; kcal?: number; protein?: number; carbs?: number; fat?: number; error?: string };
+    if (res.ok && j.saved) return { ok: true, ...j };
+    return { ok: false, error: j.error ?? `Couldn't scan (HTTP ${res.status}).` };
+  } catch {
+    return { ok: false, error: "Network error — try again." };
+  }
+}
+
+// Custom exercises (athlete+). The published global library + the caller's OWN
+// exercises both come back from /api/exercises; creating is gated server-side.
+export type LibExercise = { id?: string; name: string; pattern: string; muscles: string[]; kind: string };
+
+export async function fetchExercises(): Promise<LibExercise[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/exercises`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { exercises?: LibExercise[] }).exercises ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMyExercises(): Promise<{ exercises: LibExercise[]; canCreate: boolean }> {
+  try {
+    const res = await fetch(`${API_URL}/api/user-exercises`, { headers: await authHeaders() });
+    if (!res.ok) return { exercises: [], canCreate: false };
+    const j = (await res.json()) as { exercises?: LibExercise[]; canCreate?: boolean };
+    return { exercises: j.exercises ?? [], canCreate: j.canCreate !== false };
+  } catch {
+    return { exercises: [], canCreate: false };
+  }
+}
+
+export async function createExercise(body: { name: string; pattern: string; kind: string; muscles: string[]; equipment?: string[] }): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/user-exercises`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return { ok: true };
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: false, error: j.error ?? `Couldn't save (HTTP ${res.status}).` };
+  } catch {
+    return { ok: false, error: "Network error — try again." };
+  }
+}
+
+export async function deleteExercise(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/user-exercises/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {

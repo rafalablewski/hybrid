@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, Alert, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import {
   todayNutrition,
@@ -8,7 +8,9 @@ import {
   dailyNutrition,
   type NutritionGoal,
 } from "@hybrid/core";
-import { fetchSignals, createSignal, type CoreSignal } from "../lib/api";
+import * as ImagePicker from "expo-image-picker";
+import { fetchSignals, createSignal, connectMyFitnessPal, scanNutrition, type CoreSignal } from "../lib/api";
+import { useSession } from "../lib/session";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
@@ -26,6 +28,30 @@ export default function Nutrition() {
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
+  const { entitlement } = useSession();
+  const isPaid = entitlement === "paid";
+  const [scanning, setScanning] = useState(false);
+
+  const connectMfp = async () => {
+    const r = await connectMyFitnessPal();
+    if (r.ok && r.url) { Linking.openURL(`${r.url}`); return; }
+    Alert.alert("MyFitnessPal", r.message ?? "Not available yet.");
+  };
+
+  const scan = async () => {
+    if (!isPaid) { Alert.alert("Full feature", "Scanning labels is part of Full — upgrade to scan."); return; }
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    const pick = perm.granted
+      ? await ImagePicker.launchCameraAsync({ quality: 0.6, base64: true })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.6, base64: true });
+    if (pick.canceled || !pick.assets?.[0]?.base64) return;
+    const asset = pick.assets[0];
+    setScanning(true);
+    const r = await scanNutrition(asset.base64!, asset.mimeType ?? "image/jpeg");
+    setScanning(false);
+    if (r.ok) { Alert.alert("Logged", `${r.food}: ${r.kcal} kcal · ${r.protein}P / ${r.carbs}C / ${r.fat}F`); load(); }
+    else Alert.alert("Couldn't scan", r.error ?? "Try a clearer photo.");
+  };
 
   const load = () => {
     setRefreshing(true);
@@ -83,6 +109,25 @@ export default function Nutrition() {
           </Pressable>
         ))}
       </View>
+
+      {/* import diet (everyone) + AI label scan (athlete+) */}
+      <Card style={{ marginTop: 10 }}>
+        <Kicker color={C.blue}>Import your diet</Kicker>
+        <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
+          Connect MyFitnessPal to pull your food diary in.
+        </Mono>
+        <View style={{ marginTop: 10 }}>
+          <Button label="Connect MyFitnessPal →" color={C.blue} onPress={connectMfp} />
+        </View>
+        <View style={{ height: 1, backgroundColor: C.line, marginVertical: 14 }} />
+        <Kicker color={C.lime}>Scan a label · AI{isPaid ? "" : " · Full"}</Kicker>
+        <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
+          Snap a product label or meal — AI reads the macros and logs them.
+        </Mono>
+        <View style={{ marginTop: 10 }}>
+          <Button label={scanning ? "Analysing…" : isPaid ? "Scan a label →" : "Scan a label (Full) →"} color={C.lime} onPress={scan} disabled={scanning} />
+        </View>
+      </Card>
 
       {/* targets vs today */}
       <Card>

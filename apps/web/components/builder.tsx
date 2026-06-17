@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import type { SessionBlock } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, VIOLET, RED, ON_ACCENT, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
+import CustomExercises from "@/components/custom-exercises";
 
 const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
 
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
-export default function Builder() {
+export default function Builder({ onUpgrade }: { onUpgrade?: () => void }) {
   const [name, setName] = useState("New workout");
   const [description, setDescription] = useState("");
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
@@ -71,6 +72,7 @@ export default function Builder() {
         </button>
       </div>
 
+      <div>
       {/* template library */}
       <Card>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Template library</Mono>
@@ -89,6 +91,10 @@ export default function Builder() {
           ))
         )}
       </Card>
+
+        {/* Athlete+ : create your own movements — they feed the picker above. */}
+        <CustomExercises onUpgrade={onUpgrade} />
+      </div>
     </div>
   );
 }

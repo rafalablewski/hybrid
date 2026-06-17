@@ -563,7 +563,7 @@ export default function AppShell() {
 
         {screen === "calendar" && <Calendar sessions={sessions} />}
 
-        {screen === "builder" && <Builder />}
+        {screen === "builder" && <Builder onUpgrade={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "builder" }); setPendingBlocks(undefined); setScreen("upgrade"); }} />}
 
         {screen === "squad" && <TeamMonitor />}
 

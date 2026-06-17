@@ -174,6 +174,20 @@ export default function More() {
         </Pressable>
       )}
 
+      {/* Athlete+ : create your own exercises (mirrors the web Builder's My exercises) */}
+      {persona !== "casual" && (
+        <Pressable
+          onPress={() => router.push("/custom-exercises")}
+          style={{ marginTop: 18, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.lime) }}>≡ My exercises</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>Add your own movements — they join your workout picker</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
+      )}
+
       {sections.map((section) => (
         <View key={section.titleKey} style={{ marginTop: 18 }}>
           <Kicker>{t(section.titleKey)}</Kicker>

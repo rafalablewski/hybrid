@@ -26,7 +26,15 @@ export async function GET(request: Request) {
 
   try {
     exercises = await prisma.exercise.findMany({
-      where: { status: "published" },
+      // Everyone sees the published global library (built-in + admin custom).
+      // PLUS the caller's OWN exercises (source "user"), at any status — these
+      // are private to them and never leak to other users.
+      where: {
+        OR: [
+          { status: "published", NOT: { source: "user" } },
+          { source: "user", authorId: user.id },
+        ],
+      },
       orderBy: { name: "asc" },
       select: {
         name: true,
