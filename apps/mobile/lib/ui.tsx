@@ -281,8 +281,9 @@ export function H1({ children }: { children: ReactNode }) {
 
 export function Chip({ children, color = C.lime }: { children: ReactNode; color?: string }) {
   const { palette } = useTheme();
+  const aurora = useTemplate().template === "aurora";
   return (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 9, paddingVertical: 3, alignSelf: "flex-start" }}>
+    <View style={{ backgroundColor: `${color}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
       <Text style={{ fontFamily: F.semi, fontSize: 11, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>

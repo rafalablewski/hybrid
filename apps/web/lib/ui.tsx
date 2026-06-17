@@ -72,7 +72,7 @@ export const body: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
 export const tip = {
   background: INK,
   border: `1px solid ${LINE}`,
-  borderRadius: 8,
+  borderRadius: "var(--r-tip)",
   ...mono,
   fontSize: 12,
 } as const;
@@ -121,7 +121,7 @@ export function Card({
       style={{
         background: CARD,
         border: `1px solid ${LINE}`,
-        borderRadius: 16,
+        borderRadius: "var(--r-card)",
         padding: 20,
         gridColumn: span ? `span ${span}` : undefined,
         cursor: onClick ? "pointer" : undefined,
@@ -191,7 +191,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
         color: txt(c),
         background: `${c}1f`,
         padding: "3px 9px",
-        borderRadius: 5,
+        borderRadius: "var(--r-chip)",
         whiteSpace: "nowrap",
         // self-spacing so adjacent chips never touch (and wrap cleanly)
         marginRight: 6,
@@ -284,7 +284,7 @@ export function Select({
           ...mono,
           fontSize: 13,
           padding: pill ? "8px 14px" : "8px 10px",
-          borderRadius: pill ? 999 : 9,
+          borderRadius: pill ? 999 : "var(--r-field)",
           background: INK2,
           color: CHALK,
           appearance: "none",
