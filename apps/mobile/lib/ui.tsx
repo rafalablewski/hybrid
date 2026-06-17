@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { colors } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
+import { useTemplate } from "./template";
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 export const glassShadow: ViewStyle = {
@@ -217,9 +218,13 @@ export function Card({
   accent?: string;
 }) {
   const { palette } = useTheme();
+  // Aurora gives every card a softer, larger corner radius (callers can still
+  // override via style.borderRadius). The classic radius is untouched.
+  const aurora = useTemplate().template === "aurora";
   if (glass) {
+    const gs: ViewStyle | undefined = aurora ? { borderRadius: 24, ...(style ?? {}) } : style;
     return (
-      <GlassCard style={style} accent={accent}>
+      <GlassCard style={gs} accent={accent}>
         {children}
       </GlassCard>
     );
@@ -231,7 +236,7 @@ export function Card({
           backgroundColor: palette.card,
           borderWidth: 1,
           borderColor: palette.line,
-          borderRadius: 16,
+          borderRadius: aurora ? 24 : 16,
           padding: 16,
           marginBottom: 12,
         },
@@ -297,20 +302,21 @@ export function Button({
   disabled?: boolean;
 }) {
   const { palette } = useTheme();
+  const aurora = useTemplate().template === "aurora";
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={{
         backgroundColor: color,
-        borderRadius: 12,
-        paddingVertical: 14,
+        borderRadius: aurora ? 999 : 12,
+        paddingVertical: aurora ? 16 : 14,
         paddingHorizontal: 24,
         alignItems: "center",
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: 15, color: palette.onAccent }}>{label}</Text>
+      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: 15, color: palette.onAccent }}>{label}</Text>
     </Pressable>
   );
 }

@@ -115,6 +115,20 @@ body {
   --red-text: #a82e2a;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   AURORA TEMPLATE — global softening. When [data-template="aurora"] is set
+   on <html> (mirrored from the per-device template pref by TemplateSync),
+   every app-shell screen picks up the rounded Aurora feel without touching
+   each component. Dedicated Aurora screens (login, landing) carry the full
+   layout; this just rounds the shared surfaces. Brand tokens/fonts unchanged.
+   ════════════════════════════════════════════════════════════════════ */
+[data-template="aurora"] .liquid-glass { border-radius: 26px; }
+[data-template="aurora"] input,
+[data-template="aurora"] select,
+[data-template="aurora"] textarea { border-radius: 14px; }
+[data-template="aurora"] .rounded-xl { border-radius: 22px; }
+[data-template="aurora"] .rounded-lg { border-radius: 16px; }
+
 /* ---- core component ---- */
 .liquid-glass {
   --lg-blur: 18px;
