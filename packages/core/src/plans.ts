@@ -205,7 +205,7 @@ export function planDetail(id: string, _plan?: unknown): PlanDetail {
     sessionLength: d.sessionLength || "60 min",
     equipment: d.equipment || "Basic gym",
     split: d.split || ["Train", "Rest", "Train", "Rest", "Train", "Rest", "Rest"],
-    days: d.days && d.days.length ? d.days : [{ day: "Sample day", items: [{ name: "—", sr: "—", rest: "—", rpe: "—" }] }],
+    days: Array.isArray(d.days) && d.days.length ? d.days : [{ day: "Sample day", items: [{ name: "—", sr: "—", rest: "—", rpe: "—" }] }],
     progression: d.progression || "Progressive overload week to week, with a deload every 4th week.",
   };
 }

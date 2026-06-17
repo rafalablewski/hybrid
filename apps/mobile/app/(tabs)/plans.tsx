@@ -125,7 +125,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
       {d.days.map((session, di) => (
         <Card key={di}>
           <Kicker color={C.amber}>{session.day}</Kicker>
-          {session.items.map((it, i) => (
+          {session.items?.map((it, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk, flex: 1 }}>{it.name}</Text>
               <Mono color={C.chalk}>{it.sr}</Mono>

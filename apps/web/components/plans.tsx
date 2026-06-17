@@ -207,7 +207,7 @@ function PlanDetailView({
               </tr>
             </thead>
             <tbody>
-              {session.items.map((it, i) => (
+              {session.items?.map((it, i) => (
                 <tr key={i}>
                   <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.name}</td>
                   <td style={{ ...mono, fontSize: 13, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.sr}</td>
