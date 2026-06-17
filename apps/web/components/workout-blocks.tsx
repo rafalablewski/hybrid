@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
@@ -110,6 +110,8 @@ export default function WorkoutBlocks({
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
+  // The block currently being dragged by its grip handle (for drop reordering).
+  const [dragUid, setDragUid] = useState<string | null>(null);
   // Raw text buffer for the conditioning number fields so a mid-typed decimal
   // ("8." or "8.5") survives — the block stores a number, but binding the input
   // straight to String(number) would strip the trailing dot as you type.
@@ -133,14 +135,10 @@ export default function WorkoutBlocks({
   const rename = (u: string, name: string) => patch(u, (b) => ({ ...b, name }) as EditableBlock);
 
   const move = (u: string, dir: -1 | 1) =>
-    setBlocks((bs) => {
-      const i = bs.findIndex((b) => b.uid === u);
-      const j = i + dir;
-      if (i < 0 || j < 0 || j >= bs.length) return bs;
-      const next = [...bs];
-      [next[i], next[j]] = [next[j]!, next[i]!];
-      return next;
-    });
+    setBlocks((bs) => moveItem(bs, bs.findIndex((b) => b.uid === u), dir));
+  // Drag-and-drop reorder: drop the block being dragged onto another's card.
+  const moveTo = (fromU: string, toU: string) =>
+    setBlocks((bs) => moveItemTo(bs, bs.findIndex((b) => b.uid === fromU), bs.findIndex((b) => b.uid === toU)));
   const duplicate = (u: string) =>
     setBlocks((bs) => {
       const i = bs.findIndex((b) => b.uid === u);
@@ -181,8 +179,17 @@ export default function WorkoutBlocks({
       const rampSets: StrengthSet[] = ramp.map((step) => ({ load: String(step.load), reps: String(step.reps), rpe: "", role: "warmup" }));
       return { ...b, sets: [...rampSets, ...b.sets] };
     });
+  // A cool-down set — light back-off work, excluded from working volume/PRs like
+  // a warm-up. Add it pre-flagged; cool-downs come last, so it appends.
+  const addCooldownSet = (u: string) =>
+    patch(u, (b) =>
+      b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", role: "cooldown" }] } : b,
+    );
   const removeSet = (u: string, i: number) =>
     patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
+  // Reorder a set within its block (the ↑/↓ controls on each row).
+  const moveSet = (u: string, i: number, dir: -1 | 1) =>
+    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: moveItem(b.sets, i, dir) } : b));
   // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
   const cycleType = (u: string, i: number) =>
     patch(u, (b) =>
@@ -218,8 +225,36 @@ export default function WorkoutBlocks({
       )}
 
       {blocks.map((b, idx) => (
-        <Card key={b.uid} style={{ marginBottom: 12 }}>
+        <div
+          key={b.uid}
+          // The whole card is a drop target so dragging the grip handle onto it
+          // drops the dragged block here (slides the rest along).
+          onDragOver={reorder && dragUid && dragUid !== b.uid ? (e) => e.preventDefault() : undefined}
+          onDrop={
+            reorder && dragUid && dragUid !== b.uid
+              ? (e) => {
+                  e.preventDefault();
+                  moveTo(dragUid, b.uid);
+                  setDragUid(null);
+                }
+              : undefined
+          }
+          style={{ opacity: dragUid === b.uid ? 0.5 : 1 }}
+        >
+        <Card style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+            {reorder && (
+              <span
+                // Grip handle — press and drag the card to reorder (or use ↑/↓).
+                draggable
+                onDragStart={() => setDragUid(b.uid)}
+                onDragEnd={() => setDragUid(null)}
+                title="Drag to reorder"
+                style={{ ...mono, fontSize: 15, color: txt(ASH), cursor: "grab", userSelect: "none", lineHeight: 1, padding: "0 2px" }}
+              >
+                ⠿
+              </span>
+            )}
             <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : b.kind === "cardio" ? BLUE : VIOLET}>
               {b.kind}
             </Mono>
@@ -267,7 +302,7 @@ export default function WorkoutBlocks({
 
           {b.kind === "strength" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
                 <span />
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load ({units})</Mono>
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>reps</Mono>
@@ -284,11 +319,12 @@ export default function WorkoutBlocks({
                   </>
                 )}
                 <span />
+                <span />
               </div>
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 28px" : "26px 1fr 1fr 28px", gap: 6, marginBottom: 6 }}
+                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: 6, marginBottom: 6, alignItems: "center" }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -321,6 +357,24 @@ export default function WorkoutBlocks({
                       <input value={s.vel ?? ""} onChange={(e) => updateSet(b.uid, i, "vel", e.target.value)} placeholder="0.50" style={input} />
                     </>
                   )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <button
+                      onClick={() => moveSet(b.uid, i, -1)}
+                      disabled={i === 0}
+                      title="Move set up"
+                      style={{ ...mono, fontSize: 10, lineHeight: 1, color: txt(i === 0 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === 0 ? "default" : "pointer", padding: "2px 0" }}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => moveSet(b.uid, i, 1)}
+                      disabled={i === b.sets.length - 1}
+                      title="Move set down"
+                      style={{ ...mono, fontSize: 10, lineHeight: 1, color: txt(i === b.sets.length - 1 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === b.sets.length - 1 ? "default" : "pointer", padding: "2px 0" }}
+                    >
+                      ↓
+                    </button>
+                  </div>
                   <button onClick={() => removeSet(b.uid, i)} style={{ ...iconBtn(ASH), padding: 0 }}>
                     −
                   </button>
@@ -335,6 +389,9 @@ export default function WorkoutBlocks({
                 </button>
                 <button onClick={() => addWarmupRamp(b.uid)} style={blockBtn(AMBER)} title="Auto warm-up ramp (~40/60/80%) up to your working load">
                   + ramp
+                </button>
+                <button onClick={() => addCooldownSet(b.uid)} style={blockBtn(BLUE)} title="Add a cool-down set — light back-off work, excluded from working volume & PRs">
+                  + cool-down
                 </button>
                 <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title="Add a drop set — a lighter continuation, no rest">
                   + drop set
@@ -383,6 +440,7 @@ export default function WorkoutBlocks({
             </div>
           )}
         </Card>
+        </div>
       ))}
 
       <datalist id="workout-catalog">

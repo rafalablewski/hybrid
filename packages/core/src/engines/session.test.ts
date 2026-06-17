@@ -27,6 +27,8 @@ import {
   setTypeBadge,
   warmupRamp,
   blockBestE1rm,
+  moveItem,
+  moveItemTo,
 } from "./session";
 import type { LoggedSession, StrengthBlock } from "./session";
 
@@ -289,5 +291,23 @@ describe("set roles (warm-up / cool-down)", () => {
     expect(setTypeBadge({ role: "warmup" }, 1)).toBe("W");
     expect(setTypeBadge({ role: "cooldown" }, 2)).toBe("C");
     expect(setTypeBadge({ drop: true }, 3)).toBe("↓");
+  });
+
+  it("moveItem swaps an item one slot, clamping at the ends without mutating", () => {
+    const arr = ["a", "b", "c"];
+    expect(moveItem(arr, 0, 1)).toEqual(["b", "a", "c"]);
+    expect(moveItem(arr, 2, -1)).toEqual(["a", "c", "b"]);
+    expect(moveItem(arr, 0, -1)).toBe(arr); // past the top edge — no-op (same ref)
+    expect(moveItem(arr, 2, 1)).toBe(arr); // past the bottom edge — no-op
+    expect(arr).toEqual(["a", "b", "c"]); // original untouched
+  });
+
+  it("moveItemTo slides an item to an arbitrary index (drag reorder)", () => {
+    const arr = ["a", "b", "c", "d"];
+    expect(moveItemTo(arr, 0, 2)).toEqual(["b", "c", "a", "d"]);
+    expect(moveItemTo(arr, 3, 0)).toEqual(["d", "a", "b", "c"]);
+    expect(moveItemTo(arr, 1, 1)).toBe(arr); // same index — no-op
+    expect(moveItemTo(arr, 0, 9)).toBe(arr); // out of range — no-op
+    expect(arr).toEqual(["a", "b", "c", "d"]); // original untouched
   });
 });
