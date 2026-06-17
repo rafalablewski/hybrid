@@ -147,7 +147,7 @@ export default function More() {
       {/* Athlete cockpit — the organized depth hub (persona/access gated) */}
       {navVisibleTo(persona, "cockpit", access) && (
         <Pressable
-          onPress={() => router.push("/cockpit")}
+          onPress={() => router.push("/(tabs)/cockpit")}
           style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>

@@ -14,9 +14,9 @@ import {
   type LoggedSession,
   type Macrocycle,
 } from "@hybrid/core";
-import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, F } from "../lib/ui";
-import { useTheme, txt } from "../lib/theme";
+import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
+import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
+import { useTheme, txt } from "../../lib/theme";
 
 const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
