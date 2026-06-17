@@ -57,7 +57,9 @@ export default function Cockpit({
   const persona = usePersona();
   const { entitlement } = useSession();
   if (persona === "casual") {
-    const unlock = () => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("settings"));
+    // Casual no longer has a Cockpit nav entry (the upgrade lives on one Full
+    // page) — this teaser is the fallback if they reach it via a deep link.
+    const unlock = () => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("upgrade"));
     return <CockpitTeaser paid={entitlement === "paid"} onUnlock={unlock} />;
   }
   useEffect(() => {

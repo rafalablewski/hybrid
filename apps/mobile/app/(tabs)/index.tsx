@@ -266,6 +266,21 @@ export default function Home() {
         </Pressable>
       )}
 
+      {/* UNLOCK FULL — the single, value-labeled upgrade on-ramp for casual users.
+          No scattered locks elsewhere; this one card carries the whole pitch. */}
+      {!isAthlete && (
+        <Pressable
+          onPress={() => router.push("/upgrade")}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}14` }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
+      )}
+
       {/* COACH INVITES — incoming mutual-consent links, any persona can accept */}
       {invites.map((inv) => (
         <Card key={inv.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>

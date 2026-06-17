@@ -3,9 +3,6 @@ import {
   NAV_ITEMS,
   navForPersona,
   navVisibleTo,
-  navIsUpsell,
-  upsellNavItems,
-  sanitizeUpsellNav,
   resolvePersona,
   sanitizePersonaAccess,
 } from "./nav";
@@ -61,31 +58,12 @@ describe("navForPersona", () => {
     );
   });
 
-  it("freemium funnel: Cockpit is a LOCKED upsell for casual, the real thing for athlete+", () => {
-    // casual can't actually see it, but it's teased (locked) rather than hidden
+  it("casual never sees athlete+ features in nav (the upgrade lives on one page)", () => {
+    const casual = navForPersona("casual").map((i) => i.id);
+    expect(casual).not.toContain("cockpit");
+    expect(casual).not.toContain("velocity");
     expect(navVisibleTo("casual", "cockpit")).toBe(false);
-    expect(navIsUpsell("casual", "cockpit")).toBe(true);
-    expect(upsellNavItems("casual").map((i) => i.id)).toEqual(["cockpit"]);
-    // athlete/coach/admin have it for real — nothing to upsell
-    expect(navIsUpsell("athlete", "cockpit")).toBe(false);
-    expect(upsellNavItems("athlete")).toEqual([]);
-    expect(upsellNavItems("coach")).toEqual([]);
-    // a non-funnel locked item (e.g. velocity) is NOT teased — stays hidden
-    expect(navIsUpsell("casual", "velocity")).toBe(false);
-  });
-
-  it("admin can configure the casual locked set (access.upsellNav)", () => {
-    // admin adds Velocity as a casual bait and drops Cockpit
-    const cfg = ["velocity"];
-    expect(navIsUpsell("casual", "velocity", undefined, cfg)).toBe(true);
-    expect(navIsUpsell("casual", "cockpit", undefined, cfg)).toBe(false);
-    expect(upsellNavItems("casual", undefined, undefined, cfg).map((i) => i.id)).toEqual(["velocity"]);
-    // an item visible to casual is never an upsell, even if listed
-    expect(navIsUpsell("casual", "today", undefined, ["today"])).toBe(false);
-    // sanitizer keeps only known nav ids; non-arrays → []
-    expect(sanitizeUpsellNav(["cockpit", "bogus", 42])).toEqual(["cockpit"]);
-    expect(sanitizeUpsellNav("nope")).toEqual([]);
-    expect(sanitizeUpsellNav([])).toEqual([]);
+    expect(navVisibleTo("athlete", "cockpit")).toBe(true);
   });
 
   it("nests: each persona sees everything the lower one does, plus more", () => {

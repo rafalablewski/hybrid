@@ -1,5 +1,5 @@
 import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
-import { sanitizePersonaAccess, sanitizeUpsellNav } from "@hybrid/core";
+import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
 // The mobile client calls the SAME backend the web app uses (Vercel), with the
@@ -437,20 +437,6 @@ export async function fetchPersonaAccess(): Promise<PersonaAccess> {
     return sanitizePersonaAccess(data.values?.["access.personaNav"]);
   } catch {
     return {};
-  }
-}
-
-// The admin's casual upsell ("locked bait") set — which features a free user
-// sees locked rather than hidden. null = flag unset → caller uses the default.
-export async function fetchUpsellNav(): Promise<string[] | null> {
-  try {
-    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { values?: Record<string, unknown> };
-    const raw = data.values?.["access.upsellNav"];
-    return raw === undefined ? null : sanitizeUpsellNav(raw);
-  } catch {
-    return null;
   }
 }
 

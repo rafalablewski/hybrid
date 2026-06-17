@@ -155,50 +155,6 @@ export function navVisibleTo(persona: Persona, id: string, access?: PersonaAcces
   return PERSONA_RANK[persona] >= PERSONA_RANK[effectiveMinPersona(item, access)];
 }
 
-/**
- * The freemium FUNNEL — the DEFAULT set of nav ids that are NOT hidden from a
- * casual (free) user but shown as a LOCKED upsell anchor (a teaser of the paid
- * Athlete tier) that baits the Full upgrade, instead of vanishing. The Cockpit
- * is the flagship bait. An admin can override this set per deployment via the
- * `access.upsellNav` flag (see sanitizeUpsellNav) — choosing exactly which
- * features a casual user sees locked vs. hidden entirely.
- */
-export const UPSELL_NAV_IDS: string[] = ["cockpit"];
-
-/** Whether `id` should appear to `persona` as a LOCKED upsell (visible-but-gated
- *  teaser) rather than either fully shown or fully hidden — true only when the
- *  persona can't actually see it AND it's in the (admin-configurable) upsell set. */
-export function navIsUpsell(
-  persona: Persona,
-  id: string,
-  access?: PersonaAccess,
-  upsell: readonly string[] = UPSELL_NAV_IDS,
-): boolean {
-  return upsell.includes(id) && !navVisibleTo(persona, id, access);
-}
-
-/** The locked upsell anchors a persona should be TEASED with (the configured
- *  funnel ids it can't yet see) — appended to navForPersona by the clients and
- *  rendered with a lock. Empty for athlete+ (they have the real screens). */
-export function upsellNavItems(
-  persona: Persona,
-  items: NavItem[] = NAV_ITEMS,
-  access?: PersonaAccess,
-  upsell: readonly string[] = UPSELL_NAV_IDS,
-): NavItem[] {
-  return items.filter((i) => navIsUpsell(persona, i.id, access, upsell));
-}
-
-/** Validate a raw flag value into a clean upsell-id list — only known nav ids
- *  survive, so a bad `access.upsellNav` payload can't break the nav. An absent
- *  flag should fall back to UPSELL_NAV_IDS (the caller decides); an explicit []
- *  means the admin turned every bait off. */
-export function sanitizeUpsellNav(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const ids = new Set(NAV_ITEMS.map((i) => i.id));
-  return raw.filter((v): v is string => typeof v === "string" && ids.has(v));
-}
-
 /** Validate raw JSON (e.g. a flag value) into a clean PersonaAccess — only known
  *  nav ids mapped to valid personas survive, so a bad payload can't break nav. */
 export function sanitizePersonaAccess(raw: unknown): PersonaAccess {

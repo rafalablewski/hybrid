@@ -30,8 +30,8 @@ const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
  * athlete's real data and links out to the deep screen. (Phase 2.)
  */
 export default function Cockpit() {
-  // Freemium funnel: casual users reach the Cockpit tab as a LOCKED bait — show
-  // the upgrade teaser; athlete/coach get the live cockpit below.
+  // Casual no longer has a Cockpit tab (the upgrade is sold on the single Unlock
+  // Full page) — this teaser is the fallback if they deep-link in.
   const persona = usePersona();
   const { entitlement } = useSession();
   const router = useRouter();

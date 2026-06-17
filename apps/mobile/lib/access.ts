@@ -1,7 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { PersonaAccess } from "@hybrid/core";
-import { UPSELL_NAV_IDS } from "@hybrid/core";
-import { fetchPersonaAccess, fetchUpsellNav } from "./api";
+import { fetchPersonaAccess } from "./api";
 
 /**
  * The admin's per-persona nav-access override (Admin → Access control), so the
@@ -40,42 +39,6 @@ export function useNavAccess(): PersonaAccess {
   );
   useEffect(() => {
     refreshNavAccess();
-  }, []);
-  return value;
-}
-
-// The admin's casual upsell ("locked bait") set — which features a free user
-// sees locked rather than hidden, so the mobile nav baits the same as web.
-// Defaults to the code default (Cockpit) until/unless the admin configures it.
-let upsell: string[] = UPSELL_NAV_IDS;
-let upsellInflight = false;
-const upsellListeners = new Set<() => void>();
-const emitUpsell = () => upsellListeners.forEach((l) => l());
-
-export function refreshUpsellNav(): void {
-  if (upsellInflight) return;
-  upsellInflight = true;
-  fetchUpsellNav()
-    .then((u) => {
-      upsell = u ?? UPSELL_NAV_IDS; // unset flag → default
-      emitUpsell();
-    })
-    .finally(() => {
-      upsellInflight = false;
-    });
-}
-
-export function useUpsellNav(): string[] {
-  const value = useSyncExternalStore(
-    (l) => {
-      upsellListeners.add(l);
-      return () => upsellListeners.delete(l);
-    },
-    () => upsell,
-    () => upsell,
-  );
-  useEffect(() => {
-    refreshUpsellNav();
   }, []);
   return value;
 }
