@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // Anonymous (guest) workout logging. A user training BEFORE they have an account
@@ -8,9 +9,16 @@ import { prisma } from "@/lib/db";
 // the mobile client flushes their on-device history into real Session rows; these
 // anonymous rows stay as-is for the admin's usage picture.
 //
+// Because it's a PUBLIC write endpoint (the one route with no user/machine auth),
+// it is RATE-LIMITED per IP to blunt spam/abuse — the security test allow-lists
+// it only on that condition.
+//
 // Best-effort by design: if the AnonSession table isn't migrated yet, this
 // no-ops with 200 so it never breaks the guest's logging flow.
 export async function POST(request: Request) {
+  const limited = rateLimit(request, { key: "anon-sessions", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const b = (await request.json().catch(() => ({}))) as {
     title?: unknown;
     blocks?: unknown;
