@@ -45,16 +45,20 @@ describe("navForPersona", () => {
     expect(ids).toContain("history");
     expect(ids).toContain("nutrition");
     expect(ids).toContain("settings");
-    // depth + console he should NOT see
+    // Plans is the FREE anchor — everyone can enrol in a plan and follow it.
+    expect(ids).toContain("plans");
+    // depth + console he should NOT see. Note: building your OWN plan (builder)
+    // and the periodization engine are the PAID layer; the plan library is free.
     expect(ids).not.toContain("velocity");
     expect(ids).not.toContain("periodize");
+    expect(ids).not.toContain("builder");
     expect(ids).not.toContain("coach");
     expect(ids).not.toContain("squad");
   });
 
-  it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
+  it("casual (Average Joe) is exactly the curated lean set + the free plan library", () => {
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["calendar", "checkin", "history", "log", "nutrition", "progress", "settings", "today"],
+      ["calendar", "checkin", "history", "log", "nutrition", "plans", "progress", "settings", "today"],
     );
   });
 

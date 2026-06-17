@@ -13,9 +13,11 @@ export type NavGroup = "home" | "train" | "analyze" | "recovery" | "teams" | "ac
 /**
  * Who the app is shaping itself for. Derived from the auth role plus, for a
  * client, the "how do you train?" choice made at onboarding:
- *   • casual  — Average Joe: a frictionless logger + share loop (the lean set).
- *   • athlete — data/technique athlete: casual PLUS the depth (analytics, sport,
- *               periodization, velocity, etc.).
+ *   • casual  — Average Joe: a frictionless logger + share loop (the lean set),
+ *               PLUS the plan library (enrol in a plan and follow it — free).
+ *   • athlete — data/technique athlete: casual PLUS the depth — building your
+ *               OWN plan, custom exercises, periodization, analytics, sport,
+ *               velocity, etc.
  *   • coach   — athlete PLUS the coaching console (roster, squad, org).
  *   • admin   — everything (the operator god view).
  * The personas NEST: casual ⊂ athlete ⊂ coach ⊂ admin, so a higher persona sees
@@ -55,11 +57,12 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 
 // DEFAULT ACCESS POLICY (the "done deal" — an admin can override any of this in
 // Access control). The guiding rule: don't overload retail.
-//   • CASUAL (Average Joe) — the lean loop only: train, review, share, basic
-//     health (today/log/history/calendar/nutrition/progress/check-in) + setup.
-//   • ATHLETE — adds the depth + analytics (cockpit/plans/periodize/
+//   • CASUAL (Average Joe) — the lean loop: train, review, share, basic health
+//     (today/log/history/calendar/nutrition/progress/check-in) + setup, PLUS the
+//     PLAN LIBRARY (enrol in a plan and follow it — the free anchor).
+//   • ATHLETE — adds the depth + analytics (cockpit/periodize/builder/
 //     sport/competition/performance/velocity/running/force-plate/video/longevity/
-//     talent/connections/builder).
+//     talent/connections) — i.e. building your OWN plan + the periodization engine.
 //   • COACH — adds the coaching console (coach/squad/team-compare/org/tactical),
 //     on top of all the athlete depth (a coach trains too).
 //   • ADMIN — everything.
@@ -75,8 +78,12 @@ export const NAV_ITEMS: NavItem[] = [
 
   { id: "log", label: "Log session", icon: "✎", group: "train" },
   { id: "calendar", label: "Calendar", icon: "▦", group: "train" },
+  // Plans is FREE for everyone: any user can browse the library, enrol in a plan
+  // and follow its prescribed sessions. The PAID (athlete) layer on top is
+  // building your OWN plan (Builder), custom exercises and the periodization
+  // engine (Periodize) — see the upsell on the Plans screen.
+  { id: "plans", label: "Plans", icon: "▤", group: "train" },
   { id: "builder", label: "Builder", icon: "⊕", group: "train", minPersona: "athlete" },
-  { id: "plans", label: "Plans", icon: "▤", group: "train", minPersona: "athlete" },
   { id: "periodize", label: "Periodize", icon: "◰", group: "train", minPersona: "athlete" },
   { id: "sport", label: "Sport", icon: "◎", group: "train", minPersona: "athlete" },
   { id: "competition", label: "Competition", icon: "▲", group: "train", minPersona: "athlete" },

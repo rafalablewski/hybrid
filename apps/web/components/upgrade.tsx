@@ -19,9 +19,9 @@ import {
 const BUNDLE: { kicker: string; color: string; items: { ic: string; nm: string; ds: string }[] }[] = [
   {
     kicker: "Train smarter", color: LIME, items: [
-      { ic: "▤", nm: "Plans", ds: "Guided, periodized programs." },
-      { ic: "◰", nm: "Periodize", ds: "Your season — phases, deloads, peak." },
-      { ic: "⊕", nm: "Builder", ds: "Design your own templates." },
+      { ic: "◰", nm: "Periodize", ds: "Turn any plan into a season — phases, deloads, peak." },
+      { ic: "⊕", nm: "Builder", ds: "Design your OWN plans & templates." },
+      { ic: "≡", nm: "Custom exercises", ds: "Add your own movements." },
       { ic: "▲", nm: "Competition", ds: "Peak on the day." },
     ],
   },

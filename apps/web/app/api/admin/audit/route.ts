@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { clampPage, clampPageSize } from "@hybrid/core";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdmin, audit } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 
 // The admin audit trail — paginated, newest first. Admin-only, read-only.
@@ -36,5 +36,36 @@ export async function GET(request: Request) {
       entries: [],
       unavailable: true,
     });
+  }
+}
+
+// Permanently clear the ENTIRE audit trail. Irreversible, so it requires an
+// explicit confirm token. Admin-only. We write ONE fresh audit row recording
+// the clear (with the count) BEFORE wiping is paradoxical, so we record it
+// AFTER — that single surviving entry is the proof the log was cleared and by
+// whom (the trail can't pre-date itself).
+export async function DELETE(request: Request) {
+  const gate = await requireAdmin(request);
+  if (gate.error) return gate.error;
+
+  const url = new URL(request.url);
+  if (url.searchParams.get("confirm") !== "ALL") {
+    return NextResponse.json({ error: "confirm=ALL required" }, { status: 400 });
+  }
+
+  try {
+    const { count } = await prisma.adminAudit.deleteMany({});
+    // Re-stamp the clear itself so there's always a record of who wiped the log.
+    await audit({
+      actor: gate.admin,
+      action: "audit.clearAll",
+      targetType: "audit",
+      summary: `Cleared the audit log (${count} entr${count === 1 ? "y" : "ies"} removed)`,
+      metadata: { cleared: count },
+      req: request,
+    });
+    return NextResponse.json({ ok: true, deleted: count });
+  } catch {
+    return NextResponse.json({ error: "audit log unavailable" }, { status: 503 });
   }
 }

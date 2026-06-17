@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
+import { useRouter } from "expo-router";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
+import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 
+// Plans library — FREE for everyone (enrol + follow a plan). The paid (Full)
+// layer is building your OWN plans, custom exercises and periodization, sold via
+// a single tasteful upsell card here, never a padlock on the plans themselves.
 export default function Plans() {
   const C = useTheme().palette;
   const { t } = useLang();
@@ -31,6 +36,7 @@ export default function Plans() {
   return (
     <Screen>
       <Kicker>Plans</Kicker>
+      <UpgradeBait />
       <Mono style={{ marginTop: 6, marginBottom: 14 }}>{t("plans.chooseGoal")}</Mono>
       {GOAL_GROUPS.map((group) => (
         <View key={group.category} style={{ marginBottom: 8 }}>
@@ -87,6 +93,29 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   );
 }
 
+// Free→paid anchor: enrolling + following any plan is free; building your own,
+// custom exercises and the periodization season are Full. Shown only to a free
+// user, as one value card (no padlocks) that opens the Unlock Full page.
+function UpgradeBait({ compact }: { compact?: boolean }) {
+  const C = useTheme().palette;
+  const router = useRouter();
+  const { entitlement } = useSession();
+  if (entitlement === "paid") return null;
+  return (
+    <Card style={{ marginTop: compact ? 14 : 8, borderLeftWidth: 3, borderLeftColor: C.lime }}>
+      <Kicker color={C.lime}>Plans are free</Kicker>
+      <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 20 }}>
+        {compact
+          ? "You’re enrolled — follow it from Today. Unlock Full to periodize it (phases, deloads, peak), build your own plans and add custom exercises."
+          : "Enrol in any plan and follow it — free. Unlock Full to build your OWN plans, add custom exercises and periodize them into a real season."}
+      </Mono>
+      <View style={{ marginTop: 12 }}>
+        <Button label="Unlock Full →" color={C.lime} onPress={() => router.push("/upgrade")} />
+      </View>
+    </Card>
+  );
+}
+
 function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: () => void }) {
   const C = useTheme().palette;
   const { t } = useLang();
@@ -94,7 +123,8 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
   const enroll = async () => {
     setEnrolled("busy");
-    setEnrolled((await enrollPlan(goal.name)) ? "done" : "error");
+    // Pass the named plan id so "Your plan today" follows this exact plan.
+    setEnrolled((await enrollPlan(goal.name, plan.id)) ? "done" : "error");
   };
   return (
     <Screen>
@@ -155,6 +185,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
           </Mono>
         )}
       </View>
+      {enrolled === "done" && <UpgradeBait compact />}
     </Screen>
   );
 }

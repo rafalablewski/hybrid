@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import {
   prescribeSession,
@@ -72,6 +72,21 @@ export default function Today({
   // read client-side after mount to avoid an SSR mismatch.
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
+
+  // Plan/AI-coach pager: track the active card so the glass dots + "swipe" hint
+  // can show the user there's a second card to scroll to.
+  const pagerRef = useRef<HTMLDivElement>(null);
+  const [pagerIdx, setPagerIdx] = useState(0);
+  const onPagerScroll = () => {
+    const el = pagerRef.current;
+    if (!el) return;
+    setPagerIdx(Math.round(el.scrollLeft / el.clientWidth) === 0 ? 0 : 1);
+  };
+  const scrollToCard = (i: number) => {
+    const el = pagerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
   const log = toTrainingLog(sessions);
   const rx = useMemo(
     () => prescribeSession(log, bio, {
@@ -112,16 +127,19 @@ export default function Today({
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-      {/* PLAN TODAY + AI COACH — a horizontal, scroll-snapping row (swipe right
-          for the AI coach). Spans both columns; each card snaps to full width. */}
+      {/* PLAN TODAY + AI COACH — a horizontal, scroll-snapping row. The second
+          card PEEKS at the right edge and a glass pager (dots + hint) sits under
+          the row, so the swipe is discoverable instead of hidden. */}
+      <div style={{ gridColumn: "span 2" }}>
       <div
+        ref={pagerRef}
+        onScroll={onPagerScroll}
         style={{
-          gridColumn: "span 2",
           display: "flex",
           gap: 16,
           overflowX: "auto",
           scrollSnapType: "x mandatory",
-          // hide the native scrollbar — the cards self-document the swipe
+          // hide the native scrollbar — the pager dots document the swipe
           scrollbarWidth: "none",
           margin: "0 -2px",
           padding: "2px",
@@ -212,6 +230,30 @@ export default function Today({
           {/* AskCoach already POSTs /api/ai-coach and renders the reply inline. */}
           <AskCoach />
         </Card>
+      </div>
+        {/* pager affordance — glass dots + a swipe hint so the AI coach card is
+            discoverable. Tapping a dot scrolls to that card. */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 10 }}>
+          {PAGER_CARDS.map((label, i) => (
+            <button
+              key={label}
+              onClick={() => scrollToCard(i)}
+              aria-label={`Show ${label}`}
+              className="liquid-glass lg-thin"
+              style={{
+                display: "flex", alignItems: "center", gap: 7, cursor: "pointer",
+                border: "none", borderRadius: 999, padding: "5px 11px",
+                background: pagerIdx === i ? `${(i === 0 ? LIME : VIOLET)}22` : undefined,
+              }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: pagerIdx === i ? (i === 0 ? LIME : VIOLET) : ASH, transition: "background .2s" }} />
+              <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }} c={pagerIdx === i ? (i === 0 ? LIME : VIOLET) : ASH}>{label}</Mono>
+            </button>
+          ))}
+          {pagerIdx === 0 && (
+            <Mono s={{ fontSize: 10, letterSpacing: ".04em", opacity: 0.8 }} c={ASH}>swipe →</Mono>
+          )}
+        </div>
       </div>
 
       {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
@@ -391,10 +433,14 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 
 // Each card in the horizontal plan/coach row snaps to (near) full width so one
 // card shows at a time and the next is reachable by scrolling right.
+// The two cards in the swipe row. Labels drive the pager dots.
+const PAGER_CARDS = ["Your plan", "AI coach"] as const;
+
 const snapCard: CSSProperties = {
   scrollSnapAlign: "start",
-  flex: "0 0 100%",
-  minWidth: "100%",
+  // peek the next card (~6%) so the swipe is visibly there, not hidden
+  flex: "0 0 94%",
+  minWidth: "94%",
   boxSizing: "border-box",
 };
 

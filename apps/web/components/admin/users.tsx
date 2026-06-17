@@ -226,6 +226,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [wiping, setWiping] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/users/${id}`)
@@ -260,6 +261,25 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       onSaved();
     } else {
       setMsg({ ok: false, text: body.error ?? "Update failed." });
+    }
+  };
+
+  // Wipe just this user's training history (their logged Sessions), keeping the
+  // account. Irreversible → confirm first.
+  const wipeSessions = async () => {
+    if (!d) return;
+    if (!window.confirm(`Permanently delete ALL logged training sessions for ${d.email}? The account stays; the history is gone. This cannot be undone.`)) return;
+    setWiping(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/users/${id}/sessions`, { method: "DELETE" });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) setMsg({ ok: true, text: `Deleted ${body.deleted ?? 0} session(s) · recorded in the audit log.` });
+      else setMsg({ ok: false, text: body.error ?? "Delete failed." });
+    } catch {
+      setMsg({ ok: false, text: "Network error — try again." });
+    } finally {
+      setWiping(false);
     }
   };
 
@@ -442,6 +462,26 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 Permanently delete this account and everything attached to it — sessions, check-ins,
                 memberships. This cannot be undone.
               </Mono>
+              <button
+                onClick={wipeSessions}
+                disabled={wiping}
+                style={{
+                  width: "100%",
+                  marginBottom: 10,
+                  ...disp,
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: txt(AMBER),
+                  background: `${AMBER}14`,
+                  border: `1px solid ${AMBER}66`,
+                  borderRadius: 10,
+                  padding: "11px 0",
+                  cursor: wiping ? "default" : "pointer",
+                  opacity: wiping ? 0.6 : 1,
+                }}
+              >
+                {wiping ? "Deleting…" : "Delete training history (keep account)"}
+              </button>
               <button
                 onClick={remove}
                 disabled={deleting}

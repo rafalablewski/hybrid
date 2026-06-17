@@ -3,12 +3,63 @@
 import { useState } from "react";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
 import { LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import AdminSimulator from "./simulator";
 
-// Operator help surface (Governance → Guidance). Renders the plain-language
-// runbooks that live in @hybrid/core (guidance.ts) so the copy stays the single
-// source of truth and a future mobile admin can render the same words.
+// Operator help surface (Governance → Guidance & setup). ONE neat, tabbed home
+// for everything operational: the plain-language runbooks from @hybrid/core
+// (guidance.ts — the single source of truth) PLUS the hands-on iOS-simulator
+// guide (merged in from its old standalone section). Subjects across the top;
+// each data-driven guide keeps its own in-page table of contents.
+const SIMULATOR_ID = "__simulator__";
+
+type Subject = { id: string; label: string; icon: string };
+
 export default function AdminGuidance() {
-  const [guideId, setGuideId] = useState(GUIDES[0]!.id);
+  const SUBJECTS: Subject[] = [
+    ...GUIDES.map((g) => ({ id: g.id, label: g.title, icon: "📖" })),
+    { id: SIMULATOR_ID, label: "Run the iOS app (simulator)", icon: "📱" },
+  ];
+  const [subjectId, setSubjectId] = useState(SUBJECTS[0]!.id);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* subject tabs — categorize every guide + the simulator runbook in one bar */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {SUBJECTS.map((s) => {
+          const on = s.id === subjectId;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setSubjectId(s.id)}
+              style={{
+                ...disp,
+                fontSize: 13,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "9px 15px",
+                borderRadius: 10,
+                cursor: "pointer",
+                border: `1px solid ${on ? `${AMBER}66` : LINE}`,
+                background: on ? `${AMBER}1c` : "transparent",
+                color: txt(on ? AMBER : ASH),
+              }}
+            >
+              <span style={{ fontSize: 14 }}>{s.icon}</span>
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {subjectId === SIMULATOR_ID ? <AdminSimulator /> : <GuideView guideId={subjectId} />}
+    </div>
+  );
+}
+
+// One data-driven guide: a sticky table of contents + its sections.
+function GuideView({ guideId }: { guideId: string }) {
   const guide: Guide = GUIDES.find((g) => g.id === guideId) ?? GUIDES[0]!;
   const [active, setActive] = useState(guide.sections[0]!.id);
 
@@ -16,34 +67,6 @@ export default function AdminGuidance() {
     <div className="grid grid-cols-1 lg:grid-cols-[230px_1fr] gap-5 items-start">
       {/* sticky table of contents */}
       <Card style={{ position: "sticky", top: 16, padding: 14 }}>
-        {/* guide switcher — only when there's more than one guide */}
-        {GUIDES.length > 1 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${LINE}` }}>
-            {GUIDES.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => {
-                  setGuideId(g.id);
-                  setActive(g.sections[0]!.id);
-                }}
-                style={{
-                  ...mono,
-                  fontSize: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                  padding: "5px 9px",
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  border: `1px solid ${g.id === guideId ? `${AMBER}66` : LINE}`,
-                  background: g.id === guideId ? `${AMBER}1c` : "transparent",
-                  color: txt(g.id === guideId ? AMBER : ASH),
-                }}
-              >
-                {g.id}
-              </button>
-            ))}
-          </div>
-        )}
         <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
           {guide.title}
         </Mono>

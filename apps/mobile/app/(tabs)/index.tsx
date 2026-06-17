@@ -232,9 +232,12 @@ export default function Home() {
   // Enrolled in a REAL named plan? Its exact day drives "Your plan today".
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
 
-  // Cards in the horizontal pager snap to ~full content width.
+  // Cards in the horizontal pager. The card is a touch narrower than the screen
+  // so the SECOND card peeks at the right edge — making the swipe discoverable
+  // instead of hidden. A dots + "swipe" hint sits under the row too.
   const { width } = useWindowDimensions();
-  const cardW = width - 36; // Screen has 18px horizontal padding each side
+  const cardW = width - 64; // 18px screen padding each side + ~28px peek
+  const [pagerIdx, setPagerIdx] = useState(0);
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
@@ -337,13 +340,15 @@ export default function Home() {
         </Card>
       )}
 
-      {/* PLAN TODAY + AI COACH — horizontal pager (scroll right for the AI coach) */}
+      {/* PLAN TODAY + AI COACH — horizontal pager. The second card peeks; dots +
+          a "swipe" hint under the row make the AI coach card discoverable. */}
       <ScrollView
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
         snapToInterval={cardW + 12}
         decelerationRate="fast"
+        onScroll={(e) => setPagerIdx(Math.round(e.nativeEvent.contentOffset.x / (cardW + 12)) === 0 ? 0 : 1)}
+        scrollEventThrottle={16}
         style={{ marginTop: 18 }}
       >
         {/* PLAN TODAY — the named plan's exact day when enrolled, else the engine pick */}
@@ -398,6 +403,16 @@ export default function Home() {
           </View>
         </Card>
       </ScrollView>
+      {/* pager affordance — dots + a swipe hint so the AI coach card is found */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 }}>
+        {["Your plan", "AI coach"].map((label, i) => (
+          <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: pagerIdx === i ? (i === 0 ? C.lime : C.violet) : C.line }} />
+            <Mono color={pagerIdx === i ? (i === 0 ? C.lime : C.violet) : C.ash} style={{ fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase" }}>{label}</Mono>
+          </View>
+        ))}
+        {pagerIdx === 0 && <Mono color={C.ash} style={{ fontSize: 10 }}>swipe →</Mono>}
+      </View>
 
       {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
           absorbed from the retired web Dashboard, driven by the real season. */}

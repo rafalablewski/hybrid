@@ -21,13 +21,13 @@ import AdminSystem from "./system";
 import AdminSecurity from "./security";
 import AdminAccess from "./access";
 import CoachApplications from "./coach-applications";
-import AdminSimulator from "./simulator";
 import AdminGuidance from "./guidance";
+import AdminMaintenance from "./maintenance";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "simulator" | "guidance";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "maintenance" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
@@ -48,8 +48,10 @@ const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] 
   { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
   { id: "anon", label: "Guest workouts", icon: "👤", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", group: "Governance" },
-  { id: "simulator", label: "iOS simulator", icon: "📱", group: "Governance" },
-  { id: "guidance", label: "Guidance", icon: "📖", group: "Governance" },
+  { id: "maintenance", label: "Maintenance", icon: "🧹", group: "Governance" },
+  // Guidance now also hosts the iOS-simulator runbook as one of its subjects
+  // (merged from the old standalone "iOS simulator" section).
+  { id: "guidance", label: "Guidance & setup", icon: "📖", group: "Governance" },
 ];
 
 export default function AdminPanel() {
@@ -231,7 +233,7 @@ export default function AdminPanel() {
         {section === "audit" && <AdminAuditLog />}
         {section === "anon" && <AdminAnonSessions />}
         {section === "system" && <AdminSystem />}
-        {section === "simulator" && <AdminSimulator />}
+        {section === "maintenance" && <AdminMaintenance />}
         {section === "guidance" && <AdminGuidance />}
       </main>
     </div>

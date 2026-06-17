@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { useSession } from "@/lib/session";
+import { INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, ON_ACCENT, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
 // the exact same source the mobile app renders. Goal → plans → full detail.
-export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void }) {
+// FREE for everyone: any user can browse, enrol and follow a plan. The paid
+// (Full) layer is building your OWN plan, custom exercises and periodization —
+// surfaced as a tasteful, contextual upsell here (onUpgrade → the Unlock Full
+// page), never as a hard padlock on the plans themselves.
+export default function PlansScreen({ onEnrolled, onUpgrade }: { onEnrolled?: () => void; onUpgrade?: () => void }) {
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
 
@@ -14,7 +19,7 @@ export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void })
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
   if (plan && goal)
-    return <PlanDetailView goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+    return <PlanDetailView goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} onUpgrade={onUpgrade} />;
   if (goal)
     return (
       <PlanList
@@ -26,12 +31,54 @@ export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void })
         }}
       />
     );
-  return <GoalGrid pick={setGoalId} />;
+  return <GoalGrid pick={setGoalId} onUpgrade={onUpgrade} />;
 }
 
-function GoalGrid({ pick }: { pick: (id: string) => void }) {
+/** The free→paid anchor: enrolling + following any plan is free; building your
+ *  own, custom exercises and the periodization season are Full. Shown only to a
+ *  free user, as a single value card (no padlocks) that opens Unlock Full. */
+function UpgradeBait({ onUpgrade, compact }: { onUpgrade?: () => void; compact?: boolean }) {
+  const { entitlement } = useSession();
+  if (entitlement === "paid" || !onUpgrade) return null;
+  return (
+    <div
+      style={{
+        marginBottom: compact ? 0 : 20,
+        marginTop: compact ? 16 : 0,
+        padding: "14px 18px",
+        borderRadius: 14,
+        border: `1px solid ${LIME}55`,
+        background: `linear-gradient(135deg, ${LIME}18, ${VIOLET}14)`,
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        flexWrap: "wrap",
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 240 }}>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 4 }} c={LIME}>
+          Plans are free
+        </Mono>
+        <Mono s={{ fontSize: 13, lineHeight: 1.55, display: "block" }} c={CHALK}>
+          {compact
+            ? "You’re enrolled — follow it from Today. Unlock Full to turn this into a periodized season (phases, deloads, peak), build your own plans and add custom exercises."
+            : "Enrol in any plan and follow it — free. Unlock Full to build your OWN plans, add custom exercises, and periodize them into a real season (phases, deloads, peak)."}
+        </Mono>
+      </div>
+      <button
+        onClick={onUpgrade}
+        style={{ ...mono, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 10, padding: "10px 18px", cursor: "pointer", whiteSpace: "nowrap" }}
+      >
+        Unlock Full →
+      </button>
+    </div>
+  );
+}
+
+function GoalGrid({ pick, onUpgrade }: { pick: (id: string) => void; onUpgrade?: () => void }) {
   return (
     <div>
+      <UpgradeBait onUpgrade={onUpgrade} />
       <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
         Start with your goal — we&apos;ll show the plans built for it.
       </Mono>
@@ -121,11 +168,13 @@ function PlanDetailView({
   plan,
   back,
   onEnrolled,
+  onUpgrade,
 }: {
   goal: GoalNode;
   plan: GoalPlan;
   back: () => void;
   onEnrolled?: () => void;
+  onUpgrade?: () => void;
 }) {
   const d = planDetail(plan.id, plan);
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
@@ -136,7 +185,9 @@ function PlanDetailView({
       const res = await fetch("/api/macrocycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal: goal.name }),
+        // Send the named plan id so "Your plan today" follows this exact plan,
+        // day by day — that's what "enrol and follow it" means for everyone.
+        body: JSON.stringify({ goal: goal.name, planId: plan.id }),
       });
       if (!res.ok) return setState("error");
       setState("done");
@@ -241,7 +292,7 @@ function PlanDetailView({
         {state === "busy"
           ? "Enrolling…"
           : state === "done"
-            ? "✓ Enrolled — see Periodize"
+            ? "✓ Enrolled — follow it on Today"
             : `Enroll in ${plan.name} →`}
       </button>
       {state === "error" && (
@@ -249,6 +300,7 @@ function PlanDetailView({
           Couldn&apos;t enroll — sign in (real auth) and try again.
         </Mono>
       )}
+      {state === "done" && <UpgradeBait onUpgrade={onUpgrade} compact />}
     </div>
   );
 }

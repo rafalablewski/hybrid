@@ -4,10 +4,12 @@ import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, VIOLET, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
-// Governance → "iOS simulator" guide. The mobile app is a managed Expo / React
-// Native project (no checked-in ios/ folder), so running it in Apple's iOS
-// Simulator goes through Expo. This screen is the operator-facing runbook for
-// doing exactly that on a Mac with Xcode. Static reference content — no fetch.
+// The "Run the iOS app (simulator)" subject inside Governance → Guidance & setup
+// (it used to be its own admin section; now it's one tab of the merged guidance
+// surface). The mobile app is a managed Expo / React Native project (no
+// checked-in ios/ folder), so running it in Apple's iOS Simulator goes through
+// Expo. This is the operator-facing runbook for doing exactly that on a Mac with
+// Xcode. Static reference content — no fetch.
 
 export default function AdminSimulator() {
   return (

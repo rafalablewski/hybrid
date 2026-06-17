@@ -577,8 +577,11 @@ export default function AppShell() {
           <PlansScreen
             onEnrolled={() => {
               refreshMacro();
-              setScreen("periodize");
+              // Free users follow their plan on Today; athletes get the season
+              // view in Periodize. Don't bounce a casual user to a paid screen.
+              setScreen(persona === "casual" ? "today" : "periodize");
             }}
+            onUpgrade={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "plans" }); setPendingBlocks(undefined); setScreen("upgrade"); }}
           />
         )}
 
