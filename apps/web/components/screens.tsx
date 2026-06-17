@@ -60,7 +60,9 @@ import {
   type Biometrics,
 } from "@hybrid/core";
 import type { RosterRow } from "@/lib/use-roster";
+import { usePersona } from "@/lib/persona";
 import AskCoach from "./ai-coach";
+import AdminAccess from "./admin/access";
 import ReconciledWeek from "./reconciled-week";
 
 const fmtDate = (iso: string) =>
@@ -877,6 +879,7 @@ const PERMISSIONS = [
 ];
 
 export function RolesScreen() {
+  const persona = usePersona();
   const cell = (v: string) => {
     const yes = v === "full" || v === "yes" || v === "yes (+private)";
     const no = v === "no";
@@ -957,6 +960,19 @@ export function RolesScreen() {
           </tbody>
         </table>
       </Card>
+
+      {/* ADMIN — the editable permission matrix: per-feature minimum persona +
+          what a casual (free) user sees (hidden vs. locked upgrade bait). The
+          read-only matrix above is the role model; this is where it's tuned. */}
+      {persona === "admin" && (
+        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginTop: 20 }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }} c={AMBER}>
+            Access control · admin
+          </Mono>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Set permissions per feature</div>
+          <AdminAccess />
+        </Card>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   navVisibleTo,
   navIsUpsell,
   upsellNavItems,
+  sanitizeUpsellNav,
   resolvePersona,
   sanitizePersonaAccess,
 } from "./nav";
@@ -71,6 +72,20 @@ describe("navForPersona", () => {
     expect(upsellNavItems("coach")).toEqual([]);
     // a non-funnel locked item (e.g. velocity) is NOT teased — stays hidden
     expect(navIsUpsell("casual", "velocity")).toBe(false);
+  });
+
+  it("admin can configure the casual locked set (access.upsellNav)", () => {
+    // admin adds Velocity as a casual bait and drops Cockpit
+    const cfg = ["velocity"];
+    expect(navIsUpsell("casual", "velocity", undefined, cfg)).toBe(true);
+    expect(navIsUpsell("casual", "cockpit", undefined, cfg)).toBe(false);
+    expect(upsellNavItems("casual", undefined, undefined, cfg).map((i) => i.id)).toEqual(["velocity"]);
+    // an item visible to casual is never an upsell, even if listed
+    expect(navIsUpsell("casual", "today", undefined, ["today"])).toBe(false);
+    // sanitizer keeps only known nav ids; non-arrays → []
+    expect(sanitizeUpsellNav(["cockpit", "bogus", 42])).toEqual(["cockpit"]);
+    expect(sanitizeUpsellNav("nope")).toEqual([]);
+    expect(sanitizeUpsellNav([])).toEqual([]);
   });
 
   it("nests: each persona sees everything the lower one does, plus more", () => {

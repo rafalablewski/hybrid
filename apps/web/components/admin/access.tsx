@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { groupedNav, NAV_ITEMS, sanitizePersonaAccess, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
-import { LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { groupedNav, NAV_ITEMS, sanitizePersonaAccess, sanitizeUpsellNav, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
+import { LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 const navLabel = (id: string) => NAV_ITEMS.find((i) => i.id === id)?.label ?? id;
 type AccessReq = { id: string; userEmail: string; navId: string; createdAt: string };
@@ -13,6 +13,7 @@ const GROUP_LABEL: Record<NavGroup, string> = {
   home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", teams: "Teams", account: "Account",
 };
 const KEY = "access.personaNav";
+const KEY_UPSELL = "access.upsellNav";
 
 type FlagRow = { key: string; value: unknown };
 
@@ -24,6 +25,9 @@ type FlagRow = { key: string; value: unknown };
  */
 export default function AdminAccess() {
   const [overrides, setOverrides] = useState<PersonaAccess>({});
+  // Which features a casual (free) user sees as a LOCKED upgrade bait rather than
+  // hidden — the admin-controlled freemium funnel (access.upsellNav flag).
+  const [upsell, setUpsell] = useState<string[]>([]);
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [requests, setRequests] = useState<AccessReq[]>([]);
@@ -34,8 +38,11 @@ export default function AdminAccess() {
       .then((r) => r.json())
       .then((d) => {
         setUnavailable(Boolean(d.unavailable));
-        const row = (d.flags as FlagRow[] | undefined)?.find((f) => f.key === KEY);
-        setOverrides(sanitizePersonaAccess(row?.value));
+        const rows = d.flags as FlagRow[] | undefined;
+        setOverrides(sanitizePersonaAccess(rows?.find((f) => f.key === KEY)?.value));
+        const upsellRow = rows?.find((f) => f.key === KEY_UPSELL);
+        // absent flag → the code default (Cockpit); explicit value → as configured
+        setUpsell(upsellRow ? sanitizeUpsellNav(upsellRow.value) : ["cockpit"]);
       })
       .catch(() => setOverrides({}));
     fetch("/api/admin/access-requests")
@@ -71,6 +78,19 @@ export default function AdminAccess() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ key: KEY, value: next }),
+    }).catch(() => {});
+    setBusy(false);
+  };
+
+  // Toggle whether a (non-casual) feature is shown to casual as a locked bait.
+  const toggleUpsell = async (id: string, locked: boolean) => {
+    const next = locked ? [...new Set([...upsell, id])] : upsell.filter((x) => x !== id);
+    setUpsell(next);
+    setBusy(true);
+    await fetch("/api/admin/flags", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ key: KEY_UPSELL, value: next }),
     }).catch(() => {});
     setBusy(false);
   };
@@ -113,12 +133,14 @@ export default function AdminAccess() {
       )}
 
       <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
-        Set the <b>minimum persona</b> for each feature. Personas nest (Casual ⊂ Athlete ⊂ Coach ⊂ Admin),
-        so lowering a feature exposes it to <i>more</i> users. Changes take effect on the next client load — no deploy.
+        Set the <b>minimum persona</b> for each feature (right). Personas nest (Casual ⊂ Athlete ⊂ Coach ⊂ Admin),
+        so lowering a feature exposes it to <i>more</i> users. For anything <i>above</i> casual you also choose what a
+        free user sees (left): <b>hidden</b>, or <b style={{ color: txt(BLUE) }}>locked 🔒</b> — a teaser that baits the
+        Full upgrade. Changes take effect on the next client load — no deploy.
         {busy ? " · saving…" : ""}
       </Mono>
       <Mono s={{ fontSize: 11, display: "block", marginBottom: 16 }} c={ASH}>
-        {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
+        {overrideCount} persona override{overrideCount === 1 ? "" : "s"} · {upsell.length} casual bait{upsell.length === 1 ? "" : "s"} active.
       </Mono>
 
       <div style={{ display: "grid", gap: 16 }}>
@@ -132,18 +154,34 @@ export default function AdminAccess() {
                 const def = codeDefault(item);
                 const current = overrides[item.id] ?? def;
                 const overridden = overrides[item.id] !== undefined;
+                // The casual control only applies when the feature is ABOVE casual
+                // (otherwise it's already shown to everyone). "today" is the free
+                // home and can't be a bait.
+                const casualAware = current !== "casual" && item.id !== "today";
+                const locked = upsell.includes(item.id);
                 return (
                   <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>
                         {item.icon} {item.label}
                         {overridden && <span style={{ marginLeft: 8 }}><Chip c={AMBER}>overridden</Chip></span>}
+                        {casualAware && locked && <span style={{ marginLeft: 8 }}><Chip c={BLUE}>🔒 casual bait</Chip></span>}
                       </div>
                       <Mono s={{ fontSize: 10, display: "block", marginTop: 2 }} c={ASH}>
                         {item.id} · default: {PERSONA_LABEL[def]}
                       </Mono>
                     </div>
-                    <div style={{ flexShrink: 0 }}>
+                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                      {casualAware && (
+                        <Select
+                          value={locked ? "locked" : "hidden"}
+                          onChange={(e) => toggleUpsell(item.id, e.target.value === "locked")}
+                          title="What a casual (free) user sees for this feature"
+                        >
+                          <option value="hidden">Casual: hidden</option>
+                          <option value="locked">Casual: locked 🔒</option>
+                        </Select>
+                      )}
                       <Select value={current} onChange={(e) => change(item.id, def, e.target.value as Persona)}>
                         {PERSONAS.map((p) => (
                           <option key={p} value={p}>Visible from {PERSONA_LABEL[p]}</option>

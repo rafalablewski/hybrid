@@ -1,6 +1,9 @@
 import { Tabs, Redirect } from "expo-router";
 import { Text, View, type ColorValue } from "react-native";
+import { navVisibleTo, navIsUpsell } from "@hybrid/core";
 import { useSession } from "../../lib/session";
+import { usePersona } from "../../lib/persona";
+import { useNavAccess, useUpsellNav } from "../../lib/access";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { F } from "../../lib/ui";
@@ -13,6 +16,13 @@ export default function TabsLayout() {
   const { session, ready } = useSession();
   const { t } = useLang();
   const { palette } = useTheme();
+  // Show the Cockpit tab when the persona truly has it (athlete+) OR when it's a
+  // casual upgrade bait per the admin's access.upsellNav config — so the freemium
+  // funnel on mobile honours the same admin settings as web.
+  const persona = usePersona();
+  const access = useNavAccess();
+  const upsell = useUpsellNav();
+  const showCockpit = navVisibleTo(persona, "cockpit", access) || navIsUpsell(persona, "cockpit", access, upsell);
   if (!ready) return null;
   if (!session) return <Redirect href="/login" />;
 
@@ -29,10 +39,11 @@ export default function TabsLayout() {
         }}
       >
         {/* The funnel: see today → train → review. Everything else lives under More.
-            Cockpit sits next to Today for everyone — the real depth hub for the
-            athlete persona, a locked upgrade bait (teaser screen) for casual. */}
+            Cockpit sits next to Today — the real depth hub for the athlete persona,
+            a locked upgrade bait (teaser screen) for casual when the admin enables
+            it; hidden entirely if the admin turns the bait off. */}
         <Tabs.Screen name="index" options={{ title: t("nav.dashboard"), tabBarIcon: icon("◆") }} />
-        <Tabs.Screen name="cockpit" options={{ title: t("nav.cockpit"), tabBarIcon: icon("◈") }} />
+        <Tabs.Screen name="cockpit" options={{ title: t("nav.cockpit"), tabBarIcon: icon("◈"), href: showCockpit ? undefined : null }} />
         <Tabs.Screen name="log" options={{ title: t("nav.train"), tabBarIcon: icon("▶") }} />
         <Tabs.Screen name="history" options={{ title: t("nav.history"), tabBarIcon: icon("≣") }} />
         <Tabs.Screen name="more" options={{ title: t("nav.more"), tabBarIcon: icon("⋯") }} />

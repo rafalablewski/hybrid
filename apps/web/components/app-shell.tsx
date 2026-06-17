@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, upsellNavItems, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, upsellNavItems, sanitizeUpsellNav, UPSELL_NAV_IDS, NAV_ITEMS, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
-import { usePersona } from "@/lib/persona";
+import { usePersona, setClientPersona } from "@/lib/persona";
 import {
   INK,
   INK2,
@@ -92,7 +92,7 @@ const SCOPES_FOR: Record<Role, Scope[]> = {
 
 export default function AppShell() {
   const router = useRouter();
-  const { session, ready, logout } = useSession();
+  const { session, ready, logout, entitlement } = useSession();
   const { sessions, refresh } = useSessions();
   const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
@@ -107,10 +107,28 @@ export default function AppShell() {
   // persona sees each item (Access control → the access.personaNav flag value).
   const persona = usePersona();
   const navAccess = sanitizePersonaAccess(value("access.personaNav"));
-  // Freemium funnel: items a casual user can't truly access but should be TEASED
-  // with (the Cockpit) — appended to the sidebar/⌘K as locked upsell anchors.
-  const upsellItems = useMemo(() => upsellNavItems(persona, undefined, navAccess), [persona, navAccess]);
+  // Freemium funnel: the features a casual user sees LOCKED (an upgrade bait)
+  // rather than hidden — admin-configurable via the access.upsellNav flag, with
+  // the code default (Cockpit) when it's unset. Appended to the sidebar/⌘K.
+  const upsellRaw = value("access.upsellNav");
+  const upsellCfg = useMemo(
+    () => (upsellRaw === undefined ? UPSELL_NAV_IDS : sanitizeUpsellNav(upsellRaw)),
+    [upsellRaw],
+  );
+  const upsellItems = useMemo(() => upsellNavItems(persona, undefined, navAccess, upsellCfg), [persona, navAccess, upsellCfg]);
   const lockedNavIds = useMemo(() => new Set(upsellItems.map((i) => i.id)), [upsellItems]);
+  // A casual user clicking a locked bait: the Cockpit has its own rich teaser
+  // screen, so route there; any other locked feature opens a generic upsell
+  // dialog (so a casual click never leaks into the real athlete screen).
+  const [upsellFor, setUpsellFor] = useState<string | null>(null);
+  const openNav = useCallback((id: string) => {
+    if (persona === "casual" && lockedNavIds.has(id) && id !== "cockpit") {
+      setUpsellFor(id);
+      return;
+    }
+    setPendingBlocks(undefined);
+    setScreen(id);
+  }, [persona, lockedNavIds]);
   const { theme, toggle } = useTheme();
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
@@ -233,7 +251,7 @@ export default function AppShell() {
                   return (
                     <button
                       key={id}
-                      onClick={() => { setPendingBlocks(undefined); setScreen(id); }}
+                      onClick={() => openNav(id)}
                       title={collapsed ? `${label}${locked ? " · Full" : ""}` : undefined}
                       style={{
                         width: "100%",
@@ -584,7 +602,56 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      <CommandMenu screen={screen} setScreen={openNav} isEnabled={isEnabled} persona={persona} access={navAccess} upsell={upsellCfg} t={t} />
+
+      {upsellFor && (
+        <UpsellDialog
+          label={NAV_ITEMS.find((i) => i.id === upsellFor)?.label ?? upsellFor}
+          paid={entitlement === "paid"}
+          onClose={() => setUpsellFor(null)}
+          onUpgrade={() => { setUpsellFor(null); setScreen("settings"); }}
+          onSwitch={() => { setClientPersona("athlete"); setUpsellFor(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Generic freemium bait for a locked feature (other than the Cockpit, which has
+// its own teaser screen): names the feature and routes to the upgrade. A paid
+// user stuck in Simple mode just flips to Full.
+function UpsellDialog({
+  label, paid, onClose, onUpgrade, onSwitch,
+}: {
+  label: string; paid: boolean; onClose: () => void; onUpgrade: () => void; onSwitch: () => void;
+}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420, width: "100%" }}>
+        <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Full feature 🔒</Mono>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 22, margin: "8px 0 6px" }}>{label} is part of Full</div>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            {paid
+              ? "You're already paid — switch your mode to Full to unlock it and the rest of the athlete toolkit."
+              : "Upgrade to Full to unlock this and the whole athlete toolkit — plans, analytics, sport, velocity and the Cockpit."}
+          </Mono>
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <button
+              onClick={paid ? onSwitch : onUpgrade}
+              style={{ ...cond, fontWeight: 800, fontSize: 14, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 10, padding: "11px 20px", cursor: "pointer" }}
+            >
+              {paid ? "Switch to Full →" : "Upgrade to Full →"}
+            </button>
+            <button onClick={onClose} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: 10, padding: "11px 18px", cursor: "pointer" }}>
+              Not now
+            </button>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -598,6 +665,7 @@ function CommandMenu({
   isEnabled,
   persona,
   access,
+  upsell,
   t,
 }: {
   screen: string;
@@ -605,6 +673,7 @@ function CommandMenu({
   isEnabled: (flag: string) => boolean;
   persona: Persona;
   access: PersonaAccess;
+  upsell: readonly string[];
   t: (key: string) => string;
 }) {
   const [open, setOpen] = useState(false);
@@ -625,7 +694,7 @@ function CommandMenu({
   // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles —
   // plus the locked upsell anchors (Cockpit for freemium), so the bait shows in
   // the ⌘K hub too. lockedTile marks the upsell ones for the lock cue.
-  const upsells = upsellNavItems(persona, undefined, access);
+  const upsells = upsellNavItems(persona, undefined, access, upsell);
   const lockedTileIds = new Set(upsells.map((i) => i.id));
   const tiles = groupedNav([...navForPersona(persona, undefined, access), ...upsells]).flatMap(({ group, items }) =>
     items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group, locked: lockedTileIds.has(it.id) })),
