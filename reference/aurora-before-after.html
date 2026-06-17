@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Before vs After (Aurora template + icon set)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --r-card:28px; --r-field:16px; --r-pill:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050605;color:var(--chalk);font-family:var(--disp);padding:34px 18px 90px;-webkit-font-smoothing:antialiased}
+  .head{max-width:1100px;margin:0 auto 30px;text-align:center}
+  .head .mono{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--lime)}
+  .head h1{font-size:30px;font-weight:900;letter-spacing:-.02em;margin-top:6px}.head h1 b{color:var(--lime)}
+  .head p{color:var(--ash);font-size:14px;margin-top:8px;line-height:1.5}
+  .legend{display:flex;gap:18px;justify-content:center;margin-top:14px;font-family:var(--mono);font-size:12px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;color:var(--ash)}
+  .legend i{width:10px;height:10px;border-radius:3px}
+
+  .cmp{max-width:760px;margin:0 auto 46px}
+  .cmp h2{font-size:18px;font-weight:800;letter-spacing:-.01em;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .cmp h2 .n{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--lime);border-radius:6px;padding:2px 8px}
+  .pair{display:flex;gap:30px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+  .pw{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .tag{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;padding:3px 10px;border-radius:999px}
+  .tag.b{color:var(--ash);border:1px solid var(--line)}
+  .tag.a{color:var(--ink);background:var(--lime)}
+
+  .phone{width:300px;height:600px;border-radius:42px;background:var(--ink);border:1px solid var(--line);
+    box-shadow:0 24px 60px -22px rgba(0,0,0,.8), inset 0 0 0 6px #000;position:relative;overflow:hidden}
+  .phone::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:110px;height:20px;border-radius:12px;background:#000;z-index:30}
+  .screen{position:absolute;inset:0;padding:42px 20px 18px;display:flex;flex-direction:column;z-index:10;overflow:hidden}
+  .screen.center{justify-content:center}
+
+  .field{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .blob{position:absolute;width:280px;height:280px;border-radius:50%;filter:blur(10px);opacity:.10}
+  .blob.v{background:var(--violet);top:-110px;left:-80px}.blob.l{background:var(--lime);bottom:-120px;right:-70px}
+
+  /* shared text */
+  .h{font-weight:900;letter-spacing:-.02em;line-height:1.12}
+  .sub{color:var(--ash);font-size:13px;line-height:1.5}
+  .mono{font-family:var(--mono)}
+  .kick{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ash)}
+  .cx{text-align:center}.u{text-decoration:underline}
+
+  /* icons */
+  .ic{width:22px;height:22px;color:var(--ash);flex:0 0 auto}
+  .ic.sm{width:18px;height:18px}.ic.lg{width:30px;height:30px}
+
+  /* ===== CLASSIC (before) ===== */
+  .cl-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:15px;padding:14px;margin-bottom:11px;position:relative}
+  .cl-card.acc{border-left:3px solid var(--lime)}
+  .cl-card.accv{border-left:3px solid var(--violet)}
+  .cl-btn{background:var(--lime);color:var(--ink);border-radius:14px;padding:16px;text-align:center;font-weight:900;font-size:16px}
+  .cl-in{background:var(--ink2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;font-family:var(--mono);font-size:13px;color:var(--ash);margin-bottom:10px}
+  .cl-chip{display:inline-block;background:rgba(196,240,53,.12);color:var(--lime);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:5px}
+  .cl-nav{position:absolute;left:0;right:0;bottom:0;height:58px;background:rgba(16,18,16,.96);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:20}
+  .cl-nav .t{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ash);font-family:var(--mono);font-size:9px}
+  .cl-nav .t .g{font-size:17px}
+  .cl-nav .t.on{color:var(--lime)}
+  .cl-pad{height:66px}
+
+  /* ===== AURORA (after) ===== */
+  .pill{border-radius:var(--r-pill);padding:16px;text-align:center;font-weight:700;font-size:15px;border:0;width:100%}
+  .pill.primary{background:var(--lime);color:var(--ink)}.pill.light{background:var(--chalk);color:var(--ink)}.pill.soft{background:var(--ink2);color:var(--chalk);border:1px solid var(--line)}
+  .mark{width:60px;height:60px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center}.mark span{font-weight:900;font-size:25px}.mark b{color:var(--lime)}
+  .af-field{display:flex;align-items:center;gap:10px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-field);padding:14px 16px;margin-bottom:11px}
+  .af-field span{font-family:var(--mono);font-size:13px;color:var(--ash);flex:1}
+  .back{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);display:grid;place-items:center;color:var(--chalk)}
+  .seg{display:flex;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px;gap:4px}
+  .seg div{flex:1;text-align:center;padding:9px 0;border-radius:var(--r-pill);font-size:12px;font-weight:700;color:var(--ash)}.seg div.on{background:var(--lime);color:var(--ink)}
+  .choice{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--ink2);border-radius:var(--r-field);padding:14px}
+  .choice.on{border-color:var(--lime);background:rgba(196,240,53,.08)}
+  .choice .t{font-weight:700;font-size:14px}.choice.on .t{color:var(--lime)}.choice .s{color:var(--ash);font-size:11px;margin-top:2px;line-height:1.4}
+  .progress{display:flex;gap:7px}.progress i{flex:1;height:5px;border-radius:3px;background:var(--line)}.progress i.on{background:var(--lime)}
+  .heroc{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-card);padding:18px}
+  .big{font-weight:900;font-size:48px;line-height:1}
+  .row{display:flex;align-items:center;justify-content:space-between;background:var(--ink2);border:1px solid var(--line);border-radius:24px;padding:13px;margin-bottom:10px}
+  .dot{width:9px;height:9px;border-radius:5px;margin-right:11px}
+  .startbtn{display:flex;align-items:center;gap:5px;background:var(--lime);color:var(--ink);border-radius:var(--r-pill);padding:8px 14px;font-weight:700;font-size:12px}
+  .avatar{width:48px;height:48px;border-radius:24px;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center;color:var(--lime)}
+  .iconbtn{width:42px;height:42px;border-radius:50%;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center}
+  .af-nav{position:absolute;left:16px;right:16px;bottom:16px;height:58px;border-radius:var(--r-pill);background:rgba(20,22,20,.94);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:20}
+  .af-nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;padding:9px;color:var(--ash)}
+  .af-nav .ic.on{background:var(--chalk);color:var(--ink)}
+  .af-pad{height:72px}
+  .slist{background:var(--ink2);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+  .slist .it{display:flex;align-items:center;gap:12px;padding:14px 15px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px}
+  .slist .it:last-child{border-bottom:0}.slist .it .r{margin-left:auto;color:var(--ash);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--ink);border-top-left-radius:32px;border-top-right-radius:32px;border:1px solid var(--line);padding:16px 18px 20px;z-index:15}
+  .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+  .cal{display:flex;justify-content:space-between;margin-top:12px}
+  .cal .d{flex:1;text-align:center}.cal .dn{font-family:var(--mono);font-size:9px;color:var(--ash);margin-bottom:7px}
+  .cal .num{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;margin:0 auto;font-size:12px;font-weight:600;color:var(--ash)}
+  .cal .num.on{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+  .bars{display:flex;align-items:flex-end;justify-content:space-between;height:104px;gap:7px;margin-top:12px}
+  .bars .bar{flex:1;background:var(--line);border-radius:5px}.bars .bar.on{background:var(--lime)}
+  .minic{background:var(--ink2);border:1px solid var(--line);border-radius:20px;padding:13px;flex:1}
+  .ringwrap{position:relative;width:170px;height:170px;margin:4px auto}.ringnum{position:absolute;inset:0;display:grid;place-items:center;font-weight:900;font-size:38px}
+  .playbtn{width:64px;height:64px;border-radius:50%;background:var(--lime);display:grid;place-items:center;margin:6px auto 0;color:var(--ink)}
+  .map{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#191b19 0 1px,transparent 1px 44px),repeating-linear-gradient(0deg,#191b19 0 1px,transparent 1px 50px),#0f110f;z-index:5}
+  .ntf{display:flex;gap:11px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+  .ntf .ico{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;padding:9px;flex:0 0 auto}
+  .ring{position:relative;width:64px;height:64px}
+  .barfill{height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}.barfill i{display:block;height:100%;background:var(--lime)}
+</style>
+</head>
+<body>
+<!-- ICON SYMBOLS (from uploaded icons1/2/3, stroke→currentColor) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="P" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+</defs>
+<symbol id="ic-settings" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M28.9561 13.6984C29.5661 10.9532 32.001 9 34.8132 9H37.1871C39.9993 9 42.4342 10.9532 43.0443 13.6984L43.6531 16.4381C45.6364 17.2146 47.4729 18.284 49.1092 19.5932L51.7918 18.7488C54.4743 17.9045 57.3832 19.0366 58.7893 21.472L59.9763 23.5279C61.3824 25.9634 60.9083 29.0486 58.8359 30.9496L56.7653 32.8488C56.92 33.8767 57.0002 34.929 57.0002 36C57.0002 37.071 56.92 38.1233 56.7653 39.1511L58.8359 41.0504C60.9084 42.9514 61.3824 46.0366 59.9763 48.4721L58.7894 50.5279C57.3833 52.9634 54.4743 54.0954 51.7918 53.2512L49.1093 52.4068C47.4729 53.716 45.6364 54.7854 43.6531 55.5619L43.0443 58.3016C42.4342 61.0468 39.9993 63 37.1871 63H34.8132C32.001 63 29.5661 61.0468 28.9561 58.3016L28.3473 55.5619C26.3639 54.7854 24.5274 53.716 22.891 52.4068L20.2084 53.2511C17.526 54.0954 14.617 52.9634 13.2109 50.5279L12.0239 48.472C10.6179 46.0366 11.0919 42.9513 13.1643 41.0504L15.235 39.1511C15.0803 38.1232 15.0002 37.071 15.0002 36C15.0002 34.929 15.0803 33.8767 15.235 32.8489L13.1644 30.9496C11.092 29.0486 10.6179 25.9634 12.024 23.5279L13.211 21.4721C14.6171 19.0366 17.526 17.9046 20.2085 18.7488L22.891 19.5932C24.5274 18.284 26.3639 17.2146 28.3473 16.4381L28.9561 13.6984Z"/><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M39 36C39 37.6569 37.6569 39 36 39C34.3432 39 33 37.6569 33 36C33 34.3431 34.3432 33 36 33C37.6569 33 39 34.3431 39 36Z"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M40.1673 40.1673L57 57M28.5 45C37.6127 45 45 37.6127 45 28.5C45 19.3873 37.6127 12 28.5 12C19.3873 12 12 19.3873 12 28.5C12 37.6127 19.3873 45 28.5 45Z"/></symbol>
+  <symbol id="ic-bell" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M36 16.5C44.2843 16.5 51 23.2157 51 31.5V38.2188C51 39.6883 51.5393 41.1067 52.5155 42.205L56.3425 46.5104C58.9221 49.4124 56.862 54 52.9792 54H19.0208C15.1379 54 13.0778 49.4124 15.6574 46.5104L19.4844 42.205C20.4607 41.1067 21 39.6883 21 38.2188L21 31.5C21 23.2157 27.7157 16.5 36 16.5ZM36 16.5V9M33 63H39"/></symbol>
+  <symbol id="ic-calendar" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M60 27H12M21 9V15M51 9V15M18 63H54C57.3137 63 60 60.3137 60 57V21C60 17.6863 57.3137 15 54 15H18C14.6863 15 12 17.6863 12 21V57C12 60.3137 14.6863 63 18 63Z"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M63.0019 36.0022C57.7608 46.7301 47.6336 54 35.9999 54M35.9999 54C24.3661 54 14.2389 46.7301 8.99931 36.0009M35.9999 54L35.9999 63.0001M58.2654 43.2657L64.4998 49.5001M48.6913 50.9063L52.4999 58.5M13.7344 43.2657L7.5 49.5001M23.3086 50.9063L19.5 58.5001"/></symbol>
+  <symbol id="ic-user" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M51 60C54.3137 60 57.1363 57.2698 56.3852 54.0424C54.5169 46.0141 48.269 42 36 42C23.731 42 17.4831 46.0141 15.6148 54.0424C14.8637 57.2698 17.6863 60 21 60H51Z"/><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M36 33C42 33 45 30 45 22.5C45 15 42 12 36 12C30 12 27 15 27 22.5C27 30 30 33 36 33Z"/></symbol>
+  <symbol id="ic-mail" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M9 24L32.6718 39.7812C34.6872 41.1248 37.3128 41.1248 39.3282 39.7812L63 24M15 57H57C60.3137 57 63 54.3137 63 51V21C63 17.6863 60.3137 15 57 15H15C11.6863 15 9 17.6863 9 21V51C9 54.3137 11.6863 57 15 57Z"/></symbol>
+  <symbol id="ic-lock" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M36 42V48M24 27V18C24 11.3726 29.3726 6 36 6C42.6274 6 48 11.3726 48 18V27M21 63H51C54.3137 63 57 60.3137 57 57V33C57 29.6863 54.3137 27 51 27H21C17.6863 27 15 29.6863 15 33V57C15 60.3137 17.6863 63 21 63Z"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M48 27L30 46.5L22.5 39M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z"/></symbol>
+  <symbol id="ic-verified" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M45 30L33 42L27 36M12 15V36.1672C12 45.2577 17.1361 53.568 25.2669 57.6334L36 63L46.7331 57.6334C54.8639 53.568 60 45.2577 60 36.1672V15L57.909 15.2323C50.5627 16.0486 43.1737 14.1241 37.1589 9.82782L36 9L34.8411 9.82782C28.8263 14.1241 21.4373 16.0486 14.091 15.2323L12 15Z"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M33 54L15 36L33 18M15 36H57"/></symbol>
+  <symbol id="ic-chevdown" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M18 27L33.8787 42.8787C35.0503 44.0503 36.9497 44.0503 38.1213 42.8787L54 27"/></symbol>
+  <symbol id="ic-up" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M36 57V15M54 33L36 15L18 33"/></symbol>
+  <symbol id="ic-location" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M22.1275 14.5775C25.9665 10.8591 30.5906 9 36 9C41.4094 9 46.0117 10.838 49.807 14.5141C53.6024 18.1902 55.5 22.6479 55.5 27.8873C55.5 30.5071 54.8238 33.507 53.4715 36.8873C52.1191 40.2676 50.4832 43.4366 48.5638 46.3944C46.6443 49.3521 44.7467 52.1197 42.8708 54.6972C40.995 57.2747 39.4027 59.3239 38.094 60.8451L36 63C35.4765 62.4084 34.7785 61.6268 33.906 60.6549C33.0336 59.6831 31.4631 57.7395 29.1946 54.8239C26.9262 51.9084 24.9413 49.0775 23.2399 46.331C21.5386 43.5845 19.9899 40.4789 18.594 37.0141C17.198 33.5493 16.5 30.5071 16.5 27.8873C16.5 22.6479 18.3758 18.2113 22.1275 14.5775Z"/><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M39 28.5C39 30.1569 37.6569 31.5 36 31.5C34.3431 31.5 33 30.1569 33 28.5C33 26.8431 34.3431 25.5 36 25.5C37.6569 25.5 39 26.8431 39 28.5Z"/></symbol>
+  <symbol id="ic-nav" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M34.577 10.2691C35.0328 8.90152 36.9672 8.90153 37.423 10.2691L52.8548 56.5645C53.2774 57.8323 51.9563 58.9781 50.761 58.3805L36 51L21.239 58.3805C20.0437 58.9781 18.7226 57.8323 19.1452 56.5645L34.577 10.2691Z"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M15 33H45M15 21H45M15 45H33M45 45V57L57 51L45 45Z"/></symbol>
+  <symbol id="ic-heart" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M58.6066 16.3934C64.4644 22.2513 64.4644 31.7488 58.6066 37.6066L38.1213 58.0919C36.9497 59.2635 35.0502 59.2635 33.8786 58.0919L13.3934 37.6066C7.53553 31.7488 7.53553 22.2513 13.3934 16.3934C18.0504 11.7364 23.6717 10.3105 29.3438 13.0782C31.595 14.1767 34.5468 16.3934 36 19.2891C37.4531 16.3934 40.4049 14.1767 42.6562 13.0782C48.3283 10.3105 53.9496 11.7364 58.6066 16.3934Z"/></symbol>
+  <symbol id="ic-add" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M36 24V48M48 36H24M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z"/></symbol>
+  <symbol id="ic-logout" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M42 60H18C14.6863 60 12 57.3137 12 54L12 18C12 14.6863 14.6863 12 18 12H42M30 36H63M54 27L63 36L54 45"/></symbol>
+  <symbol id="ic-share" viewBox="0 0 72 72"><path stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M24 21L36 9L48 21M36 9V48M60 39V54C60 57.3137 57.3137 60 54 60H18C14.6863 60 12 57.3137 12 54L12 39"/></symbol>
+</svg>
+
+<div class="head">
+  <div class="mono">Strength · Conditioning</div>
+  <h1>HYBRID<b>.</b> — Before vs After</h1>
+  <p>The current app (Before) next to the new <b>Aurora</b> template (After), which uses your uploaded icon set (icons1/2/3).<br>12 screens. HYBRID brand tokens + Archivo throughout. Static mockups — data is placeholder.</p>
+  <div class="legend">
+    <span><i style="background:var(--line)"></i> Before · current HYBRID</span>
+    <span><i style="background:var(--lime)"></i> After · Aurora + icon set</span>
+  </div>
+</div>
+
+<!-- ============ 01 WELCOME ============ -->
+<section class="cmp"><h2><span class="n">01</span> Welcome</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen center">
+      <div class="h" style="font-size:46px">HYBRID<span style="color:var(--lime)">.</span></div>
+      <div class="mono" style="color:var(--lime);letter-spacing:.28em;font-size:10px;margin-top:8px">STRENGTH · CONDITIONING</div>
+      <div class="h" style="font-size:26px;margin-top:34px">Ready to train?</div>
+      <div class="sub" style="margin-top:12px">Log heavy lifts and the engine on one screen.</div>
+      <div class="cl-btn" style="margin-top:26px">▶  Start empty session</div>
+      <div class="cx mono" style="font-size:12px;color:var(--ash);margin-top:20px">Have an account? <span style="color:var(--lime)">Sign in</span></div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen center">
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:34px">
+        <div class="mark" style="width:70px;height:70px"><span>H<b>.</b></span></div>
+        <div class="h cx" style="font-size:30px;margin-top:24px">Start your<br><span style="color:var(--lime)">Fitness</span> Journey</div>
+        <div class="sub cx" style="margin-top:12px">Strength and conditioning for hybrid athletes.</div>
+      </div>
+      <button class="pill soft">Login</button><div style="height:13px"></div>
+      <button class="pill light">Register</button>
+      <div class="cx u" style="font-weight:700;font-size:13px;margin-top:24px">Continue as a guest</div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 02 LOGIN ============ -->
+<section class="cmp"><h2><span class="n">02</span> Login</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen center">
+      <div class="cx"><div class="h" style="font-size:40px">HYBRID<span style="color:var(--lime)">.</span></div>
+        <div class="mono" style="color:var(--lime);letter-spacing:.28em;font-size:10px;margin-top:6px">STRENGTH · CONDITIONING</div></div>
+      <div style="margin-top:30px">
+        <div class="cl-in">you@email.com</div>
+        <div class="cl-in">password</div>
+        <div class="cl-btn">Sign in →</div>
+        <div class="cx mono" style="font-size:12px;color:var(--ash);margin-top:16px">Need an account? <span style="color:var(--lime)">Create one</span></div>
+        <div class="cx mono" style="font-size:12px;color:var(--ash);margin-top:20px">← continue as guest</div>
+      </div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="back"><svg class="ic sm"><use href="#ic-back"/></svg></div>
+      <div class="mark" style="margin-top:14px"><span style="font-size:21px">H<b>.</b></span></div>
+      <div class="h" style="font-size:25px;margin-top:18px">Welcome back! Glad<br>to see you, Again!</div>
+      <div style="margin-top:22px">
+        <div class="af-field"><svg class="ic sm"><use href="#ic-mail"/></svg><span>Enter your email</span></div>
+        <div class="af-field"><svg class="ic sm"><use href="#ic-lock"/></svg><span>Enter your password</span><svg class="ic sm"><use href="#ic-eye"/></svg></div>
+        <div style="text-align:right;font-size:12px;font-weight:600;color:var(--ash);margin-bottom:10px">Forgot Password?</div>
+        <button class="pill light">Login</button>
+      </div>
+      <div class="cx" style="margin-top:22px;font-size:13px;color:var(--ash)">Don't have an account? <b style="color:var(--lime)">Register Now</b></div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 03 REGISTER ============ -->
+<section class="cmp"><h2><span class="n">03</span> Register</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen center">
+      <div class="cx"><div class="h" style="font-size:40px">HYBRID<span style="color:var(--lime)">.</span></div></div>
+      <div style="margin-top:26px">
+        <div class="cl-in">name</div>
+        <div class="cl-in">you@email.com</div>
+        <div class="cl-in">password</div>
+        <div class="cl-btn">Create account →</div>
+        <div class="cx mono" style="font-size:12px;color:var(--ash);margin-top:16px">Have an account? <span style="color:var(--lime)">Sign in</span></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="back"><svg class="ic sm"><use href="#ic-back"/></svg></div>
+      <div class="mark" style="margin-top:14px"><span style="font-size:21px">H<b>.</b></span></div>
+      <div class="h" style="font-size:25px;margin-top:18px">Hello! Register to<br>get started</div>
+      <div style="margin-top:22px">
+        <div class="af-field"><svg class="ic sm"><use href="#ic-user"/></svg><span>Username</span></div>
+        <div class="af-field"><svg class="ic sm"><use href="#ic-mail"/></svg><span>Email</span></div>
+        <div class="af-field"><svg class="ic sm"><use href="#ic-lock"/></svg><span>Password</span><svg class="ic sm"><use href="#ic-eye"/></svg></div>
+        <div class="af-field"><svg class="ic sm"><use href="#ic-lock"/></svg><span>Confirm password</span><svg class="ic sm"><use href="#ic-eye"/></svg></div>
+        <button class="pill light">Register</button>
+      </div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 04 ONBOARDING ============ -->
+<section class="cmp"><h2><span class="n">04</span> Onboarding</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="kick">Set up your plan</div><div class="mono" style="font-size:12px;color:var(--ash)">skip</div></div>
+      <div class="h" style="font-size:23px;margin-top:6px">Let's build your first plan</div>
+      <div class="cl-card acc" style="margin-top:14px"><div class="kick" style="color:var(--lime)">How do you want to use HYBRID?</div>
+        <div style="border:1px solid var(--lime);background:rgba(196,240,53,.08);border-radius:11px;padding:11px;margin-top:10px"><b style="font-size:14px;color:var(--lime)">Just track my training</b><div class="sub" style="font-size:11px">Log fast, review, share.</div></div>
+        <div style="border:1px solid var(--line);border-radius:11px;padding:11px;margin-top:8px"><b style="font-size:14px">Train for a goal</b><div class="sub" style="font-size:11px">The full toolkit.</div></div>
+      </div>
+      <div class="cl-card acc"><div class="kick" style="color:var(--lime)">1 · Your main goal</div><div class="sub" style="margin-top:8px">Strength · Physique · Endurance…</div></div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="progress" style="margin-top:2px"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="mono" style="text-align:right;font-size:12px;color:var(--ash);margin-top:12px">skip</div>
+      <div class="h" style="font-size:24px;margin-top:14px">How do you want to use HYBRID?</div>
+      <div class="sub" style="margin-top:8px">You can switch anytime in More.</div>
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+        <div class="choice on"><svg class="ic"><use href="#ic-check"/></svg><div><div class="t">Just track my training</div><div class="s">Log fast, review at home, share your wins.</div></div></div>
+        <div class="choice"><svg class="ic" style="color:var(--ash)"><use href="#ic-play"/></svg><div><div class="t">Train for a goal</div><div class="s">Plans, sport S&amp;C, velocity &amp; performance.</div></div></div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="back" style="width:60px;height:52px;border-radius:var(--r-pill)"><svg class="ic sm"><use href="#ic-back"/></svg></div>
+        <button class="pill primary" style="flex:1">Next</button>
+      </div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 05 HOME ============ -->
+<section class="cmp"><h2><span class="n">05</span> Home · Today</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen" style="padding-bottom:0">
+      <div class="kick">Fitness GPS · today</div>
+      <div class="h" style="font-size:28px;margin-top:4px">Ready to train?</div>
+      <div class="cl-btn" style="margin-top:14px">▶  Start workout</div>
+      <div class="cl-card acc" style="margin-top:14px"><div style="display:flex;justify-content:space-between"><div class="kick" style="color:var(--lime)">Your plan today</div><div class="mono" style="font-size:10px;color:var(--ash)">readiness 82/100</div></div>
+        <div class="h" style="font-size:18px;margin-top:6px">Back Squat + Intervals</div>
+        <div class="sub" style="font-size:11px;margin-top:4px">Heavy lower + threshold work.</div></div>
+      <div class="cl-card accv"><div class="kick" style="color:var(--violet)">AI coach <span class="cl-chip" style="color:var(--blue);background:rgba(127,212,232,.12)">beta</span></div>
+        <div class="h" style="font-size:18px;margin-top:6px">Ask your AI coach</div></div>
+      <div class="cl-pad"></div>
+    </div>
+    <div class="cl-nav">
+      <div class="t on"><span class="g">◆</span>Today</div><div class="t"><span class="g">◈</span>Cockpit</div><div class="t"><span class="g">▶</span>Train</div><div class="t"><span class="g">≣</span>History</div><div class="t"><span class="g">⋯</span>More</div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen" style="padding-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="color:var(--ash);font-size:15px">Hi,</div><div class="h" style="font-size:24px">Youssef</div></div>
+        <div style="display:flex;gap:10px"><div class="iconbtn"><svg class="ic"><use href="#ic-search"/></svg></div><div class="iconbtn"><svg class="ic"><use href="#ic-bell"/></svg></div></div>
+      </div>
+      <div class="heroc" style="margin-top:16px;padding:14px 12px 8px">
+        <div style="display:flex;justify-content:space-between"><div class="kick">This week · output</div><div class="mono" style="font-size:10px;color:var(--lime)">505 cal</div></div>
+        <svg viewBox="0 0 252 80" width="100%" height="74" style="margin-top:6px">
+          <polyline fill="none" stroke="#c4f035" stroke-width="2.5" points="0,62 36,52 72,56 108,34 144,14 180,38 216,46 252,32"/>
+          <circle cx="144" cy="14" r="4" fill="#c4f035"/></svg>
+      </div>
+      <div class="h" style="font-size:19px;margin-top:16px">Your Schedule</div>
+      <div class="kick" style="margin-top:6px;margin-bottom:10px">Today's activity</div>
+      <div class="row"><div style="display:flex;align-items:center;flex:1"><div class="dot" style="background:var(--lime)"></div><div><div style="font-weight:700;font-size:14px">WarmUp</div><div class="mono" style="font-size:10px;color:var(--ash)">Run 02 km</div></div></div><div class="startbtn"><svg class="ic sm" style="color:var(--ink)"><use href="#ic-play"/></svg>Start</div></div>
+      <div class="row"><div style="display:flex;align-items:center;flex:1"><div class="dot" style="background:var(--violet)"></div><div><div style="font-weight:700;font-size:14px">Muscle Up</div><div class="mono" style="font-size:10px;color:var(--ash)">10 reps · 3 sets</div></div></div><div class="startbtn"><svg class="ic sm" style="color:var(--ink)"><use href="#ic-play"/></svg>Start</div></div>
+      <div class="af-pad"></div>
+    </div>
+    <div class="af-nav"><div class="ic on"><svg viewBox="0 0 72 72"><use href="#ic-play"/></svg></div><div class="ic"><svg viewBox="0 0 72 72"><use href="#ic-calendar"/></svg></div><div class="ic"><svg viewBox="0 0 72 72"><use href="#ic-bell"/></svg></div><div class="ic"><svg viewBox="0 0 72 72"><use href="#ic-settings"/></svg></div></div>
+  </div></div>
+</div></section>
+
+<!-- ============ 06 SCHEDULE ============ -->
+<section class="cmp"><h2><span class="n">06</span> Schedule · Calendar</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="kick">Calendar</div><div class="h" style="font-size:24px;margin-top:4px">December 2022</div>
+      <div class="cl-card" style="margin-top:14px">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center">
+          <div class="mono" style="font-size:9px;color:var(--ash)">M</div><div class="mono" style="font-size:9px;color:var(--ash)">T</div><div class="mono" style="font-size:9px;color:var(--ash)">W</div><div class="mono" style="font-size:9px;color:var(--ash)">T</div><div class="mono" style="font-size:9px;color:var(--ash)">F</div><div class="mono" style="font-size:9px;color:var(--ash)">S</div><div class="mono" style="font-size:9px;color:var(--ash)">S</div>
+          <!-- numbers -->
+          <div class="mono" style="font-size:11px;color:var(--ash)">1</div><div class="mono" style="font-size:11px">2</div><div class="mono" style="font-size:11px">3</div><div class="mono" style="font-size:11px">4</div><div class="mono" style="font-size:11px">5</div><div class="mono" style="font-size:11px">6</div><div class="mono" style="font-size:11px">7</div>
+          <div class="mono" style="font-size:11px">8</div><div class="mono" style="font-size:11px">9</div><div class="mono" style="font-size:11px">10</div><div class="mono" style="font-size:11px;background:var(--lime);color:var(--ink);border-radius:5px">11</div><div class="mono" style="font-size:11px">12</div><div class="mono" style="font-size:11px">13</div><div class="mono" style="font-size:11px">14</div>
+        </div>
+      </div>
+      <div class="cl-card acc"><div class="kick" style="color:var(--lime)">Dec 11 · 8am</div><div style="font-weight:700;margin-top:4px">WarmUp · Run 02 km</div></div>
+      <div class="cl-card accv"><div class="kick" style="color:var(--violet)">Dec 11 · 4pm</div><div style="font-weight:700;margin-top:4px">Pushups session</div></div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen" style="padding-bottom:0">
+      <div style="display:flex;align-items:center;gap:10px"><svg class="ic"><use href="#ic-calendar"/></svg><div class="kick">Today is</div></div>
+      <div class="h" style="font-size:26px;margin-top:4px">11, December 2022</div>
+      <div class="cal">
+        <div class="d"><div class="dn">Mo</div><div class="num">8</div></div><div class="d"><div class="dn">Tu</div><div class="num">9</div></div><div class="d"><div class="dn">We</div><div class="num">10</div></div><div class="d"><div class="dn">Th</div><div class="num on">11</div></div><div class="d"><div class="dn">Fr</div><div class="num">12</div></div><div class="d"><div class="dn">Sa</div><div class="num">13</div></div><div class="d"><div class="dn">Su</div><div class="num">14</div></div>
+      </div>
+    </div>
+    <div class="sheet" style="height:330px">
+      <div class="grab"></div>
+      <div class="h cx" style="font-size:17px;margin-bottom:14px">Your Schedule</div>
+      <div style="border-radius:18px;padding:13px 15px;margin-bottom:11px;background:rgba(196,240,53,.10);border:1px solid rgba(196,240,53,.4)"><div class="mono" style="font-size:10px;color:var(--lime)">December 11, 8am</div><div style="font-weight:700;font-size:15px;margin-top:3px">WarmUp</div><div class="mono" style="font-size:11px;color:var(--ash)">Run 02 km</div></div>
+      <div style="border-radius:18px;padding:13px 15px;background:rgba(201,169,240,.10);border:1px solid rgba(201,169,240,.4)"><div class="mono" style="font-size:10px;color:var(--violet)">December 11, 4pm</div><div style="font-weight:700;font-size:15px;margin-top:3px">Pushups session</div><div class="mono" style="font-size:11px;color:var(--ash)">25 rep, 3 sets</div></div>
+    </div>
+    <div class="af-nav"><div class="ic"><svg viewBox="0 0 72 72"><use href="#ic-play"/></svg></div><div class="ic on"><svg viewBox="0 0 72 72"><use href="#ic-calendar"/></svg></div><div class="ic"><svg viewBox="0 0 72 72"><use href="#ic-bell"/></svg></div><div class="ic"><svg viewBox="0 0 72 72"><use href="#ic-settings"/></svg></div></div>
+  </div></div>
+</div></section>
+
+<!-- ============ 07 WORKOUT ============ -->
+<section class="cmp"><h2><span class="n">07</span> Workout</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="kick">Live workout</div><div class="h" style="font-size:24px;margin-top:4px">Push session</div>
+      <div class="cl-card" style="margin-top:14px"><div style="display:flex;justify-content:space-between"><b style="font-size:15px">Bench Press</b><span class="cl-chip">3×5</span></div>
+        <div class="mono" style="font-size:12px;color:var(--ash);margin-top:8px">60 kg × 5 · RPE 7</div>
+        <div class="mono" style="font-size:12px;color:var(--ash);margin-top:4px">62.5 kg × 5 · RPE 8</div></div>
+      <div class="cl-card"><div style="display:flex;justify-content:space-between"><b style="font-size:15px">Overhead Press</b><span class="cl-chip">3×8</span></div>
+        <div class="mono" style="font-size:12px;color:var(--ash);margin-top:8px">40 kg × 8</div></div>
+      <div class="cl-btn" style="margin-top:4px">+ Add set</div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="back"><svg class="ic sm"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:10px 13px;display:flex;align-items:center;gap:10px"><svg class="ic sm"><use href="#ic-play"/></svg><div><div style="font-weight:700;font-size:13px">Pushups session</div><div class="mono" style="font-size:10px;color:var(--ash)">25 rep, 3 sets</div></div></div>
+      </div>
+      <div class="h cx" style="font-size:26px;margin-top:14px">Start!</div>
+      <div class="ringwrap"><svg viewBox="0 0 200 200" width="170" height="170"><circle cx="100" cy="100" r="86" fill="none" stroke="#2a2d2a" stroke-width="11"/><circle cx="100" cy="100" r="86" fill="none" stroke="#c4f035" stroke-width="11" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="170" transform="rotate(-90 100 100)"/></svg><div class="ringnum">00:38</div></div>
+      <div class="playbtn"><svg class="ic" style="color:var(--ink)"><use href="#ic-play"/></svg></div>
+      <div class="heroc" style="margin-top:14px;padding:6px 14px">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;color:var(--ash)"><span class="mono" style="font-size:12px">Get ready</span><span class="mono" style="font-size:12px">10</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(196,240,53,.10);border-radius:12px;border:1px solid rgba(196,240,53,.35)"><b style="font-size:13px">Work</b><b style="font-size:13px">40</b></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;color:var(--ash)"><span class="mono" style="font-size:12px">Rest</span><span class="mono" style="font-size:12px">10</span></div>
+      </div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 08 STATISTICS ============ -->
+<section class="cmp"><h2><span class="n">08</span> Statistics · Progress</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="kick">Progress</div><div class="h" style="font-size:26px;margin-top:4px">Your trends</div>
+      <div class="cl-card acc" style="margin-top:14px"><div class="kick" style="color:var(--lime)">Weekly volume</div><div class="h" style="font-size:22px;margin-top:6px">18,420 kg</div><div class="mono" style="font-size:11px;color:var(--lime);margin-top:2px">▲ +6% vs last week</div></div>
+      <div class="cl-card"><div class="kick">Sessions · 7d</div><div class="h" style="font-size:22px;margin-top:6px">4 / 5</div></div>
+      <div class="cl-card"><div class="kick">Best lift · Back Squat</div><div class="h" style="font-size:22px;margin-top:6px">120 kg</div></div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen" style="padding-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div class="kick">June 06, 2024</div><div class="h" style="font-size:26px;margin-top:4px">Your<br>Statistics</div></div>
+        <div style="text-align:right;display:flex;align-items:center;gap:6px"><svg class="ic sm" style="color:var(--lime)"><use href="#ic-up"/></svg><div><div class="mono" style="font-size:9px;color:var(--ash)">Weekly Avg</div><div class="h" style="font-size:16px">102 CAL</div></div></div>
+      </div>
+      <div class="seg" style="margin-top:16px"><div class="on">Day</div><div>Week</div><div>Month</div></div>
+      <div class="heroc" style="margin-top:16px;padding:16px 14px 26px">
+        <div style="display:flex;justify-content:space-between"><b style="font-size:16px">Calories</b><span class="mono" style="font-size:11px;color:var(--ash)">50 cal</span></div>
+        <div class="bars"><div class="bar" style="height:40%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:35%"></div><div class="bar on" style="height:100%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:70%"></div></div>
+      </div>
+      <div style="display:flex;gap:11px;margin-top:16px">
+        <div class="minic"><svg class="ic" style="color:var(--lime)"><use href="#ic-nav"/></svg><div class="mono" style="font-size:10px;color:var(--ash);margin-top:6px">Walk</div><div class="h" style="font-size:17px">2 miles</div></div>
+        <div class="minic"><svg class="ic" style="color:var(--blue)"><use href="#ic-heart"/></svg><div class="mono" style="font-size:10px;color:var(--ash);margin-top:6px">Resting HR</div><div class="h" style="font-size:17px">52 bpm</div></div>
+      </div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 09 SETTINGS ============ -->
+<section class="cmp"><h2><span class="n">09</span> Settings</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="mono" style="font-size:12px;color:var(--ash)">← back</div>
+      <div class="h" style="font-size:24px;margin-top:8px">Settings</div>
+      <div class="cl-card" style="margin-top:12px"><div class="kick" style="color:var(--blue)">Account</div><div style="font-weight:700;font-size:16px;margin-top:6px">Youssef</div>
+        <div style="margin-top:8px"><span class="cl-chip" style="color:var(--violet);background:rgba(201,169,240,.12)">CLIENT</span> <span class="cl-chip">FREE</span></div></div>
+      <div class="cl-card"><div class="kick">Appearance</div>
+        <div style="display:flex;gap:6px;margin-top:10px"><div style="flex:1;text-align:center;padding:9px;border-radius:9px;border:1px solid var(--line);color:var(--ash);font-size:12px">System</div><div style="flex:1;text-align:center;padding:9px;border-radius:9px;background:var(--lime);color:var(--ink);font-size:12px;font-weight:700">Dark</div></div></div>
+      <div class="cl-card acc" style="border-left-color:var(--red)"><div class="kick" style="color:var(--red)">Danger zone</div><div class="sub" style="font-size:11px;margin-top:6px">Reset account…</div></div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen" style="align-items:center;padding-bottom:0">
+      <div class="avatar" style="width:88px;height:88px;border-radius:44px;margin-top:4px"><svg class="ic lg"><use href="#ic-user"/></svg></div>
+      <div class="h" style="font-size:19px;margin-top:12px">Youssef Labidi</div>
+      <div class="mono" style="font-size:12px;color:var(--ash);margin-top:4px">175 cm · 62 KG</div>
+      <div style="align-self:stretch;margin-top:20px">
+        <div class="kick" style="margin-bottom:8px">App Settings</div>
+        <div class="slist">
+          <div class="it"><svg class="ic sm"><use href="#ic-user"/></svg>Account Informations<span class="r"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#ic-chevdown"/></svg></span></div>
+          <div class="it"><svg class="ic sm"><use href="#ic-bell"/></svg>Notifications<span class="r"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#ic-chevdown"/></svg></span></div>
+          <div class="it"><svg class="ic sm"><use href="#ic-lock"/></svg>Privacy &amp; Security<span class="r"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#ic-chevdown"/></svg></span></div>
+        </div>
+        <div class="kick" style="margin:16px 0 8px">Support</div>
+        <div class="slist"><div class="it"><svg class="ic sm"><use href="#ic-share"/></svg>Share HYBRID<span class="r"><svg class="ic sm" style="transform:rotate(-90deg)"><use href="#ic-chevdown"/></svg></span></div>
+          <div class="it" style="color:var(--red)"><svg class="ic sm" style="color:var(--red)"><use href="#ic-logout"/></svg>Log out</div></div>
+      </div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 10 NOTIFICATIONS ============ -->
+<section class="cmp"><h2><span class="n">10</span> Notifications</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="kick">Announcements</div><div class="h" style="font-size:24px;margin-top:4px">What's new</div>
+      <div class="cl-card acc" style="margin-top:14px"><div class="kick" style="color:var(--lime)">Today · 4:00pm</div><div style="font-weight:700;margin-top:4px">Upcoming workout</div><div class="sub" style="font-size:11px;margin-top:2px">Pushups session · 25 rep</div></div>
+      <div class="cl-card"><div class="kick">Yesterday</div><div style="font-weight:700;margin-top:4px">Training completed</div><div class="sub" style="font-size:11px;margin-top:2px">312 cal burned</div></div>
+      <div class="cl-card"><div class="kick">Yesterday</div><div style="font-weight:700;margin-top:4px">New personal record</div><div class="sub" style="font-size:11px;margin-top:2px">Back Squat · 120 kg</div></div>
+      <div class="sub cx" style="font-size:11px;margin-top:8px">(today: a banner, not a dedicated screen)</div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen" style="padding-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="h" style="font-size:22px">Notifications</div><div class="iconbtn"><svg class="ic"><use href="#ic-bell"/></svg></div></div>
+      <div class="kick" style="margin-top:18px;margin-bottom:2px">Today</div>
+      <div class="ntf"><div class="ico" style="background:rgba(196,240,53,.12);color:var(--lime)"><svg viewBox="0 0 72 72"><use href="#ic-calendar"/></svg></div><div style="flex:1"><div style="font-weight:700;font-size:13px">Upcoming workout</div><div class="mono" style="font-size:10px;color:var(--ash)">Pushups session · 25 rep</div></div><div class="mono" style="font-size:9px;color:var(--ash)">4:00 PM</div></div>
+      <div class="ntf"><div class="ico" style="background:rgba(127,212,232,.12);color:var(--blue)"><svg viewBox="0 0 72 72"><use href="#ic-heart"/></svg></div><div style="flex:1"><div style="font-weight:700;font-size:13px">Recovery check-in</div><div class="mono" style="font-size:10px;color:var(--ash)">How's your readiness?</div></div><div class="mono" style="font-size:9px;color:var(--ash)">1:20 PM</div></div>
+      <div class="kick" style="margin-top:14px;margin-bottom:2px">Yesterday</div>
+      <div class="ntf"><div class="ico" style="background:rgba(201,169,240,.12);color:var(--violet)"><svg viewBox="0 0 72 72"><use href="#ic-check"/></svg></div><div style="flex:1"><div style="font-weight:700;font-size:13px">Training completed</div><div class="mono" style="font-size:10px;color:var(--ash)">312 cal burned</div></div><div class="mono" style="font-size:9px;color:var(--ash)">7:42 PM</div></div>
+      <div class="ntf" style="border-bottom:0"><div class="ico" style="background:rgba(240,180,94,.12);color:var(--amber)"><svg viewBox="0 0 72 72"><use href="#ic-verified"/></svg></div><div style="flex:1"><div style="font-weight:700;font-size:13px">New personal record</div><div class="mono" style="font-size:10px;color:var(--ash)">Back Squat · 120 kg</div></div><div class="mono" style="font-size:9px;color:var(--ash)">6:10 PM</div></div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 11 RUNNING / MAP ============ -->
+<section class="cmp"><h2><span class="n">11</span> Running · Map</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="kick">Running</div><div class="h" style="font-size:26px;margin-top:4px">Today's run</div>
+      <div class="cl-card acc" style="margin-top:14px"><div class="kick" style="color:var(--lime)">Distance</div><div class="h" style="font-size:30px;margin-top:4px">1.23 km</div></div>
+      <div style="display:flex;gap:11px">
+        <div class="cl-card" style="flex:1"><div class="kick">Time</div><div class="h" style="font-size:20px;margin-top:4px">30:12</div></div>
+        <div class="cl-card" style="flex:1"><div class="kick">Calories</div><div class="h" style="font-size:20px;margin-top:4px">312</div></div>
+      </div>
+      <div class="cl-card" style="height:140px;display:flex;align-items:center;justify-content:center"><div class="mono" style="color:var(--ash);font-size:12px">[ route map ]</div></div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="map"></div>
+    <svg style="position:absolute;z-index:6" viewBox="0 0 300 340" width="300" height="340"><path d="M120 140 C150 190 170 220 195 240" fill="none" stroke="#c4f035" stroke-width="4" stroke-linecap="round"/></svg>
+    <div style="position:absolute;top:138px;left:108px;z-index:8;color:var(--lime)"><svg class="ic lg" style="color:var(--lime)"><use href="#ic-location"/></svg></div>
+    <div style="position:absolute;top:60px;left:18px;right:18px;z-index:10;display:flex;gap:10px;align-items:center">
+      <div class="back" style="background:var(--ink)"><svg class="ic sm"><use href="#ic-back"/></svg></div>
+      <div style="flex:1;background:var(--ink);border:1px solid var(--line);border-radius:18px;padding:10px 13px;display:flex;align-items:center;gap:9px"><svg class="ic sm" style="color:var(--lime)"><use href="#ic-nav"/></svg><div><div style="font-weight:700;font-size:13px">WarmUp</div><div class="mono" style="font-size:10px;color:var(--ash)">Run 02 km</div></div></div>
+    </div>
+    <div class="sheet" style="height:230px;text-align:center">
+      <div class="playbtn" style="margin-top:-52px;position:relative"><svg class="ic" style="color:var(--ink)"><use href="#ic-play"/></svg></div>
+      <div class="big" style="margin-top:12px">1.23</div><div class="mono" style="color:var(--ash);font-size:12px">Km</div>
+      <div style="display:flex;justify-content:space-around;margin-top:16px">
+        <div><div class="h" style="font-size:20px">8:00</div><div class="mono" style="font-size:9px;color:var(--ash)">Started</div></div>
+        <div><div class="h" style="font-size:20px">30:12</div><div class="mono" style="font-size:9px;color:var(--ash)">Time</div></div>
+        <div><div class="h" style="font-size:20px">312</div><div class="mono" style="font-size:9px;color:var(--ash)">Calories</div></div>
+      </div>
+    </div>
+  </div></div>
+</div></section>
+
+<!-- ============ 12 NUTRITION ============ -->
+<section class="cmp"><h2><span class="n">12</span> Nutrition</h2><div class="pair">
+  <div class="pw"><span class="tag b">Before</span><div class="phone">
+    <div class="screen">
+      <div class="kick">Nutrition · today</div><div class="h" style="font-size:24px;margin-top:4px">Macros</div>
+      <div class="cl-card acc" style="margin-top:14px"><div class="kick" style="color:var(--lime)">Calories</div><div class="h" style="font-size:22px;margin-top:4px">1,840 / 2,400</div></div>
+      <div class="cl-card"><div style="display:flex;justify-content:space-between"><b style="font-size:14px">Protein</b><span class="mono" style="font-size:12px;color:var(--ash)">120 / 165 g</span></div></div>
+      <div class="cl-card"><div style="display:flex;justify-content:space-between"><b style="font-size:14px">Carbs</b><span class="mono" style="font-size:12px;color:var(--ash)">190 / 240 g</span></div></div>
+      <div class="cl-card"><div style="display:flex;justify-content:space-between"><b style="font-size:14px">Fat</b><span class="mono" style="font-size:12px;color:var(--ash)">52 / 70 g</span></div></div>
+      <div class="cl-btn">+ Quick add</div>
+    </div>
+  </div></div>
+  <div class="pw"><span class="tag a">After</span><div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen" style="padding-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div><div class="kick">Today</div><div class="h" style="font-size:24px;margin-top:2px">Nutrition</div></div><div class="iconbtn" style="background:var(--lime)"><svg class="ic" style="color:var(--ink)"><use href="#ic-add"/></svg></div></div>
+      <div class="heroc" style="margin-top:16px">
+        <div class="kick">Calories</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px"><div class="big" style="font-size:40px">1,840</div><div class="mono" style="font-size:13px;color:var(--ash)">/ 2,400</div></div>
+        <div class="barfill"><i style="width:76%"></i></div>
+      </div>
+      <div class="row" style="border-radius:22px"><div style="flex:1"><div style="font-weight:700;font-size:14px">Protein</div><div class="barfill" style="margin-top:8px"><i style="width:73%;background:var(--blue)"></i></div></div><div class="mono" style="font-size:11px;color:var(--ash);margin-left:14px">120/165g</div></div>
+      <div class="row" style="border-radius:22px"><div style="flex:1"><div style="font-weight:700;font-size:14px">Carbs</div><div class="barfill" style="margin-top:8px"><i style="width:79%;background:var(--amber)"></i></div></div><div class="mono" style="font-size:11px;color:var(--ash);margin-left:14px">190/240g</div></div>
+      <div class="row" style="border-radius:22px"><div style="flex:1"><div style="font-weight:700;font-size:14px">Fat</div><div class="barfill" style="margin-top:8px"><i style="width:74%;background:var(--violet)"></i></div></div><div class="mono" style="font-size:11px;color:var(--ash);margin-left:14px">52/70g</div></div>
+    </div>
+  </div></div>
+</div></section>
+
+</body>
+</html>
