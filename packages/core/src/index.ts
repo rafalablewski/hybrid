@@ -32,6 +32,7 @@ export * from "./templates";
 export * from "./aurora-icons";
 export * from "./interval";
 export * from "./activity";
+export * from "./stats";
 export * from "./contrast";
 export * from "./nav";
 export * from "./analytics";

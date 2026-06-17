@@ -94,8 +94,8 @@ export default function AuroraHome() {
           </View>
         </View>
 
-        {/* Hero readiness stat */}
-        <View style={{ marginTop: 22, backgroundColor: palette.ink2, borderColor: palette.line, borderWidth: 1, borderRadius: RADIUS.card, padding: 22 }}>
+        {/* Hero readiness stat — tap through to full Statistics */}
+        <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 22, backgroundColor: palette.ink2, borderColor: palette.line, borderWidth: 1, borderRadius: RADIUS.card, padding: 22 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: palette.ash }}>
             Today · readiness
           </Text>
@@ -114,7 +114,7 @@ export default function AuroraHome() {
               Log your first workout and your readiness, HPI and schedule build from real training.
             </Text>
           )}
-        </View>
+        </Pressable>
 
         {/* Start workout */}
         <APill
