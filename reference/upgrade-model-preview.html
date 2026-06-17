@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Proposed upgrade model — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:'Archivo',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
+  .app{display:flex;align-items:stretch}
+
+  /* ── casual sidebar (clean, no scattered locks) ─────────── */
+  .side{width:232px;flex:none;border-right:1px solid var(--line);background:var(--ink2);
+    position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+  .brand{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.04em;padding:16px 16px 8px}
+  .brand span{color:var(--lime)}
+  .navwrap{flex:1;overflow-y:auto;padding:6px 8px}
+  .grp{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);padding:0 10px;margin:12px 0 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;color:var(--ash);font-family:var(--disp);font-size:13.5px;font-weight:600}
+  .nav-item.active{background:rgba(196,240,53,.10);color:var(--chalk)}
+  .nav-item .ic{font-size:15px;width:18px;text-align:center}
+  /* the single upgrade entry — pinned, accented, value-labeled */
+  .upsell-pin{margin:8px;padding:12px;border-radius:12px;border:1px solid rgba(196,240,53,.5);
+    background:linear-gradient(135deg, rgba(196,240,53,.14), rgba(201,169,240,.10))}
+  .upsell-pin .t{font-family:var(--disp);font-weight:800;font-size:14px;color:var(--chalk);display:flex;align-items:center;gap:7px}
+  .upsell-pin .s{font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:3px;line-height:1.5}
+  .upsell-pin .go{display:block;text-align:center;margin-top:10px;background:var(--lime);color:var(--ink);
+    font-family:var(--disp);font-weight:800;font-size:12.5px;border-radius:9px;padding:9px 0}
+
+  main{flex:1;min-width:0;padding:26px 30px 90px;max-width:900px}
+  .scr-kick{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
+  h1{font-family:var(--disp);font-weight:900;font-size:30px;margin:5px 0 0}
+  .lead{font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--chalk);margin:10px 0 0;max-width:660px}
+  h2.sec{font-family:var(--disp);font-weight:900;font-size:18px;margin:42px 0 0;padding-top:22px;border-top:1px solid var(--line)}
+
+  .hero{margin-top:18px;padding:22px;border-radius:18px;border:1px solid rgba(196,240,53,.4);
+    background:linear-gradient(135deg, rgba(196,240,53,.12), rgba(201,169,240,.10))}
+  .hero .pricerow{display:flex;align-items:baseline;gap:12px;margin-top:14px;flex-wrap:wrap}
+  .hero .price{font-family:var(--disp);font-weight:900;font-size:30px}
+  .hero .per{font-family:var(--mono);font-size:12px;color:var(--ash)}
+  .cta{display:inline-block;font-family:var(--disp);font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--ink);background:var(--lime);border:none;border-radius:12px;padding:13px 26px;margin-top:14px}
+  .ghost{display:inline-block;font-family:var(--mono);font-size:13px;color:var(--ash);border:1px solid var(--line);border-radius:12px;padding:13px 20px;margin:14px 0 0 10px}
+  .count{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--lime);border:1px solid var(--lime);border-radius:999px;padding:3px 10px}
+
+  .bundle{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:720px){.bundle{grid-template-columns:1fr}}
+  .cat{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .cat.flag{border-left:3px solid var(--lime);grid-column:1 / -1}
+  .cat .ch{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:10px}
+  .feat{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+  .feat:first-of-type{border-top:none}
+  .feat .ic{font-size:15px;width:20px;text-align:center;color:var(--chalk);flex:none;margin-top:1px}
+  .feat .nm{font-family:var(--disp);font-weight:700;font-size:13.5px}
+  .feat .ds{font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.5}
+
+  .mini{background:var(--ink2);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .mini .h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);padding:10px 14px;border-bottom:1px solid var(--line)}
+  .mini .it{display:flex;align-items:center;gap:10px;padding:7px 14px;font-family:var(--disp);font-size:13px;font-weight:600;color:var(--ash)}
+  .mini .it.on{color:var(--chalk)}
+  .mini .it .ic{width:16px;text-align:center}
+  .mini .up{margin:8px 12px;border-radius:9px;border:1px solid rgba(196,240,53,.5);background:rgba(196,240,53,.10);color:var(--chalk);
+    font-family:var(--disp);font-weight:800;font-size:12px;text-align:center;padding:8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .note{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:8px;line-height:1.6}
+  .mono{font-family:var(--mono);color:var(--ash);font-size:12px;line-height:1.6}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+  .good{color:var(--lime)} .bad{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- CASUAL sidebar — clean, lean, ONE upgrade entry pinned at the bottom -->
+  <aside class="side">
+    <div class="brand">HYBRID<span>.</span></div>
+    <div class="navwrap">
+      <div class="grp">Home</div>
+      <div class="nav-item"><span class="ic">➤</span>Today</div>
+      <div class="grp">Train</div>
+      <div class="nav-item"><span class="ic">✎</span>Log session</div>
+      <div class="nav-item"><span class="ic">▦</span>Calendar</div>
+      <div class="grp">Review</div>
+      <div class="nav-item"><span class="ic">≣</span>History</div>
+      <div class="grp">Recovery</div>
+      <div class="nav-item"><span class="ic">✓</span>Check-in</div>
+      <div class="nav-item"><span class="ic">🍎</span>Nutrition</div>
+      <div class="nav-item"><span class="ic">📸</span>Progress</div>
+      <div class="grp">Account</div>
+      <div class="nav-item"><span class="ic">⚙</span>Settings</div>
+    </div>
+    <!-- the ONE upgrade affordance — value-labeled, not a feature tab -->
+    <div class="upsell-pin">
+      <div class="t">✦ Unlock Full</div>
+      <div class="s">Plans, analytics, your Athlete Twin, the Cockpit &amp; 12+ pro tools.</div>
+      <div class="go">See what's inside →</div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="scr-kick">Full · the upgrade</div>
+    <h1>Unlock HYBRID Full</h1>
+    <div class="lead">
+      One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays exactly as it is;
+      the depth simply switches on.
+    </div>
+
+    <div class="hero">
+      <span class="count">12+ pro tools · one subscription</span>
+      <div class="pricerow">
+        <span class="price">€9<span style="font-size:16px">.99</span></span>
+        <span class="per">/ month · cancel anytime · 7-day free trial</span>
+      </div>
+      <a class="cta">Start free trial →</a>
+      <a class="ghost">Maybe later</a>
+    </div>
+
+    <div class="bundle">
+      <!-- flagship -->
+      <div class="cat flag">
+        <span class="ch good">The hub — everything in one place</span>
+        <div class="feat"><span class="ic">◈</span><div><div class="nm">Athlete Cockpit</div><div class="ds">Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</div></div></div>
+      </div>
+
+      <div class="cat">
+        <span class="ch k" style="color:var(--lime)">Train smarter</span>
+        <div class="feat"><span class="ic">▤</span><div><div class="nm">Plans</div><div class="ds">Guided, periodized programs.</div></div></div>
+        <div class="feat"><span class="ic">◰</span><div><div class="nm">Periodize</div><div class="ds">Your season — phases, deloads, peak.</div></div></div>
+        <div class="feat"><span class="ic">⊕</span><div><div class="nm">Builder</div><div class="ds">Design your own templates.</div></div></div>
+        <div class="feat"><span class="ic">▲</span><div><div class="nm">Competition</div><div class="ds">Peak on the day.</div></div></div>
+      </div>
+
+      <div class="cat">
+        <span class="ch" style="color:var(--blue)">Your performance</span>
+        <div class="feat"><span class="ic">◈</span><div><div class="nm">Athlete Twin · HPI</div><div class="ds">Strength, endurance &amp; recovery, fused into one index.</div></div></div>
+        <div class="feat"><span class="ic">◇</span><div><div class="nm">Injury risk</div><div class="ds">Tissue-by-tissue, before it bites.</div></div></div>
+        <div class="feat"><span class="ic">↗</span><div><div class="nm">Future self</div><div class="ds">Projected strength &amp; goal ETA.</div></div></div>
+        <div class="feat"><span class="ic">◷</span><div><div class="nm">Analytics</div><div class="ds">Deep dashboards from your logs.</div></div></div>
+      </div>
+
+      <div class="cat">
+        <span class="ch" style="color:var(--amber)">Sport &amp; technique</span>
+        <div class="feat"><span class="ic">◎</span><div><div class="nm">Sport S&amp;C</div><div class="ds">The work that transfers, ranked.</div></div></div>
+        <div class="feat"><span class="ic">⚡</span><div><div class="nm">Velocity (VBT)</div><div class="ds">Bar speed → estimated 1RM &amp; load.</div></div></div>
+        <div class="feat"><span class="ic">◇</span><div><div class="nm">Force plate</div><div class="ds">Jump &amp; asymmetry analysis.</div></div></div>
+        <div class="feat"><span class="ic">▷</span><div><div class="nm">Video</div><div class="ds">Technique &amp; asymmetry capture.</div></div></div>
+      </div>
+
+      <div class="cat">
+        <span class="ch" style="color:var(--violet)">Endurance &amp; body</span>
+        <div class="feat"><span class="ic">🏃</span><div><div class="nm">Running</div><div class="ds">Mileage, pace zones, easy/hard split.</div></div></div>
+        <div class="feat"><span class="ic">▦</span><div><div class="nm">Volume</div><div class="ds">Sets per muscle · MEV–MRV.</div></div></div>
+        <div class="feat"><span class="ic">≡</span><div><div class="nm">Exercises &amp; Trends</div><div class="ds">Per-lift progress over time.</div></div></div>
+        <div class="feat"><span class="ic">❤</span><div><div class="nm">Longevity</div><div class="ds">Biological age &amp; healthspan.</div></div></div>
+      </div>
+    </div>
+
+    <a class="cta">Start free trial →</a>
+    <div class="note">Already paid but in Simple mode? This same screen just flips you to Full — no charge.</div>
+
+    <!-- ════ WHY THIS, NOT PER-TAB LOCKS ════ -->
+    <h2 class="sec">Why one entry, not padlocks everywhere</h2>
+    <div class="grid2">
+      <div>
+        <div class="mini">
+          <div class="h">✓ Proposed — clean casual nav</div>
+          <div class="it on"><span class="ic">➤</span>Today</div>
+          <div class="it"><span class="ic">✎</span>Log session</div>
+          <div class="it"><span class="ic">▦</span>Calendar</div>
+          <div class="it"><span class="ic">≣</span>History</div>
+          <div class="it"><span class="ic">✓</span>Check-in</div>
+          <div class="up">✦ Unlock Full — 12+ tools</div>
+        </div>
+        <div class="note"><span class="good">One</span> value-labeled entry → a page that sells the <i>whole</i> bundle. Clean for the Average Joe; the upgrade's full value is obvious.</div>
+      </div>
+      <div>
+        <div class="mini">
+          <div class="h">✕ Rejected — padlocks scattered</div>
+          <div class="it on"><span class="ic">➤</span>Today</div>
+          <div class="it"><span class="ic">◈</span>Cockpit 🔒</div>
+          <div class="it"><span class="ic">▤</span>Plans 🔒</div>
+          <div class="it"><span class="ic">◈</span>Performance 🔒</div>
+          <div class="it"><span class="ic">⚡</span>Velocity 🔒</div>
+          <div class="it"><span class="ic">◰</span>Periodize 🔒</div>
+        </div>
+        <div class="note"><span class="bad">Messy + misleading.</span> A single lock (just Cockpit) made Full look like one screen; locking everything clutters the lean app and feels crippled.</div>
+      </div>
+    </div>
+
+    <h2 class="sec">On-ramps into this page (all lead here)</h2>
+    <div class="card">
+      <div class="mono chalk" style="line-height:1.9">
+        ① The pinned <b style="color:var(--lime)">✦ Unlock Full</b> entry in the sidebar / bottom bar.<br/>
+        ② A dismissible <b style="color:var(--lime)">“Train for a goal? Go Full”</b> banner on Today (shown sparingly).<br/>
+        ③ If a curious user taps a previewed feature (e.g. the Cockpit teaser), its CTA says <i>“part of Full — see everything included”</i> and lands here.
+      </div>
+      <div class="note">Every path leads to this one bundle page — so the value is always communicated in full, and the nav never gets noisy.</div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
