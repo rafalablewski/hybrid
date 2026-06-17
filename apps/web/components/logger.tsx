@@ -30,12 +30,17 @@ const inputStyle = {
 export default function Logger({
   sessions,
   onSaved,
+  initialBlocks,
 }: {
   sessions: LoggedSession[];
   onSaved: () => void;
+  /** Seed blocks for the session — e.g. an enrolled named plan's day. */
+  initialBlocks?: SessionBlock[];
 }) {
   const [title, setTitle] = useState("Workout");
-  const [blocks, setBlocks] = useState<EditableBlock[]>([]);
+  const [blocks, setBlocks] = useState<EditableBlock[]>(
+    () => initialBlocks?.map((b) => ({ uid: uid(), ...b }) as EditableBlock) ?? [],
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [routines, setRoutines] = useState<Routine[]>([]);

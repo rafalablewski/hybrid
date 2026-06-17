@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   // avoids an N+1 pattern that would spam the connection pool on big rosters.
   const clientIds = links.map((l) => l.clientId);
   const allRows = await prisma.session.findMany({
-    where: { userId: { in: clientIds } },
+    where: { userId: { in: clientIds }, archivedAt: null },
     orderBy: { startedAt: "desc" },
   });
   const rowsByUser = new Map<string, typeof allRows>();

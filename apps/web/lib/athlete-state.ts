@@ -17,7 +17,8 @@ import { activeCalibration } from "@/lib/calibration";
  */
 export async function athleteState(userId: string) {
   const [rows, sigRows] = await Promise.all([
-    prisma.session.findMany({ where: { userId }, orderBy: { startedAt: "desc" }, take: 30 }),
+    // Archived sessions are excluded from analytics (the athlete hid them).
+    prisma.session.findMany({ where: { userId, archivedAt: null }, orderBy: { startedAt: "desc" }, take: 30 }),
     prisma.signal.findMany({ where: { userId }, orderBy: { ts: "desc" }, take: 200 }),
   ]);
 

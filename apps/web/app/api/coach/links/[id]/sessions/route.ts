@@ -17,7 +17,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const sessions = await prisma.session.findMany({
-    where: { userId: link.clientId },
+    // Archived sessions are hidden from the coach too (the athlete hid them).
+    where: { userId: link.clientId, archivedAt: null },
     orderBy: { startedAt: "desc" },
     take: 50,
   });

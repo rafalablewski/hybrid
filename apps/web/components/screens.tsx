@@ -628,59 +628,205 @@ export function PeriodizeScreen({
 }
 
 // ---------- HISTORY (real logged sessions) ----------
-export function HistoryScreen({ sessions, onOpenExercise }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void }) {
+export function HistoryScreen({
+  sessions,
+  onOpenExercise,
+  onChanged,
+}: {
+  sessions: LoggedSession[];
+  onOpenExercise?: (name: string) => void;
+  // refresh the live (non-archived) session list after an archive/delete.
+  onChanged?: () => void;
+}) {
   const [openId, setOpenId] = useState<string | null>(null);
+  // "Archived" is a separate view fetched on demand (GET /api/sessions?archived=1).
+  const [showArchived, setShowArchived] = useState(false);
+  const [archived, setArchived] = useState<LoggedSession[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
   const units = useLoggerPrefs().units;
 
-  if (sessions.length === 0)
+  const loadArchived = async () => {
+    try {
+      const res = await fetch("/api/sessions?archived=1");
+      const d = res.ok ? ((await res.json()) as { sessions?: LoggedSession[] }) : { sessions: [] };
+      setArchived(d.sessions ?? []);
+    } catch {
+      setArchived([]);
+    }
+  };
+
+  // PATCH archived flag (archive or restore), then refresh both lists. Surfaces
+  // a failure instead of silently reloading as if it had worked.
+  const setArchivedFlag = async (id: string, value: boolean) => {
+    setBusy(id);
+    try {
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: value }),
+      });
+      if (!res.ok) {
+        alert(`Couldn't ${value ? "archive" : "restore"} the workout — try again.`);
+        return;
+      }
+      onChanged?.();
+      if (showArchived || value) await loadArchived();
+    } catch {
+      alert("Network error — try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const remove = async (id: string, title: string) => {
+    if (!window.confirm(`Permanently delete “${title}”? This can't be undone.`)) return;
+    setBusy(id);
+    try {
+      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Couldn't delete the workout — try again.");
+        return;
+      }
+      onChanged?.();
+      if (showArchived) await loadArchived();
+    } catch {
+      alert("Network error — try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleArchived = () => {
+    const next = !showArchived;
+    setShowArchived(next);
+    if (next) void loadArchived();
+  };
+
+  const archivedToggle = (
+    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <button
+        onClick={toggleArchived}
+        style={{ ...mono, fontSize: 12, color: txt(showArchived ? AMBER : ASH), background: "none", border: `1px solid ${showArchived ? AMBER : LINE}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+      >
+        {showArchived ? "← Back to history" : "Archived ▸"}
+      </button>
+    </div>
+  );
+
+  if (sessions.length === 0 && !showArchived)
     return (
-      <Card style={{ textAlign: "center", padding: 60 }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No sessions yet</div>
-        <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
-          Log your first workout from the <b style={{ color: txt(LIME) }}>Log session</b> tab — it&apos;ll
-          appear here and feed your dashboard.
-        </Mono>
-      </Card>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {archivedToggle}
+        <Card style={{ textAlign: "center", padding: 60 }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No sessions yet</div>
+          <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
+            Log your first workout from the <b style={{ color: txt(LIME) }}>Log session</b> tab — it&apos;ll
+            appear here and feed your dashboard.
+          </Mono>
+        </Card>
+      </div>
     );
 
   const open = openId ? sessions.find((s) => s.id === openId) : null;
   if (open) return <SessionDetail session={open} all={sessions} onBack={() => setOpenId(null)} onOpenExercise={onOpenExercise} />;
 
+  // ARCHIVED view — read-only cards with a Restore + permanent Delete action.
+  if (showArchived)
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {archivedToggle}
+        {archived.length === 0 ? (
+          <Card style={{ textAlign: "center", padding: 40 }}>
+            <Mono s={{ fontSize: 14 }}>No archived workouts.</Mono>
+          </Card>
+        ) : (
+          archived.map((s) => (
+            <Card key={s.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
+                <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
+              </div>
+              <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
+                <Chip c={BLUE}>{fmtTonnage(sessionVolume(s.blocks), units)}</Chip>
+                <Chip c={ASH}>{s.blocks.length} blocks</Chip>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setArchivedFlag(s.id, false)} disabled={busy === s.id} style={rowBtn(LIME, busy === s.id)}>
+                  ↺ Restore
+                </button>
+                <button onClick={() => remove(s.id, s.title)} disabled={busy === s.id} style={rowBtn(RED, busy === s.id)}>
+                  Delete
+                </button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+    );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {archivedToggle}
       {sessions.map((s) => {
         const prCount = prsForSession(sessions, s.id).length;
         return (
-          <Card key={s.id} onClick={() => setOpenId(s.id)} style={{ cursor: "pointer" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
-              <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
-            </div>
-            <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
-              <Chip c={BLUE}>{fmtTonnage(sessionVolume(s.blocks), units)}</Chip>
-              <Chip c={ASH}>{s.blocks.length} blocks</Chip>
-              {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
-              {prCount > 0 && <Chip c={LIME}>🏆 {prCount} PR</Chip>}
-            </div>
-            {s.blocks.map((b, i) => (
-              <div
-                key={i}
-                style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${LINE}` }}
-              >
-                <Mono s={{ fontSize: 13 }} c={CHALK}>
-                  {b.name}
-                </Mono>
-                <Mono s={{ fontSize: 13 }}>{blockSummary(b)}</Mono>
+          <Card key={s.id}>
+            <div onClick={() => setOpenId(s.id)} style={{ cursor: "pointer" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
+                <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
               </div>
-            ))}
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={ASH}>
-              Open the full breakdown →
-            </Mono>
+              <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
+                <Chip c={BLUE}>{fmtTonnage(sessionVolume(s.blocks), units)}</Chip>
+                <Chip c={ASH}>{s.blocks.length} blocks</Chip>
+                {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
+                {prCount > 0 && <Chip c={LIME}>🏆 {prCount} PR</Chip>}
+              </div>
+              {s.blocks.map((b, i) => (
+                <div
+                  key={i}
+                  style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${LINE}` }}
+                >
+                  <Mono s={{ fontSize: 13 }} c={CHALK}>
+                    {b.name}
+                  </Mono>
+                  <Mono s={{ fontSize: 13 }}>{blockSummary(b)}</Mono>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${LINE}` }}>
+              <Mono s={{ fontSize: 12, cursor: "pointer" }} c={ASH} >
+                <span onClick={() => setOpenId(s.id)}>Open the full breakdown →</span>
+              </Mono>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setArchivedFlag(s.id, true)} disabled={busy === s.id} style={rowBtn(AMBER, busy === s.id)}>
+                  Archive
+                </button>
+                <button onClick={() => remove(s.id, s.title)} disabled={busy === s.id} style={rowBtn(RED, busy === s.id)}>
+                  Delete
+                </button>
+              </div>
+            </div>
           </Card>
         );
       })}
     </div>
   );
+}
+
+// Small per-row action button (archive / restore / delete) on history cards.
+function rowBtn(color: string, disabled: boolean) {
+  return {
+    ...mono,
+    fontSize: 12,
+    color: txt(color),
+    background: `${color}14`,
+    border: `1px solid ${color}55`,
+    borderRadius: 8,
+    padding: "6px 12px",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+  } as const;
 }
 
 const MUSCLE_LABEL: Record<string, string> = {

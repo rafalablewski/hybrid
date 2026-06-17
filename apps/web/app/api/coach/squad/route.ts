@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   // in-memory — avoids exhausting the connection pool as the roster grows.
   const clientIds = links.map((l) => l.clientId);
   const [allRows, allSigRows] = await Promise.all([
-    prisma.session.findMany({ where: { userId: { in: clientIds } }, orderBy: { startedAt: "desc" } }),
+    prisma.session.findMany({ where: { userId: { in: clientIds }, archivedAt: null }, orderBy: { startedAt: "desc" } }),
     prisma.signal.findMany({ where: { userId: { in: clientIds } }, orderBy: { ts: "desc" } }),
   ]);
   const groupBy = <T extends { userId: string }>(items: T[]) => {

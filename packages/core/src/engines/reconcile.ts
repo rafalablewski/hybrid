@@ -9,7 +9,7 @@ import type {
   Biometrics,
 } from "./types";
 import { currentPhase } from "./periodization";
-import { prescribeSession } from "./prescription";
+import { prescribeSession, type PrescribeExperience, type PrescribeEquipment } from "./prescription";
 import type { LoadVelocityProfile } from "./velocity";
 import type { SessionBlock } from "./session";
 import type { SportPrescription, SportBlock } from "../sports";
@@ -373,6 +373,9 @@ export interface BuildWeekInput {
   sport?: SportPrescription;
   daysPerWeek?: number;
   startDate?: Date;
+  /** experience + equipment from intake — tunes each day's prescription. */
+  experience?: PrescribeExperience;
+  equipment?: PrescribeEquipment;
 }
 
 /**
@@ -404,6 +407,8 @@ export function buildTrainingWeek(input: BuildWeekInput): ScheduledAssignment[] 
     // today's wearable reading only applies to today (offset 0), not future days.
     const daily = prescribeSession(view, off === 0 ? input.bio : undefined, {
       profiles: input.profiles,
+      experience: input.experience,
+      equipment: input.equipment,
     });
     const daySport =
       input.sport && sportByDay[i]!.length

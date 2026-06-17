@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import {
   prescribeSession,
@@ -12,12 +12,18 @@ import {
   velocityProfiles,
   toTrainingLog,
   weeklyRecap,
+  currentPhase,
+  planToday,
+  planDayToBlocks,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
+  type SessionBlock,
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
+import AskCoach from "./ai-coach";
 import { usePersona } from "@/lib/persona";
+import { readIntake, type Intake } from "@/lib/intake";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
@@ -44,26 +50,48 @@ export default function Today({
   bio,
   macro,
   currentWeek = 1,
+  planId,
   onStart,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
   macro?: Macrocycle | null;
   currentWeek?: number;
-  onStart: () => void;
+  planId?: string | null;
+  onStart: (planBlocks?: SessionBlock[]) => void;
 }) {
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Twin). Switchable from Settings.
   const isAthlete = usePersona() !== "casual";
+  // The onboarding intake (experience + equipment) tailors the prescription —
+  // read client-side after mount to avoid an SSR mismatch.
+  const [intake, setIntake] = useState<Intake>({});
+  useEffect(() => setIntake(readIntake()), []);
   const log = toTrainingLog(sessions);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
-    [log, bio, sessions],
+    () => prescribeSession(log, bio, {
+      profiles: velocityProfiles(sessions),
+      experience: intake.experience,
+      equipment: intake.equipment,
+    }),
+    [log, bio, sessions, intake.experience, intake.equipment],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
+
+  // Macrocycle context for the "Your plan today" card — derive the current
+  // phase/block from the block whose week range contains currentWeek. Graceful
+  // when there's no macro (fall back to today's prescription `rx.why`).
+  const phase = useMemo(
+    () => (macro ? currentPhase(macro, currentWeek) : null),
+    [macro, currentWeek],
+  );
+
+  // Enrolled in a REAL named plan? Its exact day drives "Your plan today"
+  // (cycling by sessions logged), instead of the engine's algorithmic pick.
+  const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
 
   const primaryLift = useMemo(() => liftNames(sessions)[0], [sessions]);
   const projection = useMemo(
@@ -78,39 +106,113 @@ export default function Today({
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-      {/* ROUTE TODAY */}
-      {sessions.length === 0 ? (
-        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-              Your route today
+      {/* PLAN TODAY + AI COACH — a horizontal, scroll-snapping row (swipe right
+          for the AI coach). Spans both columns; each card snaps to full width. */}
+      <div
+        style={{
+          gridColumn: "span 2",
+          display: "flex",
+          gap: 16,
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          // hide the native scrollbar — the cards self-document the swipe
+          scrollbarWidth: "none",
+          margin: "0 -2px",
+          padding: "2px",
+        }}
+      >
+        {/* card 1 — Your plan today */}
+        {plan ? (
+          /* Enrolled in a REAL named plan → its exact day drives the card. */
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+                Your plan today · readiness {rx.readiness}/100
+              </Mono>
+              <button onClick={() => onStart(planDayToBlocks(plan.items))} style={cta(LIME)}>Start session →</button>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 2px" }}>{plan.planName}</div>
+            <Mono s={{ fontSize: 12, display: "block", marginBottom: 8 }} c={VIOLET}>
+              {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} wk ${currentWeek}/${macro!.totalWeeks}` : ""}
             </Mono>
-            <button onClick={onStart} style={cta(LIME)}>Start session →</button>
-          </div>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Start your first session</div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
-            Log a workout and your route, readiness, Athlete Twin and trends all build from your real
-            training — nothing here is pre-filled.
-          </Mono>
-        </Card>
-      ) : (
-        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-              Your route today · readiness {rx.readiness}/100
-            </Mono>
-            <button onClick={onStart} style={cta(LIME)}>Start session →</button>
-          </div>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
-            {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
-          </div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
-        </Card>
-      )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {plan.items.map((it, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingTop: 6, borderTop: i ? `1px solid ${LINE}` : "none" }}>
+                  <span style={{ ...disp, fontWeight: 600, fontSize: 14, color: txt(CHALK) }}>{it.name}</span>
+                  <Mono s={{ fontSize: 12 }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : sessions.length === 0 ? (
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+                Your plan today
+              </Mono>
+              <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+              {phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+            </div>
+            {/* Enrolled but not yet logged: show the plan/phase + today's session
+                from session zero, so onboarding visibly "did something". */}
+            {phase ? (
+              <>
+                <Mono s={{ fontSize: 11, display: "block", marginBottom: 4 }} c={VIOLET}>
+                  Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
+                </Mono>
+                <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+              </>
+            ) : (
+              <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+                Log a workout and your plan, readiness, Athlete Twin and trends all build from your real
+                training — nothing here is pre-filled.
+              </Mono>
+            )}
+          </Card>
+        ) : (
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+                Your plan today · readiness {rx.readiness}/100
+              </Mono>
+              <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+              {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
+            </div>
+            {/* surface the macrocycle goal + phase when an athlete is enrolled;
+                otherwise fall back to today's prescription rationale. */}
+            {phase && (
+              <Mono s={{ fontSize: 11, display: "block", marginBottom: 4 }} c={VIOLET}>
+                Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
+              </Mono>
+            )}
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+          </Card>
+        )}
 
-      {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {isAthlete && macro && sessions.length > 0 && (
-        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} style={{ gridColumn: "span 2" }} />
+        {/* card 2 — AI coach (swipe right) */}
+        <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${VIOLET}` }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+            AI coach
+          </Mono>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Ask your coach</div>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            Claude reads your real readiness, fatigue and velocity and writes you a personalized note for
+            the day — what to push, what to hold back.
+          </Mono>
+          {/* AskCoach already POSTs /api/ai-coach and renders the reply inline. */}
+          <AskCoach />
+        </Card>
+      </div>
+
+      {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport).
+          Shown from session zero once enrolled, so the plan is visible before the
+          first logged workout (it just reads cold-start defaults until then). */}
+      {isAthlete && macro && (
+        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} style={{ gridColumn: "span 2" }} />
       )}
 
       {/* ON TRACK? — accountability */}
@@ -239,6 +341,15 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
     </div>
   );
 }
+
+// Each card in the horizontal plan/coach row snaps to (near) full width so one
+// card shows at a time and the next is reachable by scrolling right.
+const snapCard: CSSProperties = {
+  scrollSnapAlign: "start",
+  flex: "0 0 100%",
+  minWidth: "100%",
+  boxSizing: "border-box",
+};
 
 function cta(color: string) {
   return {
