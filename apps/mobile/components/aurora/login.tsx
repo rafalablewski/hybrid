@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
+import { AuroraIcon } from "./icons";
 
 // Mirrors app/login.tsx: a brand-new account owes onboarding on next entry.
 const PENDING_ONBOARDING = "hybrid.pendingOnboarding";
@@ -71,7 +72,7 @@ export default function AuroraLogin() {
         hitSlop={10}
         style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}
       >
-        <Text style={{ fontFamily: F.bold, fontSize: 18, color: palette.chalk }}>‹</Text>
+        <AuroraIcon name="back" size={20} color={palette.chalk} />
       </Pressable>
 
       <AuroraMark size={56} />
@@ -80,9 +81,9 @@ export default function AuroraLogin() {
       </AHeading>
 
       <View style={{ marginTop: 26 }}>
-        {isSignup && <AField value={name} onChange={setName} placeholder="Username" />}
-        <AField value={email} onChange={setEmail} placeholder="Enter your email" keyboard="email-address" />
-        <AField value={password} onChange={setPassword} placeholder="Enter your password" secure />
+        {isSignup && <AField value={name} onChange={setName} placeholder="Username" icon="user" />}
+        <AField value={email} onChange={setEmail} placeholder="Enter your email" keyboard="email-address" icon="mail" />
+        <AField value={password} onChange={setPassword} placeholder="Enter your password" secure icon="lock" />
 
         {!isSignup && (
           <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.ash, textAlign: "right", marginBottom: 6 }}>

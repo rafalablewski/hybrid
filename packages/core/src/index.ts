@@ -29,6 +29,7 @@ export * from "./tactical";
 export * from "./longevity";
 export * from "./theme";
 export * from "./templates";
+export * from "./aurora-icons";
 export * from "./contrast";
 export * from "./nav";
 export * from "./analytics";

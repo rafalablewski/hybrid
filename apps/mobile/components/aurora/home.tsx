@@ -15,6 +15,7 @@ import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { APill, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
 
 /** AURORA home — schedule-first layout adapted from the Figma kit: a greeting +
  *  avatar, a hero readiness stat, then "Your Schedule" (today's prescribed work
@@ -65,8 +66,6 @@ export default function AuroraHome() {
           : `${b.distance ? `${b.distance} km` : "Steady cardio"}`,
   }));
 
-  const initial = (name || "A").charAt(0).toUpperCase();
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <ScrollView
@@ -79,8 +78,13 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.reg, fontSize: 16, color: palette.ash }}>Hi,</Text>
             <Text style={{ fontFamily: F.black, fontSize: 28, color: palette.chalk, letterSpacing: -0.5 }}>{name}</Text>
           </View>
-          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 20, color: txt(palette, palette.lime) }}>{initial}</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="search" size={22} color={palette.ash} />
+            </View>
+            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="bell" size={22} color={palette.ash} />
+            </View>
           </View>
         </View>
 
@@ -184,7 +188,8 @@ function ScheduleRow({ title, sub, accent, onStart }: { title: string; sub: stri
           {!!sub && <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginTop: 2 }}>{sub}</Text>}
         </View>
       </View>
-      <Pressable onPress={onStart} style={{ backgroundColor: palette.lime, borderRadius: RADIUS.pill, paddingHorizontal: 18, paddingVertical: 9 }}>
+      <Pressable onPress={onStart} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: palette.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 9 }}>
+        <AuroraIcon name="play" size={15} color={palette.onAccent} />
         <Text style={{ fontFamily: F.bold, fontSize: 13, color: palette.onAccent }}>Start</Text>
       </Pressable>
     </View>

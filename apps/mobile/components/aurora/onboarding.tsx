@@ -15,6 +15,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APill, ASegment, AHeading, ASub, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
 
 const EXP: { id: Experience; label: string }[] = [
   { id: "beginner", label: "Beginner" },
@@ -159,7 +160,7 @@ export default function AuroraOnboarding() {
             onPress={back}
             style={{ width: 64, height: 56, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}
           >
-            <Text style={{ fontFamily: F.bold, fontSize: 18, color: palette.chalk }}>‹</Text>
+            <AuroraIcon name="back" size={20} color={palette.chalk} />
           </Pressable>
           <APill
             label={step === "plan" ? (enrolling ? "Setting up…" : plan ? "Start this plan" : "Continue") : "Next"}
@@ -189,6 +190,9 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
     <Pressable
       onPress={onPress}
       style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
         borderWidth: 1,
         borderColor: active ? palette.lime : palette.line,
         backgroundColor: active ? `${palette.lime}14` : palette.ink2,
@@ -196,8 +200,11 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
         padding: 16,
       }}
     >
-      <Text style={{ fontFamily: F.bold, fontSize: 15, color: active ? txt(palette, palette.lime) : palette.chalk }}>{title}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: 12, color: palette.ash, marginTop: 3, lineHeight: 17 }}>{sub}</Text>
+      {active && <AuroraIcon name="check" size={22} color={txt(palette, palette.lime)} />}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: 15, color: active ? txt(palette, palette.lime) : palette.chalk }}>{title}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: 12, color: palette.ash, marginTop: 3, lineHeight: 17 }}>{sub}</Text>
+      </View>
     </Pressable>
   );
 }

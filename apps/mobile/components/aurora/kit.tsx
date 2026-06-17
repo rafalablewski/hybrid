@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
+import { AuroraIcon } from "./icons";
+import type { AuroraIconName } from "@hybrid/core";
 
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
@@ -158,36 +160,44 @@ export function AField({
   placeholder,
   secure,
   keyboard,
+  icon,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   secure?: boolean;
   keyboard?: "email-address";
+  /** Optional leading icon (e.g. mail/lock); secure fields also show an eye. */
+  icon?: AuroraIconName;
 }) {
   const { palette } = useTheme();
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChange}
-      placeholder={placeholder}
-      placeholderTextColor={palette.ash}
-      secureTextEntry={secure}
-      keyboardType={keyboard ?? "default"}
-      autoCapitalize="none"
+    <View
       style={{
-        fontFamily: F.reg,
-        fontSize: 15,
-        color: palette.chalk,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
         backgroundColor: palette.ink2,
         borderWidth: 1,
         borderColor: palette.line,
         borderRadius: RADIUS.field,
-        paddingVertical: 17,
         paddingHorizontal: 18,
         marginBottom: 13,
       }}
-    />
+    >
+      {icon && <AuroraIcon name={icon} size={20} color={palette.ash} />}
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={palette.ash}
+        secureTextEntry={secure}
+        keyboardType={keyboard ?? "default"}
+        autoCapitalize="none"
+        style={{ flex: 1, fontFamily: F.reg, fontSize: 15, color: palette.chalk, paddingVertical: 17 }}
+      />
+      {secure && <AuroraIcon name="eye" size={20} color={palette.ash} />}
+    </View>
   );
 }
 

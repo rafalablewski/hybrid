@@ -6,6 +6,8 @@ import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { AuroraIcon } from "./icons";
+import type { AuroraIconName } from "@hybrid/core";
 
 /**
  * AURORA login — the rounded auth screen from the mobile Figma kit, on the web.
@@ -163,9 +165,13 @@ export default function AuroraLogin() {
               </>
             )}
 
-            {live && isSignup && <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Username" style={roundField} />}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" style={roundField} />
-            {live && <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" style={roundField} />}
+            {live && isSignup && (
+              <Field icon="user"><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Username" style={bareInput} /></Field>
+            )}
+            <Field icon="mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" style={bareInput} /></Field>
+            {live && (
+              <Field icon="lock" trailing="eye"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" style={bareInput} /></Field>
+            )}
 
             {error && <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}
             {notice && <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={LIME}>{notice}</Mono>}
@@ -198,7 +204,17 @@ export default function AuroraLogin() {
   );
 }
 
+function Field({ icon, trailing, children }: { icon: AuroraIconName; trailing?: AuroraIconName; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", borderRadius: 16, background: INK2, border: `1px solid ${LINE}`, marginBottom: 13 }}>
+      <AuroraIcon name={icon} size={20} color={ASH} />
+      {children}
+      {trailing && <AuroraIcon name={trailing} size={20} color={ASH} />}
+    </div>
+  );
+}
 const roundField = { ...mono, fontSize: 15, width: "100%", padding: "16px 18px", borderRadius: 16, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 13, outline: "none" } as const;
+const bareInput = { ...mono, fontSize: 15, flex: 1, padding: "16px 0", background: "transparent", color: CHALK, border: "none", outline: "none" } as const;
 const lightPill = { ...disp, fontWeight: 800, fontSize: 16, width: "100%", padding: 17, borderRadius: 999, cursor: "pointer", border: "none", background: CHALK, color: ON_ACCENT } as const;
 const softPill = { ...disp, fontWeight: 700, fontSize: 15, padding: 15, borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK } as const;
 const linkBtn = { display: "block", width: "100%", textAlign: "center" as const, marginTop: 22, background: "none", border: "none", cursor: "pointer" };
