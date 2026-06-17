@@ -250,6 +250,24 @@ export async function resetAccount(): Promise<boolean> {
   }
 }
 
+// ---- AI coach ----
+// The server-side AI coach: builds context from your real sessions + recovery
+// and asks Claude for a personalized note (falls back to the engine rationale
+// when no key is set). Mirrors the web AskCoach call.
+export type CoachNote = { text: string; source: "ai" | "engine" | ""; readiness?: number; hpi?: number };
+
+export async function askAiCoach(): Promise<CoachNote> {
+  try {
+    const res = await fetch(`${API_URL}/api/ai-coach`, { method: "POST", headers: await authHeaders() });
+    if (res.status === 401) return { text: "Sign in to get a personalized coaching note.", source: "" };
+    if (!res.ok) return { text: "Couldn't reach the coach — try again.", source: "" };
+    const j = (await res.json()) as { text?: string; source?: "ai" | "engine"; readiness?: number; hpi?: number };
+    return { text: j.text ?? "", source: j.source ?? "", readiness: j.readiness, hpi: j.hpi };
+  } catch {
+    return { text: "Couldn't reach the coach — check your connection.", source: "" };
+  }
+}
+
 // ---- signals (Athlete Twin time-series: recovery, body mass, nutrition…) ----
 export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
 

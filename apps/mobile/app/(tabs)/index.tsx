@@ -337,7 +337,7 @@ export default function Home() {
             Your training, readiness and goal — read together. The AI coach explains today&apos;s call and adapts your plan as your real logs come in.
           </Mono>
           <View style={{ marginTop: 14 }}>
-            <Button label="Open AI coach →" color={C.violet} onPress={() => router.push("/cockpit")} />
+            <Button label="Open AI coach →" color={C.violet} onPress={() => router.push("/ai-coach")} />
           </View>
         </Card>
       </ScrollView>

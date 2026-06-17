@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const roster = await Promise.all(
     links.map(async (l) => {
       const sessions = await prisma.session.findMany({
-        where: { userId: l.clientId },
+        where: { userId: l.clientId, archivedAt: null },
         orderBy: { startedAt: "desc" },
         take: 60,
       });
