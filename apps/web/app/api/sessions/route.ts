@@ -11,8 +11,11 @@ export async function GET(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  // History hides archived workouts by default; `?archived=1` lists only the
+  // archived ones (the "recently archived" view the athlete can restore from).
+  const archivedOnly = new URL(request.url).searchParams.get("archived") === "1";
   const rows = await prisma.session.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, archivedAt: archivedOnly ? { not: null } : null },
     orderBy: { startedAt: "desc" },
     take: 50,
   });

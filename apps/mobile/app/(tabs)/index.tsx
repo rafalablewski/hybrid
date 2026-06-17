@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -187,6 +187,18 @@ export default function Home() {
     [sessions, primaryLift, goal],
   );
 
+  // Goal / periodization / routine line for the plan card: the macrocycle's
+  // goal plus the phase the athlete is in this week.
+  const macroLine = useMemo(() => {
+    if (!macro) return null;
+    const block = macro.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro.blocks[0];
+    return `${macro.goalOrSport} · ${block?.label ?? ""} · wk ${currentWeek}/${macro.totalWeeks}`;
+  }, [macro, currentWeek]);
+
+  // Cards in the horizontal pager snap to ~full content width.
+  const { width } = useWindowDimensions();
+  const cardW = width - 36; // Screen has 18px horizontal padding each side
+
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
       <View>
@@ -287,22 +299,48 @@ export default function Home() {
         </Card>
       )}
 
-      {/* ROUTE TODAY — what to do, why */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 18 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Kicker color={C.lime}>Your route today</Kicker>
-          {sessions.length > 0 && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
-        </View>
-        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
-          {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
-        </Text>
-        <Mono color={C.chalk} style={{ lineHeight: 20 }}>
-          {sessions.length > 0 ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
-        </Mono>
-        <View style={{ marginTop: 14 }}>
-          <Button label={t("home.startSession")} onPress={() => router.push(sessions.length > 0 ? "/workout?source=ai" : "/workout?source=empty")} />
-        </View>
-      </Card>
+      {/* PLAN TODAY + AI COACH — horizontal pager (scroll right for the AI coach) */}
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={cardW + 12}
+        decelerationRate="fast"
+        style={{ marginTop: 18 }}
+      >
+        {/* PLAN TODAY — what to do, why */}
+        <Card style={{ width: cardW, marginRight: 12, borderLeftWidth: 3, borderLeftColor: C.lime }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Kicker color={C.lime}>Your plan today</Kicker>
+            {sessions.length > 0 && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
+          </View>
+          {macroLine && <Mono color={C.violet} style={{ marginTop: 6, fontSize: 11 }}>{macroLine}</Mono>}
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
+            {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+          </Text>
+          <Mono color={C.chalk} style={{ lineHeight: 20 }}>
+            {sessions.length > 0 ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
+          </Mono>
+          <View style={{ marginTop: 14 }}>
+            <Button label={t("home.startSession")} onPress={() => router.push(sessions.length > 0 ? "/workout?source=ai" : "/workout?source=empty")} />
+          </View>
+        </Card>
+
+        {/* AI COACH — scroll right to reach it */}
+        <Card style={{ width: cardW, borderLeftWidth: 3, borderLeftColor: C.violet }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Kicker color={C.violet}>AI coach</Kicker>
+            <Chip color={C.blue}>beta</Chip>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>Ask your AI coach</Text>
+          <Mono color={C.chalk} style={{ lineHeight: 20 }}>
+            Your training, readiness and goal — read together. The AI coach explains today&apos;s call and adapts your plan as your real logs come in.
+          </Mono>
+          <View style={{ marginTop: 14 }}>
+            <Button label="Open AI coach →" color={C.violet} onPress={() => router.push("/cockpit")} />
+          </View>
+        </Card>
+      </ScrollView>
 
       {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
       {isAthlete && reconciled && (
@@ -355,7 +393,7 @@ export default function Home() {
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Check-in →</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>weekly review · coach reply</Mono>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>daily review · coach reply</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/calendar")}

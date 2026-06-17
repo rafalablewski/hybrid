@@ -31,14 +31,55 @@ export async function fetchTranslationOverrides(): Promise<TranslationOverrides>
   }
 }
 
-export async function fetchSessions(): Promise<LoggedSession[]> {
+export async function fetchSessions(opts?: { archived?: boolean }): Promise<LoggedSession[]> {
   try {
-    const res = await fetch(`${API_URL}/api/sessions`, { headers: await authHeaders() });
+    const qs = opts?.archived ? "?archived=1" : "";
+    const res = await fetch(`${API_URL}/api/sessions${qs}`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as { sessions?: LoggedSession[] };
     return data.sessions ?? [];
   } catch {
     return [];
+  }
+}
+
+/** Soft-archive (hide from History, recoverable) or restore one of your own
+ *  workouts. */
+export async function archiveSession(id: string, archived: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ archived }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Permanently delete one of your own workouts. */
+export async function deleteSession(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/sessions/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Mirror a guest (no-account) workout to the backend so an admin sees real
+ *  pre-signup usage. No auth — there's no account yet. Best-effort. */
+export async function logAnonSession(payload: NewSession & { deviceId?: string; platform?: string }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/anon-sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
@@ -236,10 +277,10 @@ export async function createSignal(kind: string, value: number, unit?: string): 
   }
 }
 
-// ---- weekly check-ins ----
+// ---- daily check-ins ----
 export type Checkin = {
   id: string;
-  weekOf: string;
+  weekOf: string; // the day the check-in covers (legacy column name)
   bodyMassKg: number | null;
   energy: number | null;
   sleep: number | null;
@@ -249,6 +290,7 @@ export type Checkin = {
   note: string | null;
   coachReply: string | null;
   repliedAt: string | null;
+  sharedWithCoach?: boolean;
   createdAt: string;
 };
 

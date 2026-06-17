@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import {
   prescribeSession,
@@ -12,11 +12,13 @@ import {
   velocityProfiles,
   toTrainingLog,
   weeklyRecap,
+  currentPhase,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
+import AskCoach from "./ai-coach";
 import { usePersona } from "@/lib/persona";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
@@ -65,6 +67,14 @@ export default function Today({
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
 
+  // Macrocycle context for the "Your plan today" card — derive the current
+  // phase/block from the block whose week range contains currentWeek. Graceful
+  // when there's no macro (fall back to today's prescription `rx.why`).
+  const phase = useMemo(
+    () => (macro ? currentPhase(macro, currentWeek) : null),
+    [macro, currentWeek],
+  );
+
   const primaryLift = useMemo(() => liftNames(sessions)[0], [sessions]);
   const projection = useMemo(
     () => (primaryLift ? projectLift(sessions, primaryLift, { horizonWeeks: 12 }) : null),
@@ -78,35 +88,72 @@ export default function Today({
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-      {/* ROUTE TODAY */}
-      {sessions.length === 0 ? (
-        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-              Your route today
+      {/* PLAN TODAY + AI COACH — a horizontal, scroll-snapping row (swipe right
+          for the AI coach). Spans both columns; each card snaps to full width. */}
+      <div
+        style={{
+          gridColumn: "span 2",
+          display: "flex",
+          gap: 16,
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          // hide the native scrollbar — the cards self-document the swipe
+          scrollbarWidth: "none",
+          margin: "0 -2px",
+          padding: "2px",
+        }}
+      >
+        {/* card 1 — Your plan today */}
+        {sessions.length === 0 ? (
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+                Your plan today
+              </Mono>
+              <button onClick={onStart} style={cta(LIME)}>Start session →</button>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Start your first session</div>
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+              Log a workout and your plan, readiness, Athlete Twin and trends all build from your real
+              training — nothing here is pre-filled.
             </Mono>
-            <button onClick={onStart} style={cta(LIME)}>Start session →</button>
-          </div>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Start your first session</div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
-            Log a workout and your route, readiness, Athlete Twin and trends all build from your real
-            training — nothing here is pre-filled.
+          </Card>
+        ) : (
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+                Your plan today · readiness {rx.readiness}/100
+              </Mono>
+              <button onClick={onStart} style={cta(LIME)}>Start session →</button>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+              {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
+            </div>
+            {/* surface the macrocycle goal + phase when an athlete is enrolled;
+                otherwise fall back to today's prescription rationale. */}
+            {phase && (
+              <Mono s={{ fontSize: 11, display: "block", marginBottom: 4 }} c={VIOLET}>
+                Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
+              </Mono>
+            )}
+            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+          </Card>
+        )}
+
+        {/* card 2 — AI coach (swipe right) */}
+        <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${VIOLET}` }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+            AI coach
           </Mono>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Ask your coach</div>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            Claude reads your real readiness, fatigue and velocity and writes you a personalized note for
+            the day — what to push, what to hold back.
+          </Mono>
+          {/* AskCoach already POSTs /api/ai-coach and renders the reply inline. */}
+          <AskCoach />
         </Card>
-      ) : (
-        <Card glass variant="vibrant" style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-              Your route today · readiness {rx.readiness}/100
-            </Mono>
-            <button onClick={onStart} style={cta(LIME)}>Start session →</button>
-          </div>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
-            {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
-          </div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
-        </Card>
-      )}
+      </div>
 
       {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport) */}
       {isAthlete && macro && sessions.length > 0 && (
@@ -239,6 +286,15 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
     </div>
   );
 }
+
+// Each card in the horizontal plan/coach row snaps to (near) full width so one
+// card shows at a time and the next is reachable by scrolling right.
+const snapCard: CSSProperties = {
+  scrollSnapAlign: "start",
+  flex: "0 0 100%",
+  minWidth: "100%",
+  boxSizing: "border-box",
+};
 
 function cta(color: string) {
   return {

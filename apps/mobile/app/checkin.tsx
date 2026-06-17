@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
-import { fetchCheckins, createCheckin, fetchSessions, type Checkin } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../lib/api";
+import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 
 const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[] = [
@@ -20,8 +20,9 @@ export default function CheckinScreen() {
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ bodyMassKg: string; energy: number; sleep: number; soreness: number; mood: number; adherencePct: string; note: string }>(
-    { bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "" },
+  const [paid, setPaid] = useState(false);
+  const [form, setForm] = useState<{ bodyMassKg: string; energy: number; sleep: number; soreness: number; mood: number; adherencePct: string; note: string; sharedWithCoach: boolean }>(
+    { bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false },
   );
 
   const load = () => {
@@ -31,6 +32,9 @@ export default function CheckinScreen() {
       .finally(() => setRefreshing(false));
   };
   useEffect(load, []);
+  useEffect(() => {
+    fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {});
+  }, []);
 
   const compliance = useMemo(() => computeCompliance(sessions, { targetPerWeek: 3 }), [sessions]);
 
@@ -42,8 +46,9 @@ export default function CheckinScreen() {
       energy: form.energy, sleep: form.sleep, soreness: form.soreness, mood: form.mood,
       adherencePct: form.adherencePct ? parseInt(form.adherencePct, 10) : null,
       note: form.note || null,
+      sharedWithCoach: paid ? form.sharedWithCoach : false,
     });
-    setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "" });
+    setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     setSaving(false);
     load();
   };
@@ -51,12 +56,12 @@ export default function CheckinScreen() {
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Kicker>Weekly check-in</Kicker>
+        <Kicker>Daily check-in</Kicker>
         <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
       </View>
 
       <Card style={{ marginTop: 10 }}>
-        <Kicker color={C.lime}>This week</Kicker>
+        <Kicker color={C.lime}>Training volume · this week</Kicker>
         <Mono color={C.chalk} style={{ marginTop: 6 }}>
           {compliance.completedThisWeek}/{compliance.target} sessions · {compliance.pct}% of plan · {compliance.status}
         </Mono>
@@ -91,6 +96,21 @@ export default function CheckinScreen() {
           multiline
           style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 70, textAlignVertical: "top" }}
         />
+        <Pressable
+          onPress={() => paid && setForm((s) => ({ ...s, sharedWithCoach: !s.sharedWithCoach }))}
+          disabled={!paid}
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingVertical: 11, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.violet : C.line, backgroundColor: form.sharedWithCoach && paid ? `${C.violet}1a` : "transparent", opacity: paid ? 1 : 0.6 }}
+        >
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>{paid ? "Share with coach" : "🔒 Share with coach"}</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>
+              {paid ? "Send this check-in to your coach" : "Full plan — share check-ins with your coach"}
+            </Mono>
+          </View>
+          <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.violet : C.line, backgroundColor: form.sharedWithCoach && paid ? C.violet : "transparent" }}>
+            {form.sharedWithCoach && paid ? <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.ink }}>✓</Text> : null}
+          </View>
+        </Pressable>
         <View style={{ marginTop: 12 }}>
           <Button label={saving ? "Submitting…" : "Submit check-in"} onPress={submit} disabled={saving} />
         </View>
@@ -102,8 +122,11 @@ export default function CheckinScreen() {
       ) : (
         history.map((c) => (
           <Card key={c.id}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Mono color={C.chalk}>{new Date(c.weekOf).toLocaleDateString()}</Mono>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Mono color={C.chalk}>{new Date(c.weekOf).toLocaleDateString()}</Mono>
+                {c.sharedWithCoach ? <Chip color={C.violet}>shared</Chip> : null}
+              </View>
               <Mono>{c.adherencePct != null ? `${c.adherencePct}% adherence` : ""}</Mono>
             </View>
             <Mono style={{ marginTop: 6, fontSize: 12 }}>

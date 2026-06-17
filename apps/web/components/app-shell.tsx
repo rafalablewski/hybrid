@@ -560,7 +560,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <HistoryScreen sessions={sessions} onOpenExercise={openExercise} />}
+        {screen === "history" && <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />}
 
         {screen === "coach" && <CoachScreen />}
 

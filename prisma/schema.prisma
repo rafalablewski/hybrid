@@ -123,14 +123,15 @@ model CoachLink {
   @@index([coachId])
 }
 
-// The weekly check-in — the online-coaching heartbeat. The client submits
-// structured self-report + a note; the coach reads and replies. Authored by the
-// client (userId); a coach reads/replies via an ACTIVE CoachLink.
+// The daily check-in — a personal training-readiness log. The client submits a
+// structured self-report + a note each day; by default it's for their own use.
+// A paid athlete may share a check-in with their coach, who then reads/replies
+// via an ACTIVE CoachLink. Authored by the client (userId).
 model Checkin {
   id           String    @id @default(cuid())
   user         User      @relation(fields: [userId], references: [id])
   userId       String
-  weekOf       DateTime // the week the check-in covers
+  weekOf       DateTime // the day this check-in covers (midnight-normalized); legacy name
   bodyMassKg   Float?
   energy       Int? // 1–5 self-report
   sleep        Int? // 1–5
@@ -140,6 +141,10 @@ model Checkin {
   note         String? // client free text
   coachReply   String? // coach response
   repliedAt    DateTime?
+  // The daily check-in is for the athlete's own use by default; only a paid
+  // athlete may opt to SHARE a check-in with their coach. A coach reads a
+  // client's check-ins via an ACTIVE CoachLink AND only where this is true.
+  sharedWithCoach Boolean @default(false)
   createdAt    DateTime  @default(now())
 
   @@index([userId])
@@ -200,8 +205,30 @@ model Session {
   completedAt DateTime?
   blocks      Json // exercises/sets/reps/load/rpe — matches the prototype block shape
   readiness   Int?
+  // Soft-archive: the athlete can hide a workout from History without losing it
+  // (recoverable), or hard-delete it outright. Archived rows are excluded from
+  // the default History list + all engines, but kept for the audit trail.
+  archivedAt  DateTime?
 
   @@index([userId])
+}
+
+// A workout logged BEFORE the athlete has an account (guest mode). The mobile
+// client mirrors guest sessions here (best-effort, no auth) so an admin can see
+// real product usage from people who haven't signed up yet. There is no userId —
+// only an opaque per-device id. When the guest signs up, their on-device history
+// is flushed into real Session rows; these anonymous rows are kept as-is.
+model AnonSession {
+  id        String   @id @default(cuid())
+  deviceId  String? // opaque per-install id (not PII) — to group a device's logs
+  platform  String? // "ios" | "android" | "web"
+  title     String
+  startedAt DateTime
+  blocks    Json // same block shape as Session
+  createdAt DateTime @default(now())
+
+  @@index([deviceId])
+  @@index([createdAt])
 }
 
 model Macrocycle {
