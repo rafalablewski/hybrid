@@ -10,6 +10,8 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
+  planToday,
+  planDayToBlocks,
   sessionVolume,
   blockBestE1rm,
   newPrsInSession,
@@ -47,7 +49,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, fetchRoutines, createRoutine, type NewSession } from "../lib/api";
+import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
@@ -79,7 +81,7 @@ type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolea
 const DEFAULT_REST = 90;
 // Sources that are always a deliberate fresh start (so we can show the get-ready
 // count-in from the first frame). An empty source may instead resume a draft.
-const FRESH_SOURCES = new Set(["new", "ai", "last", "template"]);
+const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan"]);
 // One-time "how logging works" coach tip — shown until the athlete completes
 // their first-ever set or dismisses it.
 const TIP_KEY = "hybrid.workoutTipSeen";
@@ -323,6 +325,15 @@ export default function Workout() {
         if (routine) {
           setTitle(routine.name || "Workout");
           setExercises(blocksToExercises(routine.blocks));
+        }
+      } else if (source === "plan") {
+        // The enrolled named plan's exact day prefills the session.
+        await clearDraft();
+        const m = await fetchMacrocycle();
+        const today = planToday(m?.planId, sessions.length);
+        if (today) {
+          setTitle(`${today.planName} · ${today.day}`);
+          setExercises(blocksToExercises(planDayToBlocks(today.items)));
         }
       } else if (source === "new") {
         // Deliberate fresh start — drop any interrupted draft.

@@ -50,7 +50,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
       const res = await fetch("/api/macrocycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal: plan.goalLabel }),
+        body: JSON.stringify({ goal: plan.goalLabel, planId: plan.planId }),
       });
       if (res.status === 401) { setError("Sign in to save your plan (demo mode doesn't persist)."); setEnrolling(false); return; }
       if (!res.ok) { setError(`Couldn't enroll (HTTP ${res.status}).`); setEnrolling(false); return; }

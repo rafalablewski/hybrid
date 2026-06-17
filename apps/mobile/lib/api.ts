@@ -361,12 +361,12 @@ export async function updateAssignment(id: string, status: "completed" | "skippe
   }
 }
 
-export async function enrollPlan(goal: string): Promise<boolean> {
+export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ goal }),
+      body: JSON.stringify({ goal, ...(planId ? { planId } : {}) }),
     });
     return res.ok;
   } catch {
@@ -374,11 +374,12 @@ export async function enrollPlan(goal: string): Promise<boolean> {
   }
 }
 
-type MacroRow = { id: string; goal: string; blocks: MacroBlock[]; startedAt: string };
+type MacroRow = { id: string; goal: string; planId?: string | null; blocks: MacroBlock[]; startedAt: string };
 
 // The athlete's active (latest) enrolled macrocycle reconstructed into the
-// engine shape, plus which week of it is "this week" (derived from startedAt).
-export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number } | null> {
+// engine shape, plus which week of it is "this week" (derived from startedAt)
+// and the enrolled named-plan id (when they picked a real plan).
+export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number; planId: string | null } | null> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, { headers: await authHeaders() });
     if (!res.ok) return null;
@@ -391,6 +392,7 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
     return {
       macro: { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks },
       currentWeek: Math.max(1, Math.min(totalWeeks, elapsed)),
+      planId: row.planId ?? null,
     };
   } catch {
     return null;

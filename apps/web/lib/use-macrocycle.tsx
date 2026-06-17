@@ -3,22 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Macrocycle, MacroBlock } from "@hybrid/core";
 
-type Row = { id: string; goal: string; blocks: MacroBlock[]; startedAt: string };
+type Row = { id: string; goal: string; planId?: string | null; blocks: MacroBlock[]; startedAt: string };
 
 /** The user's active (latest) enrolled macrocycle, reconstructed into the
  *  engine's Macrocycle shape, plus which week of it is "this week" (1-indexed,
- *  derived from when the season started). Null when none is enrolled. */
+ *  derived from when the season started) and the enrolled named-plan id (when
+ *  they picked a real plan). Null when none is enrolled. */
 export function useMacrocycle() {
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
+  const [planId, setPlanId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/macrocycles");
-      if (!res.ok) return setMacro(null);
+      if (!res.ok) { setMacro(null); setPlanId(null); return; }
       const data = (await res.json()) as { macrocycles?: Row[] };
       const row = data.macrocycles?.[0];
-      if (!row || !row.blocks?.length) return setMacro(null);
+      if (!row || !row.blocks?.length) { setMacro(null); setPlanId(null); return; }
       const blocks = row.blocks;
       const totalWeeks = blocks[blocks.length - 1]!.endWeek;
       const started = new Date(row.startedAt).getTime();
@@ -26,6 +28,7 @@ export function useMacrocycle() {
         ? Math.floor((Date.now() - started) / (7 * 86400000)) + 1
         : 1;
       setCurrentWeek(Math.max(1, Math.min(totalWeeks, elapsed)));
+      setPlanId(row.planId ?? null);
       setMacro({
         model: "",
         goalOrSport: row.goal,
@@ -35,6 +38,7 @@ export function useMacrocycle() {
       });
     } catch {
       setMacro(null);
+      setPlanId(null);
     }
   }, []);
 
@@ -42,5 +46,5 @@ export function useMacrocycle() {
     refresh();
   }, [refresh]);
 
-  return { macro, currentWeek, refresh };
+  return { macro, currentWeek, planId, refresh };
 }

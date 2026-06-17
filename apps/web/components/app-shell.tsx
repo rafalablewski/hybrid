@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import {
@@ -95,7 +95,7 @@ export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
   const { sessions, refresh } = useSessions();
-  const { macro, currentWeek, refresh: refreshMacro } = useMacrocycle();
+  const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
   const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
@@ -118,6 +118,10 @@ export default function AppShell() {
     refreshSignals();
   }, [refreshBiometrics, refreshSignals]);
   const [screen, setScreen] = useState("today");
+  // Seed blocks for the logger when "Start" comes from an enrolled named plan
+  // (the plan day prefills the session). Cleared on any manual nav so a normal
+  // Log entry starts empty.
+  const [pendingBlocks, setPendingBlocks] = useState<SessionBlock[] | undefined>(undefined);
   // When the Trends hub opens a specific lift, focus it on the Exercises screen.
   const [exerciseFocus, setExerciseFocus] = useState("");
   const openExercise = (name: string) => { setExerciseFocus(name); setScreen("exercises"); };
@@ -227,7 +231,7 @@ export default function AppShell() {
                   return (
                     <button
                       key={id}
-                      onClick={() => setScreen(id)}
+                      onClick={() => { setPendingBlocks(undefined); setScreen(id); }}
                       title={collapsed ? label : undefined}
                       style={{
                         width: "100%",
@@ -494,7 +498,7 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} onStart={() => setScreen("log")} />
+          <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
         )}
 
         {screen === "cockpit" && (
@@ -553,7 +557,9 @@ export default function AppShell() {
         {screen === "log" && (
           <Logger
             sessions={sessions}
+            initialBlocks={pendingBlocks}
             onSaved={() => {
+              setPendingBlocks(undefined);
               refresh();
               setScreen("history");
             }}

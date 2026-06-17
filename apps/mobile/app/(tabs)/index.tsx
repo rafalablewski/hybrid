@@ -9,6 +9,7 @@ import {
   buildTrainingWeek,
   trainingDaysPerWeek,
   weekNeedsResync,
+  planToday,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -60,6 +61,7 @@ export default function Home() {
   const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
+  const [planId, setPlanId] = useState<string | null>(null);
   const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
@@ -72,7 +74,7 @@ export default function Home() {
     Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle(), fetchCoachInvites()])
       .then(([s, a, sig, m, inv]) => {
         setSessions(s); setAssignments(a); setSignals(sig);
-        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1);
+        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null);
         setInvites(inv);
       })
       .finally(() => setRefreshing(false));
@@ -213,6 +215,8 @@ export default function Home() {
   // Has the athlete got a plan to show from session zero? — either real history
   // OR an enrolled macrocycle (so onboarding visibly produces today's session).
   const hasPlan = sessions.length > 0 || !!macro;
+  // Enrolled in a REAL named plan? Its exact day drives "Your plan today".
+  const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
 
   // Cards in the horizontal pager snap to ~full content width.
   const { width } = useWindowDimensions();
@@ -327,21 +331,40 @@ export default function Home() {
         decelerationRate="fast"
         style={{ marginTop: 18 }}
       >
-        {/* PLAN TODAY — what to do, why */}
+        {/* PLAN TODAY — the named plan's exact day when enrolled, else the engine pick */}
         <Card style={{ width: cardW, marginRight: 12, borderLeftWidth: 3, borderLeftColor: C.lime }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Kicker color={C.lime}>Your plan today</Kicker>
             {hasPlan && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
           </View>
-          {macroLine && <Mono color={C.violet} style={{ marginTop: 6, fontSize: 11 }}>{macroLine}</Mono>}
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
-            {hasPlan ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
-          </Text>
-          <Mono color={C.chalk} style={{ lineHeight: 20 }}>
-            {hasPlan ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
-          </Mono>
+          {plan ? (
+            <>
+              <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 6 }}>{plan.planName}</Text>
+              <Mono color={C.violet} style={{ marginTop: 2, fontSize: 11 }}>
+                {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{macroLine ? ` · ${macroLine}` : ""}
+              </Mono>
+              <View style={{ marginTop: 8 }}>
+                {plan.items.map((it, i) => (
+                  <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk, flex: 1 }}>{it.name}</Text>
+                    <Mono color={C.chalk}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <>
+              {macroLine && <Mono color={C.violet} style={{ marginTop: 6, fontSize: 11 }}>{macroLine}</Mono>}
+              <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
+                {hasPlan ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+              </Text>
+              <Mono color={C.chalk} style={{ lineHeight: 20 }}>
+                {hasPlan ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
+              </Mono>
+            </>
+          )}
           <View style={{ marginTop: 14 }}>
-            <Button label={t("home.startSession")} onPress={() => router.push(hasPlan ? "/workout?source=ai" : "/workout?source=empty")} />
+            <Button label={t("home.startSession")} onPress={() => router.push(plan ? "/workout?source=plan" : hasPlan ? "/workout?source=ai" : "/workout?source=empty")} />
           </View>
         </Card>
 

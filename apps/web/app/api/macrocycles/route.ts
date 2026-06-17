@@ -28,22 +28,35 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
-  const b = body as { goal?: unknown; eventInWeeks?: unknown };
+  const b = body as { goal?: unknown; eventInWeeks?: unknown; planId?: unknown };
   if (typeof b.goal !== "string" || !b.goal.trim()) {
     return NextResponse.json({ error: "goal is required" }, { status: 400 });
   }
 
   const eventInWeeks = typeof b.eventInWeeks === "number" ? b.eventInWeeks : null;
   const macro = buildMacrocycle(b.goal.trim(), eventInWeeks);
+  // The enrolled named plan (when the athlete picked a real plan) — drives
+  // "Your plan today". Best-effort: tolerate the column not being migrated yet.
+  const planId = typeof b.planId === "string" && b.planId.trim() ? b.planId.trim().slice(0, 64) : null;
 
-  const macrocycle = await prisma.macrocycle.create({
-    data: {
-      userId: user.id,
-      goal: b.goal.trim(),
-      eventDate: null,
-      blocks: macro.blocks as object,
-    },
-  });
+  let macrocycle;
+  try {
+    macrocycle = await prisma.macrocycle.create({
+      data: {
+        userId: user.id,
+        goal: b.goal.trim(),
+        planId,
+        eventDate: null,
+        blocks: macro.blocks as object,
+      },
+    });
+  } catch {
+    // planId column not migrated yet (run reference/sql-macrocycle-planid.sql) —
+    // still enroll, just without the named-plan link.
+    macrocycle = await prisma.macrocycle.create({
+      data: { userId: user.id, goal: b.goal.trim(), eventDate: null, blocks: macro.blocks as object },
+    });
+  }
 
   return NextResponse.json({ macrocycle }, { status: 201 });
 }

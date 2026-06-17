@@ -236,6 +236,10 @@ model Macrocycle {
   user      User      @relation(fields: [userId], references: [id])
   userId    String
   goal      String
+  // The enrolled NAMED plan id (e.g. "bb-fb4"), when the athlete picked a real
+  // plan from the library — drives "Your plan today". Null for a goal-only
+  // enrollment (engine-prescribed). Mirrors the plan library's GoalPlan.id.
+  planId    String?
   eventDate DateTime?
   blocks    Json // meso/micro structure from buildMacrocycle()
   startedAt DateTime  @default(now())

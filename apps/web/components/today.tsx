@@ -13,9 +13,12 @@ import {
   toTrainingLog,
   weeklyRecap,
   currentPhase,
+  planToday,
+  planDayToBlocks,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
+  type SessionBlock,
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
 import AskCoach from "./ai-coach";
@@ -47,13 +50,15 @@ export default function Today({
   bio,
   macro,
   currentWeek = 1,
+  planId,
   onStart,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
   macro?: Macrocycle | null;
   currentWeek?: number;
-  onStart: () => void;
+  planId?: string | null;
+  onStart: (planBlocks?: SessionBlock[]) => void;
 }) {
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Twin). Switchable from Settings.
@@ -84,6 +89,10 @@ export default function Today({
     [macro, currentWeek],
   );
 
+  // Enrolled in a REAL named plan? Its exact day drives "Your plan today"
+  // (cycling by sessions logged), instead of the engine's algorithmic pick.
+  const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
+
   const primaryLift = useMemo(() => liftNames(sessions)[0], [sessions]);
   const projection = useMemo(
     () => (primaryLift ? projectLift(sessions, primaryLift, { horizonWeeks: 12 }) : null),
@@ -113,13 +122,35 @@ export default function Today({
         }}
       >
         {/* card 1 — Your plan today */}
-        {sessions.length === 0 ? (
+        {plan ? (
+          /* Enrolled in a REAL named plan → its exact day drives the card. */
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+                Your plan today · readiness {rx.readiness}/100
+              </Mono>
+              <button onClick={() => onStart(planDayToBlocks(plan.items))} style={cta(LIME)}>Start session →</button>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 2px" }}>{plan.planName}</div>
+            <Mono s={{ fontSize: 12, display: "block", marginBottom: 8 }} c={VIOLET}>
+              {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} wk ${currentWeek}/${macro!.totalWeeks}` : ""}
+            </Mono>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {plan.items.map((it, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingTop: 6, borderTop: i ? `1px solid ${LINE}` : "none" }}>
+                  <span style={{ ...disp, fontWeight: 600, fontSize: 14, color: txt(CHALK) }}>{it.name}</span>
+                  <Mono s={{ fontSize: 12 }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : sessions.length === 0 ? (
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today
               </Mono>
-              <button onClick={onStart} style={cta(LIME)}>Start session →</button>
+              <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
             </div>
             <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
               {phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
@@ -146,7 +177,7 @@ export default function Today({
               <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today · readiness {rx.readiness}/100
               </Mono>
-              <button onClick={onStart} style={cta(LIME)}>Start session →</button>
+              <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
             </div>
             <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
               {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}

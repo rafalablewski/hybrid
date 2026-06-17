@@ -54,7 +54,7 @@ export default function Onboarding() {
   const start = async () => {
     if (!plan) return;
     setEnrolling(true);
-    await enrollPlan(plan.goalLabel);
+    await enrollPlan(plan.goalLabel, plan.planId);
     await persistIntake();
     setEnrolling(false);
     router.replace("/(tabs)");
