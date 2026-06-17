@@ -17,8 +17,10 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}
-  a{color:inherit}
   .wrap{max-width:880px;margin:0 auto;padding:0 18px 80px}
+
+  /* state inputs are visually hidden; all interaction is pure CSS (no JS needed) */
+  .state{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
 
   /* ── top bar + tabs ──────────────────────────────────────────────────── */
   header{position:sticky;top:0;z-index:20;background:rgba(12,13,12,.86);backdrop-filter:blur(14px);
@@ -28,9 +30,15 @@
   .logo span{color:var(--lime)}
   .tabs{display:flex;gap:6px;margin-left:auto;background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:4px}
   .tab{font-family:var(--cond);font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.05em;
-    color:var(--ash);background:none;border:none;padding:9px 18px;border-radius:10px;cursor:pointer}
-  .tab.active{background:var(--lime);color:var(--ink)}
+    color:var(--ash);padding:9px 18px;border-radius:10px;cursor:pointer;user-select:none}
   .tab .gl{margin-right:6px}
+
+  /* ── tab switching (CSS only) ────────────────────────────────────────── */
+  .pane{display:none}
+  #t-today:checked  ~ .wrap #today,
+  #t-cockpit:checked ~ .wrap #cockpit{display:block}
+  #t-today:checked  ~ header .tab[for="t-today"],
+  #t-cockpit:checked ~ header .tab[for="t-cockpit"]{background:var(--lime);color:var(--ink)}
 
   /* ── cards / typography ──────────────────────────────────────────────── */
   .card{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px;position:relative}
@@ -38,9 +46,8 @@
   .card.violet{border-left:3px solid var(--violet)}
   .card.blue{border-left:3px solid var(--blue)}
   .card.amber{border-left:3px solid var(--amber)}
-  .card.red{border-left:3px solid var(--red)}
   .kick{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
-  .k-lime{color:var(--lime)} .k-violet{color:var(--violet)} .k-blue{color:var(--blue)} .k-amber{color:var(--amber)} .k-red{color:var(--red)} .k-ash{color:var(--ash)}
+  .k-lime{color:var(--lime)} .k-violet{color:var(--violet)} .k-blue{color:var(--blue)} .k-amber{color:var(--amber)} .k-ash{color:var(--ash)}
   .mono{font-family:var(--mono);color:var(--ash);font-size:12px;line-height:1.6}
   .chalk{color:var(--chalk)}
   h1.disp{font-family:var(--disp);font-weight:900;font-size:30px;margin:2px 0 0}
@@ -60,10 +67,10 @@
   .bar-seg{display:flex;gap:3px;height:8px;border-radius:4px;overflow:hidden;margin:16px 0}
   .meter{height:6px;border-radius:3px;background:var(--ink);margin-top:3px;overflow:hidden}
   .meter > i{display:block;height:100%}
-  .pill{font-family:var(--cond);font-weight:700;font-size:13px;text-transform:capitalize;padding:6px 14px;
-    border-radius:999px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ash);margin:0 6px 6px 0}
+  .pill{display:inline-block;font-family:var(--cond);font-weight:700;font-size:13px;text-transform:capitalize;padding:6px 14px;
+    border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ash);margin:0 6px 6px 0}
   .pill.on{border-color:var(--lime);background:rgba(196,240,53,.10);color:var(--lime)}
-  .opt{text-align:left;cursor:pointer;border-radius:12px;padding:12px;border:1px solid var(--line);background:transparent;width:100%}
+  .opt{text-align:left;border-radius:12px;padding:12px;border:1px solid var(--line);background:transparent}
   .opt.on{border-color:var(--lime);background:rgba(196,240,53,.08)}
   .opt .t{font-family:var(--disp);font-weight:700;font-size:15px}
   .opt.on .t{color:var(--lime)}
@@ -71,36 +78,49 @@
   .startnow b{font-family:var(--disp);font-weight:900;font-size:20px;color:var(--ink)}
   .startnow small{display:block;font-family:var(--mono);font-size:11px;color:var(--ink);opacity:.7;margin-top:4px}
   .sec{margin-top:14px}
-  .step{font-family:var(--disp);font-weight:800;font-size:22px;width:46px;height:42px;border-radius:10px;
-    border:1px solid var(--line);background:var(--ink);color:var(--lime);cursor:pointer}
+  .step{display:inline-flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:22px;
+    width:46px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--ink);color:var(--lime)}
 
-  /* ── "absorbed from …" provenance badges ─────────────────────────────── */
+  /* ── "absorbed from …" provenance badges (CSS toggle) ────────────────── */
   .from{position:absolute;top:-9px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
     text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px dashed;display:none}
-  body.show-prov .from{display:inline-block}
+  #prov:checked ~ .wrap .from{display:inline-block}
   .from.dash{color:var(--blue);border-color:var(--blue);background:rgba(127,212,232,.08)}
   .from.onb{color:var(--amber);border-color:var(--amber);background:rgba(240,180,94,.08)}
-  body.show-prov [data-prov]{outline:1px dashed transparent}
 
   .legend{border:1px solid var(--line);background:var(--ink2);border-radius:14px;padding:14px 16px;margin-top:16px}
   .legend h3{font-family:var(--disp);font-weight:800;font-size:14px;margin:0 0 6px}
   .legend .mono{font-size:11.5px}
-  .toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ash);cursor:pointer}
-  .switch{width:34px;height:18px;border-radius:999px;background:var(--line);position:relative;transition:.15s}
+  .toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ash);cursor:pointer;user-select:none}
+  .switch{width:34px;height:18px;border-radius:999px;background:var(--line);position:relative;transition:.15s;flex:none}
   .switch i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--chalk);transition:.15s}
-  body.show-prov .switch{background:var(--lime)} body.show-prov .switch i{left:18px;background:var(--ink)}
-  .pane{display:none} .pane.active{display:block}
+  #prov:checked ~ .wrap .switch{background:var(--lime)}
+  #prov:checked ~ .wrap .switch i{left:18px;background:var(--ink)}
+
+  /* ── onboarding expander (CSS toggle) ────────────────────────────────── */
+  #onbBody{display:none}
+  #onb:checked ~ .wrap #onbBody{display:block}
+  .onb-close{display:none} #onb:checked ~ .wrap .onb-open{display:none}
+  #onb:checked ~ .wrap .onb-close{display:inline}
+
   .note{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:6px}
   hr.soft{border:none;border-top:1px solid var(--line);margin:16px 0}
 </style>
 </head>
 <body>
+
+<!-- interaction state (radios = tabs, checkboxes = toggles) — pure CSS, no JS -->
+<input class="state" type="radio" name="tab" id="t-today" checked>
+<input class="state" type="radio" name="tab" id="t-cockpit">
+<input class="state" type="checkbox" id="prov">
+<input class="state" type="checkbox" id="onb">
+
 <header>
   <div class="bar">
     <div class="logo">HYBRID<span>.</span></div>
     <div class="tabs">
-      <button class="tab active" data-tab="today"><span class="gl">➤</span>Today</button>
-      <button class="tab" data-tab="cockpit"><span class="gl">◈</span>Cockpit</button>
+      <label class="tab" for="t-today"><span class="gl">➤</span>Today</label>
+      <label class="tab" for="t-cockpit"><span class="gl">◈</span>Cockpit</label>
     </div>
   </div>
 </header>
@@ -111,7 +131,7 @@
   <div class="legend">
     <div class="row">
       <h3>Home, consolidated to two tabs — nothing dropped</h3>
-      <div class="toggle" id="provToggle"><span>highlight absorbed content</span><span class="switch"><i></i></span></div>
+      <label class="toggle" for="prov"><span>highlight absorbed content</span><span class="switch"><i></i></span></label>
     </div>
     <div class="mono">
       <span style="color:var(--blue)">Dashboard</span> is retired — its unique parts (the season phase timeline + injury-risk-by-tissue, both badged <b style="color:var(--blue)">from Dashboard</b>) fold into <b style="color:var(--lime)">Today</b>.<br/>
@@ -120,7 +140,7 @@
   </div>
 
   <!-- ════════════════════════ TODAY ════════════════════════ -->
-  <section class="pane active" id="today">
+  <section class="pane" id="today">
     <div style="margin-top:18px">
       <div class="kick k-ash">Fitness GPS · today</div>
       <h1 class="disp">Ready to train.</h1>
@@ -151,7 +171,7 @@
     </div>
 
     <!-- season phase timeline — ABSORBED FROM DASHBOARD -->
-    <div class="card lime" data-prov>
+    <div class="card lime">
       <span class="from dash">from Dashboard</span>
       <div class="kick k-lime">Training for · Hybrid strength-endurance · Build phase</div>
       <div class="big">Week 5 of 16 · load week · build the engine</div>
@@ -230,7 +250,7 @@
     </div>
 
     <!-- performance state · twin — ABSORBED & EXPANDED FROM DASHBOARD (incl. injury risk) -->
-    <div class="card blue" data-prov>
+    <div class="card blue">
       <span class="from dash">from Dashboard</span>
       <div class="kick k-blue">Performance State · Athlete Twin</div>
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:8px">
@@ -263,7 +283,7 @@
             <div class="mono"><span style="color:var(--lime);font-weight:900">+</span> <span class="chalk">HRV vs baseline</span> · recovered</div>
           </div>
         </div>
-        <div data-prov style="position:relative">
+        <div style="position:relative">
           <span class="from dash" style="top:-22px">from Dashboard</span>
           <div class="kick k-ash">Injury risk · by tissue</div>
           <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
@@ -296,46 +316,46 @@
       <div class="mono">Build · week 5/16 · event in 11 wk</div>
       <hr class="soft"/>
       <!-- ABSORBED FROM GET STARTED -->
-      <div data-prov style="position:relative">
+      <div style="position:relative">
         <span class="from onb">from Get started</span>
         <div class="row">
           <div class="kick k-amber">Set up / change plan</div>
-          <button class="ghost" id="onbToggle" style="color:var(--amber)">Open setup →</button>
+          <label class="ghost" for="onb" style="color:var(--amber)"><span class="onb-open">Open setup →</span><span class="onb-close">Close setup ✕</span></label>
         </div>
         <div class="mono" style="margin-top:4px">4 questions → a plan you'll finish. Shown automatically on first run.</div>
 
-        <div id="onbBody" style="display:none;margin-top:14px">
+        <div id="onbBody" style="margin-top:14px">
           <!-- persona -->
           <div class="kick k-lime">How do you want to use HYBRID?</div>
           <div class="grid2" style="margin-top:10px">
-            <button class="opt"><div class="t">Just track my training</div><div class="mono">Log fast, review, share. The clean, simple app.</div></button>
-            <button class="opt on"><div class="t">Train for a goal — give me the data</div><div class="mono">Plans, sport S&amp;C, velocity, performance. The full toolkit.</div></button>
+            <div class="opt"><div class="t">Just track my training</div><div class="mono">Log fast, review, share. The clean, simple app.</div></div>
+            <div class="opt on"><div class="t">Train for a goal — give me the data</div><div class="mono">Plans, sport S&amp;C, velocity, performance. The full toolkit.</div></div>
           </div>
           <!-- 1 goal -->
           <div class="kick k-lime" style="margin-top:16px">1 · Your main goal</div>
           <div class="grid2" style="margin-top:8px">
-            <button class="opt on"><div class="t">Hybrid (strength + endurance)</div><div class="mono">Lift heavy and run far.</div></button>
-            <button class="opt"><div class="t">Get stronger</div><div class="mono">Max strength, powerlifts.</div></button>
-            <button class="opt"><div class="t">First marathon</div><div class="mono">Build the aerobic base.</div></button>
-            <button class="opt"><div class="t">Sport performance</div><div class="mono">S&amp;C that transfers.</div></button>
+            <div class="opt on"><div class="t">Hybrid (strength + endurance)</div><div class="mono">Lift heavy and run far.</div></div>
+            <div class="opt"><div class="t">Get stronger</div><div class="mono">Max strength, powerlifts.</div></div>
+            <div class="opt"><div class="t">First marathon</div><div class="mono">Build the aerobic base.</div></div>
+            <div class="opt"><div class="t">Sport performance</div><div class="mono">S&amp;C that transfers.</div></div>
           </div>
-          <!-- 2 experience / 4 equipment -->
+          <!-- 2 experience / 3 equipment -->
           <div class="grid2" style="margin-top:14px">
             <div>
               <div class="kick k-lime">2 · Experience</div>
-              <div style="margin-top:10px"><button class="pill">beginner</button><button class="pill on">intermediate</button><button class="pill">advanced</button></div>
+              <div style="margin-top:10px"><span class="pill">beginner</span><span class="pill on">intermediate</span><span class="pill">advanced</span></div>
             </div>
             <div>
               <div class="kick k-lime">3 · Equipment</div>
-              <div style="margin-top:10px"><button class="pill on">full</button><button class="pill">home</button><button class="pill">minimal</button></div>
+              <div style="margin-top:10px"><span class="pill on">full</span><span class="pill">home</span><span class="pill">minimal</span></div>
             </div>
           </div>
-          <!-- days -->
+          <!-- 4 days -->
           <div class="kick k-lime" style="margin-top:16px">4 · Days per week</div>
           <div style="display:flex;align-items:center;gap:14px;margin-top:10px">
-            <button class="step">−</button>
+            <span class="step">−</span>
             <span class="huge" style="font-size:26px;min-width:48px;text-align:center">4×</span>
-            <button class="step">+</button>
+            <span class="step">+</span>
           </div>
           <!-- plan preview -->
           <div class="card lime" style="margin-top:16px;border-left:3px solid var(--violet)">
@@ -359,7 +379,7 @@
     <!-- 3 · PERFORMANCE -->
     <div class="card blue sec">
       <div class="row"><div class="kick k-blue">Performance · Athlete Twin</div><button class="ghost" style="color:var(--blue)">Performance →</button></div>
-      <div style="display:flex;align-items:baseline;gap:12px;margin-top:4px">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-top:4px;flex-wrap:wrap">
         <span class="huge" style="font-size:34px;color:var(--lime)">71</span>
         <span class="mono">HPI · primed · limiter endurance</span>
         <span style="margin-left:auto;display:flex;gap:14px">
@@ -393,36 +413,5 @@
   </section>
 
 </div>
-
-<script>
-  // tab switch
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.addEventListener('click', function(){
-      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});
-      document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('active')});
-      t.classList.add('active');
-      document.getElementById(t.dataset.tab).classList.add('active');
-      window.scrollTo({top:0,behavior:'smooth'});
-    });
-  });
-  // provenance highlight toggle
-  document.getElementById('provToggle').addEventListener('click', function(){
-    document.body.classList.toggle('show-prov');
-  });
-  // onboarding flow expand
-  var ob = document.getElementById('onbToggle'), body = document.getElementById('onbBody');
-  ob.addEventListener('click', function(){
-    var open = body.style.display === 'block';
-    body.style.display = open ? 'none' : 'block';
-    ob.textContent = open ? 'Open setup →' : 'Close setup ✕';
-  });
-  // pill / option toggles (cosmetic)
-  document.querySelectorAll('.pill').forEach(function(p){
-    p.addEventListener('click', function(){
-      Array.from(p.parentElement.children).forEach(function(s){s.classList.remove('on')});
-      p.classList.add('on');
-    });
-  });
-</script>
 </body>
 </html>
