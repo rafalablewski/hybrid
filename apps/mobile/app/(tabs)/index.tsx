@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -9,6 +9,7 @@ import {
   buildTrainingWeek,
   trainingDaysPerWeek,
   weekNeedsResync,
+  planToday,
   computePerformanceState,
   computeAccountability,
   habitStrength,
@@ -22,6 +23,8 @@ import {
   LEVELS,
   type LoggedSession,
   type Macrocycle,
+  type Experience,
+  type Equipment,
 } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
@@ -58,8 +61,11 @@ export default function Home() {
   const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
+  const [planId, setPlanId] = useState<string | null>(null);
   const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
+  const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
+  const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   const [invites, setInvites] = useState<CoachInvite[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -68,7 +74,7 @@ export default function Home() {
     Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle(), fetchCoachInvites()])
       .then(([s, a, sig, m, inv]) => {
         setSessions(s); setAssignments(a); setSignals(sig);
-        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1);
+        setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null);
         setInvites(inv);
       })
       .finally(() => setRefreshing(false));
@@ -98,6 +104,13 @@ export default function Home() {
     AsyncStorage.getItem("hybrid.daysPerWeek")
       .then((raw) => { const n = Number(raw); if (Number.isFinite(n) && n > 0) setPrefDays(n); })
       .catch(() => {});
+    // experience + equipment from onboarding — tailor the daily prescription.
+    AsyncStorage.getItem("hybrid.experience")
+      .then((v) => { if (v === "beginner" || v === "intermediate" || v === "advanced") setPrefExp(v); })
+      .catch(() => {});
+    AsyncStorage.getItem("hybrid.equipment")
+      .then((v) => { if (v === "full" || v === "home" || v === "minimal") setPrefEquip(v); })
+      .catch(() => {});
   }, []);
 
   // Real biometrics from the Signal ontology (check-in + wearables) — undefined
@@ -115,8 +128,8 @@ export default function Home() {
 
   const log = toTrainingLog(sessions);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }),
-    [log, sessions, bio],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
+    [log, sessions, bio, prefExp, prefEquip],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
 
@@ -126,10 +139,12 @@ export default function Home() {
     () => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined),
     [sportSel, sessions],
   );
+  // Show the reconciled plan from session zero (cold-start until there's
+  // history) so a freshly-enrolled phase is visible right after onboarding.
   const reconciled = useMemo(() => {
-    if (!macro || sessions.length === 0) return null;
+    if (!macro) return null;
     return reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek });
-  }, [macro, rx, sportRx, sessions, currentWeek]);
+  }, [macro, rx, sportRx, currentWeek]);
 
   const daysPerWeek = useMemo(
     () => trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 }),
@@ -150,6 +165,8 @@ export default function Home() {
       profiles: velocityProfiles(sessions),
       sport: sportRx,
       daysPerWeek,
+      experience: prefExp,
+      equipment: prefEquip,
     });
     const ok = await createSelfAssignments(items, true);
     setScheduled(ok ? `${auto ? "Auto re-synced" : "Scheduled"} ${items.length} sessions off your latest logs — see your Calendar.` : "Couldn't schedule — try again.");
@@ -186,6 +203,24 @@ export default function Home() {
     () => (primaryLift && goal ? projectLift(sessions, primaryLift, { horizonWeeks: 12, goal }) : null),
     [sessions, primaryLift, goal],
   );
+
+  // Goal / periodization / routine line for the plan card: the macrocycle's
+  // goal plus the phase the athlete is in this week.
+  const macroLine = useMemo(() => {
+    if (!macro) return null;
+    const block = macro.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro.blocks[0];
+    return `${macro.goalOrSport} · ${block?.label ?? ""} · wk ${currentWeek}/${macro.totalWeeks}`;
+  }, [macro, currentWeek]);
+
+  // Has the athlete got a plan to show from session zero? — either real history
+  // OR an enrolled macrocycle (so onboarding visibly produces today's session).
+  const hasPlan = sessions.length > 0 || !!macro;
+  // Enrolled in a REAL named plan? Its exact day drives "Your plan today".
+  const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
+
+  // Cards in the horizontal pager snap to ~full content width.
+  const { width } = useWindowDimensions();
+  const cardW = width - 36; // Screen has 18px horizontal padding each side
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
@@ -287,22 +322,67 @@ export default function Home() {
         </Card>
       )}
 
-      {/* ROUTE TODAY — what to do, why */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 18 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Kicker color={C.lime}>Your route today</Kicker>
-          {sessions.length > 0 && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
-        </View>
-        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
-          {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
-        </Text>
-        <Mono color={C.chalk} style={{ lineHeight: 20 }}>
-          {sessions.length > 0 ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
-        </Mono>
-        <View style={{ marginTop: 14 }}>
-          <Button label={t("home.startSession")} onPress={() => router.push(sessions.length > 0 ? "/workout?source=ai" : "/workout?source=empty")} />
-        </View>
-      </Card>
+      {/* PLAN TODAY + AI COACH — horizontal pager (scroll right for the AI coach) */}
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={cardW + 12}
+        decelerationRate="fast"
+        style={{ marginTop: 18 }}
+      >
+        {/* PLAN TODAY — the named plan's exact day when enrolled, else the engine pick */}
+        <Card style={{ width: cardW, marginRight: 12, borderLeftWidth: 3, borderLeftColor: C.lime }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Kicker color={C.lime}>Your plan today</Kicker>
+            {hasPlan && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
+          </View>
+          {plan ? (
+            <>
+              <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 6 }}>{plan.planName}</Text>
+              <Mono color={C.violet} style={{ marginTop: 2, fontSize: 11 }}>
+                {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{macroLine ? ` · ${macroLine}` : ""}
+              </Mono>
+              <View style={{ marginTop: 8 }}>
+                {plan.items.map((it, i) => (
+                  <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk, flex: 1 }}>{it.name}</Text>
+                    <Mono color={C.chalk}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <>
+              {macroLine && <Mono color={C.violet} style={{ marginTop: 6, fontSize: 11 }}>{macroLine}</Mono>}
+              <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
+                {hasPlan ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+              </Text>
+              <Mono color={C.chalk} style={{ lineHeight: 20 }}>
+                {hasPlan ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
+              </Mono>
+            </>
+          )}
+          <View style={{ marginTop: 14 }}>
+            <Button label={t("home.startSession")} onPress={() => router.push(plan ? "/workout?source=plan" : hasPlan ? "/workout?source=ai" : "/workout?source=empty")} />
+          </View>
+        </Card>
+
+        {/* AI COACH — scroll right to reach it */}
+        <Card style={{ width: cardW, borderLeftWidth: 3, borderLeftColor: C.violet }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Kicker color={C.violet}>AI coach</Kicker>
+            <Chip color={C.blue}>beta</Chip>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>Ask your AI coach</Text>
+          <Mono color={C.chalk} style={{ lineHeight: 20 }}>
+            Your training, readiness and goal — read together. The AI coach explains today&apos;s call and adapts your plan as your real logs come in.
+          </Mono>
+          <View style={{ marginTop: 14 }}>
+            <Button label="Open AI coach →" color={C.violet} onPress={() => router.push("/ai-coach")} />
+          </View>
+        </Card>
+      </ScrollView>
 
       {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
       {isAthlete && reconciled && (
@@ -355,7 +435,7 @@ export default function Home() {
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Check-in →</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>weekly review · coach reply</Mono>
+          <Mono style={{ marginTop: 2, fontSize: 11 }}>daily review · coach reply</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/calendar")}

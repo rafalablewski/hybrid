@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
-// The athlete's own weekly check-ins. GET lists newest-first; POST submits one.
+// The athlete's own daily check-ins. GET lists newest-first; POST submits one.
 export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -27,6 +27,10 @@ export async function POST(request: Request) {
 
   const adherence = num(b.adherencePct);
   const bodyMassKg = num(b.bodyMassKg);
+  // Sharing a check-in with a coach is a paid feature; free users keep it private
+  // (their own personal log). Silently coerce to false rather than rejecting, so
+  // a free user submitting still succeeds — just unshared.
+  const sharedWithCoach = b.sharedWithCoach === true && me.entitlement === "paid";
   const checkin = await prisma.checkin.create({
     data: {
       userId: me.id,
@@ -38,6 +42,7 @@ export async function POST(request: Request) {
       mood: int1to5(b.mood),
       adherencePct: adherence != null ? Math.max(0, Math.min(100, Math.round(adherence))) : null,
       note: typeof b.note === "string" && b.note.trim() ? b.note.trim().slice(0, 2000) : null,
+      sharedWithCoach,
     },
   });
 

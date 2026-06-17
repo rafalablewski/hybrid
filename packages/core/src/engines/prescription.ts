@@ -61,6 +61,23 @@ export function easyRunTarget(log: TrainingLog, readiness: number): RunTarget {
   return { distance, minutes, paceSecPerKm, estimated };
 }
 
+/** Athlete self-reported experience + available equipment (mirrors the
+ *  onboarding intake). Feed them into prescribeSession so the day's session
+ *  matches who the athlete is and what they can train with. */
+export type PrescribeExperience = "beginner" | "intermediate" | "advanced";
+export type PrescribeEquipment = "full" | "home" | "minimal";
+
+/** The primary strength candidates per equipment tier — barbell when there's a
+ *  full gym, dumbbell at home, bodyweight when it's minimal. Same movement
+ *  patterns (squat / hinge / push), just doable with what the athlete has. */
+const PRIMARY_BY_EQUIPMENT: Record<PrescribeEquipment, string[]> = {
+  full: ["Back Squat", "Deadlift", "Bench Press", "Overhead Press"],
+  home: ["Goblet Squat", "DB Romanian Deadlift", "DB Bench Press", "DB Overhead Press"],
+  minimal: ["Bodyweight Squat", "Single-Leg RDL", "Push-Up", "Pike Push-Up"],
+};
+
+const clampN = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
 export interface PrescribeOptions {
   /**
    * Per-lift load–velocity profiles (e.g. from `velocityProfiles(sessions)`).
@@ -69,6 +86,11 @@ export interface PrescribeOptions {
    * speed rather than a stale rep-based e1RM.
    */
   profiles?: Record<string, LoadVelocityProfile>;
+  /** Experience tier — tunes volume + intensity (default "intermediate"). */
+  experience?: PrescribeExperience;
+  /** Available equipment — picks barbell/dumbbell/bodyweight movements and
+   *  swaps machine conditioning for bodyweight work (default "full"). */
+  equipment?: PrescribeEquipment;
 }
 
 /**
@@ -89,8 +111,14 @@ export function prescribeSession(
   const fatigue = computeFatigue(log);
   const { score: readiness, bioAdj } = computeReadiness(fatigue, bio);
 
-  // choose primary strength lift: most-recovered pattern with a good signal
-  const candidates = ["Back Squat", "Deadlift", "Bench Press", "Overhead Press"];
+  const experience = opts?.experience ?? "intermediate";
+  const equipment = opts?.equipment ?? "full";
+  // Bodyweight tier has no external load — the strength block is rep/RPE-driven.
+  const bodyweight = equipment === "minimal";
+
+  // choose primary strength lift: most-recovered pattern with a good signal,
+  // from the movements the athlete can actually train (barbell/dumbbell/BW).
+  const candidates = PRIMARY_BY_EQUIPMENT[equipment];
   const scored = candidates
     .map((move) => {
       const meta = MOVEMENTS[move]!;
@@ -113,27 +141,34 @@ export function prescribeSession(
   const lastE1rm = loggedE1rm.length
     ? loggedE1rm[0]!.e1rm!
     : (MOVEMENTS[primary.move]?.baseLoad ?? 100) * 1.2;
-  const pct =
-    primary.sig.action === "progress"
-      ? 0.8
-      : primary.sig.action === "deload"
-        ? 0.65
-        : 0.75;
+  // Base dose from the progression signal, then nudge by experience: beginners
+  // train a touch lighter with more reps and one fewer set (groove the pattern);
+  // advanced athletes get slightly more intensity + volume.
+  const basePct =
+    primary.sig.action === "progress" ? 0.8 : primary.sig.action === "deload" ? 0.65 : 0.75;
+  const expPctAdj = experience === "beginner" ? -0.05 : experience === "advanced" ? 0.03 : 0;
+  const expSetAdj = experience === "beginner" ? -1 : experience === "advanced" ? 1 : 0;
+  const expRepAdj = experience === "beginner" ? 2 : 0;
+  const pct = clampN(basePct + expPctAdj, 0.55, 0.9);
 
-  // VBT autoregulation: if we have a fitted load–velocity profile for the
-  // primary lift, anchor the load to its velocity-estimated 1RM (which moves
-  // with today's readiness) and surface the bar speed to hit on the work sets.
+  // VBT autoregulation (loaded tiers only): anchor the load to the velocity-
+  // estimated 1RM when a fitted profile exists. Bodyweight has no external load.
   const profile = opts?.profiles?.[primary.move];
-  const useVel = !!profile && profile.estimated1rm > 0;
+  const useVel = !bodyweight && !!profile && profile.estimated1rm > 0;
   const oneRm = useVel ? profile!.estimated1rm : lastE1rm;
   // The working load rests on a generic default only when we have neither a
-  // velocity profile nor any logged e1RM for this lift.
-  const loadEstimated = !useVel && loggedE1rm.length === 0;
-  const workLoad = Math.round((oneRm * pct) / 2.5) * 2.5;
-  const velocityTarget = useVel ? velocityAtLoad(profile!, workLoad) : undefined;
-  const reps = primary.sig.action === "deload" ? 3 : 5;
-  const sets =
+  // velocity profile nor any logged e1RM for this lift (never flagged for BW).
+  const loadEstimated = !bodyweight && !useVel && loggedE1rm.length === 0;
+  const baseSets =
     primary.sig.action === "progress" ? 5 : primary.sig.action === "deload" ? 3 : 4;
+  const sets = clampN(baseSets + expSetAdj, 2, 6);
+  // Bodyweight is rep-driven (no kg); loaded tiers keep the heavy 3–5 scheme.
+  const reps =
+    (bodyweight ? (primary.sig.action === "deload" ? 8 : 12) : primary.sig.action === "deload" ? 3 : 5) +
+    expRepAdj;
+  const workLoad = bodyweight ? 0 : Math.round((oneRm * pct) / 2.5) * 2.5;
+  const loadDisplay = bodyweight ? "BW" : String(workLoad);
+  const velocityTarget = useVel ? velocityAtLoad(profile!, workLoad) : undefined;
 
   // choose conditioning system least-loaded recently
   const sysOrder = (
@@ -141,14 +176,23 @@ export function prescribeSession(
   ).sort((a, b) => a[1] - b[1]);
   const pickSys = sysOrder[0]![0];
   const aerobic = pickSys === "aerobic";
-  const condMove =
+  const machineCond =
     pickSys === "aerobic"
       ? "Easy Run"
       : pickSys === "threshold"
         ? "Row Intervals"
         : "Assault Bike";
+  // No rower/bike at home or minimal → a bodyweight metcon covers the same
+  // system. A run needs no equipment, so the aerobic pick is always kept.
+  const condMove = equipment !== "full" && !aerobic ? "Mixed Metcon" : machineCond;
   const condFormat =
-    pickSys === "aerobic" ? "Steady" : pickSys === "threshold" ? "Intervals" : "EMOM";
+    pickSys === "aerobic"
+      ? "Steady"
+      : condMove === "Mixed Metcon"
+        ? "Circuit"
+        : pickSys === "threshold"
+          ? "Intervals"
+          : "EMOM";
   // Aerobic day → a steady run with a real distance + goal pace (off the
   // athlete's own runs); threshold/anaerobic stay interval-shaped.
   const run = aerobic ? easyRunTarget(log, readiness) : null;
@@ -162,7 +206,7 @@ export function prescribeSession(
       kind: "strength",
       name: primary.move,
       sets: Array.from({ length: sets }, () => ({
-        load: String(workLoad),
+        load: loadDisplay,
         reps: String(reps),
         rpe: "",
       })),
@@ -188,21 +232,30 @@ export function prescribeSession(
         },
   ];
 
-  const loadBasis = useVel
-    ? `${Math.round(pct * 100)}% of your velocity-estimated 1RM (${Math.round(oneRm)}kg, autoregulated to today's bar speed) — aim for ~${velocityTarget!.toFixed(2)} m/s on the work sets`
-    : loadEstimated
-      ? `${Math.round(pct * 100)}% of a starting estimate — log this lift and I'll calibrate it to your real strength`
-      : `${Math.round(pct * 100)}% e1RM`;
+  const loadBasis = bodyweight
+    ? "bodyweight — progress reps within the range, then move to a harder variation"
+    : useVel
+      ? `${Math.round(pct * 100)}% of your velocity-estimated 1RM (${Math.round(oneRm)}kg, autoregulated to today's bar speed) — aim for ~${velocityTarget!.toFixed(2)} m/s on the work sets`
+      : loadEstimated
+        ? `${Math.round(pct * 100)}% of a starting estimate — log this lift and I'll calibrate it to your real strength`
+        : `${Math.round(pct * 100)}% e1RM`;
+
+  // A one-liner on how the session was tailored to the athlete's intake.
+  const setupNote =
+    ` Dialed for ${experience} level${
+      equipment !== "full" ? ` and ${equipment === "home" ? "home (dumbbell)" : "minimal (bodyweight)"} equipment` : ""
+    }.`;
 
   const why =
     `Readiness ${readiness}/100. ` +
-    `${primary.move} is your most-recovered heavy pattern, and your signal is "${primary.sig.action}" — ${primary.sig.reason}, ` +
-    `so I prescribed ${sets}×${reps} @ ${workLoad}kg (${loadBasis}). ` +
+    `${primary.move} is your most-recovered ${bodyweight ? "pattern" : "heavy pattern"}, and your signal is "${primary.sig.action}" — ${primary.sig.reason}, ` +
+    `so I prescribed ${sets}×${reps}${bodyweight ? "" : ` @ ${workLoad}kg`} (${loadBasis}). ` +
     `Your ${pickSys} system is the freshest, so today's conditioning is ${
       run
         ? `an easy ${run.distance} km run @ ~${formatPace(run.paceSecPerKm)} (≈${run.minutes} min, RPE 5)${run.estimated ? " — a gentle starting pace until you log a run" : ""}`
         : `${condMove.toLowerCase()} (${condFormat.toLowerCase()})`
     } to balance the week.` +
+    setupNote +
     (bio && bioAdj !== 0
       ? ` Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${bioAdj > 0 ? "HRV is above baseline and sleep was solid, so you're cleared to push." : "HRV dipped and sleep ran short, so I held the load back."}`
       : "");
@@ -216,7 +269,7 @@ export function prescribeSession(
     confidence,
     pickSys,
     bioAdj: bio ? bioAdj : 0,
-    oneRm: Math.round(oneRm),
+    oneRm: bodyweight ? 0 : Math.round(oneRm),
     oneRmSource: useVel ? "velocity" : "e1rm",
     loadEstimated,
     velocityTarget,

@@ -5,6 +5,107 @@ import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
+// Permanently delete a user account and ALL of its data. Admin-only, irreversible.
+// An admin can't delete themselves, and can't delete the last remaining admin
+// (the same lockout guard the role change uses). The user's child rows are wiped
+// table-by-table (best-effort, like account/reset) before the User row, since no
+// FK cascade is defined; then the Supabase auth user, if mirrored, is removed.
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requireAdmin(request);
+  if (gate.error) return gate.error;
+
+  const limited = rateLimit(request, { key: "admin-user-delete", limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
+
+  const { id } = await params;
+  if (id === gate.admin.id)
+    return NextResponse.json({ error: "You can't delete your own account here." }, { status: 400 });
+
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (target.role === "ADMIN") {
+    const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+    if (admins <= 1)
+      return NextResponse.json({ error: "Can't delete the last admin." }, { status: 400 });
+  }
+
+  const skipped: string[] = [];
+  const wipe = async (label: string, run: () => Promise<unknown>) => {
+    try {
+      await run();
+    } catch (err) {
+      console.error(`[admin user delete] skipped ${label}:`, err);
+      skipped.push(label);
+    }
+  };
+
+  let linkIds: string[] = [];
+  try {
+    linkIds = (
+      await prisma.coachLink.findMany({
+        where: { OR: [{ coachId: id }, { clientId: id }] },
+        select: { id: true },
+      })
+    ).map((l) => l.id);
+  } catch (err) {
+    console.error("[admin user delete] could not read coach links:", err);
+  }
+
+  await wipe("sessions", () => prisma.session.deleteMany({ where: { userId: id } }));
+  await wipe("macrocycles", () => prisma.macrocycle.deleteMany({ where: { userId: id } }));
+  await wipe("biometrics", () => prisma.biometric.deleteMany({ where: { userId: id } }));
+  await wipe("signals", () => prisma.signal.deleteMany({ where: { userId: id } }));
+  await wipe("checkins", () => prisma.checkin.deleteMany({ where: { userId: id } }));
+  await wipe("rtpProtocols", () => prisma.rtpProtocol.deleteMany({ where: { userId: id } }));
+  await wipe("videoAnalyses", () => prisma.videoAnalysis.deleteMany({ where: { userId: id } }));
+  await wipe("events", () => prisma.event.deleteMany({ where: { userId: id } }));
+  await wipe("riskOutcomes", () => prisma.riskOutcome.deleteMany({ where: { userId: id } }));
+  await wipe("talentProfile", () => prisma.talentProfile.deleteMany({ where: { userId: id } }));
+  await wipe("connections", () => prisma.connection.deleteMany({ where: { userId: id } }));
+  await wipe("memberships", () => prisma.membership.deleteMany({ where: { userId: id } }));
+  await wipe("templates", () => prisma.workoutTemplate.deleteMany({ where: { ownerId: id } }));
+  await wipe("assignments", () =>
+    prisma.assignment.deleteMany({ where: { OR: [{ athleteId: id }, { assignedById: id }] } }),
+  );
+  if (linkIds.length)
+    await wipe("coachNotes", () => prisma.coachNote.deleteMany({ where: { linkId: { in: linkIds } } }));
+  await wipe("coachLinks", () =>
+    prisma.coachLink.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
+  );
+  await wipe("featureGrant", () => prisma.featureGrant.deleteMany({ where: { userId: id } }));
+
+  // The User row is the PRIMARY action — never swallow its failure (that would
+  // return a false success while the account still exists). Their AdminAudit
+  // actor rows are set to null by the relation (onDelete: SetNull; actorEmail
+  // keeps the trail readable), so an admin who performed audited actions can
+  // still be deleted.
+  try {
+    await prisma.user.delete({ where: { id } });
+  } catch (err) {
+    console.error("[admin user delete] failed to delete user:", err);
+    return NextResponse.json(
+      {
+        error:
+          "Couldn't delete the account — its data was cleared but the user row failed (if this user has audit history, apply reference/sql-adminaudit-actor-nullable.sql).",
+        skipped,
+      },
+      { status: 500 },
+    );
+  }
+
+  await audit({
+    actor: gate.admin,
+    action: "user.delete",
+    targetType: "user",
+    targetId: id,
+    summary: `Deleted ${target.email}`,
+    metadata: { email: target.email, role: target.role, skipped },
+    req: request,
+  });
+
+  return NextResponse.json({ ok: true, skipped });
+}
+
 // One user's management record. Counts + memberships + recent-activity summary —
 // NOT the raw private training content. Admin-only.
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -31,6 +31,17 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
     [goal, experience, days, equipment],
   );
 
+  // Persist the intake answers (client-side, like the sport selection) so the
+  // prescription engine can tailor the daily session to them — days/week, and
+  // now experience + equipment too (previously thrown away after onboarding).
+  const persistIntake = () => {
+    try {
+      localStorage.setItem("hybrid.daysPerWeek", String(days));
+      localStorage.setItem("hybrid.experience", experience);
+      localStorage.setItem("hybrid.equipment", equipment);
+    } catch { /* ignore */ }
+  };
+
   const start = async () => {
     if (!plan) return;
     setEnrolling(true);
@@ -39,11 +50,11 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
       const res = await fetch("/api/macrocycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal: plan.goalLabel }),
+        body: JSON.stringify({ goal: plan.goalLabel, planId: plan.planId }),
       });
       if (res.status === 401) { setError("Sign in to save your plan (demo mode doesn't persist)."); setEnrolling(false); return; }
       if (!res.ok) { setError(`Couldn't enroll (HTTP ${res.status}).`); setEnrolling(false); return; }
-      try { localStorage.setItem("hybrid.daysPerWeek", String(days)); } catch { /* ignore */ }
+      persistIntake();
       onEnrolled();
     } catch {
       setError("Network error — try again.");
@@ -143,7 +154,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
             Plans for this goal are coming soon. Jump into the app now — you can enroll once they land.
           </Mono>
           <button
-            onClick={onEnrolled}
+            onClick={() => { persistIntake(); onEnrolled(); }}
             style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "13px 26px", marginTop: 14, cursor: "pointer" }}
           >
             Continue to the app →

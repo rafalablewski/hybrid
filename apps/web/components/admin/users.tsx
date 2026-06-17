@@ -225,6 +225,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const [grants, setGrants] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/users/${id}`)
@@ -259,6 +260,36 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       onSaved();
     } else {
       setMsg({ ok: false, text: body.error ?? "Update failed." });
+    }
+  };
+
+  // Permanently delete the account + all their data. Two-step confirm (the email
+  // must be typed back) since this is irreversible and cascades.
+  const remove = async () => {
+    if (!d) return;
+    const typed = window.prompt(
+      `This permanently deletes ${d.email} and ALL their data — sessions, check-ins, everything. This cannot be undone.\n\nType the email to confirm:`,
+    );
+    if (typed == null) return;
+    if (typed.trim().toLowerCase() !== d.email.toLowerCase()) {
+      setMsg({ ok: false, text: "Email didn't match — nothing deleted." });
+      return;
+    }
+    setDeleting(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        onSaved();
+        onClose();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setMsg({ ok: false, text: body.error ?? "Delete failed." });
+      }
+    } catch {
+      setMsg({ ok: false, text: "Network error — try again." });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -399,6 +430,36 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 }}
               >
                 {saving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+
+            {/* danger zone — irreversible account deletion (cascades all data) */}
+            <div style={{ borderTop: `1px solid ${RED}44`, marginTop: 22, paddingTop: 18 }}>
+              <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={RED}>
+                Danger zone
+              </Mono>
+              <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginBottom: 12 }} c={ASH}>
+                Permanently delete this account and everything attached to it — sessions, check-ins,
+                memberships. This cannot be undone.
+              </Mono>
+              <button
+                onClick={remove}
+                disabled={deleting}
+                style={{
+                  width: "100%",
+                  ...disp,
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: txt(RED),
+                  background: `${RED}14`,
+                  border: `1px solid ${RED}66`,
+                  borderRadius: 10,
+                  padding: "11px 0",
+                  cursor: deleting ? "default" : "pointer",
+                  opacity: deleting ? 0.6 : 1,
+                }}
+              >
+                {deleting ? "Deleting…" : "Delete account"}
               </button>
             </div>
           </>

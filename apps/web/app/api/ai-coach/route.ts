@@ -40,7 +40,8 @@ export async function POST(request: Request) {
   if (limited) return limited;
 
   const rows = await prisma.session.findMany({
-    where: { userId: user.id },
+    // Archived sessions are excluded from analytics (the athlete hid them).
+    where: { userId: user.id, archivedAt: null },
     orderBy: { startedAt: "desc" },
     take: 30,
   });

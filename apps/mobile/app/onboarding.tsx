@@ -40,12 +40,28 @@ export default function Onboarding() {
     [goal, experience, days, equipment],
   );
 
+  // Persist the intake (client-side, like the sport selection) so the
+  // prescription engine can tailor the daily session — days/week, and now
+  // experience + equipment too (previously discarded after onboarding).
+  const persistIntake = async () => {
+    await Promise.all([
+      AsyncStorage.setItem("hybrid.daysPerWeek", String(days)),
+      AsyncStorage.setItem("hybrid.experience", experience),
+      AsyncStorage.setItem("hybrid.equipment", equipment),
+    ]).catch(() => {});
+  };
+
   const start = async () => {
     if (!plan) return;
     setEnrolling(true);
-    await enrollPlan(plan.goalLabel);
-    await AsyncStorage.setItem("hybrid.daysPerWeek", String(days)).catch(() => {});
+    await enrollPlan(plan.goalLabel, plan.planId);
+    await persistIntake();
     setEnrolling(false);
+    router.replace("/(tabs)");
+  };
+
+  const continueNoPlan = async () => {
+    await persistIntake();
     router.replace("/(tabs)");
   };
 
@@ -143,7 +159,7 @@ export default function Onboarding() {
             Plans for this goal are coming soon. Jump into the app now — you can enroll once they land.
           </Mono>
           <View style={{ marginTop: 14 }}>
-            <Button label="Continue to the app →" onPress={() => router.replace("/(tabs)")} />
+            <Button label="Continue to the app →" onPress={continueNoPlan} />
           </View>
         </Card>
       )}

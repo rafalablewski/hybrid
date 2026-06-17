@@ -10,6 +10,8 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
+  planToday,
+  planDayToBlocks,
   sessionVolume,
   blockBestE1rm,
   newPrsInSession,
@@ -49,7 +51,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, fetchRoutines, createRoutine, type NewSession } from "../lib/api";
+import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
@@ -79,6 +81,9 @@ type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolea
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
 const DEFAULT_REST = 90;
+// Sources that are always a deliberate fresh start (so we can show the get-ready
+// count-in from the first frame). An empty source may instead resume a draft.
+const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan"]);
 // One-time "how logging works" coach tip — shown until the athlete completes
 // their first-ever set or dismisses it.
 const TIP_KEY = "hybrid.workoutTipSeen";
@@ -175,8 +180,12 @@ export default function Workout() {
   const [showTip, setShowTip] = useState(false);
   // Get-ready countdown on entering a fresh workout (5→1→GO) before the clock
   // starts; null once it finishes or when resuming an in-progress draft.
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const didCountdown = useRef(false);
+  // Seed it synchronously for an explicit fresh start (source is known on the
+  // first render) so the count-in is the VERY FIRST thing on screen — never a
+  // flash of the workout (and a stray elapsed second) while sessions load.
+  const initialCountdown = FRESH_SOURCES.has(source ?? "") && prefs.countIn ? 5 : null;
+  const [countdown, setCountdown] = useState<number | null>(initialCountdown);
+  const didCountdown = useRef(initialCountdown != null);
   // Pause/hold — freezes the elapsed clock (and any running rest) until resumed.
   const [paused, setPaused] = useState(false);
   const pausedAt = useRef(0);
@@ -199,8 +208,10 @@ export default function Workout() {
   const prior = useRef<LoggedSession[]>([]);
 
   useEffect(() => {
-    // Don't advance the clock during the get-ready countdown or while paused.
-    if (phase !== "active" || paused || countdown !== null) return;
+    // Don't advance the clock during the get-ready countdown or while paused —
+    // and never before the initial restore has resolved whether we count in
+    // (otherwise a fresh start leaks a stray elapsed second before the count-in).
+    if (phase !== "active" || paused || countdown !== null || !restored) return;
     const id = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt.current.getTime()) / 1000));
       if (restSince) {
@@ -214,7 +225,7 @@ export default function Workout() {
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [phase, restSince, restTarget, paused, countdown]);
+  }, [phase, restSince, restTarget, paused, countdown, restored]);
 
   // Drive the get-ready countdown: 5→1, a brief "GO", then start the clock from
   // zero so the elapsed time reflects actual training, not the count-in.
@@ -330,6 +341,15 @@ export default function Workout() {
         if (routine) {
           setTitle(routine.name || "Workout");
           setExercises(blocksToExercises(routine.blocks));
+        }
+      } else if (source === "plan") {
+        // The enrolled named plan's exact day prefills the session.
+        await clearDraft();
+        const m = await fetchMacrocycle();
+        const today = planToday(m?.planId, sessions.length);
+        if (today) {
+          setTitle(`${today.planName} · ${today.day}`);
+          setExercises(blocksToExercises(planDayToBlocks(today.items)));
         }
       } else if (source === "new") {
         // Deliberate fresh start — drop any interrupted draft.

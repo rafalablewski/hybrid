@@ -31,14 +31,55 @@ export async function fetchTranslationOverrides(): Promise<TranslationOverrides>
   }
 }
 
-export async function fetchSessions(): Promise<LoggedSession[]> {
+export async function fetchSessions(opts?: { archived?: boolean }): Promise<LoggedSession[]> {
   try {
-    const res = await fetch(`${API_URL}/api/sessions`, { headers: await authHeaders() });
+    const qs = opts?.archived ? "?archived=1" : "";
+    const res = await fetch(`${API_URL}/api/sessions${qs}`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as { sessions?: LoggedSession[] };
     return data.sessions ?? [];
   } catch {
     return [];
+  }
+}
+
+/** Soft-archive (hide from History, recoverable) or restore one of your own
+ *  workouts. */
+export async function archiveSession(id: string, archived: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ archived }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Permanently delete one of your own workouts. */
+export async function deleteSession(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/sessions/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Mirror a guest (no-account) workout to the backend so an admin sees real
+ *  pre-signup usage. No auth — there's no account yet. Best-effort. */
+export async function logAnonSession(payload: NewSession & { deviceId?: string; platform?: string }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/anon-sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
@@ -209,6 +250,24 @@ export async function resetAccount(): Promise<boolean> {
   }
 }
 
+// ---- AI coach ----
+// The server-side AI coach: builds context from your real sessions + recovery
+// and asks Claude for a personalized note (falls back to the engine rationale
+// when no key is set). Mirrors the web AskCoach call.
+export type CoachNote = { text: string; source: "ai" | "engine" | ""; readiness?: number; hpi?: number };
+
+export async function askAiCoach(): Promise<CoachNote> {
+  try {
+    const res = await fetch(`${API_URL}/api/ai-coach`, { method: "POST", headers: await authHeaders() });
+    if (res.status === 401) return { text: "Sign in to get a personalized coaching note.", source: "" };
+    if (!res.ok) return { text: "Couldn't reach the coach — try again.", source: "" };
+    const j = (await res.json()) as { text?: string; source?: "ai" | "engine"; readiness?: number; hpi?: number };
+    return { text: j.text ?? "", source: j.source ?? "", readiness: j.readiness, hpi: j.hpi };
+  } catch {
+    return { text: "Couldn't reach the coach — check your connection.", source: "" };
+  }
+}
+
 // ---- signals (Athlete Twin time-series: recovery, body mass, nutrition…) ----
 export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
@@ -236,10 +295,10 @@ export async function createSignal(kind: string, value: number, unit?: string): 
   }
 }
 
-// ---- weekly check-ins ----
+// ---- daily check-ins ----
 export type Checkin = {
   id: string;
-  weekOf: string;
+  weekOf: string; // the day the check-in covers (legacy column name)
   bodyMassKg: number | null;
   energy: number | null;
   sleep: number | null;
@@ -249,6 +308,7 @@ export type Checkin = {
   note: string | null;
   coachReply: string | null;
   repliedAt: string | null;
+  sharedWithCoach?: boolean;
   createdAt: string;
 };
 
@@ -301,12 +361,12 @@ export async function updateAssignment(id: string, status: "completed" | "skippe
   }
 }
 
-export async function enrollPlan(goal: string): Promise<boolean> {
+export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ goal }),
+      body: JSON.stringify({ goal, ...(planId ? { planId } : {}) }),
     });
     return res.ok;
   } catch {
@@ -314,11 +374,12 @@ export async function enrollPlan(goal: string): Promise<boolean> {
   }
 }
 
-type MacroRow = { id: string; goal: string; blocks: MacroBlock[]; startedAt: string };
+type MacroRow = { id: string; goal: string; planId?: string | null; blocks: MacroBlock[]; startedAt: string };
 
 // The athlete's active (latest) enrolled macrocycle reconstructed into the
-// engine shape, plus which week of it is "this week" (derived from startedAt).
-export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number } | null> {
+// engine shape, plus which week of it is "this week" (derived from startedAt)
+// and the enrolled named-plan id (when they picked a real plan).
+export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWeek: number; planId: string | null } | null> {
   try {
     const res = await fetch(`${API_URL}/api/macrocycles`, { headers: await authHeaders() });
     if (!res.ok) return null;
@@ -331,6 +392,7 @@ export async function fetchMacrocycle(): Promise<{ macro: Macrocycle; currentWee
     return {
       macro: { model: "", goalOrSport: row.goal, totalWeeks, eventInWeeks: null, blocks },
       currentWeek: Math.max(1, Math.min(totalWeeks, elapsed)),
+      planId: row.planId ?? null,
     };
   } catch {
     return null;

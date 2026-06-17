@@ -26,12 +26,22 @@ const apiRoutes = walk(join(APP_ROOT, "app", "api"), ["route.ts"]);
 const adminRoutes = apiRoutes.filter((f) => f.includes(join("api", "admin")));
 const read = (f: string) => readFileSync(f, "utf8");
 
+// Deliberately PUBLIC routes — no user/machine auth is possible because there's
+// no account or signing secret. They are allow-listed from the auth check but
+// MUST still be rate-limited (enforced below), so the allow-list can't become a
+// silent open door.
+//   - anon-sessions: a guest logs a workout BEFORE creating an account, so an
+//     admin sees real pre-signup usage. Non-PII (opaque deviceId + blocks).
+const PUBLIC_ROUTES = [join("api", "anon-sessions")];
+const isPublic = (f: string) => PUBLIC_ROUTES.some((p) => f.includes(p));
+
 describe("authentication: every API route authenticates", () => {
   it("found a meaningful number of routes", () => {
     expect(apiRoutes.length).toBeGreaterThan(20);
   });
   it("no route is reachable without an auth helper", () => {
     const offenders = apiRoutes.filter((f) => {
+      if (isPublic(f)) return false; // intentionally public — see PUBLIC_ROUTES
       const src = read(f);
       // A route authenticates via a user session (getOrCreateDbUser/requireAdmin,
       // or requireAgentOperator which wraps requireAdmin) OR a machine channel:
@@ -40,6 +50,12 @@ describe("authentication: every API route authenticates", () => {
       return !/getOrCreateDbUser|requireAdmin|requireAgentOperator|CRON_SECRET|verifySlackSignature|constructEvent/.test(src);
     });
     expect(offenders, `routes missing an auth check:\n${offenders.join("\n")}`).toEqual([]);
+  });
+  it("every deliberately-public route is rate-limited", () => {
+    const offenders = apiRoutes
+      .filter(isPublic)
+      .filter((f) => !/rateLimit/.test(read(f)));
+    expect(offenders, `public routes missing a rate limit:\n${offenders.join("\n")}`).toEqual([]);
   });
 });
 

@@ -11,6 +11,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const checkin = await prisma.checkin.findUnique({ where: { id } });
   if (!checkin) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // The coach can only reply to a check-in the athlete chose to share.
+  if (!checkin.sharedWithCoach) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+
   const link = await prisma.coachLink.findFirst({
     where: { coachId: me.id, clientId: checkin.userId, status: "ACTIVE" },
   });
