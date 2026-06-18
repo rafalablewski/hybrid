@@ -54,7 +54,7 @@ describe("navForPersona", () => {
 
   it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["calendar", "checkin", "history", "log", "nutrition", "progress", "settings", "today"],
+      ["calendar", "checkin", "history", "log", "nutrition", "progress", "runtrack", "settings", "today"],
     );
   });
 

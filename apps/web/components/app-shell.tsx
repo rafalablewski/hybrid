@@ -45,6 +45,8 @@ import AuroraCompetition from "./aurora/competition";
 import AuroraPeriodize from "./aurora/periodize";
 import AuroraBuilder from "./aurora/builder";
 import AuroraLogger from "./aurora/logger";
+import RunTrack from "./run-track";
+import AuroraRunTrack from "./aurora/run-track";
 import AuroraCoach from "./aurora/coach";
 import AuroraUpgrade from "./aurora/upgrade";
 import AuroraOrg from "./aurora/org";
@@ -633,6 +635,8 @@ export default function AppShell() {
           ))}
 
         {screen === "sport" && (aurora ? <AuroraSport /> : <SportScreen />)}
+
+        {screen === "runtrack" && (aurora ? <AuroraRunTrack onSaved={refresh} /> : <RunTrack onSaved={refresh} />)}
 
         {screen === "video" && (aurora ? <AuroraVideo /> : <VideoScreen />)}
 
