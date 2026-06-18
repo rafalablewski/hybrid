@@ -3,6 +3,8 @@ import { View, Text, Pressable, Linking } from "react-native";
 import { fetchConnections, syncConnection, API_BASE, type Conn, type Provider } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraConnections from "../components/aurora/connections";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -12,6 +14,11 @@ const statusColor = (s: string, C: Palette) =>
  *  write into the Signal ontology. OAuth providers show "setup pending" until
  *  credentials land. Mobile port. */
 export default function Connections() {
+  if (useTemplate().template === "aurora") return <AuroraConnections />;
+  return <ClassicConnections />;
+}
+
+function ClassicConnections() {
   const C = useTheme().palette;
   const [connections, setConnections] = useState<Conn[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
