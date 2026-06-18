@@ -61,10 +61,15 @@ export default function AuroraOnboarding() {
 
   const finish = async () => {
     setEnrolling(true);
-    if (plan) await enrollPlan(plan.goalLabel, plan.planId);
-    await persistIntake();
-    setEnrolling(false);
-    router.replace("/(tabs)");
+    try {
+      if (plan) await enrollPlan(plan.goalLabel, plan.planId);
+      await persistIntake();
+      router.replace("/(tabs)");
+    } catch (err) {
+      console.error("Failed to complete onboarding:", err);
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   const next = () => {

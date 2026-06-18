@@ -1,4 +1,4 @@
-import { Image, type ImageStyle, type StyleProp } from "react-native";
+import { Image, type ColorValue, type ImageStyle, type StyleProp } from "react-native";
 import type { AuroraIconName } from "@hybrid/core";
 
 /**
@@ -39,7 +39,7 @@ export function AuroraIcon({
 }: {
   name: AuroraIconName;
   size?: number;
-  color?: string;
+  color?: ColorValue;
   style?: StyleProp<ImageStyle>;
 }) {
   return (

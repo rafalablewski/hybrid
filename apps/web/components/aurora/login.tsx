@@ -32,6 +32,7 @@ export default function AuroraLogin() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaStep, setMfaStep] = useState<{ factorId: string; challengeId: string } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
 
@@ -170,7 +171,9 @@ export default function AuroraLogin() {
             )}
             <Field icon="mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" style={bareInput} /></Field>
             {live && (
-              <Field icon="lock" trailing="eye"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" style={bareInput} /></Field>
+              <Field icon="lock" trailing="eye" onTrailingClick={() => setShowPassword((v) => !v)} trailingActive={showPassword}>
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" style={bareInput} />
+              </Field>
             )}
 
             {error && <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}
@@ -204,12 +207,20 @@ export default function AuroraLogin() {
   );
 }
 
-function Field({ icon, trailing, children }: { icon: AuroraIconName; trailing?: AuroraIconName; children: React.ReactNode }) {
+function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { icon: AuroraIconName; trailing?: AuroraIconName; onTrailingClick?: () => void; trailingActive?: boolean; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", borderRadius: 16, background: INK2, border: `1px solid ${LINE}`, marginBottom: 13 }}>
       <AuroraIcon name={icon} size={20} color={ASH} />
       {children}
-      {trailing && <AuroraIcon name={trailing} size={20} color={ASH} />}
+      {trailing && (
+        onTrailingClick ? (
+          <button type="button" onClick={onTrailingClick} aria-label="Toggle password visibility" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
+            <AuroraIcon name={trailing} size={20} color={trailingActive ? LIME : ASH} />
+          </button>
+        ) : (
+          <AuroraIcon name={trailing} size={20} color={ASH} />
+        )
+      )}
     </div>
   );
 }

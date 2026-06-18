@@ -24,9 +24,11 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
   const [template, setTemplateState] = useState<TemplateName>(DEFAULT_TEMPLATE);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY).then((v) => {
-      if (v != null) setTemplateState(resolveTemplate(v));
-    });
+    AsyncStorage.getItem(KEY)
+      .then((v) => {
+        if (v != null) setTemplateState(resolveTemplate(v));
+      })
+      .catch((err) => console.error("Failed to load template from AsyncStorage:", err));
   }, []);
 
   const setTemplate = (t: TemplateName) => {

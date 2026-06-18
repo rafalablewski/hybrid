@@ -37,6 +37,7 @@ export default function AuroraHome() {
         setAssignments(a);
         setSignals(sig);
       })
+      .catch((err) => console.error("Failed to load home data:", err))
       .finally(() => setRefreshing(false));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -50,22 +51,30 @@ export default function AuroraHome() {
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hasData = sessions.length > 0;
 
-  const upcoming = assignments
-    .filter((a) => a.status === "assigned")
-    .sort((x, y) => Date.parse(x.date) - Date.parse(y.date))
-    .slice(0, 2);
+  const upcoming = useMemo(
+    () =>
+      assignments
+        .filter((a) => a.status === "assigned")
+        .sort((x, y) => Date.parse(x.date) - Date.parse(y.date))
+        .slice(0, 2),
+    [assignments],
+  );
 
   // Today's prescribed blocks become the "Today's Activity" schedule rows.
-  const todayItems = rx.blocks.slice(0, 3).map((b) => ({
-    name: b.name,
-    kind: b.kind,
-    sub:
-      b.kind === "strength"
-        ? "Primary lift"
-        : b.kind === "conditioning"
-          ? b.format
-          : `${b.distance ? `${b.distance} km` : "Steady cardio"}`,
-  }));
+  const todayItems = useMemo(
+    () =>
+      rx.blocks.slice(0, 3).map((b) => ({
+        name: b.name,
+        kind: b.kind,
+        sub:
+          b.kind === "strength"
+            ? "Primary lift"
+            : b.kind === "conditioning"
+              ? b.format
+              : `${b.distance ? `${b.distance} km` : "Steady cardio"}`,
+      })),
+    [rx.blocks],
+  );
   // Conditioning opens the interval timer; everything else opens the logger.
   const startItem = (it: { name: string; kind: string }) =>
     it.kind === "conditioning"

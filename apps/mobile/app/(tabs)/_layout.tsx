@@ -15,7 +15,7 @@ import AuroraTabBar, { type AuroraTabBarProps } from "../../components/aurora/ta
 const glyphIcon = (glyph: string) => ({ color }: { color: ColorValue }) =>
   <Text style={{ color, fontSize: 16 }}>{glyph}</Text>;
 const auroraTabIcon = (name: AuroraIconName) => ({ color }: { color: ColorValue }) =>
-  <AuroraIcon name={name} size={23} color={color as string} />;
+  <AuroraIcon name={name} size={23} color={color} />;
 // Aurora swaps the bar's glyphs for the uploaded line-icon set.
 const icon = (glyph: string, aurora: boolean, name: AuroraIconName) =>
   aurora ? auroraTabIcon(name) : glyphIcon(glyph);

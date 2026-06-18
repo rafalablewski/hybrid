@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   View,
   Text,
@@ -179,6 +179,8 @@ export function AField({
   icon?: AuroraIconName;
 }) {
   const { palette } = useTheme();
+  // Secure fields start masked; the eye toggles visibility.
+  const [visible, setVisible] = useState(false);
   return (
     <View
       style={{
@@ -199,12 +201,16 @@ export function AField({
         onChangeText={onChange}
         placeholder={placeholder}
         placeholderTextColor={palette.ash}
-        secureTextEntry={secure}
+        secureTextEntry={secure ? !visible : false}
         keyboardType={keyboard ?? "default"}
         autoCapitalize="none"
         style={{ flex: 1, fontFamily: F.reg, fontSize: 15, color: palette.chalk, paddingVertical: 17 }}
       />
-      {secure && <AuroraIcon name="eye" size={20} color={palette.ash} />}
+      {secure && (
+        <Pressable onPress={() => setVisible((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={visible ? "Hide password" : "Show password"}>
+          <AuroraIcon name="eye" size={20} color={visible ? palette.lime : palette.ash} />
+        </Pressable>
+      )}
     </View>
   );
 }
