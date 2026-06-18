@@ -43,6 +43,7 @@ import AuroraPlans from "./aurora/plans";
 import AuroraSport from "./aurora/sport";
 import AuroraCompetition from "./aurora/competition";
 import AuroraPeriodize from "./aurora/periodize";
+import AuroraBuilder from "./aurora/builder";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
@@ -596,7 +597,7 @@ export default function AppShell() {
 
         {screen === "calendar" && (aurora ? <AuroraCalendar sessions={sessions} /> : <Calendar sessions={sessions} />)}
 
-        {screen === "builder" && <Builder />}
+        {screen === "builder" && (aurora ? <AuroraBuilder /> : <Builder />)}
 
         {screen === "squad" && <TeamMonitor />}
 
