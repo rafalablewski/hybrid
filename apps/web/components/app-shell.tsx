@@ -54,6 +54,7 @@ import AuroraLongevity from "./aurora/longevity";
 import Velocity from "./velocity";
 import Running from "./running";
 import Volume from "./volume";
+import AuroraVolume from "./aurora/volume";
 import Exercises from "./exercises";
 import Trends from "./trends";
 import TeamCompare from "./team-compare";
@@ -567,7 +568,7 @@ export default function AppShell() {
 
         {screen === "running" && <Running sessions={sessions} />}
 
-        {screen === "volume" && <Volume sessions={sessions} />}
+        {screen === "volume" && (aurora ? <AuroraVolume sessions={sessions} /> : <Volume sessions={sessions} />)}
 
         {screen === "exercises" && <Exercises sessions={sessions} focus={exerciseFocus} />}
 
