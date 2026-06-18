@@ -29,7 +29,17 @@ export type AuroraIconName =
   | "add"
   | "logout"
   | "settings"
-  | "share";
+  | "share"
+  | "bookmark"
+  | "list-check"
+  | "list-play"
+  | "list-add"
+  | "calendar-event"
+  | "user-circle"
+  | "user-add"
+  | "store"
+  | "globe"
+  | "swap";
 
 /** name → one or more SVG path `d` strings (72×72 viewBox, fill:none stroke). */
 export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
@@ -84,4 +94,53 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
     "M39 36C39 37.6569 37.6569 39 36 39C34.3432 39 33 37.6569 33 36C33 34.3431 34.3432 33 36 33C37.6569 33 39 34.3431 39 36Z",
   ],
   share: ["M24 21L36 9L48 21M36 9V48M60 39V54C60 57.3137 57.3137 60 54 60H18C14.6863 60 12 57.3137 12 54L12 39"],
+  bookmark: ["M18 18C18 14.6863 20.6863 12 24 12H48C51.3137 12 54 14.6863 54 18V56.1803C54 58.7906 50.897 60.1556 48.9728 58.3918L36 46.5L23.0272 58.3918C21.103 60.1556 18 58.7906 18 56.1803V18Z"],
+  "list-check": ["M9 33H39M9 21H39M9 45H27M38.7944 45.9943L46.4788 53.6787C47.6503 54.8502 49.5498 54.8502 50.7214 53.6787L64.923 39.4771"],
+  "list-play": ["M15 33H45M15 21H45M15 45H33M45 45V57L57 51L45 45Z"],
+  "list-add": ["M51 57V33M9 33H39M9 21H39M9 45H27M39 45H63"],
+  "calendar-event": ["M60 27H12M21 9V15M51 9V15M48 46.5C48 48.9853 45.9853 51 43.5 51C41.0147 51 39 48.9853 39 46.5C39 44.0147 41.0147 42 43.5 42C45.9853 42 48 44.0147 48 46.5ZM18 63H54C57.3137 63 60 60.3137 60 57V21C60 17.6863 57.3137 15 54 15H18C14.6863 15 12 17.6863 12 21V57C12 60.3137 14.6863 63 18 63Z"],
+  "user-circle": ["M54 56.125C52.4497 49.125 46.607 45 36.0004 45C25.3938 45 19.5503 49.125 18 56.125M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63ZM36 36C40 36 42 33.8571 42 28.5C42 23.1429 40 21 36 21C32 21 30 23.1429 30 28.5C30 33.8571 32 36 36 36Z"],
+  "user-add": ["M9 33H24M16.5 40.5V25.5M43.5 42C54.8899 42 60.6914 46.0121 62.4279 54.0364C63.1287 57.2751 60.3137 60 57 60H30C26.6863 60 23.8713 57.2752 24.5721 54.0364C26.3086 46.0121 32.1101 42 43.5 42ZM43.5 30C48.5 30 51 27.4286 51 21C51 14.5714 48.5 12 43.5 12C38.5 12 36 14.5714 36 21C36 27.4286 38.5 30 43.5 30Z"],
+  store: ["M60 34.8633V54C60 57.3137 57.3137 60 54 60H18C14.6863 60 12 57.3137 12 54V34.8633M48 12L49.5 29.25C49.5 32.9779 52.5221 36 56.25 36C59.7181 36 62.5753 33.3845 62.9567 30.0185C63.0143 29.5107 62.9347 28.9997 62.8057 28.5052L59.6701 16.4855C58.9809 13.8435 56.5948 12 53.8644 12H18.1356C15.4052 12 13.0191 13.8435 12.3299 16.4855L9.1943 28.5052C9.06529 28.9997 8.98572 29.5107 9.04326 30.0185C9.42472 33.3845 12.2819 36 15.75 36C19.4779 36 22.5 32.9779 22.5 29.25M24 12L22.5 29.25C22.5 32.9779 25.5221 36 29.25 36C32.9779 36 36 32.9779 36 29.25M36 29.25C36 32.9779 39.0221 36 42.75 36C46.4779 36 49.5 32.9779 49.5 29.25M36 29.25V12"],
+  globe: ["M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9M36 63C21.0883 63 9 50.9117 9 36C9 21.0883 21.0883 9 36 9M36 63C28.3953 55.1698 24 45.9154 24 36C24 26.0846 28.3953 16.8302 36 9M36 63C43.6047 55.1698 48 45.9154 48 36C48 26.0846 43.6047 16.8302 36 9M60 27H12M60 45H12"],
+  swap: ["M18 39L9 48L18 57M9 48H33C37.9706 48 42 43.9706 42 39V36M30 36V33C30 28.0294 34.0294 24 39 24H63M54 15L63 24L54 33"],
+};
+
+/**
+ * AURORA nav glyphs — maps a NAV_ITEMS id to a design-kit line icon, so the
+ * Aurora sidebar/nav uses the uploaded icon set instead of the classic unicode/
+ * emoji glyphs. The kit is a generic UI set (no fitness/chart glyphs), so the
+ * fitness-specific items (today, cockpit, performance, analytics, volume, sport,
+ * competition, force-plate, tactical, timer, velocity) intentionally have NO
+ * mapping and fall back to their NAV_ITEMS glyph. Classic always uses the glyph.
+ */
+export const AURORA_NAV_ICONS: Partial<Record<string, AuroraIconName>> = {
+  notifications: "bell",
+  log: "list-add",
+  timer: "play",
+  velocity: "arrow-up",
+  runtrack: "location",
+  calendar: "calendar",
+  builder: "add",
+  plans: "bookmark",
+  periodize: "calendar-event",
+  statistics: "arrow-up",
+  exercises: "list-check",
+  trends: "arrow-up",
+  running: "navigation",
+  video: "list-play",
+  history: "calendar-event",
+  checkin: "check",
+  nutrition: "heart",
+  progress: "verified",
+  longevity: "heart",
+  coach: "user-circle",
+  squad: "user-add",
+  teamcompare: "swap",
+  org: "store",
+  talent: "verified",
+  connections: "globe",
+  roles: "lock",
+  settings: "settings",
+  upgrade: "verified",
 };

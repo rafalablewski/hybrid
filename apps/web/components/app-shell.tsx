@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { AuroraIcon } from "./aurora/icons";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -269,6 +270,9 @@ export default function AppShell() {
                 )}
                 {visible.map(({ id, label: fallback, icon: ic }) => {
                   const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
+                  // Aurora: use the uploaded design-kit line icon where one maps;
+                  // fitness-specific items (no kit glyph) keep their unicode glyph.
+                  const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
                   return (
                     <button
                       key={id}
@@ -293,7 +297,9 @@ export default function AppShell() {
                         textAlign: "left",
                       }}
                     >
-                      <span style={{ fontSize: 16 }}>{ic}</span>
+                      <span style={{ fontSize: 16, display: "grid", placeItems: "center", width: 18, height: 18 }}>
+                        {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
+                      </span>
                       {!collapsed && label}
                     </button>
                   );
@@ -573,7 +579,7 @@ export default function AppShell() {
 
         {screen === "today" && (
           aurora ? (
-            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />
           ) : (
             <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
           )

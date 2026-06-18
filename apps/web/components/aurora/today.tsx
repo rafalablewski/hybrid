@@ -49,6 +49,7 @@ export default function AuroraToday({
   currentWeek = 1,
   planId,
   onStart,
+  onNavigate,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -56,6 +57,8 @@ export default function AuroraToday({
   currentWeek?: number;
   planId?: string | null;
   onStart: (planBlocks?: SessionBlock[]) => void;
+  /** In-shell navigation (keeps the sidebar); falls back to a route push. */
+  onNavigate?: (screen: string) => void;
 }) {
   const router = useRouter();
   const { session } = useSession();
@@ -102,7 +105,7 @@ export default function AuroraToday({
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <div style={iconBtn}><AuroraIcon name="search" size={22} color={C("ash")} /></div>
-          <button onClick={() => router.push("/notifications")} style={iconBtn} aria-label="Notifications"><AuroraIcon name="bell" size={22} color={C("ash")} /></button>
+          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label="Notifications"><AuroraIcon name="bell" size={22} color={C("ash")} /></button>
         </div>
       </div>
 
@@ -221,7 +224,7 @@ export default function AuroraToday({
 
       {/* YOUR WEEK — recap (tap → full Statistics) */}
       {hasData && (
-        <button onClick={() => router.push("/statistics")} style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}`, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
+        <button onClick={() => (onNavigate ? onNavigate("statistics") : router.push("/statistics"))} style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}`, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your week</span>
             <div style={{ display: "flex", gap: 8 }}>

@@ -29,6 +29,16 @@ const SOURCES: Record<AuroraIconName, ReturnType<typeof require>> = {
   logout: require("../../assets/icons/logout.png"),
   settings: require("../../assets/icons/settings.png"),
   share: require("../../assets/icons/share.png"),
+  bookmark: require("../../assets/icons/bookmark.png"),
+  "list-check": require("../../assets/icons/list-check.png"),
+  "list-play": require("../../assets/icons/list-play.png"),
+  "list-add": require("../../assets/icons/list-add.png"),
+  "calendar-event": require("../../assets/icons/calendar-event.png"),
+  "user-circle": require("../../assets/icons/user-circle.png"),
+  "user-add": require("../../assets/icons/user-add.png"),
+  store: require("../../assets/icons/store.png"),
+  globe: require("../../assets/icons/globe.png"),
+  swap: require("../../assets/icons/swap.png"),
 };
 
 export function AuroraIcon({
