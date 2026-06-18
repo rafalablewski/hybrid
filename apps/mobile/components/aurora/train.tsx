@@ -124,6 +124,11 @@ export default function AuroraTrain() {
         </ACard>
       )}
 
+      {/* Build a reusable routine */}
+      <Pressable onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>＋ Build a routine</Text>
+      </Pressable>
+
       <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
   );
