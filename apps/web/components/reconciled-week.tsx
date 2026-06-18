@@ -145,7 +145,13 @@ export default function ReconciledWeek({
   if (!reconciled) return null;
 
   return (
-    <Card style={{ borderLeft: `3px solid ${VIOLET}`, ...style }}>
+    // Aurora: a solid ink2 card (matching the bespoke Aurora cards) instead of
+    // the classic liquid-glass surface, so "This week" sits flush with the rest
+    // of the Aurora Today. Classic keeps the glass card.
+    <Card
+      glass={!aurora}
+      style={{ borderLeft: `3px solid ${VIOLET}`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
           This week · {reconciled.phase.label} · week {reconciled.phase.week}
