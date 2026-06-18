@@ -27,15 +27,15 @@ const field = (line, key) => {
 const planned = [];
 const blocked = [];
 for (const line of src.split("\n")) {
-  // Match the real `status` FIELD only — it's always immediately followed by a
-  // comma (`status: "planned", title: …`). Requiring the comma stops prose in a
-  // `detail` string that merely mentions status:"planned"/"blocked" (like this
-  // hook's own entry) from being mis-counted as backlog.
-  if (/status:\s*"planned"\s*,/.test(line)) {
-    planned.push({ id: field(line, "id"), title: field(line, "title") });
-  } else if (/status:\s*"blocked"\s*,/.test(line)) {
-    blocked.push({ id: field(line, "id"), title: field(line, "title"), by: field(line, "blockedBy") });
-  }
+  // Anchor to the entry's real top-level shape — `{ id: "…", area: "…",
+  // status: "(planned|blocked)"` at the START of the line — so prose inside a
+  // detail/blockedBy string that merely mentions a status can never match
+  // (this hook's own entry does exactly that). id comes straight from the match.
+  const m = line.match(/^\s*\{\s*id:\s*"([^"]+)",\s*area:\s*"[^"]+",\s*status:\s*"(planned|blocked)"/);
+  if (!m) continue;
+  const [, id, status] = m;
+  if (status === "planned") planned.push({ id, title: field(line, "title") });
+  else blocked.push({ id, title: field(line, "title"), by: field(line, "blockedBy") });
 }
 
 if (!planned.length && !blocked.length) process.exit(0);
