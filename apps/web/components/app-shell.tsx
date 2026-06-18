@@ -58,6 +58,7 @@ import AuroraVolume from "./aurora/volume";
 import Exercises from "./exercises";
 import AuroraExercises from "./aurora/exercises";
 import Trends from "./trends";
+import AuroraTrends from "./aurora/trends";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
@@ -573,7 +574,7 @@ export default function AppShell() {
 
         {screen === "exercises" && (aurora ? <AuroraExercises sessions={sessions} focus={exerciseFocus} /> : <Exercises sessions={sessions} focus={exerciseFocus} />)}
 
-        {screen === "trends" && <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
+        {screen === "trends" && (aurora ? <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} /> : <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />)}
 
         {screen === "forceplate" && <ForcePlate />}
 
