@@ -137,9 +137,14 @@ export function resolvePersona(
   role: "client" | "coach" | "admin",
   clientChoice?: ClientPersona,
   entitlement: Entitlement = "free",
+  hasActiveCoach = false,
 ): Persona {
   if (role === "admin") return "admin";
   if (role === "coach") return "coach";
+  // A client with an ACTIVE coach gets the full athlete experience (adaptive
+  // plan, reconciled week, Twin) on their coach's seat — "your coach pays, you
+  // get Full" — regardless of their own billing entitlement or mode choice.
+  if (hasActiveCoach) return "athlete";
   if (clientChoice === "athlete" && entitlement === "paid") return "athlete";
   return "casual";
 }

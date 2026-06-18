@@ -643,6 +643,69 @@ export async function getCoachLinks(): Promise<{ asCoach: CoachLink[]; asClient:
   }
 }
 
+// ---- coach client groups (assign a plan to many clients at once) ----
+export type CoachGroup = { id: string; name: string; clientIds: string[] };
+
+export async function getCoachGroups(): Promise<{ groups: CoachGroup[]; unavailable: boolean }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/groups`, { headers: await authHeaders() });
+    if (!res.ok) return { groups: [], unavailable: false };
+    const d = (await res.json()) as { groups?: CoachGroup[]; unavailable?: boolean };
+    return { groups: d.groups ?? [], unavailable: Boolean(d.unavailable) };
+  } catch {
+    return { groups: [], unavailable: false };
+  }
+}
+
+export async function createCoachGroup(name: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/groups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ name }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function patchCoachGroup(id: string, body: { name?: string; clientIds?: string[] }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/groups/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteCoachGroup(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/groups/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function assignPlanToGroup(id: string, goal: string, planId?: string): Promise<{ ok: boolean; assigned?: number; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/groups/${id}/assign-plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ goal, ...(planId ? { planId } : {}) }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { assigned?: number; error?: string };
+    return { ok: res.ok, assigned: j.assigned, error: j.error };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
 export async function inviteClient(email: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(`${API_URL}/api/coach/links`, {

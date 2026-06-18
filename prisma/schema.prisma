@@ -63,6 +63,7 @@ model User {
   assignmentsMade Assignment[]     @relation("assignmentCoach")
   coachLinks    CoachLink[]     @relation("asClient")
   clientLinks   CoachLink[]     @relation("asCoach")
+  coachGroups   CoachGroup[]    @relation("coachGroups")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
@@ -120,6 +121,23 @@ model CoachLink {
 
   @@unique([coachId, clientId])
   @@index([clientId])
+  @@index([coachId])
+}
+
+// A solo coach's lightweight client GROUP (e.g. "Tuesday 6am squad") — a named
+// set of the coach's clients, so a coach can assign a whole plan to all of them
+// at once. Distinct from the enterprise Org Graph (Organization/Team/Membership),
+// which models institutions. Members are stored as client user ids and each is
+// re-validated against an ACTIVE CoachLink at assign time (membership is not a
+// grant on its own).
+model CoachGroup {
+  id        String   @id @default(cuid())
+  coach     User     @relation("coachGroups", fields: [coachId], references: [id])
+  coachId   String
+  name      String
+  clientIds String[] @default([])
+  createdAt DateTime @default(now())
+
   @@index([coachId])
 }
 

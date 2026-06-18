@@ -68,11 +68,11 @@ export const REVENUE_STREAMS: RevenueStream[] = [
     label: "Coaching seats (B2B2C)",
     whoPays: "PTs & online coaches (per roster)",
     howItWorks:
-      "The coach pays a monthly seat fee scaled to roster size; their rostered athletes get Pro features included. The weekly check-in (the coaching heartbeat) is the recurring ritual clients stay for, so the seat compounds with retention.",
+      "The coach pays a monthly seat fee scaled to roster size; their rostered athletes get the full adaptive (Pro) experience included ON THE COACH'S SEAT — no per-client subscription. The coach builds a plan and assigns it straight into a client's account (or to a whole client group at once); the weekly check-in (the coaching heartbeat) is the recurring ritual clients stay for, so the seat compounds with retention.",
     tiers: [
       { name: "Starter", price: "$29/mo", note: "Up to 10 athletes." },
-      { name: "Pro", price: "$79/mo", note: "Up to 40 athletes." },
-      { name: "Business", price: "$199/mo", note: "Up to 150 athletes + Team OS (org graph, segmentation)." },
+      { name: "Pro", price: "$79/mo", note: "Up to 40 athletes + client groups & bulk plan assignment." },
+      { name: "Business", price: "$199/mo", note: "Up to 150 athletes + Team OS (org graph, roles, segmentation)." },
     ],
   },
   {
@@ -400,6 +400,9 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
 
   // Coaching & teams — the coach seat
   { group: "Coaching & teams (Coach seat)", feature: "Roster, client notes & check-in replies", free: false, pro: false, coach: true, org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Assign plans into a client's account", free: false, pro: false, coach: true, org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Client groups + bulk plan assignment", free: false, pro: false, coach: "Pro seat+", org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Rostered clients get the adaptive experience (no per-client sub)", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Squad monitor & team compare", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Private coaching notes", free: false, pro: false, coach: true, org: true },
 

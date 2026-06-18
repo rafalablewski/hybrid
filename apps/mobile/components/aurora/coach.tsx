@@ -17,6 +17,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import CoachGroups from "../coach-groups";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
@@ -158,6 +159,9 @@ export default function AuroraCoach() {
               </View>
             </ACard>
           ))}
+
+          <AHeading style={{ fontSize: 18, marginTop: 22 }}>Client groups</AHeading>
+          <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
         </>
       )}
     </AuroraScreen>

@@ -17,13 +17,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (link.coachId !== me.id || link.status !== "ACTIVE")
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const b = (await request.json().catch(() => ({}))) as { goal?: unknown };
+  const b = (await request.json().catch(() => ({}))) as { goal?: unknown; planId?: unknown };
   if (typeof b.goal !== "string" || !b.goal.trim())
     return NextResponse.json({ error: "goal is required" }, { status: 400 });
+  // Optional: a specific named plan from the library (drives the client's
+  // "Your plan today" exactly as written; null = engine-prescribed by goal).
+  const planId = typeof b.planId === "string" && b.planId.trim() ? b.planId.trim() : null;
 
   const macro = buildMacrocycle(b.goal.trim());
   const macrocycle = await prisma.macrocycle.create({
-    data: { userId: link.clientId, goal: b.goal.trim(), eventDate: null, blocks: macro.blocks as object },
+    data: { userId: link.clientId, goal: b.goal.trim(), planId, eventDate: null, blocks: macro.blocks as object },
   });
   return NextResponse.json({ macrocycle }, { status: 201 });
 }

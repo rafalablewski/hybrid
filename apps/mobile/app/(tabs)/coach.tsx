@@ -18,6 +18,7 @@ import { Screen, Card, Kicker, Mono, Chip, Button, Loading, F } from "../../lib/
 import { useTheme } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraCoach from "../../components/aurora/coach";
+import CoachGroups from "../../components/coach-groups";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
@@ -154,6 +155,9 @@ function ClassicCoach() {
               </View>
             </Card>
           ))}
+
+          <View style={{ marginTop: 18 }}><Kicker color={C.violet}>Client groups</Kicker></View>
+          <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
         </>
       )}
     </Screen>

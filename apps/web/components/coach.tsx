@@ -160,7 +160,115 @@ export default function CoachScreen() {
           </Card>
         ))}
       </Section>
+
+      {/* CLIENT GROUPS — bundle clients and push a whole plan to all of them at
+          once (the solo-coach version of segmentation; Pro seat). */}
+      <Section title="Client groups" color={VIOLET}>
+        <GroupsManager clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
+      </Section>
     </div>
+  );
+}
+
+type Group = { id: string; name: string; clientIds: string[] };
+
+// Solo-coach client groups: create a group, toggle which active clients belong,
+// then assign a whole periodized plan (by goal) to everyone at once. Soft-
+// degrades to an "enable it" note until reference/sql-coach-groups.sql is run.
+function GroupsManager({ clients }: { clients: { clientId: string; name: string }[] }) {
+  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [goalFor, setGoalFor] = useState<Record<string, string>>({});
+
+  const load = useCallback(() => {
+    fetch("/api/coach/groups")
+      .then((r) => r.json())
+      .then((d) => {
+        setUnavailable(Boolean(d.unavailable));
+        setGroups((d.groups as Group[]) ?? []);
+      })
+      .catch(() => setGroups([]));
+  }, []);
+  useEffect(load, [load]);
+
+  const create = async () => {
+    const name = newName.trim();
+    if (!name) return;
+    const res = await fetch("/api/coach/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+    if (res.ok) { setNewName(""); load(); }
+    else { const j = await res.json().catch(() => ({})); setMsg(j.error ?? "Couldn't create the group."); }
+  };
+  const patch = async (id: string, body: object) => {
+    await fetch(`/api/coach/groups/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => {});
+    load();
+  };
+  const toggle = (g: Group, clientId: string) => {
+    const has = g.clientIds.includes(clientId);
+    patch(g.id, { clientIds: has ? g.clientIds.filter((x) => x !== clientId) : [...g.clientIds, clientId] });
+  };
+  const del = async (id: string) => { await fetch(`/api/coach/groups/${id}`, { method: "DELETE" }).catch(() => {}); load(); };
+  const assign = async (g: Group) => {
+    const goal = goalFor[g.id] || GEN_GOALS[0] || "Hybrid";
+    setMsg(null);
+    const res = await fetch(`/api/coach/groups/${g.id}/assign-plan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal }) });
+    const j = (await res.json().catch(() => ({}))) as { assigned?: number; error?: string };
+    setMsg(res.ok ? `Assigned “${goal}” to ${j.assigned} client${j.assigned === 1 ? "" : "s"}.` : (j.error ?? "Couldn't assign."));
+    if (res.ok) load();
+  };
+
+  if (groups === null) return <Mono>Loading…</Mono>;
+
+  return (
+    <>
+      {unavailable && (
+        <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
+          <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            Groups aren&apos;t persisted yet — run <span style={{ color: txt(AMBER) }}>reference/sql-coach-groups.sql</span> in Supabase to enable them.
+          </Mono>
+        </Card>
+      )}
+      <Card>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>New group</Mono>
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Tuesday 6am squad"
+            style={{ ...mono, fontSize: 14, flex: 1, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }} />
+          <Btn label="Create" color={newName.trim() ? LIME : ASH} onClick={create} />
+        </div>
+      </Card>
+      {msg && <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={LIME}>{msg}</Mono>}
+      {groups.map((g) => (
+        <Card key={g.id}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{g.name}</div>
+            <Btn label="Delete" color={ASH} onClick={() => del(g.id)} />
+          </div>
+          <Mono s={{ fontSize: 11, display: "block", marginTop: 4 }}>{g.clientIds.length} member{g.clientIds.length === 1 ? "" : "s"}</Mono>
+          {clients.length === 0 ? (
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }}>Invite athletes first — your active clients show up here to add.</Mono>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {clients.map((c) => {
+                const on = g.clientIds.includes(c.clientId);
+                return (
+                  <button key={c.clientId} onClick={() => toggle(g, c.clientId)}
+                    style={{ ...mono, fontSize: 12, padding: "6px 10px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? LIME : LINE}`, background: on ? `${LIME}1c` : "transparent", color: txt(on ? LIME : ASH) }}>
+                    {on ? "✓ " : ""}{c.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <Select value={goalFor[g.id] || GEN_GOALS[0]} onChange={(e) => setGoalFor((m) => ({ ...m, [g.id]: e.target.value }))} style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
+              {GEN_GOALS.map((gg) => <option key={gg} value={gg}>{gg}</option>)}
+            </Select>
+            <Btn label="Assign plan to group" color={g.clientIds.length ? VIOLET : ASH} onClick={() => assign(g)} />
+          </div>
+        </Card>
+      ))}
+    </>
   );
 }
 

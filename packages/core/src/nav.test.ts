@@ -26,6 +26,14 @@ describe("persona resolution", () => {
     expect(resolvePersona("client", "casual", "paid")).toBe("casual");
   });
 
+  it("a client with an ACTIVE coach gets Full on the coach's seat", () => {
+    // hasActiveCoach unlocks athlete regardless of the client's own choice/billing.
+    expect(resolvePersona("client", "casual", "free", true)).toBe("athlete");
+    expect(resolvePersona("client", undefined, "free", true)).toBe("athlete");
+    // No active coach → unchanged (still gated on the paid Full upgrade).
+    expect(resolvePersona("client", "casual", "free", false)).toBe("casual");
+  });
+
   it("entitlement never elevates a coach/admin role and never grants coach to a client", () => {
     // role outranks entitlement
     expect(resolvePersona("coach", "casual", "free")).toBe("coach");
