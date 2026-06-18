@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../lib/api";
-import { useSession } from "../lib/session";
-import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
-import { useTemplate } from "../lib/template";
-import AuroraCoachApply from "../components/aurora/coach-apply";
+import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../../lib/api";
+import { useSession } from "../../lib/session";
+import { useLang } from "../../lib/i18n";
+import { useTheme, txt } from "../../lib/theme";
+import { F } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 const STATUS_COPY: Record<CoachApplication["status"], string> = {
   pending: "Your application is in review — an admin will verify it shortly.",
@@ -15,13 +14,10 @@ const STATUS_COPY: Record<CoachApplication["status"], string> = {
   denied: "This application wasn't approved. You can revise and re-apply below.",
 };
 
-export default function CoachApply() {
-  if (useTemplate().template === "aurora") return <AuroraCoachApply />;
-  return <ClassicCoachApply />;
-}
-
-function ClassicCoachApply() {
-  const C = useTheme().palette;
+/** AURORA Become a coach — same verification-gated application flow (fetch,
+ *  status card, form, submit) as the classic, in the rounded look. */
+export default function AuroraCoachApply() {
+  const { palette: C } = useTheme();
   const router = useRouter();
   const { t } = useLang();
   const { role } = useSession();
@@ -55,26 +51,29 @@ function ClassicCoachApply() {
     }
   };
 
+  const statusColor = (s: CoachApplication["status"]) =>
+    s === "approved" ? C.lime : s === "denied" ? C.red : C.amber;
+
   return (
-    <Screen>
+    <AuroraScreen>
       <Pressable onPress={() => router.back()} hitSlop={10}>
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 10 }}>Become a coach</Text>
-      <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
+      <AHeading style={{ fontSize: 26, marginTop: 12 }}>Become a coach</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
         Coaching others is verification-gated. Tell us who you are — certifications, experience,
         who you train — and an admin reviews it. Approval unlocks the roster, squad monitor and
         athlete assignment.
-      </Mono>
+      </Text>
 
       {isCoach ? (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
-          <Kicker color={C.lime}>Already verified</Kicker>
-          <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>
+        <ACard style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Already verified</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
             You already have coach access — open the Coach tab to manage your athletes.
-          </Mono>
-        </Card>
+          </Text>
+        </ACard>
       ) : loading ? (
         <View style={{ paddingVertical: 40, alignItems: "center" }}>
           <ActivityIndicator color={C.lime} />
@@ -82,25 +81,19 @@ function ClassicCoachApply() {
       ) : (
         <>
           {existing && (
-            <Card
-              style={{
-                borderLeftWidth: 3,
-                borderLeftColor: existing.status === "approved" ? C.lime : existing.status === "denied" ? C.red : C.amber,
-                marginTop: 16,
-              }}
-            >
-              <Kicker color={existing.status === "approved" ? C.lime : existing.status === "denied" ? C.red : C.amber}>
+            <ACard style={{ borderLeftWidth: 3, borderLeftColor: statusColor(existing.status), marginTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
                 Application · {existing.status}
-              </Kicker>
-              <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>{STATUS_COPY[existing.status]}</Mono>
-            </Card>
+              </Text>
+              <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{STATUS_COPY[existing.status]}</Text>
+            </ACard>
           )}
 
           {/* Hide the form while a fresh application is pending; show it for new
               applicants and for re-applying after a denial. */}
           {existing?.status !== "pending" && (
-            <Card style={{ marginTop: 16 }}>
-              <Kicker>Your background</Kicker>
+            <ACard style={{ marginTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Your background</Text>
               <TextInput
                 value={credentials}
                 onChangeText={setCredentials}
@@ -109,24 +102,24 @@ function ClassicCoachApply() {
                 multiline
                 numberOfLines={5}
                 textAlignVertical="top"
-                style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 120 }}
+                style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 120 }}
               />
-              {!!error && <Mono color={C.red} style={{ marginTop: 10 }}>{error}</Mono>}
+              {!!error && <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}
-                style={{ backgroundColor: canSubmit ? C.violet : `${C.violet}55`, borderRadius: 12, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
+                style={{ backgroundColor: canSubmit ? C.violet : `${C.violet}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
               >
-                {busy ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>Submit application</Text>}
+                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>Submit application</Text>}
               </Pressable>
-            </Card>
+            </ACard>
           )}
 
           {sent && existing?.status === "pending" && (
-            <Mono color={C.lime} style={{ marginTop: 12, textAlign: "center" }}>Application submitted — thanks!</Mono>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime), marginTop: 12, textAlign: "center" }}>Application submitted — thanks!</Text>
           )}
         </>
       )}
-    </Screen>
+    </AuroraScreen>
   );
 }

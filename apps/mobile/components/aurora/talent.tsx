@@ -4,25 +4,20 @@ import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/c
 import {
   fetchTalent, saveTalentProfile, searchTalent, reportProfile,
   type TalentProfile, type TalentReport, type TalentResult,
-} from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
-import { useTheme, txt } from "../lib/theme";
-import { useTemplate } from "../lib/template";
-import AuroraTalent from "../components/aurora/talent";
+} from "../../lib/api";
+import { F } from "../../lib/ui";
+import { useTheme, txt } from "../../lib/theme";
+import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerlifting", "Bodybuilding", "Hybrid"];
 const pctColor = (p: number, C: Palette) => (p >= 90 ? C.lime : p >= 70 ? C.blue : p >= 40 ? C.amber : C.ash);
 const numOrU = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? parseFloat(s) : undefined);
 
-/** Talent — benchmark vs your cohort + opt-in discovery. Mobile port. */
-export default function Talent() {
-  if (useTemplate().template === "aurora") return <AuroraTalent />;
-  return <ClassicTalent />;
-}
-
-function ClassicTalent() {
-  const C = useTheme().palette;
+/** AURORA Talent — benchmark vs your cohort + opt-in discovery, reusing the
+ *  talent API verbatim in the rounded Aurora style. */
+export default function AuroraTalent() {
+  const { palette: C } = useTheme();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [report, setReport] = useState<TalentReport | null>(null);
   const [hpi, setHpi] = useState<number | null>(null);
@@ -64,20 +59,21 @@ function ClassicTalent() {
     ]);
 
   return (
-    <Screen>
-      <Kicker>Talent graph</Kicker>
-      <H1>Benchmarks & discovery</H1>
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 14 }}>
-        <Mono color={C.chalk} style={{ lineHeight: 18 }}>
+    <AuroraScreen>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Talent graph</Text>
+      <AHeading style={{ fontSize: 26, marginTop: 4 }}>Benchmarks &amp; discovery</AHeading>
+
+      <ACard style={{ marginTop: 16 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, lineHeight: 20 }}>
           Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real talent from early maturity. Opt in to be discoverable.
-        </Mono>
-        <Mono color={C.ash} style={{ marginTop: 6, fontSize: 11 }}>Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}</Mono>
-      </Card>
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 8 }}>Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}</Text>
+      </ACard>
 
       {/* profile */}
-      <Card style={{ marginTop: 14 }}>
-        <Kicker color={C.lime}>Your profile</Kicker>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+      <ACard style={{ marginTop: 14 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Your profile</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
           <View style={{ flexDirection: "row", gap: 6 }}>
             {SPORTS.map((s) => (
               <Pressable key={s} onPress={() => setForm({ ...form, sport: s })} style={pill(C, form.sport === s)}>
@@ -100,36 +96,40 @@ function ClassicTalent() {
           <Field C={C} label="Durability" value={form.durability} onChange={(v) => setForm({ ...form, durability: v })} />
         </View>
         <Pressable onPress={() => setForm({ ...form, visibility: form.visibility === "discoverable" ? "private" : "discoverable" })} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
-          <View style={{ width: 18, height: 18, borderRadius: 4, borderWidth: 1, borderColor: form.visibility === "discoverable" ? C.lime : C.line, backgroundColor: form.visibility === "discoverable" ? C.lime : "transparent" }} />
-          <Mono color={form.visibility === "discoverable" ? txt(C, C.lime) : C.ash} style={{ fontSize: 12 }}>Discoverable by clubs & federations</Mono>
+          <View style={{ width: 18, height: 18, borderRadius: 6, borderWidth: 1, borderColor: form.visibility === "discoverable" ? C.lime : C.line, backgroundColor: form.visibility === "discoverable" ? C.lime : "transparent" }} />
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: form.visibility === "discoverable" ? txt(C, C.lime) : C.ash }}>Discoverable by clubs &amp; federations</Text>
         </Pressable>
         {profile?.visibility === "discoverable" && profile?.moderationStatus === "pending" && (
-          <Mono color={C.amber} style={{ marginTop: 8, fontSize: 12 }}>⏳ Pending review — appears in discovery once approved.</Mono>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.amber), marginTop: 8 }}>⏳ Pending review — appears in discovery once approved.</Text>
         )}
         {profile?.moderationStatus === "rejected" && (
-          <Mono color={C.ash} style={{ marginTop: 8, fontSize: 12 }}>Not approved for discovery. Edit and re-save to request another review.</Mono>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 8 }}>Not approved for discovery. Edit and re-save to request another review.</Text>
         )}
-        <View style={{ marginTop: 14 }}><Button label={saving ? "Saving…" : "Save profile"} onPress={save} disabled={saving} /></View>
-      </Card>
+        <APill label={saving ? "Saving…" : "Save profile"} onPress={save} disabled={saving} style={{ marginTop: 14 }} />
+      </ACard>
 
       {/* benchmarks */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue, marginTop: 14 }}>
-        <Kicker color={C.blue}>Your benchmarks</Kicker>
+      <ACard style={{ marginTop: 14 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Your benchmarks</Text>
         {!report ? (
-          <Mono color={C.chalk} style={{ marginTop: 8 }}>Save your profile to see percentiles.</Mono>
+          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, marginTop: 8 }}>Save your profile to see percentiles.</Text>
         ) : (
           <>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 10, marginBottom: 12 }}>
-              <Chip color={pctColor(report.overall, C)}>overall {report.overall}th</Chip>
-              <Chip color={pctColor(report.potential, C)}>potential {report.potential}th</Chip>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 12, marginBottom: 12 }}>
+              <View style={{ backgroundColor: `${pctColor(report.overall, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, pctColor(report.overall, C)) }}>overall {report.overall}th</Text>
+              </View>
+              <View style={{ backgroundColor: `${pctColor(report.potential, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, pctColor(report.potential, C)) }}>potential {report.potential}th</Text>
+              </View>
             </View>
             {report.benchmarks.map((b) => (
               <View key={b.metric} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Mono color={C.chalk} style={{ fontSize: 12 }}>{METRIC_LABEL[b.metric as BenchmarkMetric] ?? b.metric}</Mono>
-                  <Mono color={C.ash} style={{ fontSize: 11 }}>{b.value} · cohort {b.cohortMean}</Mono>
+                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{METRIC_LABEL[b.metric as BenchmarkMetric] ?? b.metric}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{b.value} · cohort {b.cohortMean}</Text>
                 </View>
-                <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink2, marginTop: 4, overflow: "hidden" }}>
+                <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, marginTop: 6, overflow: "hidden" }}>
                   <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${b.potentialPercentile}%`, backgroundColor: `${C.violet}55` }} />
                   <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${b.percentile}%`, backgroundColor: pctColor(b.percentile, C) }} />
                 </View>
@@ -137,12 +137,12 @@ function ClassicTalent() {
             ))}
           </>
         )}
-      </Card>
+      </ACard>
 
       {/* discovery */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 14 }}>
-        <Kicker color={C.lime}>Discover talent</Kicker>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+      <ACard style={{ marginTop: 14 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Discover talent</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
           <View style={{ flexDirection: "row", gap: 6 }}>
             {BENCHMARK_METRICS.map((m) => (
               <Pressable key={m} onPress={() => setQ({ ...q, metric: m })} style={pill(C, q.metric === m)}>
@@ -156,39 +156,45 @@ function ClassicTalent() {
           <Pressable onPress={() => setQ({ ...q, byPotential: !q.byPotential })} style={[pill(C, q.byPotential), { alignSelf: "flex-end" }]}>
             <Text style={pillTxt(C, q.byPotential)}>by potential</Text>
           </Pressable>
-          <View style={{ width: 96 }}><Button label="Search" onPress={search} /></View>
+          <View style={{ width: 96 }}><APill label="Search" onPress={search} style={{ paddingVertical: 14 }} /></View>
         </View>
         <View style={{ marginTop: 12 }}>
           {results.length === 0 ? (
-            searched ? <Mono color={C.chalk}>No discoverable athletes match yet.</Mono> : null
+            searched ? <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk }}>No discoverable athletes match yet.</Text> : null
           ) : (
             results.map((r) => (
-              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
-                <Mono color={C.chalk} style={{ flex: 1, fontSize: 13 }}>{r.name} · {r.sport} · {r.sex}{r.age}</Mono>
+              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, flex: 1 }}>{r.name} · {r.sport} · {r.sex}{r.age}</Text>
                 <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-                  <Chip color={pctColor(r.percentile, C)}>{r.percentile}th</Chip>
-                  {r.potential > r.percentile && <Chip color={C.violet}>{r.potential}th</Chip>}
+                  <View style={{ backgroundColor: `${pctColor(r.percentile, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, pctColor(r.percentile, C)) }}>{r.percentile}th</Text>
+                  </View>
+                  {r.potential > r.percentile && (
+                    <View style={{ backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.violet) }}>{r.potential}th</Text>
+                    </View>
+                  )}
                   <Pressable onPress={() => flag(r.id)}><Text style={{ color: C.ash, fontSize: 15 }}>⚑</Text></Pressable>
                 </View>
               </View>
             ))
           )}
         </View>
-      </Card>
+      </ACard>
       <View style={{ height: 16 }} />
-    </Screen>
+    </AuroraScreen>
   );
 }
 
-const pill = (C: Palette, on: boolean) => ({ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent" } as const);
+const pill = (C: Palette, on: boolean) => ({ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1f` : C.ink } as const);
 const pillTxt = (C: Palette, on: boolean) => ({ fontFamily: F.semi, fontSize: 12, color: on ? txt(C, C.lime) : C.ash } as const);
 
 function Field({ C, label, value, onChange }: { C: Palette; label: string; value: string; onChange: (v: string) => void }) {
   return (
     <View style={{ width: "47%", flexGrow: 1 }}>
-      <Mono color={C.ash} style={{ fontSize: 10, marginBottom: 4 }}>{label}</Mono>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginBottom: 4 }}>{label}</Text>
       <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }} />
+        style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 }} />
     </View>
   );
 }

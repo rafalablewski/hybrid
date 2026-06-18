@@ -45,6 +45,13 @@ import AuroraCompetition from "./aurora/competition";
 import AuroraPeriodize from "./aurora/periodize";
 import AuroraBuilder from "./aurora/builder";
 import AuroraLogger from "./aurora/logger";
+import AuroraCoach from "./aurora/coach";
+import AuroraUpgrade from "./aurora/upgrade";
+import AuroraOrg from "./aurora/org";
+import AuroraTalent from "./aurora/talent";
+import AuroraTactical from "./aurora/tactical";
+import AuroraTeamCompare from "./aurora/team-compare";
+import AuroraTeamMonitor from "./aurora/team-monitor";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
@@ -562,7 +569,7 @@ export default function AppShell() {
           )
         )}
 
-        {screen === "upgrade" && <Upgrade onUpgraded={() => setScreen("today")} />}
+        {screen === "upgrade" && (aurora ? <AuroraUpgrade onUpgraded={() => setScreen("today")} /> : <Upgrade onUpgraded={() => setScreen("today")} />)}
 
         {screen === "cockpit" && (
           aurora
@@ -600,9 +607,9 @@ export default function AppShell() {
 
         {screen === "builder" && (aurora ? <AuroraBuilder /> : <Builder />)}
 
-        {screen === "squad" && <TeamMonitor />}
+        {screen === "squad" && (aurora ? <AuroraTeamMonitor /> : <TeamMonitor />)}
 
-        {screen === "teamcompare" && <TeamCompare />}
+        {screen === "teamcompare" && (aurora ? <AuroraTeamCompare /> : <TeamCompare />)}
 
         {screen === "periodize" && (aurora ? <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} /> : <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />)}
 
@@ -654,15 +661,15 @@ export default function AppShell() {
 
         {screen === "history" && (aurora ? <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} /> : <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />)}
 
-        {screen === "coach" && <CoachScreen />}
+        {screen === "coach" && (aurora ? <AuroraCoach /> : <CoachScreen />)}
 
         {screen === "connections" && (aurora ? <AuroraConnections /> : <Connections />)}
 
-        {screen === "org" && <Org />}
+        {screen === "org" && (aurora ? <AuroraOrg /> : <Org />)}
 
-        {screen === "talent" && <Talent />}
+        {screen === "talent" && (aurora ? <AuroraTalent /> : <Talent />)}
 
-        {screen === "tactical" && <Tactical />}
+        {screen === "tactical" && (aurora ? <AuroraTactical /> : <Tactical />)}
 
         {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
 

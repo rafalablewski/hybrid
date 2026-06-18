@@ -4,6 +4,8 @@ import { deploymentReadiness, unitReadiness, type UnitMember } from "@hybrid/cor
 import { fetchState, type StateSnapshot } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraTactical from "../components/aurora/tactical";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const num = (s: string, d: number) => {
@@ -24,6 +26,11 @@ const PEERS: UnitMember[] = [
 /** Tactical — a Deployment Readiness Index (Twin + occupational capacity) and a
  *  unit go/no-go roll-up. Mobile port. */
 export default function Tactical() {
+  if (useTemplate().template === "aurora") return <AuroraTactical />;
+  return <ClassicTactical />;
+}
+
+function ClassicTactical() {
   const C = useTheme().palette;
   const [state, setState] = useState<StateSnapshot | null>(null);
   const [loaded, setLoaded] = useState(false);

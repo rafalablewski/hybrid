@@ -1,0 +1,205 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
+
+type Bench = { metric: BenchmarkMetric; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
+type Report = { cohort: { sport: string; sex: string; age: number }; benchmarks: Bench[]; overall: number; potential: number; modelVersion: string };
+type Profile = { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number>; moderationStatus?: string } | null;
+type Result = { id: string; name: string; sport: string; age: number; sex: string; percentile: number; potential: number };
+
+const C = (v: string) => `var(--color-${v})`;
+const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerlifting", "Bodybuilding", "Hybrid"];
+const pctColor = (p: number) => (p >= 90 ? "lime" : p >= 70 ? "blue" : p >= 40 ? "amber" : "ash");
+
+/** AURORA Talent Graph (web) — same /api/talent + /api/talent/search + /api/reports
+ *  flow: benchmarks, maturation-adjusted potential and discovery, in the rounded
+ *  Aurora style. */
+export default function AuroraTalent() {
+  const [profile, setProfile] = useState<Profile>(null);
+  const [report, setReport] = useState<Report | null>(null);
+  const [hpi, setHpi] = useState<number | null>(null);
+  const [form, setForm] = useState({ sport: "Hybrid", sex: "M", age: "", relStrength: "", vo2: "", durability: "", visibility: "private" });
+
+  // discovery
+  const [q, setQ] = useState({ sport: "", metric: "hpi" as BenchmarkMetric, minPct: "80", byPotential: false });
+  const [results, setResults] = useState<Result[]>([]);
+
+  const load = async () => {
+    const res = await fetch("/api/talent");
+    if (res.ok) {
+      const d = (await res.json()) as { profile: Profile; report: Report | null; computedHpi: number };
+      setProfile(d.profile);
+      setReport(d.report);
+      setHpi(d.computedHpi);
+      if (d.profile)
+        setForm((f) => ({
+          ...f,
+          sport: d.profile!.sport,
+          sex: d.profile!.sex,
+          age: String(d.profile!.age),
+          relStrength: d.profile!.metrics.relStrength != null ? String(d.profile!.metrics.relStrength) : "",
+          vo2: d.profile!.metrics.vo2 != null ? String(d.profile!.metrics.vo2) : "",
+          durability: d.profile!.metrics.durability != null ? String(d.profile!.metrics.durability) : "",
+          visibility: d.profile!.visibility,
+        }));
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+
+  const save = async () => {
+    const numOrU = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? parseFloat(s) : undefined);
+    await fetch("/api/talent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sport: form.sport,
+        sex: form.sex,
+        age: parseInt(form.age, 10),
+        visibility: form.visibility,
+        metrics: { relStrength: numOrU(form.relStrength), vo2: numOrU(form.vo2), durability: numOrU(form.durability) },
+      }),
+    });
+    load();
+  };
+
+  const search = async () => {
+    const p = new URLSearchParams({ metric: q.metric, minPct: q.minPct, ...(q.sport ? { sport: q.sport } : {}), ...(q.byPotential ? { byPotential: "1" } : {}) });
+    const res = await fetch(`/api/talent/search?${p.toString()}`);
+    if (res.ok) setResults(((await res.json()) as { results: Result[] }).results);
+  };
+
+  // Flag a discoverable profile for the moderation queue.
+  const flagProfile = async (id: string) => {
+    const reason = prompt("Report this profile — reason? (inappropriate / fake / spam / other)", "inappropriate");
+    if (reason === null) return;
+    await fetch("/api/reports", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ targetType: "talentProfile", targetId: id, reason: reason.trim().toLowerCase() }),
+    });
+    alert("Thanks — our team will review it.");
+  };
+
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 } as const;
+  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
+  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 13, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
+  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 13, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
+  const btn: React.CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" };
+  const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
+
+  return (
+    <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ ...card, borderLeft: `3px solid ${C("violet")}` }}>
+        <div style={kicker("violet")}>Talent Graph · benchmarks & discovery</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
+          Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real
+          talent from early physical maturity. Opt in to be discoverable — the talent market.
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 6, color: C("ash") }}>
+          Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={card}>
+          <div style={kicker("ash")}>Your profile</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+            <select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })} style={selectStyle}>
+              {SPORTS.map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <select value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value })} style={selectStyle}>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+            <input value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} placeholder="Age" inputMode="numeric" style={input} />
+            <input value={form.relStrength} onChange={(e) => setForm({ ...form, relStrength: e.target.value })} placeholder="Rel. strength (×BW)" inputMode="decimal" style={input} />
+            <input value={form.vo2} onChange={(e) => setForm({ ...form, vo2: e.target.value })} placeholder="VO₂ proxy" inputMode="decimal" style={input} />
+            <input value={form.durability} onChange={(e) => setForm({ ...form, durability: e.target.value })} placeholder="Durability" inputMode="decimal" style={input} />
+          </div>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={form.visibility === "discoverable"} onChange={(e) => setForm({ ...form, visibility: e.target.checked ? "discoverable" : "private" })} />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: form.visibility === "discoverable" ? C("lime") : C("ash") }}>Discoverable by clubs &amp; federations</span>
+          </label>
+          {profile?.visibility === "discoverable" && profile?.moderationStatus === "pending" && (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 8, color: C("amber") }}>
+              ⏳ Pending review — your profile appears in discovery once a moderator approves it.
+            </div>
+          )}
+          {profile?.moderationStatus === "rejected" && (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 8, color: C("ash") }}>
+              This profile was not approved for discovery. Edit and re-save to request another review.
+            </div>
+          )}
+          <button onClick={save} style={{ ...btn, marginTop: 12 }}>Save profile</button>
+        </div>
+
+        <div style={card}>
+          <div style={kicker("ash")}>Your benchmarks</div>
+          {!report && <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 12, color: C("ash") }}>Save your profile to see percentiles.</div>}
+          {report && (
+            <>
+              <div style={{ display: "flex", gap: 8, margin: "10px 0 14px" }}>
+                {chip(pctColor(report.overall), `overall ${report.overall}th`)}
+                {chip(pctColor(report.potential), `potential ${report.potential}th`)}
+              </div>
+              {report.benchmarks.map((b) => (
+                <div key={b.metric} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("chalk") }}>{METRIC_LABEL[b.metric]}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{b.value} · cohort {b.cohortMean}</span>
+                  </div>
+                  <div style={{ position: "relative", height: 8, borderRadius: 999, background: C("ink"), marginTop: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${b.potentialPercentile}%`, height: "100%", background: `color-mix(in srgb, ${C("violet")} 40%, transparent)`, position: "absolute" }} />
+                    <div style={{ width: `${b.percentile}%`, height: "100%", background: C(pctColor(b.percentile)), position: "absolute" }} />
+                  </div>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>{b.percentile}th{b.potentialPercentile > b.percentile ? ` · ${b.potentialPercentile}th potential` : ""}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+
+      <div style={{ ...card, borderLeft: `3px solid ${C("lime")}` }}>
+        <div style={kicker("lime")}>Discover talent</div>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <select value={q.sport} onChange={(e) => setQ({ ...q, sport: e.target.value })} style={selectStyle}>
+            <option value="">Any sport</option>
+            {SPORTS.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <select value={q.metric} onChange={(e) => setQ({ ...q, metric: e.target.value as BenchmarkMetric })} style={selectStyle}>
+            {BENCHMARK_METRICS.map((m) => <option key={m} value={m}>{METRIC_LABEL[m]}</option>)}
+          </select>
+          <input value={q.minPct} onChange={(e) => setQ({ ...q, minPct: e.target.value })} placeholder="min percentile" inputMode="numeric" style={{ ...input, width: 120 }} />
+          <label style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
+            <input type="checkbox" checked={q.byPotential} onChange={(e) => setQ({ ...q, byPotential: e.target.checked })} />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>by potential</span>
+          </label>
+          <button onClick={search} style={btn}>Search</button>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          {results.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No discoverable athletes match yet.</div>}
+          {results.map((r, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("chalk") }}>{r.name} · {r.sport} · {r.sex}{r.age}</span>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {chip(pctColor(r.percentile), `${r.percentile}th`)}
+                {r.potential > r.percentile && chip("violet", `${r.potential}th pot.`)}
+                <button
+                  onClick={() => flagProfile(r.id)}
+                  title="Report this profile"
+                  style={{ background: "transparent", border: "none", color: C("ash"), cursor: "pointer", fontSize: 14, padding: "2px 4px" }}
+                >
+                  ⚑
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

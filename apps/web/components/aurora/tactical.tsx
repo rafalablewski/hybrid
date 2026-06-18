@@ -1,0 +1,106 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
+
+type State = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
+
+const C = (v: string) => `var(--color-${v})`;
+
+const statusColor: Record<DutyStatus, string> = {
+  ready: "lime",
+  qualified: "blue",
+  limited: "amber",
+  "non-deployable": "red",
+};
+
+/** AURORA Tactical / SOF (web) — same /api/state fetch + deploymentReadiness /
+ *  unitReadiness engines: Deployment Readiness Index + unit go/no-go, in the
+ *  rounded Aurora style. */
+export default function AuroraTactical() {
+  const [state, setState] = useState<State | null>(null);
+  const [load, setLoad] = useState("78");
+  const [work, setWork] = useState("80");
+
+  useEffect(() => {
+    fetch("/api/state").then(async (r) => {
+      if (r.ok) setState((await r.json()) as State);
+    });
+  }, []);
+
+  const num = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? parseFloat(s) : undefined);
+  const hasData = !!state && state.sessionCount > 0;
+  const dr = hasData
+    ? deploymentReadiness({ hpi: state!.hpi, injuryRisk: state!.injuryRisk, loadCarriage: num(load), workCapacity: num(work) })
+    : null;
+
+  // illustrative squad: you + synthetic teammates, to show the unit rollup
+  const squad: UnitMember[] = dr ? [{ name: "You", dri: dr.dri, status: dr.status }] : [];
+  const unit = squad.length ? unitReadiness(squad) : null;
+
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 } as const;
+  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
+  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 14, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, width: "100%", outline: "none" };
+  const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
+
+  return (
+    <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ ...card, borderLeft: `3px solid ${C("amber")}` }}>
+        <div style={kicker("amber")}>Tactical / SOF · deployment readiness</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
+          Not &ldquo;are you fit?&rdquo; but &ldquo;are you deployable?&rdquo; — the same Twin signals (HPI, injury risk)
+          fused with occupational capacity into a Deployment Readiness Index and a unit go/no-go.
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+        <div style={{ ...card, borderLeft: `3px solid ${dr ? C(statusColor[dr.status]) : C("line")}` }}>
+          <div style={kicker("blue")}>Deployment readiness</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 54, color: dr ? C(statusColor[dr.status]) : C("ash"), lineHeight: 1.1, margin: "6px 0" }}>
+            {dr ? dr.dri : "—"}
+          </div>
+          {dr && chip(statusColor[dr.status], dr.status.replace("-", " "))}
+          {dr && dr.limiters.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              {dr.limiters.map((l) => <div key={l} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("amber") }}>⚠ {l}</div>)}
+            </div>
+          )}
+          {hasData ? (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} · injury risk {state!.injuryRisk}/100</div>
+          ) : (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 10, color: C("ash") }}>Log training to compute your Deployment Readiness Index from your Twin.</div>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <label style={{ flex: 1 }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Load carriage</span>
+              <input value={load} onChange={(e) => setLoad(e.target.value)} inputMode="numeric" style={input} />
+            </label>
+            <label style={{ flex: 1 }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Work capacity</span>
+              <input value={work} onChange={(e) => setWork(e.target.value)} inputMode="numeric" style={input} />
+            </label>
+          </div>
+        </div>
+
+        <div style={{ ...card, borderLeft: `3px solid ${unit?.go ? C("lime") : C("red")}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div style={kicker("ash")}>Unit readiness</div>
+            {unit && chip(unit.go ? "lime" : "red", `${unit.go ? "MISSION GO" : "NO-GO"} · ${unit.pctReady}% deployable`)}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            {unit?.members.map((m) => (
+              <div key={m.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: m.name === "You" ? C("lime") : C("chalk") }}>{m.name}</span>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>DRI {m.dri}</span>
+                  {chip(statusColor[m.status], m.status.replace("-", " "))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, marginTop: 10, color: C("ash") }}>Unit roll-up shows your own readiness · connect a real unit through the Org Graph.</div>
+        </div>
+      </div>
+    </div>
+  );
+}

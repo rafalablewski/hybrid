@@ -14,6 +14,7 @@ import {
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { AuroraIcon } from "./icons";
+import AuroraAskCoach from "./ai-coach";
 
 /**
  * AURORA Today (web) — the bespoke web parity of the mobile Aurora Home:
@@ -117,6 +118,9 @@ export default function AuroraToday({
           Nothing scheduled yet. Start a session and your week fills in from your real training.
         </div>
       )}
+
+      <div style={{ fontWeight: 900, fontSize: 22, marginTop: 28, marginBottom: 12 }}>Ask the coach</div>
+      <AuroraAskCoach />
     </div>
   );
 }
