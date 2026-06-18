@@ -27,9 +27,13 @@ const field = (line, key) => {
 const planned = [];
 const blocked = [];
 for (const line of src.split("\n")) {
-  if (/status:\s*"planned"/.test(line)) {
+  // Match the real `status` FIELD only — it's always immediately followed by a
+  // comma (`status: "planned", title: …`). Requiring the comma stops prose in a
+  // `detail` string that merely mentions status:"planned"/"blocked" (like this
+  // hook's own entry) from being mis-counted as backlog.
+  if (/status:\s*"planned"\s*,/.test(line)) {
     planned.push({ id: field(line, "id"), title: field(line, "title") });
-  } else if (/status:\s*"blocked"/.test(line)) {
+  } else if (/status:\s*"blocked"\s*,/.test(line)) {
     blocked.push({ id: field(line, "id"), title: field(line, "title"), by: field(line, "blockedBy") });
   }
 }
