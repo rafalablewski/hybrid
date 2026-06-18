@@ -377,6 +377,7 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   // Logging — free forever (the top of the funnel)
   { group: "Log & basics (free forever)", feature: "Session logging, interval timer, run tracking", free: true, pro: true, coach: true, org: true },
   { group: "Log & basics (free forever)", feature: "Calendar & training history", free: "30-day", pro: "Unlimited", coach: "Unlimited", org: "Unlimited" },
+  { group: "Log & basics (free forever)", feature: "Pre-built plan library (browse & enroll)", free: true, pro: true, coach: true, org: true },
   { group: "Log & basics (free forever)", feature: "Daily check-in & progress photos", free: true, pro: true, coach: true, org: true },
   { group: "Log & basics (free forever)", feature: "Export your own data (GDPR)", free: true, pro: true, coach: true, org: true },
 
@@ -387,8 +388,9 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   { group: "Intelligence (Pro)", feature: "Tissue-level injury risk", free: false, pro: true, coach: true, org: "Medical-tier" },
   { group: "Intelligence (Pro)", feature: "Deep analytics dashboards", free: false, pro: true, coach: true, org: true },
 
-  // Training depth — Pro
-  { group: "Training depth (Pro)", feature: "Plan library & periodization", free: false, pro: true, coach: true, org: true },
+  // Training depth — Pro (the pre-built plan library itself is free; the smart
+  // layer on top — periodizing your season — is the paid line)
+  { group: "Training depth (Pro)", feature: "Periodization (build your season)", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Template builder", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Competition peaking", free: false, pro: true, coach: true, org: true },
   { group: "Training depth (Pro)", feature: "Sport-specific S&C", free: false, pro: true, coach: true, org: true },

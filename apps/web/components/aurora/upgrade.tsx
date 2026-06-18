@@ -16,7 +16,7 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 const BUNDLE: { kicker: string; color: string; items: { ic: string; nm: string; ds: string }[] }[] = [
   {
     kicker: "Train smarter", color: C("lime"), items: [
-      { ic: "▤", nm: "Plans", ds: "Guided, periodized programs." },
+      { ic: "▤", nm: "Adaptive plans", ds: "Auto-progression on top of the free plan library." },
       { ic: "◰", nm: "Periodize", ds: "Your season — phases, deloads, peak." },
       { ic: "⊕", nm: "Builder", ds: "Design your own templates." },
       { ic: "▲", nm: "Competition", ds: "Peak on the day." },

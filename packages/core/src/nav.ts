@@ -79,7 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "runtrack", label: "Run tracking", icon: "📍", group: "train" },
   { id: "calendar", label: "Calendar", icon: "▦", group: "train" },
   { id: "builder", label: "Builder", icon: "⊕", group: "train", minPersona: "athlete" },
-  { id: "plans", label: "Plans", icon: "▤", group: "train", minPersona: "athlete" },
+  { id: "plans", label: "Plans", icon: "▤", group: "train" },
   { id: "periodize", label: "Periodize", icon: "◰", group: "train", minPersona: "athlete" },
   { id: "sport", label: "Sport", icon: "◎", group: "train", minPersona: "athlete" },
   { id: "competition", label: "Competition", icon: "▲", group: "train", minPersona: "athlete" },
