@@ -43,6 +43,7 @@ import CoachScreen from "./coach";
 import Connections from "./connections";
 import AuroraConnections from "./aurora/connections";
 import Performance from "./performance";
+import AuroraPerformance from "./aurora/performance";
 import Org from "./org";
 import VideoScreen from "./video-screen";
 import Competition from "./competition";
@@ -560,7 +561,7 @@ export default function AppShell() {
             : <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
-        {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
+        {screen === "performance" && (aurora ? <AuroraPerformance sessions={sessions} bio={bio} /> : <Performance sessions={sessions} bio={bio} />)}
 
         {screen === "velocity" && <Velocity sessions={sessions} />}
 

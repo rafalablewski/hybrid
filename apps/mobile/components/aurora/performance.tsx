@@ -1,0 +1,133 @@
+import { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog, toBiometrics,
+  type LoggedSession,
+} from "@hybrid/core";
+import { fetchSessions, fetchSignals, type CoreSignal } from "../../lib/api";
+import { useTheme, txt } from "../../lib/theme";
+import { F } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
+
+type Palette = ReturnType<typeof useTheme>["palette"];
+const hpiColor = (b: string, C: Palette) => (b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red);
+const riskColor = (b: string, C: Palette) => (b === "low" ? C.lime : b === "moderate" ? C.blue : b === "elevated" ? C.amber : C.red);
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** AURORA Performance — the Athlete Twin (HPI cockpit, 14-day trajectory,
+ *  tissue injury risk) reusing the exact engines as the classic. */
+export default function AuroraPerformance() {
+  const { palette: C } = useTheme();
+  const router = useRouter();
+  const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  const [signals, setSignals] = useState<CoreSignal[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = () => {
+    setRefreshing(true);
+    Promise.all([fetchSessions(), fetchSignals()]).then(([s, sig]) => { setSessions(s); setSignals(sig); }).finally(() => setRefreshing(false));
+  };
+  useEffect(() => { load(); }, []);
+
+  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
+  const log = useMemo(() => toTrainingLog(sessions), [sessions]);
+  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
+  const traj = useMemo(() => performanceTrajectory(log, 14), [log]);
+
+  const header = (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <AuroraIcon name="back" size={20} color={C.chalk} />
+      </Pressable>
+      <AHeading style={{ fontSize: 26 }}>Performance</AHeading>
+    </View>
+  );
+
+  if (sessions.length === 0) {
+    return (
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {header}
+        <ACard style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, lineHeight: 20 }}>Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</Text>
+        </ACard>
+      </AuroraScreen>
+    );
+  }
+
+  const maxBar = 96;
+
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      {header}
+
+      <ACard style={{ marginTop: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>HPI · Athlete Twin</Text>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12, marginTop: 4 }}>
+          <Text style={{ fontFamily: F.black, fontSize: 52, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+          <View>
+            <View style={{ backgroundColor: `${hpiColor(state.hpi.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4, alignSelf: "flex-start" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.band}</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>limiter · {state.hpi.limiter}</Text>
+          </View>
+        </View>
+        <View style={{ marginTop: 14, gap: 10 }}>
+          {([
+            ["Strength", state.hpi.components.strength, C.lime] as const,
+            ["Endurance", state.hpi.components.endurance, C.blue] as const,
+            ["Recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), C.violet] as const,
+          ]).map(([l, v, col]) => (
+            <View key={l}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{l}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, col) }}>{v}</Text>
+              </View>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: C.ink, marginTop: 3, overflow: "hidden" }}>
+                <View style={{ width: `${v}%`, height: "100%", backgroundColor: col }} />
+              </View>
+            </View>
+          ))}
+        </View>
+        <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 12, lineHeight: 18 }}>{state.summary}</Text>
+      </ACard>
+
+      <ACard style={{ marginTop: 14 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Trajectory · last 14 days</Text>
+        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: maxBar + 6, marginTop: 12 }}>
+          {traj.map((p) => (
+            <View key={p.daysAgo} style={{ flex: 1, alignItems: "center", justifyContent: "flex-end" }}>
+              <View style={{ width: "100%", height: Math.max(2, (p.hpi / 100) * maxBar), backgroundColor: p.daysAgo === 0 ? C.lime : `${C.lime}66`, borderRadius: 3 }} />
+            </View>
+          ))}
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>-13d</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>today · HPI {traj[traj.length - 1]?.hpi ?? "—"}</Text>
+        </View>
+      </ACard>
+
+      <ACard style={{ marginTop: 14 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>Injury risk · tissue</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>model {risk.modelVersion}</Text>
+        </View>
+        <View style={{ marginTop: 10 }}>
+          {risk.tissues.map((t) => (
+            <View key={t.tissue} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk, flex: 1 }}>{cap(t.tissue)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 12, color: t.risk > 0 ? C.chalk : C.ash, width: 70, textAlign: "right" }}>{(t.prob * 100).toFixed(1)}%</Text>
+              <View style={{ width: 56, alignItems: "flex-end" }}>
+                <View style={{ backgroundColor: `${(t.risk > 0 ? riskColor(t.band, C) : C.ash)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, t.risk > 0 ? riskColor(t.band, C) : C.ash) }}>{t.risk}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ACard>
+    </AuroraScreen>
+  );
+}

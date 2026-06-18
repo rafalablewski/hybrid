@@ -11,6 +11,8 @@ import {
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraPerformance from "../components/aurora/performance";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) =>
@@ -22,6 +24,11 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** Performance — the Athlete Twin: HPI cockpit, 14-day trajectory, tissue-level
  *  injury risk. Mobile port of the web Performance screen. */
 export default function Performance() {
+  if (useTemplate().template === "aurora") return <AuroraPerformance />;
+  return <ClassicPerformance />;
+}
+
+function ClassicPerformance() {
   const C = useTheme().palette;
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
