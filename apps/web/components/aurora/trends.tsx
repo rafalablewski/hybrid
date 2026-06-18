@@ -40,7 +40,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
 
   if (!trained) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 16px" }}>Trends</h1>
         <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: C("ash") }}>No strength training logged yet. Log some lifts and your volume trends, muscle breakdown and per-exercise analytics show up here.</span></div>
       </div>
@@ -48,7 +48,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Trends</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>

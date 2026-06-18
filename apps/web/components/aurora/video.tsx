@@ -15,7 +15,7 @@ export default function AuroraVideo() {
   useEffect(() => { (async () => { const res = await fetch("/api/video"); if (res.ok) setAnalyses(((await res.json()) as { analyses: Analysis[] }).analyses); })(); }, []);
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Technique</h1>
       <div style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>Video intelligence · markerless motion analysis</div>

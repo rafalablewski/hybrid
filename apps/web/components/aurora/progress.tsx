@@ -58,7 +58,7 @@ export default function AuroraProgress() {
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 22 } as const;
   const notice = (color: string, body: React.ReactNode) => (
-    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ ...card, color }}>{body}</div>
     </div>
   );
@@ -67,7 +67,7 @@ export default function AuroraProgress() {
   if (status === "no-bucket") return notice(C("red"), <>The <strong>progress</strong> storage bucket isn&apos;t set up yet. Run <strong>reference/sql-progress-photos.sql</strong> in Supabase, then reload.</>);
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Progress photos</h1>
 
       <div style={{ ...card, marginTop: 16 }}>

@@ -63,7 +63,7 @@ export default function AuroraNutrition() {
   const numField = { fontFamily: "var(--font-mono)", fontSize: 14, width: "100%", boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Nutrition</h1>
         <AuroraIcon name="heart" size={22} color={C("lime")} />

@@ -40,7 +40,7 @@ export default function AuroraSport() {
   const rx = prescribeForSport(sport, levelIdx, { sessions });
 
   return (
-    <div style={{ maxWidth: 820, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 8px" }}>Sport</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>
         Pick your sport — we prescribe the strength &amp; conditioning that transfers to it.

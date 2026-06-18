@@ -62,7 +62,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
   const numField = { fontFamily: "var(--font-mono)", fontSize: 14, width: "100%", boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none" };
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Daily check-in</h1>
         <span style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={C("red")} /></span>

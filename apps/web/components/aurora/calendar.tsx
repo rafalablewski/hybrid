@@ -43,7 +43,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, minWidth: 36, height: 36, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 20 }}>{monthLabel}</div>

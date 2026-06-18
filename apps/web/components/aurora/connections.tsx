@@ -36,7 +36,7 @@ export default function AuroraConnections() {
   const pill = (border: string, fill: boolean): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, background: fill ? C("lime") : "transparent", color: fill ? C("ink") : C("chalk"), border: `1px solid ${border}`, borderRadius: 999, padding: "10px 18px", cursor: "pointer", display: "inline-block", textDecoration: "none" });
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Connections</h1>
       <p style={{ fontSize: 14, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>Every device writes into one Signal stream — the engines never learn a vendor exists. Connect a wearable and your readiness, HPI and injury risk update automatically.</p>
 

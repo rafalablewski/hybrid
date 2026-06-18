@@ -41,7 +41,7 @@ export default function AuroraLongevity() {
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{label}</span>;
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Longevity</h1>
         <AuroraIcon name="heart" size={24} color={C("blue")} />

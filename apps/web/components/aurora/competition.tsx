@@ -55,7 +55,7 @@ export default function AuroraCompetition() {
   const input: React.CSSProperties = { ...mono, fontSize: 13, padding: "10px 14px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
 
   return (
-    <div style={{ display: "grid", gap: 16, maxWidth: 900, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gap: 16, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
         <div style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>
           Competition · peaking optimizer

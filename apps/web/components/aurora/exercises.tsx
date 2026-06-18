@@ -39,7 +39,7 @@ export default function AuroraExercises({ sessions, focus }: { sessions: LoggedS
 
   if (history.length === 0) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 16px" }}>Exercises</h1>
         <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: C("ash") }}>No exercises logged yet. Log a workout and every movement gets its own progress dashboard here.</span></div>
       </div>
@@ -47,7 +47,7 @@ export default function AuroraExercises({ sessions, focus }: { sessions: LoggedS
   }
 
   return (
-    <div style={{ maxWidth: 1040, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start" }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <h1 style={{ fontWeight: 900, fontSize: 22, margin: 0 }}>Exercises</h1>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search exercises…" style={input} />
