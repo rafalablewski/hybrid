@@ -236,6 +236,19 @@ export async function verifyIapPurchase(transactionId: string): Promise<{ ok: bo
   }
 }
 
+/** Download everything tied to the signed-in account as one JSON document
+ *  (GET /api/account/export — same payload the web "Download my data" button
+ *  serves). Returns the JSON text, or null on failure. */
+export async function exportAccountData(): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/account/export`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
 // Wipe all of the signed-in user's data on the backend (keeps the login).
 export async function resetAccount(): Promise<boolean> {
   try {

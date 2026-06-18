@@ -5,7 +5,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { TEMPLATES } from "@hybrid/core";
+import { TEMPLATES, ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -24,19 +24,10 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: "data", label: "Data" },
 ];
 
-const NOTIF_DEFAULTS: Record<string, boolean> = { weeklyRecap: true, coachMessages: true, checkinReminders: true, productUpdates: false };
-const PRIVACY_DEFAULTS: Record<string, boolean> = { coachCanSeeDetail: true, discoverable: false, analyticsOptOut: false };
-const NOTIF_ROWS: [string, string, string][] = [
-  ["weeklyRecap", "Weekly recap", "Your Sunday training summary."],
-  ["coachMessages", "Coach messages", "When your coach replies to a check-in or assigns work."],
-  ["checkinReminders", "Check-in reminders", "A nudge when your weekly check-in is due."],
-  ["productUpdates", "Product updates", "Occasional news about new features."],
-];
-const PRIVACY_ROWS: [string, string, string][] = [
-  ["coachCanSeeDetail", "Share detail with my coach", "Let a linked coach see your full session detail, not just summaries."],
-  ["discoverable", "Discoverable in Talent", "Appear in coach talent searches (your benchmarks, never raw logs)."],
-  ["analyticsOptOut", "Opt out of product analytics", "Don't include my usage in aggregate product analytics."],
-];
+// Notification + privacy rows/defaults are shared in @hybrid/core so web +
+// mobile render the same keys + copy (parity).
+const NOTIF_DEFAULTS = ACCOUNT_NOTIF_DEFAULTS;
+const PRIVACY_DEFAULTS = ACCOUNT_PRIVACY_DEFAULTS;
 const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "en", label: "EN" },
   { id: "pl", label: "PL" },
@@ -486,8 +477,8 @@ export default function AccountSettings() {
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Notifications</Mono>
           <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Mono>
           <div style={{ marginTop: 12 }}>
-            {NOTIF_ROWS.map(([k, title, desc]) => (
-              <PrefRow key={k} title={title} desc={desc} on={!!notif[k]} onToggle={() => toggleNotif(k)} disabled={!authOn} />
+            {ACCOUNT_NOTIF_ROWS.map(({ key, title, desc }) => (
+              <PrefRow key={key} title={title} desc={desc} on={!!notif[key]} onToggle={() => toggleNotif(key)} disabled={!authOn} />
             ))}
           </div>
           {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
@@ -500,8 +491,8 @@ export default function AccountSettings() {
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Privacy</Mono>
           <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>You control what you share. Saved to your account &amp; synced across devices.</Mono>
           <div style={{ marginTop: 12 }}>
-            {PRIVACY_ROWS.map(([k, title, desc]) => (
-              <PrefRow key={k} title={title} desc={desc} on={!!priv[k]} onToggle={() => togglePriv(k)} disabled={!authOn} />
+            {ACCOUNT_PRIVACY_ROWS.map(({ key, title, desc }) => (
+              <PrefRow key={key} title={title} desc={desc} on={!!priv[key]} onToggle={() => togglePriv(key)} disabled={!authOn} />
             ))}
           </div>
           {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}

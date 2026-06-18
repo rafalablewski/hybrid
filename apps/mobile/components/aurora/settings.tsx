@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { TEMPLATES, type Lang } from "@hybrid/core";
+import { TEMPLATES, type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
+import { useAccountSettings } from "../../lib/account";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { F } from "../../lib/ui";
-import { AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS } from "./kit";
+import { ToggleRow } from "../toggle-row";
+import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 
@@ -34,6 +36,7 @@ export default function AuroraSettings() {
   const { signOut, name, role, entitlement } = useSession();
   const { pref, setPref } = useTheme();
   const { template, setTemplate } = useTemplate();
+  const acct = useAccountSettings();
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -66,7 +69,21 @@ export default function AuroraSettings() {
           <Tag label={role.toUpperCase()} color={C.violet} />
           <Tag label={entitlement === "paid" ? "FULL · PAID" : "FREE"} color={entitlement === "paid" ? C.lime : C.ash} />
         </View>
+        {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
       </View>
+
+      <Section title="Profile">
+        <Field icon="user" label="Display name">
+          <AField value={acct.name} onChange={acct.setName} placeholder="Your name" />
+          <APill label="Save name" variant="soft" disabled={acct.busy} onPress={acct.saveName} />
+        </Field>
+        <Field icon="mail" label="Change email">
+          <AField value={acct.newEmail} onChange={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} keyboard="email-address" />
+          <APill label="Update email" variant="soft" disabled={acct.busy || !acct.newEmail.trim()} onPress={acct.changeEmail} />
+        </Field>
+        {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: 12, color: acct.profileMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: -2 }}>{acct.profileMsg}</Text>}
+        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>Profile editing needs a real signed-in account.</Text>}
+      </Section>
 
       <Section title="Preferences">
         <Field icon="settings" label="Appearance">
@@ -88,6 +105,50 @@ export default function AuroraSettings() {
 
       <Section title="Workout">
         <ListItem icon="play" label={t("loggerPrefs.title")} sub={t("loggerPrefs.intro")} onPress={() => router.push("/logger-settings")} />
+      </Section>
+
+      <Section title="Notifications">
+        <ACard style={{ marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, lineHeight: 16, marginBottom: 4 }}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Text>
+          {ACCOUNT_NOTIF_ROWS.map((row) => (
+            <ToggleRow key={row.key} C={C} title={row.title} desc={row.desc} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
+          ))}
+        </ACard>
+      </Section>
+
+      <Section title="Privacy">
+        <ACard style={{ marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, lineHeight: 16, marginBottom: 4 }}>You control what you share. Saved to your account &amp; synced across devices.</Text>
+          {ACCOUNT_PRIVACY_ROWS.map((row) => (
+            <ToggleRow key={row.key} C={C} title={row.title} desc={row.desc} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
+          ))}
+        </ACard>
+      </Section>
+
+      <Section title="Security">
+        <Field icon="lock" label="Change password">
+          {acct.provider && acct.provider !== "email" ? (
+            <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.chalk, lineHeight: 17 }}>You sign in with {acct.provider} — manage your password there.</Text>
+          ) : (
+            <>
+              <AField value={acct.newPw} onChange={acct.setNewPw} placeholder="New password" secure icon="lock" />
+              <APill label="Update password" variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} />
+              {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: 12, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
+            </>
+          )}
+        </Field>
+        <Field icon="logout" label="Active sessions">
+          <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Sign out of every device — revokes all other sessions and ends this one.</Text>
+          <APill label="Sign out everywhere" variant="soft" onPress={acct.signOutEverywhere} />
+        </Field>
+      </Section>
+
+      <Section title="Data">
+        <Field icon="download" label="Export my data">
+          <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.</Text>
+          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label="Download my data (JSON)" variant="soft" onPress={acct.exportData} />}
+          {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
+        </Field>
       </Section>
 
       {/* Danger zone */}
