@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { sanitizeProgramWeeks } from "@/lib/coach-program";
 
@@ -12,7 +13,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
-  const b = (await request.json().catch(() => ({}))) as { name?: unknown; goal?: unknown; weeks?: unknown };
+  const { data: b, error } = await readJsonLimited<{ name?: unknown; goal?: unknown; weeks?: unknown }>(request, 128 * 1024);
+  if (error) return error;
   try {
     const program = await prisma.coachProgram.findUnique({ where: { id } });
     if (!program || program.coachId !== me.id) return NextResponse.json({ error: "not found" }, { status: 404 });

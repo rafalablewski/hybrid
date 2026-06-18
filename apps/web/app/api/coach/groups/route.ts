@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // A solo coach's lightweight client GROUPS — a named set of their clients so a
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
   if (me.role !== "COACH" && me.role !== "ADMIN")
     return NextResponse.json({ error: "coach only" }, { status: 403 });
 
-  const b = (await request.json().catch(() => ({}))) as { name?: unknown };
+  const { data: b, error } = await readJsonLimited<{ name?: unknown }>(request, 4 * 1024);
+  if (error) return error;
   const name = typeof b.name === "string" ? b.name.trim() : "";
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
   if (name.length > 60) return NextResponse.json({ error: "name too long" }, { status: 400 });

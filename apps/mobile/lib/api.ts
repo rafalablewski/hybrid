@@ -440,6 +440,18 @@ export async function fetchPersonaAccess(): Promise<PersonaAccess> {
   }
 }
 
+/** The boolean feature flags evaluated for the signed-in user (admin → Flags). */
+export async function fetchFeatureFlags(): Promise<Record<string, boolean>> {
+  try {
+    const res = await fetch(`${API_URL}/api/flags`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { flags?: Record<string, boolean> };
+    return data.flags ?? {};
+  } catch {
+    return {};
+  }
+}
+
 // Incoming coach invites (mutual consent) — so a client can accept/decline a
 // coach's link from anywhere, without the coach console.
 export type CoachInvite = { id: string; status: string; coach?: { name: string | null; email: string } };

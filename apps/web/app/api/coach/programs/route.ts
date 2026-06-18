@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { sanitizeProgramWeeks } from "@/lib/coach-program";
 
@@ -31,7 +32,8 @@ export async function POST(request: Request) {
   if (me.role !== "COACH" && me.role !== "ADMIN")
     return NextResponse.json({ error: "coach only" }, { status: 403 });
 
-  const b = (await request.json().catch(() => ({}))) as { name?: unknown; goal?: unknown; weeks?: unknown };
+  const { data: b, error } = await readJsonLimited<{ name?: unknown; goal?: unknown; weeks?: unknown }>(request, 128 * 1024);
+  if (error) return error;
   const name = typeof b.name === "string" ? b.name.trim().slice(0, 80) : "";
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
   const goal = typeof b.goal === "string" && b.goal.trim() ? b.goal.trim().slice(0, 40) : null;

@@ -13,6 +13,7 @@ import {
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import CoachPrograms from "./coach-programs";
+import { useFlags } from "@/lib/use-flags";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator.
@@ -30,6 +31,7 @@ export default function CoachScreen() {
   const [openLink, setOpenLink] = useState<CoachLink | null>(null);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const { isEnabled } = useFlags();
 
   const load = useCallback(async () => {
     try {
@@ -164,16 +166,22 @@ export default function CoachScreen() {
       </Section>
 
       {/* CLIENT GROUPS — bundle clients and push a whole plan to all of them at
-          once (the solo-coach version of segmentation; Pro seat). */}
-      <Section title="Client groups" color={VIOLET}>
-        <GroupsManager clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
-      </Section>
+          once (the solo-coach version of segmentation; Pro seat). Admin-gated by
+          the coach.groups feature flag. */}
+      {isEnabled("coach.groups") && (
+        <Section title="Client groups" color={VIOLET}>
+          <GroupsManager clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
+        </Section>
+      )}
 
       {/* PROGRAMS — coach-authored multi-week programs (type 3): build once,
-          assign to a client or a whole group as scheduled sessions. */}
-      <Section title="Programs" color={LIME}>
-        <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
-      </Section>
+          assign to a client or a whole group as scheduled sessions. Admin-gated
+          by the coach.programs feature flag. */}
+      {isEnabled("coach.programs") && (
+        <Section title="Programs" color={LIME}>
+          <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
+        </Section>
+      )}
     </div>
   );
 }

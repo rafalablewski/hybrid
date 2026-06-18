@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { sanitizeProgramWeeks, programAssignments } from "@/lib/coach-program";
 
@@ -16,7 +17,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
-  const b = (await request.json().catch(() => ({}))) as { linkId?: unknown; groupId?: unknown; startDate?: unknown };
+  const { data: b, error } = await readJsonLimited<{ linkId?: unknown; groupId?: unknown; startDate?: unknown }>(request, 4 * 1024);
+  if (error) return error;
   const start = typeof b.startDate === "string" && !Number.isNaN(Date.parse(b.startDate)) ? new Date(b.startDate) : new Date();
 
   try {

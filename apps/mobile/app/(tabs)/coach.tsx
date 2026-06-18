@@ -20,6 +20,7 @@ import { useTemplate } from "../../lib/template";
 import AuroraCoach from "../../components/aurora/coach";
 import CoachGroups from "../../components/coach-groups";
 import CoachPrograms from "../../components/coach-programs";
+import { useFeatureFlag } from "../../lib/flags";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
@@ -31,6 +32,8 @@ export default function Coach() {
 function ClassicCoach() {
   const C = useTheme().palette;
   const { t } = useLang();
+  const groupsOn = useFeatureFlag("coach.groups");
+  const programsOn = useFeatureFlag("coach.programs");
   const [asCoach, setAsCoach] = useState<CoachLink[]>([]);
   const [asClient, setAsClient] = useState<CoachLink[]>([]);
   const [email, setEmail] = useState("");
@@ -157,11 +160,19 @@ function ClassicCoach() {
             </Card>
           ))}
 
-          <View style={{ marginTop: 18 }}><Kicker color={C.violet}>Client groups</Kicker></View>
-          <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
+          {groupsOn && (
+            <>
+              <View style={{ marginTop: 18 }}><Kicker color={C.violet}>Client groups</Kicker></View>
+              <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
+            </>
+          )}
 
-          <View style={{ marginTop: 18 }}><Kicker color={C.lime}>Programs</Kicker></View>
-          <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
+          {programsOn && (
+            <>
+              <View style={{ marginTop: 18 }}><Kicker color={C.lime}>Programs</Kicker></View>
+              <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
+            </>
+          )}
         </>
       )}
     </Screen>

@@ -401,7 +401,8 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   // Coaching & teams — the coach seat
   { group: "Coaching & teams (Coach seat)", feature: "Roster, client notes & check-in replies", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Assign plans into a client's account", free: false, pro: false, coach: true, org: true },
-  { group: "Coaching & teams (Coach seat)", feature: "Client groups + bulk plan assignment", free: false, pro: false, coach: "Pro seat+", org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Build & assign multi-week programs", free: false, pro: false, coach: true, org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Client groups + bulk plan/program assignment", free: false, pro: false, coach: "Pro seat+", org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Rostered clients get the adaptive experience (no per-client sub)", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Squad monitor & team compare", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Private coaching notes", free: false, pro: false, coach: true, org: true },

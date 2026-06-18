@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // Manage one client group: rename, set its members, or delete it. Owner-gated
@@ -21,7 +22,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const b = (await request.json().catch(() => ({}))) as { name?: unknown; clientIds?: unknown };
+  const { data: b, error } = await readJsonLimited<{ name?: unknown; clientIds?: unknown }>(request, 16 * 1024);
+  if (error) return error;
   try {
     const group = await ownGroup(me.id, id);
     if (!group) return NextResponse.json({ error: "not found" }, { status: 404 });
