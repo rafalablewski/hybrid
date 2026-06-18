@@ -453,6 +453,10 @@ export default function AppShell() {
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          {/* Classic shows the app kicker + screen title here. Aurora screens
+              render their own bespoke header, so we drop this to avoid a doubled
+              page title — but keep the theme/lang controls (right). */}
+          {aurora ? <div /> : (
           <div>
             <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
               app.hybrid.app
@@ -461,6 +465,7 @@ export default function AppShell() {
               {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
             </h1>
           </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               onClick={toggle}
@@ -691,7 +696,9 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      {/* ⌘K command orb — Classic only; Aurora's nav is the sidebar (no floating
+          circle, matching the uploaded web design). */}
+      {!aurora && <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />}
     </div>
   );
 }

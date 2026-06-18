@@ -93,7 +93,7 @@ export default function AuroraToday({
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 22 } as const;
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)" }}>
+    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)" }}>
       {/* Greeting + search/bell */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>

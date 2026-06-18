@@ -19,6 +19,7 @@ import {
   type Equipment,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
+import { useTemplate } from "@/lib/use-template";
 import { LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
 
 /**
@@ -44,6 +45,7 @@ export default function ReconciledWeek({
   equipment?: Equipment;
   style?: React.CSSProperties;
 }) {
+  const aurora = useTemplate().template === "aurora";
   const rx = useMemo(
     () => prescribeSession(toTrainingLog(sessions), bio, { profiles: velocityProfiles(sessions), experience, equipment }),
     [sessions, bio, experience, equipment],
@@ -152,7 +154,7 @@ export default function ReconciledWeek({
           <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
             {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
           </Chip>
-          <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling)}>
+          <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
             {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
           </button>
         </div>
@@ -199,7 +201,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   );
 }
 
-function cta(disabled: boolean) {
+function cta(disabled: boolean, aurora = false) {
   return {
     ...cond,
     fontSize: 13,
@@ -209,8 +211,8 @@ function cta(disabled: boolean) {
     color: ON_ACCENT,
     background: VIOLET,
     border: "none",
-    borderRadius: 10,
-    padding: "9px 16px",
+    borderRadius: aurora ? 999 : 10,
+    padding: aurora ? "10px 18px" : "9px 16px",
     cursor: disabled ? "default" : "pointer",
     opacity: disabled ? 0.6 : 1,
   };
