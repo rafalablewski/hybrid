@@ -244,7 +244,17 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
               Claude reads your real readiness, fatigue and velocity and writes you a personalized note for the day.
             </Text>
-            <AuroraAiCoach />
+            {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
+            {isAthlete ? (
+              <AuroraAiCoach />
+            ) : (
+              <Pressable
+                onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-aicoach" }); router.push("/upgrade"); }}
+                style={{ marginTop: 6, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}
+              >
+                <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>✦ Unlock Full →</Text>
+              </Pressable>
+            )}
           </View>
         </ScrollView>
 

@@ -215,8 +215,13 @@ export default function Today({
             Claude reads your real readiness, fatigue and velocity and writes you a personalized note for
             the day — what to push, what to hold back.
           </Mono>
-          {/* AskCoach already POSTs /api/ai-coach and renders the reply inline. */}
-          <AskCoach />
+          {/* The AI coach is the paid intelligence layer — casual gets the pitch
+              + one upgrade tap, not the working input. */}
+          {isAthlete ? (
+            <AskCoach />
+          ) : (
+            <button onClick={() => onNavigate?.("upgrade")} style={{ ...cta(VIOLET), marginTop: 12 }}>✦ Unlock Full →</button>
+          )}
         </Card>
       </div>
 

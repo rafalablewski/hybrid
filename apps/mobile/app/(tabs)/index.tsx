@@ -425,8 +425,13 @@ function ClassicHome() {
           <Mono color={C.chalk} style={{ lineHeight: 20 }}>
             Your training, readiness and goal — read together. The AI coach explains today&apos;s call and adapts your plan as your real logs come in.
           </Mono>
+          {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
           <View style={{ marginTop: 14 }}>
-            <Button label="Open AI coach →" color={C.violet} onPress={() => router.push("/ai-coach")} />
+            {isAthlete ? (
+              <Button label="Open AI coach →" color={C.violet} onPress={() => router.push("/ai-coach")} />
+            ) : (
+              <Button label="✦ Unlock Full →" color={C.violet} onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-aicoach" }); router.push("/upgrade"); }} />
+            )}
           </View>
         </Card>
       </ScrollView>

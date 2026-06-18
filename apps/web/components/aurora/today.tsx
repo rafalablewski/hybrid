@@ -178,7 +178,17 @@ export default function AuroraToday({
           <div style={{ fontSize: 13, lineHeight: 1.6, color: C("chalk"), marginBottom: 6 }}>
             Claude reads your real readiness, fatigue and velocity and writes you a personalized note for the day — what to push, what to hold back.
           </div>
-          <AuroraAskCoach />
+          {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
+          {isAthlete ? (
+            <AuroraAskCoach />
+          ) : (
+            <button
+              onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
+              style={{ marginTop: 6, background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              ✦ Unlock Full →
+            </button>
+          )}
         </div>
       </div>
 
