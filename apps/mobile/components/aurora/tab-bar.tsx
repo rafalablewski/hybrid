@@ -17,15 +17,43 @@ export type AuroraTabBarProps = {
   };
 };
 
-// The funnel tabs that belong in the bar, in order, with their Aurora glyph +
-// a11y label. Everything else (plans/sport/…) is reached from More / deep links.
-const TABS: { name: string; icon: AuroraIconName; label: string }[] = [
-  { name: "index", icon: "navigation", label: "Today" },
-  { name: "cockpit", icon: "arrow-up", label: "Cockpit" },
-  { name: "log", icon: "add", label: "Train" },
-  { name: "history", icon: "calendar", label: "History" },
-  { name: "more", icon: "settings", label: "More" },
+// A glyph is either one of the uploaded line-icons (icons1/2/3) or one of the
+// two distinctive nav marks from the design that aren't in the icon set — the
+// home GRID and the statistics BAR-CHART — which we draw from primitive Views
+// (crisp at any size, no extra asset/dependency).
+type Glyph = "grid" | "chart" | AuroraIconName;
+
+// The funnel tabs, in bar order, mirroring the uploaded design's bottom nav:
+// home grid · stats bars · calendar · gear — plus our essential Train (add).
+const TABS: { name: string; glyph: Glyph; label: string }[] = [
+  { name: "index", glyph: "grid", label: "Today" },
+  { name: "cockpit", glyph: "chart", label: "Cockpit" },
+  { name: "log", glyph: "add", label: "Train" },
+  { name: "history", glyph: "calendar", label: "History" },
+  { name: "more", glyph: "settings", label: "More" },
 ];
+
+function TabGlyph({ glyph, size, color }: { glyph: Glyph; size: number; color: string }) {
+  if (glyph === "grid") {
+    const cell = (size - 5) / 2;
+    const sq = { width: cell, height: cell, borderRadius: Math.max(2, cell * 0.3), backgroundColor: color } as const;
+    return (
+      <View style={{ width: size, height: size, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignContent: "space-between" }}>
+        <View style={sq} /><View style={sq} /><View style={sq} /><View style={sq} />
+      </View>
+    );
+  }
+  if (glyph === "chart") {
+    const bw = (size - 6) / 4;
+    const bar = (h: number) => ({ width: bw, height: size * h, borderRadius: bw / 2, backgroundColor: color } as const);
+    return (
+      <View style={{ width: size, height: size, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <View style={bar(0.5)} /><View style={bar(0.82)} /><View style={bar(0.62)} /><View style={bar(1)} />
+      </View>
+    );
+  }
+  return <AuroraIcon name={glyph} size={size} color={color} />;
+}
 
 /**
  * AURORA bottom navigation — the uploaded design's floating pill bar: a single
@@ -72,7 +100,6 @@ export default function AuroraTabBar({ state, navigation }: AuroraTabBarProps) {
           borderRadius: 999,
           paddingHorizontal: 10,
           paddingVertical: 9,
-          // soft floating shadow
           shadowColor: "#000",
           shadowOpacity: 0.35,
           shadowRadius: 18,
@@ -90,12 +117,7 @@ export default function AuroraTabBar({ state, navigation }: AuroraTabBarProps) {
               accessibilityState={{ selected: focused }}
               accessibilityLabel={tab.label}
               hitSlop={6}
-              style={{
-                flex: 1,
-                height: 52,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              style={{ flex: 1, height: 52, alignItems: "center", justifyContent: "center" }}
             >
               <View
                 style={{
@@ -107,7 +129,7 @@ export default function AuroraTabBar({ state, navigation }: AuroraTabBarProps) {
                   backgroundColor: focused ? C.chalk : "transparent",
                 }}
               >
-                <AuroraIcon name={tab.icon} size={23} color={focused ? C.ink : C.ash} />
+                <TabGlyph glyph={tab.glyph} size={22} color={focused ? C.ink : C.ash} />
               </View>
             </Pressable>
           );
