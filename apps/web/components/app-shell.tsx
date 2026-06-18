@@ -36,6 +36,7 @@ import {
   RolesScreen,
 } from "./screens";
 import AuroraRoles from "./aurora/roles";
+import AuroraHistory from "./aurora/history";
 import Logger from "./logger";
 import PlansScreen from "./plans";
 import SportScreen from "./sports";
@@ -625,7 +626,7 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "history" && <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />}
+        {screen === "history" && (aurora ? <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} /> : <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />)}
 
         {screen === "coach" && <CoachScreen />}
 

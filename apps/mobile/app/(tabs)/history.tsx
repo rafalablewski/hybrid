@@ -6,10 +6,17 @@ import { fetchSessions, archiveSession, deleteSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraHistory from "../../components/aurora/history";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 export default function History() {
+  if (useTemplate().template === "aurora") return <AuroraHistory />;
+  return <ClassicHistory />;
+}
+
+function ClassicHistory() {
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
