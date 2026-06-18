@@ -4,6 +4,7 @@ import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
 
 type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
 
@@ -28,6 +29,9 @@ export default function LoggerSettings() {
   const C = useTheme().palette;
   const { t } = useLang();
   const prefs = useLoggerPrefs();
+  // Aurora rounds choice chips into pills, matching the segmented controls used
+  // across the rest of the Aurora UI; Classic keeps the tighter radius.
+  const rChip = useTemplate().template === "aurora" ? 999 : 10;
 
   return (
     <Screen>
@@ -66,7 +70,7 @@ export default function LoggerSettings() {
                 <Pressable
                   key={sec}
                   onPress={() => setLoggerPref("restSeconds", sec)}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: 13, color: on ? txt(C, C.lime) : C.ash }}>{sec}s</Text>
                 </Pressable>
@@ -83,7 +87,7 @@ export default function LoggerSettings() {
           {(["kg", "lb"] as const).map((u) => {
             const on = prefs.units === u;
             return (
-              <Pressable key={u} onPress={() => setLoggerPref("units", u)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
+              <Pressable key={u} onPress={() => setLoggerPref("units", u)} style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 13, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{u}</Text>
               </Pressable>
             );
@@ -98,7 +102,7 @@ export default function LoggerSettings() {
           {(prefs.units === "lb" ? [0, 5, 10] : [0, 2.5, 5]).map((inc) => {
             const on = prefs.quickIncrement === inc;
             return (
-              <Pressable key={inc} onPress={() => setLoggerPref("quickIncrement", inc)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
+              <Pressable key={inc} onPress={() => setLoggerPref("quickIncrement", inc)} style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 13, color: on ? txt(C, C.lime) : C.ash }}>{inc === 0 ? t("common.off") : `±${inc}`}</Text>
               </Pressable>
             );
@@ -116,7 +120,7 @@ export default function LoggerSettings() {
               <Pressable
                 key={id}
                 onPress={() => setLoggerPref("defaultStart", id)}
-                style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
               </Pressable>

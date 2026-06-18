@@ -10,6 +10,7 @@ import { fetchMyAccessRequests, requestAccess, WEB_APP_URL } from "../../lib/api
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
 
 // Features worth requesting (everything not casual-by-default).
 const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
@@ -21,11 +22,20 @@ const MOBILE_NAV_IDS = new Set([
   "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar",
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "roles", "settings", "onboarding",
+  "statistics", "timer", "notifications",
 ]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
 
 const SECTIONS: { titleKey: string; links: Link[] }[] = [
+  {
+    titleKey: "more.tools",
+    links: [
+      { id: "statistics", labelKey: "nav.statistics", sub: "week · month · year", href: "/statistics", color: C.lime },
+      { id: "timer", labelKey: "nav.timer", sub: "work / rest rounds", href: "/interval-timer", color: C.amber },
+      { id: "notifications", labelKey: "nav.notifications", sub: "activity · coach workouts", href: "/notifications", color: C.blue },
+    ],
+  },
   {
     titleKey: "more.plan",
     links: [
@@ -71,6 +81,11 @@ export default function More() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
+  // Aurora softens every surface — match the rest of the app (cards → bigger
+  // radius, CTAs → pills) so the More hub isn't a classic island in Aurora.
+  const aurora = useTemplate().template === "aurora";
+  const rCard = aurora ? 22 : 14;
+  const rCta = aurora ? 999 : 14;
   const { signOut, role, entitlement } = useSession();
   const persona = usePersona();
   const choice = useClientPersonaChoice();
@@ -151,7 +166,7 @@ export default function More() {
       {persona === "casual" && (
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "more" }); router.push("/upgrade"); }}
-          style={{ marginTop: 18, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+          style={{ marginTop: 18, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: rCta, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
@@ -165,7 +180,7 @@ export default function More() {
       {navVisibleTo(persona, "cockpit", access) && (
         <Pressable
           onPress={() => router.push("/(tabs)/cockpit")}
-          style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: 14, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+          style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: rCta, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.blue) }}>◈ Athlete cockpit</Text>
@@ -183,7 +198,7 @@ export default function More() {
               <Pressable
                 key={l.labelKey}
                 onPress={() => router.push(l.href)}
-                style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
+                style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 14 }}
               >
                 <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, l.color) }}>{t(l.labelKey)} →</Text>
                 <Mono style={{ marginTop: 2, fontSize: 11 }}>{l.sub}</Mono>
@@ -243,7 +258,7 @@ export default function More() {
 
       <Pressable
         onPress={() => router.push("/settings")}
-        style={{ marginTop: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        style={{ marginTop: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
       >
         <View>
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("settings.title")}</Text>

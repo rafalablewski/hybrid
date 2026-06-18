@@ -100,6 +100,9 @@ import AuroraForcePlate from "./aurora/forceplate";
 import Progress from "./progress";
 import AuroraProgress from "./aurora/progress";
 import AccountSettings from "./account-settings";
+import IntervalTimerScreen from "./interval-timer";
+import NotificationsScreen from "./notifications";
+import StatisticsScreen from "./statistics";
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
@@ -678,6 +681,12 @@ export default function AppShell() {
         {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
 
         {screen === "roles" && (aurora ? <AuroraRoles /> : <RolesScreen />)}
+
+        {/* Tools available in BOTH templates (Aurora-styled when active, classic
+            otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}
+        {screen === "notifications" && <NotificationsScreen embedded />}
+        {screen === "timer" && <IntervalTimerScreen embedded />}
+        {screen === "statistics" && <StatisticsScreen embedded />}
 
         {screen === "settings" && <AccountSettings />}
       </main>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { AuroraIcon } from "@/components/aurora/icons";
+import { useTemplate } from "@/lib/use-template";
 
 const RANGES: { id: StatRange; label: string }[] = [
   { id: "week", label: "Week" },
@@ -13,9 +14,14 @@ const RANGES: { id: StatRange; label: string }[] = [
 ];
 
 /** Statistics (web) — web parity of the mobile screen, same @hybrid/core stats
- *  engine over the signed-in user's real sessions. Honest empty state. */
-export default function StatisticsScreen() {
+ *  engine over the signed-in user's real sessions. Honest empty state. Works in
+ *  BOTH templates: `embedded` (in the app-shell, reached from the sidebar / ⌘K)
+ *  drops the full-screen chrome + back button; standalone (/statistics, e.g.
+ *  from the landing) keeps them. Radii soften under Aurora. */
+export default function StatisticsScreen({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
+  const aurora = useTemplate().template === "aurora";
+  const r = { card: aurora ? 24 : 12, chart: aurora ? 28 : 14, field: aurora ? 14 : 10, pill: aurora ? 999 : 10 };
   const { sessions } = useSessions();
   const [range, setRange] = useState<StatRange>("week");
   const buckets = useMemo(() => sessionBuckets(sessions, range), [sessions, range]);
@@ -23,15 +29,20 @@ export default function StatisticsScreen() {
   const hasData = sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
   const C = (v: string) => `var(--color-${v})`;
+  const outer: CSSProperties = embedded
+    ? { color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", justifyContent: "center" }
+    : { minHeight: "100vh", background: C("ink"), color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", justifyContent: "center", padding: "32px 22px" };
 
   return (
-    <div style={{ minHeight: "100vh", background: C("ink"), color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", justifyContent: "center", padding: "32px 22px" }}>
+    <div style={outer}>
       <div style={{ width: "100%", maxWidth: 460 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button onClick={() => router.push("/app")} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
-              <AuroraIcon name="back" size={20} />
-            </button>
+            {!embedded && (
+              <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+                {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: 20 }}>←</span>}
+              </button>
+            )}
             <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0, lineHeight: 1.1 }}>Your<br />Statistics</h1>
           </div>
           <div style={{ textAlign: "right", marginTop: 6 }}>
@@ -43,16 +54,16 @@ export default function StatisticsScreen() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4, marginTop: 18 }}>
-          {RANGES.map((r) => {
-            const on = range === r.id;
+        <div style={{ display: "flex", gap: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.pill, padding: 4, marginTop: 18 }}>
+          {RANGES.map((rg) => {
+            const on = range === rg.id;
             return (
-              <button key={r.id} onClick={() => setRange(r.id)} style={{ flex: 1, padding: "9px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{r.label}</button>
+              <button key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{rg.label}</button>
             );
           })}
         </div>
 
-        <div style={{ marginTop: 18, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "18px 18px 26px" }}>
+        <div style={{ marginTop: 18, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.chart, padding: "18px 18px 26px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <b style={{ fontSize: 16 }}>Sessions</b>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{buckets.total} in {range}</span>
@@ -68,9 +79,9 @@ export default function StatisticsScreen() {
         </div>
 
         <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-          <Mini icon="verified" label="Active days" value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} />
-          <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("violet")} />
-          <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("amber")} />
+          <Mini icon="verified" label="Active days" value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} radius={r.card} />
+          <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("violet")} radius={r.card} />
+          <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("amber")} radius={r.card} />
         </div>
 
         {!hasData && (
@@ -81,10 +92,10 @@ export default function StatisticsScreen() {
   );
 }
 
-function Mini({ icon, label, value, color }: { icon: Parameters<typeof AuroraIcon>[0]["name"]; label: string; value: string; color: string }) {
+function Mini({ icon, label, value, color, radius }: { icon: Parameters<typeof AuroraIcon>[0]["name"]; label: string; value: string; color: string; radius: number }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
-    <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 16 }}>
+    <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: radius, padding: 16 }}>
       <AuroraIcon name={icon} size={22} color={color} />
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), marginTop: 8 }}>{label}</div>
       <div style={{ fontWeight: 900, fontSize: 20, marginTop: 2 }}>{value}</div>

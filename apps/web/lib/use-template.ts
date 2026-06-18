@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_TEMPLATE, resolveTemplate, type TemplateName } from "@hybrid/core";
+import { DEFAULT_TEMPLATE, resolveTemplate, TEMPLATE_STORAGE_KEY, type TemplateName } from "@hybrid/core";
 
-const KEY = "hybrid-template";
+const KEY = TEMPLATE_STORAGE_KEY;
 
 /**
  * Active UI template (classic ⇄ aurora) — see @hybrid/core templates.ts. A

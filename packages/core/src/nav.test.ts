@@ -53,8 +53,10 @@ describe("navForPersona", () => {
   });
 
   it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
+    // The lean loop PLUS the universal lightweight tools every user gets:
+    // Notifications (activity feed), the Interval timer, and Statistics.
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["calendar", "checkin", "history", "log", "nutrition", "progress", "runtrack", "settings", "today"],
+      ["calendar", "checkin", "history", "log", "notifications", "nutrition", "progress", "runtrack", "settings", "statistics", "timer", "today"],
     );
   });
 

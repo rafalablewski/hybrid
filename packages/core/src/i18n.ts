@@ -10,6 +10,9 @@ export const LANGS: Record<Lang, string> = { en: "English", pl: "Polski", de: "D
 export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   en: {
     "nav.today": "Today",
+    "nav.notifications": "Notifications",
+    "nav.timer": "Interval timer",
+    "nav.statistics": "Statistics",
     "nav.onboarding": "Get started",
     "nav.squad": "Squad monitor",
     "nav.dashboard": "Dashboard",
@@ -167,6 +170,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     "more.plan": "Plan",
     "more.analyze": "Analyze",
     "more.routines": "Routines & coaching",
+    "more.tools": "Tools",
     "welcome.tagline": "STRENGTH · CONDITIONING",
     "welcome.hook": "Train first.\nSign up later.",
     "welcome.sub": "Start logging in seconds. Create an account when you want to keep your history and see the analysis.",
@@ -289,6 +293,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   },
   pl: {
     "nav.today": "Dziś",
+    "nav.notifications": "Powiadomienia",
+    "nav.timer": "Minutnik interwałowy",
+    "nav.statistics": "Statystyki",
     "nav.onboarding": "Zacznij tutaj",
     "nav.squad": "Monitor zespołu",
     "nav.dashboard": "Pulpit",
@@ -446,6 +453,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     "more.plan": "Plan",
     "more.analyze": "Analiza",
     "more.routines": "Rutyny i trener",
+    "more.tools": "Narzędzia",
     "welcome.tagline": "SIŁA · KONDYCJA",
     "welcome.hook": "Najpierw trenuj.\nKonto później.",
     "welcome.sub": "Zacznij zapisywać w kilka sekund. Załóż konto, gdy zechcesz zachować historię i zobaczyć analizę.",
@@ -568,6 +576,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   },
   de: {
     "nav.today": "Heute",
+    "nav.notifications": "Benachrichtigungen",
+    "nav.timer": "Intervall-Timer",
+    "nav.statistics": "Statistik",
     "nav.onboarding": "Loslegen",
     "nav.squad": "Team-Monitor",
     "nav.dashboard": "Übersicht",
@@ -725,6 +736,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     "more.plan": "Plan",
     "more.analyze": "Analyse",
     "more.routines": "Routinen & Coaching",
+    "more.tools": "Werkzeuge",
     "welcome.tagline": "KRAFT · KONDITION",
     "welcome.hook": "Erst trainieren.\nSpäter anmelden.",
     "welcome.sub": "Starte das Logging in Sekunden. Erstelle ein Konto, wenn du deinen Verlauf behalten und die Analyse sehen willst.",
