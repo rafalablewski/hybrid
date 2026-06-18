@@ -14,7 +14,7 @@ import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 // The whole Full (athlete) toolkit — sold as one bundle so the upgrade's full
 // value is clear (not "just one screen"). Grouped to stay scannable.
 const BUNDLE: { k: string; c: (C: ReturnType<typeof useTheme>["palette"]) => string; items: string[] }[] = [
-  { k: "Train smarter", c: (C) => C.lime, items: ["Plans — guided programs", "Periodize — your season", "Builder — your own templates", "Competition — peak on the day"] },
+  { k: "Train smarter", c: (C) => C.lime, items: ["Adaptive plans — auto-progression", "Periodize — your season", "Builder — your own templates", "Competition — peak on the day"] },
   { k: "Your performance", c: (C) => C.blue, items: ["Athlete Twin · HPI", "Injury risk by tissue", "Future-self projections", "Analytics dashboards"] },
   { k: "Sport & technique", c: (C) => C.amber, items: ["Sport S&C transfer", "Velocity (VBT)", "Force plate", "Technique video"] },
   { k: "Endurance & body", c: (C) => C.violet, items: ["Running — pace zones", "Volume · MEV–MRV", "Exercises & trends", "Longevity"] },

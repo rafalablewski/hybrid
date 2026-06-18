@@ -17,6 +17,9 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import CoachGroups from "../coach-groups";
+import CoachPrograms from "../coach-programs";
+import { useFeatureFlag } from "../../lib/flags";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
@@ -25,6 +28,8 @@ const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlet
 export default function AuroraCoach() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const groupsOn = useFeatureFlag("coach.groups");
+  const programsOn = useFeatureFlag("coach.programs");
   const [asCoach, setAsCoach] = useState<CoachLink[]>([]);
   const [asClient, setAsClient] = useState<CoachLink[]>([]);
   const [email, setEmail] = useState("");
@@ -158,6 +163,20 @@ export default function AuroraCoach() {
               </View>
             </ACard>
           ))}
+
+          {groupsOn && (
+            <>
+              <AHeading style={{ fontSize: 18, marginTop: 22 }}>Client groups</AHeading>
+              <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
+            </>
+          )}
+
+          {programsOn && (
+            <>
+              <AHeading style={{ fontSize: 18, marginTop: 22 }}>Programs</AHeading>
+              <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
+            </>
+          )}
         </>
       )}
     </AuroraScreen>

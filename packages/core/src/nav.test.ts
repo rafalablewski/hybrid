@@ -26,6 +26,14 @@ describe("persona resolution", () => {
     expect(resolvePersona("client", "casual", "paid")).toBe("casual");
   });
 
+  it("a client with an ACTIVE coach gets Full on the coach's seat", () => {
+    // hasActiveCoach unlocks athlete regardless of the client's own choice/billing.
+    expect(resolvePersona("client", "casual", "free", true)).toBe("athlete");
+    expect(resolvePersona("client", undefined, "free", true)).toBe("athlete");
+    // No active coach → unchanged (still gated on the paid Full upgrade).
+    expect(resolvePersona("client", "casual", "free", false)).toBe("casual");
+  });
+
   it("entitlement never elevates a coach/admin role and never grants coach to a client", () => {
     // role outranks entitlement
     expect(resolvePersona("coach", "casual", "free")).toBe("coach");
@@ -54,9 +62,10 @@ describe("navForPersona", () => {
 
   it("casual (Average Joe) is exactly the curated lean set — the done deal", () => {
     // The lean loop PLUS the universal lightweight tools every user gets:
-    // Notifications (activity feed), the Interval timer, and Statistics.
+    // Notifications (activity feed), the Interval timer, Statistics — and the
+    // pre-built Plan library (browse & enroll is free; periodizing it is paid).
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["calendar", "checkin", "history", "log", "notifications", "nutrition", "progress", "runtrack", "settings", "statistics", "timer", "today"],
+      ["calendar", "checkin", "history", "log", "notifications", "nutrition", "plans", "progress", "runtrack", "settings", "statistics", "timer", "today"],
     );
   });
 

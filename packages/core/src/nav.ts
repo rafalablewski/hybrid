@@ -79,7 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "runtrack", label: "Run tracking", icon: "📍", group: "train" },
   { id: "calendar", label: "Calendar", icon: "▦", group: "train" },
   { id: "builder", label: "Builder", icon: "⊕", group: "train", minPersona: "athlete" },
-  { id: "plans", label: "Plans", icon: "▤", group: "train", minPersona: "athlete" },
+  { id: "plans", label: "Plans", icon: "▤", group: "train" },
   { id: "periodize", label: "Periodize", icon: "◰", group: "train", minPersona: "athlete" },
   { id: "sport", label: "Sport", icon: "◎", group: "train", minPersona: "athlete" },
   { id: "competition", label: "Competition", icon: "▲", group: "train", minPersona: "athlete" },
@@ -109,7 +109,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "tactical", label: "Tactical", icon: "▰", group: "teams", minPersona: "coach" },
 
   { id: "connections", label: "Connections", icon: "⌁", group: "account", minPersona: "athlete" },
-  { id: "roles", label: "Roles & access", icon: "⚿", group: "account", minPersona: "athlete" },
   { id: "settings", label: "Settings", icon: "⚙", group: "account" },
 ];
 
@@ -138,9 +137,14 @@ export function resolvePersona(
   role: "client" | "coach" | "admin",
   clientChoice?: ClientPersona,
   entitlement: Entitlement = "free",
+  hasActiveCoach = false,
 ): Persona {
   if (role === "admin") return "admin";
   if (role === "coach") return "coach";
+  // A client with an ACTIVE coach gets the full athlete experience (adaptive
+  // plan, reconciled week, Twin) on their coach's seat — "your coach pays, you
+  // get Full" — regardless of their own billing entitlement or mode choice.
+  if (hasActiveCoach) return "athlete";
   if (clientChoice === "athlete" && entitlement === "paid") return "athlete";
   return "casual";
 }

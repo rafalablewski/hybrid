@@ -35,6 +35,8 @@ export const FEATURE_FLAGS: FeatureFlagDef[] = [
   { key: "nav.talent", label: "Talent graph", description: "Expose the Talent (benchmarks/discovery) screen.", defaultEnabled: true },
   { key: "nav.longevity", label: "Longevity screen", description: "Expose the performance-medicine / longevity screen.", defaultEnabled: true },
   { key: "nav.tactical", label: "Tactical readiness", description: "Expose the tactical / SOF readiness screen.", defaultEnabled: true },
+  { key: "coach.groups", label: "Coach client groups", description: "Let coaches bundle clients into groups and assign a plan to a whole group at once (Coach Pro). Off hides the Client groups section.", defaultEnabled: true, audience: "coaches" },
+  { key: "coach.programs", label: "Coach program builder", description: "Let coaches author multi-week programs and assign them to a client or group as scheduled sessions. Off hides the Programs section.", defaultEnabled: true, audience: "coaches" },
 ];
 
 /** Does a flag's audience include this role? Admins always match (god view). */

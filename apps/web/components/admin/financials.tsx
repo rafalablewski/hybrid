@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -21,10 +21,17 @@ import {
   COST_DRIVERS,
   METRIC_GUIDE,
   DEFAULT_ASSUMPTIONS,
+  FIXED_OPEX_ITEMS,
+  MARKET_PRICING,
+  PLAN_COLUMNS,
+  ENTITLEMENT_MATRIX,
+  PRICING_REF_DATE,
+  toUsd,
   computeEconomics,
   type EconomicAssumptions,
   type RevenueStreamId,
   type SegmentEconomics,
+  type EntitlementCell,
 } from "@hybrid/core";
 import {
   LINE,
@@ -225,6 +232,31 @@ export default function AdminFinancials() {
         </div>
       </Section>
 
+      {/* ---- focus markets + pricing ---- */}
+      <Section title="Focus markets & pricing" kicker={`Where we sell · localized price · FX ${PRICING_REF_DATE}`}>
+        <Mono s={{ fontSize: 12.5, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
+          We focus on five markets. The <span style={{ color: CHALK }}>US is the anchor</span> — every
+          other price indexes off it on a purchasing-power lens, then rounds to the point that market
+          expects. The <span style={{ color: txt(LIME) }}>≈ USD</span> figure is what we keep before that
+          market&apos;s tax + Stripe fee, so two markets at the same headline can net very differently.
+        </Mono>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          {MARKET_PRICING.map((m) => (
+            <MarketCard key={m.id} m={m} />
+          ))}
+        </div>
+      </Section>
+
+      {/* ---- what each plan gets ---- */}
+      <Section title="What each plan includes" kicker="The entitlement matrix · free → org">
+        <Mono s={{ fontSize: 12.5, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
+          What a user actually gets for what they pay. The tiers nest — <span style={{ color: CHALK }}>Pro ⊂ Coach ⊂ Org</span>:
+          a coach seat includes Pro for the coach and their roster; org includes everything plus the
+          institutional layer. Free is the logging loop, free forever — the top of the funnel.
+        </Mono>
+        <PlanMatrix />
+      </Section>
+
       {/* ---- what it costs us ---- */}
       <Section title="What it costs us" kicker="Cost of goods + fixed opex (COGS drivers)">
         {agentCost && agentCost.runs > 0 && (
@@ -247,7 +279,7 @@ export default function AdminFinancials() {
               c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "support" ? r.cogs.support : c.id === "fixed" ? r.cogs.fixed : null;
             const shareOfRev = live != null && r.revenue.total > 0 ? (live / r.revenue.total) * 100 : null;
             return (
-              <Card key={c.id} style={{ borderLeft: `3px solid ${c.kind === "fixed" ? AMBER : RED}` }}>
+              <Card key={c.id} style={{ borderLeft: `3px solid ${c.kind === "fixed" ? AMBER : RED}`, gridColumn: c.id === "fixed" ? "1 / -1" : undefined }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{c.label}</div>
                   <Chip c={c.kind === "fixed" ? AMBER : RED}>{c.kind === "fixed" ? "fixed" : "COGS"}</Chip>
@@ -261,6 +293,7 @@ export default function AdminFinancials() {
                 <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
                   {c.note}
                 </Mono>
+                {c.id === "fixed" && <FixedOpexBreakdown />}
               </Card>
             );
           })}
@@ -549,6 +582,167 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
       </div>
       <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
         {Math.round(seg.monthlyChurn * 100 * 10) / 10}% monthly churn · ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo average lifetime
+      </Mono>
+    </Card>
+  );
+}
+
+function MarketCard({ m }: { m: (typeof MARKET_PRICING)[number] }) {
+  const isPLN = m.currency === "PLN";
+  const loc = (n: number) => (isPLN ? `${Math.round(n)} zł` : `${m.symbol}${Number.isInteger(n) ? n : n.toFixed(2)}`);
+  const eq = (n: number) => `≈ $${toUsd(n, m.fxPerUsd).toFixed(2)}`;
+  const indexPct = Math.round(m.priceIndex * 100);
+  const indexColor = m.priceIndex >= 0.95 ? LIME : m.priceIndex >= 0.7 ? AMBER : BLUE;
+  return (
+    <Card style={{ borderLeft: `3px solid ${indexColor}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>
+          <span style={{ marginRight: 8 }}>{m.flag}</span>
+          {m.market}
+        </div>
+        <Chip c={indexColor}>{m.currency} · {indexPct}% of US</Chip>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginTop: 12 }}>
+        <PriceBox label="Pro · monthly" value={loc(m.proMonthly)} sub={eq(m.proMonthly)} />
+        <PriceBox label="Pro · annual" value={loc(m.proAnnual)} sub={`${eq(m.proAnnual)} · ${loc(m.proAnnual / 12)}/mo`} />
+      </div>
+      <Mono s={{ fontSize: 11.5, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+        Coach seats{" "}
+        <span style={{ color: txt(CHALK) }}>{loc(m.coachStarter)} · {loc(m.coachPro)} · {loc(m.coachBusiness)}</span>/mo
+        {" · "}Org <span style={{ color: txt(CHALK) }}>{loc(m.orgLow)}–{loc(m.orgHigh)}</span>/athlete/yr
+      </Mono>
+      <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+        {m.tax} · Stripe {m.stripeFee}
+      </Mono>
+      <Mono s={{ fontSize: 11.5, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>
+        {m.rationale}
+      </Mono>
+    </Card>
+  );
+}
+
+function PriceBox({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "8px 10px" }}>
+      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginTop: 2 }}>{value}</div>
+      <Mono s={{ fontSize: 10.5, display: "block", marginTop: 1 }} c={ASH}>{sub}</Mono>
+    </div>
+  );
+}
+
+function FixedOpexBreakdown() {
+  const recurring = FIXED_OPEX_ITEMS.filter((i) => i.kind === "recurring");
+  const extras = FIXED_OPEX_ITEMS.filter((i) => i.kind !== "recurring");
+  const total = recurring.reduce((s, i) => s + i.monthlyUsd, 0);
+  const row = (label: string, billed: string, monthly: string, c: string = ASH, muted = false) => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr) 70px",
+        gap: 8,
+        alignItems: "center",
+        padding: "7px 0",
+        borderBottom: `1px solid ${LINE}`,
+      }}
+    >
+      <Mono s={{ fontSize: 12, fontWeight: muted ? 400 : 600 }} c={muted ? ASH : CHALK}>{label}</Mono>
+      <Mono s={{ fontSize: 11.5, textAlign: "right" }} c={ASH}>{billed}</Mono>
+      <Mono s={{ fontSize: 12, textAlign: "right", fontWeight: 700 }} c={c}>{monthly}</Mono>
+    </div>
+  );
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr) 70px",
+          gap: 8,
+          padding: "0 0 6px",
+          borderBottom: `1px solid ${LINE}`,
+        }}
+      >
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Item</Mono>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>As billed</Mono>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>$/mo</Mono>
+      </div>
+      {recurring.map((i) => row(i.label, i.billed, usdFull(i.monthlyUsd)))}
+      {row("Recurring run-rate", "", usdFull(total), AMBER)}
+      {extras.length > 0 && (
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginTop: 12, marginBottom: 2 }} c={ASH}>
+          Not in the monthly run-rate
+        </Mono>
+      )}
+      {extras.map((i) => row(i.note ? `${i.label} · ${i.note}` : i.label, i.billed, "—", ASH, true))}
+    </div>
+  );
+}
+
+function PlanMatrix() {
+  const entCell = (v: EntitlementCell, key: string) => {
+    const none = v === false;
+    const yes = v === true;
+    return (
+      <td
+        key={key}
+        style={{
+          ...mono,
+          fontSize: 12,
+          textAlign: "center",
+          padding: "10px 6px",
+          borderBottom: `1px solid ${LINE}`,
+          color: txt(none ? ASH : yes ? LIME : AMBER),
+        }}
+      >
+        {none ? "—" : yes ? "✓" : v}
+      </td>
+    );
+  };
+
+  // Insert a group sub-header row whenever the group label changes — derived
+  // purely from the previous row (no render-phase mutation).
+  return (
+    <Card>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "8px 6px", borderBottom: `1px solid ${LINE}` }}>
+              Feature
+            </th>
+            {PLAN_COLUMNS.map((c) => (
+              <th key={c.id} style={{ padding: "8px 6px", borderBottom: `1px solid ${LINE}`, textAlign: "center", minWidth: 110 }}>
+                <div style={{ ...disp, fontWeight: 800, fontSize: 13, color: txt(c.id === "free" ? ASH : c.id === "pro" ? LIME : c.id === "coach" ? VIOLET : BLUE) }}>{c.label}</div>
+                <Mono s={{ fontSize: 9.5, display: "block", marginTop: 2 }} c={ASH}>{c.price}</Mono>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {ENTITLEMENT_MATRIX.map((row, i) => {
+            const groupHeader = row.group !== ENTITLEMENT_MATRIX[i - 1]?.group;
+            return (
+              <Fragment key={`${row.group}-${row.feature}-${i}`}>
+                {groupHeader && (
+                  <tr>
+                    <td colSpan={1 + PLAN_COLUMNS.length} style={{ padding: "12px 6px 4px" }}>
+                      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{row.group}</Mono>
+                    </td>
+                  </tr>
+                )}
+                <tr>
+                  <td style={{ ...disp, fontWeight: 600, fontSize: 13, padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>{row.feature}</td>
+                  {entCell(row.free, `${i}-free`)}
+                  {entCell(row.pro, `${i}-pro`)}
+                  {entCell(row.coach, `${i}-coach`)}
+                  {entCell(row.org, `${i}-org`)}
+                </tr>
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+      <Mono s={{ fontSize: 11, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+        {PLAN_COLUMNS.map((c) => `${c.label}: ${c.who}`).join(" · ")}
       </Mono>
     </Card>
   );

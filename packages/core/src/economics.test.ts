@@ -5,8 +5,15 @@ import {
   REVENUE_STREAMS,
   COST_DRIVERS,
   METRIC_GUIDE,
+  FIXED_OPEX_ITEMS,
+  fixedOpexMonthlyTotal,
+  MARKET_PRICING,
+  PLAN_COLUMNS,
+  ENTITLEMENT_MATRIX,
+  toUsd,
   PROJECTION_MONTHS,
   type EconomicAssumptions,
+  type MarketId,
 } from "./economics";
 
 const base = DEFAULT_ASSUMPTIONS;
@@ -35,6 +42,98 @@ describe("model constants", () => {
       expect(m.formula.length).toBeGreaterThan(0);
       expect(m.benchmark.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("fixed opex line items", () => {
+  it("the recurring lines sum to the default fixed-opex assumption (±$1 rounding)", () => {
+    const total = fixedOpexMonthlyTotal();
+    expect(total).toBeGreaterThan(0);
+    expect(Math.abs(total - DEFAULT_ASSUMPTIONS.fixedOpexMonthly)).toBeLessThanOrEqual(1);
+  });
+
+  it("one-time and future items carry no monthly run-rate", () => {
+    for (const i of FIXED_OPEX_ITEMS) {
+      if (i.kind !== "recurring") expect(i.monthlyUsd).toBe(0);
+      else expect(i.monthlyUsd).toBeGreaterThan(0);
+    }
+  });
+
+  it("includes Supabase, the Claude agent budget, and the domains", () => {
+    const labels = FIXED_OPEX_ITEMS.map((i) => i.label.toLowerCase()).join(" | ");
+    expect(labels).toContain("supabase");
+    expect(labels).toContain("claude");
+    expect(labels).toContain("hybrid.app");
+  });
+});
+
+describe("focus markets + localized pricing", () => {
+  it("covers exactly the five focus markets", () => {
+    expect(MARKET_PRICING.map((m) => m.id)).toEqual<MarketId[]>(["us", "uk", "eu", "pl", "sg"]);
+  });
+
+  it("the US is the anchor at FX 1.0 and index 1.0", () => {
+    const us = MARKET_PRICING.find((m) => m.id === "us")!;
+    expect(us.fxPerUsd).toBe(1);
+    expect(us.priceIndex).toBe(1);
+    expect(toUsd(us.proMonthly, us.fxPerUsd)).toBeCloseTo(us.proMonthly, 6);
+  });
+
+  it("every market quotes positive prices and a usable FX rate", () => {
+    for (const m of MARKET_PRICING) {
+      expect(m.fxPerUsd).toBeGreaterThan(0);
+      for (const p of [m.proMonthly, m.proAnnual, m.coachStarter, m.coachPro, m.coachBusiness, m.orgLow, m.orgHigh]) {
+        expect(p).toBeGreaterThan(0);
+      }
+      expect(m.orgHigh).toBeGreaterThanOrEqual(m.orgLow);
+      expect(m.rationale.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("the annual plan is always cheaper per month than monthly (a real discount)", () => {
+    for (const m of MARKET_PRICING) {
+      expect(m.proAnnual / 12).toBeLessThan(m.proMonthly);
+    }
+  });
+
+  it("Poland is localized below the US on a purchasing-power lens", () => {
+    const pl = MARKET_PRICING.find((m) => m.id === "pl")!;
+    const us = MARKET_PRICING.find((m) => m.id === "us")!;
+    expect(pl.priceIndex).toBeLessThan(us.priceIndex);
+    // The effective USD take is below the US headline.
+    expect(toUsd(pl.proMonthly, pl.fxPerUsd)).toBeLessThan(us.proMonthly);
+  });
+
+  it("toUsd guards a zero rate", () => {
+    expect(toUsd(100, 0)).toBe(0);
+  });
+});
+
+describe("entitlement matrix (what each plan gets)", () => {
+  it("exposes the four plan columns free → org", () => {
+    expect(PLAN_COLUMNS.map((c) => c.id)).toEqual(["free", "pro", "coach", "org"]);
+  });
+
+  it("free is the smallest bundle and org the largest (tiers nest)", () => {
+    const count = (key: "free" | "pro" | "coach" | "org") =>
+      ENTITLEMENT_MATRIX.filter((r) => r[key] !== false).length;
+    expect(count("free")).toBeLessThan(count("pro"));
+    expect(count("pro")).toBeLessThanOrEqual(count("coach"));
+    expect(count("coach")).toBeLessThanOrEqual(count("org"));
+  });
+
+  it("the free logging loop is available on every plan", () => {
+    const logging = ENTITLEMENT_MATRIX.filter((r) => r.group.startsWith("Log & basics"));
+    expect(logging.length).toBeGreaterThan(0);
+    for (const r of logging) {
+      for (const key of ["free", "pro", "coach", "org"] as const) expect(r[key]).not.toBe(false);
+    }
+  });
+
+  it("the Pro intelligence layer is gated off the free plan", () => {
+    const ai = ENTITLEMENT_MATRIX.find((r) => r.feature.includes("AI coach"))!;
+    expect(ai.free).toBe(false);
+    expect(ai.pro).toBe(true);
   });
 });
 

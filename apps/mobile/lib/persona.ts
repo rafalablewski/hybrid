@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { resolvePersona, type ClientPersona, type Persona } from "@hybrid/core";
 import { useSession } from "./session";
+import { getCoachLinks } from "./api";
 
 /**
  * The app's persona shape (see @hybrid/core `Persona`). Coach/admin come from the
@@ -31,8 +32,27 @@ export function setClientPersona(c: ClientPersona): void {
   emit();
 }
 
+// A client with an ACTIVE coach gets the full adaptive experience on their
+// coach's seat (see resolvePersona). Learned once from /api/coach/links.
+let activeCoach = false;
+let coachFetched = false;
+function ensureCoachFetch() {
+  if (coachFetched) return;
+  coachFetched = true;
+  getCoachLinks()
+    .then((d) => {
+      const has = (d.asClient ?? []).some((l) => l.status === "ACTIVE");
+      if (has !== activeCoach) {
+        activeCoach = has;
+        emit();
+      }
+    })
+    .catch(() => {});
+}
+
 function subscribe(l: () => void): () => void {
   listeners.add(l);
+  ensureCoachFetch(); // one-time active-coach lookup on first use
   return () => listeners.delete(l);
 }
 
@@ -45,10 +65,20 @@ export function useClientPersonaChoice(): ClientPersona | null {
   );
 }
 
+/** Whether the signed-in client has an ACTIVE coach (→ adaptive on the seat). */
+export function useHasActiveCoach(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => activeCoach,
+    () => false,
+  );
+}
+
 /** The resolved persona for the signed-in user (role + client choice +
- *  billing entitlement — Full/athlete only unlocks with a paid entitlement). */
+ *  billing entitlement, plus an active coach which confers Full on the seat). */
 export function usePersona(): Persona {
   const { role, entitlement } = useSession();
   const c = useClientPersonaChoice();
-  return resolvePersona(role, c ?? undefined, entitlement);
+  const coached = useHasActiveCoach();
+  return resolvePersona(role, c ?? undefined, entitlement, coached);
 }

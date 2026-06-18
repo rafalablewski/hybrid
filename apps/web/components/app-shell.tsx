@@ -34,9 +34,7 @@ import {
   OperatorAnalytics,
   PeriodizeScreen,
   HistoryScreen,
-  RolesScreen,
 } from "./screens";
-import AuroraRoles from "./aurora/roles";
 import AuroraHistory from "./aurora/history";
 import Logger from "./logger";
 import PlansScreen from "./plans";
@@ -582,7 +580,7 @@ export default function AppShell() {
           aurora ? (
             <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />
           ) : (
-            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />
           )
         )}
 
@@ -691,8 +689,6 @@ export default function AppShell() {
         {screen === "tactical" && (aurora ? <AuroraTactical /> : <Tactical />)}
 
         {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
-
-        {screen === "roles" && (aurora ? <AuroraRoles /> : <RolesScreen />)}
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}

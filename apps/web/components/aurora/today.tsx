@@ -120,7 +120,8 @@ export default function AuroraToday({
         <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", borderLeft: `3px solid ${C("lime")}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
-              Your plan today{hasData || plan || phase ? ` · readiness ${rx.readiness}/100` : ""}
+              {/* Free: follow as written; the readiness-adaptive layer is Full. */}
+              Your plan today{isAthlete ? (hasData || plan || phase ? ` · readiness ${rx.readiness}/100` : "") : plan ? " · as written" : ""}
             </span>
             <button
               onClick={() => onStart(plan ? planDayToBlocks(plan.items) : undefined)}
@@ -143,6 +144,15 @@ export default function AuroraToday({
                   </div>
                 ))}
               </div>
+              {!isAthlete && (
+                <button
+                  onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
+                  style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 999, cursor: "pointer", textAlign: "left", border: `1px solid color-mix(in srgb, ${C("violet")} 55%, transparent)`, background: `color-mix(in srgb, ${C("violet")} 14%, transparent)`, color: C("chalk") }}
+                >
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>✦ Following as written. <span style={{ color: C("violet") }}>Unlock Full</span> to auto-adjust loads to your recovery.</span>
+                  <span style={{ fontWeight: 800, fontSize: 15, color: C("violet") }}>→</span>
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -168,7 +178,17 @@ export default function AuroraToday({
           <div style={{ fontSize: 13, lineHeight: 1.6, color: C("chalk"), marginBottom: 6 }}>
             Claude reads your real readiness, fatigue and velocity and writes you a personalized note for the day — what to push, what to hold back.
           </div>
-          <AuroraAskCoach />
+          {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
+          {isAthlete ? (
+            <AuroraAskCoach />
+          ) : (
+            <button
+              onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
+              style={{ marginTop: 6, background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              ✦ Unlock Full →
+            </button>
+          )}
         </div>
       </div>
 
@@ -178,6 +198,20 @@ export default function AuroraToday({
           <span key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, background: activeCard === i ? C("lime") : C("line"), transition: "width .2s" }} />
         ))}
       </div>
+
+      {/* BROWSE PLANS — free users can follow a pre-built plan; nudge to the library */}
+      {!isAthlete && !plan && (
+        <button
+          onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))}
+          style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}`, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left", color: C("chalk") }}
+        >
+          <span>
+            <span style={{ fontWeight: 800, fontSize: 17, display: "block" }}>▤ Follow a plan — free</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Browse the library &amp; enroll. Following is free; periodizing &amp; auto-progression are Full.</span>
+          </span>
+          <span style={{ fontWeight: 800, fontSize: 20, color: C("lime") }}>→</span>
+        </button>
+      )}
 
       {/* SEASON — macrocycle phase timeline (athlete + enrolled) */}
       {isAthlete && macro && phase && (
