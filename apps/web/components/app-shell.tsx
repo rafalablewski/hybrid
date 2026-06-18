@@ -61,6 +61,7 @@ import Today from "./today";
 import AuroraToday from "./aurora/today";
 import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
+import AuroraCockpit from "./aurora/cockpit";
 import Nutrition from "./nutrition";
 import AuroraNutrition from "./aurora/nutrition";
 import Onboarding from "./onboarding";
@@ -548,7 +549,9 @@ export default function AppShell() {
         {screen === "upgrade" && <Upgrade onUpgraded={() => setScreen("today")} />}
 
         {screen === "cockpit" && (
-          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          aurora
+            ? <AuroraCockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+            : <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
