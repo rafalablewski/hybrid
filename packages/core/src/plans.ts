@@ -138,6 +138,13 @@ export const PLANS: (GoalPlan & { color: string })[] = GOAL_TREE.flatMap((g) =>
   g.plans[0] ? [{ ...g.plans[0], color: g.color }] : [],
 );
 
+/** The named library plans for a goal (matched by GoalNode name, e.g.
+ *  "Bodybuilding"). Empty when that goal has no uploaded plans yet (most don't
+ *  — see the `plans-lib` capability). Powers the coach's named-plan picker. */
+export function plansForGoal(goalName: string): GoalPlan[] {
+  return GOAL_TREE.find((g) => g.name === goalName)?.plans ?? [];
+}
+
 export interface GoalGroup {
   category: GoalCategory;
   goals: GoalNode[];

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
+import { plansForGoal } from "@hybrid/core";
 import { Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
@@ -25,6 +26,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
   const [newName, setNewName] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [goalFor, setGoalFor] = useState<Record<string, string>>({});
+  const [planFor, setPlanFor] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
     getCoachGroups()
@@ -45,8 +47,10 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
   const del = async (id: string) => { await deleteCoachGroup(id); load(); };
   const assign = async (g: CoachGroup) => {
     const goal = goalFor[g.id] || GROUP_GOALS[0]!;
-    const r = await assignPlanToGroup(g.id, goal);
-    setMsg(r.ok ? `Assigned ${goal} to ${r.assigned} client${r.assigned === 1 ? "" : "s"}.` : (r.error ?? "Couldn't assign."));
+    const planId = planFor[g.id] || undefined;
+    const r = await assignPlanToGroup(g.id, goal, planId);
+    const planName = planId ? plansForGoal(goal).find((p) => p.id === planId)?.name ?? goal : goal;
+    setMsg(r.ok ? `Assigned ${planName} to ${r.assigned} client${r.assigned === 1 ? "" : "s"}.` : (r.error ?? "Couldn't assign."));
     if (r.ok) load();
   };
 
@@ -111,7 +115,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
               return (
                 <Pressable
                   key={gg}
-                  onPress={() => setGoalFor((m) => ({ ...m, [g.id]: gg }))}
+                  onPress={() => { setGoalFor((m) => ({ ...m, [g.id]: gg })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }}
                   style={{ borderWidth: 1, borderColor: sel ? C.violet : C.line, backgroundColor: sel ? `${C.violet}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: 12, color: sel ? txt(C, C.violet) : C.ash }}>{gg}</Text>
@@ -119,6 +123,27 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
               );
             })}
           </View>
+          {(() => {
+            const named = plansForGoal(goalFor[g.id] || GROUP_GOALS[0]!);
+            if (named.length === 0) return null;
+            const chosen = planFor[g.id] || "";
+            return (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {[{ id: "", name: "By goal" }, ...named].map((p) => {
+                  const sel = chosen === p.id;
+                  return (
+                    <Pressable
+                      key={p.id || "_goal"}
+                      onPress={() => setPlanFor((m) => ({ ...m, [g.id]: p.id }))}
+                      style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
+                    >
+                      <Text style={{ fontFamily: F.mono, fontSize: 12, color: sel ? txt(C, C.lime) : C.ash }}>{p.name}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            );
+          })()}
           <View style={{ marginTop: 10 }}>
             <Button label="Assign plan to group" color={C.violet} onPress={() => assign(g)} />
           </View>

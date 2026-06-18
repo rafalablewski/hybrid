@@ -8,6 +8,7 @@ import {
   buildTrainingWeek,
   trainingDaysPerWeek,
   toTrainingLog,
+  plansForGoal,
   type LoggedSession,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
@@ -181,6 +182,7 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
   const [newName, setNewName] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [goalFor, setGoalFor] = useState<Record<string, string>>({});
+  const [planFor, setPlanFor] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
     fetch("/api/coach/groups")
@@ -211,10 +213,12 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
   const del = async (id: string) => { await fetch(`/api/coach/groups/${id}`, { method: "DELETE" }).catch(() => {}); load(); };
   const assign = async (g: Group) => {
     const goal = goalFor[g.id] || GEN_GOALS[0] || "Hybrid";
+    const planId = planFor[g.id] || undefined; // "" = engine-prescribed by goal
     setMsg(null);
-    const res = await fetch(`/api/coach/groups/${g.id}/assign-plan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal }) });
+    const res = await fetch(`/api/coach/groups/${g.id}/assign-plan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal, ...(planId ? { planId } : {}) }) });
     const j = (await res.json().catch(() => ({}))) as { assigned?: number; error?: string };
-    setMsg(res.ok ? `Assigned “${goal}” to ${j.assigned} client${j.assigned === 1 ? "" : "s"}.` : (j.error ?? "Couldn't assign."));
+    const planName = planId ? plansForGoal(goal).find((p) => p.id === planId)?.name ?? goal : goal;
+    setMsg(res.ok ? `Assigned “${planName}” to ${j.assigned} client${j.assigned === 1 ? "" : "s"}.` : (j.error ?? "Couldn't assign."));
     if (res.ok) load();
   };
 
@@ -260,12 +264,22 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
               })}
             </div>
           )}
-          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <Select value={goalFor[g.id] || GEN_GOALS[0]} onChange={(e) => setGoalFor((m) => ({ ...m, [g.id]: e.target.value }))} style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
-              {GEN_GOALS.map((gg) => <option key={gg} value={gg}>{gg}</option>)}
-            </Select>
-            <Btn label="Assign plan to group" color={g.clientIds.length ? VIOLET : ASH} onClick={() => assign(g)} />
-          </div>
+          {(() => {
+            const goal = goalFor[g.id] || GEN_GOALS[0] || "Hybrid";
+            const named = plansForGoal(goal);
+            return (
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <Select value={goal} onChange={(e) => { setGoalFor((m) => ({ ...m, [g.id]: e.target.value })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }} style={{ fontSize: 14, flex: 1, minWidth: 130 }}>
+                  {GEN_GOALS.map((gg) => <option key={gg} value={gg}>{gg}</option>)}
+                </Select>
+                <Select value={planFor[g.id] ?? ""} onChange={(e) => setPlanFor((m) => ({ ...m, [g.id]: e.target.value }))} style={{ fontSize: 14, flex: 1, minWidth: 150 }} disabled={named.length === 0}>
+                  <option value="">{named.length ? "Engine-prescribed (by goal)" : "By goal (no named plans yet)"}</option>
+                  {named.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </Select>
+                <Btn label="Assign plan to group" color={g.clientIds.length ? VIOLET : ASH} onClick={() => assign(g)} />
+              </div>
+            );
+          })()}
         </Card>
       ))}
     </>
@@ -290,6 +304,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [assignId, setAssignId] = useState("");
   const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
+  const [genPlanId, setGenPlanId] = useState("");
   const [genWeek, setGenWeek] = useState(1);
   const genMacro = useMemo(() => buildMacrocycle(genGoal), [genGoal]);
   const [generating, setGenerating] = useState(false);
@@ -352,6 +367,30 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   // Days/week is inferred from their actual cadence; loads dose off their logs.
   // The macrocycle is PERSISTED to the client first, so their Periodize/Today
   // show the same season the coach is programming against (one shared source).
+  const assignFullPlan = async () => {
+    if (generating) return;
+    setGenerating(true);
+    setGenMsg(null);
+    try {
+      const res = await fetch(`/api/coach/links/${link.id}/macrocycle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: genGoal, ...(genPlanId ? { planId: genPlanId } : {}) }),
+      });
+      if (res.ok) {
+        const planName = genPlanId ? plansForGoal(genGoal).find((p) => p.id === genPlanId)?.name ?? genGoal : genGoal;
+        setGenMsg(`Assigned “${planName}” to ${personName(link.client)}'s account — it's now their plan on Today.`);
+        load();
+      } else {
+        setGenMsg("Couldn't assign the plan — try again.");
+      }
+    } catch {
+      setGenMsg("Couldn't assign the plan — try again.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const generateWeek = async () => {
     if (generating) return;
     setGenerating(true);
@@ -489,6 +528,27 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               <Btn label="Assign" color={assignId ? LIME : ASH} onClick={assign} />
             </div>
           )}
+        </Card>
+        <Card>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a full plan</Mono>
+          <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+            Push a whole periodized plan into {personName(link.client)}&apos;s account — it becomes their plan on Today (adaptive, on your seat).
+          </Mono>
+          {(() => {
+            const named = plansForGoal(genGoal);
+            return (
+              <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); setGenPlanId(""); }} style={{ fontSize: 14, flex: 1, minWidth: 130 }}>
+                  {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
+                </Select>
+                <Select value={genPlanId} onChange={(e) => setGenPlanId(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 150 }} disabled={named.length === 0}>
+                  <option value="">{named.length ? "Engine-prescribed (by goal)" : "By goal (no named plans yet)"}</option>
+                  {named.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </Select>
+                <Btn label={generating ? "Assigning…" : "Assign plan"} color={generating ? ASH : LIME} onClick={assignFullPlan} />
+              </div>
+            );
+          })()}
         </Card>
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Generate a periodized week</Mono>
