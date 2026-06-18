@@ -52,6 +52,7 @@ import Tactical from "./tactical";
 import Longevity from "./longevity";
 import AuroraLongevity from "./aurora/longevity";
 import Velocity from "./velocity";
+import AuroraVelocity from "./aurora/velocity";
 import Running from "./running";
 import Volume from "./volume";
 import AuroraVolume from "./aurora/volume";
@@ -566,7 +567,7 @@ export default function AppShell() {
 
         {screen === "performance" && (aurora ? <AuroraPerformance sessions={sessions} bio={bio} /> : <Performance sessions={sessions} bio={bio} />)}
 
-        {screen === "velocity" && <Velocity sessions={sessions} />}
+        {screen === "velocity" && (aurora ? <AuroraVelocity sessions={sessions} /> : <Velocity sessions={sessions} />)}
 
         {screen === "running" && <Running sessions={sessions} />}
 
