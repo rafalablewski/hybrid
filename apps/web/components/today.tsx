@@ -57,6 +57,7 @@ export default function Today({
   currentWeek = 1,
   planId,
   onStart,
+  onNavigate,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -64,6 +65,8 @@ export default function Today({
   currentWeek?: number;
   planId?: string | null;
   onStart: (planBlocks?: SessionBlock[]) => void;
+  /** In-shell navigation (keeps the sidebar) — used by the free plan nudges. */
+  onNavigate?: (screen: string) => void;
 }) {
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Twin). Switchable from Settings.
@@ -133,7 +136,9 @@ export default function Today({
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-                Your plan today · readiness {rx.readiness}/100
+                {/* Free users follow the plan as written; the adaptive readiness
+                    layer is the paid upgrade (strip below). */}
+                Your plan today{isAthlete ? ` · readiness ${rx.readiness}/100` : " · as written"}
               </Mono>
               <button onClick={() => onStart(planDayToBlocks(plan.items))} style={cta(LIME)}>Start session →</button>
             </div>
@@ -149,6 +154,7 @@ export default function Today({
                 </div>
               ))}
             </div>
+            {!isAthlete && <UpgradeStrip onClick={() => onNavigate?.("upgrade")} />}
           </Card>
         ) : sessions.length === 0 ? (
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
@@ -213,6 +219,25 @@ export default function Today({
           <AskCoach />
         </Card>
       </div>
+
+      {/* BROWSE PLANS — casual users can now follow a pre-built plan for free;
+          nudge them to the library when they haven't enrolled in one yet. */}
+      {!isAthlete && !plan && (
+        <button
+          onClick={() => onNavigate?.("plans")}
+          style={{
+            gridColumn: "span 2", display: "flex", justifyContent: "space-between", alignItems: "center",
+            gap: 12, padding: "14px 16px", borderRadius: 12, cursor: "pointer", textAlign: "left",
+            border: `1px solid ${LIME}55`, background: `${LIME}12`, color: txt(CHALK),
+          }}
+        >
+          <span>
+            <span style={{ ...disp, fontWeight: 800, fontSize: 15, display: "block" }}>▤ Follow a plan — free</span>
+            <Mono s={{ fontSize: 12, lineHeight: 1.4 }} c={ASH}>Browse the plan library and enroll. Following it is free; periodizing &amp; auto-progression are Full.</Mono>
+          </span>
+          <span style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(LIME) }}>→</span>
+        </button>
+      )}
 
       {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
           absorbed from the retired Dashboard but now driven by the athlete's REAL
@@ -377,6 +402,26 @@ export default function Today({
         </Card>
       )}
     </div>
+  );
+}
+
+// Free plan card → the single, honest upsell: the plan you follow is free; what
+// Full adds is the adaptive layer (loads that auto-adjust to your recovery).
+function UpgradeStrip({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+        gap: 10, padding: "9px 12px", borderRadius: 10, cursor: "pointer", textAlign: "left",
+        border: `1px solid ${VIOLET}55`, background: `${VIOLET}14`, color: txt(CHALK),
+      }}
+    >
+      <Mono s={{ fontSize: 11.5, lineHeight: 1.4 }} c={CHALK}>
+        ✦ Following the plan as written. <span style={{ color: txt(VIOLET) }}>Unlock Full</span> to auto-adjust loads to your recovery.
+      </Mono>
+      <span style={{ ...disp, fontWeight: 800, fontSize: 15, color: txt(VIOLET) }}>→</span>
+    </button>
   );
 }
 

@@ -17,6 +17,7 @@ import {
   habitStrength,
   weeklyRecap,
   planToday,
+  FUNNEL,
   toTrainingLog,
   toBiometrics,
   velocityProfiles,
@@ -32,6 +33,7 @@ import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
+import { track } from "../../lib/track";
 import { APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
@@ -190,7 +192,7 @@ export default function AuroraHome() {
           <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), flex: 1 }}>
-                Your plan today{planReadiness ? ` · readiness ${rx.readiness}/100` : ""}
+                Your plan today{isAthlete && planReadiness ? ` · readiness ${rx.readiness}/100` : plan ? " · as written" : ""}
               </Text>
               <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.onAccent }}>Start →</Text>
@@ -208,6 +210,15 @@ export default function AuroraHome() {
                     <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Text>
                   </View>
                 ))}
+                {!isAthlete && (
+                  <Pressable
+                    onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
+                    style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, padding: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${C.violet}55`, backgroundColor: `${C.violet}14` }}
+                  >
+                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.chalk, flex: 1 }}>✦ Following as written. Unlock Full to auto-adjust loads to your recovery.</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.violet) }}>→</Text>
+                  </Pressable>
+                )}
               </>
             ) : (
               <>
@@ -268,6 +279,20 @@ export default function AuroraHome() {
               </View>
             ))}
           </View>
+        )}
+
+        {/* FOLLOW A PLAN — free users can enroll in a pre-built plan & follow it */}
+        {!isAthlete && !plan && (
+          <Pressable
+            onPress={() => router.push("/(tabs)/plans")}
+            style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: RADIUS.card, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}12` }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>▤ Follow a plan — free</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>Browse the library &amp; enroll. Following is free.</Text>
+            </View>
+            <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+          </Pressable>
         )}
 
         {/* SEASON — phase timeline */}

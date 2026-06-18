@@ -275,6 +275,21 @@ function ClassicHome() {
         </Pressable>
       )}
 
+      {/* FOLLOW A PLAN — free users can enroll in a pre-built plan and follow it
+          as written; periodizing & auto-progression are the paid layer. */}
+      {!isAthlete && !plan && (
+        <Pressable
+          onPress={() => router.push("/(tabs)/plans")}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}12` }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>▤ Follow a plan — free</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>Browse the library &amp; enroll. Following is free.</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+        </Pressable>
+      )}
+
       {/* UNLOCK FULL — the single, value-labeled upgrade on-ramp for casual users.
           No scattered locks elsewhere; this one card carries the whole pitch. */}
       {!isAthlete && (
@@ -357,7 +372,8 @@ function ClassicHome() {
         <Card style={{ width: cardW, marginRight: 12, borderLeftWidth: 3, borderLeftColor: C.lime }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Kicker color={C.lime}>Your plan today</Kicker>
-            {hasPlan && <Mono color={C.ash}>readiness {rx.readiness}/100</Mono>}
+            {/* Free: follow as written; the readiness-adaptive layer is Full. */}
+            {isAthlete && hasPlan ? <Mono color={C.ash}>readiness {rx.readiness}/100</Mono> : plan ? <Mono color={C.ash}>as written</Mono> : null}
           </View>
           {plan ? (
             <>
@@ -373,6 +389,15 @@ function ClassicHome() {
                   </View>
                 ))}
               </View>
+              {!isAthlete && (
+                <Pressable
+                  onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
+                  style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: `${C.violet}55`, backgroundColor: `${C.violet}14` }}
+                >
+                  <Mono color={C.chalk} style={{ flex: 1, fontSize: 11.5, lineHeight: 16 }}>✦ Following as written. Unlock Full to auto-adjust loads to your recovery.</Mono>
+                  <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.violet) }}>→</Text>
+                </Pressable>
+              )}
             </>
           ) : (
             <>
