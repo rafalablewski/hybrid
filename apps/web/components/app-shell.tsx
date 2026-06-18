@@ -41,6 +41,7 @@ import Logger from "./logger";
 import PlansScreen from "./plans";
 import AuroraPlans from "./aurora/plans";
 import AuroraSport from "./aurora/sport";
+import AuroraCompetition from "./aurora/competition";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
@@ -602,7 +603,7 @@ export default function AppShell() {
 
         {screen === "periodize" && <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />}
 
-        {screen === "competition" && <Competition />}
+        {screen === "competition" && (aurora ? <AuroraCompetition /> : <Competition />)}
 
         {screen === "plans" &&
           (aurora ? (

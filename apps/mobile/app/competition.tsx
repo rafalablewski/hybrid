@@ -4,6 +4,8 @@ import { optimizeForEvent } from "@hybrid/core";
 import { fetchEvents, createEvent, type EventRow } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraCompetition from "../components/aurora/competition";
 
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Marathon", "CrossFit", "Powerlifting", "Cycling", "Swimming", "Hybrid"];
 const plus8w = () => new Date(Date.now() + 56 * 86_400_000).toISOString().slice(0, 10);
@@ -12,6 +14,11 @@ const fmt = (d: string) => new Date(d).toLocaleDateString();
 /** Competition — set an event date and the peaking optimizer back-solves the
  *  season so form peaks on the day. Mobile port. */
 export default function Competition() {
+  if (useTemplate().template === "aurora") return <AuroraCompetition />;
+  return <ClassicCompetition />;
+}
+
+function ClassicCompetition() {
   const C = useTheme().palette;
   const [events, setEvents] = useState<EventRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
