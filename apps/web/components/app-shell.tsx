@@ -69,6 +69,7 @@ import Calendar from "./calendar";
 import Builder from "./builder";
 import ForcePlate from "./forceplate";
 import Progress from "./progress";
+import AuroraProgress from "./aurora/progress";
 import AccountSettings from "./account-settings";
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
@@ -569,7 +570,7 @@ export default function AppShell() {
 
         {screen === "nutrition" && (aurora ? <AuroraNutrition /> : <Nutrition />)}
 
-        {screen === "progress" && <Progress />}
+        {screen === "progress" && (aurora ? <AuroraProgress /> : <Progress />)}
 
         {screen === "checkin" && (aurora ? <AuroraCheckins sessions={sessions} /> : <Checkins sessions={sessions} />)}
 
