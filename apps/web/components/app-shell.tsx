@@ -39,6 +39,7 @@ import AuroraRoles from "./aurora/roles";
 import AuroraHistory from "./aurora/history";
 import Logger from "./logger";
 import PlansScreen from "./plans";
+import AuroraPlans from "./aurora/plans";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
@@ -602,14 +603,22 @@ export default function AppShell() {
 
         {screen === "competition" && <Competition />}
 
-        {screen === "plans" && (
-          <PlansScreen
-            onEnrolled={() => {
-              refreshMacro();
-              setScreen("periodize");
-            }}
-          />
-        )}
+        {screen === "plans" &&
+          (aurora ? (
+            <AuroraPlans
+              onEnrolled={() => {
+                refreshMacro();
+                setScreen("periodize");
+              }}
+            />
+          ) : (
+            <PlansScreen
+              onEnrolled={() => {
+                refreshMacro();
+                setScreen("periodize");
+              }}
+            />
+          ))}
 
         {screen === "sport" && <SportScreen />}
 
