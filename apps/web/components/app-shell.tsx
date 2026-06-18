@@ -83,6 +83,7 @@ import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
 import AuroraToday from "./aurora/today";
+import AuroraPillNav from "./aurora/pill-nav";
 import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
 import AuroraCockpit from "./aurora/cockpit";
@@ -454,8 +455,8 @@ export default function AppShell() {
         </div>
       </aside>
 
-      {/* main */}
-      <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
+      <main style={{ flex: 1, padding: aurora ? "24px 32px 120px" : "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -702,9 +703,13 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      {/* ⌘K command orb — Classic only; Aurora's nav is the sidebar (no floating
-          circle, matching the uploaded web design). */}
-      {!aurora && <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />}
+      {/* Aurora: the floating pill bottom nav (coexists with the sidebar) — the
+          ⌘K orb is Classic-only. */}
+      {aurora ? (
+        <AuroraPillNav activeId={screen} onSelect={(id) => { setPendingBlocks(undefined); setScreen(id); }} />
+      ) : (
+        <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      )}
     </div>
   );
 }

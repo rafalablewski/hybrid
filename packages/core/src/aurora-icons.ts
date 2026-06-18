@@ -39,7 +39,16 @@ export type AuroraIconName =
   | "user-add"
   | "store"
   | "globe"
-  | "swap";
+  | "swap"
+  | "village"
+  | "gps"
+  | "info"
+  | "offer"
+  | "add-square"
+  | "check-circle"
+  | "user-square"
+  | "download"
+  | "copy";
 
 /** name → one or more SVG path `d` strings (72×72 viewBox, fill:none stroke). */
 export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
@@ -104,43 +113,61 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   store: ["M60 34.8633V54C60 57.3137 57.3137 60 54 60H18C14.6863 60 12 57.3137 12 54V34.8633M48 12L49.5 29.25C49.5 32.9779 52.5221 36 56.25 36C59.7181 36 62.5753 33.3845 62.9567 30.0185C63.0143 29.5107 62.9347 28.9997 62.8057 28.5052L59.6701 16.4855C58.9809 13.8435 56.5948 12 53.8644 12H18.1356C15.4052 12 13.0191 13.8435 12.3299 16.4855L9.1943 28.5052C9.06529 28.9997 8.98572 29.5107 9.04326 30.0185C9.42472 33.3845 12.2819 36 15.75 36C19.4779 36 22.5 32.9779 22.5 29.25M24 12L22.5 29.25C22.5 32.9779 25.5221 36 29.25 36C32.9779 36 36 32.9779 36 29.25M36 29.25C36 32.9779 39.0221 36 42.75 36C46.4779 36 49.5 32.9779 49.5 29.25M36 29.25V12"],
   globe: ["M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9M36 63C21.0883 63 9 50.9117 9 36C9 21.0883 21.0883 9 36 9M36 63C28.3953 55.1698 24 45.9154 24 36C24 26.0846 28.3953 16.8302 36 9M36 63C43.6047 55.1698 48 45.9154 48 36C48 26.0846 43.6047 16.8302 36 9M60 27H12M60 45H12"],
   swap: ["M18 39L9 48L18 57M9 48H33C37.9706 48 42 43.9706 42 39V36M30 36V33C30 28.0294 34.0294 24 39 24H63M54 15L63 24L54 33"],
+  village: ["M27 59.9999L42 59.9997V29.485C42 27.8937 41.3679 26.3676 40.2426 25.2424L31.2426 16.2424C28.8995 13.8992 25.1005 13.8992 22.7574 16.2424L13.7574 25.2424C12.6321 26.3676 12 27.8937 12 29.485V53.9998C12 57.3135 14.6863 59.9998 17.9999 59.9998L27 59.9999ZM42 59.9997L57 59.9998C60.3137 59.9999 63 57.3136 63 53.9998V38.4852C63 36.8939 62.3679 35.3678 61.2426 34.2425L55.2426 28.2425C52.8995 25.8994 49.1005 25.8994 46.7574 28.2425L42 32.9999M27 59.9999V47.9999"],
+  gps: ["M36 60C49.2548 60 60 49.2548 60 36M36 60C22.7452 60 12 49.2548 12 36M36 60V66M60 36C60 22.7452 49.2548 12 36 12M60 36H66M36 12C22.7452 12 12 22.7452 12 36M36 12V6M12 36H6"],
+  info: ["M36 24V25.5M36 36V48M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z"],
+  offer: ["M24 24H24.03M34.7574 13.7574L58.7574 37.7574C61.1005 40.1005 61.1005 43.8995 58.7574 46.2426L46.2426 58.7574C43.8995 61.1005 40.1005 61.1005 37.7574 58.7574L13.7574 34.7574C12.6321 33.6321 12 32.106 12 30.5147V18C12 14.6863 14.6863 12 18 12H30.5147C32.106 12 33.6321 12.6321 34.7574 13.7574Z"],
+  "add-square": ["M36 24V48M48 36H24M18 60H54C57.3137 60 60 57.3137 60 54V18C60 14.6863 57.3137 12 54 12H18C14.6863 12 12 14.6863 12 18V54C12 57.3137 14.6863 60 18 60Z"],
+  "check-circle": ["M48 27L30 46.5L22.5 39M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z"],
+  "user-square": ["M18.2197 60C19.3225 52 24.6614 48 36.0004 48C47.3393 48 52.6782 52 53.781 60M36 39C40 39 42 36.8571 42 31.5C42 26.1429 40 24 36 24C32 24 30 26.1429 30 31.5C30 36.8571 32 39 36 39ZM18 60H54C57.3137 60 60 57.3137 60 54V18C60 14.6863 57.3137 12 54 12H18C14.6863 12 12 14.6863 12 18V54C12 57.3137 14.6863 60 18 60Z"],
+  download: ["M21 36L36 51L51 36M36 51V12M51 60H21"],
+  copy: ["M9 48V12C9 8.68629 11.6863 6 15 6H45M27 66H54C57.3137 66 60 63.3137 60 60V24C60 20.6863 57.3137 18 54 18H27C23.6863 18 21 20.6863 21 24V60C21 63.3137 23.6863 66 27 66Z"],
 };
 
 /**
- * AURORA nav glyphs — maps a NAV_ITEMS id to a design-kit line icon, so the
- * Aurora sidebar/nav uses the uploaded icon set instead of the classic unicode/
- * emoji glyphs. The kit is a generic UI set (no fitness/chart glyphs), so the
- * fitness-specific items (today, cockpit, performance, analytics, volume, sport,
- * competition, force-plate, tactical, timer, velocity) intentionally have NO
- * mapping and fall back to their NAV_ITEMS glyph. Classic always uses the glyph.
+ * AURORA nav glyphs — maps EVERY NAV_ITEMS id to a design-kit line icon (icons1/
+ * 2/3), so the Aurora nav uses ONLY the uploaded icon set — never a unicode or
+ * emoji glyph. The kit is a generic UI set with no fitness/chart glyphs, so a
+ * few items reuse the closest available icon (e.g. arrow-up for the trend-y
+ * metrics); that's deliberate, to honour the "only our icons" rule. Classic
+ * always uses the NAV_ITEMS glyph.
  */
-export const AURORA_NAV_ICONS: Partial<Record<string, AuroraIconName>> = {
+export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
+  today: "village",
+  cockpit: "user-circle",
   notifications: "bell",
   log: "list-add",
   timer: "play",
-  velocity: "arrow-up",
-  runtrack: "location",
+  runtrack: "gps",
   calendar: "calendar",
-  builder: "add",
+  builder: "add-square",
   plans: "bookmark",
   periodize: "calendar-event",
+  sport: "navigation",
+  competition: "offer",
   statistics: "arrow-up",
-  exercises: "list-check",
+  performance: "check-circle",
+  analytics: "info",
+  volume: "list-check",
+  exercises: "list-play",
   trends: "arrow-up",
-  running: "navigation",
+  velocity: "arrow-up",
+  running: "location",
+  forceplate: "download",
   video: "list-play",
-  history: "calendar-event",
+  history: "copy",
   checkin: "check",
-  nutrition: "heart",
-  progress: "verified",
+  nutrition: "store",
+  progress: "user-square",
   longevity: "heart",
-  coach: "user-circle",
+  coach: "user",
   squad: "user-add",
   teamcompare: "swap",
-  org: "store",
+  org: "globe",
   talent: "verified",
-  connections: "globe",
+  tactical: "navigation",
+  connections: "share",
   roles: "lock",
   settings: "settings",
-  upgrade: "verified",
+  upgrade: "offer",
 };

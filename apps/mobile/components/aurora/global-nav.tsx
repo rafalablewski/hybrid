@@ -9,14 +9,13 @@ import { useTemplate } from "../../lib/template";
 import { useTheme } from "../../lib/theme";
 import { AuroraIcon } from "./icons";
 
-type Glyph = "grid" | "chart" | AuroraIconName;
-
-// The five funnel destinations, mirroring the uploaded design's bottom nav.
-const TABS: { id: string; glyph: Glyph; label: string; href: Href; seg: string }[] = [
-  { id: "today", glyph: "grid", label: "Today", href: "/(tabs)", seg: "index" },
-  { id: "cockpit", glyph: "chart", label: "Cockpit", href: "/(tabs)/cockpit", seg: "cockpit" },
-  { id: "log", glyph: "add", label: "Train", href: "/(tabs)/log", seg: "log" },
-  { id: "history", glyph: "calendar", label: "History", href: "/(tabs)/history", seg: "history" },
+// The five funnel destinations, mirroring the uploaded design's bottom nav —
+// glyphs are design-kit line icons only (no custom-drawn marks).
+const TABS: { id: string; glyph: AuroraIconName; label: string; href: Href; seg: string }[] = [
+  { id: "today", glyph: "village", label: "Today", href: "/(tabs)", seg: "index" },
+  { id: "cockpit", glyph: "user-circle", label: "Cockpit", href: "/(tabs)/cockpit", seg: "cockpit" },
+  { id: "log", glyph: "list-add", label: "Train", href: "/(tabs)/log", seg: "log" },
+  { id: "history", glyph: "copy", label: "History", href: "/(tabs)/history", seg: "history" },
   { id: "more", glyph: "settings", label: "More", href: "/(tabs)/more", seg: "more" },
 ];
 
@@ -89,7 +88,7 @@ export default function AuroraGlobalNav() {
               style={{ flex: 1, height: 52, alignItems: "center", justifyContent: "center" }}
             >
               <View style={{ width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
-                <TabGlyph glyph={tab.glyph} size={22} color={focused ? C.ink : C.ash} />
+                <AuroraIcon name={tab.glyph} size={22} color={focused ? C.ink : C.ash} />
               </View>
             </Pressable>
           );
@@ -99,24 +98,3 @@ export default function AuroraGlobalNav() {
   );
 }
 
-function TabGlyph({ glyph, size, color }: { glyph: Glyph; size: number; color: string }) {
-  if (glyph === "grid") {
-    const cell = (size - 5) / 2;
-    const sq = { width: cell, height: cell, borderRadius: Math.max(2, cell * 0.3), backgroundColor: color } as const;
-    return (
-      <View style={{ width: size, height: size, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignContent: "space-between" }}>
-        <View style={sq} /><View style={sq} /><View style={sq} /><View style={sq} />
-      </View>
-    );
-  }
-  if (glyph === "chart") {
-    const bw = (size - 6) / 4;
-    const bar = (h: number) => ({ width: bw, height: size * h, borderRadius: bw / 2, backgroundColor: color } as const);
-    return (
-      <View style={{ width: size, height: size, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <View style={bar(0.5)} /><View style={bar(0.82)} /><View style={bar(0.62)} /><View style={bar(1)} />
-      </View>
-    );
-  }
-  return <AuroraIcon name={glyph} size={size} color={color} />;
-}

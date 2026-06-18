@@ -39,6 +39,15 @@ const SOURCES: Record<AuroraIconName, ReturnType<typeof require>> = {
   store: require("../../assets/icons/store.png"),
   globe: require("../../assets/icons/globe.png"),
   swap: require("../../assets/icons/swap.png"),
+  village: require("../../assets/icons/village.png"),
+  gps: require("../../assets/icons/gps.png"),
+  info: require("../../assets/icons/info.png"),
+  offer: require("../../assets/icons/offer.png"),
+  "add-square": require("../../assets/icons/add-square.png"),
+  "check-circle": require("../../assets/icons/check-circle.png"),
+  "user-square": require("../../assets/icons/user-square.png"),
+  download: require("../../assets/icons/download.png"),
+  copy: require("../../assets/icons/copy.png"),
 };
 
 export function AuroraIcon({
