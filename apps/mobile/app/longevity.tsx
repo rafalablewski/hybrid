@@ -4,6 +4,8 @@ import { longevityReport } from "@hybrid/core";
 import { fetchSignals, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraLongevity from "../components/aurora/longevity";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const num = (s: string) => {
@@ -14,6 +16,11 @@ const num = (s: string) => {
 /** Longevity — biological age vs chronological + healthspan, from recovery
  *  markers (prefilled from the Signal ontology). Mobile port. */
 export default function Longevity() {
+  if (useTemplate().template === "aurora") return <AuroraLongevity />;
+  return <ClassicLongevity />;
+}
+
+function ClassicLongevity() {
   const C = useTheme().palette;
   const [age, setAge] = useState("");
   const [restingHr, setRestingHr] = useState("");

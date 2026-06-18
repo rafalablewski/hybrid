@@ -47,6 +47,7 @@ import Competition from "./competition";
 import Talent from "./talent";
 import Tactical from "./tactical";
 import Longevity from "./longevity";
+import AuroraLongevity from "./aurora/longevity";
 import Velocity from "./velocity";
 import Running from "./running";
 import Volume from "./volume";
@@ -623,7 +624,7 @@ export default function AppShell() {
 
         {screen === "tactical" && <Tactical />}
 
-        {screen === "longevity" && <Longevity />}
+        {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
 
         {screen === "roles" && <RolesScreen />}
 
