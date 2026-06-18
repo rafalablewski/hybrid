@@ -146,8 +146,8 @@ export const COST_DRIVERS: CostDriver[] = [
     id: "fixed",
     label: "Fixed opex (base)",
     kind: "fixed",
-    rate: "~$64 / mo",
-    note: "Real recurring run-rate, independent of user count — itemized in the table below. One-time domain setup and the Apple Developer fee are listed there too but kept out of the monthly figure. FX $1 ≈ zł3.71 (18 Jun 2026).",
+    rate: "~$72 / mo",
+    note: "Real recurring run-rate, independent of user count — itemized in the table below (Supabase Pro, the Claude API agent budget, Apple Developer, and the domains/mailbox). One-time domain setup is listed there too but kept out of the monthly figure. FX $1 ≈ zł3.71 (18 Jun 2026).",
   },
 ];
 
@@ -172,12 +172,12 @@ export interface FixedOpexItem {
 export const FIXED_OPEX_ITEMS: FixedOpexItem[] = [
   { label: "Supabase Pro", billed: "$25 / mo", monthlyUsd: 25, kind: "recurring" },
   { label: "Claude API (internal AI agents)", billed: "$20 / mo", monthlyUsd: 20, kind: "recurring" },
+  { label: "Apple Developer account", billed: "$99 / yr", monthlyUsd: 99 / 12, kind: "recurring" },
   { label: "hybrid.app domain renewal", billed: "$100 / yr", monthlyUsd: 100 / 12, kind: "recurring" },
   { label: "@hybriddomain.xyz mailbox", billed: "zł31.50 / mo", monthlyUsd: 31.5 / 3.71, kind: "recurring" },
   { label: "hybriddomain.xyz renewal", billed: "$23.99 / yr", monthlyUsd: 23.99 / 12, kind: "recurring" },
   { label: "hybrid.app premium domain", billed: "$300 one-time", monthlyUsd: 0, kind: "oneTime" },
   { label: "hybriddomain.xyz registration", billed: "zł5.34 one-time", monthlyUsd: 0, kind: "oneTime" },
-  { label: "Apple Developer account", billed: "$99 / yr", monthlyUsd: 0, kind: "future", note: "added once mobile billing goes live" },
 ];
 
 /** Sum of the recurring fixed-opex lines — the monthly run-rate. */
@@ -480,7 +480,7 @@ export const DEFAULT_ASSUMPTIONS: EconomicAssumptions = {
   aiCostPerUserMonthly: 2,
   infraCostPerUserMonthly: 0.2,
   coachServiceCostMonthly: 3,
-  fixedOpexMonthly: 64,
+  fixedOpexMonthly: 72,
   stripeFeePct: 2.9,
   stripeFlatPerCharge: 0.3,
 
