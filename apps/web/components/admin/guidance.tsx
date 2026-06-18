@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
 // Operator help surface (Governance → Guidance). Renders the plain-language
 // runbooks that live in @hybrid/core (guidance.ts) so the copy stays the single
@@ -143,6 +143,33 @@ function Block({ b }: { b: GuideBlock }) {
       </div>
     );
   }
+  if (b.t === "cmd") {
+    return <Cmd lines={b.lines} />;
+  }
+  if (b.t === "matrix") {
+    return (
+      <div style={{ display: "grid", gap: 0 }}>
+        {b.rows.map((r, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              padding: "9px 0",
+              borderBottom: i < b.rows.length - 1 ? `1px solid ${LINE}` : "none",
+            }}
+          >
+            <span style={{ ...disp, fontSize: 13.5, color: CHALK }}>{r.goal}</span>
+            <Mono s={{ fontSize: 12, textAlign: "right", flexShrink: 0 }} c={LIME}>
+              {r.path}
+            </Mono>
+          </div>
+        ))}
+      </div>
+    );
+  }
   // steps
   return (
     <ol style={{ ...disp, margin: 0, paddingLeft: 0, listStyle: "none", counterReset: "g", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -171,5 +198,67 @@ function Block({ b }: { b: GuideBlock }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+// A copy-able terminal command box. Mirrors the affordance the old standalone
+// iOS-simulator page had, now that that runbook lives in @hybrid/core as a guide.
+function Cmd({ lines }: { lines: string }) {
+  const [copied, setCopied] = useState(false);
+  // Reset the "copied" label after a moment, clearing the timer on unmount so we
+  // never set state on an unmounted component.
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1400);
+    return () => clearTimeout(t);
+  }, [copied]);
+  const copy = () => {
+    // navigator.clipboard is undefined on non-HTTPS / older browsers — guard it.
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(lines).then(
+      () => setCopied(true),
+      () => {},
+    );
+  };
+  return (
+    <div style={{ position: "relative" }}>
+      <pre
+        style={{
+          ...mono,
+          fontSize: 12.5,
+          lineHeight: 1.7,
+          color: CHALK,
+          background: INK,
+          border: `1px solid ${LINE}`,
+          borderRadius: "var(--r-field)",
+          padding: "12px 14px",
+          margin: 0,
+          overflowX: "auto",
+          whiteSpace: "pre",
+        }}
+      >
+        {lines}
+      </pre>
+      <button
+        onClick={copy}
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          ...mono,
+          fontSize: 10,
+          textTransform: "uppercase",
+          letterSpacing: ".08em",
+          color: txt(copied ? INK : ASH),
+          background: copied ? LIME : INK2,
+          border: `1px solid ${LINE}`,
+          borderRadius: "var(--r-field)",
+          padding: "3px 8px",
+          cursor: "pointer",
+        }}
+      >
+        {copied ? "copied" : "copy"}
+      </button>
+    </div>
   );
 }

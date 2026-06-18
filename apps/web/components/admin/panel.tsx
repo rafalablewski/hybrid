@@ -24,13 +24,12 @@ import AdminSystem from "./system";
 import AdminSecurity from "./security";
 import AdminAccess from "./access";
 import CoachApplications from "./coach-applications";
-import AdminSimulator from "./simulator";
 import AdminGuidance from "./guidance";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "simulator" | "guidance";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
@@ -51,7 +50,6 @@ const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: Aurora
   { id: "audit", label: "Audit log", icon: "❑", auroraIcon: "search", group: "Governance" },
   { id: "anon", label: "Guest workouts", icon: "👤", auroraIcon: "user-circle", group: "Governance" },
   { id: "system", label: "System", icon: "⚙", auroraIcon: "settings", group: "Governance" },
-  { id: "simulator", label: "iOS simulator", icon: "📱", auroraIcon: "play", group: "Governance" },
   { id: "guidance", label: "Guidance", icon: "📖", auroraIcon: "calendar-event", group: "Governance" },
 ];
 
@@ -240,7 +238,6 @@ export default function AdminPanel() {
         {section === "audit" && <AdminAuditLog />}
         {section === "anon" && <AdminAnonSessions />}
         {section === "system" && <AdminSystem />}
-        {section === "simulator" && <AdminSimulator />}
         {section === "guidance" && <AdminGuidance />}
       </main>
     </div>

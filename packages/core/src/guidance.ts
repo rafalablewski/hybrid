@@ -9,7 +9,11 @@ export type GuideBlock =
   | { t: "p"; text: string }
   | { t: "steps"; items: string[] }
   | { t: "note"; text: string }
-  | { t: "term"; term: string; text: string };
+  | { t: "term"; term: string; text: string }
+  /** A copy-able command block — one or more terminal lines (joined by "\n"). */
+  | { t: "cmd"; lines: string }
+  /** A two-column cheat-sheet: a goal on the left, the path to take on the right. */
+  | { t: "matrix"; rows: { goal: string; path: string }[] };
 
 export type GuideSection = {
   id: string;
@@ -476,5 +480,161 @@ export const ACCOUNTS_GUIDE: Guide = {
   ],
 };
 
+/**
+ * "Run the app on an iPhone Simulator" — the absolute-beginner, copy-paste
+ * runbook for opening HYBRID on Apple's iOS Simulator on a Mac (the mobile app
+ * is a managed Expo / React-Native project, so this goes through Expo). Plain
+ * language on purpose: someone who has never opened a terminal can follow it
+ * top to bottom. Commands live in `cmd` blocks so the renderer gives each a
+ * copy button; inline commands use `backticks` to match the other guides.
+ */
+export const SIMULATOR_GUIDE: Guide = {
+  id: "simulator",
+  title: "Run the app on an iPhone Simulator",
+  updated: "2026-06-18",
+  sections: [
+    {
+      id: "intro",
+      icon: "◆",
+      title: "Open HYBRID on a pretend iPhone",
+      summary: "You don't need a real iPhone — a Mac can show one on screen.",
+      blocks: [
+        {
+          t: "p",
+          text: "You don't need a real iPhone to try the app. Your Mac (an Apple computer) can show a pretend iPhone right on the screen — like a toy phone you tap with your mouse. This guide tells you exactly what to type, one line at a time. Go from the top and do each box in order.",
+        },
+        {
+          t: "note",
+          text: "You can't break anything by following these steps, so don't worry. Every command box below has a copy button — copy it, paste it into the Terminal, and press Enter.",
+        },
+      ],
+    },
+    {
+      id: "glossary",
+      icon: "≣",
+      title: "First, a few words explained",
+      summary: "The scary-sounding words, in plain English.",
+      blocks: [
+        { t: "term", term: "Mac", text: "An Apple computer (a MacBook or iMac). The pretend iPhone only works on a Mac." },
+        { t: "term", term: "Terminal", text: "A plain window where you TYPE instructions instead of clicking buttons. On a Mac, press Cmd+Space, type “Terminal”, and press Enter to open it." },
+        { t: "term", term: "Type a command", text: "Copy the words from a command box below, paste them into the Terminal, and press Enter. That's it." },
+        { t: "term", term: "Xcode", text: "A free Apple program. It's the thing that knows how to show the pretend iPhone." },
+        { t: "term", term: "Simulator", text: "The pretend iPhone itself — a little phone-shaped window you can tap." },
+        { t: "term", term: "The app code", text: "The HYBRID app's building blocks, kept in a folder we'll copy onto your computer." },
+      ],
+    },
+    {
+      id: "walkthrough",
+      icon: "▶",
+      title: "Do these in order — top to bottom",
+      summary: "Steps 1–5 you do only ONCE (they set things up). Steps 6–7 are the ones you do every time. About 15 minutes.",
+      blocks: [
+        { t: "term", term: "1 · Get Xcode (once)", text: "On your Mac, open the App Store (the blue “A” icon), search for Xcode, and press Get / Install. It's big, so this can take a while. This only works on a Mac — not Windows or Linux." },
+        { t: "term", term: "2 · Open Xcode once and let it set up", text: "Open Xcode once. If it asks you to agree to anything, click Agree and type your computer password if needed. Then in the top menu click Xcode → Settings → Components and download an iPhone option in the list (that's the pretend phone). Now you can close Xcode." },
+        { t: "term", term: "3 · Install two helpers", text: "Open the Terminal. If you've never used it, first install “Homebrew” from brew.sh by pasting the one line on that website. Then paste these two lines, one at a time — `node` and `pnpm` are little tools the app needs:" },
+        { t: "cmd", lines: "brew install node\nnpm install -g pnpm" },
+        { t: "term", term: "4 · Copy the app onto your computer", text: "Still in the Terminal, paste these three lines (one at a time): line 1 downloads the app, line 2 steps INTO its folder, line 3 grabs the extra pieces it needs. The last one can take a couple of minutes — that's normal." },
+        { t: "cmd", lines: "git clone https://github.com/rafalablewski/hybrid.git\ncd hybrid\npnpm install" },
+        { t: "term", term: "5 · (Nice to have) one more small helper", text: "This just makes things smoother. Paste it; if it gives a little warning, that's okay — keep going." },
+        { t: "cmd", lines: "brew install watchman" },
+        { t: "term", term: "6 · Start the app's engine", text: "Paste this and press Enter. A lot of text appears and it looks like it's “waiting” — that's good. LEAVE THIS WINDOW OPEN; it's the app's engine running." },
+        { t: "cmd", lines: "pnpm --filter @hybrid/mobile dev" },
+        { t: "term", term: "7 · Open the pretend iPhone", text: "In that same window, press the letter i on your keyboard — i is for iPhone. Wait a little and a phone-shaped window pops up (that's the Simulator, run by Xcode) with HYBRID inside it. If it asks to install “Expo Go,” say yes. IMPORTANT: press i, NOT w — w opens the app in Safari (a web preview), which is the website, not the iPhone app. If Safari opened, go back to the engine window and press i." },
+        { t: "term", term: "8 · That's it — play with it", text: "Tap around the pretend phone with your mouse, just like a real one. If you change something in the code it updates by itself. Press r to refresh, or i to open the phone again." },
+        { t: "note", text: "Can't find or open the Simulator? Open it by hand: press Cmd+Space (Spotlight), type Simulator, press Enter — a phone-shaped window appears, and THAT is the Xcode Simulator. Leave it open, go back to the engine window (step 6) and press i. If nothing called “Simulator” shows up, Xcode isn't fully installed yet — do steps 1–2 first. If pressing i shows an error about Xcode, paste `sudo xcode-select -s /Applications/Xcode.app` (type your Mac password when asked — you won't see it as you type, that's normal), then press i again." },
+        { t: "note", text: "You did it! Next time you only need steps 6 and 7. The app opens even with no key — you just can't SIGN IN yet, but you can still look around." },
+        { t: "term", term: "Already set up? The whole thing in a few lines", text: "Get the newest code, then start the engine and press i (with your Simulator open). `git pull` + `pnpm install` are only needed when the code changed — otherwise just the last line, then i:" },
+        { t: "cmd", lines: "cd hybrid\ngit checkout main\ngit pull\npnpm install\npnpm --filter @hybrid/mobile dev" },
+        { t: "term", term: "Want to actually log in?", text: "You need one key called EXPO_PUBLIC_SUPABASE_ANON_KEY. An admin has it (in Supabase: Project Settings → API → `anon public`). Make a new file named `.env` inside the `apps/mobile` folder with this single line, swapping in the real key. Then stop the engine (click its window, press Ctrl+C) and start it again with step 6. Your `.env` stays on your computer — it's in `.gitignore` and never uploaded, which is why we never paste the real key onto this page." },
+        { t: "cmd", lines: "EXPO_PUBLIC_SUPABASE_ANON_KEY=paste-your-anon-public-key-here" },
+        { t: "note", text: "Got a red screen saying “Native module is null, cannot access legacy storage”? That just means the phone opened the app in Expo Go, a quick preview that can't do a few things this app needs (remembering your login, the camera, save-a-photo). It is NOT broken and NOT your fault. The fix is to build the full version once — do the “full app” section below — and the red screen is gone for good. Only want a quick peek? Tap Dismiss and look around." },
+      ],
+    },
+    {
+      id: "full-app",
+      icon: "▣",
+      title: "Recommended — the full app (fixes the red “Native module is null” error)",
+      summary: "The version that actually works end-to-end: login, camera, save-a-photo.",
+      blocks: [
+        { t: "p", text: "This is the version that works end-to-end — login, camera, save-a-photo — and it's what makes the red “Native module is null” error go away. Do steps 1–5 above first. Then, instead of steps 6–7, build the full app. It takes a few extra minutes the first time." },
+        { t: "term", term: "9 · Install one more helper (once)", text: "Paste this in the Terminal:" },
+        { t: "cmd", lines: "brew install cocoapods" },
+        { t: "term", term: "10 · Build it and open the pretend phone", text: "The FIRST time is slow (it's building the real app) — a few minutes is normal. After it finishes, the pretend iPhone opens with the camera and save-photo working:" },
+        { t: "cmd", lines: "cd apps/mobile\nnpx expo run:ios" },
+        { t: "note", text: "Prefer the “real Xcode” way (open the project and press ▶)? From the repo root run the three lines below — the last opens the project in Xcode. IMPORTANT: open the `.xcworkspace` file, NOT `.xcodeproj`. In Xcode set the scheme to HYBRID and the destination to a simulator, then press ▶ Play (or Cmd+R). If the app loads blank or red, Metro (the JavaScript engine) isn't running — start it in a second Terminal with `cd apps/mobile` then `pnpm start`. Note: `npx expo prebuild` creates an `ios/` folder — that's generated build output, already in `.gitignore`, so don't commit it." },
+        { t: "cmd", lines: "cd apps/mobile\nnpx expo prebuild --platform ios\nopen ios/HYBRID.xcworkspace" },
+      ],
+    },
+    {
+      id: "cloud-build",
+      icon: "⬡",
+      title: "Extra — let a robot in the cloud build it for you",
+      summary: "If building on your computer is too slow, ask Expo's cloud to build it.",
+      blocks: [
+        { t: "p", text: "If the full-app build above is too slow or grumpy on your computer, you can ask Expo's online helpers to build it. (You still need a Mac to open the pretend phone at the end.) Sign in and ask for a build — it makes you a free Expo account the first time, and gives you a download link when it finishes:" },
+        { t: "cmd", lines: "cd apps/mobile\nnpx eas login\nnpx eas build --profile preview --platform ios" },
+        { t: "term", term: "Drop it onto the pretend phone", text: "Download the file it gives you, unzip it to get a `HYBRID.app`, open the pretend iPhone, and drag the app onto it. Or paste these two lines:" },
+        { t: "cmd", lines: "xcrun simctl install booted HYBRID.app\nxcrun simctl launch booted app.hybrid.mobile" },
+        { t: "note", text: "For login to work in this version too, an admin needs to add the secret key EXPO_PUBLIC_SUPABASE_ANON_KEY (the steps are in `apps/mobile/SUBMIT.md`)." },
+      ],
+    },
+    {
+      id: "reload",
+      icon: "↻",
+      title: "After we change the app — get the latest & reload",
+      summary: "How to see an update. Usually you do NOT have to quit Expo or start over.",
+      blocks: [
+        { t: "term", term: "1 · Leave the engine running — open a NEW Terminal tab", text: "Keep the “engine” window (the one running Expo) open. Open a SECOND tab with Cmd+T and do the git steps there." },
+        { t: "term", term: "2 · Get the newest code", text: "In the new tab, paste these one line at a time. Only run `pnpm install` afterwards if the update added new pieces. Paste each command on its OWN line — no notes after it (see the warning below):" },
+        { t: "cmd", lines: "cd hybrid\ngit pull" },
+        { t: "term", term: "3 · Reload the pretend phone", text: "Click the Simulator window once, then press Cmd+R. (Or press r in the engine window.) Often you don't even need this — the app refreshes by itself when files change (“Fast Refresh”)." },
+        { t: "note", text: "When pasting, don't add a note after a command on the same line. The Mac Terminal (zsh) does NOT treat # as a comment — it feeds those words to the command, so `pnpm install  # only if deps changed` errors with ERR_PNPM_ADDING_TO_ROOT (nothing actually broke). Just paste the command by itself." },
+        { t: "note", text: "Reload, or fully restart? A reload (Cmd+R) is enough for normal code changes. Fully restart — stop with Ctrl+C, then redo step 6 (or step 10 for the full build) — only when (a) new dependencies were added, or (b) native code changed (rebuild with `npx expo run:ios`). If it ever looks stale, restart with a clean cache: `npx expo start -c`." },
+        { t: "note", text: "Not every update touches the phone app. Changes to the WEBSITE (like this admin page) don't affect the app in the Simulator at all — nothing to pull or reload. Only changes under `apps/mobile` (or the shared core) need the steps above. To check your branch is current, run `git branch --show-current` and `git status` — it should say “up to date with ‘origin/main’.”" },
+      ],
+    },
+    {
+      id: "cheat-sheet",
+      icon: "❖",
+      title: "Not sure which to do? Here's a cheat sheet",
+      blocks: [
+        {
+          t: "matrix",
+          rows: [
+            { goal: "I want it to work properly (login, no red errors)", path: "Steps 1–5, then 9–10" },
+            { goal: "I just want a quick peek (red errors are OK)", path: "Steps 1–8, tap Dismiss" },
+            { goal: "Building on my computer is too slow", path: "Use the cloud robot" },
+            { goal: "I only want to check it doesn't crash", path: "pnpm --filter @hybrid/mobile export:ios" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "troubleshooting",
+      icon: "⚑",
+      title: "If something looks wrong (don't panic)",
+      summary: "The common snags and the one-line fix for each.",
+      blocks: [
+        { t: "term", term: "Red screen: “Native module is null, cannot access legacy storage”", text: "(Often with AsyncStorageError.) The app opened in Expo Go, the quick preview, which doesn't include everything this app needs — the most common snag. Fix: build the full version once with the “full app” section above (`cd apps/mobile` then `npx expo run:ios`). After that one build the red screen is gone for good. You can tap Dismiss to peek around meanwhile, but login won't work until you build the full version." },
+        { t: "term", term: "“Verifying ‘iOS… simruntime’” has been stuck for ages", text: "That's your Mac unpacking the pretend-iPhone files the very first time — it's several gigabytes, so it can take 5–20 minutes and the bar often looks frozen near the start. Let it finish; don't cancel. It only does this once. (If it truly never moves, your Mac may be low on free disk space.)" },
+        { t: "term", term: "Lots of red “CHHapticPattern” / “hapticpatternlibrary.plist” lines", text: "Or “Failed to send CA Event for app launch measurements.” These are SAFE TO IGNORE — the pretend phone has no vibration hardware and no real-device stats, so it grumbles. If you also see a line like “iOS Bundled … (NNNN modules)”, the app is running fine." },
+        { t: "term", term: "“Your local changes would be overwritten by merge”", text: "Something edited a file on your computer and it's blocking `git pull`. To throw away that local change and take the latest, run the two lines below (swap in whatever filename the message named), then start again from step 6:" },
+        { t: "cmd", lines: "git checkout -- apps/mobile/package.json\ngit pull" },
+        { t: "term", term: "“No package.json found” or “cd: no such file or directory: apps/mobile”", text: "You're not inside the app's folder. Type `cd hybrid` first, then redo the command. `pnpm install` must be run from the hybrid folder, not your home folder." },
+        { t: "term", term: "Red screen: “No script URL provided”", text: "(Also says unsanitizedScriptURLString = (null).) The app built and opened fine, but Metro — the thing that serves the app's JavaScript — isn't running. This happens with the Xcode ▶ method, which doesn't start Metro for you. Open a new Terminal window and start it with `cd apps/mobile` then `pnpm start`, leave it open, then reload in the Simulator (Cmd+R, or tap R twice). Still red? In the `pnpm start` window press r, or restart with a clean cache: `npx expo start -c`. The Xcode method needs TWO things running — Metro AND the app. (Pressing i starts Metro automatically, so you never see this.)" },
+        { t: "term", term: "I pressed a key to reload and nothing happened (or a new tab opened)", text: "Cmd+T opens a new Terminal tab — it does NOT reload the app. To reload: click the Simulator window once so it's in front, then press Cmd+R — or press r in the engine (Expo) window. Cmd+D in the Simulator opens a menu with a Reload button too." },
+        { t: "term", term: "ERR_PNPM_ADDING_TO_ROOT (or it complained about words from my note)", text: "You pasted a command with a # note after it on the same line. The Mac Terminal doesn't treat # as a comment — it ran your note as part of the command. Nothing broke; just paste the command on its own, e.g. `pnpm install` by itself." },
+        { t: "term", term: "“supabaseKey is required”", text: "An old bug — the app crashed when it had no login key. It's fixed now. Get the fix by pulling the latest code: `cd hybrid` then `git pull`, then start again from step 6. The app opens even without a key (you just can't sign in until you add one — see “Want to actually log in?” above)." },
+        { t: "term", term: "It opened in Safari, not a phone window", text: "You pressed w (web) or clicked a link. That's only a website preview, not the iPhone app. Go back to the engine window and press i (for iPhone) — that's the one that opens the pretend phone via Xcode." },
+        { t: "term", term: "I pressed i and no phone showed up", text: "Go back to step 2 and make sure you downloaded an iPhone in Xcode → Settings → Components. Then try i again." },
+        { t: "term", term: "It says a lot of red words", text: "Red usually just means “try again.” Close the Terminal, open it fresh, go back into the folder with `cd hybrid`, and redo the last step." },
+        { t: "term", term: "The app looks stuck or weird", text: "In the engine window, run `npx expo start -c` — that gives it a clean fresh start." },
+        { t: "term", term: "I'm totally stuck", text: "That's okay! Copy the red words you see and show them to an admin or developer — they'll know what to do." },
+        { t: "note", text: "For admins: this can only be done on a real Mac. It can't run inside this website's sandbox (there's no Mac here and the database is blocked)." },
+      ],
+    },
+  ],
+};
+
 /** All guides surfaced in the admin Guidance tab (room to add more later). */
-export const GUIDES: Guide[] = [DEPLOY_GUIDE, ACCOUNTS_GUIDE];
+export const GUIDES: Guide[] = [DEPLOY_GUIDE, ACCOUNTS_GUIDE, SIMULATOR_GUIDE];
