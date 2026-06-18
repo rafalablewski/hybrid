@@ -5,6 +5,8 @@ import {
   REVENUE_STREAMS,
   COST_DRIVERS,
   METRIC_GUIDE,
+  FIXED_OPEX_ITEMS,
+  fixedOpexMonthlyTotal,
   MARKET_PRICING,
   PLAN_COLUMNS,
   ENTITLEMENT_MATRIX,
@@ -40,6 +42,28 @@ describe("model constants", () => {
       expect(m.formula.length).toBeGreaterThan(0);
       expect(m.benchmark.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("fixed opex line items", () => {
+  it("the recurring lines sum to the default fixed-opex assumption (±$1 rounding)", () => {
+    const total = fixedOpexMonthlyTotal();
+    expect(total).toBeGreaterThan(0);
+    expect(Math.abs(total - DEFAULT_ASSUMPTIONS.fixedOpexMonthly)).toBeLessThanOrEqual(1);
+  });
+
+  it("one-time and future items carry no monthly run-rate", () => {
+    for (const i of FIXED_OPEX_ITEMS) {
+      if (i.kind !== "recurring") expect(i.monthlyUsd).toBe(0);
+      else expect(i.monthlyUsd).toBeGreaterThan(0);
+    }
+  });
+
+  it("includes Supabase, the Claude agent budget, and the domains", () => {
+    const labels = FIXED_OPEX_ITEMS.map((i) => i.label.toLowerCase()).join(" | ");
+    expect(labels).toContain("supabase");
+    expect(labels).toContain("claude");
+    expect(labels).toContain("hybrid.app");
   });
 });
 

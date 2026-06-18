@@ -21,6 +21,7 @@ import {
   COST_DRIVERS,
   METRIC_GUIDE,
   DEFAULT_ASSUMPTIONS,
+  FIXED_OPEX_ITEMS,
   MARKET_PRICING,
   PLAN_COLUMNS,
   ENTITLEMENT_MATRIX,
@@ -278,7 +279,7 @@ export default function AdminFinancials() {
               c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "support" ? r.cogs.support : c.id === "fixed" ? r.cogs.fixed : null;
             const shareOfRev = live != null && r.revenue.total > 0 ? (live / r.revenue.total) * 100 : null;
             return (
-              <Card key={c.id} style={{ borderLeft: `3px solid ${c.kind === "fixed" ? AMBER : RED}` }}>
+              <Card key={c.id} style={{ borderLeft: `3px solid ${c.kind === "fixed" ? AMBER : RED}`, gridColumn: c.id === "fixed" ? "1 / -1" : undefined }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{c.label}</div>
                   <Chip c={c.kind === "fixed" ? AMBER : RED}>{c.kind === "fixed" ? "fixed" : "COGS"}</Chip>
@@ -292,6 +293,7 @@ export default function AdminFinancials() {
                 <Mono s={{ fontSize: 11.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
                   {c.note}
                 </Mono>
+                {c.id === "fixed" && <FixedOpexBreakdown />}
               </Card>
             );
           })}
@@ -625,6 +627,53 @@ function PriceBox({ label, value, sub }: { label: string; value: string; sub: st
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginTop: 2 }}>{value}</div>
       <Mono s={{ fontSize: 10.5, display: "block", marginTop: 1 }} c={ASH}>{sub}</Mono>
+    </div>
+  );
+}
+
+function FixedOpexBreakdown() {
+  const recurring = FIXED_OPEX_ITEMS.filter((i) => i.kind === "recurring");
+  const extras = FIXED_OPEX_ITEMS.filter((i) => i.kind !== "recurring");
+  const total = recurring.reduce((s, i) => s + i.monthlyUsd, 0);
+  const row = (label: string, billed: string, monthly: string, c: string = ASH, muted = false) => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr) 70px",
+        gap: 8,
+        alignItems: "center",
+        padding: "7px 0",
+        borderBottom: `1px solid ${LINE}`,
+      }}
+    >
+      <Mono s={{ fontSize: 12, fontWeight: muted ? 400 : 600 }} c={muted ? ASH : CHALK}>{label}</Mono>
+      <Mono s={{ fontSize: 11.5, textAlign: "right" }} c={ASH}>{billed}</Mono>
+      <Mono s={{ fontSize: 12, textAlign: "right", fontWeight: 700 }} c={c}>{monthly}</Mono>
+    </div>
+  );
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr) 70px",
+          gap: 8,
+          padding: "0 0 6px",
+          borderBottom: `1px solid ${LINE}`,
+        }}
+      >
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Item</Mono>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>As billed</Mono>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>$/mo</Mono>
+      </div>
+      {recurring.map((i) => row(i.label, i.billed, usdFull(i.monthlyUsd)))}
+      {row("Recurring run-rate", "", usdFull(total), AMBER)}
+      {extras.length > 0 && (
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginTop: 12, marginBottom: 2 }} c={ASH}>
+          Not in the monthly run-rate
+        </Mono>
+      )}
+      {extras.map((i) => row(i.note ? `${i.label} · ${i.note}` : i.label, i.billed, "—", ASH, true))}
     </div>
   );
 }

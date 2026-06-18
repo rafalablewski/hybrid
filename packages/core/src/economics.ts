@@ -147,9 +147,42 @@ export const COST_DRIVERS: CostDriver[] = [
     label: "Fixed opex (base)",
     kind: "fixed",
     rate: "~$64 / mo",
-    note: "Real recurring run-rate, independent of user count: Supabase Pro ($25/mo) + Claude API for the internal AI agents ($20/mo) + hybrid.app domain renewal ($100/yr ≈ $8.33/mo) + the @hybriddomain.xyz mailbox (zł31.50/mo ≈ $8.49) + hybriddomain.xyz renewal ($23.99/yr ≈ $2.00/mo). NOT in this monthly figure: one-time setup (hybrid.app premium domain $300 + hybriddomain.xyz registration zł5.34) and the Apple Developer account ($99/yr, added once mobile billing goes live). FX $1 ≈ zł3.71 (18 Jun 2026).",
+    note: "Real recurring run-rate, independent of user count — itemized in the table below. One-time domain setup and the Apple Developer fee are listed there too but kept out of the monthly figure. FX $1 ≈ zł3.71 (18 Jun 2026).",
   },
 ];
+
+/** A single fixed-opex line, normalized to a monthly USD run-rate. */
+export interface FixedOpexItem {
+  label: string;
+  /** As actually billed (native cadence + currency). */
+  billed: string;
+  /** Monthly USD run-rate. 0 for one-time or not-yet-paid items. */
+  monthlyUsd: number;
+  /** Whether it's part of the recurring monthly figure, a one-time cost, or a future add. */
+  kind: "recurring" | "oneTime" | "future";
+  /** Optional qualifier (e.g. when a future cost kicks in). */
+  note?: string;
+}
+
+/**
+ * The fixed-opex line items behind the ~$64/mo figure. The recurring rows sum to
+ * `fixedOpexMonthly`; one-time + future rows are listed for context but excluded
+ * from the monthly run-rate. FX $1 ≈ zł3.71 (18 Jun 2026).
+ */
+export const FIXED_OPEX_ITEMS: FixedOpexItem[] = [
+  { label: "Supabase Pro", billed: "$25 / mo", monthlyUsd: 25, kind: "recurring" },
+  { label: "Claude API (internal AI agents)", billed: "$20 / mo", monthlyUsd: 20, kind: "recurring" },
+  { label: "hybrid.app domain renewal", billed: "$100 / yr", monthlyUsd: 100 / 12, kind: "recurring" },
+  { label: "@hybriddomain.xyz mailbox", billed: "zł31.50 / mo", monthlyUsd: 31.5 / 3.71, kind: "recurring" },
+  { label: "hybriddomain.xyz renewal", billed: "$23.99 / yr", monthlyUsd: 23.99 / 12, kind: "recurring" },
+  { label: "hybrid.app premium domain", billed: "$300 one-time", monthlyUsd: 0, kind: "oneTime" },
+  { label: "hybriddomain.xyz registration", billed: "zł5.34 one-time", monthlyUsd: 0, kind: "oneTime" },
+  { label: "Apple Developer account", billed: "$99 / yr", monthlyUsd: 0, kind: "future", note: "added once mobile billing goes live" },
+];
+
+/** Sum of the recurring fixed-opex lines — the monthly run-rate. */
+export const fixedOpexMonthlyTotal = (): number =>
+  FIXED_OPEX_ITEMS.filter((i) => i.kind === "recurring").reduce((s, i) => s + i.monthlyUsd, 0);
 
 // ----------------------------------------------------------------------------
 // Focus markets + localized pricing (where we sell, and for how much)
