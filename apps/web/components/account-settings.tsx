@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
+import { useTemplate } from "@/lib/use-template";
+import { TEMPLATES } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -41,13 +43,20 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "de", label: "DE" },
 ];
 
-const editInput = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 12px", outline: "none" } as const;
-const editBtn = (c: string) => ({ ...mono, fontSize: 13, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: 10, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
-
 export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
   const { theme, setTheme } = useTheme();
+  const { template, setTemplate } = useTemplate();
+  // Aurora rounds everything more. The Card surfaces already adapt via the
+  // template skin; here we round the controls (inputs, buttons, choice cards)
+  // to match, in place — this tab area holds MFA/billing logic we don't want to
+  // fork into a parallel component.
+  const aurora = template === "aurora";
+  const r = aurora ? 14 : 10;
+  const rCard = aurora ? 18 : 12;
+  const editInput = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "9px 12px", outline: "none" } as const;
+  const editBtn = (c: string) => ({ ...mono, fontSize: 13, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
   const { lang, setLang } = useLang();
   const prefs = useLoggerPrefs();
   const [section, setSection] = useState<Section>("general");
@@ -311,9 +320,23 @@ export default function AccountSettings() {
                 <button
                   key={m}
                   onClick={() => setTheme(m)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
                 >
                   {m}
+                </button>
+              ))}
+            </div>
+
+            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Template</Mono>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => setTemplate(tpl.id)}
+                  title={tpl.description}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: template === tpl.id ? txt(LIME) : txt(ASH), background: template === tpl.id ? `${LIME}1a` : "transparent", border: `1px solid ${template === tpl.id ? LIME : LINE}` }}
+                >
+                  {tpl.label}
                 </button>
               ))}
             </div>
@@ -324,7 +347,7 @@ export default function AccountSettings() {
                 <button
                   key={l.id}
                   onClick={() => setLang(l.id)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}
                 >
                   {l.label}
                 </button>
@@ -334,7 +357,7 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Workout logger</Mono>
             <button
               onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
             >
               {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
             </button>
@@ -345,7 +368,7 @@ export default function AccountSettings() {
                 <button
                   key={u}
                   onClick={() => setLoggerPref("units", u)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
                 >
                   {u}
                 </button>
@@ -355,7 +378,7 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
             <button
               onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)}
-              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
             >
               {prefs.countWarmupsInVolume ? "Warm-ups count toward volume" : "Warm-ups excluded from volume"}
             </button>
@@ -364,7 +387,7 @@ export default function AccountSettings() {
             </Mono>
             <button
               onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)}
-              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: 10, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
+              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
             >
               {prefs.fractionalVolume ? "Secondary muscles = 0.5 sets" : "Every muscle = 1 set"}
             </button>
@@ -386,7 +409,7 @@ export default function AccountSettings() {
             {/* Simple (casual) — always selectable, free. */}
             <button
               onClick={() => setClientPersona("casual")}
-              style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `${LIME}14` : "transparent" }}
+              style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `${LIME}14` : "transparent" }}
             >
               <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>Simple</div>
               <Mono s={{ fontSize: 11 }}>track · review · share</Mono>
@@ -396,7 +419,7 @@ export default function AccountSettings() {
             <button
               onClick={() => (paid ? setClientPersona("athlete") : undefined)}
               aria-disabled={!paid}
-              style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: 12, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `${LIME}14` : "transparent", opacity: paid ? 1 : 0.7 }}
+              style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `${LIME}14` : "transparent", opacity: paid ? 1 : 0.7 }}
             >
               <div style={{ ...disp, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 6, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
                 Full
@@ -416,7 +439,7 @@ export default function AccountSettings() {
               <button
                 onClick={upgrade}
                 disabled={billingBusy}
-                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 10, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
+                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
               >
                 {billingBusy ? "Starting…" : "Upgrade to Full"}
               </button>
@@ -438,7 +461,7 @@ export default function AccountSettings() {
               <button
                 onClick={manageSubscription}
                 disabled={billingBusy}
-                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
+                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
               >
                 {billingBusy ? "Opening…" : "Manage subscription"}
               </button>
@@ -511,7 +534,7 @@ export default function AccountSettings() {
                 onChange={(e) => setCredentials(e.target.value)}
                 placeholder="Certifications, experience, who you coach…"
                 rows={3}
-                style={{ ...mono, fontSize: 13, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
+                style={{ ...mono, fontSize: 13, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
               />
               {coachMsg && (
                 <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>
@@ -519,7 +542,7 @@ export default function AccountSettings() {
               <button
                 onClick={applyCoach}
                 disabled={!credentials.trim() || coachBusy}
-                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}`, borderRadius: 10, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}
+                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}
               >
                 {coachBusy ? "Applying…" : "Apply"}
               </button>
@@ -596,7 +619,7 @@ export default function AccountSettings() {
             width: "100%",
             maxWidth: 240,
             padding: "10px 12px",
-            borderRadius: 10,
+            borderRadius: r,
             background: INK2,
             color: CHALK,
             border: `1px solid ${armed ? RED : LINE}`,
@@ -621,7 +644,7 @@ export default function AccountSettings() {
               color: "#fff",
               background: armed && !busy ? RED : `${RED}55`,
               border: "none",
-              borderRadius: 10,
+              borderRadius: r,
               padding: "11px 18px",
               cursor: armed && !busy ? "pointer" : "not-allowed",
             }}

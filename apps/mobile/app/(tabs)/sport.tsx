@@ -7,10 +7,17 @@ import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraSport from "../../components/aurora/sport";
 
 const STORE_KEY = "hybrid.sport";
 
 export default function Sport() {
+  if (useTemplate().template === "aurora") return <AuroraSport />;
+  return <ClassicSport />;
+}
+
+function ClassicSport() {
   const C = useTheme().palette;
   const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);

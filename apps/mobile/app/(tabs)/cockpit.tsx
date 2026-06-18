@@ -19,6 +19,8 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { Screen, Card, Kicker, Mono, H1, Button, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraCockpit from "../../components/aurora/cockpit";
 
 const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
   b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
@@ -30,6 +32,11 @@ const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
  * athlete's real data and links out to the deep screen. (Phase 2.)
  */
 export default function Cockpit() {
+  if (useTemplate().template === "aurora") return <AuroraCockpit />;
+  return <ClassicCockpit />;
+}
+
+function ClassicCockpit() {
   // Casual no longer has a Cockpit tab (the upgrade is sold on the single Unlock
   // Full page) — this teaser is the fallback if they deep-link in.
   const persona = usePersona();

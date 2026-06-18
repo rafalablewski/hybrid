@@ -14,10 +14,17 @@ import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, C, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraRunning from "../../components/aurora/running";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 export default function Running() {
+  if (useTemplate().template === "aurora") return <AuroraRunning />;
+  return <ClassicRunning />;
+}
+
+function ClassicRunning() {
   const C = useTheme().palette;
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);

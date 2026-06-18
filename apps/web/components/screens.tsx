@@ -663,7 +663,7 @@ const MUSCLE_LABEL: Record<string, string> = {
 };
 
 // ---------- SESSION DETAIL (web parity: PRs, e1RM trend, muscle focus) ----------
-function SessionDetail({
+export function SessionDetail({
   session,
   all,
   onBack,

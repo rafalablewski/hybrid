@@ -5,8 +5,15 @@ import { brand } from "@hybrid/core";
 import { useLang } from "../lib/i18n";
 import { F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraWelcome from "../components/aurora/welcome";
 
 export default function Welcome() {
+  if (useTemplate().template === "aurora") return <AuroraWelcome />;
+  return <ClassicWelcome />;
+}
+
+function ClassicWelcome() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();

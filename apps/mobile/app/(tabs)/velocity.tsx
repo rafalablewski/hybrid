@@ -18,6 +18,8 @@ import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraVelocity from "../../components/aurora/velocity";
 
 const zoneColor = (id: string) =>
   id === "absolute-strength" ? C.red
@@ -27,6 +29,11 @@ const zoneColor = (id: string) =>
   : C.violet;
 
 export default function Velocity() {
+  if (useTemplate().template === "aurora") return <AuroraVelocity />;
+  return <ClassicVelocity />;
+}
+
+function ClassicVelocity() {
   const C = useTheme().palette;
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);

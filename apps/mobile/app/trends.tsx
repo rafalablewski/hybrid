@@ -20,6 +20,8 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraTrends from "../components/aurora/trends";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads", glutes: "Glutes", posterior: "Posterior", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps",
@@ -34,6 +36,11 @@ const PERIODS: { id: ExercisePeriod; label: string }[] = [
 /** Training analytics hub — volume trends, muscle breakdown, and a per-exercise
  *  table that drills into each movement's dashboard. Mobile port of web Trends. */
 export default function Trends() {
+  if (useTemplate().template === "aurora") return <AuroraTrends />;
+  return <ClassicTrends />;
+}
+
+function ClassicTrends() {
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();

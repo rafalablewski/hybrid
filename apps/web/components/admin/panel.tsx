@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
 import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
+import { useTemplate } from "@/lib/use-template";
 import AdminOverview from "./overview";
 import AdminUsers from "./users";
 import AdminDirectory from "./directory";
@@ -57,6 +58,10 @@ export default function AdminPanel() {
   const { session, ready, logout } = useSession();
   const [section, setSection] = useState<SectionId>("overview");
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-admin-sidebar");
+  // Aurora rounds the console chrome too (pill nav + softer cards); the section
+  // bodies pick up the skin via the shared template-aware lib/ui primitives.
+  const aurora = useTemplate().template === "aurora";
+  const navRadius = aurora ? 999 : 9;
 
   // The operator console is admin-only. The `/api/admin/*` routes already
   // enforce this server-side (requireAdmin), but the UI shell must not render
@@ -133,7 +138,7 @@ export default function AdminPanel() {
                     gap: collapsed ? 0 : 11,
                     padding: collapsed ? "9px 0" : "9px 11px",
                     marginBottom: 2,
-                    borderRadius: 9,
+                    borderRadius: navRadius,
                     cursor: "pointer",
                     border: "none",
                     background: section === s.id ? `${AMBER}1c` : "transparent",
@@ -249,7 +254,7 @@ export default function AdminPanel() {
       color: txt(danger ? ASH : CHALK),
       background: danger ? "transparent" : INK2,
       border: `1px solid ${LINE}`,
-      borderRadius: 9,
+      borderRadius: navRadius,
       padding: "8px 0",
       cursor: "pointer",
     };

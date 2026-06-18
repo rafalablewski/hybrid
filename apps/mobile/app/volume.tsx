@@ -16,6 +16,8 @@ import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraVolume from "../components/aurora/volume";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -31,6 +33,11 @@ const MUSCLE_LABEL: Record<string, string> = {
  *  per-muscle landmarks, with a per-muscle nudge. Mobile port of the web Volume
  *  screen; reads the same pure @hybrid/core engine. */
 export default function Volume() {
+  if (useTemplate().template === "aurora") return <AuroraVolume />;
+  return <ClassicVolume />;
+}
+
+function ClassicVolume() {
   const C = useTheme().palette;
   const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);

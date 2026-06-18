@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { brand } from "@hybrid/core";
 import { SessionProvider } from "@/lib/session";
 import { LanguageProvider } from "@/lib/i18n";
+import TemplateSync from "@/components/template-sync";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default async function RootLayout({
   return (
     <html lang="en" data-theme={theme}>
       <body>
+        <TemplateSync />
         <LanguageProvider>
           <SessionProvider>{children}</SessionProvider>
         </LanguageProvider>

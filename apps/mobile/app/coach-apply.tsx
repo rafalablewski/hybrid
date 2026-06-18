@@ -6,6 +6,8 @@ import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraCoachApply from "../components/aurora/coach-apply";
 
 const STATUS_COPY: Record<CoachApplication["status"], string> = {
   pending: "Your application is in review — an admin will verify it shortly.",
@@ -14,6 +16,11 @@ const STATUS_COPY: Record<CoachApplication["status"], string> = {
 };
 
 export default function CoachApply() {
+  if (useTemplate().template === "aurora") return <AuroraCoachApply />;
+  return <ClassicCoachApply />;
+}
+
+function ClassicCoachApply() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();

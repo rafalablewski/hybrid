@@ -5,8 +5,15 @@ import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraPlans from "../../components/aurora/plans";
 
 export default function Plans() {
+  if (useTemplate().template === "aurora") return <AuroraPlans />;
+  return <ClassicPlans />;
+}
+
+function ClassicPlans() {
   const C = useTheme().palette;
   const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);

@@ -18,6 +18,8 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraExercises from "../components/aurora/exercises";
 
 const PERIODS: { id: ExercisePeriod; label: string }[] = [
   { id: "8w", label: "8 wk" },
@@ -31,6 +33,11 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { m
 /** Per-exercise dashboard — open any movement for its full progress history.
  *  Mobile port of the web Exercises screen on the same pure engine. */
 export default function Exercises() {
+  if (useTemplate().template === "aurora") return <AuroraExercises />;
+  return <ClassicExercises />;
+}
+
+function ClassicExercises() {
   const C = useTheme().palette;
   const { t } = useLang();
   const params = useLocalSearchParams<{ name?: string }>();

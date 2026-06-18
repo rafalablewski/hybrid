@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { colors } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
+import { useTemplate } from "./template";
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 export const glassShadow: ViewStyle = {
@@ -217,9 +218,13 @@ export function Card({
   accent?: string;
 }) {
   const { palette } = useTheme();
+  // Aurora gives every card a softer, larger corner radius (callers can still
+  // override via style.borderRadius). The classic radius is untouched.
+  const aurora = useTemplate().template === "aurora";
   if (glass) {
+    const gs: ViewStyle | undefined = aurora ? { borderRadius: 24, ...(style ?? {}) } : style;
     return (
-      <GlassCard style={style} accent={accent}>
+      <GlassCard style={gs} accent={accent}>
         {children}
       </GlassCard>
     );
@@ -231,7 +236,7 @@ export function Card({
           backgroundColor: palette.card,
           borderWidth: 1,
           borderColor: palette.line,
-          borderRadius: 16,
+          borderRadius: aurora ? 24 : 16,
           padding: 16,
           marginBottom: 12,
         },
@@ -276,8 +281,9 @@ export function H1({ children }: { children: ReactNode }) {
 
 export function Chip({ children, color = C.lime }: { children: ReactNode; color?: string }) {
   const { palette } = useTheme();
+  const aurora = useTemplate().template === "aurora";
   return (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 9, paddingVertical: 3, alignSelf: "flex-start" }}>
+    <View style={{ backgroundColor: `${color}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
       <Text style={{ fontFamily: F.semi, fontSize: 11, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
@@ -297,20 +303,21 @@ export function Button({
   disabled?: boolean;
 }) {
   const { palette } = useTheme();
+  const aurora = useTemplate().template === "aurora";
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={{
         backgroundColor: color,
-        borderRadius: 12,
-        paddingVertical: 14,
+        borderRadius: aurora ? 999 : 12,
+        paddingVertical: aurora ? 16 : 14,
         paddingHorizontal: 24,
         alignItems: "center",
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: 15, color: palette.onAccent }}>{label}</Text>
+      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: 15, color: palette.onAccent }}>{label}</Text>
     </Pressable>
   );
 }

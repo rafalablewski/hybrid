@@ -35,35 +35,70 @@ import {
   HistoryScreen,
   RolesScreen,
 } from "./screens";
+import AuroraRoles from "./aurora/roles";
+import AuroraHistory from "./aurora/history";
 import Logger from "./logger";
 import PlansScreen from "./plans";
+import AuroraPlans from "./aurora/plans";
+import AuroraSport from "./aurora/sport";
+import AuroraCompetition from "./aurora/competition";
+import AuroraPeriodize from "./aurora/periodize";
+import AuroraBuilder from "./aurora/builder";
+import AuroraLogger from "./aurora/logger";
+import RunTrack from "./run-track";
+import AuroraRunTrack from "./aurora/run-track";
+import AuroraCoach from "./aurora/coach";
+import AuroraUpgrade from "./aurora/upgrade";
+import AuroraOrg from "./aurora/org";
+import AuroraTalent from "./aurora/talent";
+import AuroraTactical from "./aurora/tactical";
+import AuroraTeamCompare from "./aurora/team-compare";
+import AuroraTeamMonitor from "./aurora/team-monitor";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
+import AuroraConnections from "./aurora/connections";
 import Performance from "./performance";
+import AuroraPerformance from "./aurora/performance";
 import Org from "./org";
 import VideoScreen from "./video-screen";
+import AuroraVideo from "./aurora/video";
 import Competition from "./competition";
 import Talent from "./talent";
 import Tactical from "./tactical";
 import Longevity from "./longevity";
+import AuroraLongevity from "./aurora/longevity";
 import Velocity from "./velocity";
+import AuroraVelocity from "./aurora/velocity";
 import Running from "./running";
+import AuroraRunning from "./aurora/running";
 import Volume from "./volume";
+import AuroraVolume from "./aurora/volume";
 import Exercises from "./exercises";
+import AuroraExercises from "./aurora/exercises";
 import Trends from "./trends";
+import AuroraTrends from "./aurora/trends";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
+import AuroraToday from "./aurora/today";
+import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
+import AuroraCockpit from "./aurora/cockpit";
 import Nutrition from "./nutrition";
+import AuroraNutrition from "./aurora/nutrition";
 import Onboarding from "./onboarding";
+import AuroraOnboarding from "./aurora/onboarding";
 import Upgrade from "./upgrade";
 import Checkins from "./checkins";
+import AuroraCheckins from "./aurora/checkins";
 import Calendar from "./calendar";
+import AuroraCalendar from "./aurora/calendar";
 import Builder from "./builder";
 import ForcePlate from "./forceplate";
+import AuroraForcePlate from "./aurora/forceplate";
 import Progress from "./progress";
+import AuroraProgress from "./aurora/progress";
 import AccountSettings from "./account-settings";
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
@@ -115,6 +150,7 @@ export default function AppShell() {
   // cluttering the lean app. Shown only to the casual persona.
   const showUpgradeEntry = persona === "casual";
   const { theme, toggle } = useTheme();
+  const aurora = useTemplate().template === "aurora";
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
@@ -479,7 +515,7 @@ export default function AppShell() {
                       textTransform: "uppercase",
                       letterSpacing: ".04em",
                       padding: "9px 18px",
-                      borderRadius: 10,
+                      borderRadius: aurora ? 999 : 10,
                       cursor: "pointer",
                       border: `1px solid ${scope === id ? c : LINE}`,
                       background: scope === id ? c : "transparent",
@@ -506,7 +542,7 @@ export default function AppShell() {
                     alignItems: "center",
                     gap: 10,
                     padding: "10px 14px",
-                    borderRadius: 10,
+                    borderRadius: aurora ? 18 : 10,
                     background: `${acc}12`,
                     border: `1px solid ${acc}40`,
                     marginBottom: 20,
@@ -528,91 +564,120 @@ export default function AppShell() {
         )}
 
         {screen === "today" && (
-          <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+          aurora ? (
+            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+          ) : (
+            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+          )
         )}
 
-        {screen === "upgrade" && <Upgrade onUpgraded={() => setScreen("today")} />}
+        {screen === "upgrade" && (aurora ? <AuroraUpgrade onUpgraded={() => setScreen("today")} /> : <Upgrade onUpgraded={() => setScreen("today")} />)}
 
         {screen === "cockpit" && (
-          <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          aurora
+            ? <AuroraCockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+            : <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
-          <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          aurora
+            ? <AuroraOnboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+            : <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
-        {screen === "performance" && <Performance sessions={sessions} bio={bio} />}
+        {screen === "performance" && (aurora ? <AuroraPerformance sessions={sessions} bio={bio} /> : <Performance sessions={sessions} bio={bio} />)}
 
-        {screen === "velocity" && <Velocity sessions={sessions} />}
+        {screen === "velocity" && (aurora ? <AuroraVelocity sessions={sessions} /> : <Velocity sessions={sessions} />)}
 
-        {screen === "running" && <Running sessions={sessions} />}
+        {screen === "running" && (aurora ? <AuroraRunning sessions={sessions} /> : <Running sessions={sessions} />)}
 
-        {screen === "volume" && <Volume sessions={sessions} />}
+        {screen === "volume" && (aurora ? <AuroraVolume sessions={sessions} /> : <Volume sessions={sessions} />)}
 
-        {screen === "exercises" && <Exercises sessions={sessions} focus={exerciseFocus} />}
+        {screen === "exercises" && (aurora ? <AuroraExercises sessions={sessions} focus={exerciseFocus} /> : <Exercises sessions={sessions} focus={exerciseFocus} />)}
 
-        {screen === "trends" && <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
+        {screen === "trends" && (aurora ? <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} /> : <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />)}
 
-        {screen === "forceplate" && <ForcePlate />}
+        {screen === "forceplate" && (aurora ? <AuroraForcePlate /> : <ForcePlate />)}
 
-        {screen === "nutrition" && <Nutrition />}
+        {screen === "nutrition" && (aurora ? <AuroraNutrition /> : <Nutrition />)}
 
-        {screen === "progress" && <Progress />}
+        {screen === "progress" && (aurora ? <AuroraProgress /> : <Progress />)}
 
-        {screen === "checkin" && <Checkins sessions={sessions} />}
+        {screen === "checkin" && (aurora ? <AuroraCheckins sessions={sessions} /> : <Checkins sessions={sessions} />)}
 
-        {screen === "calendar" && <Calendar sessions={sessions} />}
+        {screen === "calendar" && (aurora ? <AuroraCalendar sessions={sessions} /> : <Calendar sessions={sessions} />)}
 
-        {screen === "builder" && <Builder />}
+        {screen === "builder" && (aurora ? <AuroraBuilder /> : <Builder />)}
 
-        {screen === "squad" && <TeamMonitor />}
+        {screen === "squad" && (aurora ? <AuroraTeamMonitor /> : <TeamMonitor />)}
 
-        {screen === "teamcompare" && <TeamCompare />}
+        {screen === "teamcompare" && (aurora ? <AuroraTeamCompare /> : <TeamCompare />)}
 
-        {screen === "periodize" && <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />}
+        {screen === "periodize" && (aurora ? <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} /> : <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />)}
 
-        {screen === "competition" && <Competition />}
+        {screen === "competition" && (aurora ? <AuroraCompetition /> : <Competition />)}
 
-        {screen === "plans" && (
-          <PlansScreen
-            onEnrolled={() => {
-              refreshMacro();
-              setScreen("periodize");
-            }}
-          />
-        )}
+        {screen === "plans" &&
+          (aurora ? (
+            <AuroraPlans
+              onEnrolled={() => {
+                refreshMacro();
+                setScreen("periodize");
+              }}
+            />
+          ) : (
+            <PlansScreen
+              onEnrolled={() => {
+                refreshMacro();
+                setScreen("periodize");
+              }}
+            />
+          ))}
 
-        {screen === "sport" && <SportScreen />}
+        {screen === "sport" && (aurora ? <AuroraSport /> : <SportScreen />)}
 
-        {screen === "video" && <VideoScreen />}
+        {screen === "runtrack" && (aurora ? <AuroraRunTrack onSaved={refresh} /> : <RunTrack onSaved={refresh} />)}
 
-        {screen === "log" && (
-          <Logger
-            sessions={sessions}
-            initialBlocks={pendingBlocks}
-            onSaved={() => {
-              setPendingBlocks(undefined);
-              refresh();
-              setScreen("history");
-            }}
-          />
-        )}
+        {screen === "video" && (aurora ? <AuroraVideo /> : <VideoScreen />)}
 
-        {screen === "history" && <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />}
+        {screen === "log" &&
+          (aurora ? (
+            <AuroraLogger
+              sessions={sessions}
+              initialBlocks={pendingBlocks}
+              onSaved={() => {
+                setPendingBlocks(undefined);
+                refresh();
+                setScreen("history");
+              }}
+            />
+          ) : (
+            <Logger
+              sessions={sessions}
+              initialBlocks={pendingBlocks}
+              onSaved={() => {
+                setPendingBlocks(undefined);
+                refresh();
+                setScreen("history");
+              }}
+            />
+          ))}
 
-        {screen === "coach" && <CoachScreen />}
+        {screen === "history" && (aurora ? <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} /> : <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />)}
 
-        {screen === "connections" && <Connections />}
+        {screen === "coach" && (aurora ? <AuroraCoach /> : <CoachScreen />)}
 
-        {screen === "org" && <Org />}
+        {screen === "connections" && (aurora ? <AuroraConnections /> : <Connections />)}
 
-        {screen === "talent" && <Talent />}
+        {screen === "org" && (aurora ? <AuroraOrg /> : <Org />)}
 
-        {screen === "tactical" && <Tactical />}
+        {screen === "talent" && (aurora ? <AuroraTalent /> : <Talent />)}
 
-        {screen === "longevity" && <Longevity />}
+        {screen === "tactical" && (aurora ? <AuroraTactical /> : <Tactical />)}
 
-        {screen === "roles" && <RolesScreen />}
+        {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
+
+        {screen === "roles" && (aurora ? <AuroraRoles /> : <RolesScreen />)}
 
         {screen === "settings" && <AccountSettings />}
       </main>

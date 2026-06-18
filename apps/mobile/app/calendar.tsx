@@ -5,11 +5,18 @@ import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSe
 import { fetchSessions } from "../lib/api";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraCalendar from "../components/aurora/calendar";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export default function CalendarScreen() {
+  if (useTemplate().template === "aurora") return <AuroraCalendar />;
+  return <ClassicCalendar />;
+}
+
+function ClassicCalendar() {
   const C = useTheme().palette;
   // themed inside the component so the month-nav buttons follow light/dark
   const nav = { width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center" as const, justifyContent: "center" as const };

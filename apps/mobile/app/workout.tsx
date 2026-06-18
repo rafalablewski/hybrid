@@ -60,6 +60,17 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+
+// Aurora rounds everything more — pill CTAs and softer cards/banners. These
+// helpers let the live logger pick up the new look without duplicating its
+// (large, stateful) logic; classic radii are preserved when not on Aurora.
+const auroraRadii = (aurora: boolean) => ({
+  cta: aurora ? 999 : 14,
+  banner: aurora ? 20 : 12,
+  field: aurora ? 14 : 10,
+  chip: aurora ? 999 : 10,
+});
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -153,6 +164,8 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
 
 export default function Workout() {
   const C = useTheme().palette;
+  const aurora = useTemplate().template === "aurora";
+  const R = auroraRadii(aurora);
   const router = useRouter();
   const { t } = useLang();
   const { session } = useSession();
@@ -724,7 +737,7 @@ export default function Workout() {
         </View>
 
         {showTip && (
-          <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+          <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>{t("workout.tipTitle")}</Text>
               <Pressable onPress={dismissTip} hitSlop={8}>
@@ -749,7 +762,7 @@ export default function Workout() {
                 ? `+${mmss(restNow - restTarget)}`
                 : `${mmss(remaining!)} ${t("workout.restLeft")}`;
           return (
-            <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
+            <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, accent) }}>
                   {done ? t("workout.restDone") : t("workout.resting")} · {clock}
@@ -880,7 +893,7 @@ export default function Workout() {
                     </View>
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
-                      style={{ width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
+                      style={{ width: 40, height: 40, borderRadius: R.field, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
                     >
                       <Text style={{ fontSize: 16, color: s.done ? C.ink : C.ash, fontFamily: F.black }}>✓</Text>
                     </Pressable>
@@ -978,7 +991,7 @@ export default function Workout() {
               <Pressable
                 key={key}
                 onPress={() => addExercise(name, kind)}
-                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}
+                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.chip, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}
               >
                 <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, c) }}>{name}</Text>
               </Pressable>
@@ -1016,7 +1029,7 @@ export default function Workout() {
               )}
 
               {q.length > 0 && !exact && (
-                <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 14, borderRadius: 10, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
+                <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 14, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
                   <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>+ “{custom.trim()}”</Text>
                 </Pressable>
               )}
@@ -1029,7 +1042,7 @@ export default function Workout() {
         })() : (
           <Pressable
             onPress={() => setPickerOpen(true)}
-            style={{ borderWidth: 1, borderColor: C.lime, borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
+            style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
           >
             <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
           </Pressable>
@@ -1043,7 +1056,7 @@ export default function Workout() {
                 a long queue for the rack, or a between-blocks breather. */}
             <Pressable
               onPress={togglePause}
-              style={{ paddingHorizontal: 18, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
+              style={{ paddingHorizontal: 18, borderRadius: R.cta, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: 14, color: paused ? txt(C, C.amber) : C.ash }}>
                 {paused ? `▶ ${t("workout.resume")}` : `❚❚ ${t("workout.pause")}`}
@@ -1052,7 +1065,7 @@ export default function Workout() {
             <Pressable
               onPress={finish}
               disabled={saving}
-              style={{ flex: 1, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
+              style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
             >
               {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
             </Pressable>
@@ -1121,6 +1134,7 @@ function Summary({
   units: WeightUnit;
 }) {
   const C = useTheme().palette;
+  const R = auroraRadii(useTemplate().template === "aurora");
   const cardRef = useRef<View>(null);
   const { title, prs, bests, cardioPrs, firstEver } = summary;
   // A PR or a first-ever workout is the moment worth posting — the share is the
@@ -1213,7 +1227,7 @@ function Summary({
           onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
           style={{
             backgroundColor: C.lime,
-            borderRadius: 14,
+            borderRadius: R.cta,
             paddingVertical: 16,
             alignItems: "center",
             marginTop: milestone ? 6 : 14,
@@ -1241,7 +1255,7 @@ function Summary({
             </View>
             <Pressable
               onPress={() => router.replace("/login?mode=signup")}
-              style={{ backgroundColor: C.violet, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
+              style={{ backgroundColor: C.violet, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
             >
               <Text style={{ fontFamily: F.black, fontSize: 16, color: C.chalk }}>{t("summary.guestSave")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
@@ -1256,7 +1270,7 @@ function Summary({
             <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
             <Pressable
               onPress={() => router.replace("/(tabs)/history")}
-              style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 15, alignItems: "center" }}
+              style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 15, alignItems: "center" }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("summary.seeAnalysis")}</Text>
             </Pressable>
@@ -1274,6 +1288,7 @@ function Summary({
 // can be loaded and started next time. Non-guest only (routines need an account).
 function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock[]; t: (k: string) => string }) {
   const C = useTheme().palette;
+  const R = auroraRadii(useTemplate().template === "aurora");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(title || "Routine");
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
@@ -1285,7 +1300,7 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
     return (
       <Pressable
         onPress={() => setOpen(true)}
-        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 18 }}
+        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: R.cta, paddingVertical: 15, alignItems: "center", marginTop: 18 }}
       >
         <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -1310,7 +1325,7 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
       <Pressable
         onPress={save}
         disabled={state === "saving"}
-        style={{ backgroundColor: C.lime, borderRadius: 12, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
+        style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>

@@ -5,10 +5,17 @@ import { currentPhase, type Macrocycle } from "@hybrid/core";
 import { fetchMacrocycle } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraPeriodize from "../components/aurora/periodize";
 
 /** Periodize — the enrolled macrocycle: phase timeline + load/recovery
  *  microcycles. Mobile port of the web Periodize screen. */
 export default function Periodize() {
+  if (useTemplate().template === "aurora") return <AuroraPeriodize />;
+  return <ClassicPeriodize />;
+}
+
+function ClassicPeriodize() {
   const C = useTheme().palette;
   const router = useRouter();
   const [macro, setMacro] = useState<Macrocycle | null>(null);

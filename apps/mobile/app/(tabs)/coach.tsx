@@ -16,10 +16,17 @@ import {
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, Chip, Button, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraCoach from "../../components/aurora/coach";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
 export default function Coach() {
+  if (useTemplate().template === "aurora") return <AuroraCoach />;
+  return <ClassicCoach />;
+}
+
+function ClassicCoach() {
   const C = useTheme().palette;
   const { t } = useLang();
   const [asCoach, setAsCoach] = useState<CoachLink[]>([]);

@@ -13,6 +13,8 @@ import { enrollPlan } from "../lib/api";
 import { useClientPersonaChoice, setClientPersona } from "../lib/persona";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraOnboarding from "../components/aurora/onboarding";
 
 const EXP: { id: Experience; label: string }[] = [
   { id: "beginner", label: "Beginner" },
@@ -26,6 +28,11 @@ const EQUIP: { id: Equipment; label: string }[] = [
 ];
 
 export default function Onboarding() {
+  if (useTemplate().template === "aurora") return <AuroraOnboarding />;
+  return <ClassicOnboarding />;
+}
+
+function ClassicOnboarding() {
   const C = useTheme().palette;
   const router = useRouter();
   const [goal, setGoal] = useState<OnboardingGoal | null>(null);

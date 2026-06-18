@@ -13,8 +13,15 @@ import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
 import { Screen, Card, Kicker, Mono, H1, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import AuroraTrain from "../../components/aurora/train";
 
 export default function Train() {
+  if (useTemplate().template === "aurora") return <AuroraTrain />;
+  return <ClassicTrain />;
+}
+
+function ClassicTrain() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
@@ -126,6 +133,11 @@ export default function Train() {
           ))}
         </Card>
       )}
+
+      {/* Build a reusable routine */}
+      <Pressable onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>＋ Build a routine</Text>
+      </Pressable>
 
       <Mono style={{ marginTop: 8, lineHeight: 19 }}>{t("train.finishedNote")}</Mono>
     </Screen>

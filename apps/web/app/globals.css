@@ -115,6 +115,31 @@ body {
   --red-text: #a82e2a;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   AURORA TEMPLATE — global softening. When [data-template="aurora"] is set
+   on <html> (mirrored from the per-device template pref by TemplateSync),
+   every app-shell screen picks up the rounded Aurora feel without touching
+   each component. Dedicated Aurora screens (login, landing) carry the full
+   layout; this just rounds the shared surfaces. Brand tokens/fonts unchanged.
+   ════════════════════════════════════════════════════════════════════ */
+/* Radius tokens — the shared lib/ui primitives read these (inline styles can't
+   be reached by a class selector), so swapping them here re-rounds every Card,
+   Chip, Select, input and tooltip across the whole app at once. */
+:root { --r-card: 16px; --r-chip: 5px; --r-field: 9px; --r-tip: 8px; }
+[data-template="aurora"] { --r-card: 24px; --r-chip: 999px; --r-field: 14px; --r-tip: 14px; }
+
+[data-template="aurora"] .liquid-glass { border-radius: 26px; }
+[data-template="aurora"] input,
+[data-template="aurora"] select,
+[data-template="aurora"] textarea { border-radius: var(--r-field); }
+[data-template="aurora"] .rounded-md { border-radius: 14px; }
+[data-template="aurora"] .rounded-lg { border-radius: 18px; }
+[data-template="aurora"] .rounded-xl { border-radius: 22px; }
+[data-template="aurora"] .rounded-2xl { border-radius: 28px; }
+/* the frosted sidebar + command hub soften too */
+[data-template="aurora"] .lg-sidebar { border-radius: 0 28px 28px 0; }
+[data-template="aurora"] .cmd-hub { border-radius: 34px; }
+
 /* ---- core component ---- */
 .liquid-glass {
   --lg-blur: 18px;

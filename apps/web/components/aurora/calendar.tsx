@@ -1,0 +1,96 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const todayKey = () => new Date().toISOString().slice(0, 10);
+const C = (v: string) => `var(--color-${v})`;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6 }}>{label}</span>;
+type EventRow = { id: string; name: string; sport: string; date: string };
+type AssignmentRow = { id: string; name: string; date: string; status: string };
+
+/** AURORA Calendar (web) — month heat-grid + day detail (events/assignments/
+ *  sessions, mark-done), reusing the exact calendar engine + APIs. */
+export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[] }) {
+  const now = new Date();
+  const [year, setYear] = useState(now.getUTCFullYear());
+  const [month, setMonth] = useState(now.getUTCMonth());
+  const [selected, setSelected] = useState<string>(todayKey());
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+
+  const loadAssignments = () => fetch("/api/assignments").then((r) => (r.ok ? r.json() : { assignments: [] })).then((d: { assignments?: AssignmentRow[] }) => setAssignments((d.assignments ?? []).map((a) => ({ ...a, date: a.date.slice(0, 10) })))).catch(() => setAssignments([]));
+  useEffect(() => {
+    fetch("/api/events").then((r) => (r.ok ? r.json() : { events: [] })).then((d: { events?: EventRow[] }) => setEvents((d.events ?? []).map((e) => ({ ...e, date: e.date.slice(0, 10) })))).catch(() => setEvents([]));
+    loadAssignments();
+  }, []);
+  const markDone = async (id: string) => { await fetch(`/api/assignments/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "completed" }) }); loadAssignments(); };
+
+  const byDay = useMemo(() => sessionsByDay(sessions), [sessions]);
+  const intensity = useMemo(() => loadIntensity(byDay), [byDay]);
+  const matrix = useMemo(() => monthMatrix(year, month), [year, month]);
+  const eventsByDay = useMemo(() => { const m: Record<string, EventRow[]> = {}; for (const e of events) (m[e.date] ??= []).push(e); return m; }, [events]);
+  const assignmentsByDay = useMemo(() => { const m: Record<string, AssignmentRow[]> = {}; for (const a of assignments) (m[a.date] ??= []).push(a); return m; }, [assignments]);
+  const monthLabel = new Date(Date.UTC(year, month, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  const today = todayKey();
+  const go = (delta: number) => { const m = month + delta; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
+  const jumpToday = () => { setYear(now.getUTCFullYear()); setMonth(now.getUTCMonth()); setSelected(today); };
+  const selSessions = sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
+  const selEvents = eventsByDay[selected] ?? [];
+  const selAssignments = assignmentsByDay[selected] ?? [];
+  const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, minWidth: 36, height: 36, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontWeight: 800, fontSize: 20 }}>{monthLabel}</div>
+          <div style={{ display: "flex", gap: 6 }}><button onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>Today</button><button onClick={() => go(1)} style={navBtn}>›</button></div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
+          {WEEKDAYS.map((d) => <span key={d} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{d}</span>)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+          {matrix.flat().map((cell) => {
+            const day = byDay[cell.date]; const ev = eventsByDay[cell.date]; const asg = assignmentsByDay[cell.date];
+            const inten = intensity(cell.date); const isToday = cell.date === today; const isSel = cell.date === selected;
+            return (
+              <button key={cell.date} onClick={() => setSelected(cell.date)} style={{ textAlign: "left", minHeight: 62, borderRadius: 14, padding: 6, cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: day ? `rgba(196,240,53,${0.08 + inten * 0.5})` : C("ink") }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: isToday ? C("lime") : C("chalk"), fontWeight: isToday ? 700 : 400 }}>{Number(cell.date.slice(8, 10))}</span>
+                  <span style={{ display: "flex", gap: 3 }}>{asg && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("violet") }} />}{ev && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("amber") }} />}</span>
+                </div>
+                {day && <div style={{ marginTop: 4 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: C("ink"), background: C("lime"), borderRadius: 6, padding: "1px 6px" }}>{day.count}×</span></div>}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 10, color: C("ash") }}>Cell shading = training load (sRPE) · <span style={{ color: C("violet") }}>●</span> assigned · <span style={{ color: C("amber") }}>●</span> event</div>
+      </div>
+
+      <div style={card}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
+        {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), "Event")}<div style={{ fontWeight: 700, fontSize: 15, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{e.sport}</div></div>)}
+        {selAssignments.map((a) => (
+          <div key={a.id} style={{ marginTop: 10 }}>{chip(C("violet"), "Assigned")}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{a.name}</div>
+              {a.status === "completed" ? chip(C("lime"), "done") : <button onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>Mark done</button>}
+            </div>
+          </div>
+        ))}
+        {selSessions.length === 0 && selEvents.length === 0 && selAssignments.length === 0 ? (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 12, color: C("ash") }}>Nothing logged this day.</div>
+        ) : selSessions.map((s) => (
+          <div key={s.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{s.title}</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("blue"), `load ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} blocks`)}{typeof s.readiness === "number" && chip(C("lime"), `readiness ${s.readiness}`)}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 6, color: C("ash") }}>{s.blocks.map((b) => b.name).join(" · ")}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

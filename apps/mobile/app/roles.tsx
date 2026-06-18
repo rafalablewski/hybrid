@@ -1,10 +1,17 @@
 import { View, Text } from "react-native";
 import { Screen, Card, Kicker, Mono, H1, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraRoles from "../components/aurora/roles";
 
 /** Roles & access — how the three roles are scoped. Access is enforced
  *  server-side by RELATIONSHIP, not the role label. Mobile port (info). */
 export default function Roles() {
+  if (useTemplate().template === "aurora") return <AuroraRoles />;
+  return <ClassicRoles />;
+}
+
+function ClassicRoles() {
   const C = useTheme().palette;
   const ROLES = [
     { name: "Client", color: C.lime, desc: "Owns their own data. Sees only themselves. Private coach notes stay hidden." },

@@ -9,6 +9,8 @@ import { supabase } from "../lib/supabase";
 import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraUpgrade from "../components/aurora/upgrade";
 
 // The whole Full (athlete) toolkit — sold as one bundle so the upgrade's full
 // value is clear (not "just one screen"). Grouped to stay scannable.
@@ -20,6 +22,11 @@ const BUNDLE: { k: string; c: (C: ReturnType<typeof useTheme>["palette"]) => str
 ];
 
 export default function Upgrade() {
+  if (useTemplate().template === "aurora") return <AuroraUpgrade />;
+  return <ClassicUpgrade />;
+}
+
+function ClassicUpgrade() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();

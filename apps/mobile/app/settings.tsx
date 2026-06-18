@@ -7,8 +7,11 @@ import { clearDraft } from "../lib/draft";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
 import type { Lang } from "@hybrid/core";
-import { useTheme, type ThemePref } from "../lib/theme";
+import { useTheme, txt, type ThemePref } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import { TEMPLATES } from "@hybrid/core";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import AuroraSettings from "../components/aurora/settings";
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "system", label: "System" },
@@ -23,10 +26,16 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 ];
 
 export default function Settings() {
+  if (useTemplate().template === "aurora") return <AuroraSettings />;
+  return <ClassicSettings />;
+}
+
+function ClassicSettings() {
   const router = useRouter();
   const { t, lang, setLang } = useLang();
   const { signOut, name, role, entitlement } = useSession();
   const { palette, pref, setPref } = useTheme();
+  const { template, setTemplate } = useTemplate();
   const C = palette;
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -91,6 +100,32 @@ export default function Settings() {
                 }}
               >
                 <Text style={{ fontFamily: F.bold, fontSize: 13, color: on ? C.onAccent : C.ash }}>{opt.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
+      <Card style={{ marginTop: 16 }}>
+        <Kicker>Template</Kicker>
+        <Mono style={{ marginTop: 4, fontSize: 11 }}>Switch the whole app between the classic look and the new rounded design.</Mono>
+        <View style={{ gap: 8, marginTop: 12 }}>
+          {TEMPLATES.map((opt) => {
+            const on = template === opt.id;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => setTemplate(opt.id)}
+                style={{
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: on ? C.lime : C.line,
+                  backgroundColor: on ? `${C.lime}14` : "transparent",
+                  padding: 14,
+                }}
+              >
+                <Text style={{ fontFamily: F.bold, fontSize: 15, color: on ? txt(C, C.lime) : C.chalk }}>{opt.label}</Text>
+                <Mono style={{ marginTop: 3, fontSize: 11, lineHeight: 16 }}>{opt.description}</Mono>
               </Pressable>
             );
           })}

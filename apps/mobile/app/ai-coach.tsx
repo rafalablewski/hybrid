@@ -4,11 +4,18 @@ import { useRouter } from "expo-router";
 import { askAiCoach, type CoachNote } from "../lib/api";
 import { Screen, Card, Kicker, Mono, Button, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraAiCoach from "../components/aurora/ai-coach";
 
 // The native AI coach — the mobile counterpart to the web AskCoach. POSTs to the
 // same /api/ai-coach (server-side Claude, engine fallback) and renders the note.
 // Reached from the Home dashboard's "AI coach" card.
 export default function AiCoach() {
+  if (useTemplate().template === "aurora") return <AuroraAiCoach />;
+  return <ClassicAiCoach />;
+}
+
+function ClassicAiCoach() {
   const C = useTheme().palette;
   const router = useRouter();
   const [note, setNote] = useState<CoachNote | null>(null);

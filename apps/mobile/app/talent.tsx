@@ -7,6 +7,8 @@ import {
 } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraTalent from "../components/aurora/talent";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerlifting", "Bodybuilding", "Hybrid"];
@@ -15,6 +17,11 @@ const numOrU = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? pars
 
 /** Talent — benchmark vs your cohort + opt-in discovery. Mobile port. */
 export default function Talent() {
+  if (useTemplate().template === "aurora") return <AuroraTalent />;
+  return <ClassicTalent />;
+}
+
+function ClassicTalent() {
   const C = useTheme().palette;
   const [profile, setProfile] = useState<TalentProfile | null>(null);
   const [report, setReport] = useState<TalentReport | null>(null);

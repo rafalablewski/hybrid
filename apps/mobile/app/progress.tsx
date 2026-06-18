@@ -5,6 +5,8 @@ import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraProgress from "../components/aurora/progress";
 
 const BUCKET = "progress";
 type Photo = { name: string; path: string; url: string; date: string };
@@ -15,6 +17,11 @@ type Status = "loading" | "ready" | "no-auth" | "no-bucket";
 // owner-folder RLS). The phone is where these get taken, so this is the natural
 // capture surface; the web Progress screen shows the same timeline.
 export default function ProgressScreen() {
+  if (useTemplate().template === "aurora") return <AuroraProgress />;
+  return <ClassicProgress />;
+}
+
+function ClassicProgress() {
   const C = useTheme().palette;
   const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
