@@ -59,6 +59,7 @@ import AuroraToday from "./aurora/today";
 import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
 import Nutrition from "./nutrition";
+import AuroraNutrition from "./aurora/nutrition";
 import Onboarding from "./onboarding";
 import AuroraOnboarding from "./aurora/onboarding";
 import Upgrade from "./upgrade";
@@ -566,7 +567,7 @@ export default function AppShell() {
 
         {screen === "forceplate" && <ForcePlate />}
 
-        {screen === "nutrition" && <Nutrition />}
+        {screen === "nutrition" && (aurora ? <AuroraNutrition /> : <Nutrition />)}
 
         {screen === "progress" && <Progress />}
 

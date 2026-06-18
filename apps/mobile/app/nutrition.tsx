@@ -11,6 +11,8 @@ import {
 import { fetchSignals, createSignal, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraNutrition from "../components/aurora/nutrition";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "Lose" },
@@ -19,6 +21,11 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 ];
 
 export default function Nutrition() {
+  if (useTemplate().template === "aurora") return <AuroraNutrition />;
+  return <ClassicNutrition />;
+}
+
+function ClassicNutrition() {
   const C = useTheme().palette;
   const router = useRouter();
   const [signals, setSignals] = useState<CoreSignal[]>([]);
