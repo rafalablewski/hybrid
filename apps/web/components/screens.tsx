@@ -60,9 +60,7 @@ import {
   type Biometrics,
 } from "@hybrid/core";
 import type { RosterRow } from "@/lib/use-roster";
-import { usePersona } from "@/lib/persona";
 import AskCoach from "./ai-coach";
-import AdminAccess from "./admin/access";
 import ReconciledWeek from "./reconciled-week";
 
 const fmtDate = (iso: string) =>
@@ -866,113 +864,6 @@ export function SessionDetail({
   );
 }
 
-// ---------- ROLES & ACCESS (the permission model) ----------
-const PERMISSIONS = [
-  { cap: "Own training data & analytics", client: "full", coach: "own", admin: "no" },
-  { cap: "Other athletes' data", client: "no", coach: "consented only", admin: "aggregate" },
-  { cap: "Leave coaching notes", client: "no", coach: "yes (+private)", admin: "no" },
-  { cap: "Private coach notes visible", client: "no", coach: "own", admin: "no" },
-  { cap: "Adjust someone's plan", client: "no", coach: "consented only", admin: "no" },
-  { cap: "Platform metrics (MAU, retention)", client: "no", coach: "no", admin: "yes" },
-  { cap: "Manage content & languages", client: "no", coach: "no", admin: "yes" },
-  { cap: "Manage accounts & verify coaches", client: "no", coach: "no", admin: "yes" },
-];
-
-export function RolesScreen() {
-  const persona = usePersona();
-  const cell = (v: string) => {
-    const yes = v === "full" || v === "yes" || v === "yes (+private)";
-    const no = v === "no";
-    return (
-      <td
-        style={{
-          ...mono,
-          fontSize: 12,
-          textAlign: "center",
-          padding: "11px 6px",
-          borderBottom: `1px solid ${LINE}`,
-          color: txt(no ? ASH : yes ? LIME : AMBER),
-        }}
-      >
-        {no ? "—" : v}
-      </td>
-    );
-  };
-
-  return (
-    <div>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 18 }}>
-        Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not role
-        label alone.
-      </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 20 }}>
-        {(
-          [
-            ["Client", LIME, "Owns their own data. Sees only themselves. Private coach notes stay hidden."],
-            ["Coach", VIOLET, "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
-            ["Admin", AMBER, "Platform aggregates & content. No silent access to private training data; support access is audited."],
-          ] as const
-        ).map(([n, c, d]) => (
-          <Card key={n} style={{ borderLeft: `3px solid ${c}` }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(c) }}>{n}</div>
-            <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>
-              {d}
-            </Mono>
-          </Card>
-        ))}
-      </div>
-      <Card>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 14 }}>
-          Permission matrix
-        </Mono>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
-                <th
-                  key={h}
-                  style={{
-                    ...mono,
-                    fontSize: 11,
-                    color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER),
-                    textTransform: "uppercase",
-                    textAlign: i === 0 ? "left" : "center",
-                    padding: "8px 6px",
-                    borderBottom: `1px solid ${LINE}`,
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {PERMISSIONS.map((p) => (
-              <tr key={p.cap}>
-                <td style={{ ...disp, fontWeight: 600, fontSize: 13, padding: "11px 6px", borderBottom: `1px solid ${LINE}` }}>
-                  {p.cap}
-                </td>
-                {cell(p.client)}
-                {cell(p.coach)}
-                {cell(p.admin)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-
-      {/* ADMIN — the editable permission matrix: per-feature minimum persona +
-          what a casual (free) user sees (hidden vs. locked upgrade bait). The
-          read-only matrix above is the role model; this is where it's tuned. */}
-      {persona === "admin" && (
-        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginTop: 20 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }} c={AMBER}>
-            Access control · admin
-          </Mono>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginBottom: 10 }}>Set permissions per feature</div>
-          <AdminAccess />
-        </Card>
-      )}
-    </div>
-  );
-}
+// Roles & access moved to the admin Governance → Access control screen
+// (components/admin/access.tsx). The plan/entitlement matrix lives in the admin
+// Business → Financials console. The user-facing Roles screen was retired.

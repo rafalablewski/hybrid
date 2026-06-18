@@ -146,9 +146,231 @@ export const COST_DRIVERS: CostDriver[] = [
     id: "fixed",
     label: "Fixed opex (base)",
     kind: "fixed",
-    rate: "~$600 / mo",
-    note: "Base Supabase/Vercel plans + Apple Developer ($99/yr), Expo/EAS, domains, tooling — independent of user count.",
+    rate: "~$64 / mo",
+    note: "Real recurring run-rate, independent of user count: Supabase Pro ($25/mo) + Claude API for the internal AI agents ($20/mo) + hybrid.app domain renewal ($100/yr ≈ $8.33/mo) + the @hybriddomain.xyz mailbox (zł31.50/mo ≈ $8.49) + hybriddomain.xyz renewal ($23.99/yr ≈ $2.00/mo). NOT in this monthly figure: one-time setup (hybrid.app premium domain $300 + hybriddomain.xyz registration zł5.34) and the Apple Developer account ($99/yr, added once mobile billing goes live). FX $1 ≈ zł3.71 (18 Jun 2026).",
   },
+];
+
+// ----------------------------------------------------------------------------
+// Focus markets + localized pricing (where we sell, and for how much)
+// ----------------------------------------------------------------------------
+
+/** The five launch markets HYBRID focuses on. */
+export type MarketId = "us" | "uk" | "eu" | "pl" | "sg";
+
+/** The day the FX rates + localized prices below were set (for the readout). */
+export const PRICING_REF_DATE = "2026-06-18";
+
+export interface MarketPricing {
+  id: MarketId;
+  /** Market / region name. */
+  market: string;
+  flag: string;
+  /** ISO-4217 currency code. */
+  currency: string;
+  symbol: string;
+  /** Local-currency units per 1 USD on PRICING_REF_DATE (drives the USD-equivalent). */
+  fxPerUsd: number;
+  /** Consumer tax baked into (or added to) the headline price. */
+  tax: string;
+  /** Stripe domestic card processing fee in this market. */
+  stripeFee: string;
+  /** Headline price level vs the US anchor on a purchasing-power lens (US = 1.00). */
+  priceIndex: number;
+  /** Consumer Pro — monthly + annual, in local currency. */
+  proMonthly: number;
+  proAnnual: number;
+  /** Coaching seats — monthly, local currency. */
+  coachStarter: number;
+  coachPro: number;
+  coachBusiness: number;
+  /** Org / enterprise — per athlete / year band, local currency. */
+  orgLow: number;
+  orgHigh: number;
+  /** Why this market is priced where it is. */
+  rationale: string;
+}
+
+/**
+ * Where HYBRID sells and what it charges. The US is the anchor (price set first);
+ * every other market localizes off it on a purchasing-power lens, then rounds to
+ * the price point that market actually expects. The USD-equivalent (local ÷ FX)
+ * is what we keep before that market's tax + Stripe fee, so two markets at the
+ * same headline can net very differently.
+ */
+export const MARKET_PRICING: MarketPricing[] = [
+  {
+    id: "us",
+    market: "United States",
+    flag: "🇺🇸",
+    currency: "USD",
+    symbol: "$",
+    fxPerUsd: 1,
+    tax: "Sales tax added at checkout (varies by state)",
+    stripeFee: "2.9% + $0.30",
+    priceIndex: 1.0,
+    proMonthly: 12.99,
+    proAnnual: 99,
+    coachStarter: 29,
+    coachPro: 79,
+    coachBusiness: 199,
+    orgLow: 40,
+    orgHigh: 80,
+    rationale: "Anchor market — highest willingness-to-pay. Price set here first; every other market indexes off it.",
+  },
+  {
+    id: "uk",
+    market: "United Kingdom",
+    flag: "🇬🇧",
+    currency: "GBP",
+    symbol: "£",
+    fxPerUsd: 0.745,
+    tax: "VAT 20% included",
+    stripeFee: "1.5% + £0.20",
+    priceIndex: 0.92,
+    proMonthly: 9.99,
+    proAnnual: 79,
+    coachStarter: 25,
+    coachPro: 65,
+    coachBusiness: 175,
+    orgLow: 32,
+    orgHigh: 64,
+    rationale: "£9.99 is the price point a $12.99 US app lands on. VAT-inclusive display, and lower UK/EU Stripe fees offset the slightly lower headline.",
+  },
+  {
+    id: "eu",
+    market: "European Union (ex-PL)",
+    flag: "🇪🇺",
+    currency: "EUR",
+    symbol: "€",
+    fxPerUsd: 0.856,
+    tax: "VAT ~20–23% included (varies by country)",
+    stripeFee: "1.5% + €0.25",
+    priceIndex: 1.0,
+    proMonthly: 11.99,
+    proAnnual: 99,
+    coachStarter: 29,
+    coachPro: 79,
+    coachBusiness: 199,
+    orgLow: 38,
+    orgHigh: 75,
+    rationale: "Eurozone, near numeric parity with USD. A strong euro means the effective USD take runs a touch above the US — that headroom covers VAT-inclusive pricing.",
+  },
+  {
+    id: "pl",
+    market: "Poland",
+    flag: "🇵🇱",
+    currency: "PLN",
+    symbol: "zł",
+    fxPerUsd: 3.71,
+    tax: "VAT 23% included",
+    stripeFee: "1.5% + zł1.00",
+    priceIndex: 0.6,
+    proMonthly: 29,
+    proAnnual: 249,
+    coachStarter: 99,
+    coachPro: 269,
+    coachBusiness: 699,
+    orgLow: 120,
+    orgHigh: 240,
+    rationale: "A focus home market, but ~40% lower purchasing power than the US (OECD PPP). Consumer Pro localizes to ~zł29/mo (~60% of the US price) to drive adoption; the B2B coach/org seats discount less because the buyer is a business.",
+  },
+  {
+    id: "sg",
+    market: "Singapore",
+    flag: "🇸🇬",
+    currency: "SGD",
+    symbol: "S$",
+    fxPerUsd: 1.285,
+    tax: "GST 9% included",
+    stripeFee: "3.4% + S$0.50",
+    priceIndex: 1.02,
+    proMonthly: 16.99,
+    proAnnual: 139,
+    coachStarter: 39,
+    coachPro: 105,
+    coachBusiness: 265,
+    orgLow: 52,
+    orgHigh: 104,
+    rationale: "High-income hub for SE-Asia expansion, near-US willingness-to-pay. GST-inclusive display and Singapore's higher Stripe fee (3.4% + S$0.50) put the headline a touch above the US in USD terms.",
+  },
+];
+
+/** Local-currency amount → USD at the reference FX (guarded against a 0 rate). */
+export const toUsd = (local: number, fxPerUsd: number): number => (fxPerUsd > 0 ? local / fxPerUsd : 0);
+
+// ----------------------------------------------------------------------------
+// Entitlement matrix — what each plan actually gets ("what user gets what")
+// ----------------------------------------------------------------------------
+
+export type PlanId = "free" | "pro" | "coach" | "org";
+
+export interface PlanColumn {
+  id: PlanId;
+  label: string;
+  /** Headline price (US anchor). */
+  price: string;
+  /** Who is on this plan. */
+  who: string;
+}
+
+export const PLAN_COLUMNS: PlanColumn[] = [
+  { id: "free", label: "Free", price: "$0", who: "Guest & casual — track and share" },
+  { id: "pro", label: "Pro", price: "$12.99/mo · $99/yr", who: "The individual athlete (paid)" },
+  { id: "coach", label: "Coach", price: "$29–199/mo seat", who: "Coach + their roster (Pro included)" },
+  { id: "org", label: "Org", price: "Custom / athlete / yr", who: "Clubs · federations · units" },
+];
+
+/** A cell: false = not included, true = included, string = included with a qualifier. */
+export type EntitlementCell = boolean | string;
+
+export interface EntitlementRow {
+  group: string;
+  feature: string;
+  free: EntitlementCell;
+  pro: EntitlementCell;
+  coach: EntitlementCell;
+  org: EntitlementCell;
+}
+
+/**
+ * The single source of truth for what each plan unlocks — the "what user gets
+ * what" matrix surfaced in the admin Business/Financials console. Tiers nest:
+ * Pro ⊂ Coach ⊂ Org (a coach seat includes Pro for the coach + their roster; org
+ * includes everything plus the institutional layer). Free is the loss-leader
+ * logging loop that's free forever.
+ */
+export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
+  // Logging — free forever (the top of the funnel)
+  { group: "Log & basics (free forever)", feature: "Session logging, interval timer, run tracking", free: true, pro: true, coach: true, org: true },
+  { group: "Log & basics (free forever)", feature: "Calendar & training history", free: "30-day", pro: "Unlimited", coach: "Unlimited", org: "Unlimited" },
+  { group: "Log & basics (free forever)", feature: "Daily check-in & progress photos", free: true, pro: true, coach: true, org: true },
+  { group: "Log & basics (free forever)", feature: "Export your own data (GDPR)", free: true, pro: true, coach: true, org: true },
+
+  // Intelligence — the paid Pro layer
+  { group: "Intelligence (Pro)", feature: "Athlete Twin · HPI", free: false, pro: true, coach: true, org: true },
+  { group: "Intelligence (Pro)", feature: "Future Self projection & goal ETA", free: false, pro: true, coach: true, org: true },
+  { group: "Intelligence (Pro)", feature: "AI coach (Claude)", free: false, pro: true, coach: true, org: true },
+  { group: "Intelligence (Pro)", feature: "Tissue-level injury risk", free: false, pro: true, coach: true, org: "Medical-tier" },
+  { group: "Intelligence (Pro)", feature: "Deep analytics dashboards", free: false, pro: true, coach: true, org: true },
+
+  // Training depth — Pro
+  { group: "Training depth (Pro)", feature: "Plan library & periodization", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Template builder", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Competition peaking", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Sport-specific S&C", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Velocity (VBT) · force plate · video", free: false, pro: true, coach: true, org: true },
+  { group: "Training depth (Pro)", feature: "Adaptive nutrition & longevity", free: false, pro: true, coach: true, org: true },
+
+  // Coaching & teams — the coach seat
+  { group: "Coaching & teams (Coach seat)", feature: "Roster, client notes & check-in replies", free: false, pro: false, coach: true, org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Squad monitor & team compare", free: false, pro: false, coach: true, org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Private coaching notes", free: false, pro: false, coach: true, org: true },
+
+  // Organization — the enterprise layer
+  { group: "Organization (Enterprise)", feature: "Org graph (roles × team subtree)", free: false, pro: false, coach: "Business tier", org: true },
+  { group: "Organization (Enterprise)", feature: "Medical-tier injury detail & return-to-play", free: false, pro: false, coach: false, org: true },
+  { group: "Organization (Enterprise)", feature: "Video intelligence & talent graph", free: false, pro: false, coach: false, org: true },
 ];
 
 // ----------------------------------------------------------------------------
@@ -225,7 +447,7 @@ export const DEFAULT_ASSUMPTIONS: EconomicAssumptions = {
   aiCostPerUserMonthly: 2,
   infraCostPerUserMonthly: 0.2,
   coachServiceCostMonthly: 3,
-  fixedOpexMonthly: 600,
+  fixedOpexMonthly: 64,
   stripeFeePct: 2.9,
   stripeFlatPerCharge: 0.3,
 

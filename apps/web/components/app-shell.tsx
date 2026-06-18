@@ -34,9 +34,7 @@ import {
   OperatorAnalytics,
   PeriodizeScreen,
   HistoryScreen,
-  RolesScreen,
 } from "./screens";
-import AuroraRoles from "./aurora/roles";
 import AuroraHistory from "./aurora/history";
 import Logger from "./logger";
 import PlansScreen from "./plans";
@@ -691,8 +689,6 @@ export default function AppShell() {
         {screen === "tactical" && (aurora ? <AuroraTactical /> : <Tactical />)}
 
         {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
-
-        {screen === "roles" && (aurora ? <AuroraRoles /> : <RolesScreen />)}
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}

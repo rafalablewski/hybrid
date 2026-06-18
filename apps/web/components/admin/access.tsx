@@ -7,6 +7,82 @@ import { LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Se
 const navLabel = (id: string) => NAV_ITEMS.find((i) => i.id === id)?.label ?? id;
 type AccessReq = { id: string; userEmail: string; navId: string; createdAt: string };
 
+// The role-based data-access model (RBAC) — distinct from the per-feature persona
+// matrix below. Moved here (admin-only Governance) from the old user-facing
+// "Roles & access" screen; the plan/entitlement matrix now lives in Financials.
+const ROLE_MODEL = [
+  ["Client", LIME, "Owns their own data. Sees only themselves. Private coach notes stay hidden."],
+  ["Coach", VIOLET, "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
+  ["Admin", AMBER, "Platform aggregates & content. No silent access to private training data; support access is audited."],
+] as const;
+
+const ROLE_PERMISSIONS = [
+  { cap: "Own training data & analytics", client: "full", coach: "own", admin: "no" },
+  { cap: "Other athletes' data", client: "no", coach: "consented only", admin: "aggregate" },
+  { cap: "Leave coaching notes", client: "no", coach: "yes (+private)", admin: "no" },
+  { cap: "Private coach notes visible", client: "no", coach: "own", admin: "no" },
+  { cap: "Adjust someone's plan", client: "no", coach: "consented only", admin: "no" },
+  { cap: "Platform metrics (MAU, retention)", client: "no", coach: "no", admin: "yes" },
+  { cap: "Manage content & languages", client: "no", coach: "no", admin: "yes" },
+  { cap: "Manage accounts & verify coaches", client: "no", coach: "no", admin: "yes" },
+];
+
+/** Read-only RBAC reference: the three roles + the data-access permission matrix.
+ *  Access is enforced server-side by RELATIONSHIP, not the role label alone. */
+function RoleModel() {
+  const cell = (v: string) => {
+    const yes = v === "full" || v === "yes" || v === "yes (+private)";
+    const no = v === "no";
+    return (
+      <td style={{ ...mono, fontSize: 12, textAlign: "center", padding: "11px 6px", borderBottom: `1px solid ${LINE}`, color: txt(no ? ASH : yes ? LIME : AMBER) }}>
+        {no ? "—" : v}
+      </td>
+    );
+  };
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
+        Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not the role
+        label alone.
+      </Mono>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 14 }}>
+        {ROLE_MODEL.map(([n, c, d]) => (
+          <Card key={n} style={{ borderLeft: `3px solid ${c}` }}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: txt(c) }}>{n}</div>
+            <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{d}</Mono>
+          </Card>
+        ))}
+      </div>
+      <Card>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={ASH}>
+          Permission matrix
+        </Mono>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
+                <th key={h} style={{ ...mono, fontSize: 11, color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER), textTransform: "uppercase", textAlign: i === 0 ? "left" : "center", padding: "8px 6px", borderBottom: `1px solid ${LINE}` }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ROLE_PERMISSIONS.map((p) => (
+              <tr key={p.cap}>
+                <td style={{ ...disp, fontWeight: 600, fontSize: 13, padding: "11px 6px", borderBottom: `1px solid ${LINE}` }}>{p.cap}</td>
+                {cell(p.client)}
+                {cell(p.coach)}
+                {cell(p.admin)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
+
 const PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
 const PERSONA_LABEL: Record<Persona, string> = { casual: "Casual", athlete: "Athlete", coach: "Coach", admin: "Admin" };
 const GROUP_LABEL: Record<NavGroup, string> = {
@@ -79,6 +155,8 @@ export default function AdminAccess() {
 
   return (
     <div>
+      <RoleModel />
+
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Overrides not persisted yet</div>

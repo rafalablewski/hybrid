@@ -109,7 +109,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "tactical", label: "Tactical", icon: "▰", group: "teams", minPersona: "coach" },
 
   { id: "connections", label: "Connections", icon: "⌁", group: "account", minPersona: "athlete" },
-  { id: "roles", label: "Roles & access", icon: "⚿", group: "account", minPersona: "athlete" },
   { id: "settings", label: "Settings", icon: "⚙", group: "account" },
 ];
 

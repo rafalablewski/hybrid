@@ -21,7 +21,7 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 const MOBILE_NAV_IDS = new Set([
   "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar",
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
-  "longevity", "connections", "talent", "coach", "roles", "settings", "onboarding",
+  "longevity", "connections", "talent", "coach", "settings", "onboarding",
   "statistics", "timer", "notifications",
 ]);
 
@@ -72,7 +72,6 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "connections", labelKey: "nav.connections", sub: "wearables · sensors", href: "/connections", color: C.blue },
       { id: "talent", labelKey: "nav.talent", sub: "benchmarks · discovery", href: "/talent", color: C.violet },
       { id: "coach", labelKey: "nav.coach", sub: "roster · notes · clients", href: "/(tabs)/coach", color: C.violet },
-      { id: "roles", labelKey: "nav.roles", sub: "who can see what", href: "/roles", color: C.lime },
     ],
   },
 ];
