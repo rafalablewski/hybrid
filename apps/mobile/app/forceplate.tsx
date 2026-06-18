@@ -4,10 +4,17 @@ import { parseForcePlateCsv, type ForcePlateImport } from "@hybrid/core";
 import { fetchSignals, importSignal, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraForcePlate from "../components/aurora/forceplate";
 
 /** Force-plate / jump-test CSV import — paste a Hawkin/ForceDecks-style CSV; it
  *  normalizes jump height / asymmetry into the Signal ontology. Mobile port. */
 export default function ForcePlate() {
+  if (useTemplate().template === "aurora") return <AuroraForcePlate />;
+  return <ClassicForcePlate />;
+}
+
+function ClassicForcePlate() {
   const C = useTheme().palette;
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<ForcePlateImport | null>(null);

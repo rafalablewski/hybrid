@@ -78,6 +78,7 @@ import AuroraCheckins from "./aurora/checkins";
 import Calendar from "./calendar";
 import Builder from "./builder";
 import ForcePlate from "./forceplate";
+import AuroraForcePlate from "./aurora/forceplate";
 import Progress from "./progress";
 import AuroraProgress from "./aurora/progress";
 import AccountSettings from "./account-settings";
@@ -578,7 +579,7 @@ export default function AppShell() {
 
         {screen === "trends" && (aurora ? <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} /> : <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />)}
 
-        {screen === "forceplate" && <ForcePlate />}
+        {screen === "forceplate" && (aurora ? <AuroraForcePlate /> : <ForcePlate />)}
 
         {screen === "nutrition" && (aurora ? <AuroraNutrition /> : <Nutrition />)}
 
