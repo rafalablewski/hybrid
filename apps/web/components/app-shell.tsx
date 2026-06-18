@@ -78,6 +78,7 @@ import Upgrade from "./upgrade";
 import Checkins from "./checkins";
 import AuroraCheckins from "./aurora/checkins";
 import Calendar from "./calendar";
+import AuroraCalendar from "./aurora/calendar";
 import Builder from "./builder";
 import ForcePlate from "./forceplate";
 import AuroraForcePlate from "./aurora/forceplate";
@@ -589,7 +590,7 @@ export default function AppShell() {
 
         {screen === "checkin" && (aurora ? <AuroraCheckins sessions={sessions} /> : <Checkins sessions={sessions} />)}
 
-        {screen === "calendar" && <Calendar sessions={sessions} />}
+        {screen === "calendar" && (aurora ? <AuroraCalendar sessions={sessions} /> : <Calendar sessions={sessions} />)}
 
         {screen === "builder" && <Builder />}
 
