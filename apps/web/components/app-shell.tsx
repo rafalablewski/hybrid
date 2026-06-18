@@ -35,6 +35,7 @@ import {
   HistoryScreen,
   RolesScreen,
 } from "./screens";
+import AuroraRoles from "./aurora/roles";
 import Logger from "./logger";
 import PlansScreen from "./plans";
 import SportScreen from "./sports";
@@ -627,7 +628,7 @@ export default function AppShell() {
 
         {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
 
-        {screen === "roles" && <RolesScreen />}
+        {screen === "roles" && (aurora ? <AuroraRoles /> : <RolesScreen />)}
 
         {screen === "settings" && <AccountSettings />}
       </main>
