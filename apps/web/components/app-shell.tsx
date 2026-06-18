@@ -56,6 +56,7 @@ import Running from "./running";
 import Volume from "./volume";
 import AuroraVolume from "./aurora/volume";
 import Exercises from "./exercises";
+import AuroraExercises from "./aurora/exercises";
 import Trends from "./trends";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
@@ -570,7 +571,7 @@ export default function AppShell() {
 
         {screen === "volume" && (aurora ? <AuroraVolume sessions={sessions} /> : <Volume sessions={sessions} />)}
 
-        {screen === "exercises" && <Exercises sessions={sessions} focus={exerciseFocus} />}
+        {screen === "exercises" && (aurora ? <AuroraExercises sessions={sessions} focus={exerciseFocus} /> : <Exercises sessions={sessions} focus={exerciseFocus} />)}
 
         {screen === "trends" && <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
 
