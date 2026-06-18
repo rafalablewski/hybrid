@@ -3,6 +3,8 @@ import { View, Text } from "react-native";
 import { fetchVideoAnalyses, type VideoAnalysis } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraVideo from "../components/aurora/video";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const scoreColor = (s: number, C: Palette) => (s >= 80 ? C.lime : s >= 60 ? C.blue : s >= 40 ? C.amber : C.red);
@@ -10,6 +12,11 @@ const scoreColor = (s: number, C: Palette) => (s >= 80 ? C.lime : s >= 60 ? C.bl
 /** Video — markerless motion-analysis results (joint angles, asymmetry,
  *  technique score). Capture is phone-side; this lists real recordings. Mobile port. */
 export default function Video() {
+  if (useTemplate().template === "aurora") return <AuroraVideo />;
+  return <ClassicVideo />;
+}
+
+function ClassicVideo() {
   const C = useTheme().palette;
   const [analyses, setAnalyses] = useState<VideoAnalysis[]>([]);
   const [loaded, setLoaded] = useState(false);

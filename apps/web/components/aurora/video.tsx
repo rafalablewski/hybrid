@@ -1,0 +1,46 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Metrics = { movement: string; reps: number; minKneeAngle: number | null; kneeAsymmetryPct: number | null; techniqueScore: number; flags: string[] };
+type Analysis = { id: string; movement: string; metrics: Metrics; createdAt: string };
+const C = (v: string) => `var(--color-${v})`;
+const scoreVar = (s: number) => (s >= 85 ? "lime" : s >= 70 ? "blue" : s >= 50 ? "amber" : "red");
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 10 }}>{label}</span>;
+
+/** AURORA Video (web) — markerless technique-analysis results, reusing /api/video. */
+export default function AuroraVideo() {
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  useEffect(() => { (async () => { const res = await fetch("/api/video"); if (res.ok) setAnalyses(((await res.json()) as { analyses: Analysis[] }).analyses); })(); }, []);
+
+  return (
+    <div style={{ maxWidth: 860, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
+      <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Technique</h1>
+      <div style={card}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>Video intelligence · markerless motion analysis</div>
+        <p style={{ fontSize: 13, lineHeight: 1.5, marginTop: 6 }}>An on-device pose model turns a phone clip into keypoints; the engine scores technique (depth, rep count, L/R asymmetry) and feeds asymmetry into the Twin&apos;s injury risk. Lab-grade biomechanics, phone-first.</p>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 12, color: C("ash") }}>Capture runs on the phone (native pose model). Analyses you record appear below.</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+        {analyses.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No analyses yet — record a clip on the phone to see the engine output.</span>}
+        {analyses.map((a) => (
+          <div key={a.id} style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <div style={{ fontWeight: 800, fontSize: 18, textTransform: "capitalize" }}>{a.movement}</div>
+              <div style={{ fontWeight: 900, fontSize: 30, color: C(scoreVar(a.metrics.techniqueScore)) }}>{a.metrics.techniqueScore}</div>
+            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 2, color: C("ash") }}>technique score</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+              {chip(C("blue"), `${a.metrics.reps} reps`)}
+              {a.metrics.minKneeAngle != null && chip(C("ash"), `depth ${Math.round(a.metrics.minKneeAngle)}°`)}
+              {a.metrics.kneeAsymmetryPct != null && chip(a.metrics.kneeAsymmetryPct > 10 ? C("amber") : C("lime"), `asym ${a.metrics.kneeAsymmetryPct.toFixed(0)}%`)}
+            </div>
+            {a.metrics.flags.length > 0 && <div style={{ marginTop: 10 }}>{a.metrics.flags.map((f) => <div key={f} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("amber") }}>⚠ {f}</div>)}</div>}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, marginTop: 10, color: C("ash") }}>{new Date(a.createdAt).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

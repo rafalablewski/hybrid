@@ -46,6 +46,7 @@ import Performance from "./performance";
 import AuroraPerformance from "./aurora/performance";
 import Org from "./org";
 import VideoScreen from "./video-screen";
+import AuroraVideo from "./aurora/video";
 import Competition from "./competition";
 import Talent from "./talent";
 import Tactical from "./tactical";
@@ -610,7 +611,7 @@ export default function AppShell() {
 
         {screen === "sport" && <SportScreen />}
 
-        {screen === "video" && <VideoScreen />}
+        {screen === "video" && (aurora ? <AuroraVideo /> : <VideoScreen />)}
 
         {screen === "log" && (
           <Logger
