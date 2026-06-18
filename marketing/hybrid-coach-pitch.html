@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — for coaches &amp; gyms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --lime:#c4f035;
+    --ink:#0c0d0c;
+    --ink-2:#141614;
+    --card:#16181500;
+    --chalk:#f4f6f1;
+    --ash:#9aa093;
+    --line:#272a26;
+    --sans:'Archivo',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    --narrow:'Archivo Narrow',var(--sans);
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--ink);color:var(--chalk);
+    font-family:var(--sans);line-height:1.6;font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--lime);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---- top nav ---- */
+  header.nav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(12,13,12,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:980px;margin:0 auto;padding:14px 28px;
+    display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+  }
+  .brand{font-weight:900;letter-spacing:.14em;font-size:18px}
+  .brand .dot{color:var(--lime)}
+  .nav a{
+    color:var(--ash);font-family:var(--narrow);font-weight:600;
+    text-transform:uppercase;letter-spacing:.08em;font-size:13px;
+  }
+  .nav a:hover{color:var(--chalk);text-decoration:none}
+  .nav .spacer{flex:1}
+
+  main{max-width:980px;margin:0 auto;padding:0 28px}
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  section:last-child{border-bottom:none}
+
+  .eyebrow{
+    font-family:var(--narrow);text-transform:uppercase;letter-spacing:.18em;
+    font-weight:700;font-size:12px;color:var(--lime);margin:0 0 14px;
+  }
+  h1{font-size:clamp(34px,6vw,58px);line-height:1.04;font-weight:900;margin:0 0 18px;letter-spacing:-.01em}
+  h2{font-size:clamp(26px,4vw,38px);font-weight:800;margin:0 0 8px;letter-spacing:-.01em}
+  h3{font-size:20px;font-weight:700;margin:28px 0 8px}
+  .lede{font-size:clamp(18px,2.4vw,22px);color:var(--chalk);max-width:62ch}
+  .muted{color:var(--ash)}
+  p{margin:0 0 14px;max-width:68ch}
+  strong{color:#fff;font-weight:700}
+  .lime{color:var(--lime)}
+
+  /* ---- hero ---- */
+  .hero{padding-top:72px}
+  .hero .tag{
+    display:inline-block;border:1px solid var(--line);border-radius:999px;
+    padding:6px 14px;font-family:var(--mono);font-size:12px;color:var(--ash);
+    margin-bottom:26px;
+  }
+  .hero .tag b{color:var(--lime)}
+
+  /* ---- benefit / feature blocks ---- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:8px}
+  .feat{
+    border:1px solid var(--line);border-radius:14px;padding:22px 22px 20px;
+    background:linear-gradient(180deg,rgba(196,240,53,.03),transparent);
+  }
+  .feat h3{margin:0 0 6px;font-size:18px;display:flex;align-items:center;gap:10px}
+  .feat p{margin:0;color:var(--ash);font-size:15px}
+  .feat .k{
+    font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--lime);
+    border-radius:5px;padding:2px 7px;font-weight:700;white-space:nowrap;
+  }
+
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:10px}
+  .pillar{border:1px solid var(--line);border-radius:14px;padding:20px}
+  .pillar .n{font-family:var(--mono);color:var(--lime);font-size:13px;font-weight:700;margin-bottom:8px}
+  .pillar p{margin:0;font-size:14px;color:var(--ash)}
+
+  /* ---- offer callout ---- */
+  .offer{
+    border:1px solid var(--lime);border-radius:18px;padding:34px;
+    background:radial-gradient(120% 140% at 0% 0%,rgba(196,240,53,.10),transparent 60%);
+  }
+  .offer h2{color:#fff}
+  .offer ul{margin:14px 0 0;padding:0;list-style:none}
+  .offer li{padding:10px 0 10px 30px;position:relative;border-top:1px solid var(--line)}
+  .offer li:first-child{border-top:none}
+  .offer li::before{content:"→";position:absolute;left:0;color:var(--lime);font-weight:700}
+
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
+  .btn{
+    display:inline-block;background:var(--lime);color:var(--ink);
+    font-weight:800;padding:14px 24px;border-radius:10px;letter-spacing:.01em;
+  }
+  .btn:hover{text-decoration:none;filter:brightness(1.05)}
+  .btn.ghost{background:transparent;color:var(--chalk);border:1px solid var(--line)}
+  .contact{font-family:var(--mono);color:var(--ash);margin-top:18px;font-size:14px}
+  .contact b{color:var(--chalk)}
+
+  /* ---- scripts ---- */
+  .script{
+    border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:18px 0;
+    background:var(--ink-2);
+  }
+  .script .label{
+    font-family:var(--narrow);text-transform:uppercase;letter-spacing:.1em;
+    font-weight:700;font-size:12px;color:var(--lime);margin-bottom:4px;
+  }
+  .script .meta{font-family:var(--mono);font-size:11px;color:var(--ash);margin-bottom:14px}
+  .script blockquote{
+    margin:0;padding:0 0 0 16px;border-left:3px solid var(--line);
+    color:var(--chalk);font-size:15px;
+  }
+  .script blockquote p{margin:0 0 10px}
+  .script blockquote p:last-child{margin:0}
+  .slot{color:var(--lime);font-family:var(--mono);font-size:.92em}
+  .subj{font-weight:700;color:#fff}
+
+  .tips{border:1px dashed var(--line);border-radius:12px;padding:18px 22px;margin-top:8px}
+  .tips ul{margin:8px 0 0;padding-left:18px}
+  .tips li{margin:6px 0;color:var(--ash);font-size:14px}
+
+  /* ---- deck ---- */
+  .slide{
+    display:grid;grid-template-columns:64px 1fr;gap:20px;
+    border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0;
+    background:var(--ink-2);
+  }
+  .slide .num{
+    font-family:var(--mono);font-weight:700;font-size:22px;color:var(--ink);
+    background:var(--lime);border-radius:10px;height:48px;width:48px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .slide h3{margin:0 0 4px}
+  .slide .screen{color:#fff;font-weight:600;margin:0 0 10px}
+  .slide .notes{color:var(--ash);font-size:14px;margin:0}
+  .slide .notes b{color:var(--chalk)}
+
+  .honest{
+    border:1px solid var(--line);border-left:3px solid var(--lime);border-radius:0 12px 12px 0;
+    padding:18px 22px;background:rgba(196,240,53,.03);margin-top:8px;
+  }
+  .honest ul{margin:8px 0 0;padding-left:18px}
+  .honest li{margin:8px 0;color:var(--ash);font-size:14px}
+  .honest li b{color:var(--chalk)}
+
+  footer{padding:40px 0 70px;text-align:center;color:var(--ash);font-family:var(--mono);font-size:12px}
+  footer .brand{font-family:var(--sans);font-size:15px;color:var(--chalk);display:block;margin-bottom:6px}
+
+  @media (max-width:680px){
+    .grid,.pillars{grid-template-columns:1fr}
+    .slide{grid-template-columns:1fr}
+    .slide .num{width:44px;height:44px;font-size:18px}
+  }
+
+  /* ---- print / PDF ---- */
+  @media print{
+    :root{--ink:#fff;--ink-2:#fff;--chalk:#0c0d0c;--ash:#444;--line:#ccc}
+    body{background:#fff;color:#111;font-size:12px}
+    header.nav{display:none}
+    a{color:#111}
+    section{padding:22px 0;page-break-inside:avoid;border-color:#ddd}
+    .feat,.pillar,.script,.slide,.offer,.tips,.honest{break-inside:avoid;background:none}
+    .btn{border:1px solid #111;color:#111;background:none}
+    .k{background:#111;color:#fff}
+    .num{background:#111 !important;color:#fff !important}
+    h1{font-size:30px}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <span class="brand">HYBRID<span class="dot">.</span></span>
+    <span class="spacer"></span>
+    <a href="#pitch">Pitch</a>
+    <a href="#offer">Offer</a>
+    <a href="#scripts">Outreach</a>
+    <a href="#deck">Deck</a>
+    <a href="#contact">Contact</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ HERO / ONE-PAGER ============ -->
+  <section class="hero" id="pitch">
+    <span class="tag">For coaches &amp; gyms · <b>founding-coach early access</b></span>
+    <p class="eyebrow">Strength &amp; conditioning for hybrid athletes</p>
+    <h1>The operating system for the coaches who train them.</h1>
+    <p class="lede"><strong>HYBRID is not another workout app.</strong> It's a decision system
+      that sits underneath your coaching — it reads each athlete's training, readiness, and
+      fatigue, and tells you and them what to do next, and why. You stay the coach. The engine
+      does the math.</p>
+
+    <h2 style="margin-top:48px">The problem you already know</h2>
+    <p class="muted">You run a real coaching business on tools that were never built for it:</p>
+    <div class="grid">
+      <div class="feat"><h3>Spreadsheets for programming</h3><p>Copy, paste, tweak, repeat — for every client, every week.</p></div>
+      <div class="feat"><h3>Generic apps</h3><p>The same plan for everyone. No adjustment for the human in front of you.</p></div>
+      <div class="feat"><h3>No single view</h3><p>Who's overreaching? Who's dropping off? Who's about to get hurt? You're guessing.</p></div>
+      <div class="feat"><h3>Hours of admin</h3><p>Time that should go to the relationship and the room.</p></div>
+    </div>
+    <p class="muted" style="margin-top:18px">The bigger your roster gets, the worse it gets.</p>
+  </section>
+
+  <!-- ============ WHAT IT DOES ============ -->
+  <section id="does">
+    <p class="eyebrow">What HYBRID does for you</p>
+    <h2>Less admin. Tighter coaching. A roster you can actually see.</h2>
+    <div class="grid" style="margin-top:28px">
+      <div class="feat">
+        <h3>Build once, assign to many <span class="k">SHIPPED</span></h3>
+        <p>Compose weeks → days → exercises (sets × reps × RPE) in the program builder, then push
+          to one client or a whole group in two taps. It lands on each athlete's calendar as
+          dated sessions.</p>
+      </div>
+      <div class="feat">
+        <h3>Loads adapt to each athlete <span class="k">SHIPPED</span></h3>
+        <p>The engine adjusts working loads to each athlete's readiness — built from their own
+          HRV, resting HR and sleep baselines — and accumulated fatigue. One plan, individualized
+          for twenty bodies, without you rewriting anything.</p>
+      </div>
+      <div class="feat">
+        <h3>One screen: who needs you today <span class="k">SHIPPED</span></h3>
+        <p>The squad monitor ranks your roster worst-first by readiness, training-load ratio
+          (ACWR) and injury flags, and auto-segments into needs-attention / dormant / new /
+          on-track. Walk in already knowing where your attention goes.</p>
+      </div>
+      <div class="feat">
+        <h3>Benchmark the whole team <span class="k">SHIPPED</span></h3>
+        <p>Line everyone up on any lift — squat, snatch, a 5k — and see who's progressing and
+          who's stalling, on a ranked chart, in seconds.</p>
+      </div>
+      <div class="feat">
+        <h3>Keep the relationship close <span class="k">SHIPPED</span></h3>
+        <p>Private coaching notes your client never sees, weekly check-ins they can share, and
+          your replies — all in one place, all auditable.</p>
+      </div>
+      <div class="feat">
+        <h3>Coach from desk or gym floor <span class="k">WEB + MOBILE</span></h3>
+        <p>Full web app and native iOS/Android. Your athletes train on either; you manage on
+          either.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY DIFFERENT ============ -->
+  <section id="engine">
+    <p class="eyebrow">Why it's different</p>
+    <h2>Most apps sell content. HYBRID is a real decision engine.</h2>
+    <div class="pillars" style="margin-top:26px">
+      <div class="pillar">
+        <div class="n">HPI · 0–100</div>
+        <p>The Hybrid Performance Index fuses strength, endurance and recovery into one score —
+          and names the limiter, so you know what to fix.</p>
+      </div>
+      <div class="pillar">
+        <div class="n">Velocity-based loads</div>
+        <p>Capture bar speed, estimate 1RM without max testing, and auto-prescribe today's
+          working load.</p>
+      </div>
+      <div class="pillar">
+        <div class="n">Confidence ↑ with data</div>
+        <p>The more an athlete logs, the more certain the prescriptions become. It gets to know
+          your athlete the way you do — and never forgets a session.</p>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:22px">Think <em>Bloomberg terminal for the body</em> — not
+      another feed of workout videos.</p>
+  </section>
+
+  <!-- ============ OFFER ============ -->
+  <section id="offer">
+    <div class="offer">
+      <p class="eyebrow">Founding-coach early access</p>
+      <h2>Free now. Shape the roadmap. Founder pricing locked in.</h2>
+      <p class="muted" style="margin-top:10px">We're onboarding a first group of coaches and gyms
+        right now — at no cost.</p>
+      <ul>
+        <li><strong>No cost during early access</strong> — bring your real roster and put it to
+          work today.</li>
+        <li><strong>Shape the roadmap</strong> — the plan library, integrations and coach tools
+          are being built; your feedback sets the priorities.</li>
+        <li><strong>Founder pricing, locked in</strong> — when paid coaching seats launch,
+          founding coaches keep a permanent preferred rate.</li>
+      </ul>
+      <p class="muted" style="margin-top:16px">No catch. We want serious coaches using it and
+        telling us where it bends.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section id="contact">
+    <p class="eyebrow">Let's talk</p>
+    <h2>Book a 15-minute demo — I'll set up your roster live.</h2>
+    <div class="cta-row">
+      <a class="btn" href="mailto:[your email]">Book a demo</a>
+      <a class="btn ghost" href="#pitch">See it again</a>
+    </div>
+    <p class="contact">📩 <b>[your email]</b> &nbsp;·&nbsp; 📱 <b>[your number]</b> &nbsp;·&nbsp; 🔗 <b>[your link]</b></p>
+  </section>
+
+  <!-- ============ OUTREACH SCRIPTS ============ -->
+  <section id="scripts">
+    <p class="eyebrow">Outreach scripts</p>
+    <h2>Messages to start the conversation.</h2>
+    <p class="muted">Replace everything in <span class="slot">[brackets]</span>. Lead with their
+      problem, make one clear ask. Send the pitch only after they reply with interest.</p>
+
+    <div class="script">
+      <div class="label">1 · Cold — gym owner</div>
+      <div class="meta">email or DM</div>
+      <blockquote>
+        <p><span class="subj">Subject:</span> A smarter system for your coaching team</p>
+        <p>Hi <span class="slot">[name]</span>,</p>
+        <p>I run <span class="slot">[your gym/your name]</span> and I've been using a coaching
+          platform called <strong>HYBRID</strong> that's changed how I program for clients. You
+          build a plan once, assign it to your whole roster, and it auto-adjusts each person's
+          loads to their own readiness and fatigue — plus one screen shows you who's overreaching
+          or dropping off before it becomes a problem.</p>
+        <p>We're in free founding-coach early access right now. Worth a 15-minute look for
+          <span class="slot">[gym name]</span>'s floor team?</p>
+        <p><span class="slot">[your name]</span></p>
+      </blockquote>
+    </div>
+
+    <div class="script">
+      <div class="label">2 · Cold — fellow personal trainer</div>
+      <div class="meta">DM or email</div>
+      <blockquote>
+        <p>Hey <span class="slot">[name]</span> — quick one. I've been running my clients on
+          <strong>HYBRID</strong>, a coaching app built around an actual training-science engine
+          (not just a workout logger). I build one program and it individualizes the loads for
+          every client off their readiness and fatigue, and I get a single dashboard of who needs
+          attention each day.</p>
+        <p>It's free in early access while they onboard founding coaches. Want me to show you my
+          roster on a quick call? I think it'd save you serious programming time.</p>
+      </blockquote>
+    </div>
+
+    <div class="script">
+      <div class="label">3 · Warm / referral</div>
+      <div class="meta">you share a connection</div>
+      <blockquote>
+        <p>Hi <span class="slot">[name]</span> — <span class="slot">[referrer]</span> mentioned
+          you're coaching <span class="slot">[clients/athletes]</span> and might like this. I've
+          been using <strong>HYBRID</strong> to program for my roster; the part that sold me is
+          that one plan adapts to each athlete automatically, and I can see everyone's readiness
+          and injury-risk at a glance.</p>
+        <p>They're letting founding coaches in free right now. Happy to walk you through how I've
+          set mine up — 15 minutes this week?</p>
+      </blockquote>
+    </div>
+
+    <div class="script">
+      <div class="label">4 · Follow-up nudge</div>
+      <div class="meta">3–4 days, no reply</div>
+      <blockquote>
+        <p>Hey <span class="slot">[name]</span>, floating this back up. No pressure — if it's not
+          the right time, all good. If you <em>are</em> curious, I can show you my actual roster
+          in HYBRID in 15 minutes and you can decide from there. Want me to send a couple of
+          times?</p>
+      </blockquote>
+    </div>
+
+    <div class="script">
+      <div class="label">5 · Ultra-short</div>
+      <div class="meta">SMS / Instagram DM</div>
+      <blockquote>
+        <p>Hey <span class="slot">[name]</span> — using a coaching app called HYBRID that builds
+          one program and auto-adjusts it per client off their readiness/fatigue, with a
+          who-needs-attention dashboard. Free in early access. Worth a 15-min look? 👇</p>
+      </blockquote>
+    </div>
+
+    <div class="tips">
+      <strong>Tips</strong>
+      <ul>
+        <li><b>One ask per message</b> — the demo. Don't pitch features in the first touch.</li>
+        <li><b>Lead with their pain</b> (admin time, generic plans, no roster visibility), not your tech.</li>
+        <li>Say <b>"free founding-coach early access"</b> plainly — don't imply paid plans exist yet.</li>
+        <li>Personalize the first line; generic openers get ignored.</li>
+        <li>Follow up <b>once</b>, then leave it.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ DECK ============ -->
+  <section id="deck">
+    <p class="eyebrow">Pitch deck outline</p>
+    <h2>10 slides for a 15-minute demo call.</h2>
+    <p class="muted">Keep slides sparse — you talk, the slide anchors. Leave room for the live
+      roster setup at the end.</p>
+
+    <div class="slide"><div class="num">1</div><div>
+      <h3>Title</h3>
+      <p class="screen">HYBRID — Strength &amp; conditioning for hybrid athletes. The operating system for the coaches who train them.</p>
+      <p class="notes"><b>Say:</b> "I'll show you how to program for your whole roster in a fraction of the time, and never lose track of who needs you." Set the 15-minute expectation.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">2</div><div>
+      <h3>The problem</h3>
+      <p class="screen">You're running a real business on spreadsheets and generic apps.</p>
+      <p class="notes"><b>Notes:</b> Name their day — rewriting plans per client, apps that give everyone the same program, no view of who's overreaching or fading. The better you do, the worse the admin gets. Get them nodding before you show anything.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">3</div><div>
+      <h3>The shift</h3>
+      <p class="screen">Most apps sell content. HYBRID is a decision system.</p>
+      <p class="notes"><b>Notes:</b> A workout app hands out exercises. HYBRID reads training, readiness and fatigue and tells you what to do next — and why. You stay the coach; the engine does the load math. Land this reframe before features.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">4</div><div>
+      <h3>Build once, assign to many</h3>
+      <p class="screen">One program → your whole roster. Each client gets it individualized.</p>
+      <p class="notes"><b>Notes:</b> Program builder: weeks → days → exercises. Push to one client or a group; lands on each calendar as dated sessions. Then: the engine adjusts each athlete's loads to <b>their</b> readiness and fatigue — one plan, twenty bodies, zero rewrites.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">5</div><div>
+      <h3>The squad monitor</h3>
+      <p class="screen">One screen. Who needs you today.</p>
+      <p class="notes"><b>Notes:</b> Roster ranked worst-first by readiness, training-load ratio (ACWR) and injury flags, auto-segmented. You walk onto the floor already knowing where your attention goes. This is the "aha" for anyone with more than a few clients.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">6</div><div>
+      <h3>The engine</h3>
+      <p class="screen">HPI · readiness · velocity-based loads · confidence that grows with data.</p>
+      <p class="notes"><b>Notes:</b> HPI — one 0–100 score with the limiter named. Readiness from each athlete's own HRV/RHR/sleep baselines. VBT — bar speed → estimated 1RM → today's load. The more they log, the sharper it gets. Don't over-explain the math — sell that it's real and tested.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">7</div><div>
+      <h3>Keep the relationship close</h3>
+      <p class="screen">Private notes · shared check-ins · benchmark the team on any lift.</p>
+      <p class="notes"><b>Notes:</b> Private notes the client never sees. Check-ins they share, you reply. Team-compare spots who's progressing or stalling. The tech makes you <b>more</b> present, not less.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">8</div><div>
+      <h3>Web + mobile</h3>
+      <p class="screen">Coach from the desk or the gym floor. Athletes train on either.</p>
+      <p class="notes"><b>Notes:</b> Full web app and native iOS/Android. One product, two screens, same data.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">9</div><div>
+      <h3>Founding-coach early access</h3>
+      <p class="screen">Free now. Shape the roadmap. Founder pricing locked in later.</p>
+      <p class="notes"><b>Notes:</b> Be honest and confident — onboarding a first group <b>free</b>. Bring your real roster today. Feedback sets what we build next. When paid seats launch, founders keep a permanent preferred rate. No cost, no catch.</p>
+    </div></div>
+
+    <div class="slide"><div class="num">10</div><div>
+      <h3>The ask</h3>
+      <p class="screen">Let's set up your roster — right now.</p>
+      <p class="notes"><b>Notes:</b> Close with action. Offer to create their account and add 2–3 real clients live on the call. Capture best email, roster size, what they coach. Then run the demo.</p>
+    </div></div>
+  </section>
+
+  <!-- ============ HONESTY ============ -->
+  <section id="honest">
+    <p class="eyebrow">Keep it honest</p>
+    <h2>Written to only claim what's shipped today.</h2>
+    <div class="honest">
+      <ul>
+        <li><b>The ask is free founding-coach early access.</b> Paid coaching seats are designed but not yet live — don't quote prices as if they're for sale. "Founder pricing locked in later" is the line.</li>
+        <li><b>Plan library:</b> Bodybuilding plans are fully built today; the other 18 goals are rolling out. Lean on the program builder — that's shipped and strong.</li>
+        <li><b>Squad monitor &amp; team-compare</b> are on the web app today; full mobile versions are in progress. Demo on web; don't promise them on the phone yet.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span class="brand">HYBRID<span style="color:var(--lime)">.</span></span>
+  Strength &amp; conditioning for hybrid athletes · coach &amp; gym marketing kit
+  <div style="margin-top:8px">Tip: print this page (⌘/Ctrl-P) → “Save as PDF” for a clean handout.</div>
+</footer>
+
+</body>
+</html>
