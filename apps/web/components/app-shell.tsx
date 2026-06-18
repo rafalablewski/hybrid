@@ -40,6 +40,7 @@ import AuroraHistory from "./aurora/history";
 import Logger from "./logger";
 import PlansScreen from "./plans";
 import AuroraPlans from "./aurora/plans";
+import AuroraSport from "./aurora/sport";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
@@ -620,7 +621,7 @@ export default function AppShell() {
             />
           ))}
 
-        {screen === "sport" && <SportScreen />}
+        {screen === "sport" && (aurora ? <AuroraSport /> : <SportScreen />)}
 
         {screen === "video" && (aurora ? <AuroraVideo /> : <VideoScreen />)}
 

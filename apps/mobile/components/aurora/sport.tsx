@@ -5,28 +5,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, F } from "../../lib/ui";
-import { useTheme } from "../../lib/theme";
-import { useTemplate } from "../../lib/template";
-import AuroraSport from "../../components/aurora/sport";
+import { useTheme, txt } from "../../lib/theme";
+import { F } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 const STORE_KEY = "hybrid.sport";
 
-export default function Sport() {
-  if (useTemplate().template === "aurora") return <AuroraSport />;
-  return <ClassicSport />;
-}
-
-function ClassicSport() {
-  const C = useTheme().palette;
+/** AURORA Sport — sport + level picker driving the shared prescribeForSport
+ *  engine, with working loads tuned to the athlete's logged lifts. */
+export default function AuroraSport() {
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // Refetch when the tab regains focus so loads reflect freshly logged
-  // sessions (the screen stays mounted across tab switches).
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -39,8 +33,6 @@ function ClassicSport() {
     }, []),
   );
 
-  // Remember the athlete's sport + level so the tab reflects THEM, not a
-  // default demo selection.
   useEffect(() => {
     AsyncStorage.getItem(STORE_KEY)
       .then((raw) => {
@@ -64,9 +56,9 @@ function ClassicSport() {
   const rx = prescribeForSport(sport, levelIdx, { sessions });
 
   return (
-    <Screen>
-      <Kicker>Sport</Kicker>
-      <Mono style={{ marginTop: 6, marginBottom: 12 }}>{t("sport.intro")}</Mono>
+    <AuroraScreen>
+      <AHeading style={{ fontSize: 26 }}>Sport</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("sport.intro")}</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
         {SPORT_NAMES.map((s) => {
@@ -78,13 +70,13 @@ function ClassicSport() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 5,
-                paddingHorizontal: 12,
-                paddingVertical: 9,
-                borderRadius: 10,
+                gap: 6,
+                paddingHorizontal: 14,
+                paddingVertical: 11,
+                borderRadius: RADIUS.pill,
                 borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
-                backgroundColor: on ? `${C.lime}1a` : "transparent",
+                backgroundColor: on ? `${C.lime}1f` : C.ink2,
               }}
             >
               <Text style={{ fontSize: 15 }}>{SPORTS[s]!.icon}</Text>
@@ -102,51 +94,64 @@ function ClassicSport() {
               key={l}
               onPress={() => setLevelIdx(i)}
               style={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 10,
+                flex: 1,
+                alignItems: "center",
+                paddingVertical: 11,
+                borderRadius: RADIUS.pill,
                 borderWidth: 1,
                 borderColor: on ? C.blue : C.line,
-                backgroundColor: on ? C.blue : "transparent",
+                backgroundColor: on ? C.blue : C.ink2,
               }}
             >
-              <Text style={{ fontFamily: F.semi, fontSize: 12, color: on ? C.ink : C.ash }}>{l}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 12, color: on ? C.ink : C.ash }}>{l}</Text>
             </Pressable>
           );
         })}
       </View>
 
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
-        <Kicker color={C.lime}>{t("sport.prescribed")}</Kicker>
-        <Mono style={{ fontSize: 11, marginTop: 2 }}>
+      <ACard style={{ marginBottom: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Text style={{ fontSize: 28 }}>{meta.icon}</Text>
+          <View>
+            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{sport}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 2 }}>{meta.family} · {LEVELS[levelIdx]}</Text>
+          </View>
+        </View>
+      </ACard>
+
+      <ACard style={{ marginBottom: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("sport.prescribed")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 3 }}>
           {rx.personalized ? t("sport.loadsFromLogs") : t("sport.loadsLogPrompt")}
-        </Mono>
+        </Text>
         {rx.blocks.map((b, i) => (
-          <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 6 }}>
+          <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 8 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
-              <Mono color={C.amber} style={{ fontSize: 11 }}>{b.demand}</Mono>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.amber), marginTop: 2 }}>{b.demand}</Text>
             </View>
             <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
-              <Chip>{b.scheme}</Chip>
-              <Mono style={{ fontSize: 10, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Mono>
+              <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime) }}>{b.scheme}</Text>
+              </View>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Text>
             </View>
           </View>
         ))}
-      </Card>
+      </ACard>
 
-      <Card>
-        <Kicker>{t("sport.why")}</Kicker>
+      <ACard>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("sport.why")}</Text>
         {rx.ranked.map((e) => (
           <View key={e.name} style={{ marginTop: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>{e.name}</Text>
-              <Mono style={{ fontSize: 11 }}>{e.demand}</Mono>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{e.demand}</Text>
             </View>
-            <Mono color={C.chalk} style={{ marginTop: 3, lineHeight: 19 }}>{e.why}</Mono>
+            <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 3, lineHeight: 19 }}>{e.why}</Text>
           </View>
         ))}
-      </Card>
-    </Screen>
+      </ACard>
+    </AuroraScreen>
   );
 }
