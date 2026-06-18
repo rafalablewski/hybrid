@@ -699,8 +699,8 @@ function PlanMatrix() {
     );
   };
 
-  // Insert a group sub-header row whenever the group label changes.
-  let lastGroup = "";
+  // Insert a group sub-header row whenever the group label changes — derived
+  // purely from the previous row (no render-phase mutation).
   return (
     <Card>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -719,8 +719,7 @@ function PlanMatrix() {
         </thead>
         <tbody>
           {ENTITLEMENT_MATRIX.map((row, i) => {
-            const groupHeader = row.group !== lastGroup;
-            lastGroup = row.group;
+            const groupHeader = row.group !== ENTITLEMENT_MATRIX[i - 1]?.group;
             return (
               <Fragment key={`${row.group}-${row.feature}-${i}`}>
                 {groupHeader && (
