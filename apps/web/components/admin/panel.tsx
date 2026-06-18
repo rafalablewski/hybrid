@@ -27,6 +27,7 @@ import AdminGuidance from "./guidance";
 import AdminFinancials from "./financials";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
+import AuroraPillNav from "@/components/aurora/pill-nav";
 
 type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "simulator" | "guidance";
 
@@ -193,7 +194,7 @@ export default function AdminPanel() {
       </aside>
 
       {/* ---- main ---- */}
-      <main style={{ flex: 1, minWidth: 0, padding: "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      <main style={{ flex: 1, minWidth: 0, padding: aurora ? "24px 32px 120px" : "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <Mono s={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }} c={AMBER}>
@@ -239,6 +240,10 @@ export default function AdminPanel() {
         {section === "simulator" && <AdminSimulator />}
         {section === "guidance" && <AdminGuidance />}
       </main>
+
+      {/* Aurora: the app-wide floating pill nav (routes back into the main app);
+          the admin section sidebar stays for the 23 console tools. */}
+      <AuroraPillNav />
     </div>
   );
 

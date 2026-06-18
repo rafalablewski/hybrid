@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { useRouter, useSearchParams } from "next/navigation";
+import { groupedNav, navForPersona, NAV_ITEMS, sanitizePersonaAccess, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -82,6 +82,7 @@ import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
 import AuroraToday from "./aurora/today";
+import AuroraPillNav from "./aurora/pill-nav";
 import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
 import AuroraCockpit from "./aurora/cockpit";
@@ -132,6 +133,7 @@ const SCOPES_FOR: Record<Role, Scope[]> = {
 
 export default function AppShell() {
   const router = useRouter();
+  const params = useSearchParams();
   const { session, ready, logout } = useSession();
   const { sessions, refresh } = useSessions();
   const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
@@ -191,6 +193,13 @@ export default function AppShell() {
   useEffect(() => {
     if (!ready || !session || landed.current) return;
     landed.current = true;
+    // Deep-link from the pill nav on admin / standalone routes (/app?screen=id)
+    // takes precedence over the persona default.
+    const target = params.get("screen");
+    if (target && NAV_ITEMS.some((n) => n.id === target)) {
+      setScreen(target);
+      return;
+    }
     try {
       if (localStorage.getItem("hybrid.pendingOnboarding")) {
         localStorage.removeItem("hybrid.pendingOnboarding");
@@ -221,7 +230,8 @@ export default function AppShell() {
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
       <GlassField />
 
-      {/* sidebar */}
+      {/* sidebar — Classic only; Aurora replaces it with the floating pill nav */}
+      {!aurora && (
       <aside
         className="lg-sidebar"
         style={{
@@ -447,9 +457,10 @@ export default function AppShell() {
           </button>
         </div>
       </aside>
+      )}
 
-      {/* main */}
-      <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
+      <main style={{ flex: 1, padding: aurora ? "24px 32px 120px" : "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -691,7 +702,13 @@ export default function AppShell() {
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      {/* Aurora: the floating pill nav (replaces the sidebar + the ⌘K orb).
+          Classic: the ⌘K command orb. */}
+      {aurora ? (
+        <AuroraPillNav activeId={screen} onSelect={(id) => { setPendingBlocks(undefined); setScreen(id); }} />
+      ) : (
+        <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      )}
     </div>
   );
 }
