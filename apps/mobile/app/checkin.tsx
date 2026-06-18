@@ -5,6 +5,8 @@ import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../lib/api";
 import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
+import { useTemplate } from "../lib/template";
+import AuroraCheckin from "../components/aurora/checkin";
 
 const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[] = [
   { key: "energy", label: "Energy" },
@@ -14,6 +16,11 @@ const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[
 ];
 
 export default function CheckinScreen() {
+  if (useTemplate().template === "aurora") return <AuroraCheckin />;
+  return <ClassicCheckin />;
+}
+
+function ClassicCheckin() {
   const C = useTheme().palette;
   const router = useRouter();
   const [history, setHistory] = useState<Checkin[]>([]);

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   StyleSheet,
+  RefreshControl,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
@@ -49,15 +50,22 @@ export function AuroraScreen({
   scroll = true,
   center = false,
   padding = 24,
+  refreshing,
+  onRefresh,
 }: {
   children: ReactNode;
   scroll?: boolean;
   center?: boolean;
   padding?: number;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }) {
   const { palette } = useTheme();
   const body = scroll ? (
-    <ScrollView contentContainerStyle={{ padding, paddingBottom: 56, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}>
+    <ScrollView
+      contentContainerStyle={{ padding, paddingBottom: 56, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
+    >
       {children}
     </ScrollView>
   ) : (
