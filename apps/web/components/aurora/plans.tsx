@@ -20,7 +20,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
   if (goal) return <List goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 8px" }}>Plans</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>Start with your goal — we&apos;ll show the plans built for it.</p>
       {GOAL_GROUPS.map((group) => (
@@ -43,7 +43,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
 
 function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void; back: () => void }) {
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {backLink(back, "All goals")}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 16px" }}><span style={{ fontSize: 24, color: goal.color }}>{goal.icon}</span><h2 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>{goal.name}</h2></div>
       {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No plans here yet — plans for this goal are on the way.</p>}
@@ -70,7 +70,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
     catch { setState("error"); }
   };
   return (
-    <div style={{ maxWidth: 820, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {backLink(back, goal.name)}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 4px" }}><h2 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>{plan.name}</h2>{plan.hot && chip(C("lime"), "Popular")}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>{plan.weeks} weeks · {plan.sessions}×/week · {d.level}</div>

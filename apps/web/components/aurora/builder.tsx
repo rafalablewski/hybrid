@@ -53,7 +53,7 @@ export default function AuroraBuilder() {
   const del = async (id: string) => { await fetch(`/api/templates/${id}`, { method: "DELETE" }); load(); };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: 1000, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workout name"
           style={{ ...input, fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, width: "100%", marginBottom: 8 }} />

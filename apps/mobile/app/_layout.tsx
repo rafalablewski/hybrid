@@ -15,16 +15,19 @@ import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import { C } from "../lib/ui";
+import AuroraGlobalNav from "../components/aurora/global-nav";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
 // status-bar style + the navigator background so the whole app follows
-// light/dark (system by default, overridable in Settings).
+// light/dark (system by default, overridable in Settings). In Aurora it also
+// renders the global floating pill nav over every screen (self-gating).
 function Shell() {
   const { scheme, palette } = useTheme();
   return (
     <>
       <StatusBar style={scheme === "light" ? "dark" : "light"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.ink } }} />
+      <AuroraGlobalNav />
     </>
   );
 }

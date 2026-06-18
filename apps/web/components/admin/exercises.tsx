@@ -207,7 +207,7 @@ export default function AdminExercises() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search the library…"
-          style={{ ...mono, fontSize: 13, flex: 1, maxWidth: 320, padding: "10px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 13, flex: 1, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: 12 }} c={ASH}>
           {list ? `${list.length} custom` : "…"} · + built-ins
@@ -275,7 +275,7 @@ export default function AdminExercises() {
                       textTransform: "uppercase",
                       letterSpacing: ".04em",
                       padding: "6px 12px",
-                      borderRadius: 8,
+                      borderRadius: "var(--r-field)",
                       cursor: "pointer",
                       border: `1px solid ${on ? LIME : LINE}`,
                       background: on ? LIME : "transparent",
@@ -378,7 +378,7 @@ const input: React.CSSProperties = {
   width: "100%",
   fontSize: 13,
   padding: "10px 14px",
-  borderRadius: 10,
+  borderRadius: "var(--r-card)",
   background: INK2,
   color: CHALK,
   border: `1px solid ${LINE}`,
@@ -392,7 +392,7 @@ const baseBtn: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: ".05em",
   padding: "9px 16px",
-  borderRadius: 9,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
 };
@@ -406,7 +406,7 @@ const miniBtn: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: ".04em",
   padding: "6px 12px",
-  borderRadius: 8,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK,

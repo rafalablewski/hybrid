@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { groupedNav, navForPersona, sanitizePersonaAccess, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { AuroraIcon } from "./aurora/icons";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -82,6 +83,7 @@ import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
 import AuroraToday from "./aurora/today";
+import AuroraPillNav from "./aurora/pill-nav";
 import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
 import AuroraCockpit from "./aurora/cockpit";
@@ -100,6 +102,9 @@ import AuroraForcePlate from "./aurora/forceplate";
 import Progress from "./progress";
 import AuroraProgress from "./aurora/progress";
 import AccountSettings from "./account-settings";
+import IntervalTimerScreen from "./interval-timer";
+import NotificationsScreen from "./notifications";
+import StatisticsScreen from "./statistics";
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
@@ -218,7 +223,7 @@ export default function AppShell() {
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
       <GlassField />
 
-      {/* sidebar */}
+      {/* sidebar — always present on web (both templates, every screen) */}
       <aside
         className="lg-sidebar"
         style={{
@@ -266,6 +271,9 @@ export default function AppShell() {
                 )}
                 {visible.map(({ id, label: fallback, icon: ic }) => {
                   const label = t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
+                  // Aurora: use the uploaded design-kit line icon where one maps;
+                  // fitness-specific items (no kit glyph) keep their unicode glyph.
+                  const auroraIcon = aurora ? AURORA_NAV_ICONS[id] : undefined;
                   return (
                     <button
                       key={id}
@@ -290,7 +298,9 @@ export default function AppShell() {
                         textAlign: "left",
                       }}
                     >
-                      <span style={{ fontSize: 16 }}>{ic}</span>
+                      <span style={{ fontSize: 16, display: "grid", placeItems: "center", width: 18, height: 18 }}>
+                        {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
+                      </span>
                       {!collapsed && label}
                     </button>
                   );
@@ -445,11 +455,15 @@ export default function AppShell() {
         </div>
       </aside>
 
-      {/* main */}
-      <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
+      <main style={{ flex: 1, padding: aurora ? "24px 32px 120px" : "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          {/* Classic shows the app kicker + screen title here. Aurora screens
+              render their own bespoke header, so we drop this to avoid a doubled
+              page title — but keep the theme/lang controls (right). */}
+          {aurora ? <div /> : (
           <div>
             <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
               app.hybrid.app
@@ -458,6 +472,7 @@ export default function AppShell() {
               {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
             </h1>
           </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               onClick={toggle}
@@ -565,7 +580,7 @@ export default function AppShell() {
 
         {screen === "today" && (
           aurora ? (
-            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
+            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />
           ) : (
             <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} />
           )
@@ -679,10 +694,22 @@ export default function AppShell() {
 
         {screen === "roles" && (aurora ? <AuroraRoles /> : <RolesScreen />)}
 
+        {/* Tools available in BOTH templates (Aurora-styled when active, classic
+            otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}
+        {screen === "notifications" && <NotificationsScreen embedded />}
+        {screen === "timer" && <IntervalTimerScreen embedded />}
+        {screen === "statistics" && <StatisticsScreen embedded />}
+
         {screen === "settings" && <AccountSettings />}
       </main>
 
-      <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      {/* Aurora: the floating pill bottom nav (coexists with the sidebar) — the
+          ⌘K orb is Classic-only. */}
+      {aurora ? (
+        <AuroraPillNav activeId={screen} onSelect={(id) => { setPendingBlocks(undefined); setScreen(id); }} />
+      ) : (
+        <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
+      )}
     </div>
   );
 }

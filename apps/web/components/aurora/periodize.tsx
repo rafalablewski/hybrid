@@ -22,7 +22,7 @@ export default function AuroraPeriodize({
 }) {
   if (!macro)
     return (
-      <div style={{ ...card, textAlign: "center", padding: 60, maxWidth: 720, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ ...card, textAlign: "center", padding: 60, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ fontWeight: 800, fontSize: 20 }}>No active plan</div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>
           Enroll in a plan from the <b style={{ color: C("lime") }}>Plans</b> tab — your periodized
@@ -35,7 +35,7 @@ export default function AuroraPeriodize({
   const { block: current } = currentPhase(macro, week);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {sessions.length > 0 && (
         <ReconciledWeek macro={macro} currentWeek={week} sessions={sessions} bio={bio ?? undefined} style={{ marginBottom: 16 }} />
       )}

@@ -556,7 +556,7 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
 
 function Metric({ label, value, c = CHALK }: { label: string; value: string; c?: string }) {
   return (
-    <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 10px" }}>
+    <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "8px 10px" }}>
       <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(c), marginTop: 2 }}>{value}</div>
     </div>
@@ -655,7 +655,7 @@ function Num({
             width: 84,
             textAlign: "right",
             padding: "6px 8px",
-            borderRadius: 8,
+            borderRadius: "var(--r-field)",
             background: INK2,
             color: CHALK,
             border: `1px solid ${LINE}`,
@@ -713,7 +713,7 @@ function Btn({ label, active, onClick, disabled }: { label: string; active: bool
         ...mono,
         fontSize: 11,
         padding: "5px 9px",
-        borderRadius: 7,
+        borderRadius: "var(--r-field)",
         cursor: disabled ? "not-allowed" : "pointer",
         border: `1px solid ${active ? LIME : LINE}`,
         background: active ? `${LIME}1c` : "transparent",

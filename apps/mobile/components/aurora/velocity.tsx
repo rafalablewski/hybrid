@@ -142,6 +142,9 @@ export default function AuroraVelocity() {
             );
           })}
         </View>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 10, lineHeight: 15 }}>
+          Per-rep trajectory &amp; bar path need the bar sensor / camera capture (see Capabilities).
+        </Text>
       </ACard>
     </AuroraScreen>
   );

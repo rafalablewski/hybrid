@@ -84,7 +84,7 @@ export default function AdminUsers() {
             flex: 1,
             minWidth: 220,
             padding: "10px 14px",
-            borderRadius: 10,
+            borderRadius: "var(--r-card)",
             background: INK2,
             color: CHALK,
             border: `1px solid ${LINE}`,
@@ -207,7 +207,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
         color: disabled ? ASH : CHALK,
         background: CARD,
         border: `1px solid ${LINE}`,
-        borderRadius: 9,
+        borderRadius: "var(--r-field)",
         padding: "8px 14px",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
@@ -334,7 +334,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
             {/* activity counts */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 20 }}>
               {Object.entries(d.counts).map(([k, v]) => (
-                <div key={k} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 12px" }}>
+                <div key={k} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                   <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{v}</div>
                   <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
                 </div>
@@ -394,7 +394,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                         fontSize: 12,
                         textAlign: "left",
                         padding: "8px 10px",
-                        borderRadius: 8,
+                        borderRadius: "var(--r-field)",
                         cursor: "pointer",
                         border: `1px solid ${on ? LIME : LINE}`,
                         background: on ? `${LIME}1a` : "transparent",
@@ -424,7 +424,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   color: ON_ACCENT,
                   background: dirty && !saving ? AMBER : LINE,
                   border: "none",
-                  borderRadius: 10,
+                  borderRadius: "var(--r-card)",
                   padding: "11px 0",
                   cursor: dirty && !saving ? "pointer" : "default",
                 }}
@@ -453,7 +453,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   color: txt(RED),
                   background: `${RED}14`,
                   border: `1px solid ${RED}66`,
-                  borderRadius: 10,
+                  borderRadius: "var(--r-card)",
                   padding: "11px 0",
                   cursor: deleting ? "default" : "pointer",
                   opacity: deleting ? 0.6 : 1,

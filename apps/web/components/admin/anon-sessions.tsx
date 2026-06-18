@@ -90,7 +90,7 @@ export default function AdminAnonSessions() {
                   <button
                     onClick={() => remove(s.id, s.title)}
                     disabled={busy === s.id}
-                    style={{ ...mono, fontSize: 12, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: 8, padding: "6px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? 0.5 : 1 }}
+                    style={{ ...mono, fontSize: 12, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: "var(--r-field)", padding: "6px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? 0.5 : 1 }}
                   >
                     Delete
                   </button>

@@ -46,7 +46,7 @@ export default function AuroraForcePlate() {
   };
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 16px" }}>Force plate</h1>
       <div style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Import force-plate / jump CSV</div>

@@ -197,7 +197,7 @@ function Command({ data }: { data: Overview | null }) {
                 <XAxis dataKey="day" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} />
                 <Tooltip
                   cursor={{ fill: `${AMBER}14` }}
-                  contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}
+                  contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}
                 />
                 <Bar dataKey="ok" stackId="a" fill={LIME} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="error" stackId="a" fill={RED} radius={[3, 3, 0, 0]} />
@@ -282,7 +282,7 @@ function OrgChart({ agents }: { agents: AgentLite[] }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12 }}>
       {groups.out.map((g) => (
-        <div key={g.head.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12 }}>
+        <div key={g.head.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12 }}>
           <Node a={g.head} head />
           {g.reports.length > 0 && (
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${LINE}`, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -292,7 +292,7 @@ function OrgChart({ agents }: { agents: AgentLite[] }) {
         </div>
       ))}
       {groups.independents.length > 0 && (
-        <div style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12 }}>
+        <div style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12 }}>
           <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>Independent</Mono>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {groups.independents.map((r) => <Node key={r.id} a={r} />)}
@@ -368,7 +368,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 title="Drag me onto the dropzone"
-                style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "8px 12px", borderRadius: 9, cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `${LIME}1f` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
+                style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "8px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `${LIME}1f` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
               >
                 <span style={{ color: txt(ASH) }}>⠿</span>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: DOT[a.status] ?? ASH }} />
@@ -389,7 +389,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
               if (id) setAgentId(id);
               setDragOver(false);
             }}
-            style={{ flex: 1, minWidth: 220, border: `2px dashed ${dragOver ? LIME : LINE}`, borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dragOver ? `${LIME}12` : "transparent", transition: "all .12s", minHeight: 88 }}
+            style={{ flex: 1, minWidth: 220, border: `2px dashed ${dragOver ? LIME : LINE}`, borderRadius: "var(--r-card)", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dragOver ? `${LIME}12` : "transparent", transition: "all .12s", minHeight: 88 }}
           >
             {assignedName ? (
               <Mono s={{ fontSize: 13, fontWeight: 700, textAlign: "center" }} c={LIME}>✓ {assignedName} assigned — add a task below</Mono>
@@ -409,7 +409,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
             {active.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.role})</option>)}
           </Select>
           <input
-            style={{ ...mono, flex: 1, minWidth: 220, fontSize: 13, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+            style={{ ...mono, flex: 1, minWidth: 220, fontSize: 13, padding: "8px 10px", borderRadius: "var(--r-field)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
             placeholder="Task, e.g. Summarize this week's priorities."
             value={task}
             onChange={(e) => setTask(e.target.value)}
@@ -418,14 +418,14 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           <button
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
-            style={{ ...cond, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "8px 18px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
+            style={{ ...cond, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "8px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
           >
             {busy ? "Running…" : "Run"}
           </button>
         </div>
         {active.length === 0 && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={AMBER}>No active agents — activate one in “AI agents” first.</Mono>}
         {result && (
-          <div style={{ ...mono, marginTop: 12, fontSize: 13, lineHeight: 1.6, color: txt(result.error ? AMBER : CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, whiteSpace: "pre-wrap" }}>
+          <div style={{ ...mono, marginTop: 12, fontSize: 13, lineHeight: 1.6, color: txt(result.error ? AMBER : CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>
             {result.output}
           </div>
         )}
@@ -603,12 +603,12 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
           onChange={(e) => setVal(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && log()}
           placeholder="log actual…"
-          style={{ ...mono, fontSize: 12, flex: 1, padding: "5px 8px", borderRadius: 7, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 12, flex: 1, padding: "5px 8px", borderRadius: "var(--r-field)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <button
           disabled={busy || val === ""}
           onClick={log}
-          style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", borderRadius: 7, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
+          style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
         >
           log
         </button>
@@ -627,7 +627,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
                   <CartesianGrid stroke={LINE} strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="t" tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} />
                   <YAxis tick={{ fill: ASH, fontSize: 10 }} stroke={LINE} width={40} />
-                  <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
                   {target != null && <ReferenceLine y={target} stroke={ASH} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: 10, position: "insideTopRight" }} />}
                   <Line type="monotone" dataKey="value" stroke={LIME} strokeWidth={2} dot={{ r: 3, fill: LIME }} />
                 </LineChart>
@@ -653,7 +653,7 @@ function Spark({ values, up }: { values: number[]; up: boolean }) {
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 9, padding: "8px 10px" }}>
+    <div style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "8px 10px" }}>
       <Mono s={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: CHALK, marginTop: 2 }}>{value}</div>
     </div>
@@ -717,10 +717,10 @@ function Approvals({ onChange }: { onChange: () => void }) {
               <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: 12, fontWeight: 800, textTransform: "uppercase", padding: "8px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
                 Approve &amp; run
               </button>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "8px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "8px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
                 Deny
               </button>
             </div>
@@ -758,11 +758,11 @@ function DigestCard() {
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionHead title="Daily digest" kicker="last 24h · auto-posts to Slack via cron" />
-        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "7px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "7px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack now"}
         </button>
       </div>
-      <pre style={{ ...mono, fontSize: 12, lineHeight: 1.55, color: CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, margin: "4px 0 0", whiteSpace: "pre-wrap" }}>
+      <pre style={{ ...mono, fontSize: 12, lineHeight: 1.55, color: CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, margin: "4px 0 0", whiteSpace: "pre-wrap" }}>
         {d ? d.text : "Loading…"}
       </pre>
       <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={sent ? LIME : ASH}>
@@ -798,13 +798,13 @@ function MonthlyCostCard() {
   }
 
   const csv = (month: string) => `/api/admin/agents/cost-report?month=${month}&format=csv`;
-  const link: React.CSSProperties = { ...mono, fontSize: 11, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 7, padding: "4px 9px", textDecoration: "none" };
+  const link: React.CSSProperties = { ...mono, fontSize: 11, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "4px 9px", textDecoration: "none" };
 
   return (
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionHead title="Monthly cost" kicker="real agent spend · auto-reports on the 1st" />
-        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "7px 14px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", padding: "7px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack"}
         </button>
       </div>
@@ -813,7 +813,7 @@ function MonthlyCostCard() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {[d.current, d.previous].map((m, i) => (
-            <div key={m.month} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 12 }}>
+            <div key={m.month} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " · MTD" : ""}</Mono>
                 <a href={csv(m.month)} style={link}>⬇ CSV</a>
@@ -882,7 +882,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <SectionHead title="Notifications" kicker={`${unread} unread · ${list.length} recent`} />
             {unread > 0 && (
-              <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "6px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
+              <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", padding: "6px 12px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
                 Mark all read
               </button>
             )}

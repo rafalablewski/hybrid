@@ -49,7 +49,7 @@ export default function AuroraCockpit({
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>Your command center</h1>
       <p style={{ fontSize: 14, color: C("ash"), marginTop: 8 }}>Goal → season → today → performance → technique, in one place.</p>
 
@@ -148,7 +148,7 @@ const TEASE: { kicker: string; color: string; blurb: string }[] = [
 
 function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 6px" }}>Unlock your command center</h1>
       <p style={{ fontSize: 14, lineHeight: 1.6, color: C("ash") }}>Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen. It&apos;s part of <b style={{ color: C("lime") }}>Full</b>.</p>
       <div style={{ display: "grid", gap: 10, marginTop: 14 }}>

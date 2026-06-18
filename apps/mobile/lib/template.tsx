@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_TEMPLATE, resolveTemplate, type TemplateName } from "@hybrid/core";
+import { DEFAULT_TEMPLATE, resolveTemplate, TEMPLATE_STORAGE_KEY, type TemplateName } from "@hybrid/core";
 
 /**
  * Active UI template (see @hybrid/core templates.ts). A per-device preference —
@@ -8,7 +8,7 @@ import { DEFAULT_TEMPLATE, resolveTemplate, type TemplateName } from "@hybrid/co
  * renders (classic HYBRID vs the rounded "aurora" look). Defaults to `classic`
  * so existing users are untouched until they switch it in Settings.
  */
-const KEY = "hybrid.template";
+const KEY = TEMPLATE_STORAGE_KEY;
 
 interface TemplateCtx {
   template: TemplateName;

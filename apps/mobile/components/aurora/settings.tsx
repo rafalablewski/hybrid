@@ -20,9 +20,9 @@ const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "dark", label: "Dark" },
 ];
 const LANGUAGES: { id: Lang; label: string }[] = [
-  { id: "en", label: "EN" },
-  { id: "pl", label: "PL" },
-  { id: "de", label: "DE" },
+  { id: "en", label: "English" },
+  { id: "pl", label: "Polski" },
+  { id: "de", label: "Deutsch" },
 ];
 
 /** AURORA settings — avatar header + grouped rounded list, matching the Figma
@@ -73,7 +73,13 @@ export default function AuroraSettings() {
           <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
         </Field>
         <Field icon="bell" label="Template">
+          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: -4, marginBottom: 10, lineHeight: 16 }}>
+            Switch the whole app between the classic look and the new rounded design.
+          </Text>
           <ASegment options={TEMPLATES.map((tp) => ({ id: tp.id, label: tp.label }))} value={template} onPick={setTemplate} />
+          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: 10, lineHeight: 16 }}>
+            {TEMPLATES.find((tp) => tp.id === template)?.description}
+          </Text>
         </Field>
         <Field icon="share" label="Language">
           <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
@@ -81,7 +87,7 @@ export default function AuroraSettings() {
       </Section>
 
       <Section title="Workout">
-        <ListItem icon="play" label={t("loggerPrefs.title")} onPress={() => router.push("/logger-settings")} />
+        <ListItem icon="play" label={t("loggerPrefs.title")} sub={t("loggerPrefs.intro")} onPress={() => router.push("/logger-settings")} />
       </Section>
 
       {/* Danger zone */}
@@ -91,6 +97,7 @@ export default function AuroraSettings() {
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.red) }}>{t("settings.resetTitle")}</Text>
         </View>
         <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, marginTop: 8, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 14 }}>{t("settings.typeReset")}</Text>
         <TextInput
           value={confirm}
           onChangeText={setConfirm}
@@ -143,13 +150,16 @@ function Field({ icon, label, children }: { icon: AuroraIconName; label: string;
   );
 }
 
-function ListItem({ icon, label, onPress }: { icon: AuroraIconName; label: string; onPress: () => void }) {
+function ListItem({ icon, label, sub, onPress }: { icon: AuroraIconName; label: string; sub?: string; onPress: () => void }) {
   const { palette: C } = useTheme();
   return (
     <Pressable onPress={onPress}>
       <ACard style={{ marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 12 }}>
         <AuroraIcon name={icon} size={20} color={C.ash} />
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk, flex: 1 }}>{label}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{label}</Text>
+          {!!sub && <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: 2, lineHeight: 15 }}>{sub}</Text>}
+        </View>
         <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
       </ACard>
     </Pressable>

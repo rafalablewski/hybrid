@@ -30,7 +30,7 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
 
   if (totals.efforts === 0) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 16px" }}>Running</h1>
         <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: C("ash") }}>No cardio logged yet. Log a run or row (with distance + minutes) and your mileage, pace and easy/hard split show up here.</span></div>
       </div>
@@ -44,7 +44,7 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
   const easyPct = hasEffort ? Math.round((split.easy / splitTotal) * 100) : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 980, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Running</h1>
         <AuroraIcon name="navigation" size={24} color={C("blue")} />

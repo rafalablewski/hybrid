@@ -52,7 +52,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
 
   const list = showArchived ? archived : sessions;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 720, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {archivedToggle}
       {list.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 50 }}>

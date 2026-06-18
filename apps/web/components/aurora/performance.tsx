@@ -49,7 +49,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
   if (sessions.length === 0) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
           <div style={{ fontWeight: 800, fontSize: 20 }}>No training data yet</div>
           <p style={{ fontSize: 14, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</p>
@@ -67,7 +67,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", marginRight: 6, fontFamily: "var(--font-mono)", fontSize: 11, whiteSpace: "nowrap" }}>{label}</span>;
 
   return (
-    <div style={{ maxWidth: 880, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Performance</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>

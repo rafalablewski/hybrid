@@ -43,7 +43,10 @@ export function GlassTabBarBackground() {
 const HREF: Record<string, Href> = {
   today: "/(tabs)",
   cockpit: "/(tabs)/cockpit",
+  notifications: "/notifications",
   log: "/(tabs)/log",
+  timer: "/interval-timer",
+  statistics: "/statistics",
   runtrack: "/run-track",
   history: "/(tabs)/history",
   plans: "/(tabs)/plans",

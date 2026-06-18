@@ -30,7 +30,7 @@ export default function AuroraRoles() {
   const yes = (v: string) => v === "full" || v === "yes" || v === "yes (+private)";
 
   return (
-    <div style={{ maxWidth: 820, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Roles &amp; access</h1>
       <p style={{ fontSize: 14, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not role label alone.</p>
 

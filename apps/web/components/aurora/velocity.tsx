@@ -35,7 +35,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
 
   if (noData) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 16px" }}>Velocity</h1>
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
           <div style={{ fontWeight: 800, fontSize: 20 }}>No bar speed logged yet</div>
@@ -46,7 +46,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
   }
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 14px" }}>Velocity</h1>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" }}>
         {lifts.map((l) => <button key={l} onClick={() => setLift(l)} style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 700, padding: "6px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active === l ? C("lime") : C("line")}`, background: active === l ? C("lime") : "transparent", color: active === l ? C("ink") : C("ash") }}>{l}</button>)}

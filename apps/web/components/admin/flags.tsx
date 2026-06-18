@@ -151,7 +151,7 @@ const resetBtn: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: ".04em",
   padding: "6px 10px",
-  borderRadius: 8,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK,

@@ -72,8 +72,10 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 export const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Today", icon: "➤", group: "home" },
   { id: "cockpit", label: "Cockpit", icon: "◈", group: "home", minPersona: "athlete" },
+  { id: "notifications", label: "Notifications", icon: "🔔", group: "home" },
 
   { id: "log", label: "Log session", icon: "✎", group: "train" },
+  { id: "timer", label: "Interval timer", icon: "⏱", group: "train" },
   { id: "runtrack", label: "Run tracking", icon: "📍", group: "train" },
   { id: "calendar", label: "Calendar", icon: "▦", group: "train" },
   { id: "builder", label: "Builder", icon: "⊕", group: "train", minPersona: "athlete" },
@@ -82,6 +84,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "sport", label: "Sport", icon: "◎", group: "train", minPersona: "athlete" },
   { id: "competition", label: "Competition", icon: "▲", group: "train", minPersona: "athlete" },
 
+  { id: "statistics", label: "Statistics", icon: "📊", group: "analyze" },
   { id: "performance", label: "Performance", icon: "◈", group: "analyze", minPersona: "athlete" },
   { id: "analytics", label: "Analytics", icon: "◷", group: "analyze", minPersona: "athlete" },
   { id: "volume", label: "Volume", icon: "▦", group: "analyze", minPersona: "athlete" },

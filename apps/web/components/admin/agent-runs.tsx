@@ -114,7 +114,7 @@ export default function AdminAgentRuns() {
                 <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "4px 0" }} c={ASH}>
                   Output
                 </Mono>
-                <div style={{ ...mono, fontSize: 13, lineHeight: 1.6, color: CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, whiteSpace: "pre-wrap" }}>
+                <div style={{ ...mono, fontSize: 13, lineHeight: 1.6, color: CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>
                   {r.output || "(no output)"}
                 </div>
                 <Mono s={{ fontSize: 10, display: "block", marginTop: 8 }} c={ASH}>

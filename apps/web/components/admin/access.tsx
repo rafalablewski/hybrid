@@ -103,8 +103,8 @@ export default function AdminAccess() {
                   <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>wants <b style={{ color: txt(CHALK) }}>{navLabel(r.navId)}</b></Mono>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => decide(r.id, "approve")} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 9, padding: "7px 14px", cursor: "pointer" }}>Approve</button>
-                  <button onClick={() => decide(r.id, "deny")} style={{ ...mono, fontSize: 12, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: 9, padding: "7px 14px", cursor: "pointer" }}>Deny</button>
+                  <button onClick={() => decide(r.id, "approve")} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "7px 14px", cursor: "pointer" }}>Approve</button>
+                  <button onClick={() => decide(r.id, "deny")} style={{ ...mono, fontSize: 12, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "7px 14px", cursor: "pointer" }}>Deny</button>
                 </div>
               </div>
             ))}

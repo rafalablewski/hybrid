@@ -6,6 +6,8 @@ import { useSession } from "@/lib/session";
 import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useTemplate } from "@/lib/use-template";
+import { AuroraIcon } from "@/components/aurora/icons";
+import type { AuroraIconName } from "@hybrid/core";
 import AdminOverview from "./overview";
 import AdminUsers from "./users";
 import AdminDirectory from "./directory";
@@ -30,27 +32,27 @@ import AgentHQ from "./agent-hq";
 
 type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "simulator" | "guidance";
 
-const SECTIONS: { id: SectionId; label: string; icon: string; group: string }[] = [
-  { id: "overview", label: "Overview", icon: "◆", group: "Platform" },
-  { id: "users", label: "Users", icon: "⦿", group: "Platform" },
-  { id: "directory", label: "Orgs & coaching", icon: "⬡", group: "Platform" },
-  { id: "moderation", label: "Moderation", icon: "⚖", group: "Platform" },
-  { id: "financials", label: "Financials", icon: "💰", group: "Business" },
-  { id: "hq", label: "Agent HQ", icon: "◳", group: "AI" },
-  { id: "agents", label: "AI agents", icon: "🤖", group: "AI" },
-  { id: "announcements", label: "Announcements", icon: "📣", group: "Content" },
-  { id: "exercises", label: "Exercise library", icon: "🏋", group: "Content" },
-  { id: "media", label: "Media library", icon: "🖼", group: "Content" },
-  { id: "translations", label: "Localization", icon: "🌐", group: "Content" },
-  { id: "flags", label: "Feature flags", icon: "⚑", group: "Content" },
-  { id: "content", label: "Capabilities & data", icon: "⊞", group: "Content" },
-  { id: "access", label: "Access control", icon: "⚿", group: "Governance" },
-  { id: "security", label: "Security", icon: "🛡", group: "Governance" },
-  { id: "audit", label: "Audit log", icon: "❑", group: "Governance" },
-  { id: "anon", label: "Guest workouts", icon: "👤", group: "Governance" },
-  { id: "system", label: "System", icon: "⚙", group: "Governance" },
-  { id: "simulator", label: "iOS simulator", icon: "📱", group: "Governance" },
-  { id: "guidance", label: "Guidance", icon: "📖", group: "Governance" },
+const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
+  { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
+  { id: "users", label: "Users", icon: "⦿", auroraIcon: "user", group: "Platform" },
+  { id: "directory", label: "Orgs & coaching", icon: "⬡", auroraIcon: "globe", group: "Platform" },
+  { id: "moderation", label: "Moderation", icon: "⚖", auroraIcon: "check-circle", group: "Platform" },
+  { id: "financials", label: "Financials", icon: "💰", auroraIcon: "offer", group: "Business" },
+  { id: "hq", label: "Agent HQ", icon: "◳", auroraIcon: "navigation", group: "AI" },
+  { id: "agents", label: "AI agents", icon: "🤖", auroraIcon: "user-square", group: "AI" },
+  { id: "announcements", label: "Announcements", icon: "📣", auroraIcon: "bell", group: "Content" },
+  { id: "exercises", label: "Exercise library", icon: "🏋", auroraIcon: "list-check", group: "Content" },
+  { id: "media", label: "Media library", icon: "🖼", auroraIcon: "copy", group: "Content" },
+  { id: "translations", label: "Localization", icon: "🌐", auroraIcon: "share", group: "Content" },
+  { id: "flags", label: "Feature flags", icon: "⚑", auroraIcon: "bookmark", group: "Content" },
+  { id: "content", label: "Capabilities & data", icon: "⊞", auroraIcon: "download", group: "Content" },
+  { id: "access", label: "Access control", icon: "⚿", auroraIcon: "lock", group: "Governance" },
+  { id: "security", label: "Security", icon: "🛡", auroraIcon: "verified", group: "Governance" },
+  { id: "audit", label: "Audit log", icon: "❑", auroraIcon: "search", group: "Governance" },
+  { id: "anon", label: "Guest workouts", icon: "👤", auroraIcon: "user-circle", group: "Governance" },
+  { id: "system", label: "System", icon: "⚙", auroraIcon: "settings", group: "Governance" },
+  { id: "simulator", label: "iOS simulator", icon: "📱", auroraIcon: "play", group: "Governance" },
+  { id: "guidance", label: "Guidance", icon: "📖", auroraIcon: "calendar-event", group: "Governance" },
 ];
 
 export default function AdminPanel() {
@@ -149,7 +151,9 @@ export default function AdminPanel() {
                     textAlign: "left",
                   }}
                 >
-                  <span style={{ fontSize: 14, width: 16, textAlign: "center" }}>{s.icon}</span>
+                  <span style={{ fontSize: 14, width: 18, display: "grid", placeItems: "center" }}>
+                    {aurora ? <AuroraIcon name={s.auroraIcon} size={18} strokeWidth={2.6} /> : s.icon}
+                  </span>
                   {!collapsed && s.label}
                 </button>
               ))}

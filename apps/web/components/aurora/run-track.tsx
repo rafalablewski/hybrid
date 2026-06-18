@@ -66,7 +66,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 6px" }}>Run tracking</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>Track a run — time it, log the distance, save it to your history.</p>
 

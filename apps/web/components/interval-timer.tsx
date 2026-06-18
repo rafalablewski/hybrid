@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { buildIntervalPlan, intervalTotalSeconds, locateInterval, formatClock } from "@hybrid/core";
 import { AuroraIcon } from "@/components/aurora/icons";
+import { useTemplate } from "@/lib/use-template";
 
 /**
  * Interval timer (web) — the web parity of the mobile interval timer, running
  * the identical @hybrid/core sequencing engine. Real work/rest countdown with
  * configurable rounds/work/rest and play · pause · reset.
+ *
+ * Works in BOTH templates: `embedded` (rendered inside the app-shell `<main>`,
+ * reached from the sidebar / ⌘K) drops the full-screen chrome + back button;
+ * standalone (the /timer route, e.g. from the landing page) keeps them. Radii
+ * soften under Aurora and stay tighter under Classic, like the rest of the app.
  */
-export default function IntervalTimerScreen() {
+export default function IntervalTimerScreen({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
+  const aurora = useTemplate().template === "aurora";
+  const r = { card: aurora ? 18 : 12, field: aurora ? 14 : 10, ring: aurora ? 28 : 14 };
   const [rounds, setRounds] = useState(3);
   const [workSec, setWorkSec] = useState(40);
   const [restSec, setRestSec] = useState(20);
@@ -46,14 +54,20 @@ export default function IntervalTimerScreen() {
   const progress = total > 0 ? elapsed / total : 0;
   const C = (v: string) => `var(--color-${v})`;
 
+  const outer: CSSProperties = embedded
+    ? { color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", flexDirection: "column", alignItems: "center" }
+    : { minHeight: "100vh", background: C("ink"), color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 22px" };
+
   return (
-    <div style={{ minHeight: "100vh", background: C("ink"), color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 22px" }}>
+    <div style={outer}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <button onClick={() => router.push("/app")} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
-            <AuroraIcon name="back" size={20} />
-          </button>
-          <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          {!embedded && (
+            <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+              {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: 20 }}>←</span>}
+            </button>
+          )}
+          <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
             <AuroraIcon name="play" size={18} color={C("ash")} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>Interval session</div>

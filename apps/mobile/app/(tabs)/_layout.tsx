@@ -10,7 +10,6 @@ import { useTemplate } from "../../lib/template";
 import { F } from "../../lib/ui";
 import { CommandMenu, GlassTabBarBackground } from "../../components/liquid-glass";
 import { AuroraIcon } from "../../components/aurora/icons";
-import AuroraTabBar, { type AuroraTabBarProps } from "../../components/aurora/tab-bar";
 
 const glyphIcon = (glyph: string) => ({ color }: { color: ColorValue }) =>
   <Text style={{ color, fontSize: 16 }}>{glyph}</Text>;
@@ -36,9 +35,10 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.ink }}>
       <Tabs
-        // Aurora swaps the classic glass bar for the bespoke floating pill bar
-        // (circular icon buttons, no "jump to" orb); classic keeps the glass bar.
-        tabBar={aurora ? (props) => <AuroraTabBar {...(props as unknown as AuroraTabBarProps)} /> : undefined}
+        // Aurora's bottom nav is the GLOBAL floating pill bar (rendered once at
+        // the root so it shows on every screen — see components/aurora/global-nav),
+        // so the per-Tabs bar is suppressed here; classic keeps its glass bar.
+        tabBar={aurora ? () => null : undefined}
         screenOptions={{
           headerShown: false,
           tabBarBackground: () => <GlassTabBarBackground />,

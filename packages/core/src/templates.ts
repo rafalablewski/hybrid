@@ -38,6 +38,13 @@ export const TEMPLATES: TemplateDef[] = [
 /** The look every user gets until they opt into another template. */
 export const DEFAULT_TEMPLATE: TemplateName = "classic";
 
+/**
+ * Persistence key for the active template — SHARED so web (localStorage) and
+ * mobile (AsyncStorage) can't drift apart. (Stores are still per-device; this
+ * just keeps the key string identical on both clients.)
+ */
+export const TEMPLATE_STORAGE_KEY = "hybrid.template";
+
 /** Runtime guard for a persisted/template-switch value. */
 export function isTemplateName(v: unknown): v is TemplateName {
   return v === "classic" || v === "aurora";

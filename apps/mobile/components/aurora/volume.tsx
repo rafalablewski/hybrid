@@ -87,6 +87,9 @@ export default function AuroraVolume() {
               ))}
             </View>
           ))}
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 12, lineHeight: 15 }}>
+            Tune to your own recovery. Values clamp to a sane order; blank a field to restore its default.
+          </Text>
         </ACard>
       )}
 

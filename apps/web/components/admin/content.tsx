@@ -29,7 +29,7 @@ export default function AdminContent() {
               textTransform: "uppercase",
               letterSpacing: ".05em",
               padding: "8px 16px",
-              borderRadius: 9,
+              borderRadius: "var(--r-field)",
               cursor: "pointer",
               border: `1px solid ${tab === id ? LIME : LINE}`,
               background: tab === id ? LIME : "transparent",
