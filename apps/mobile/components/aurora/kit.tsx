@@ -63,7 +63,7 @@ export function AuroraScreen({
   const { palette } = useTheme();
   const body = scroll ? (
     <ScrollView
-      contentContainerStyle={{ padding, paddingBottom: 56, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      contentContainerStyle={{ padding, paddingBottom: 112, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
       {children}

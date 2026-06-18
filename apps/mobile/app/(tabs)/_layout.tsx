@@ -10,6 +10,7 @@ import { useTemplate } from "../../lib/template";
 import { F } from "../../lib/ui";
 import { CommandMenu, GlassTabBarBackground } from "../../components/liquid-glass";
 import { AuroraIcon } from "../../components/aurora/icons";
+import AuroraTabBar, { type AuroraTabBarProps } from "../../components/aurora/tab-bar";
 
 const glyphIcon = (glyph: string) => ({ color }: { color: ColorValue }) =>
   <Text style={{ color, fontSize: 16 }}>{glyph}</Text>;
@@ -35,6 +36,9 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: palette.ink }}>
       <Tabs
+        // Aurora swaps the classic glass bar for the bespoke floating pill bar
+        // (circular icon buttons, no "jump to" orb); classic keeps the glass bar.
+        tabBar={aurora ? (props) => <AuroraTabBar {...(props as unknown as AuroraTabBarProps)} /> : undefined}
         screenOptions={{
           headerShown: false,
           tabBarBackground: () => <GlassTabBarBackground />,
@@ -60,7 +64,9 @@ export default function TabsLayout() {
         <Tabs.Screen name="running" options={{ href: null }} />
         <Tabs.Screen name="coach" options={{ href: null }} />
       </Tabs>
-      <CommandMenu />
+      {/* The floating "jump to" command orb is a classic-only flourish; Aurora's
+          bespoke pill bar replaces it. */}
+      {!aurora && <CommandMenu />}
     </View>
   );
 }
