@@ -64,6 +64,7 @@ model User {
   coachLinks    CoachLink[]     @relation("asClient")
   clientLinks   CoachLink[]     @relation("asCoach")
   coachGroups   CoachGroup[]    @relation("coachGroups")
+  coachPrograms CoachProgram[]  @relation("coachPrograms")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
@@ -136,6 +137,23 @@ model CoachGroup {
   coachId   String
   name      String
   clientIds String[] @default([])
+  createdAt DateTime @default(now())
+
+  @@index([coachId])
+}
+
+// A coach-authored multi-week PROGRAM (type 3 of the plan model — see the
+// plans-lib capability): the coach composes weeks → days → exercises once, then
+// assigns it to a client or a whole group, which materializes it into dated
+// Assignments. `weeks` is a JSON PlanSample[][] (weeks of days of items), reusing
+// the core plan shape so planDayToBlocks() can turn each day into session blocks.
+model CoachProgram {
+  id        String   @id @default(cuid())
+  coach     User     @relation("coachPrograms", fields: [coachId], references: [id])
+  coachId   String
+  name      String
+  goal      String?
+  weeks     Json     @default("[]")
   createdAt DateTime @default(now())
 
   @@index([coachId])

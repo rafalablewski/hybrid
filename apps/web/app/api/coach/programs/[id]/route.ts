@@ -1,0 +1,44 @@
+import { NextResponse } from "next/server";
+import { getOrCreateDbUser } from "@/lib/server-auth";
+import { prisma } from "@/lib/db";
+import { sanitizeProgramWeeks } from "@/lib/coach-program";
+
+const tableMissing = (e: unknown) => {
+  const code = (e as { code?: string })?.code;
+  return code === "P2021" || code === "P2010";
+};
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const me = await getOrCreateDbUser(request);
+  if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { id } = await params;
+  const b = (await request.json().catch(() => ({}))) as { name?: unknown; goal?: unknown; weeks?: unknown };
+  try {
+    const program = await prisma.coachProgram.findUnique({ where: { id } });
+    if (!program || program.coachId !== me.id) return NextResponse.json({ error: "not found" }, { status: 404 });
+    const data: { name?: string; goal?: string | null; weeks?: object } = {};
+    if (typeof b.name === "string" && b.name.trim()) data.name = b.name.trim().slice(0, 80);
+    if (typeof b.goal === "string") data.goal = b.goal.trim() ? b.goal.trim().slice(0, 40) : null;
+    if (b.weeks !== undefined) data.weeks = sanitizeProgramWeeks(b.weeks);
+    const updated = await prisma.coachProgram.update({ where: { id }, data });
+    return NextResponse.json({ program: updated });
+  } catch (e) {
+    if (tableMissing(e)) return NextResponse.json({ error: "not enabled yet" }, { status: 503 });
+    return NextResponse.json({ error: "failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const me = await getOrCreateDbUser(request);
+  if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { id } = await params;
+  try {
+    const program = await prisma.coachProgram.findUnique({ where: { id } });
+    if (!program || program.coachId !== me.id) return NextResponse.json({ error: "not found" }, { status: 404 });
+    await prisma.coachProgram.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    if (tableMissing(e)) return NextResponse.json({ error: "not enabled yet" }, { status: 503 });
+    return NextResponse.json({ error: "failed" }, { status: 500 });
+  }
+}

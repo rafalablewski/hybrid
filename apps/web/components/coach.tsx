@@ -12,6 +12,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import CoachPrograms from "./coach-programs";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator.
@@ -166,6 +167,12 @@ export default function CoachScreen() {
           once (the solo-coach version of segmentation; Pro seat). */}
       <Section title="Client groups" color={VIOLET}>
         <GroupsManager clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
+      </Section>
+
+      {/* PROGRAMS — coach-authored multi-week programs (type 3): build once,
+          assign to a client or a whole group as scheduled sessions. */}
+      <Section title="Programs" color={LIME}>
+        <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
       </Section>
     </div>
   );

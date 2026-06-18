@@ -706,6 +706,73 @@ export async function assignPlanToGroup(id: string, goal: string, planId?: strin
   }
 }
 
+// ---- coach-authored multi-week programs ----
+export type ProgramItem = { name: string; sr: string; rpe?: string };
+export type ProgramDay = { day: string; items: ProgramItem[] };
+export type ProgramWeek = { days: ProgramDay[] };
+export type CoachProgram = { id: string; name: string; goal: string | null; weeks: ProgramWeek[] };
+
+export async function getCoachPrograms(): Promise<{ programs: CoachProgram[]; unavailable: boolean }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/programs`, { headers: await authHeaders() });
+    if (!res.ok) return { programs: [], unavailable: false };
+    const d = (await res.json()) as { programs?: CoachProgram[]; unavailable?: boolean };
+    return { programs: d.programs ?? [], unavailable: Boolean(d.unavailable) };
+  } catch {
+    return { programs: [], unavailable: false };
+  }
+}
+
+export async function createCoachProgram(name: string): Promise<CoachProgram | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/programs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ name, weeks: [{ days: [] }] }),
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as { program: CoachProgram }).program;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateCoachProgram(id: string, body: { name?: string; weeks?: ProgramWeek[] }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/programs/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteCoachProgram(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/programs/${id}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function assignProgram(id: string, target: { linkId?: string; groupId?: string }, startDate: string): Promise<{ ok: boolean; assigned?: number; sessions?: number; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/programs/${id}/assign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ ...target, startDate }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { assigned?: number; sessions?: number; error?: string };
+    return { ok: res.ok, assigned: j.assigned, sessions: j.sessions, error: j.error };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
 export async function inviteClient(email: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(`${API_URL}/api/coach/links`, {
