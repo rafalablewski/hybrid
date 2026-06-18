@@ -119,6 +119,9 @@ export default function AuroraNutrition() {
           <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph="fat" />
         </View>
         <APill label={saving ? "Adding…" : "Add"} onPress={add} disabled={saving} style={{ marginTop: 14 }} />
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 10, lineHeight: 16 }}>
+          Manual macros (food search + barcode is a separate, blocked layer — see Capabilities).
+        </Text>
       </ACard>
 
       {/* Recent */}

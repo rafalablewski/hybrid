@@ -112,7 +112,7 @@ export default function AdminTranslations() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search keys or text…"
-          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Select value={prefix} onChange={(e) => setPrefix(e.target.value)}>
           {prefixes.map((p) => <option key={p} value={p}>{p === "all" ? "All groups" : p}</option>)}
@@ -169,7 +169,7 @@ export default function AdminTranslations() {
                             fontSize: 12,
                             lineHeight: 1.4,
                             padding: "6px 8px",
-                            borderRadius: 7,
+                            borderRadius: "var(--r-field)",
                             background: INK2,
                             color: txt(missing && !val ? ASH : CHALK),
                             border: `1px solid ${overridden ? LIME : missing ? AMBER : LINE}`,

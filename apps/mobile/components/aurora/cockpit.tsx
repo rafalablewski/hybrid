@@ -79,6 +79,18 @@ function Full() {
         ) : (
           <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>No season yet — enroll a goal and your periodized plan drives the weeks.</Text>
         )}
+        {/* SET UP / CHANGE PLAN — the onboarding funnel folded under Goal & season
+            (the mobile analog of the web expander; parity with classic cockpit). */}
+        <Pressable
+          onPress={() => router.push("/onboarding")}
+          style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: 2 }}>4 questions → a plan you&apos;ll finish.</Text>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.amber) }}>Open setup →</Text>
+        </Pressable>
       </Section>
 
       <Section C={C} title={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color={C.lime} openLabel={hasData ? "Start" : "Start first"} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>

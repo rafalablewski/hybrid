@@ -56,7 +56,7 @@ export default function AdminAuditLog() {
             setPage(1);
           }}
           placeholder="Filter by action (e.g. user.update)…"
-          style={{ ...mono, fontSize: 13, flex: 1, padding: "10px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 13, flex: 1, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: 12 }} c={ASH}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </div>
@@ -126,7 +126,7 @@ export default function AdminAuditLog() {
 
 function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; disabled?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: txt(disabled ? ASH : CHALK), background: CARD, border: `1px solid ${LINE}`, borderRadius: 9, padding: "8px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
+    <button onClick={onClick} disabled={disabled} style={{ ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: txt(disabled ? ASH : CHALK), background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "8px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );

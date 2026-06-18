@@ -578,7 +578,7 @@ export default function AdminAgents() {
                           color: CHALK,
                           background: INK,
                           border: `1px solid ${LINE}`,
-                          borderRadius: 10,
+                          borderRadius: "var(--r-card)",
                           padding: 14,
                           whiteSpace: "pre-wrap",
                         }}
@@ -600,7 +600,7 @@ export default function AdminAgents() {
             <Section title="Schedules" hint="standing tasks the agent runs on a cadence (fires via cron; only while active)">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {schedules.map((s) => (
-                  <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 12px" }}>
+                  <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                     <button onClick={() => toggleSchedule(s)} style={toggle(s.enabled)} title={s.enabled ? "Disable" : "Enable"}>
                       <span style={knob(s.enabled)} />
                     </button>
@@ -664,7 +664,7 @@ export default function AdminAgents() {
               <Section title="History" hint={`${runs.length} recent run${runs.length === 1 ? "" : "s"} (transcripts)`}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {runs.map((r) => (
-                    <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 12px" }}>
+                    <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "8px 12px" }}>
                       <summary style={{ ...mono, fontSize: 12, color: CHALK, cursor: "pointer", listStyle: "none" }}>
                         <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
                         <Chip c={ASH}>{r.runtime}</Chip>
@@ -699,7 +699,7 @@ export default function AdminAgents() {
                   color: CHALK,
                   background: INK,
                   border: `1px solid ${LINE}`,
-                  borderRadius: 10,
+                  borderRadius: "var(--r-card)",
                   padding: 14,
                   margin: 0,
                   maxHeight: 360,
@@ -824,7 +824,7 @@ const input: React.CSSProperties = {
   fontSize: 13,
   width: "100%",
   padding: "8px 10px",
-  borderRadius: 9,
+  borderRadius: "var(--r-field)",
   background: INK2,
   color: CHALK,
   border: `1px solid ${LINE}`,
@@ -835,7 +835,7 @@ const presetBtn: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
   padding: "8px 14px",
-  borderRadius: 9,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK2,
@@ -848,7 +848,7 @@ const primaryBtn: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: ".04em",
   padding: "8px 14px",
-  borderRadius: 9,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LIME}`,
   background: `${LIME}22`,
@@ -861,7 +861,7 @@ const dangerBtn: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: ".04em",
   padding: "8px 14px",
-  borderRadius: 9,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: "transparent",
@@ -873,7 +873,7 @@ const addBtn: React.CSSProperties = {
   fontWeight: 600,
   textAlign: "left",
   padding: "7px 10px",
-  borderRadius: 8,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px dashed ${LINE}`,
   background: "transparent",
@@ -885,7 +885,7 @@ const removeBtn: React.CSSProperties = {
   lineHeight: 1,
   width: 34,
   flexShrink: 0,
-  borderRadius: 8,
+  borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
   background: INK2,

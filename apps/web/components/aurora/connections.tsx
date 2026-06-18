@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AuroraIcon } from "./icons";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };

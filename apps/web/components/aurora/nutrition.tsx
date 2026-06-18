@@ -85,7 +85,9 @@ export default function AuroraNutrition() {
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>/ {targets.kcal}</span>
             </div>
             <Bar cur={today.kcal} target={targets.kcal} color={C("lime")} />
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 10 }}>Maintenance ≈ {maint.kcal} kcal · {targets.basis}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 10 }}>
+              Maintenance ≈ {maint.kcal} kcal · {targets.basis}{maint.weightChangeKg != null ? ` · weight trend ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+            </div>
           </div>
           <MacroRow label="Protein" cur={today.protein} target={targets.protein} color={C("blue")} />
           <MacroRow label="Carbs" cur={today.carbs} target={targets.carbs} color={C("amber")} />
@@ -139,6 +141,9 @@ export default function AuroraNutrition() {
         <button onClick={add} disabled={saving} style={{ width: "100%", fontWeight: 700, fontSize: 16, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Adding…" : "Add"}
         </button>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 10, lineHeight: 1.5 }}>
+          Food search + barcode is a separate, blocked layer (needs a food-DB partner) — see Capabilities.
+        </div>
       </div>
 
       <div style={{ ...card, marginTop: 16, padding: 18 }}>

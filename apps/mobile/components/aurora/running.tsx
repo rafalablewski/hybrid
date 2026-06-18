@@ -94,6 +94,7 @@ export default function AuroraRunning() {
             <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
           </View>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("running.paceNote")}</Text>
         </ACard>
       )}
 

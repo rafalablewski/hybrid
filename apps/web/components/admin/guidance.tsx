@@ -32,7 +32,7 @@ export default function AdminGuidance() {
                   textTransform: "uppercase",
                   letterSpacing: ".08em",
                   padding: "5px 9px",
-                  borderRadius: 7,
+                  borderRadius: "var(--r-field)",
                   cursor: "pointer",
                   border: `1px solid ${g.id === guideId ? `${AMBER}66` : LINE}`,
                   background: g.id === guideId ? `${AMBER}1c` : "transparent",
@@ -62,7 +62,7 @@ export default function AdminGuidance() {
                 alignItems: "center",
                 padding: "8px 10px",
                 marginBottom: 2,
-                borderRadius: 8,
+                borderRadius: "var(--r-field)",
                 border: "none",
                 cursor: "pointer",
                 textAlign: "left",
@@ -124,7 +124,7 @@ function Block({ b }: { b: GuideBlock }) {
         style={{
           borderLeft: `3px solid ${AMBER}`,
           background: `${AMBER}12`,
-          borderRadius: 8,
+          borderRadius: "var(--r-field)",
           padding: "10px 14px",
         }}
       >
@@ -153,7 +153,7 @@ function Block({ b }: { b: GuideBlock }) {
               flexShrink: 0,
               width: 22,
               height: 22,
-              borderRadius: 7,
+              borderRadius: "var(--r-field)",
               background: `${LIME}1f`,
               border: `1px solid ${LIME}55`,
               color: txt(LIME),
