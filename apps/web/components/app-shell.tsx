@@ -44,6 +44,7 @@ import AuroraSport from "./aurora/sport";
 import AuroraCompetition from "./aurora/competition";
 import AuroraPeriodize from "./aurora/periodize";
 import AuroraBuilder from "./aurora/builder";
+import AuroraLogger from "./aurora/logger";
 import SportScreen from "./sports";
 import CoachScreen from "./coach";
 import Connections from "./connections";
@@ -628,17 +629,28 @@ export default function AppShell() {
 
         {screen === "video" && (aurora ? <AuroraVideo /> : <VideoScreen />)}
 
-        {screen === "log" && (
-          <Logger
-            sessions={sessions}
-            initialBlocks={pendingBlocks}
-            onSaved={() => {
-              setPendingBlocks(undefined);
-              refresh();
-              setScreen("history");
-            }}
-          />
-        )}
+        {screen === "log" &&
+          (aurora ? (
+            <AuroraLogger
+              sessions={sessions}
+              initialBlocks={pendingBlocks}
+              onSaved={() => {
+                setPendingBlocks(undefined);
+                refresh();
+                setScreen("history");
+              }}
+            />
+          ) : (
+            <Logger
+              sessions={sessions}
+              initialBlocks={pendingBlocks}
+              onSaved={() => {
+                setPendingBlocks(undefined);
+                refresh();
+                setScreen("history");
+              }}
+            />
+          ))}
 
         {screen === "history" && (aurora ? <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} /> : <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />)}
 
