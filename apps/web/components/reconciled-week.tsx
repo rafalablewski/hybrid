@@ -36,6 +36,7 @@ export default function ReconciledWeek({
   experience,
   equipment,
   style,
+  readOnly = false,
 }: {
   macro: Macrocycle;
   currentWeek?: number;
@@ -44,11 +45,17 @@ export default function ReconciledWeek({
   experience?: Experience;
   equipment?: Equipment;
   style?: React.CSSProperties;
+  /** Coached, non-paying client: show the coach's assigned plan AS WRITTEN
+   *  (no readiness modulation) and hide the schedule / auto-resync controls. */
+  readOnly?: boolean;
 }) {
   const aurora = useTemplate().template === "aurora";
+  // Read-only (coached) view shows the plan as the coach authored it — no
+  // biometric/readiness adjustment (that adaptive layer is the paid upgrade).
+  const effBio = readOnly ? undefined : bio;
   const rx = useMemo(
-    () => prescribeSession(toTrainingLog(sessions), bio, { profiles: velocityProfiles(sessions), experience, equipment }),
-    [sessions, bio, experience, equipment],
+    () => prescribeSession(toTrainingLog(sessions), effBio, { profiles: velocityProfiles(sessions), experience, equipment }),
+    [sessions, effBio, experience, equipment],
   );
 
   // the athlete's saved sport selection (client-only — avoids an SSR mismatch).
@@ -126,7 +133,7 @@ export default function ReconciledWeek({
   // (not in a loop, and not on every re-render).
   const syncedFor = useRef(0);
   useEffect(() => {
-    if (!reconciled) return;
+    if (!reconciled || readOnly) return;
     const latest = sessions.reduce((m, s) => Math.max(m, Date.parse(s.startedAt) || 0), 0);
     if (!latest || latest <= syncedFor.current) return;
     let cancelled = false;
@@ -160,9 +167,13 @@ export default function ReconciledWeek({
           <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
             {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
           </Chip>
-          <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
-            {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
-          </button>
+          {readOnly ? (
+            <Chip c={VIOLET}>assigned by your coach · read-only</Chip>
+          ) : (
+            <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
+              {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
+            </button>
+          )}
         </div>
       </div>
       {scheduled && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}

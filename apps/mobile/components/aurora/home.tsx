@@ -30,7 +30,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { useSession } from "../../lib/session";
-import { usePersona } from "../../lib/persona";
+import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { track } from "../../lib/track";
@@ -58,6 +58,9 @@ export default function AuroraHome() {
   const router = useRouter();
   const { name } = useSession();
   const isAthlete = usePersona() !== "casual";
+  // Coached (free) client: read-only view of the coach-assigned plan.
+  const coached = useHasActiveCoach();
+  const readOnlyPlan = coached && !isAthlete;
   const { width } = useWindowDimensions();
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -119,6 +122,15 @@ export default function AuroraHome() {
   // Reconciled "This week" — macrocycle phase arbitrates daily + sport transfer.
   const sportRx = useMemo(() => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined), [sportSel, sessions]);
   const reconciled = useMemo(() => (macro ? reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek }) : null), [macro, rx, sportRx, currentWeek]);
+  // Coached read-only: the coach's plan AS WRITTEN (no readiness modulation).
+  const rxAsWritten = useMemo(
+    () => prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
+    [log, sessions, prefExp, prefEquip],
+  );
+  const reconciledView = useMemo(
+    () => (macro ? (readOnlyPlan ? reconcilePlan({ macro, daily: rxAsWritten, sport: sportRx, currentWeek }) : reconciled) : null),
+    [macro, readOnlyPlan, rxAsWritten, reconciled, sportRx, currentWeek],
+  );
   const daysPerWeek = useMemo(() => trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 }), [sessions, prefDays]);
 
   const [scheduling, setScheduling] = useState(false);
@@ -136,7 +148,7 @@ export default function AuroraHome() {
 
   // Auto re-sync once per newly-logged session (mirrors classic home).
   useEffect(() => {
-    if (!reconciled) return;
+    if (!reconciled || readOnlyPlan) return;
     const latest = sessions.reduce((m, s) => Math.max(m, Date.parse(s.startedAt) || 0), 0);
     if (!latest || latest <= autoSynced.current) return;
     autoSynced.current = latest;
@@ -305,8 +317,8 @@ export default function AuroraHome() {
           </Pressable>
         )}
 
-        {/* SEASON — phase timeline */}
-        {isAthlete && macro && phase && (
+        {/* SEASON — phase timeline (athlete, or coached read-only) */}
+        {(isAthlete || coached) && macro && phase && (
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>
               Training for · {macro.goalOrSport} · {phase.block.label} phase
@@ -322,31 +334,39 @@ export default function AuroraHome() {
           </View>
         )}
 
-        {/* THIS WEEK — reconciled plan + schedule/re-sync */}
-        {isAthlete && macro && reconciled && (
+        {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
+        {(isAthlete || coached) && macro && reconciledView && (
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.violet, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>
-                This week · {reconciled.phase.label} · week {reconciled.phase.week}
+                This week · {reconciledView.phase.label} · week {reconciledView.phase.week}
               </Text>
-              <View style={{ backgroundColor: `${reconciled.phase.kind === "recovery" ? C.amber : C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, reconciled.phase.kind === "recovery" ? C.amber : C.lime) }}>
-                  {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
+              <View style={{ backgroundColor: `${reconciledView.phase.kind === "recovery" ? C.amber : C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, reconciledView.phase.kind === "recovery" ? C.amber : C.lime) }}>
+                  {reconciledView.phase.kind === "recovery" ? "deload week" : "load week"}
                 </Text>
               </View>
             </View>
-            <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
-            </Pressable>
-            {scheduled && <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 8 }}>{scheduled}</Text>}
+            {readOnlyPlan ? (
+              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.violet) }}>assigned by your coach · read-only</Text>
+              </View>
+            ) : (
+              <>
+                <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
+                </Pressable>
+                {scheduled && <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 8 }}>{scheduled}</Text>}
+              </>
+            )}
             <View style={{ flexDirection: "row", gap: 18, marginTop: 14 }}>
-              <Metric label="Intensity" value={`${reconciled.intensity}`} color={C.chalk} C={C} />
-              <Metric label="Volume" value={`${reconciled.volume}`} color={C.chalk} C={C} />
-              <Metric label="Load ×" value={reconciled.loadFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
-              <Metric label="Volume ×" value={reconciled.volumeFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
+              <Metric label="Intensity" value={`${reconciledView.intensity}`} color={C.chalk} C={C} />
+              <Metric label="Volume" value={`${reconciledView.volume}`} color={C.chalk} C={C} />
+              <Metric label="Load ×" value={reconciledView.loadFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
+              <Metric label="Volume ×" value={reconciledView.volumeFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
             </View>
             <View style={{ marginTop: 12 }}>
-              {reconciled.blocks.map((b, i) => (
+              {reconciledView.blocks.map((b, i) => (
                 <View key={`${b.name}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
                   <View style={{ flex: 1, paddingRight: 10 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
@@ -360,7 +380,7 @@ export default function AuroraHome() {
                 </View>
               ))}
             </View>
-            <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.chalk, lineHeight: 18, marginTop: 12 }}>{reconciled.why}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.chalk, lineHeight: 18, marginTop: 12 }}>{reconciledView.why}</Text>
           </View>
         )}
 

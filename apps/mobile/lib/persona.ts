@@ -65,7 +65,9 @@ export function useClientPersonaChoice(): ClientPersona | null {
   );
 }
 
-/** Whether the signed-in client has an ACTIVE coach (→ adaptive on the seat). */
+/** Whether the signed-in client has an ACTIVE coach. Drives the READ-ONLY view
+ *  of coach-assigned content for casual coached clients — it does NOT elevate the
+ *  persona (a coach link never grants Full; see resolvePersona). */
 export function useHasActiveCoach(): boolean {
   return useSyncExternalStore(
     subscribe,
@@ -74,11 +76,11 @@ export function useHasActiveCoach(): boolean {
   );
 }
 
-/** The resolved persona for the signed-in user (role + client choice +
- *  billing entitlement, plus an active coach which confers Full on the seat). */
+/** The resolved persona for the signed-in user (role + client choice + billing).
+ *  A coach link is intentionally NOT a factor — coached clients stay casual and
+ *  get read-only assigned content via useHasActiveCoach. */
 export function usePersona(): Persona {
   const { role, entitlement } = useSession();
   const c = useClientPersonaChoice();
-  const coached = useHasActiveCoach();
-  return resolvePersona(role, c ?? undefined, entitlement, coached);
+  return resolvePersona(role, c ?? undefined, entitlement);
 }

@@ -15,6 +15,17 @@ const coachName = (c?: Invite["coach"]) => c?.name || c?.email?.split("@")[0] ||
 export default function CoachInviteBanner() {
   const [invites, setInvites] = useState<Invite[]>([]);
 
+  // Finish a coach-led onboarding claim: if a QR/link invite token was stashed
+  // before sign-up (see /invite/[token]), claim it now that we're signed in.
+  useEffect(() => {
+    let token: string | null = null;
+    try { token = localStorage.getItem("hybrid.coachInviteToken"); } catch { /* ignore */ }
+    if (!token) return;
+    fetch(`/api/coach/invite/${token}/claim`, { method: "POST" })
+      .catch(() => {})
+      .finally(() => { try { localStorage.removeItem("hybrid.coachInviteToken"); } catch { /* ignore */ } });
+  }, []);
+
   useEffect(() => {
     fetch("/api/coach/links")
       .then((r) => (r.ok ? r.json() : { asClient: [] }))

@@ -32,7 +32,7 @@ import { track } from "../../lib/track";
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
-import { usePersona } from "../../lib/persona";
+import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useDraft } from "../../lib/draft";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
@@ -67,6 +67,10 @@ function ClassicHome() {
   // Twin). Switchable from More.
   const persona = usePersona();
   const isAthlete = persona !== "casual";
+  // A coached (free) client: not an athlete, but gets a READ-ONLY view of the
+  // plan their coach assigned. readOnlyPlan = show it without edit/schedule.
+  const coached = useHasActiveCoach();
+  const readOnlyPlan = coached && !isAthlete;
   const { draft } = useDraft();
   const { defaultStart, units } = useLoggerPrefs();
   const { t } = useLang();
@@ -166,6 +170,17 @@ function ClassicHome() {
     if (!macro) return null;
     return reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek });
   }, [macro, rx, sportRx, currentWeek]);
+  // Coached read-only view: the coach's plan AS WRITTEN — recompute the daily
+  // prescription without biometrics so no readiness modulation is applied (that
+  // adaptive layer is the paid upgrade).
+  const rxAsWritten = useMemo(
+    () => prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
+    [log, sessions, prefExp, prefEquip],
+  );
+  const reconciledView = useMemo(() => {
+    if (!macro) return null;
+    return readOnlyPlan ? reconcilePlan({ macro, daily: rxAsWritten, sport: sportRx, currentWeek }) : reconciled;
+  }, [macro, readOnlyPlan, rxAsWritten, reconciled, sportRx, currentWeek]);
 
   const daysPerWeek = useMemo(
     () => trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 }),
@@ -201,13 +216,14 @@ function ClassicHome() {
   // regenerate the rest off that real result. The ref tracks the latest session
   // already handled, so it fires once per new session, not in a loop.
   useEffect(() => {
-    if (!reconciled) return;
+    // Coached read-only clients never auto-schedule (they only VIEW the plan).
+    if (!reconciled || readOnlyPlan) return;
     const latest = sessions.reduce((m, s) => Math.max(m, Date.parse(s.startedAt) || 0), 0);
     if (!latest || latest <= autoSynced.current) return;
     autoSynced.current = latest;
     if (weekNeedsResync(assignments, sessions)) void doSchedule(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reconciled, assignments, sessions]);
+  }, [reconciled, readOnlyPlan, assignments, sessions]);
 
   // Consumer engines run on REAL sessions (empty → honest "getting started").
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
@@ -438,7 +454,7 @@ function ClassicHome() {
 
       {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
           absorbed from the retired web Dashboard, driven by the real season. */}
-      {isAthlete && macro && seasonBlock && (
+      {(isAthlete || coached) && macro && seasonBlock && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
           <Kicker color={C.lime}>Training for · {macro.goalOrSport} · {seasonBlock.label} phase</Kicker>
           <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 6 }}>
@@ -452,21 +468,22 @@ function ClassicHome() {
         </Card>
       )}
 
-      {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport) */}
-      {isAthlete && reconciled && (
+      {/* THIS WEEK — reconciled plan (macrocycle phase arbitrates route + sport).
+          A coached casual client sees the coach-assigned week READ-ONLY. */}
+      {(isAthlete || coached) && reconciledView && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Kicker color={C.violet}>This week · {reconciled.phase.label} · wk {reconciled.phase.week}</Kicker>
-            <Chip color={reconciled.phase.kind === "recovery" ? C.amber : C.lime}>
-              {reconciled.phase.kind === "recovery" ? "deload" : "load"}
+            <Kicker color={C.violet}>This week · {reconciledView.phase.label} · wk {reconciledView.phase.week}</Kicker>
+            <Chip color={reconciledView.phase.kind === "recovery" ? C.amber : C.lime}>
+              {reconciledView.phase.kind === "recovery" ? "deload" : "load"}
             </Chip>
           </View>
           <View style={{ flexDirection: "row", gap: 16, marginTop: 10 }}>
-            <Mono color={C.ash}>intensity {reconciled.intensity}</Mono>
-            <Mono color={C.ash}>load ×{reconciled.loadFactor.toFixed(2)}</Mono>
-            <Mono color={C.ash}>vol ×{reconciled.volumeFactor.toFixed(2)}</Mono>
+            <Mono color={C.ash}>intensity {reconciledView.intensity}</Mono>
+            <Mono color={C.ash}>load ×{reconciledView.loadFactor.toFixed(2)}</Mono>
+            <Mono color={C.ash}>vol ×{reconciledView.volumeFactor.toFixed(2)}</Mono>
           </View>
-          {reconciled.blocks.map((b, i) => (
+          {reconciledView.blocks.map((b, i) => (
             <View key={`${b.name}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
@@ -477,15 +494,23 @@ function ClassicHome() {
               <Chip color={b.source === "sport" ? C.amber : C.lime}>{b.scheme}</Chip>
             </View>
           ))}
-          <Mono color={C.chalk} style={{ marginTop: 10, lineHeight: 19 }}>{reconciled.why}</Mono>
-          <Pressable
-            onPress={scheduleThisWeek}
-            disabled={scheduling}
-            style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}
-          >
-            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
-          </Pressable>
-          {scheduled && <Mono color={C.lime} style={{ marginTop: 8, textAlign: "center" }}>{scheduled}</Mono>}
+          <Mono color={C.chalk} style={{ marginTop: 10, lineHeight: 19 }}>{reconciledView.why}</Mono>
+          {readOnlyPlan ? (
+            <View style={{ marginTop: 12, alignSelf: "flex-start" }}>
+              <Chip color={C.violet}>assigned by your coach · read-only</Chip>
+            </View>
+          ) : (
+            <>
+              <Pressable
+                onPress={scheduleThisWeek}
+                disabled={scheduling}
+                style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}
+              >
+                <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
+              </Pressable>
+              {scheduled && <Mono color={C.lime} style={{ marginTop: 8, textAlign: "center" }}>{scheduled}</Mono>}
+            </>
+          )}
         </Card>
       )}
 

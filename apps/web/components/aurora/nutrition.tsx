@@ -22,6 +22,8 @@ export default function AuroraNutrition() {
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
+  useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
   const C = (v: string) => `var(--color-${v})`;
 
   const load = useCallback(async () => {
@@ -75,6 +77,25 @@ export default function AuroraNutrition() {
           return <button key={g.id} onClick={() => setGoal(g.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{g.label}</button>;
         })}
       </div>
+
+      {coachDiet?.diet && (
+        <div style={{ ...card, marginTop: 16, borderLeft: `3px solid ${C("violet")}` }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
+            Assigned by {coachDiet.coachName ?? "your coach"} · read-only
+          </div>
+          <div style={{ display: "flex", gap: 22, marginTop: 10, flexWrap: "wrap" }}>
+            {([["Energy", coachDiet.diet.kcal, "kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
+              ([label, val, unit]) => (val != null ? (
+                <div key={label}>
+                  <div style={{ fontWeight: 800, fontSize: 20 }}>{val}{unit === "g" ? "g" : ""}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{label}{unit === "kcal" ? " · kcal" : ""}</div>
+                </div>
+              ) : null),
+            )}
+          </div>
+          {coachDiet.diet.note && <p style={{ fontSize: 13, lineHeight: 1.5, marginTop: 10, color: C("chalk") }}>{coachDiet.diet.note}</p>}
+        </div>
+      )}
 
       {personalized ? (
         <>

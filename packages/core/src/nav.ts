@@ -132,19 +132,20 @@ function effectiveMinPersona(item: NavItem, access?: PersonaAccess): Persona {
 /** Resolve the active persona from the auth role, a client's mode choice, and
  *  the account's billing entitlement. A coach/admin role outranks everything; a
  *  client gets the athlete (Full) surface only when they've both chosen it AND
- *  carry a paid entitlement — otherwise they stay casual (Simple, free). */
+ *  carry a paid entitlement — otherwise they stay casual (Simple, free).
+ *
+ *  Being COACHED does NOT grant Full. A client linked to a coach stays casual
+ *  and gets a READ-ONLY view of what the coach assigned (plans, programs, diet)
+ *  — surfaced via the separate `useHasActiveCoach` flag on each client. Editing,
+ *  adding and the adaptive engine stay a paid (athlete) upgrade, so a coach link
+ *  can never be used to obtain Pro for free. */
 export function resolvePersona(
   role: "client" | "coach" | "admin",
   clientChoice?: ClientPersona,
   entitlement: Entitlement = "free",
-  hasActiveCoach = false,
 ): Persona {
   if (role === "admin") return "admin";
   if (role === "coach") return "coach";
-  // A client with an ACTIVE coach gets the full athlete experience (adaptive
-  // plan, reconciled week, Twin) on their coach's seat — "your coach pays, you
-  // get Full" — regardless of their own billing entitlement or mode choice.
-  if (hasActiveCoach) return "athlete";
   if (clientChoice === "athlete" && entitlement === "paid") return "athlete";
   return "casual";
 }

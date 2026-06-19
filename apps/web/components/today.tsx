@@ -23,7 +23,7 @@ import {
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
 import AskCoach from "./ai-coach";
-import { usePersona } from "@/lib/persona";
+import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { readIntake, type Intake } from "@/lib/intake";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
@@ -71,6 +71,9 @@ export default function Today({
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Twin). Switchable from Settings.
   const isAthlete = usePersona() !== "casual";
+  // A coached (free) client: not an athlete, but gets a READ-ONLY view of the
+  // plan their coach assigned (see useHasActiveCoach).
+  const coached = useHasActiveCoach();
   // The onboarding intake (experience + equipment) tailors the prescription —
   // read client-side after mount to avoid an SSR mismatch.
   const [intake, setIntake] = useState<Intake>({});
@@ -269,9 +272,11 @@ export default function Today({
 
       {/* THIS WEEK — the reconciled plan (macrocycle phase arbitrates route + sport).
           Shown from session zero once enrolled, so the plan is visible before the
-          first logged workout (it just reads cold-start defaults until then). */}
-      {isAthlete && macro && (
-        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} style={{ gridColumn: "span 2" }} />
+          first logged workout (it just reads cold-start defaults until then).
+          A coached casual client sees the coach-assigned season READ-ONLY (as
+          written, no readiness modulation); athletes get the live adaptive one. */}
+      {(isAthlete || coached) && macro && (
+        <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} readOnly={!isAthlete} style={{ gridColumn: "span 2" }} />
       )}
 
       {/* ON TRACK? — accountability */}

@@ -65,6 +65,8 @@ model User {
   clientLinks   CoachLink[]     @relation("asCoach")
   coachGroups   CoachGroup[]    @relation("coachGroups")
   coachPrograms CoachProgram[]  @relation("coachPrograms")
+  coachInvites  CoachInvite[]   @relation("coachInvites")
+  coachDiets    CoachDiet[]     @relation("coachDiets")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
@@ -157,6 +159,51 @@ model CoachProgram {
   createdAt DateTime @default(now())
 
   @@index([coachId])
+}
+
+// A pre-account invite from a coach to a prospective client who isn't on HYBRID
+// yet. Three delivery methods share ONE invite: a QR code, a copyable link, or
+// (later) email/SMS. The client CLAIMS it — by scanning the QR / opening the
+// link, or an email auto-match on first sign-up — which creates an ACTIVE
+// CoachLink (the act of claiming is the consent). Single-use + expiring. The
+// claimed client lands on the free plan with read-only access to what the coach
+// assigns. See reference/sql-coach-invites.sql (soft-degrades until run).
+model CoachInvite {
+  id          String    @id @default(cuid())
+  coach       User      @relation("coachInvites", fields: [coachId], references: [id])
+  coachId     String
+  token       String    @unique // random; encodes the link + QR, also the claim key
+  email       String? // optional auto-match target (verified email on signup)
+  phone       String? // optional auto-match target (future SMS)
+  status      String    @default("PENDING") // PENDING | CLAIMED | REVOKED
+  claimedById String? // the user who claimed it
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  @@index([coachId])
+  @@index([email])
+}
+
+// A coach-assigned DIET (macro targets) for one client — the nutrition analogue
+// of an assigned training plan. The client VIEWS it read-only on their Nutrition
+// screen (alongside their own free macro logging); editing their own adaptive
+// targets is still the paid upgrade. One active diet per coach↔client pair, only
+// honoured while an ACTIVE CoachLink exists. See reference/sql-coach-diet.sql.
+model CoachDiet {
+  id        String   @id @default(cuid())
+  coach     User     @relation("coachDiets", fields: [coachId], references: [id])
+  coachId   String
+  clientId  String // the athlete this diet is for
+  kcal      Int?
+  protein   Int? // grams/day
+  carbs     Int? // grams/day
+  fat       Int? // grams/day
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([coachId, clientId])
+  @@index([clientId])
 }
 
 // The daily check-in — a personal training-readiness log. The client submits a

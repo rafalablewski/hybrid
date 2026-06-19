@@ -42,6 +42,23 @@ export async function getOrCreateDbUser(req?: Request) {
 }
 
 /**
+ * The signed-in user's billing entitlement, read from Supabase auth metadata
+ * ('free' | 'paid'; default 'free'). Server-side mirror of the client check —
+ * used to gate paid (athlete) AUTHORING actions on the API so a coached/casual
+ * free client can't POST around the hidden UI. Being coached never confers this.
+ */
+export async function getAuthEntitlement(req?: Request): Promise<"free" | "paid"> {
+  const supabase = await createClient();
+  const authHeader = req?.headers.get("authorization");
+  const user =
+    authHeader && authHeader.toLowerCase().startsWith("bearer ")
+      ? (await supabase.auth.getUser(authHeader.slice(7).trim())).data.user
+      : (await supabase.auth.getUser()).data.user;
+  const meta = user?.user_metadata ?? {};
+  return String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+}
+
+/**
  * Materialize any pending org invitations addressed to this user's email into
  * real memberships. Called from /api/me (app load), NOT on every request, so it
  * doesn't add a query to every authenticated endpoint.
@@ -56,5 +73,35 @@ export async function claimPendingInvites(userId: string, email: string) {
       create: { orgId: inv.orgId, userId, role: inv.role, teamId: inv.teamId },
     });
     await prisma.orgInvite.update({ where: { id: inv.id }, data: { status: "accepted" } });
+  }
+}
+
+/**
+ * Materialize any pending COACH invites addressed to this user's (verified)
+ * email into an ACTIVE CoachLink — the coach-led onboarding path for someone who
+ * wasn't on HYBRID when invited. Mirrors claimPendingInvites; called from /api/me
+ * on app load. Soft no-ops until reference/sql-coach-invites.sql has been run.
+ */
+export async function claimPendingCoachInvites(userId: string, email: string) {
+  if (!email) return;
+  try {
+    const invites = await prisma.coachInvite.findMany({
+      where: { email: email.toLowerCase(), status: "PENDING" },
+    });
+    const now = Date.now();
+    for (const inv of invites) {
+      if (inv.expiresAt.getTime() < now || inv.coachId === userId) continue;
+      // Atomic: never leave an ACTIVE link with a still-PENDING invite.
+      await prisma.$transaction([
+        prisma.coachLink.upsert({
+          where: { coachId_clientId: { coachId: inv.coachId, clientId: userId } },
+          update: { status: "ACTIVE" },
+          create: { coachId: inv.coachId, clientId: userId, status: "ACTIVE" },
+        }),
+        prisma.coachInvite.update({ where: { id: inv.id }, data: { status: "CLAIMED", claimedById: userId } }),
+      ]);
+    }
+  } catch {
+    // CoachInvite table not migrated yet — onboarding-by-email just no-ops.
   }
 }

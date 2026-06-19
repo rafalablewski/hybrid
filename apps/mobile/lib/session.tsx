@@ -6,9 +6,26 @@ import {
   type ReactNode,
 } from "react";
 import { AppState } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Session as SupaSession } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { flushGuestSessions } from "./guest";
+import { claimCoachInvite } from "./api";
+
+// Finish a coach-led onboarding claim: a QR/link invite token stashed before
+// sign-up (see app/invite/[token]) is claimed once we're authenticated.
+async function claimStoredCoachInvite() {
+  try {
+    const token = await AsyncStorage.getItem("hybrid.coachInviteToken");
+    if (!token) return;
+    const r = await claimCoachInvite(token);
+    if (r.ok || /no longer valid|expired|coach yourself/i.test(r.error || "")) {
+      await AsyncStorage.removeItem("hybrid.coachInviteToken");
+    }
+  } catch {
+    // best-effort — try again next launch
+  }
+}
 
 import type { Entitlement } from "@hybrid/core";
 
@@ -36,12 +53,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setReady(true);
       // Restored a signed-in session: flush any workouts saved offline.
-      if (data.session) flushGuestSessions().catch(() => {});
+      if (data.session) { flushGuestSessions().catch(() => {}); void claimStoredCoachInvite(); }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       // First real sign-in: carry any guest workouts up to the account.
-      if (event === "SIGNED_IN") flushGuestSessions().catch(() => {});
+      if (event === "SIGNED_IN") { flushGuestSessions().catch(() => {}); void claimStoredCoachInvite(); }
     });
     // Back to foreground (likely back online): retry the offline sync.
     const appSub = AppState.addEventListener("change", (state) => {
