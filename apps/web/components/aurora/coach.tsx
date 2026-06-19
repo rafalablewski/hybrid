@@ -11,6 +11,7 @@ import {
   toTrainingLog,
   type LoggedSession,
 } from "@hybrid/core";
+import CoachInvite from "../coach-invite";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, marginBottom: 12 } as const;
@@ -152,6 +153,9 @@ export default function AuroraCoach() {
             </Mono>
           )}
         </div>
+
+        {/* Onboard a brand-new client (not on HYBRID yet) via link / QR / email. */}
+        <CoachInvite />
 
         {clients.map((l) => (
           <div key={l.id} onClick={() => setOpenLink(l)} style={{ ...card, borderLeft: `3px solid ${C("lime")}`, cursor: "pointer" }}>

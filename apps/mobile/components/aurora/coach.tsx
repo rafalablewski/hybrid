@@ -19,6 +19,7 @@ import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import CoachGroups from "../coach-groups";
 import CoachPrograms from "../coach-programs";
+import CoachInvite from "../coach-invite";
 import { useFeatureFlag } from "../../lib/flags";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
@@ -138,6 +139,9 @@ export default function AuroraCoach() {
               </Text>
             )}
           </ACard>
+
+          {/* Onboard a brand-new client (not on HYBRID yet) via link / QR / email. */}
+          <View style={{ marginTop: 12 }}><CoachInvite /></View>
 
           {clients.map((l) => (
             <Pressable key={l.id} onPress={() => setOpen(l)} style={{ marginTop: 12 }}>

@@ -12,7 +12,24 @@
 - **Reuse:** mirror the existing `claimPendingInvites` org-invite pattern in
   `apps/web/lib/server-auth.ts` for claiming coach invites by verified email.
 
-**Status:** PLAN ONLY — implemented after step ① (access change is done).
+## PROGRESS — IMPLEMENTED (2026-06-19)
+- [x] `CoachInvite` model (prisma) + `reference/sql-coach-invites.sql` (RLS, soft-degrade).
+- [x] APIs: `POST/GET /api/coach/invite`, `GET/DELETE /api/coach/invite/[token]`,
+      `POST /api/coach/invite/[token]/claim` (ACTIVE on claim, single-use, expiry,
+      roster cap, existing-user fallback to PENDING link).
+- [x] Email auto-match: `claimPendingCoachInvites` in server-auth, called from `/api/me`.
+- [x] Post-login token claim: web CoachInviteBanner + mobile session provider.
+- [x] Web claim page `app/invite/[token]/page.tsx`; mobile claim route `app/invite/[token].tsx`.
+- [x] Shared coach UI `coach-invite.tsx` (web + mobile) in classic + Aurora coach
+      screens. QR: web via `qrcode` toDataURL; mobile via a View matrix (no native dep).
+- [x] mobile `lib/api.ts` helpers; capabilities `coach-client-invite` (shipped) +
+      `coach-invite-sms` / `coach-invite-email` (blocked).
+- [x] Web + mobile typecheck clean; core 496/496; iOS export green.
+
+**Remaining (blocked, tracked in capabilities):** automated SMS (Twilio) +
+automated email (Resend/Supabase) delivery; native deep-link app-open (EAS build).
+
+**Status:** DONE for v1 (QR + link + email auto-match).
 **Builds on:** `plan-coached-readonly.md` (coached client = Casual + read-only
 assigned; Pro to edit/add).
 

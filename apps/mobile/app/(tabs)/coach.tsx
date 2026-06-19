@@ -20,6 +20,7 @@ import { useTemplate } from "../../lib/template";
 import AuroraCoach from "../../components/aurora/coach";
 import CoachGroups from "../../components/coach-groups";
 import CoachPrograms from "../../components/coach-programs";
+import CoachInvite from "../../components/coach-invite";
 import { useFeatureFlag } from "../../lib/flags";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
@@ -136,6 +137,9 @@ function ClassicCoach() {
               </Mono>
             )}
           </Card>
+
+          {/* Onboard a brand-new client (not on HYBRID yet) via link / QR / email. */}
+          <CoachInvite />
 
           {clients.map((l) => (
             <Pressable key={l.id} onPress={() => setOpen(l)}>

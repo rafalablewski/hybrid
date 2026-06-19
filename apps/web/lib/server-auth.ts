@@ -75,3 +75,30 @@ export async function claimPendingInvites(userId: string, email: string) {
     await prisma.orgInvite.update({ where: { id: inv.id }, data: { status: "accepted" } });
   }
 }
+
+/**
+ * Materialize any pending COACH invites addressed to this user's (verified)
+ * email into an ACTIVE CoachLink — the coach-led onboarding path for someone who
+ * wasn't on HYBRID when invited. Mirrors claimPendingInvites; called from /api/me
+ * on app load. Soft no-ops until reference/sql-coach-invites.sql has been run.
+ */
+export async function claimPendingCoachInvites(userId: string, email: string) {
+  if (!email) return;
+  try {
+    const invites = await prisma.coachInvite.findMany({
+      where: { email: email.toLowerCase(), status: "PENDING" },
+    });
+    const now = Date.now();
+    for (const inv of invites) {
+      if (inv.expiresAt.getTime() < now || inv.coachId === userId) continue;
+      await prisma.coachLink.upsert({
+        where: { coachId_clientId: { coachId: inv.coachId, clientId: userId } },
+        update: { status: "ACTIVE" },
+        create: { coachId: inv.coachId, clientId: userId, status: "ACTIVE" },
+      });
+      await prisma.coachInvite.update({ where: { id: inv.id }, data: { status: "CLAIMED", claimedById: userId } });
+    }
+  } catch {
+    // CoachInvite table not migrated yet — onboarding-by-email just no-ops.
+  }
+}

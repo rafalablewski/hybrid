@@ -13,6 +13,7 @@ import {
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import CoachPrograms from "./coach-programs";
+import CoachInvite from "./coach-invite";
 import { useFlags } from "@/lib/use-flags";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
@@ -139,6 +140,9 @@ export default function CoachScreen() {
             </Mono>
           )}
         </Card>
+
+        {/* Onboard a brand-new client (not on HYBRID yet) via link / QR / email. */}
+        <CoachInvite />
 
         {clients.map((l) => (
           <Card key={l.id} onClick={() => setOpenLink(l)} style={{ borderLeft: `3px solid ${LIME}` }}>
