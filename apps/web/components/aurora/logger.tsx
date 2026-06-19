@@ -5,11 +5,29 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
+  newPrsInSession,
+  newCardioPrsInSession,
+  sessionVolume,
+  blockBestE1rm,
+  fmtTonnage,
+  fmtWeight,
+  type WeightUnit,
+  type PrHit,
+  type CardioPrHit,
   type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+
+type FinishData = {
+  title: string;
+  sets: number;
+  volume: number;
+  prs: PrHit[];
+  cardioPrs: CardioPrHit[];
+  firstEver: boolean;
+};
 
 type Routine = { id: string; name: string; blocks: SessionBlock[] };
 
@@ -39,6 +57,9 @@ export default function AuroraLogger({
   const [error, setError] = useState("");
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineMsg, setRoutineMsg] = useState("");
+  // The finish CELEBRATION — at parity with the mobile summary. Finishing is the
+  // payoff, so instead of silently navigating away we land on a win screen.
+  const [done, setDone] = useState<FinishData | null>(null);
   const prefs = useLoggerPrefs();
 
   useEffect(() => {
@@ -133,12 +154,32 @@ export default function AuroraLogger({
         setSaving(false);
         return;
       }
-      onSaved();
+      // Compute the win against everything done before this session, then land
+      // on the celebration (the parent's onSaved fires when they tap Done).
+      const cleanBlocks = payload.blocks as SessionBlock[];
+      const finished: LoggedSession = {
+        id: "new",
+        title: payload.title,
+        startedAt: payload.startedAt,
+        completedAt: payload.completedAt,
+        blocks: cleanBlocks,
+      };
+      setSaving(false);
+      setDone({
+        title: payload.title,
+        sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
+        volume: sessionVolume(cleanBlocks),
+        prs: newPrsInSession(finished, sessions),
+        cardioPrs: newCardioPrsInSession(finished, sessions),
+        firstEver: sessions.length === 0,
+      });
     } catch {
       setError("Network error — try again.");
       setSaving(false);
     }
   };
+
+  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} />;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -243,6 +284,56 @@ export default function AuroraLogger({
         </button>
         {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
       </div>
+    </div>
+  );
+}
+
+/** The finish CELEBRATION — the web twin of the mobile workout summary. A win
+ *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
+ *  a short navigator.vibrate where the device supports it (the web analog of the
+ *  native success haptic). */
+function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; onDone: () => void }) {
+  const { title, sets, volume, prs, cardioPrs, firstEver } = data;
+  const milestone = firstEver || prs.length > 0 || cardioPrs.length > 0;
+  useEffect(() => {
+    if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
+    }
+  }, [milestone]);
+  const prLine = (p: PrHit) =>
+    p.previous == null
+      ? `${p.lift} ${fmtWeight(p.e1rm, units)} (first time)`
+      : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
+  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — faster pace`);
+  return (
+    <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div className="win-pop" style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
+        <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
+        <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? "First one done." : "Session complete."}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginTop: 6 }}>{sets} sets · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
+      </div>
+
+      {prs.length > 0 && (
+        <div className="win-pop" style={{ ...card, borderColor: C("lime"), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", marginBottom: 12 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: C("lime") }}>🏆 {prs.length} new PR{prs.length > 1 ? "s" : ""}</div>
+          {prs.slice(0, 5).map((p) => (
+            <div key={p.lift} style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6 }}>{prLine(p)}</div>
+          ))}
+        </div>
+      )}
+
+      {cardioPrs.length > 0 && (
+        <div className="win-pop" style={{ ...card, borderColor: C("blue"), background: "color-mix(in srgb, var(--color-blue) 8%, transparent)", marginBottom: 12 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: C("blue") }}>🏃 {cardioPrs.length} cardio PR{cardioPrs.length > 1 ? "s" : ""}</div>
+          {cardioPrs.slice(0, 5).map((p) => (
+            <div key={`${p.move}-${p.kind}`} style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6 }}>{cardioLine(p)}</div>
+          ))}
+        </div>
+      )}
+
+      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 6 }}>
+        Done →
+      </button>
     </div>
   );
 }
