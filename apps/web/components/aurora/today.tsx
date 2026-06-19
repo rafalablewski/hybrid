@@ -108,7 +108,7 @@ export default function AuroraToday({
   };
 
   const iconBtn = { width: 44, height: 44, borderRadius: "50%", background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 22 } as const;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" }}>

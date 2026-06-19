@@ -232,11 +232,12 @@ export function Card({
   accent?: string;
 }) {
   const { palette } = useTheme();
-  // Aurora gives every card a softer, larger corner radius (callers can still
-  // override via style.borderRadius). The classic radius is untouched.
+  // Aurora gives every card the reference card radius (28 — matches the kit's
+  // RADIUS.card and the /hybrid design). Callers can override via style. Classic
+  // radius is untouched.
   const aurora = useTemplate().template === "aurora";
   if (glass) {
-    const gs: ViewStyle | undefined = aurora ? { borderRadius: 24, ...(style ?? {}) } : style;
+    const gs: ViewStyle | undefined = aurora ? { borderRadius: 28, ...(style ?? {}) } : style;
     return (
       <GlassCard style={gs} accent={accent}>
         {children}
@@ -250,7 +251,7 @@ export function Card({
           backgroundColor: palette.card,
           borderWidth: 1,
           borderColor: palette.line,
-          borderRadius: aurora ? 24 : 16,
+          borderRadius: aurora ? 28 : 16,
           padding: 16,
           marginBottom: 12,
         },

@@ -6,7 +6,7 @@ import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
 
 /** AURORA Sport (web) — sport + level picker driving the shared
  *  prescribeForSport engine; working loads tuned to the athlete's logged lifts. */

@@ -7,7 +7,7 @@ import { setClientPersona } from "@/lib/persona";
 import { track } from "@/lib/track";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
 
 /**
  * AURORA HYBRID Full — the single upgrade surface, in the rounded Aurora style.
@@ -103,7 +103,7 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
       </div>
 
       {/* hero */}
-      <div style={{ marginTop: 18, padding: 22, borderRadius: 24, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 13%, transparent), color-mix(in srgb, ${C("violet")} 10%, transparent))` }}>
+      <div style={{ marginTop: 18, padding: 22, borderRadius: 28, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 13%, transparent), color-mix(in srgb, ${C("violet")} 10%, transparent))` }}>
         <span style={{ fontFamily: "var(--font-display)", fontSize: 11, color: C("lime"), border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "3px 12px", fontWeight: 700 }}>
           12+ pro tools · one subscription
         </span>

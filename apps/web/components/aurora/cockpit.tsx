@@ -155,7 +155,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
       <p style={{ fontSize: 14, lineHeight: 1.6, color: C("ash") }}>Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen. It&apos;s part of <b style={{ color: C("lime") }}>Full</b>.</p>
       <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
         {TEASE.map((s) => (
-          <div key={s.kicker} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: 12 }}>
+          <div key={s.kicker} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C(s.color) }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(s.color) }}>{s.kicker}</div>

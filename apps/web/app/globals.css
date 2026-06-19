@@ -126,7 +126,7 @@ body {
    be reached by a class selector), so swapping them here re-rounds every Card,
    Chip, Select, input and tooltip across the whole app at once. */
 :root { --r-card: 16px; --r-chip: 5px; --r-field: 9px; --r-tip: 8px; }
-[data-template="aurora"] { --r-card: 24px; --r-chip: 999px; --r-field: 14px; --r-tip: 14px; }
+[data-template="aurora"] { --r-card: 28px; --r-chip: 999px; --r-field: 16px; --r-tip: 14px; }
 
 /* AURORA turns the Liquid-Glass surface into a SOLID ink2 card (the bespoke
    Aurora look) — flat fill, solid hairline border, no blur/grain/sheen/glow —

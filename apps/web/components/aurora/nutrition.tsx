@@ -197,7 +197,7 @@ function Bar({ cur, target, color }: { cur: number; target: number; color: strin
 function MacroRow({ label, cur, target, color }: { label: string; cur: number; target: number; color: string }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
-    <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 16, marginTop: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, marginTop: 12 }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
         <Bar cur={cur} target={target} color={color} />
