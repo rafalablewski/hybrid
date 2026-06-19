@@ -23,6 +23,32 @@ own accounts and credentials, so they run **on your computer**, not in CI.
    pnpm install
    ```
 
+## Build the latest code first (do this every time)
+
+`eas build` packages your **local, committed git state** and uploads *that* to
+Expo's builders — it does **not** pull from GitHub. So a build only contains the
+PRs you've actually pulled onto your machine. If recent PRs were merged on
+GitHub but your local checkout is behind, the build ships **stale code** with no
+warning.
+
+Before any build, get current and reinstall deps (dependencies change across
+PRs, and a build off un-reinstalled `node_modules` can fail or ship stale deps):
+
+```bash
+cd ~/hybrid
+git checkout main
+git pull origin main
+git log --oneline -1   # confirm the newest commit is at HEAD
+git status             # must be clean
+pnpm install           # deps changed across these PRs
+```
+
+Notes:
+- Store builds should come from an up-to-date **`main`**. Feature branches only
+  have the latest code if they've been merged with / rebased onto `main`.
+- This is a full native rebuild. For JS/TS-only changes, `eas update` (OTA) is
+  far faster — see "Faster iteration" below.
+
 ## Build + submit (run from `apps/mobile`)
 
 ```bash
