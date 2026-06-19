@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,13 @@ import {
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Easing,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -65,6 +68,21 @@ export function AuroraScreen({
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
+  // Subtle entrance — content fades + rises on every screen ENTRY (push or tab
+  // switch), so navigation feels like motion, not a hard cut. Re-runs on focus.
+  const enter = useRef(new Animated.Value(0)).current;
+  useFocusEffect(
+    useCallback(() => {
+      enter.setValue(0);
+      const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+      anim.start();
+      return () => anim.stop();
+    }, [enter]),
+  );
+  const enterStyle = {
+    opacity: enter,
+    transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+  };
   const body = scroll ? (
     <ScrollView
       // Clear the floating Aurora pill nav so the last content row never hides
@@ -85,7 +103,7 @@ export function AuroraScreen({
       {/* Lift fields above the keyboard so low inputs / submit buttons (login,
           builder, check-in, nutrition…) aren't hidden when it opens. */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        {body}
+        <Animated.View style={[{ flex: 1 }, enterStyle]}>{body}</Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

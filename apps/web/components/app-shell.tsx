@@ -505,6 +505,9 @@ export default function AppShell() {
           </div>
         </header>
 
+        {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
+            changes (Aurora only). The banners/header above stay put. */}
+        <div key={screen} className={aurora ? "aurora-enter" : undefined}>
         {screen === "analytics" && (
           <>
             {allowedScopes.length > 1 && (
@@ -697,6 +700,7 @@ export default function AppShell() {
         {screen === "statistics" && <StatisticsScreen embedded />}
 
         {screen === "settings" && <AccountSettings />}
+        </div>
       </main>
 
       {/* Aurora: the floating pill bottom nav (coexists with the sidebar) — the

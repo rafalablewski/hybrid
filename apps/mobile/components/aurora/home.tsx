@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -97,6 +97,19 @@ export default function AuroraHome() {
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Subtle entrance — content fades + rises each time Today gains focus, matching
+  // the AuroraScreen transition so the home doesn't hard-cut in.
+  const enter = useRef(new Animated.Value(0)).current;
+  useFocusEffect(
+    useCallback(() => {
+      enter.setValue(0);
+      const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+      anim.start();
+      return () => anim.stop();
+    }, [enter]),
+  );
+  const enterStyle = { opacity: enter, transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] };
+
   // Onboarding prefs that tailor the prescription (client-only).
   useEffect(() => {
     AsyncStorage.getItem("hybrid.sport").then((raw) => {
@@ -189,6 +202,7 @@ export default function AuroraHome() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
+        <Animated.View style={enterStyle}>
         {/* Greeting + search/bell — the greeting is one quiet line so the PLAN
             (the reason you opened the app), not your own name, is the hero. */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -492,6 +506,7 @@ export default function AuroraHome() {
             </View>
           </View>
         )}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
