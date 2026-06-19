@@ -174,20 +174,20 @@ export default function AuroraHome() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 132 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
-        {/* Greeting + search/bell */}
+        {/* Greeting + search/bell — the greeting is one quiet line so the PLAN
+            (the reason you opened the app), not your own name, is the hero. */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View>
-            <Text style={{ fontFamily: F.reg, fontSize: 16, color: C.ash }}>Hi,</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5 }}>{name}</Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 10 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: 15, color: C.ash }}>
+            Hi, <Text style={{ fontFamily: F.bold, color: C.chalk }}>{name.split(" ")[0]}</Text>
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
             {/* Was a bare View — looked tappable but did nothing. Wire it to the
                 searchable Exercises browser so the magnifier actually searches. */}
-            <Pressable onPress={() => router.push("/exercises")} accessibilityRole="button" accessibilityLabel="Search exercises" style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="search" size={22} color={C.ash} />
+            <Pressable onPress={() => router.push("/exercises")} accessibilityRole="button" accessibilityLabel="Search exercises" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="search" size={20} color={C.ash} />
             </Pressable>
-            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel="Notifications" style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="bell" size={22} color={C.ash} />
+            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel="Notifications" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="bell" size={20} color={C.ash} />
             </Pressable>
           </View>
         </View>
@@ -203,7 +203,7 @@ export default function AuroraHome() {
           // height instead of stretching to match the taller AI-coach card —
           // otherwise the plan card renders mostly-empty tall whitespace.
           contentContainerStyle={{ gap: 12, alignItems: "flex-start" }}
-          style={{ marginTop: 20, marginHorizontal: -2 }}
+          style={{ marginTop: 14, marginHorizontal: -2 }}
         >
           {/* card 1 — plan today */}
           <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>

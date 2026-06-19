@@ -99,15 +99,15 @@ export default function AuroraToday({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" }}>
-      {/* Greeting + search/bell */}
+      {/* Greeting + search/bell — the greeting is a single quiet line so the
+          PLAN (the reason you opened the app) is the hero, not your own name. */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ color: C("ash"), fontSize: 16 }}>Hi,</div>
-          <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: "-.02em" }}>{name}</div>
+        <div style={{ color: C("ash"), fontSize: 15 }}>
+          Hi, <span style={{ fontWeight: 700, color: C("chalk") }}>{name.split(" ")[0]}</span>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <div style={iconBtn}><AuroraIcon name="search" size={22} color={C("ash")} /></div>
-          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label="Notifications"><AuroraIcon name="bell" size={22} color={C("ash")} /></button>
+          <button onClick={() => (onNavigate ? onNavigate("exercises") : router.push("/exercises"))} style={iconBtn} aria-label="Search exercises"><AuroraIcon name="search" size={20} color={C("ash")} /></button>
+          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label="Notifications"><AuroraIcon name="bell" size={20} color={C("ash")} /></button>
         </div>
       </div>
 
@@ -116,7 +116,7 @@ export default function AuroraToday({
       <div
         ref={pagerRef}
         onScroll={onPagerScroll}
-        style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", marginTop: 20, paddingBottom: 2 }}
+        style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", marginTop: 14, paddingBottom: 2 }}
       >
         {/* card 1 — Your plan today */}
         <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", borderLeft: `3px solid ${C("lime")}` }}>
