@@ -281,8 +281,8 @@ export default function AuroraToday({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your week</span>
             <div style={{ display: "flex", gap: 8 }}>
-              {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 10px" }}>🏆 {recap.prs.length} PR</span>}
-              {recap.cardioPrs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ink"), background: C("blue"), borderRadius: 999, padding: "3px 10px" }}>🏃 {recap.cardioPrs.length} PR</span>}
+              {recap.prs.length > 0 && <span className="win-pop" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 10px" }}>🏆 {recap.prs.length} PR</span>}
+              {recap.cardioPrs.length > 0 && <span className="win-pop" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ink"), background: C("blue"), borderRadius: 999, padding: "3px 10px" }}>🏃 {recap.cardioPrs.length} PR</span>}
             </div>
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>

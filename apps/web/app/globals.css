@@ -277,6 +277,12 @@ body {
 .cmd-orb:hover .cmd-dot { transform: rotate(45deg) scale(1.05); border-radius: 9px; }
 @keyframes cmdFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
 
+/* Win pop-in — a PR/achievement should LAND, not just appear (Today recap badges).
+   Honours reduced-motion. */
+@keyframes winPop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.win-pop { animation: winPop .42s cubic-bezier(.2,.7,.3,1.2) both; }
+@media (prefers-reduced-motion: reduce) { .win-pop { animation: none; } }
+
 .cmd-scrim {
   position: fixed;
   inset: 0;

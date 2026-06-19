@@ -696,7 +696,7 @@ export default function Workout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
-  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} />;
+  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} haptics={prefs.haptics} />;
 
   const ssLabels = supersetLabels(exercises);
 
@@ -1129,11 +1129,13 @@ function Summary({
   router,
   t,
   units,
+  haptics,
 }: {
   summary: Summ;
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
   units: WeightUnit;
+  haptics: boolean;
 }) {
   const C = useTheme().palette;
   const R = auroraRadii(useTemplate().template === "aurora");
@@ -1143,6 +1145,27 @@ function Summary({
   // climax (and our download engine), so the CTA leans into it.
   const hasWin = prs.length > 0 || cardioPrs.length > 0;
   const milestone = firstEver || hasWin;
+
+  // Finishing is the payoff — make it FELT. A success haptic (a heavier knock
+  // layered on for a PR/first), and a spring entrance on the hero badge so the
+  // win lands instead of just appearing.
+  const pop = useRef(new Animated.Value(milestone ? 0.6 : 0.85)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (haptics) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      if (milestone) {
+        const id = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 150);
+        // best-effort; component stays mounted on the summary
+        void id;
+      }
+    }
+    Animated.parallel([
+      Animated.spring(pop, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 320, useNativeDriver: true }),
+    ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const shareLabel = firstEver
     ? t("summary.shareFirst")
     : hasWin
@@ -1174,9 +1197,9 @@ function Summary({
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
         <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+          <Animated.View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center", transform: [{ scale: pop }] }}>
             <Text style={{ fontSize: 34, color: txt(C, C.lime), fontFamily: F.black }}>{firstEver ? "🎉" : "✓"}</Text>
-          </View>
+          </Animated.View>
           <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>
             {firstEver ? t("summary.firstTitle") : t("summary.complete")}
           </Text>
@@ -1185,9 +1208,9 @@ function Summary({
           )}
         </View>
 
-        {/* PR celebration — the reason to keep coming back */}
+        {/* PR celebration — the reason to keep coming back (fades/scales in) */}
         {prs.length > 0 && (
-          <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12 }}>
+          <Animated.View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12, opacity: fade, transform: [{ scale: pop }] }}>
             <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.lime) }}>
               🏆 {prs.length} {t("summary.newPrs")}
             </Text>
@@ -1196,7 +1219,7 @@ function Summary({
                 {prLine(p)}
               </Text>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* Cardio PR celebration — runs count too */}
