@@ -49,6 +49,7 @@ import AuroraRunTrack from "./aurora/run-track";
 import AuroraCoach from "./aurora/coach";
 import AuroraUpgrade from "./aurora/upgrade";
 import AuroraOrg from "./aurora/org";
+import { AuroraAthleteAnalytics, AuroraCoachAnalytics, AuroraOperatorAnalytics } from "./aurora/analytics";
 import AuroraTalent from "./aurora/talent";
 import AuroraTactical from "./aurora/tactical";
 import AuroraTeamCompare from "./aurora/team-compare";
@@ -573,9 +574,9 @@ export default function AppShell() {
                 </div>
               );
             })()}
-            {scope === "athlete" && <AthleteAnalytics sessions={sessions} />}
-            {scope === "coach" && <CoachAnalytics roster={roster} />}
-            {scope === "operator" && <OperatorAnalytics />}
+            {scope === "athlete" && (aurora ? <AuroraAthleteAnalytics sessions={sessions} /> : <AthleteAnalytics sessions={sessions} />)}
+            {scope === "coach" && (aurora ? <AuroraCoachAnalytics roster={roster} /> : <CoachAnalytics roster={roster} />)}
+            {scope === "operator" && (aurora ? <AuroraOperatorAnalytics /> : <OperatorAnalytics />)}
           </>
         )}
 
