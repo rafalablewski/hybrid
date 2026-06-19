@@ -30,7 +30,36 @@ const hpiColor = (b: string) =>
  * endurance), each a live snapshot off real data that jumps to the deep screen.
  * Athlete/coach personas only (gated in the nav). (Phase 2.)
  */
-export default function Cockpit({
+export default function Cockpit(props: {
+  sessions: LoggedSession[];
+  bio?: Biometrics;
+  macro?: Macrocycle | null;
+  currentWeek?: number;
+  setScreen: (id: string) => void;
+  /** Called after the inline "Set up / change plan" flow enrolls a macrocycle —
+   *  app-shell refreshes the macro and lands the athlete back on Today. */
+  onEnrolled: () => void;
+}) {
+  // Freemium funnel: a casual user reaches the Cockpit as a LOCKED bait (it shows
+  // in nav with a lock). Render the upsell teaser instead of the live cockpit;
+  // a paid user in Simple mode just flips to Full, a free user hits billing.
+  // Only persona/entitlement hooks live here, BEFORE the early return — the live
+  // cockpit (with its own data hooks) is delegated to <CockpitBody/> so the
+  // hook count of THIS component never changes when the persona flips in place
+  // (the paid "Switch to Full" re-renders this without unmounting). Mirrors the
+  // mobile cockpit, which splits the teaser from <CockpitFull/> the same way.
+  const persona = usePersona();
+  const { entitlement } = useSession();
+  if (persona === "casual") {
+    // Casual no longer has a Cockpit nav entry (the upgrade lives on one Full
+    // page) — this teaser is the fallback if they reach it via a deep link.
+    const unlock = () => (entitlement === "paid" ? setClientPersona("athlete") : props.setScreen("upgrade"));
+    return <CockpitTeaser paid={entitlement === "paid"} onUnlock={unlock} />;
+  }
+  return <CockpitBody {...props} />;
+}
+
+function CockpitBody({
   sessions,
   bio,
   macro,
@@ -43,25 +72,12 @@ export default function Cockpit({
   macro?: Macrocycle | null;
   currentWeek?: number;
   setScreen: (id: string) => void;
-  /** Called after the inline "Set up / change plan" flow enrolls a macrocycle —
-   *  app-shell refreshes the macro and lands the athlete back on Today. */
   onEnrolled: () => void;
 }) {
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
   // The onboarding ("Get started") funnel is no longer a standalone tab — it
   // lives here, under Goal & season, as an expandable setup flow.
   const [setupOpen, setSetupOpen] = useState(false);
-  // Freemium funnel: a casual user reaches the Cockpit as a LOCKED bait (it shows
-  // in nav with a lock). Render the upsell teaser instead of the live cockpit;
-  // a paid user in Simple mode just flips to Full, a free user hits billing.
-  const persona = usePersona();
-  const { entitlement } = useSession();
-  if (persona === "casual") {
-    // Casual no longer has a Cockpit nav entry (the upgrade lives on one Full
-    // page) — this teaser is the fallback if they reach it via a deep link.
-    const unlock = () => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("upgrade"));
-    return <CockpitTeaser paid={entitlement === "paid"} onUnlock={unlock} />;
-  }
   useEffect(() => {
     const s = readSportSelection();
     if (s?.sport) setSport({ sport: s.sport, levelIdx: typeof s.levelIdx === "number" ? s.levelIdx : 0 });
