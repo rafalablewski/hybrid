@@ -771,7 +771,7 @@ export default function Workout() {
                 <Pressable
                   onPress={() => setRestSince(null)}
                   hitSlop={8}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: accent }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: R.field, borderWidth: 1, borderColor: accent }}
                 >
                   <Text style={{ fontFamily: F.bold, fontSize: 12, color: txt(C, accent) }}>■ {t("workout.stopRest")}</Text>
                 </Pressable>
@@ -783,7 +783,7 @@ export default function Workout() {
                     <Pressable
                       key={sec}
                       onPress={() => pickRest(sec)}
-                      style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
+                      style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: R.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
                     >
                       <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.blue) : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
                     </Pressable>
@@ -828,7 +828,7 @@ export default function Workout() {
                   <Pressable
                     onPress={() => supersetWithPrev(nextUid)}
                     hitSlop={6}
-                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
                   >
                     <Text style={{ fontFamily: F.mono, fontSize: 11, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("workout.supersetJoined") : t("workout.superset")}</Text>
                   </Pressable>
@@ -875,7 +875,7 @@ export default function Workout() {
                         <Pressable
                           onPress={() => cycleType(x.uid, i)}
                           onLongPress={() => removeSet(x.uid, i)}
-                          style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
+                          style={{ width: 28, height: 30, borderRadius: R.field, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
                         >
                           <Text style={{ fontFamily: F.mono, fontSize: 13, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                         </Pressable>
@@ -927,7 +927,7 @@ export default function Workout() {
                       {prefs.quickIncrement > 0 && (
                         <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                           {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
-                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line }}>
+                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: R.field, borderWidth: 1, borderColor: C.line }}>
                               <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
                             </Pressable>
                           ))}
@@ -1008,7 +1008,7 @@ export default function Workout() {
                 placeholderTextColor={C.ash}
                 autoFocus
                 onSubmitEditing={() => addExercise(custom)}
-                style={{ fontFamily: F.reg, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
+                style={{ fontFamily: F.reg, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
               />
 
               {recentShown.length > 0 && (
