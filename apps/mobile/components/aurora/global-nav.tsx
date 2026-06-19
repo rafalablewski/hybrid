@@ -1,4 +1,4 @@
-import { View, Pressable } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navVisibleTo, type AuroraIconName } from "@hybrid/core";
@@ -7,6 +7,7 @@ import { useNavAccess } from "../../lib/access";
 import { useSession } from "../../lib/session";
 import { useTemplate } from "../../lib/template";
 import { useTheme } from "../../lib/theme";
+import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
 // The five funnel destinations, mirroring the uploaded design's bottom nav —
@@ -85,11 +86,17 @@ export default function AuroraGlobalNav() {
               accessibilityState={{ selected: focused }}
               accessibilityLabel={tab.label}
               hitSlop={6}
-              style={{ flex: 1, height: 52, alignItems: "center", justifyContent: "center" }}
+              style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}
             >
-              <View style={{ width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
-                <AuroraIcon name={tab.glyph} size={22} color={focused ? C.ink : C.ash} />
+              {/* A bare icon left "More" reading as a Settings cog. The label
+                  under every glyph names the destination (incl. "More") so the
+                  bar is self-explanatory and the active tab is unmistakable. */}
+              <View style={{ width: 44, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
+                <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
               </View>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
+                {tab.label}
+              </Text>
             </Pressable>
           );
         })}

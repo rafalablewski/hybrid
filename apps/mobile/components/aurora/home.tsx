@@ -173,7 +173,7 @@ export default function AuroraHome() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 132 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         {/* Greeting + search/bell */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <View>
@@ -197,7 +197,10 @@ export default function AuroraHome() {
           snapToInterval={cardW + 12}
           decelerationRate="fast"
           onMomentumScrollEnd={onPagerScroll}
-          contentContainerStyle={{ gap: 12 }}
+          // align top so a shorter card (e.g. Plan today) keeps its NATURAL
+          // height instead of stretching to match the taller AI-coach card —
+          // otherwise the plan card renders mostly-empty tall whitespace.
+          contentContainerStyle={{ gap: 12, alignItems: "flex-start" }}
           style={{ marginTop: 20, marginHorizontal: -2 }}
         >
           {/* card 1 — plan today */}
@@ -256,9 +259,11 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
               Claude reads your real readiness, fatigue and velocity and writes you a personalized note for the day.
             </Text>
-            {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
+            {/* Paid intelligence — casual sees the pitch + one upgrade tap.
+                Athletes get the coach note INLINE (embedded — no nested screen
+                /header/card, which previously double-wrapped this card). */}
             {isAthlete ? (
-              <AuroraAiCoach />
+              <AuroraAiCoach embedded />
             ) : (
               <Pressable
                 onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-aicoach" }); router.push("/upgrade"); }}

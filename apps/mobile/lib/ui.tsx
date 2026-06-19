@@ -172,11 +172,16 @@ export function Screen({
   onRefresh?: () => void;
 }) {
   const { palette } = useTheme();
+  // Aurora renders a FLOATING pill nav over every screen (incl. pushed pages),
+  // so the last bit of content (share buttons, sign-out, the Builder CTA) would
+  // sit UNDER the bar. Reserve room for it so everything stays scrollable into
+  // view. Classic keeps the tight padding (its bar is a real, laid-out tab bar).
+  const aurora = useTemplate().template === "aurora";
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <GlassField />
       <ScrollView
-        contentContainerStyle={{ padding: 18, paddingBottom: 48 }}
+        contentContainerStyle={{ padding: 18, paddingBottom: aurora ? 132 : 48 }}
         refreshControl={
           onRefresh ? (
             <RefreshControl

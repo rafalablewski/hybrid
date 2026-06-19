@@ -63,7 +63,9 @@ export function AuroraScreen({
   const { palette } = useTheme();
   const body = scroll ? (
     <ScrollView
-      contentContainerStyle={{ padding, paddingBottom: 112, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      // Clear the floating Aurora pill nav (icon + label ≈ 96px + safe-area) so
+      // the last content row never hides under the bar.
+      contentContainerStyle={{ padding, paddingBottom: 132, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
       {children}

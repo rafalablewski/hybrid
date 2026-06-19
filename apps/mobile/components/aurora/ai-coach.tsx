@@ -7,8 +7,14 @@ import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
- *  fallback) and rendered note as the classic, in the rounded look. */
-export default function AuroraAiCoach() {
+ *  fallback) and rendered note as the classic, in the rounded look.
+ *
+ *  `embedded` renders JUST the note body (chips + text + Ask again) with no
+ *  screen chrome — used inside the Home "Ask your coach" card, which already
+ *  carries its own header/description, so we don't double-wrap a whole screen
+ *  (heading + back + card) inside another card. The default (full screen) is
+ *  used by the standalone /ai-coach route. */
+export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean }) {
   const { palette: C } = useTheme();
   const router = useRouter();
   const [note, setNote] = useState<CoachNote | null>(null);
@@ -31,6 +37,34 @@ export default function AuroraAiCoach() {
     </View>
   );
 
+  // The note body — shared between the embedded card and the full screen.
+  const body = (
+    <>
+      {busy ? (
+        <View style={{ marginTop: embedded ? 10 : 18, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <ActivityIndicator color={C.violet} />
+          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Reading your training…</Text>
+        </View>
+      ) : note?.text ? (
+        <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+            {note.source ? chip(note.source === "ai" ? "Claude" : "Engine", note.source === "ai" ? C.lime : C.ash) : null}
+            {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.blue) : null}
+            {note.hpi != null ? chip(`HPI ${note.hpi}`, C.violet) : null}
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: embedded ? 13.5 : 15, lineHeight: embedded ? 21 : 24, color: txt(C, C.chalk) }}>{note.text}</Text>
+        </View>
+      ) : null}
+
+      <View style={{ marginTop: embedded ? 12 : 16 }}>
+        <APill label={busy ? "Thinking…" : "Ask again →"} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 13 }} />
+      </View>
+    </>
+  );
+
+  // Embedded: no screen/header/inner-card — the Home card is the wrapper.
+  if (embedded) return body;
+
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -44,26 +78,7 @@ export default function AuroraAiCoach() {
           Claude reads your real readiness, fatigue, velocity and goal and writes you a personalized note —
           what to push and what to hold back.
         </Text>
-
-        {busy ? (
-          <View style={{ marginTop: 18, flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <ActivityIndicator color={C.violet} />
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Reading your training…</Text>
-          </View>
-        ) : note?.text ? (
-          <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-              {note.source ? chip(note.source === "ai" ? "Claude" : "Engine", note.source === "ai" ? C.lime : C.ash) : null}
-              {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.blue) : null}
-              {note.hpi != null ? chip(`HPI ${note.hpi}`, C.violet) : null}
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 24, color: txt(C, C.chalk) }}>{note.text}</Text>
-          </View>
-        ) : null}
-
-        <View style={{ marginTop: 16 }}>
-          <APill label={busy ? "Thinking…" : "Ask again →"} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 14 }} />
-        </View>
+        {body}
       </ACard>
     </AuroraScreen>
   );
