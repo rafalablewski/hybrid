@@ -82,7 +82,7 @@
 
   /* pricing tiers */
   .layer{margin-top:30px}
-  .layer-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .layer-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .layer-head h3{font-size:15px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--fg)}
   .layer-head span{font-size:13px;color:var(--fg-faint)}
   .tier{border:1px solid var(--line);background:var(--ink-2);border-radius:16px;padding:22px;position:relative;display:flex;flex-direction:column}
@@ -95,6 +95,8 @@
   .tier ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:auto}
   .tier li{position:relative;padding-left:18px;font-size:13px;color:var(--fg-dim)}
   .tier li::before{content:"·";position:absolute;left:4px;color:var(--lime);font-weight:700}
+  .subnote{border:1px dashed var(--line);background:var(--ink-2);border-radius:14px;padding:18px 22px;margin-top:18px;font-size:14.5px;color:var(--fg-dim);line-height:1.6}
+  .subnote b{color:var(--lime)}
 
   /* tables / model */
   table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
@@ -110,8 +112,9 @@
   .tbl-note{font-family:var(--mono);font-size:11.5px;color:var(--fg-faint);margin-top:14px;line-height:1.7}
   .tbl-note b{color:var(--fg-dim)}
   .tablewrap{overflow-x:auto}
+  .modelhead{margin:30px 0 6px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-dim)}
 
-  /* defense list (anti-leakage) */
+  /* defense list (integrity) */
   .defense{display:flex;flex-direction:column;gap:14px;margin-top:28px}
   .drow{display:grid;grid-template-columns:42px 1fr;gap:16px;border:1px solid var(--line);background:var(--ink-2);border-radius:14px;padding:20px 22px}
   .drow .dn{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--lime)}
@@ -188,13 +191,13 @@
   <div class="wrap">
     <span class="tag">Go-to-market memo · B2B2C beachhead · Confidential</span>
     <h1>Own the <span>coach</span>.<br>Capture the gym.<br>Monetize the floor.</h1>
-    <p class="lead">HYBRID's first revenue doesn't come from ad spend — it comes from the people who already own the trust. We sell to <strong>10 operators</strong> (5 gym owners, 5 coaches) and let them carry an adaptive coaching platform to <strong>1,650 athletes</strong>. This memo lays out the value to each party, the three-layer pricing architecture, the controls that protect that pricing, and the unit economics that make the beachhead a repeatable, capital-efficient growth engine.</p>
+    <p class="lead">HYBRID's first revenue doesn't come from ad spend — it comes from the people who already own the trust. We sell to <strong>10 operators</strong> (5 gym owners, 5 coaches) and let them carry an adaptive coaching platform to <strong>1,650 athletes</strong>. This memo lays out the value to each party, the three-layer pricing architecture, the model that protects that pricing from leakage, and the unit economics that make the beachhead a repeatable, capital-efficient growth engine.</p>
     <div class="heromath">
       <div class="chip lime"><b>5 + 5</b><span>Gyms + coaches</span></div>
       <div class="chip"><b>1,650</b><span>Athletes in reach</span></div>
       <div class="chip lime"><b>~84–95%</b><span>Gross margin</span></div>
       <div class="chip"><b>&gt;10:1</b><span>LTV / CAC (coach)</span></div>
-      <div class="chip"><b>~$9.1k</b><span>Base-case ARR / unit</span></div>
+      <div class="chip"><b>~$11.4k</b><span>Base-case ARR / unit</span></div>
     </div>
   </div>
 </header>
@@ -205,10 +208,10 @@
     <div class="secnum">01 · Executive summary</div>
     <div class="eyebrow">The thesis</div>
     <h2>A coach-led wedge into the fitness market.</h2>
-    <p class="lead">Cold consumer installs convert at 1–2% and churn fast. A platform a coach hands you in person — and uses with you every week — converts an order of magnitude better and retains because the relationship, not the app, is the lock-in. So the entry strategy is <strong>B2B2C</strong>: land the coach (recurring seat revenue), embed in the gym (free distribution + retention story), and let both pull the members onto the consumer tiers. Each <strong>(5 gyms + 5 coaches)</strong> set is a self-contained, profitable “beachhead unit” that one founder/rep can close in 8 weeks and then replicate.</p>
+    <p class="lead">Cold consumer installs convert at 1–2% and churn fast. A platform a coach hands you in person — and uses with you every week — converts an order of magnitude better and retains because the relationship, not the app, is the lock-in. So the entry strategy is <strong>B2B2C</strong>: land the coach (recurring seat revenue), embed in the gym (free distribution + retention story), and convert two pools of warm users — gym members and coached clients — onto the paid consumer tier. Each <strong>(5 gyms + 5 coaches)</strong> set is a self-contained, profitable “beachhead unit” that one founder/rep can close in 8 weeks and then replicate.</p>
 
     <div class="metrics">
-      <div class="metric"><div class="n">~$9.1k</div><div class="l">Base-case ARR from one beachhead unit (coach seats + consumer Pro)</div></div>
+      <div class="metric"><div class="n">~$11.4k</div><div class="l">Base-case ARR / unit (coach seats + member &amp; coached-client Pro)</div></div>
       <div class="metric"><div class="n">~386</div><div class="l">Engaged users seeded per unit — the data + testimonials that compound</div></div>
       <div class="metric"><div class="n">~$2.4k</div><div class="l">LTV of a single coach seat (96% margin, ~33-mo life)</div></div>
       <div class="metric"><div class="n">~$72/mo</div><div class="l">Total fixed opex today — the whole platform runs near-breakeven cost</div></div>
@@ -242,7 +245,7 @@
           <li><strong>Scale past floor hours:</strong> hold up to 40 athletes on one seat, including remote &amp; travelling clients.</li>
           <li><strong>Build once, assign to many:</strong> author a program, push it to a client or a whole group in two taps.</li>
           <li><strong>The weekly check-in loop:</strong> the ritual that converts one-off plans into monthly recurring client revenue.</li>
-          <li><strong>Adaptive does the grunt work:</strong> loads auto-adjust to each client's recovery between sessions — the coach supervises, doesn't recompute.</li>
+          <li><strong>Clients on the house:</strong> your clients use the app free — they get a read-only view of the plan &amp; diet you assigned, so there's no per-client cost to you.</li>
         </ul>
       </div>
       <div class="card pillar us">
@@ -250,7 +253,7 @@
         <h3>Recurring revenue, near-zero CAC, a data moat</h3>
         <ul>
           <li><strong>Predictable B2B MRR:</strong> coach seats are sticky, expand with roster size, and carry ~96% margin.</li>
-          <li><strong>Consumer upsell, organically:</strong> members self-convert Casual → Athlete once hooked — no paid acquisition.</li>
+          <li><strong>Two upsell pools:</strong> gym members <em>and</em> coached clients self-convert Casual → Pro once hooked — no paid acquisition.</li>
           <li><strong>Capital-efficient GTM:</strong> 1,650 warm users from 10 in-person conversations; the unit is replicable.</li>
           <li><strong>Compounding data:</strong> every logged session &amp; check-in refits the engine — better adaptation → higher retention → cheaper growth.</li>
         </ul>
@@ -265,7 +268,7 @@
     <div class="secnum">03 · Business model</div>
     <div class="eyebrow">Pricing architecture</div>
     <h2>Three separate revenue layers.</h2>
-    <p class="lead">The plans are deliberately distinct so they don't cannibalise each other: a free <strong>consumer</strong> on-ramp, a paid consumer <strong>upgrade</strong>, and a <strong>professional</strong> (B2B2C) layer where coaches pay per capacity and their clients ride included.</p>
+    <p class="lead">The plans are deliberately distinct so they don't cannibalise each other: a free <strong>consumer</strong> on-ramp, a paid consumer <strong>upgrade</strong>, and a <strong>professional</strong> (B2B2C) layer where coaches pay per capacity and their clients use the app free — read-only on what's assigned, never granted Pro by the link.</p>
 
     <!-- Consumer -->
     <div class="layer">
@@ -276,11 +279,11 @@
           <div class="price">$0</div>
           <div class="cap">Forever · the on-ramp</div>
           <ul>
-            <li>Log workouts &amp; cardio</li>
+            <li>Log workouts, cardio &amp; nutrition</li>
             <li>Browse, enroll &amp; follow a pre-built plan <em>as written</em></li>
             <li>History, calendar, basic progress (30-day window)</li>
             <li>PRs, streaks &amp; shareable recaps (the come-back loop)</li>
-            <li>No adaptive layer — plan does not auto-adjust</li>
+            <li>No self-authoring &amp; no adaptive engine</li>
           </ul>
         </div>
         <div class="tier hot">
@@ -289,28 +292,31 @@
           <div class="price">$12.99<small>/mo</small></div>
           <div class="cap">or $99 / yr (~36% off)</div>
           <ul>
-            <li><strong>Everything adaptive:</strong> readiness-adjusted auto-progression</li>
-            <li>Athlete Twin + Hybrid Performance Index (HPI)</li>
-            <li>AI coach, velocity-based training, adaptive nutrition</li>
+            <li><strong>Self-authoring:</strong> build, edit &amp; add your own plans &amp; templates</li>
+            <li><strong>Adaptive engine:</strong> readiness-adjusted auto-progression</li>
+            <li>Athlete Twin + HPI, AI coach, velocity training, adaptive nutrition</li>
             <li>Periodization, full analytics cockpit, unlimited history</li>
           </ul>
         </div>
       </div>
     </div>
 
+    <!-- Coached state -->
+    <div class="subnote"><b>Coached (free):</b> a client linked to an active coach gets the <b>Casual app</b> plus a <b>read-only</b> view of everything assigned — plans, programs &amp; diet. They can still log their own workouts &amp; intake (Casual), but <b>editing, adding or self-programming requires the Athlete (Pro) upgrade</b>. A coach link never grants Pro.</div>
+
     <!-- Professional -->
     <div class="layer">
-      <div class="layer-head"><h3>② Professional — Coach seats (B2B2C)</h3><span>Coach pays per roster capacity; rostered clients get Full <em>included</em> on the seat.</span></div>
+      <div class="layer-head"><h3>② Professional — Coach seats (B2B2C)</h3><span>Coach pays per roster capacity; their clients use the free app (read-only on assigned) — Pro is never bundled in.</span></div>
       <div class="grid g3">
         <div class="tier">
           <div class="nm">Starter</div>
           <div class="price">$29<small>/mo</small></div>
           <div class="cap">up to 10 athletes</div>
           <ul>
-            <li>Assign plans to clients</li>
+            <li>Assign plans &amp; diet to clients</li>
             <li>Weekly check-in review &amp; reply</li>
             <li>Mutual-consent client linking</li>
-            <li>Clients get Full, included</li>
+            <li>Clients view assigned, free</li>
           </ul>
         </div>
         <div class="tier hot">
@@ -322,7 +328,7 @@
             <li>Everything in Starter, plus:</li>
             <li>Client groups + <strong>bulk</strong> plan assignment</li>
             <li>Multi-week program builder</li>
-            <li>≈ $1.98 / client / mo at the cap</li>
+            <li>Up to 40 client relationships</li>
           </ul>
         </div>
         <div class="tier">
@@ -333,7 +339,7 @@
             <li>Everything in Pro, plus:</li>
             <li>Team OS — org graph, roles</li>
             <li>Segmentation &amp; team monitoring</li>
-            <li>≈ $1.33 / client / mo at the cap</li>
+            <li>For studios &amp; large rosters</li>
           </ul>
         </div>
       </div>
@@ -342,62 +348,36 @@
   </div>
 </section>
 
-<!-- INTEGRITY / ANTI-LEAKAGE -->
+<!-- INTEGRITY -->
 <section id="integrity">
   <div class="wrap">
     <div class="secnum">04 · Revenue integrity</div>
-    <div class="eyebrow">The leakage question</div>
-    <h2>“What stops people fake-joining a coach to get Pro free?”</h2>
-    <p class="lead">It's the right question — coached clients get Full <em>included</em>, so the obvious exploit is a group of friends nominating a “coach” and splitting one seat instead of each paying $12.99. The architecture closes this on three fronts: <strong>access is gated, capacity is paid, and the entitlement is conditional.</strong></p>
+    <div class="eyebrow">The leakage question, solved by design</div>
+    <h2>A coach link never grants Pro.</h2>
+    <p class="lead">The classic worry with any bundled tier is leakage — people fake-joining a coach to dodge the $12.99. We remove the incentive at the root. A coach relationship gives a client the <strong>free app plus a read-only view</strong> of what's been assigned (plans, programs, diet) — and nothing more. The paid powers (editing, adding, building, the adaptive engine) stay behind the Pro upgrade. There is simply no Full to farm.</p>
 
-    <div class="keyline">There is no free Full. It is <span>always funded</span> — either by the athlete ($12.99/$99) or by a coach's <span>capped, pre-paid</span> seat tied to a verified, consented, <span>active</span> relationship.</div>
+    <div class="keyline">Coached clients get the <span>free app</span> + a <span>read-only</span> view of what their coach assigned. Pro is <span>never</span> bundled into a coach seat — so it can't be gamed.</div>
 
     <div class="defense">
-      <div class="drow">
-        <div class="dn">1</div>
-        <div>
-          <h3>Coach is a verified role, not a toggle <span class="pill live">Live</span></h3>
-          <p>You can't self-declare as a coach. A user applies, an admin reviews credentials and approves — the role promotion is audited. No verified coach → no seat → no entitlement to hand out. This alone kills the “be your own coach” exploit.</p>
-        </div>
-      </div>
-      <div class="drow">
-        <div class="dn">2</div>
-        <div>
-          <h3>Mutual-consent, audited linking <span class="pill live">Live</span></h3>
-          <p>A client is attached only via a two-sided CoachLink — the coach initiates, the client accepts (or vice-versa), and it's logged. Nobody is silently added; every relationship has a paper trail an operator can inspect.</p>
-        </div>
-      </div>
-      <div class="drow">
-        <div class="dn">3</div>
-        <div>
-          <h3>Capacity is finite and pre-paid <span class="pill live">Live</span></h3>
-          <p>Every seat holds a hard cap (10 / 40 / 150). Each client granted Full <em>consumes a slot the coach already paid for</em>. There is no marginal “free” entitlement — the coach buys the headroom up front. Even at the worst-case arbitrage ($79 ÷ 40 ≈ $1.98/client), the company still collects the seat fee, locks the users in, and captures their data.</p>
-        </div>
-      </div>
-      <div class="drow">
-        <div class="dn">4</div>
-        <div>
-          <h3>Entitlement is bound to an ACTIVE link <span class="pill live">Live</span></h3>
-          <p>Full is granted by <em>resolving the persona from a live relationship</em>. End or expire the CoachLink and the client reverts to Casual (free) immediately. There is no persistent, detached Pro to farm.</p>
-        </div>
-      </div>
-      <div class="drow">
-        <div class="dn">5</div>
-        <div>
-          <h3>Engagement gate — the clincher <span class="pill road">Recommended</span></h3>
-          <p>Seat-funded Full persists only while a <strong>real coaching touch</strong> exists: at least one assigned plan/program or check-in reply within a rolling 30-day window. A dormant “client” with zero coaching activity drops to Casual. This forces any would-be arbitrage coach to <em>actually coach 40 people</em> — at which point it isn't fake, it's the business working as intended.</p>
-        </div>
-      </div>
-      <div class="drow">
-        <div class="dn">6</div>
-        <div>
-          <h3>Abuse analytics &amp; operator review <span class="pill road">Recommended</span></h3>
-          <p>Flag seats where many clients share a device/IP, never receive a plan, or sit on an uncredentialed coach. The audit trail already exists; this layers detection on top so outliers surface for manual review.</p>
-        </div>
-      </div>
+      <div class="drow"><div class="dn">1</div><div>
+        <h3>Entitlement is independent of the coach link <span class="pill road">This change</span></h3>
+        <p>Today, a live coach link silently unlocks the full athlete tier on the coach's seat. We're cutting that path: a client's tier is decided solely by their own billing. An active coach now unlocks <em>read-only assigned content</em>, not paid features.</p>
+      </div></div>
+      <div class="drow"><div class="dn">2</div><div>
+        <h3>Coached = Casual + read-only assigned <span class="pill road">This change</span></h3>
+        <p>A coached client keeps everything Casual allows (log workouts &amp; intake, history, follow plans) and additionally sees the plan, program &amp; diet their coach assigned — view-only. To edit, add or self-program, they upgrade to Pro like anyone else.</p>
+      </div></div>
+      <div class="drow"><div class="dn">3</div><div>
+        <h3>Relationship integrity still holds <span class="pill live">Live</span></h3>
+        <p>Coach is a verified, admin-approved role; clients attach only via mutual-consent, audited links; access ends when the link ends. These protect the coaching relationship — and now there's no entitlement riding on them to exploit.</p>
+      </div></div>
+      <div class="drow"><div class="dn">4</div><div>
+        <h3>The old leak becomes a lead <span class="pill live">Upside</span></h3>
+        <p>Coached clients are warm, engaged, already-in-the-app users. With Pro the only way to self-program, a meaningful share upgrades — turning what would have been a free-rider loophole into a <em>second</em> consumer-revenue pool.</p>
+      </div></div>
     </div>
 
-    <p class="tbl-note" style="margin-top:24px"><b>Net effect:</b> the exploit costs the exploiter a verified application, a paid seat slot, and ongoing coaching activity — to save ~$11/mo per person. The juice isn't worth the squeeze, and the few who try still pay us and feed the network. <b>Leakage is bounded by design, not policed by hope.</b></p>
+    <p class="tbl-note" style="margin-top:24px"><b>Net effect:</b> joining a coach yields zero paid capability, so the exploit's payoff is $0 — there's nothing to police. Meanwhile every coached client becomes a Pro upsell target. We close the leak and open a revenue line in the same move.</p>
   </div>
 </section>
 
@@ -410,67 +390,66 @@
     <p class="lead">Three scenarios, conservative assumptions. Fixed inputs: <strong>1,500 gym members</strong> (5 × 300) and <strong>150 coached clients</strong> (5 × 30). The <span class="lime">Base</span> column is the planning case.</p>
 
     <!-- Consumer funnel -->
-    <h3 style="margin:34px 0 6px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-dim)">A · Consumer funnel — gym members → Casual → Athlete</h3>
+    <h3 class="modelhead">A · Consumer funnel — gym members → Casual → Athlete</h3>
     <div class="tablewrap">
     <table>
-      <thead><tr>
-        <th>Stage</th>
-        <th class="num-col">Conservative</th>
-        <th class="num-col base-col">Base</th>
-        <th class="num-col">Bull</th>
-      </tr></thead>
+      <thead><tr><th>Stage</th><th class="num-col">Conservative</th><th class="num-col base-col">Base</th><th class="num-col">Bull</th></tr></thead>
       <tbody>
         <tr><td class="q">Members reached</td><td class="num-col">1,500</td><td class="num-col base-col">1,500</td><td class="num-col">1,500</td></tr>
         <tr><td class="q">Install free app (Casual)</td><td class="num-col">25% · 375</td><td class="num-col base-col">35% · 525</td><td class="num-col">45% · 675</td></tr>
         <tr><td class="q">Active at 30 days</td><td class="num-col">35% · 131</td><td class="num-col base-col">45% · 236</td><td class="num-col">55% · 371</td></tr>
         <tr><td class="q">Convert to Athlete (of active)</td><td class="num-col">8% · 10</td><td class="num-col base-col">12% · 28</td><td class="num-col">18% · 67</td></tr>
-        <tr><td class="q">Athlete MRR @ $12.99</td><td class="num-col">$130</td><td class="num-col base-col">$364</td><td class="num-col">$870</td></tr>
+        <tr><td class="q">Member Pro MRR @ $12.99</td><td class="num-col">$130</td><td class="num-col base-col">$364</td><td class="num-col">$870</td></tr>
       </tbody>
     </table>
     </div>
 
     <!-- Coach side -->
-    <h3 style="margin:30px 0 6px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-dim)">B · Professional side — coach seats (clients ride included)</h3>
+    <h3 class="modelhead">B · Professional side — coach seats (clients ride on the free app)</h3>
     <div class="tablewrap">
     <table>
-      <thead><tr>
-        <th>Stage</th>
-        <th class="num-col">Conservative</th>
-        <th class="num-col base-col">Base</th>
-        <th class="num-col">Bull</th>
-      </tr></thead>
+      <thead><tr><th>Stage</th><th class="num-col">Conservative</th><th class="num-col base-col">Base</th><th class="num-col">Bull</th></tr></thead>
       <tbody>
         <tr><td class="q">Coaches converting after trial</td><td class="num-col">3 of 5</td><td class="num-col base-col">5 of 5</td><td class="num-col">5 of 5</td></tr>
         <tr><td class="q">Seat mix</td><td class="num-col">3 × Pro</td><td class="num-col base-col">5 × Pro</td><td class="num-col">4 Pro + 1 Business</td></tr>
         <tr><td class="q">Coach seat MRR</td><td class="num-col">$237</td><td class="num-col base-col">$395</td><td class="num-col">$515</td></tr>
-        <tr><td class="q">Coached clients on Full</td><td class="num-col">~90</td><td class="num-col base-col">150</td><td class="num-col">150</td></tr>
+        <tr><td class="q">Clients active free (read-only assigned)</td><td class="num-col">~90</td><td class="num-col base-col">150</td><td class="num-col">150</td></tr>
       </tbody>
     </table>
     </div>
 
-    <!-- Totals -->
-    <h3 style="margin:30px 0 6px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-dim)">C · Unit totals</h3>
+    <!-- Coached upsell -->
+    <h3 class="modelhead">C · Coached-client → Pro upsell (the recovered “leak”)</h3>
     <div class="tablewrap">
     <table>
-      <thead><tr>
-        <th>Metric</th>
-        <th class="num-col">Conservative</th>
-        <th class="num-col base-col">Base</th>
-        <th class="num-col">Bull</th>
-      </tr></thead>
+      <thead><tr><th>Stage</th><th class="num-col">Conservative</th><th class="num-col base-col">Base</th><th class="num-col">Bull</th></tr></thead>
       <tbody>
-        <tr><td class="q">Total MRR</td><td class="num-col">$367</td><td class="num-col base-col">$759</td><td class="num-col">$1,385</td></tr>
-        <tr><td class="q">Total ARR</td><td class="num-col">$4.4k</td><td class="num-col base-col">$9.1k</td><td class="num-col">$16.6k</td></tr>
+        <tr><td class="q">Coached-client pool</td><td class="num-col">~90</td><td class="num-col base-col">150</td><td class="num-col">150</td></tr>
+        <tr><td class="q">Self-serve Pro conversion</td><td class="num-col">5% · 5</td><td class="num-col base-col">10% · 15</td><td class="num-col">15% · 23</td></tr>
+        <tr><td class="q">Coached Pro MRR @ $12.99</td><td class="num-col">$65</td><td class="num-col base-col">$195</td><td class="num-col">$299</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tbl-note">Coached clients upgrade specifically to <b>self-program</b> (edit/add/build) on top of what their coach gives them — a clean, non-cannibalising reason to pay that didn't exist while Pro was bundled into the seat.</p>
+
+    <!-- Totals -->
+    <h3 class="modelhead">D · Unit totals</h3>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Metric</th><th class="num-col">Conservative</th><th class="num-col base-col">Base</th><th class="num-col">Bull</th></tr></thead>
+      <tbody>
+        <tr><td class="q">Total MRR</td><td class="num-col">$432</td><td class="num-col base-col">$954</td><td class="num-col">$1,684</td></tr>
+        <tr><td class="q">Total ARR</td><td class="num-col">~$5.2k</td><td class="num-col base-col">~$11.4k</td><td class="num-col">~$20.2k</td></tr>
         <tr><td class="q">Engaged users (active members + coached)</td><td class="num-col">~221</td><td class="num-col base-col">~386</td><td class="num-col">~521</td></tr>
-        <tr><td class="q">Est. monthly cost (opex + COGS)*</td><td class="num-col">~$98</td><td class="num-col base-col">~$119</td><td class="num-col">~$140</td></tr>
-        <tr><td class="q">Contribution margin</td><td class="num-col">~73%</td><td class="num-col base-col">~84%</td><td class="num-col">~90%</td></tr>
+        <tr><td class="q">Est. monthly cost (opex + COGS)*</td><td class="num-col">~$98</td><td class="num-col base-col">~$128</td><td class="num-col">~$163</td></tr>
+        <tr><td class="q">Contribution margin</td><td class="num-col">~77%</td><td class="num-col base-col">~87%</td><td class="num-col">~90%</td></tr>
       </tbody>
     </table>
     </div>
     <p class="tbl-note">* Cost stack (real run-rate): <b>fixed opex ~$72/mo</b> (Supabase Pro $25, Claude API $20, Apple Developer ~$8, domains + mailbox ~$19), <b>coach support ~$3/seat/mo</b>, <b>payments ~2.9% + $0.30/charge</b>. Fixed opex is shared across <em>all</em> units, so margin rises toward ~95% as units are added — the $72 amortizes to near-zero per unit at scale.</p>
 
     <!-- LTV / CAC -->
-    <h3 style="margin:30px 0 6px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-dim)">D · Lifetime value &amp; acquisition cost</h3>
+    <h3 class="modelhead">E · Lifetime value &amp; acquisition cost</h3>
     <div class="grid g3" style="margin-top:6px">
       <div class="card">
         <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);margin-bottom:8px">Coach seat</div>
@@ -478,20 +457,20 @@
         <p>$79/mo × ~33-mo life (≈3% monthly B2B churn — embedded in workflow) × ~96% margin. And each seat anchors up to 40 sticky clients.</p>
       </div>
       <div class="card">
-        <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);margin-bottom:8px">Athlete (consumer)</div>
+        <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);margin-bottom:8px">Pro (consumer)</div>
         <h3>~$270 LTV</h3>
-        <p>$12.99/mo × ~22-mo life (≈4.5% churn) × ~95% margin. Annual plan ($99) lifts retention further. Acquired organically — CAC ≈ $0.</p>
+        <p>$12.99/mo × ~22-mo life (≈4.5% churn) × ~95% margin. Fed by two pools — members and coached clients — both acquired organically, CAC ≈ $0.</p>
       </div>
       <div class="card">
         <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:8px">Acquisition</div>
         <h3>&gt; 10 : 1 LTV/CAC</h3>
-        <p>Founder/rep-led, in-person. Allocate even ~$200/account of selling time → coach LTV/CAC ≈ 12:1; members ride in free. Payback in weeks.</p>
+        <p>Founder/rep-led, in-person. Allocate even ~$200/account of selling time → coach LTV/CAC ≈ 12:1; the consumer pools ride in free.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- SCALE / FLYWHEEL -->
+<!-- SCALE -->
 <section id="scale">
   <div class="wrap">
     <div class="secnum">06 · The “so what”</div>
@@ -501,7 +480,7 @@
 
     <div class="grid g3" style="margin-top:32px">
       <div class="metric"><div class="n">~6</div><div class="l">Beachhead units one rep can close per year (8-week cycles)</div></div>
-      <div class="metric"><div class="n">~$55k</div><div class="l">Base-case ARR added per rep / year (6 × ~$9.1k)</div></div>
+      <div class="metric"><div class="n">~$68k</div><div class="l">Base-case ARR added per rep / year (6 × ~$11.4k)</div></div>
       <div class="metric"><div class="n">~2,300</div><div class="l">Engaged users seeded per rep / year — fuel for the flywheel</div></div>
     </div>
 
@@ -523,7 +502,7 @@
   </div>
 </section>
 
-<!-- PRODUCT (condensed) -->
+<!-- PRODUCT -->
 <section>
   <div class="wrap">
     <div class="secnum">07 · The product</div>
@@ -531,8 +510,8 @@
     <h2>Not a tracker. An adaptive coaching system.</h2>
     <p class="lead">The five things to show in the gym office — all shipped, web <em class="lime">and</em> iPhone.</p>
     <div style="margin-top:26px">
-      <div class="feat"><div class="num">01</div><div><h3>Adaptive prescription</h3><p>Working loads dosed from the athlete's own lifts and today's recovery (readiness + HPI). The plan moves with the person — the part a spreadsheet can't do.</p></div></div>
-      <div class="feat"><div class="num">02</div><div><h3>Coach console</h3><p>Build a plan or multi-week program, push it to a client or a whole group at once. Mutual-consent, private coach↔client.</p></div></div>
+      <div class="feat"><div class="num">01</div><div><h3>Adaptive prescription</h3><p>Working loads dosed from the athlete's own lifts and today's recovery (readiness + HPI). The plan moves with the person — the part a spreadsheet can't do. A Pro-tier power.</p></div></div>
+      <div class="feat"><div class="num">02</div><div><h3>Coach console</h3><p>Build a plan, program or diet, push it to a client or a whole group at once. Mutual-consent, private coach↔client; the client sees it read-only on the free app.</p></div></div>
       <div class="feat"><div class="num">03</div><div><h3>Weekly check-in</h3><p>The retention heartbeat: client submits metrics + note, coach reviews and replies in-app. The reason clients pay monthly.</p></div></div>
       <div class="feat"><div class="num">04</div><div><h3>Come-back loop</h3><p>PR celebrations, shareable recaps, streaks, the Future-Self simulator, and an Accountability Engine that predicts the quit and nudges.</p></div></div>
       <div class="feat"><div class="num">05</div><div><h3>Free plan library</h3><p>Curated goal-first plans a member can follow free — value before anyone pays, and the top of the consumer funnel.</p></div></div>
@@ -568,7 +547,7 @@
         <tr><td class="q">(Coach) “I already use a spreadsheet.”</td><td class="a">“Does it adjust today's loads to recovery and run the weekly check-in in two taps? That's what keeps clients paying you. I'll migrate two clients with you in 20 minutes.”</td></tr>
         <tr><td class="q">(Gym) “What does this cost us?”</td><td class="a">“Nothing. Members get it free, you get churn alerts and a coached-gym story. Money only moves when a coach buys a seat — and we'll share that with you.”</td></tr>
         <tr><td class="q">(Coach) “$79 is a lot monthly.”</td><td class="a">“Free for 90 days, holds 40 clients. One retained online client covers it; the rest is margin you didn't have.”</td></tr>
-        <tr><td class="q">“Won't people abuse the free-via-coach Pro?”</td><td class="a">“Coach is a verified role, seats are capped and pre-paid, and the entitlement only lives while there's an active, consented relationship. There's no free Full to farm.”</td></tr>
+        <tr><td class="q">“Won't clients just join a coach to get Pro free?”</td><td class="a">“A coach link only gives the free app plus a read-only view of what's assigned — never Pro. Editing and the adaptive engine are a separate paid upgrade, so there's nothing to game.”</td></tr>
       </tbody>
     </table>
     </div>
