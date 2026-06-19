@@ -12,9 +12,10 @@ import {
   type ViewStyle,
   type TextStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
+import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 
@@ -63,11 +64,13 @@ export function AuroraScreen({
   onRefresh?: () => void;
 }) {
   const { palette } = useTheme();
+  const insets = useSafeAreaInsets();
   const body = scroll ? (
     <ScrollView
-      // Clear the floating Aurora pill nav (icon + label ≈ 96px + safe-area) so
-      // the last content row never hides under the bar.
-      contentContainerStyle={{ padding, paddingBottom: 132, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      // Clear the floating Aurora pill nav so the last content row never hides
+      // under the bar — derived from the real bar height + safe-area inset (one
+      // source of truth in lib/layout), not a hand-copied magic number.
+      contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >

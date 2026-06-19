@@ -14,11 +14,12 @@ import {
   type ViewStyle,
   type TextStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { colors } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useTemplate } from "./template";
+import { auroraScrollClearance } from "./layout";
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 export const glassShadow: ViewStyle = {
@@ -179,6 +180,7 @@ export function Screen({
   // sit UNDER the bar. Reserve room for it so everything stays scrollable into
   // view. Classic keeps the tight padding (its bar is a real, laid-out tab bar).
   const aurora = useTemplate().template === "aurora";
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <GlassField />
@@ -186,7 +188,7 @@ export function Screen({
           hidden when the keyboard opens (no screen had keyboard avoidance). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
-          contentContainerStyle={{ padding: 18, paddingBottom: aurora ? 132 : 48 }}
+          contentContainerStyle={{ padding: 18, paddingBottom: aurora ? auroraScrollClearance(insets.bottom) : 48 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={
             onRefresh ? (

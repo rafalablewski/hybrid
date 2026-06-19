@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -42,6 +42,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { APill, RADIUS, Ring, Spark } from "./kit";
+import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 
@@ -74,6 +75,7 @@ export default function AuroraHome() {
   const coached = useHasActiveCoach();
   const readOnlyPlan = coached && !isAthlete;
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -190,7 +192,7 @@ export default function AuroraHome() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 132 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         {/* Greeting + search/bell — the greeting is one quiet line so the PLAN
             (the reason you opened the app), not your own name, is the hero. */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
