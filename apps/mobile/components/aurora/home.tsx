@@ -22,12 +22,10 @@ import {
   toTrainingLog,
   toBiometrics,
   velocityProfiles,
-  ROLE_COLOR,
   readinessRole,
   hpiRole,
   riskRole,
   accountabilityRole,
-  type SemanticRole,
   SPORTS,
   LEVELS,
   type LoggedSession,
@@ -38,7 +36,7 @@ import {
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, roleColor } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { APill, RADIUS, Ring, Spark } from "./kit";
@@ -48,13 +46,11 @@ import AuroraAiCoach from "./ai-coach";
 
 type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
-// semantic.ts) so web + mobile can't drift on what a colour means: a role →
-// the matching brand accent on the theme palette.
-const roleColor = (role: SemanticRole, C: P) => C[ROLE_COLOR[role]];
-const readyColor = (v: number, C: P) => roleColor(readinessRole(v), C);
-const hpiColor = (b: string, C: P) => roleColor(hpiRole(b), C);
-const riskColor = (b: string, C: P) => roleColor(riskRole(b), C);
-const bandColor = (b: string, C: P) => roleColor(accountabilityRole(b), C);
+// semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
+const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
+const hpiColor = (b: string, C: P) => roleColor(C, hpiRole(b));
+const riskColor = (b: string, C: P) => roleColor(C, riskRole(b));
+const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
 

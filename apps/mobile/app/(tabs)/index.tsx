@@ -13,6 +13,10 @@ import {
   computePerformanceState,
   computeInjuryRisk,
   computeAccountability,
+  ROLE_COLOR,
+  hpiRole,
+  riskRole,
+  accountabilityRole,
   habitStrength,
   projectLift,
   liftNames,
@@ -41,17 +45,13 @@ import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraHome from "../../components/aurora/home";
 
-const hpiColor = (b: string) =>
-  b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
-
-const bandColor = (b: string) =>
-  b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red;
+// State colours resolve through the SHARED semantic vocabulary (@hybrid/core
+// semantic.ts) — meaning lives in core, not duplicated thresholds per screen.
+const hpiColor = (b: string) => C[ROLE_COLOR[hpiRole(b)]];
+const bandColor = (b: string) => C[ROLE_COLOR[accountabilityRole(b)]];
 // "new" is the day-one state — show it as "getting started", not the raw key.
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
-// Injury-risk band → brand color (theme-aware). Folded in from the web Dashboard
-// retirement so mobile keeps web↔mobile parity on the tissue panel.
-const riskColor = (b: string, P: ReturnType<typeof useTheme>["palette"]) =>
-  b === "low" ? P.lime : b === "moderate" ? P.blue : b === "elevated" ? P.amber : P.red;
+const riskColor = (b: string, P: ReturnType<typeof useTheme>["palette"]) => P[ROLE_COLOR[riskRole(b)]];
 
 export default function Home() {
   if (useTemplate().template === "aurora") return <AuroraHome />;

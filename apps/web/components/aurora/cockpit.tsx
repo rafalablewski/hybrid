@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   prescribeSession, computePerformanceState, runTotals, toTrainingLog, velocityProfiles, LEVELS,
+  ROLE_COLOR, hpiRole,
   type Biometrics, type LoggedSession, type Macrocycle,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
@@ -11,7 +12,8 @@ import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { AuroraIcon } from "./icons";
 
-const hpiVar = (b: string) => (b === "peak" || b === "primed" ? "lime" : b === "moderate" ? "blue" : b === "compromised" ? "amber" : "red");
+// State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
+const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)];
 const C = (v: string) => `var(--color-${v})`;
 
 /** AURORA Cockpit (web) — same live snapshots + inline plan setup + freemium
