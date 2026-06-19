@@ -9,6 +9,7 @@ import { useNavAccess } from "../../lib/access";
 import { fetchMyAccessRequests, requestAccess, WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
+import { AuroraScreen } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 
@@ -124,8 +125,10 @@ export default function More() {
     links: s.links.filter((l) => ALWAYS.has(l.id) || navVisibleTo(persona, l.id, access)),
   })).filter((s) => s.links.length > 0);
 
-  return (
-    <Screen>
+  // Aurora wraps the hub in the airy AuroraScreen (blob field + nav clearance);
+  // classic keeps the glass Screen. Same content either way.
+  const body = (
+    <>
       <Kicker>{t("nav.more")}</Kicker>
       <H1>{t("more.title")}</H1>
       <Mono style={{ marginTop: 6 }}>{t("more.intro")}</Mono>
@@ -281,6 +284,8 @@ export default function More() {
       <Pressable onPress={signOut} style={{ marginTop: 24, alignItems: "center" }}>
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("common.signout")}</Text>
       </Pressable>
-    </Screen>
+    </>
   );
+
+  return aurora ? <AuroraScreen>{body}</AuroraScreen> : <Screen>{body}</Screen>;
 }
