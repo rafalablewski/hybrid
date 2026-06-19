@@ -8,7 +8,7 @@ import {
   dailyNutrition,
   type NutritionGoal,
 } from "@hybrid/core";
-import { fetchSignals, createSignal, type CoreSignal } from "../../lib/api";
+import { fetchSignals, createSignal, getAssignedDiet, type CoreSignal } from "../../lib/api";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS } from "./kit";
@@ -30,6 +30,8 @@ export default function AuroraNutrition() {
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
+  const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
+  useEffect(() => { getAssignedDiet().then(setCoachDiet).catch(() => {}); }, []);
 
   const load = () => {
     setRefreshing(true);
@@ -74,6 +76,25 @@ export default function AuroraNutrition() {
       <View style={{ marginTop: 16 }}>
         <ASegment options={GOALS} value={goal} onPick={setGoal} />
       </View>
+
+      {coachDiet?.diet && (
+        <ACard style={{ marginTop: 16, borderLeftWidth: 3, borderLeftColor: C.violet }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>
+            Assigned by {coachDiet.coachName ?? "your coach"} · read-only
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 8 }}>
+            {([["Energy", coachDiet.diet.kcal, " kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
+              ([label, val, unit]) => (val != null ? (
+                <View key={label}>
+                  <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{label}{unit === " kcal" ? " · kcal" : ""}</Text>
+                </View>
+              ) : null),
+            )}
+          </View>
+          {coachDiet.diet.note ? <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{coachDiet.diet.note}</Text> : null}
+        </ACard>
+      )}
 
       {personalized ? (
         <>

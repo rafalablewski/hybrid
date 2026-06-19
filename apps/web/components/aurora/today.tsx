@@ -20,7 +20,7 @@ import {
   type SessionBlock,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
-import { usePersona } from "@/lib/persona";
+import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { readIntake, type Intake } from "@/lib/intake";
 import ReconciledWeek from "../reconciled-week";
 import { AuroraIcon } from "./icons";
@@ -64,6 +64,8 @@ export default function AuroraToday({
   const { session } = useSession();
   const name = session?.name ?? "Athlete";
   const isAthlete = usePersona() !== "casual";
+  // Coached (free) client: read-only view of the coach-assigned plan.
+  const coached = useHasActiveCoach();
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -213,8 +215,8 @@ export default function AuroraToday({
         </button>
       )}
 
-      {/* SEASON — macrocycle phase timeline (athlete + enrolled) */}
-      {isAthlete && macro && phase && (
+      {/* SEASON — macrocycle phase timeline (athlete, or coached read-only) */}
+      {(isAthlete || coached) && macro && phase && (
         <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}` }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
             Training for · {macro.goalOrSport} · {phase.block.label} phase
@@ -230,10 +232,10 @@ export default function AuroraToday({
         </div>
       )}
 
-      {/* THIS WEEK — the shared reconciled plan (rounds under Aurora via --r-card) */}
-      {isAthlete && macro && (
+      {/* THIS WEEK — shared reconciled plan; coached clients see it read-only */}
+      {(isAthlete || coached) && macro && (
         <div style={{ marginTop: 18 }}>
-          <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} />
+          <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} readOnly={!isAthlete} />
         </div>
       )}
 
