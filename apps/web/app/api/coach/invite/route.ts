@@ -66,10 +66,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "That doesn't look like a valid email." }, { status: 400 });
 
   try {
-    // Roster guardrail: ACTIVE clients + still-open invites.
+    // Roster guardrail: ACTIVE clients + still-open (non-expired) invites.
     const [active, pending] = await Promise.all([
       prisma.coachLink.count({ where: { coachId: me.id, status: "ACTIVE" } }),
-      prisma.coachInvite.count({ where: { coachId: me.id, status: "PENDING" } }),
+      prisma.coachInvite.count({ where: { coachId: me.id, status: "PENDING", expiresAt: { gt: new Date() } } }),
     ]);
     if (active + pending >= MAX_ROSTER)
       return NextResponse.json({ error: `Roster limit reached (${MAX_ROSTER}).` }, { status: 409 });

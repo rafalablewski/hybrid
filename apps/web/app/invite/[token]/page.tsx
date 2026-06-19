@@ -41,7 +41,6 @@ export default function InviteClaimPage() {
       if (r.ok) {
         try { localStorage.removeItem("hybrid.coachInviteToken"); } catch { /* ignore */ }
         setState("done");
-        setTimeout(() => router.push("/app"), 1200);
       } else {
         setState("error");
         setMsg(d.error || "Couldn't accept the invite.");
@@ -56,6 +55,13 @@ export default function InviteClaimPage() {
   useEffect(() => {
     if (signedIn && info?.valid && state === "idle") void claim();
   }, [signedIn, info, state, claim]);
+
+  // Navigate into the app shortly after a successful claim; clear on unmount.
+  useEffect(() => {
+    if (state !== "done") return;
+    const timer = setTimeout(() => router.push("/app"), 1200);
+    return () => clearTimeout(timer);
+  }, [state, router]);
 
   const coach = info?.coachName || "Your coach";
 

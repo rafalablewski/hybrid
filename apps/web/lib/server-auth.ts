@@ -91,12 +91,15 @@ export async function claimPendingCoachInvites(userId: string, email: string) {
     const now = Date.now();
     for (const inv of invites) {
       if (inv.expiresAt.getTime() < now || inv.coachId === userId) continue;
-      await prisma.coachLink.upsert({
-        where: { coachId_clientId: { coachId: inv.coachId, clientId: userId } },
-        update: { status: "ACTIVE" },
-        create: { coachId: inv.coachId, clientId: userId, status: "ACTIVE" },
-      });
-      await prisma.coachInvite.update({ where: { id: inv.id }, data: { status: "CLAIMED", claimedById: userId } });
+      // Atomic: never leave an ACTIVE link with a still-PENDING invite.
+      await prisma.$transaction([
+        prisma.coachLink.upsert({
+          where: { coachId_clientId: { coachId: inv.coachId, clientId: userId } },
+          update: { status: "ACTIVE" },
+          create: { coachId: inv.coachId, clientId: userId, status: "ACTIVE" },
+        }),
+        prisma.coachInvite.update({ where: { id: inv.id }, data: { status: "CLAIMED", claimedById: userId } }),
+      ]);
     }
   } catch {
     // CoachInvite table not migrated yet — onboarding-by-email just no-ops.

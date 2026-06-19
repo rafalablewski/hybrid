@@ -29,16 +29,22 @@ export default function InviteClaim() {
     if (r.ok) {
       AsyncStorage.removeItem("hybrid.coachInviteToken").catch(() => {});
       setState("done");
-      setTimeout(() => router.replace("/"), 1000);
     } else {
       setState("error");
       setMsg(r.error || "Couldn't accept the invite.");
     }
-  }, [token, router]);
+  }, [token]);
 
   useEffect(() => {
     if (ready && session && state === "idle") void claim();
   }, [ready, session, state, claim]);
+
+  // Navigate home shortly after a successful claim; clear the timer on unmount.
+  useEffect(() => {
+    if (state !== "done") return;
+    const timer = setTimeout(() => router.replace("/"), 1000);
+    return () => clearTimeout(timer);
+  }, [state, router]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.ink, alignItems: "center", justifyContent: "center", padding: 24 }}>

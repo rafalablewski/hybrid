@@ -15,16 +15,18 @@ export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
-    const diets = await prisma.coachDiet.findMany({
-      where: { clientId: me.id },
-      orderBy: { updatedAt: "desc" },
+    // The client's active coaches (one query, with the coach for the name).
+    const activeLinks = await prisma.coachLink.findMany({
+      where: { clientId: me.id, status: "ACTIVE" },
+      include: { coach: { select: { name: true, email: true } } },
     });
-    for (const diet of diets) {
-      const link = await prisma.coachLink.findUnique({
-        where: { coachId_clientId: { coachId: diet.coachId, clientId: me.id } },
+    if (activeLinks.length > 0) {
+      const diet = await prisma.coachDiet.findFirst({
+        where: { clientId: me.id, coachId: { in: activeLinks.map((l) => l.coachId) } },
+        orderBy: { updatedAt: "desc" },
       });
-      if (link?.status === "ACTIVE") {
-        const coach = await prisma.user.findUnique({ where: { id: diet.coachId }, select: { name: true, email: true } });
+      if (diet) {
+        const coach = activeLinks.find((l) => l.coachId === diet.coachId)?.coach;
         return NextResponse.json({
           diet: { kcal: diet.kcal, protein: diet.protein, carbs: diet.carbs, fat: diet.fat, note: diet.note },
           coachName: coach?.name || coach?.email?.split("@")[0] || "your coach",
