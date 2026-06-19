@@ -24,20 +24,7 @@ import {
 const hpiColor = (b: string) =>
   b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
 
-/**
- * Web parity of the mobile Athlete Cockpit — one screen that sequences the
- * data-athlete's path (goal/season → today → performance → sport → velocity →
- * endurance), each a live snapshot off real data that jumps to the deep screen.
- * Athlete/coach personas only (gated in the nav). (Phase 2.)
- */
-export default function Cockpit({
-  sessions,
-  bio,
-  macro,
-  currentWeek = 1,
-  setScreen,
-  onEnrolled,
-}: {
+type CockpitProps = {
   sessions: LoggedSession[];
   bio?: Biometrics;
   macro?: Macrocycle | null;
@@ -46,11 +33,16 @@ export default function Cockpit({
   /** Called after the inline "Set up / change plan" flow enrolls a macrocycle —
    *  app-shell refreshes the macro and lands the athlete back on Today. */
   onEnrolled: () => void;
-}) {
-  const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
-  // The onboarding ("Get started") funnel is no longer a standalone tab — it
-  // lives here, under Goal & season, as an expandable setup flow.
-  const [setupOpen, setSetupOpen] = useState(false);
+};
+
+/**
+ * Thin persona gate (mirrors the mobile <AuroraCockpit/> wrapper). It calls a
+ * fixed set of hooks regardless of persona, then EITHER renders the freemium
+ * teaser OR the live <CockpitBody/>. Keeping the data hooks in the child means
+ * flipping persona in place (paid user tapping "Switch to Full") never changes
+ * the hook count of any single component — no Rules-of-Hooks violation.
+ */
+export default function Cockpit(props: CockpitProps) {
   // Freemium funnel: a casual user reaches the Cockpit as a LOCKED bait (it shows
   // in nav with a lock). Render the upsell teaser instead of the live cockpit;
   // a paid user in Simple mode just flips to Full, a free user hits billing.
@@ -59,9 +51,30 @@ export default function Cockpit({
   if (persona === "casual") {
     // Casual no longer has a Cockpit nav entry (the upgrade lives on one Full
     // page) — this teaser is the fallback if they reach it via a deep link.
-    const unlock = () => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("upgrade"));
+    const unlock = () => (entitlement === "paid" ? setClientPersona("athlete") : props.setScreen("upgrade"));
     return <CockpitTeaser paid={entitlement === "paid"} onUnlock={unlock} />;
   }
+  return <CockpitBody {...props} />;
+}
+
+/**
+ * Web parity of the mobile Athlete Cockpit — one screen that sequences the
+ * data-athlete's path (goal/season → today → performance → sport → velocity →
+ * endurance), each a live snapshot off real data that jumps to the deep screen.
+ * Athlete/coach personas only (gated by the wrapper above). (Phase 2.)
+ */
+function CockpitBody({
+  sessions,
+  bio,
+  macro,
+  currentWeek = 1,
+  setScreen,
+  onEnrolled,
+}: CockpitProps) {
+  const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
+  // The onboarding ("Get started") funnel is no longer a standalone tab — it
+  // lives here, under Goal & season, as an expandable setup flow.
+  const [setupOpen, setSetupOpen] = useState(false);
   useEffect(() => {
     const s = readSportSelection();
     if (s?.sport) setSport({ sport: s.sport, levelIdx: typeof s.levelIdx === "number" ? s.levelIdx : 0 });
