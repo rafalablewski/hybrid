@@ -7,6 +7,7 @@
  */
 
 export * from "./brand";
+export * from "./semantic";
 export * from "./engines";
 export * from "./plans";
 export * from "./plan-day";

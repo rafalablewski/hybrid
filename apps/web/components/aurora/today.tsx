@@ -15,6 +15,12 @@ import {
   planDayToBlocks,
   toTrainingLog,
   velocityProfiles,
+  ROLE_COLOR,
+  readinessRole,
+  hpiRole,
+  riskRole,
+  accountabilityRole,
+  type SemanticRole,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
@@ -29,11 +35,13 @@ import AuroraAskCoach from "./ai-coach";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
-// Semantic readiness scale (lime=go · blue=ok · amber=caution · red=hold).
-const readyColor = (v: number) => (v >= 80 ? C("lime") : v >= 60 ? C("blue") : v >= 40 ? C("amber") : C("red"));
-const hpiColor = (b: string) => (b === "peak" || b === "primed" ? C("lime") : b === "moderate" ? C("blue") : b === "compromised" ? C("amber") : C("red"));
-const riskColor = (b: string) => (b === "low" ? C("lime") : b === "moderate" ? C("blue") : b === "elevated" ? C("amber") : C("red"));
-const bandColor = (b: string) => (b === "thriving" || b === "steady" ? C("lime") : b === "new" || b === "wobbling" ? C("blue") : b === "at-risk" ? C("amber") : C("red"));
+// State colours resolve through the SHARED semantic vocabulary (@hybrid/core
+// semantic.ts) so web + mobile agree on what a colour means.
+const roleColor = (role: SemanticRole) => C(ROLE_COLOR[role]);
+const readyColor = (v: number) => roleColor(readinessRole(v));
+const hpiColor = (b: string) => roleColor(hpiRole(b));
+const riskColor = (b: string) => roleColor(riskRole(b));
+const bandColor = (b: string) => roleColor(accountabilityRole(b));
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
 

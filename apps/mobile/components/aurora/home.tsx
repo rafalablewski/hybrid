@@ -22,6 +22,12 @@ import {
   toTrainingLog,
   toBiometrics,
   velocityProfiles,
+  ROLE_COLOR,
+  readinessRole,
+  hpiRole,
+  riskRole,
+  accountabilityRole,
+  type SemanticRole,
   SPORTS,
   LEVELS,
   type LoggedSession,
@@ -40,12 +46,14 @@ import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 
 type P = ReturnType<typeof useTheme>["palette"];
-// Semantic readiness scale (lime=go · blue=ok · amber=caution · red=hold) —
-// the same green→amber→red language the rest of the app uses for state.
-const readyColor = (v: number, C: P) => (v >= 80 ? C.lime : v >= 60 ? C.blue : v >= 40 ? C.amber : C.red);
-const hpiColor = (b: string, C: P) => (b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red);
-const riskColor = (b: string, C: P) => (b === "low" ? C.lime : b === "moderate" ? C.blue : b === "elevated" ? C.amber : C.red);
-const bandColor = (b: string, C: P) => (b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red);
+// State colours resolve through the SHARED semantic vocabulary (@hybrid/core
+// semantic.ts) so web + mobile can't drift on what a colour means: a role →
+// the matching brand accent on the theme palette.
+const roleColor = (role: SemanticRole, C: P) => C[ROLE_COLOR[role]];
+const readyColor = (v: number, C: P) => roleColor(readinessRole(v), C);
+const hpiColor = (b: string, C: P) => roleColor(hpiRole(b), C);
+const riskColor = (b: string, C: P) => roleColor(riskRole(b), C);
+const bandColor = (b: string, C: P) => roleColor(accountabilityRole(b), C);
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
 
