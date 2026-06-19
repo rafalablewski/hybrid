@@ -42,6 +42,23 @@ export async function getOrCreateDbUser(req?: Request) {
 }
 
 /**
+ * The signed-in user's billing entitlement, read from Supabase auth metadata
+ * ('free' | 'paid'; default 'free'). Server-side mirror of the client check —
+ * used to gate paid (athlete) AUTHORING actions on the API so a coached/casual
+ * free client can't POST around the hidden UI. Being coached never confers this.
+ */
+export async function getAuthEntitlement(req?: Request): Promise<"free" | "paid"> {
+  const supabase = await createClient();
+  const authHeader = req?.headers.get("authorization");
+  const user =
+    authHeader && authHeader.toLowerCase().startsWith("bearer ")
+      ? (await supabase.auth.getUser(authHeader.slice(7).trim())).data.user
+      : (await supabase.auth.getUser()).data.user;
+  const meta = user?.user_metadata ?? {};
+  return String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+}
+
+/**
  * Materialize any pending org invitations addressed to this user's email into
  * real memberships. Called from /api/me (app load), NOT on every request, so it
  * doesn't add a query to every authenticated endpoint.

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SessionBlock } from "@hybrid/core";
-import { getOrCreateDbUser } from "@/lib/server-auth";
+import { getOrCreateDbUser, getAuthEntitlement } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
 // Reusable workout templates the user owns. GET lists; POST creates.
@@ -17,6 +17,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const me = await getOrCreateDbUser(request);
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // The builder (authoring your own workouts) is a paid (Full/athlete) action.
+  // A free CLIENT — including a coached client — can VIEW what's assigned but
+  // must upgrade to create/edit records. Coaches & admins author by role.
+  if (me.role === "CLIENT") {
+    const ent = await getAuthEntitlement(request);
+    if (ent !== "paid") {
+      return NextResponse.json(
+        { error: "Upgrade to Full to create your own workouts.", code: "upgrade_required" },
+        { status: 403 },
+      );
+    }
+  }
 
   const b = (await request.json().catch(() => ({}))) as { name?: unknown; description?: unknown; blocks?: unknown };
   if (typeof b.name !== "string" || !b.name.trim())

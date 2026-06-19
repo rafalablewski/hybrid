@@ -14,19 +14,21 @@
 - [x] Web + mobile `usePersona` drop the coach arg; `useHasActiveCoach` kept for
       read-only surfacing.
 - [x] `capabilities.ts` persona-shape + coach-assign-plans updated.
-- [ ] **Today read-only surfacing** — show the assigned "This week" / plan cards
-      to coached *casual* users (read-only) on web `components/today.tsx` +
-      mobile Today (currently gated behind `isAthlete`; assignments still appear
-      on the casual-visible Calendar, so no data loss meanwhile).
-- [ ] **Server-side authoring guards** — add an entitlement check (read from auth
-      `user_metadata.entitlement`; `getOrCreateDbUser` doesn't expose it yet, so
-      add a small helper) on athlete-authoring write routes (templates POST,
-      macrocycle self-write, etc.) so a coached/casual user can't POST around the
-      hidden UI. Defence-in-depth.
+- [x] **Today read-only surfacing** — coached casual users now see the season
+      timeline + "This week" plan READ-ONLY (as written, no readiness modulation,
+      no schedule/auto-resync) on web `components/today.tsx` (via a `readOnly`
+      prop on `reconciled-week.tsx`) and mobile `app/(tabs)/index.tsx` (inline,
+      via a `reconciledView` computed without biometrics). Calendar already shows
+      dated assignments to casual.
+- [x] **Server-side authoring guard** — `getAuthEntitlement()` helper in
+      `server-auth.ts`; `POST /api/templates` (the builder) now 403s a free
+      CLIENT (coached or not). NOTE: `/api/macrocycles` POST is intentionally NOT
+      gated — it's also how a free user enrolls in / follows a plan.
 
 ---
 
-**Status:** Core access change DONE + tested; surfacing/guards remain (above).
+**Status:** DONE — access change + read-only surfacing (web+mobile) + authoring
+guard, all typecheck-clean and 496/496 core tests passing.
 **Decision (confirmed):** A client linked to an active coach must get the
 **Casual (free)** experience **plus a read-only view of everything the coach
 assigned** (plans, programs, **and diet**). They keep Casual logging (own
