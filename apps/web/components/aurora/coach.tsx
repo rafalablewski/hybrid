@@ -12,6 +12,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import CoachInvite from "../coach-invite";
+import CoachDiet from "../coach-diet";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, marginBottom: 12 } as const;
@@ -355,6 +356,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           style={fieldStyle({ fontSize: 12, width: 90, padding: "6px 10px", borderRadius: 999, background: C("ink2") })}
         />
       </div>
+
+      <Section title="Diet" color={C("lime")}>
+        <CoachDiet linkId={link.id} />
+      </Section>
 
       <Section title="Coaching notes" color={C("violet")}>
         <div style={card}>

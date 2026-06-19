@@ -717,6 +717,47 @@ export async function claimCoachInvite(token: string): Promise<{ ok: boolean; er
   }
 }
 
+// ---- coach-assigned diet (macro targets, read-only for the client) ----
+export type CoachDietRow = { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null };
+
+export async function getCoachDiet(linkId: string): Promise<{ diet: CoachDietRow | null; unavailable: boolean }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/diet`, { headers: await authHeaders() });
+    if (!res.ok) return { diet: null, unavailable: false };
+    const d = (await res.json()) as { diet?: CoachDietRow | null; unavailable?: boolean };
+    return { diet: d.diet ?? null, unavailable: Boolean(d.unavailable) };
+  } catch {
+    return { diet: null, unavailable: false };
+  }
+}
+
+export async function saveCoachDiet(
+  linkId: string,
+  body: { kcal?: number; protein?: number; carbs?: number; fat?: number; note?: string },
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/diet`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    const d = (await res.json().catch(() => ({}))) as { error?: string };
+    return { ok: res.ok, error: d.error };
+  } catch {
+    return { ok: false, error: "network error" };
+  }
+}
+
+export async function getAssignedDiet(): Promise<{ diet: CoachDietRow | null; coachName?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/nutrition/assigned`, { headers: await authHeaders() });
+    if (!res.ok) return { diet: null };
+    return (await res.json()) as { diet: CoachDietRow | null; coachName?: string };
+  } catch {
+    return { diet: null };
+  }
+}
+
 // ---- coach client groups (assign a plan to many clients at once) ----
 export type CoachGroup = { id: string; name: string; clientIds: string[] };
 

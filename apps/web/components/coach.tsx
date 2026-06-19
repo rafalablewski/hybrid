@@ -14,6 +14,7 @@ import {
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import CoachPrograms from "./coach-programs";
 import CoachInvite from "./coach-invite";
+import CoachDiet from "./coach-diet";
 import { useFlags } from "@/lib/use-flags";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
@@ -499,6 +500,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           style={{ ...mono, fontSize: 12, width: 90, padding: "5px 8px", borderRadius: 999, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
       </div>
+
+      <Section title="Diet" color={LIME}>
+        <CoachDiet linkId={link.id} />
+      </Section>
 
       <Section title="Coaching notes" color={VIOLET}>
         <Card>

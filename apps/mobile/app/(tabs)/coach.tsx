@@ -21,6 +21,7 @@ import AuroraCoach from "../../components/aurora/coach";
 import CoachGroups from "../../components/coach-groups";
 import CoachPrograms from "../../components/coach-programs";
 import CoachInvite from "../../components/coach-invite";
+import CoachDiet from "../../components/coach-diet";
 import { useFeatureFlag } from "../../lib/flags";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
@@ -218,6 +219,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk }}>{personName(link.client)}</Text>
       <Mono style={{ marginBottom: 12 }}>{link.client?.email}</Mono>
 
+      <Kicker color={C.lime}>Diet</Kicker>
+      <CoachDiet linkId={link.id} />
+
+      <View style={{ marginTop: 14 }} />
       <Kicker color={C.violet}>{t("coach.notes")}</Kicker>
       <Card>
         <TextInput

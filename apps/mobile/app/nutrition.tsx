@@ -8,7 +8,7 @@ import {
   dailyNutrition,
   type NutritionGoal,
 } from "@hybrid/core";
-import { fetchSignals, createSignal, type CoreSignal } from "../lib/api";
+import { fetchSignals, createSignal, getAssignedDiet, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
@@ -33,6 +33,9 @@ function ClassicNutrition() {
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
+  // Read-only diet assigned by an active coach (shown above the adaptive targets).
+  const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
+  useEffect(() => { getAssignedDiet().then(setCoachDiet).catch(() => {}); }, []);
 
   const load = () => {
     setRefreshing(true);
@@ -90,6 +93,24 @@ function ClassicNutrition() {
           </Pressable>
         ))}
       </View>
+
+      {/* Coach-assigned diet (read-only) */}
+      {coachDiet?.diet && (
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 10 }}>
+          <Kicker color={C.violet}>Assigned by {coachDiet.coachName ?? "your coach"} · read-only</Kicker>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 8 }}>
+            {([["Energy", coachDiet.diet.kcal, " kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
+              ([label, val, unit]) => (val != null ? (
+                <View key={label}>
+                  <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
+                  <Mono color={C.ash} style={{ fontSize: 10 }}>{label}{unit === " kcal" ? " · kcal" : ""}</Mono>
+                </View>
+              ) : null),
+            )}
+          </View>
+          {coachDiet.diet.note ? <Mono style={{ marginTop: 8, lineHeight: 18 }}>{coachDiet.diet.note}</Mono> : null}
+        </Card>
+      )}
 
       {/* targets vs today */}
       <Card>

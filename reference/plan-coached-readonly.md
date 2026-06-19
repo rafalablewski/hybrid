@@ -114,7 +114,14 @@ now casual, so we must **explicitly** show the *assigned* pieces to them:
   - Any other athlete-authoring write route. (Coach routes are unaffected — they
     gate on the COACH role / CoachLink.)
 
-### 7. Diet/nutrition — NEW build (the main gap)
+### 7. Diet/nutrition — DONE (2026-06-19)
+- [x] `CoachDiet` model + `reference/sql-coach-diet.sql` (RLS, soft-degrade).
+- [x] APIs: `GET/POST /api/coach/links/[id]/diet` (link-gated) + `GET /api/nutrition/assigned` (client read, withdrawn when link ends).
+- [x] Shared coach editor `coach-diet.tsx` (web + mobile) in classic + Aurora client-detail.
+- [x] Read-only band on web + mobile Nutrition screens.
+- [x] capability `coach-assign-diet` (shipped). v1 = macro targets.
+
+### 7. (original) Diet/nutrition — NEW build (the main gap)
 Today **only training plans/programs are coach-assignable**; there is no
 coach-assigned diet. The decision requires clients to view assigned **diet**.
 - **Coach side:** let a coach assign a nutrition target / diet to a client or

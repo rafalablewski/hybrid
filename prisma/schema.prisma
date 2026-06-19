@@ -66,6 +66,7 @@ model User {
   coachGroups   CoachGroup[]    @relation("coachGroups")
   coachPrograms CoachProgram[]  @relation("coachPrograms")
   coachInvites  CoachInvite[]   @relation("coachInvites")
+  coachDiets    CoachDiet[]     @relation("coachDiets")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 }
 
@@ -181,6 +182,28 @@ model CoachInvite {
 
   @@index([coachId])
   @@index([email])
+}
+
+// A coach-assigned DIET (macro targets) for one client — the nutrition analogue
+// of an assigned training plan. The client VIEWS it read-only on their Nutrition
+// screen (alongside their own free macro logging); editing their own adaptive
+// targets is still the paid upgrade. One active diet per coach↔client pair, only
+// honoured while an ACTIVE CoachLink exists. See reference/sql-coach-diet.sql.
+model CoachDiet {
+  id        String   @id @default(cuid())
+  coach     User     @relation("coachDiets", fields: [coachId], references: [id])
+  coachId   String
+  clientId  String // the athlete this diet is for
+  kcal      Int?
+  protein   Int? // grams/day
+  carbs     Int? // grams/day
+  fat       Int? // grams/day
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([coachId, clientId])
+  @@index([clientId])
 }
 
 // The daily check-in — a personal training-readiness log. The client submits a

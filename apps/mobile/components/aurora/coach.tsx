@@ -20,6 +20,7 @@ import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import CoachGroups from "../coach-groups";
 import CoachPrograms from "../coach-programs";
 import CoachInvite from "../coach-invite";
+import CoachDiet from "../coach-diet";
 import { useFeatureFlag } from "../../lib/flags";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
@@ -222,6 +223,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       <AHeading style={{ fontSize: 26 }}>{personName(link.client)}</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 4, marginBottom: 14 }}>{link.client?.email}</Text>
 
+      <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginBottom: 10 }}>Diet</Text>
+      <CoachDiet linkId={link.id} />
+
+      <View style={{ marginTop: 14 }} />
       <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet), marginBottom: 10 }}>{t("coach.notes")}</Text>
       <ACard>
         <TextInput

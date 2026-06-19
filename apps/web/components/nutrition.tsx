@@ -30,6 +30,10 @@ export default function Nutrition() {
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // Read-only diet assigned by an active coach (the nutrition analogue of an
+  // assigned plan). Shown above the athlete's own adaptive targets.
+  const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
+  useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
 
   const load = useCallback(async () => {
     try {
@@ -85,6 +89,26 @@ export default function Nutrition() {
 
   return (
     <div style={{ maxWidth: 820 }}>
+      {/* Coach-assigned diet (read-only) — shown when an active coach set macros. */}
+      {coachDiet?.diet && (
+        <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
+          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+            Assigned by {coachDiet.coachName ?? "your coach"} · read-only
+          </Mono>
+          <div style={{ display: "flex", gap: 22, marginTop: 10, flexWrap: "wrap" }}>
+            {([["Energy", coachDiet.diet.kcal, "kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
+              ([label, val, unit]) => (val != null ? (
+                <div key={label}>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: 20, color: CHALK }}>{val}{unit === "g" ? "g" : ""}</div>
+                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}{unit === "kcal" ? " · kcal" : ""}</Mono>
+                </div>
+              ) : null),
+            )}
+          </div>
+          {coachDiet.diet.note && <Mono s={{ fontSize: 12, display: "block", marginTop: 10, lineHeight: 1.5 }} c={CHALK}>{coachDiet.diet.note}</Mono>}
+        </Card>
+      )}
+
       {/* goal */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Goal</Mono>
