@@ -26,12 +26,14 @@ describe("persona resolution", () => {
     expect(resolvePersona("client", "casual", "paid")).toBe("casual");
   });
 
-  it("a client with an ACTIVE coach gets Full on the coach's seat", () => {
-    // hasActiveCoach unlocks athlete regardless of the client's own choice/billing.
-    expect(resolvePersona("client", "casual", "free", true)).toBe("athlete");
-    expect(resolvePersona("client", undefined, "free", true)).toBe("athlete");
-    // No active coach → unchanged (still gated on the paid Full upgrade).
-    expect(resolvePersona("client", "casual", "free", false)).toBe("casual");
+  it("being coached does NOT grant Full — a coached client stays casual", () => {
+    // A coach link no longer elevates the persona. A coached client stays casual
+    // (free) and only gets a READ-ONLY view of assigned content (surfaced via the
+    // separate useHasActiveCoach flag on the clients). Their OWN paid upgrade is
+    // the only path to athlete — so a coach link can't be used to obtain Pro free.
+    expect(resolvePersona("client", "casual", "free")).toBe("casual");
+    expect(resolvePersona("client", undefined, "free")).toBe("casual");
+    expect(resolvePersona("client", "athlete", "paid")).toBe("athlete");
   });
 
   it("entitlement never elevates a coach/admin role and never grants coach to a client", () => {

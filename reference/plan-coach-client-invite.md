@@ -1,6 +1,18 @@
 # Plan — Coach-led client onboarding (invite by email / phone / QR)
 
-**Status:** PLAN ONLY — no code written yet (awaiting approval).
+## DECISIONS LOCKED (2026-06-19)
+- **Delivery v1:** **QR + copyable link now** (coach shares via own channel);
+  email/phone stored for auto-match on signup; automated email/SMS later. ✔
+- **Claim = consent:** using the invite **auto-creates an ACTIVE link** (no extra
+  Accept tap). ✔
+- **On claim:** link + **free plan only**; the coach assigns plans/diet afterward
+  (no goal/plan picker at invite time in v1). ✔
+- **Mobile deep-link:** v1 QR encodes the **web** URL (works today); native
+  app-open deep-link lands with the EAS build (blocked on Apple Developer acct). ✔
+- **Reuse:** mirror the existing `claimPendingInvites` org-invite pattern in
+  `apps/web/lib/server-auth.ts` for claiming coach invites by verified email.
+
+**Status:** PLAN ONLY — implemented after step ① (access change is done).
 **Builds on:** `plan-coached-readonly.md` (coached client = Casual + read-only
 assigned; Pro to edit/add).
 

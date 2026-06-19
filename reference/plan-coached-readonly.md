@@ -1,6 +1,32 @@
 # Plan — Coached clients get Casual + read-only assigned (not Full)
 
-**Status:** PLAN ONLY — no code written yet (awaiting approval).
+## DECISIONS LOCKED (2026-06-19)
+- **Coached loads:** show **as the coach set them** (no server-side recompute). ✔
+- **Persona model:** keep the 4-persona model; use the `useHasActiveCoach`
+  boolean (not a 5th persona) to surface read-only assigned content. ✔
+- **Casual scope:** coached clients keep Casual logging (own workouts + intake). ✔
+- **Build order:** ① this access change → ② invite/claim → ③ coach-assigned diet. ✔
+
+## PROGRESS
+- [x] Core: `resolvePersona` no longer grants athlete for a coach link
+      (`packages/core/src/nav.ts`); param removed.
+- [x] Core test rewritten (`nav.test.ts`) — coached client stays casual; 496/496 pass.
+- [x] Web + mobile `usePersona` drop the coach arg; `useHasActiveCoach` kept for
+      read-only surfacing.
+- [x] `capabilities.ts` persona-shape + coach-assign-plans updated.
+- [ ] **Today read-only surfacing** — show the assigned "This week" / plan cards
+      to coached *casual* users (read-only) on web `components/today.tsx` +
+      mobile Today (currently gated behind `isAthlete`; assignments still appear
+      on the casual-visible Calendar, so no data loss meanwhile).
+- [ ] **Server-side authoring guards** — add an entitlement check (read from auth
+      `user_metadata.entitlement`; `getOrCreateDbUser` doesn't expose it yet, so
+      add a small helper) on athlete-authoring write routes (templates POST,
+      macrocycle self-write, etc.) so a coached/casual user can't POST around the
+      hidden UI. Defence-in-depth.
+
+---
+
+**Status:** Core access change DONE + tested; surfacing/guards remain (above).
 **Decision (confirmed):** A client linked to an active coach must get the
 **Casual (free)** experience **plus a read-only view of everything the coach
 assigned** (plans, programs, **and diet**). They keep Casual logging (own
