@@ -19,7 +19,7 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 // access to lives on the web app only — keep in sync with the HREF map in
 // components/liquid-glass.tsx.
 const MOBILE_NAV_IDS = new Set([
-  "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar",
+  "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar", "builder",
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "settings", "onboarding",
   "statistics", "timer", "notifications",
@@ -114,8 +114,10 @@ export default function More() {
   // `onboarding` is the universal setup flow — it's no longer a nav item (so
   // navVisibleTo can't gate it), but every persona can re-run it, so it always
   // shows. Everything else is persona/access gated as before.
-  // `onboarding` + `builder` aren't persona-gated nav items (navVisibleTo can't
-  // see them) but every user can reach both, so they always show.
+  // `onboarding` is the universal setup flow (no longer a nav item). `builder`
+  // IS an athlete-gated nav item, but the Train launcher offers "Build a routine"
+  // to everyone, so we surface it here for everyone too (parity with Train) —
+  // both bypass the persona filter and always show.
   const ALWAYS = new Set(["onboarding", "builder"]);
   const sections = SECTIONS.map((s) => ({
     ...s,

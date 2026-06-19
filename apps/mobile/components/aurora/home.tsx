@@ -181,10 +181,12 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5 }}>{name}</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            {/* Was a bare View — looked tappable but did nothing. Wire it to the
+                searchable Exercises browser so the magnifier actually searches. */}
+            <Pressable onPress={() => router.push("/exercises")} accessibilityRole="button" accessibilityLabel="Search exercises" style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
               <AuroraIcon name="search" size={22} color={C.ash} />
-            </View>
-            <Pressable onPress={() => router.push("/notifications")} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            </Pressable>
+            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel="Notifications" style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
               <AuroraIcon name="bell" size={22} color={C.ash} />
             </Pressable>
           </View>

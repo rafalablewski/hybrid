@@ -7,6 +7,8 @@ import {
   TextInput,
   StyleSheet,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
@@ -66,6 +68,7 @@ export function AuroraScreen({
       // Clear the floating Aurora pill nav (icon + label ≈ 96px + safe-area) so
       // the last content row never hides under the bar.
       contentContainerStyle={{ padding, paddingBottom: 132, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
       {children}
@@ -76,7 +79,11 @@ export function AuroraScreen({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <AuroraField />
-      {body}
+      {/* Lift fields above the keyboard so low inputs / submit buttons (login,
+          builder, check-in, nutrition…) aren't hidden when it opens. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        {body}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

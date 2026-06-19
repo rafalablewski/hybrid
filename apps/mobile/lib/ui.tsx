@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  KeyboardAvoidingView,
+  Platform,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
@@ -180,21 +182,26 @@ export function Screen({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <GlassField />
-      <ScrollView
-        contentContainerStyle={{ padding: 18, paddingBottom: aurora ? 132 : 48 }}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={!!refreshing}
-              onRefresh={onRefresh}
-              tintColor={palette.lime}
-              colors={[palette.lime]}
-            />
-          ) : undefined
-        }
-      >
-        {children}
-      </ScrollView>
+      {/* Lift the form above the keyboard so low inputs/submit buttons aren't
+          hidden when the keyboard opens (no screen had keyboard avoidance). */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={{ padding: 18, paddingBottom: aurora ? 132 : 48 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={!!refreshing}
+                onRefresh={onRefresh}
+                tintColor={palette.lime}
+                colors={[palette.lime]}
+              />
+            ) : undefined
+          }
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
