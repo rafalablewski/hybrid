@@ -15,7 +15,7 @@ import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, marginBottom: 12 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, marginBottom: 12 } as const;
 const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: "var(--font-mono)",
   fontSize: 14,

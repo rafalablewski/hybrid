@@ -117,7 +117,7 @@ export default function AuroraCockpit({
 
 function Section({ title, color, children, onOpen, openLabel }: { title: string; color: string; children: React.ReactNode; onOpen: () => void; openLabel: string }) {
   return (
-    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 }}>
+    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ width: 9, height: 9, borderRadius: 5, background: C(color) }} />
@@ -155,7 +155,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
       <p style={{ fontSize: 14, lineHeight: 1.6, color: C("ash") }}>Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen. It&apos;s part of <b style={{ color: C("lime") }}>Full</b>.</p>
       <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
         {TEASE.map((s) => (
-          <div key={s.kicker} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: 12 }}>
+          <div key={s.kicker} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C(s.color) }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(s.color) }}>{s.kicker}</div>

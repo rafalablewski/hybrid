@@ -48,7 +48,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 /** AURORA Performance (web) — full bespoke Athlete Twin (HPI, trajectory chart,
  *  tissue body-map + injury table, RtP panel), reusing the exact engines. */
 export default function AuroraPerformance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
   if (sessions.length === 0) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>

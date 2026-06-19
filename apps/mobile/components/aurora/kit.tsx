@@ -200,6 +200,13 @@ export function ACard({ children, style }: { children: ReactNode; style?: ViewSt
           borderWidth: 1,
           borderRadius: RADIUS.card,
           padding: 20,
+          // A touch of depth — soft, low, lifted off the field (not the heavy
+          // classic glass shadow). Keeps cards reading as floating surfaces.
+          shadowColor: "#000",
+          shadowOpacity: 0.18,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 3,
         },
         style,
       ]}

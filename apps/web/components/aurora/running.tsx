@@ -10,7 +10,7 @@ import { AuroraIcon } from "./icons";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
 function Stat({ label, value, c }: { label: string; value: string | number; c?: string }) {
   return <div style={card}><div style={{ fontWeight: 800, fontSize: 26, color: c ?? C("chalk") }}>{value}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4, color: C("ash") }}>{label}</div></div>;
