@@ -115,7 +115,7 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
       </div>
 
       {/* flagship — the Cockpit (assembles everything) */}
-      <div style={{ ...card, borderLeft: `3px solid ${C("lime")}`, marginTop: 16 }}>
+      <div style={{ ...card, marginTop: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>The hub — everything in one place</div>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 10 }}>
           <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>◈</span>

@@ -251,7 +251,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       ) : (
         <>
           {notes.map((n) => (
-            <ACard key={n.id} style={{ marginTop: 12, borderLeftWidth: 3, borderLeftColor: n.private ? C.amber : C.line }}>
+            <ACard key={n.id} style={{ marginTop: 12 }}>
               {n.private && (
                 <View style={{ alignSelf: "flex-start", backgroundColor: `${C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.amber) }}>{t("coach.private")}</Text>

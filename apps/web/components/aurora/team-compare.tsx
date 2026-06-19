@@ -81,7 +81,7 @@ export default function AuroraTeamCompare() {
 
   if (athletes.length === 0)
     return (
-      <div style={{ ...card, borderLeft: `3px solid ${C("amber")}`, fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ ...card, fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
           No comparable athletes yet
         </div>

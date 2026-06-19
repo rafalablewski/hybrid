@@ -45,7 +45,7 @@ export default function AuroraTactical() {
 
   return (
     <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ ...card, borderLeft: `3px solid ${C("amber")}` }}>
+      <div style={{ ...card, }}>
         <div style={kicker("amber")}>Tactical / SOF · deployment readiness</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
           Not &ldquo;are you fit?&rdquo; but &ldquo;are you deployable?&rdquo; — the same Twin signals (HPI, injury risk)
@@ -54,7 +54,7 @@ export default function AuroraTactical() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
-        <div style={{ ...card, borderLeft: `3px solid ${dr ? C(statusColor[dr.status]) : C("line")}` }}>
+        <div style={{ ...card, }}>
           <div style={kicker("blue")}>Deployment readiness</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 54, color: dr ? C(statusColor[dr.status]) : C("ash"), lineHeight: 1.1, margin: "6px 0" }}>
             {dr ? dr.dri : "—"}
@@ -82,7 +82,7 @@ export default function AuroraTactical() {
           </div>
         </div>
 
-        <div style={{ ...card, borderLeft: `3px solid ${unit?.go ? C("lime") : C("red")}` }}>
+        <div style={{ ...card, }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <div style={kicker("ash")}>Unit readiness</div>
             {unit && chip(unit.go ? "lime" : "red", `${unit.go ? "MISSION GO" : "NO-GO"} · ${unit.pctReady}% deployable`)}

@@ -79,7 +79,7 @@ export default function AuroraNutrition() {
       </div>
 
       {coachDiet?.diet && (
-        <div style={{ ...card, marginTop: 16, borderLeft: `3px solid ${C("violet")}` }}>
+        <div style={{ ...card, marginTop: 16, }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
             Assigned by {coachDiet.coachName ?? "your coach"} · read-only
           </div>

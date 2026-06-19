@@ -74,7 +74,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
         <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
       </View>
 
-      <ACard style={{ marginTop: 14, borderLeftWidth: 3, borderLeftColor: C.violet }}>
+      <ACard style={{ marginTop: 14 }}>
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>Today&apos;s coaching note</Text>
         <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
           Claude reads your real readiness, fatigue, velocity and goal and writes you a personalized note —

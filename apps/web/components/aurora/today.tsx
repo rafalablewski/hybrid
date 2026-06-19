@@ -132,7 +132,7 @@ export default function AuroraToday({
         style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", marginTop: 14, paddingBottom: 2 }}
       >
         {/* card 1 — Your plan today */}
-        <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", borderLeft: `3px solid ${C("lime")}` }}>
+        <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
               {/* Free: follow as written; the readiness-adaptive layer is Full. */}
@@ -191,7 +191,7 @@ export default function AuroraToday({
         </div>
 
         {/* card 2 — AI coach */}
-        <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", borderLeft: `3px solid ${C("violet")}` }}>
+        <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>AI coach</span>
           <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>Ask your coach</div>
           <div style={{ fontSize: 13, lineHeight: 1.6, color: C("chalk"), marginBottom: 6 }}>
@@ -222,7 +222,7 @@ export default function AuroraToday({
       {!isAthlete && !plan && (
         <button
           onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))}
-          style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}`, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left", color: C("chalk") }}
+          style={{ ...card, marginTop: 18, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left", color: C("chalk") }}
         >
           <span>
             <span style={{ fontWeight: 800, fontSize: 17, display: "block" }}>▤ Follow a plan — free</span>
@@ -234,7 +234,7 @@ export default function AuroraToday({
 
       {/* SEASON — macrocycle phase timeline (athlete, or coached read-only) */}
       {(isAthlete || coached) && macro && phase && (
-        <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}` }}>
+        <div style={{ ...card, marginTop: 18, }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
             Training for · {macro.goalOrSport} · {phase.block.label} phase
           </span>
@@ -257,7 +257,7 @@ export default function AuroraToday({
       )}
 
       {/* ON TRACK? — accountability */}
-      <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${bandColor(acc.band)}` }}>
+      <div style={{ ...card, marginTop: 18, }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: bandColor(acc.band) }}>
             On track? · {bandLabel(acc.band)}
@@ -277,7 +277,7 @@ export default function AuroraToday({
 
       {/* YOUR WEEK — recap (tap → full Statistics) */}
       {hasData && (
-        <button onClick={() => (onNavigate ? onNavigate("statistics") : router.push("/statistics"))} style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("lime")}`, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
+        <button onClick={() => (onNavigate ? onNavigate("statistics") : router.push("/statistics"))} style={{ ...card, marginTop: 18, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your week</span>
             <div style={{ display: "flex", gap: 8 }}>
@@ -303,7 +303,7 @@ export default function AuroraToday({
 
       {/* PERFORMANCE STATE · ATHLETE TWIN + injury risk by tissue */}
       {isAthlete && hasData && (
-        <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("blue")}` }}>
+        <div style={{ ...card, marginTop: 18, }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>Performance State · Athlete Twin</span>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
             <span style={{ fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>

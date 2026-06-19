@@ -92,7 +92,7 @@ export default function AuroraTalent() {
 
   return (
     <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ ...card, borderLeft: `3px solid ${C("violet")}` }}>
+      <div style={{ ...card, }}>
         <div style={kicker("violet")}>Talent Graph · benchmarks & discovery</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
           Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real
@@ -163,7 +163,7 @@ export default function AuroraTalent() {
         </div>
       </div>
 
-      <div style={{ ...card, borderLeft: `3px solid ${C("lime")}` }}>
+      <div style={{ ...card, }}>
         <div style={kicker("lime")}>Discover talent</div>
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           <select value={q.sport} onChange={(e) => setQ({ ...q, sport: e.target.value })} style={selectStyle}>

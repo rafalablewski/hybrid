@@ -193,7 +193,7 @@ export default function AuroraOrg() {
                 {tree.map((t) => {
                   const count = detail.members.filter((m) => m.teamId === t.id).length;
                   return (
-                    <div key={t.id} style={{ padding: "8px 10px", marginLeft: t.depth * 18, borderLeft: `2px solid ${t.depth ? C("line") : C("lime")}`, marginBottom: 4 }}>
+                    <div key={t.id} style={{ padding: "8px 10px", marginLeft: t.depth * 18, marginBottom: 4 }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: C("chalk") }}>{t.name}</span>
                       {count > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginLeft: 8, color: C("ash") }}>{count} member{count === 1 ? "" : "s"}</span>}
                     </div>
@@ -273,7 +273,7 @@ export default function AuroraOrg() {
           </div>
 
           {athlete && (
-            <div style={{ ...card, borderLeft: `3px solid ${C(hpiColor(athlete.hpi.band))}` }}>
+            <div style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={kicker("blue")}>Athlete Twin · {athlete.name}</div>
                 <span style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)}>✕</span>

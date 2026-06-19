@@ -78,7 +78,7 @@ export default function AuroraNutrition() {
       </View>
 
       {coachDiet?.diet && (
-        <ACard style={{ marginTop: 16, borderLeftWidth: 3, borderLeftColor: C.violet }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>
             Assigned by {coachDiet.coachName ?? "your coach"} · read-only
           </Text>

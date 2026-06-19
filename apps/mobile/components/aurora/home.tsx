@@ -221,7 +221,7 @@ export default function AuroraHome() {
           style={{ marginTop: 14, marginHorizontal: -2 }}
         >
           {/* card 1 — plan today */}
-          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
+          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), flex: 1 }}>
                 Your plan today{plan && !(isAthlete && planReadiness) ? " · as written" : ""}
@@ -278,7 +278,7 @@ export default function AuroraHome() {
           </View>
 
           {/* card 2 — AI coach */}
-          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.violet, padding: 20 }}>
+          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>AI coach</Text>
             <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>Ask your coach</Text>
             <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
@@ -349,7 +349,7 @@ export default function AuroraHome() {
 
         {/* SEASON — phase timeline (athlete, or coached read-only) */}
         {(isAthlete || coached) && macro && phase && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>
               Training for · {macro.goalOrSport} · {phase.block.label} phase
             </Text>
@@ -366,7 +366,7 @@ export default function AuroraHome() {
 
         {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
         {(isAthlete || coached) && macro && reconciledView && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.violet, padding: 20 }}>
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>
                 This week · {reconciledView.phase.label} · week {reconciledView.phase.week}
@@ -415,7 +415,7 @@ export default function AuroraHome() {
         )}
 
         {/* ON TRACK? — accountability */}
-        <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: bandColor(acc.band, C), padding: 20 }}>
+        <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, bandColor(acc.band, C)) }}>On track? · {bandLabel(acc.band)}</Text>
             <View style={{ backgroundColor: `${bandColor(acc.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
@@ -433,7 +433,7 @@ export default function AuroraHome() {
 
         {/* YOUR WEEK — recap (tap → Statistics) */}
         {hasData && (
-          <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
+          <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>Your week</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
@@ -459,7 +459,7 @@ export default function AuroraHome() {
 
         {/* PERFORMANCE STATE · ATHLETE TWIN + injury risk */}
         {isAthlete && hasData && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.blue, padding: 20 }}>
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>Performance State · Athlete Twin</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
               <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
