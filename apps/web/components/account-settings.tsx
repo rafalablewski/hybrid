@@ -44,9 +44,9 @@ export default function AccountSettings() {
   // to match, in place — this tab area holds MFA/billing logic we don't want to
   // fork into a parallel component.
   const aurora = template === "aurora";
-  // Match the rest of the Aurora UI: field radius 16, inner-card radius 24
+  // Match the web Aurora radius tokens (globals.css): --r-field 14, --r-card 24
   // (the section panels already round via the Card component's --r-card token).
-  const r = aurora ? 16 : 10;
+  const r = aurora ? 14 : 10;
   const rCard = aurora ? 24 : 12;
   const editInput = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "9px 12px", outline: "none" } as const;
   const editBtn = (c: string) => ({ ...mono, fontSize: 13, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
