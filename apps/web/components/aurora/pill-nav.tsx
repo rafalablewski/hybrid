@@ -72,7 +72,10 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       )}
 
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 18px 18px", pointerEvents: "none" }}>
-        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4)" }}>
+        {/* Liquid-glass pill — a frosted blur lets the page fizz through, lighter
+            than the classic .liquid-glass (translucent tint + a top rim highlight,
+            no grain/sheen). */}
+        <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
           {tabs.map((tab) => (
             <PillButton key={tab.id} icon={tab.icon} label={label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
