@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   prescribeSession,
   computePerformanceState,
+  performanceTrajectory,
   computeInjuryRisk,
   computeAccountability,
   habitStrength,
@@ -28,6 +29,8 @@ import AuroraAskCoach from "./ai-coach";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
+// Semantic readiness scale (lime=go · blue=ok · amber=caution · red=hold).
+const readyColor = (v: number) => (v >= 80 ? C("lime") : v >= 60 ? C("blue") : v >= 40 ? C("amber") : C("red"));
 const hpiColor = (b: string) => (b === "peak" || b === "primed" ? C("lime") : b === "moderate" ? C("blue") : b === "compromised" ? C("amber") : C("red"));
 const riskColor = (b: string) => (b === "low" ? C("lime") : b === "moderate" ? C("blue") : b === "elevated" ? C("amber") : C("red"));
 const bandColor = (b: string) => (b === "thriving" || b === "steady" ? C("lime") : b === "new" || b === "wobbling" ? C("blue") : b === "at-risk" ? C("amber") : C("red"));
@@ -76,6 +79,8 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // 14-day HPI trajectory (oldest→today) for the Twin sparkline.
+  const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
@@ -123,14 +128,18 @@ export default function AuroraToday({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
               {/* Free: follow as written; the readiness-adaptive layer is Full. */}
-              Your plan today{isAthlete ? (hasData || plan || phase ? ` · readiness ${rx.readiness}/100` : "") : plan ? " · as written" : ""}
+              Your plan today{!(isAthlete && (hasData || plan || phase)) && plan ? " · as written" : ""}
             </span>
-            <button
-              onClick={() => onStart(plan ? planDayToBlocks(plan.items) : undefined)}
-              style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}
-            >
-              Start →
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Readiness as a glanceable dial, not "95/100" digits to parse. */}
+              {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
+              <button
+                onClick={() => onStart(plan ? planDayToBlocks(plan.items) : undefined)}
+                style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}
+              >
+                Start →
+              </button>
+            </div>
           </div>
           {plan ? (
             <>
@@ -288,9 +297,13 @@ export default function AuroraToday({
       {isAthlete && hasData && (
         <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("blue")}` }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>Performance State · Athlete Twin</span>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
             <span style={{ fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</span>
+            <div>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</span>
+              {/* 14-day trend — direction at a glance, not just today's number. */}
+              <div style={{ marginTop: 4, maxWidth: 180 }}><Spark series={hpiSeries} color={hpiColor(state.hpi.band)} /></div>
+            </div>
             <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("lime") }}>STR {state.hpi.components.strength}</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("blue") }}>END {state.hpi.components.endurance}</span>
@@ -324,6 +337,33 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
     <div>
       <div style={{ fontWeight: 800, fontSize: 22, color }}>{value}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--color-ash)" }}>{label}</div>
+    </div>
+  );
+}
+
+/** Readiness/score dial — a conic-gradient ring with the number in the middle,
+ *  so a headline figure reads as a shape at a glance, not digits to parse. */
+function Ring({ value, color, size = 44 }: { value: number; color: string; size?: number }) {
+  const pct = Math.max(0, Math.min(100, value));
+  const inner = size - 12;
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: `conic-gradient(${color} ${pct * 3.6}deg, ${C("line")} 0)`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+      <div style={{ width: inner, height: inner, borderRadius: "50%", background: C("ink2"), display: "grid", placeItems: "center", fontWeight: 800, fontSize: 13, color: C("chalk") }}>{Math.round(value)}</div>
+    </div>
+  );
+}
+
+/** Dependency-free sparkline — scaled bars, latest highlighted. */
+function Spark({ series, color, height = 22 }: { series: number[]; color: string; height?: number }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height }}>
+      {series.map((v, i) => (
+        <div key={i} style={{ flex: 1, height: 4 + ((v - min) / range) * (height - 4), borderRadius: 2, background: i === series.length - 1 ? color : `color-mix(in srgb, ${color} 40%, transparent)` }} />
+      ))}
     </div>
   );
 }

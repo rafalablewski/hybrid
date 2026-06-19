@@ -110,6 +110,82 @@ export function AuroraMark({ size = 64 }: { size?: number }) {
   );
 }
 
+/**
+ * Readiness/score DIAL — a glanceable ring of ticks (Apple-Watch-ish), so a
+ * headline number reads as a *shape* at a glance, not digits to parse. Built
+ * from plain Views (no react-native-svg dep, matching the icon approach): N
+ * ticks evenly rotated around the centre, the first `value%` lit in `color`.
+ */
+export function Ring({
+  value,
+  size = 46,
+  ticks = 32,
+  color,
+  track,
+  children,
+}: {
+  value: number;
+  size?: number;
+  ticks?: number;
+  color: string;
+  track: string;
+  children?: ReactNode;
+}) {
+  const pct = Math.max(0, Math.min(100, value));
+  const lit = Math.round((pct / 100) * ticks);
+  const tickLen = Math.round(size * 0.16);
+  const tickW = Math.max(2, Math.round(size * 0.045));
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {Array.from({ length: ticks }).map((_, i) => (
+        <View
+          key={i}
+          pointerEvents="none"
+          style={{ position: "absolute", width: size, height: size, alignItems: "center", transform: [{ rotate: `${(i / ticks) * 360}deg` }] }}
+        >
+          <View style={{ width: tickW, height: tickLen, borderRadius: tickW, backgroundColor: i < lit ? color : track }} />
+        </View>
+      ))}
+      {children}
+    </View>
+  );
+}
+
+/** Dependency-free SPARKLINE — scaled bars, latest highlighted. A 2-second read
+ *  of a trend where a lone number can't show direction. */
+export function Spark({
+  series,
+  color,
+  height = 26,
+  width,
+}: {
+  series: number[];
+  color: string;
+  height?: number;
+  width?: number;
+}) {
+  const { palette } = useTheme();
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-end", height, gap: 2, width }}>
+      {series.map((v, i) => (
+        <View
+          key={i}
+          style={{
+            flex: 1,
+            height: 4 + ((v - min) / range) * (height - 4),
+            borderRadius: 2,
+            backgroundColor: i === series.length - 1 ? color : `${color}55`,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
 export function ACard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { palette } = useTheme();
   return (

@@ -12,6 +12,7 @@ import {
   weekNeedsResync,
   currentPhase,
   computePerformanceState,
+  performanceTrajectory,
   computeInjuryRisk,
   computeAccountability,
   habitStrength,
@@ -34,11 +35,14 @@ import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { APill, RADIUS } from "./kit";
+import { APill, RADIUS, Ring, Spark } from "./kit";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 
 type P = ReturnType<typeof useTheme>["palette"];
+// Semantic readiness scale (lime=go · blue=ok · amber=caution · red=hold) —
+// the same green→amber→red language the rest of the app uses for state.
+const readyColor = (v: number, C: P) => (v >= 80 ? C.lime : v >= 60 ? C.blue : v >= 40 ? C.amber : C.red);
 const hpiColor = (b: string, C: P) => (b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red);
 const riskColor = (b: string, C: P) => (b === "low" ? C.lime : b === "moderate" ? C.blue : b === "elevated" ? C.amber : C.red);
 const bandColor = (b: string, C: P) => (b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red);
@@ -111,6 +115,11 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // 14-day HPI trajectory (oldest→today) for the Twin sparkline.
+  const hpiSeries = useMemo(
+    () => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi),
+    [log],
+  );
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
@@ -209,11 +218,19 @@ export default function AuroraHome() {
           <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), flex: 1 }}>
-                Your plan today{isAthlete && planReadiness ? ` · readiness ${rx.readiness}/100` : plan ? " · as written" : ""}
+                Your plan today{plan && !(isAthlete && planReadiness) ? " · as written" : ""}
               </Text>
-              <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.onAccent }}>Start →</Text>
-              </Pressable>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                {/* Readiness as a glanceable DIAL, not "95/100" digits to parse. */}
+                {isAthlete && planReadiness ? (
+                  <Ring value={rx.readiness} size={44} color={readyColor(rx.readiness, C)} track={C.line}>
+                    <Text style={{ fontFamily: F.black, fontSize: 13, color: C.chalk }}>{rx.readiness}</Text>
+                  </Ring>
+                ) : null}
+                <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.onAccent }}>Start →</Text>
+                </Pressable>
+              </View>
             </View>
             {plan ? (
               <>
@@ -438,9 +455,13 @@ export default function AuroraHome() {
         {isAthlete && hasData && (
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.blue, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>Performance State · Athlete Twin</Text>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
               <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginBottom: 4 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+                {/* 14-day trend — direction at a glance, not just today's number. */}
+                <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
+              </View>
             </View>
             <View style={{ flexDirection: "row", gap: 16, marginTop: 4 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
