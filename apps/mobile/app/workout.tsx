@@ -1152,18 +1152,18 @@ function Summary({
   const pop = useRef(new Animated.Value(milestone ? 0.6 : 0.85)).current;
   const fade = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    let knock: ReturnType<typeof setTimeout> | undefined;
     if (haptics) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       if (milestone) {
-        const id = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 150);
-        // best-effort; component stays mounted on the summary
-        void id;
+        knock = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 150);
       }
     }
     Animated.parallel([
       Animated.spring(pop, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
       Animated.timing(fade, { toValue: 1, duration: 320, useNativeDriver: true }),
     ]).start();
+    return () => { if (knock) clearTimeout(knock); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const shareLabel = firstEver

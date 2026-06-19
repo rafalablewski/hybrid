@@ -22,7 +22,7 @@ const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("lin
 const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 };
 const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: 12 } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 /** A big rounded stat tile — accent kicker, oversized number, optional sub. */
 function AStat({ label, value, sub, accent = "chalk" }: { label: string; value: ReactNode; sub?: string; accent?: string }) {
@@ -172,10 +172,12 @@ export function AuroraOperatorAnalytics() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
-    fetch("/api/admin/stats")
+    const controller = new AbortController();
+    fetch("/api/admin/stats", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d: AdminStats) => setStats(d))
-      .catch(() => setErr(true));
+      .catch((e) => { if ((e as Error).name !== "AbortError") setErr(true); });
+    return () => controller.abort();
   }, []);
 
   if (err) return <AEmpty title="Admin only" body="Platform analytics are admin-only and computed live from the database." />;
@@ -204,9 +206,9 @@ export function AuroraOperatorAnalytics() {
       {stats.langSplit.length > 0 && (
         <AFrame title="Language split" kicker="Users by language" accent="blue" span={2}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-            {stats.langSplit.map((l) => {
+            {(() => {
               const max = Math.max(...stats.langSplit.map((x) => x.n)) || 1;
-              return (
+              return stats.langSplit.map((l) => (
                 <div key={l.lang}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ ...mono, fontSize: 13, color: C("chalk") }}>{l.lang}</span>
@@ -216,8 +218,8 @@ export function AuroraOperatorAnalytics() {
                     <div style={{ width: `${(l.n / max) * 100}%`, height: "100%", background: C("blue") }} />
                   </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         </AFrame>
       )}
@@ -242,7 +244,7 @@ function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
         {rows.map((r, i) => (
           <tr key={i}>
             {r.map((cell, j) => (
-              <td key={j} style={{ fontFamily: j === 0 ? "var(--font-display)" : "var(--font-mono)", fontWeight: j === 0 ? 600 : 400, fontSize: 14, color: C(j === 0 ? "chalk" : "chalk"), padding: "12px 0", borderBottom: `1px solid ${C("line")}` }}>{cell}</td>
+              <td key={j} style={{ fontFamily: j === 0 ? "var(--font-display)" : "var(--font-mono)", fontWeight: j === 0 ? 600 : 400, fontSize: 14, color: C("chalk"), padding: "12px 0", borderBottom: `1px solid ${C("line")}` }}>{cell}</td>
             ))}
           </tr>
         ))}
