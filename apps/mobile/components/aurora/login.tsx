@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
+import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
@@ -16,6 +17,7 @@ const PENDING_ONBOARDING = "hybrid.pendingOnboarding";
 export default function AuroraLogin() {
   const { palette } = useTheme();
   const router = useRouter();
+  const { session } = useSession();
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
   const live = isSupabaseConfigured();
   const [mode, setMode] = useState<"signin" | "signup">(modeParam === "signup" ? "signup" : "signin");
@@ -24,6 +26,15 @@ export default function AuroraLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Where to go AFTER auth — navigate only once the session is actually present
+  // in context. Navigating the instant signInWithPassword resolves races the
+  // SessionProvider's onAuthStateChange listener: the (tabs) guard can still see
+  // a null session and bounce straight back to /login (the "works on 2nd try"
+  // bug). Gating on `session` makes the first attempt land reliably.
+  const [navTo, setNavTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (navTo && session) router.replace(navTo);
+  }, [navTo, session, router]);
 
   const fail = (m: string) => {
     setError(m);
@@ -48,7 +59,7 @@ export default function AuroraLogin() {
         return;
       }
       await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      router.replace("/onboarding");
+      setNavTo("/onboarding");
       return;
     }
 
@@ -57,10 +68,10 @@ export default function AuroraLogin() {
     const pending = await AsyncStorage.getItem(PENDING_ONBOARDING).catch(() => null);
     if (pending) {
       await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      router.replace("/onboarding");
+      setNavTo("/onboarding");
       return;
     }
-    router.replace("/(tabs)");
+    setNavTo("/(tabs)");
   };
 
   const isSignup = mode === "signup";

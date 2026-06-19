@@ -8,9 +8,10 @@
  * SAME brand tokens (brand.ts) + theme palettes — only the composition differs.
  *
  * The active template is a per-device preference on each client (mobile:
- * AsyncStorage; web: localStorage), defaulting to `classic` so nothing changes
- * for existing users until they opt in. This is the single source of truth for
- * the template registry both clients read.
+ * AsyncStorage; web: localStorage), defaulting to `aurora` — the main HYBRID
+ * look on both clients. A user can still switch to `classic` from Settings (a
+ * stored preference always wins over this default). This is the single source
+ * of truth for the template registry both clients read.
  */
 export type TemplateName = "classic" | "aurora";
 
@@ -35,8 +36,10 @@ export const TEMPLATES: TemplateDef[] = [
   },
 ];
 
-/** The look every user gets until they opt into another template. */
-export const DEFAULT_TEMPLATE: TemplateName = "classic";
+/** The look every user gets until they opt into another template. Aurora is the
+ *  main HYBRID template on both web and mobile; Classic stays available via the
+ *  Settings switcher for anyone who prefers it. */
+export const DEFAULT_TEMPLATE: TemplateName = "aurora";
 
 /**
  * Persistence key for the active template — SHARED so web (localStorage) and

@@ -14,8 +14,8 @@ describe("templates registry", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("defaults to classic so existing users are untouched", () => {
-    expect(DEFAULT_TEMPLATE).toBe("classic");
+  it("defaults to aurora — the main HYBRID template on both clients", () => {
+    expect(DEFAULT_TEMPLATE).toBe("aurora");
     expect(TEMPLATES.some((t) => t.id === DEFAULT_TEMPLATE)).toBe(true);
   });
 
