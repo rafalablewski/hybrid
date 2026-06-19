@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import { readinessRole } from "@hybrid/core";
 import { fetchVideoAnalyses, type VideoAnalysis } from "../../lib/api";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, roleColor } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const scoreColor = (s: number, C: Palette) => (s >= 80 ? C.lime : s >= 60 ? C.blue : s >= 40 ? C.amber : C.red);
+// Technique score (0–100) on the shared good-score scale (green→amber→red).
+const scoreColor = (s: number, C: Palette) => roleColor(C, readinessRole(s));
 
 /** AURORA Video — markerless technique-analysis results, reusing the exact
  *  fetchVideoAnalyses feed. */

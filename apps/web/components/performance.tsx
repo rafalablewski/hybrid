@@ -1,12 +1,14 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, tip, Mono, Card, Chip } from "@/lib/ui";
+import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, roleHex, disp, mono, tip, Mono, Card, Chip } from "@/lib/ui";
 import {
   computePerformanceState,
   computeInjuryRisk,
   performanceTrajectory,
   toTrainingLog,
+  hpiRole,
+  riskRole,
   type Biometrics,
   type LoggedSession,
   type MuscleGroup,
@@ -19,10 +21,10 @@ import RtpPanel from "./rtp-panel";
 // themed `var(--color-*)` constants from lib/ui can't resolve.
 const SVG_INK2 = colors.ink2;
 
-const bandColor = (b: string) =>
-  b === "low" ? LIME : b === "moderate" ? BLUE : b === "elevated" ? AMBER : RED;
-const hpiColor = (b: string) =>
-  b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
+// State colours via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
+// (bandColor here is the injury-RISK scale.)
+const bandColor = (b: string) => roleHex(riskRole(b));
+const hpiColor = (b: string) => roleHex(hpiRole(b));
 
 // schematic region layout (front + back figures), keyed by tissue
 type Region = { tissue: MuscleGroup; x: number; y: number; w: number; h: number };

@@ -73,7 +73,7 @@ export default function AuroraTeamCompare() {
     [athletes, metric],
   );
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
 
   if (loading)
@@ -81,7 +81,7 @@ export default function AuroraTeamCompare() {
 
   if (athletes.length === 0)
     return (
-      <div style={{ ...card, borderLeft: `3px solid ${C("amber")}`, fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <div style={{ ...card, fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
           No comparable athletes yet
         </div>

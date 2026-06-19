@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,18 @@ import {
   TextInput,
   StyleSheet,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Easing,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
+import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 
@@ -61,9 +67,29 @@ export function AuroraScreen({
   onRefresh?: () => void;
 }) {
   const { palette } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Subtle entrance — content fades + rises on every screen ENTRY (push or tab
+  // switch), so navigation feels like motion, not a hard cut. Re-runs on focus.
+  const enter = useRef(new Animated.Value(0)).current;
+  useFocusEffect(
+    useCallback(() => {
+      enter.setValue(0);
+      const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+      anim.start();
+      return () => anim.stop();
+    }, [enter]),
+  );
+  const enterStyle = {
+    opacity: enter,
+    transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+  };
   const body = scroll ? (
     <ScrollView
-      contentContainerStyle={{ padding, paddingBottom: 112, flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      // Clear the floating Aurora pill nav so the last content row never hides
+      // under the bar — derived from the real bar height + safe-area inset (one
+      // source of truth in lib/layout), not a hand-copied magic number.
+      contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
       {children}
@@ -74,7 +100,11 @@ export function AuroraScreen({
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <AuroraField />
-      {body}
+      {/* Lift fields above the keyboard so low inputs / submit buttons (login,
+          builder, check-in, nutrition…) aren't hidden when it opens. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <Animated.View style={[{ flex: 1 }, enterStyle]}>{body}</Animated.View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -101,6 +131,82 @@ export function AuroraMark({ size = 64 }: { size?: number }) {
   );
 }
 
+/**
+ * Readiness/score DIAL — a glanceable ring of ticks (Apple-Watch-ish), so a
+ * headline number reads as a *shape* at a glance, not digits to parse. Built
+ * from plain Views (no react-native-svg dep, matching the icon approach): N
+ * ticks evenly rotated around the centre, the first `value%` lit in `color`.
+ */
+export function Ring({
+  value,
+  size = 46,
+  ticks = 32,
+  color,
+  track,
+  children,
+}: {
+  value: number;
+  size?: number;
+  ticks?: number;
+  color: string;
+  track: string;
+  children?: ReactNode;
+}) {
+  const pct = Math.max(0, Math.min(100, value));
+  const lit = Math.round((pct / 100) * ticks);
+  const tickLen = Math.round(size * 0.16);
+  const tickW = Math.max(2, Math.round(size * 0.045));
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {Array.from({ length: ticks }).map((_, i) => (
+        <View
+          key={i}
+          pointerEvents="none"
+          style={{ position: "absolute", width: size, height: size, alignItems: "center", transform: [{ rotate: `${(i / ticks) * 360}deg` }] }}
+        >
+          <View style={{ width: tickW, height: tickLen, borderRadius: tickW, backgroundColor: i < lit ? color : track }} />
+        </View>
+      ))}
+      {children}
+    </View>
+  );
+}
+
+/** Dependency-free SPARKLINE — scaled bars, latest highlighted. A 2-second read
+ *  of a trend where a lone number can't show direction. */
+export function Spark({
+  series,
+  color,
+  height = 26,
+  width,
+}: {
+  series: number[];
+  color: string;
+  height?: number;
+  width?: number;
+}) {
+  const { palette } = useTheme();
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-end", height, gap: 2, width }}>
+      {series.map((v, i) => (
+        <View
+          key={i}
+          style={{
+            flex: 1,
+            height: 4 + ((v - min) / range) * (height - 4),
+            borderRadius: 2,
+            backgroundColor: i === series.length - 1 ? color : `${color}55`,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
 export function ACard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { palette } = useTheme();
   return (
@@ -112,6 +218,13 @@ export function ACard({ children, style }: { children: ReactNode; style?: ViewSt
           borderWidth: 1,
           borderRadius: RADIUS.card,
           padding: 20,
+          // A touch of depth — soft, low, lifted off the field (not the heavy
+          // classic glass shadow). Keeps cards reading as floating surfaces.
+          shadowColor: "#000",
+          shadowOpacity: 0.18,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 3,
         },
         style,
       ]}

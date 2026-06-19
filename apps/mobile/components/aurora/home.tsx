@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -12,6 +12,7 @@ import {
   weekNeedsResync,
   currentPhase,
   computePerformanceState,
+  performanceTrajectory,
   computeInjuryRisk,
   computeAccountability,
   habitStrength,
@@ -21,6 +22,10 @@ import {
   toTrainingLog,
   toBiometrics,
   velocityProfiles,
+  readinessRole,
+  hpiRole,
+  riskRole,
+  accountabilityRole,
   SPORTS,
   LEVELS,
   type LoggedSession,
@@ -31,17 +36,21 @@ import {
 import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, roleColor } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { APill, RADIUS } from "./kit";
+import { APill, RADIUS, Ring, Spark } from "./kit";
+import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 
 type P = ReturnType<typeof useTheme>["palette"];
-const hpiColor = (b: string, C: P) => (b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red);
-const riskColor = (b: string, C: P) => (b === "low" ? C.lime : b === "moderate" ? C.blue : b === "elevated" ? C.amber : C.red);
-const bandColor = (b: string, C: P) => (b === "thriving" || b === "steady" ? C.lime : b === "new" || b === "wobbling" ? C.blue : b === "at-risk" ? C.amber : C.red);
+// State colours resolve through the SHARED semantic vocabulary (@hybrid/core
+// semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
+const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
+const hpiColor = (b: string, C: P) => roleColor(C, hpiRole(b));
+const riskColor = (b: string, C: P) => roleColor(C, riskRole(b));
+const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
 
@@ -62,6 +71,7 @@ export default function AuroraHome() {
   const coached = useHasActiveCoach();
   const readOnlyPlan = coached && !isAthlete;
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -87,6 +97,19 @@ export default function AuroraHome() {
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Subtle entrance — content fades + rises each time Today gains focus, matching
+  // the AuroraScreen transition so the home doesn't hard-cut in.
+  const enter = useRef(new Animated.Value(0)).current;
+  useFocusEffect(
+    useCallback(() => {
+      enter.setValue(0);
+      const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+      anim.start();
+      return () => anim.stop();
+    }, [enter]),
+  );
+  const enterStyle = { opacity: enter, transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] };
+
   // Onboarding prefs that tailor the prescription (client-only).
   useEffect(() => {
     AsyncStorage.getItem("hybrid.sport").then((raw) => {
@@ -111,6 +134,11 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // 14-day HPI trajectory (oldest→today) for the Twin sparkline.
+  const hpiSeries = useMemo(
+    () => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi),
+    [log],
+  );
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
@@ -173,19 +201,22 @@ export default function AuroraHome() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
-        {/* Greeting + search/bell */}
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
+        <Animated.View style={enterStyle}>
+        {/* Greeting + search/bell — the greeting is one quiet line so the PLAN
+            (the reason you opened the app), not your own name, is the hero. */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View>
-            <Text style={{ fontFamily: F.reg, fontSize: 16, color: C.ash }}>Hi,</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5 }}>{name}</Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="search" size={22} color={C.ash} />
-            </View>
-            <Pressable onPress={() => router.push("/notifications")} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="bell" size={22} color={C.ash} />
+          <Text style={{ fontFamily: F.reg, fontSize: 15, color: C.ash }}>
+            Hi, <Text style={{ fontFamily: F.bold, color: C.chalk }}>{name.split(" ")[0]}</Text>
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {/* Was a bare View — looked tappable but did nothing. Wire it to the
+                searchable Exercises browser so the magnifier actually searches. */}
+            <Pressable onPress={() => router.push("/exercises")} accessibilityRole="button" accessibilityLabel="Search exercises" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="search" size={20} color={C.ash} />
+            </Pressable>
+            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel="Notifications" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="bell" size={20} color={C.ash} />
             </Pressable>
           </View>
         </View>
@@ -197,18 +228,29 @@ export default function AuroraHome() {
           snapToInterval={cardW + 12}
           decelerationRate="fast"
           onMomentumScrollEnd={onPagerScroll}
-          contentContainerStyle={{ gap: 12 }}
-          style={{ marginTop: 20, marginHorizontal: -2 }}
+          // align top so a shorter card (e.g. Plan today) keeps its NATURAL
+          // height instead of stretching to match the taller AI-coach card —
+          // otherwise the plan card renders mostly-empty tall whitespace.
+          contentContainerStyle={{ gap: 12, alignItems: "flex-start" }}
+          style={{ marginTop: 14, marginHorizontal: -2 }}
         >
           {/* card 1 — plan today */}
-          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
+          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), flex: 1 }}>
-                Your plan today{isAthlete && planReadiness ? ` · readiness ${rx.readiness}/100` : plan ? " · as written" : ""}
+                Your plan today{plan && !(isAthlete && planReadiness) ? " · as written" : ""}
               </Text>
-              <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.onAccent }}>Start →</Text>
-              </Pressable>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                {/* Readiness as a glanceable DIAL, not "95/100" digits to parse. */}
+                {isAthlete && planReadiness ? (
+                  <Ring value={rx.readiness} size={44} color={readyColor(rx.readiness, C)} track={C.line}>
+                    <Text style={{ fontFamily: F.black, fontSize: 13, color: C.chalk }}>{rx.readiness}</Text>
+                  </Ring>
+                ) : null}
+                <Pressable onPress={startPrescribed} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.onAccent }}>Start →</Text>
+                </Pressable>
+              </View>
             </View>
             {plan ? (
               <>
@@ -250,15 +292,17 @@ export default function AuroraHome() {
           </View>
 
           {/* card 2 — AI coach */}
-          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.violet, padding: 20 }}>
+          <View style={{ width: cardW, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>AI coach</Text>
             <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>Ask your coach</Text>
             <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
               Claude reads your real readiness, fatigue and velocity and writes you a personalized note for the day.
             </Text>
-            {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
+            {/* Paid intelligence — casual sees the pitch + one upgrade tap.
+                Athletes get the coach note INLINE (embedded — no nested screen
+                /header/card, which previously double-wrapped this card). */}
             {isAthlete ? (
-              <AuroraAiCoach />
+              <AuroraAiCoach embedded />
             ) : (
               <Pressable
                 onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-aicoach" }); router.push("/upgrade"); }}
@@ -285,7 +329,7 @@ export default function AuroraHome() {
           <View style={{ marginTop: 22 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>Assigned by your coach</Text>
             {upcoming.map((a) => (
-              <View key={a.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, marginBottom: 12 }}>
+              <View key={a.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 16, marginBottom: 12 }}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{a.name}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>Assigned · {new Date(a.date).toLocaleDateString()}</Text>
@@ -319,7 +363,7 @@ export default function AuroraHome() {
 
         {/* SEASON — phase timeline (athlete, or coached read-only) */}
         {(isAthlete || coached) && macro && phase && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>
               Training for · {macro.goalOrSport} · {phase.block.label} phase
             </Text>
@@ -336,7 +380,7 @@ export default function AuroraHome() {
 
         {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
         {(isAthlete || coached) && macro && reconciledView && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.violet, padding: 20 }}>
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>
                 This week · {reconciledView.phase.label} · week {reconciledView.phase.week}
@@ -385,7 +429,7 @@ export default function AuroraHome() {
         )}
 
         {/* ON TRACK? — accountability */}
-        <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: bandColor(acc.band, C), padding: 20 }}>
+        <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, bandColor(acc.band, C)) }}>On track? · {bandLabel(acc.band)}</Text>
             <View style={{ backgroundColor: `${bandColor(acc.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
@@ -403,7 +447,7 @@ export default function AuroraHome() {
 
         {/* YOUR WEEK — recap (tap → Statistics) */}
         {hasData && (
-          <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.lime, padding: 20 }}>
+          <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>Your week</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
@@ -429,11 +473,15 @@ export default function AuroraHome() {
 
         {/* PERFORMANCE STATE · ATHLETE TWIN + injury risk */}
         {isAthlete && hasData && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, borderLeftWidth: 3, borderLeftColor: C.blue, padding: 20 }}>
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>Performance State · Athlete Twin</Text>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
               <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginBottom: 4 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+                {/* 14-day trend — direction at a glance, not just today's number. */}
+                <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
+              </View>
             </View>
             <View style={{ flexDirection: "row", gap: 16, marginTop: 4 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
@@ -458,6 +506,7 @@ export default function AuroraHome() {
             </View>
           </View>
         )}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

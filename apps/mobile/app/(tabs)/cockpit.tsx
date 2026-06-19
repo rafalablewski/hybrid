@@ -9,6 +9,7 @@ import {
   toTrainingLog,
   toBiometrics,
   velocityProfiles,
+  hpiRole,
   SPORTS,
   LEVELS,
   type LoggedSession,
@@ -18,12 +19,11 @@ import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from ".
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { Screen, Card, Kicker, Mono, H1, Button, F } from "../../lib/ui";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, roleColor } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraCockpit from "../../components/aurora/cockpit";
 
-const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) =>
-  b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
+const hpiColor = (b: string, C: ReturnType<typeof useTheme>["palette"]) => roleColor(C, hpiRole(b));
 
 /**
  * The Athlete Cockpit — one screen that assembles the athlete's scattered depth

@@ -1,9 +1,10 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { LINE, ASH, LIME, BLUE, tip, mono } from "@/lib/ui";
+import { LINE, ASH, LIME, BLUE, tip, mono, roleHex } from "@/lib/ui";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog,
+  ROLE_COLOR, hpiRole, riskRole,
   type Biometrics, type LoggedSession, type MuscleGroup, type TissueRisk, colors,
 } from "@hybrid/core";
 import RtpPanel from "../rtp-panel";
@@ -11,8 +12,9 @@ import { AuroraIcon } from "./icons";
 
 const SVG_INK2 = colors.ink2;
 const C = (v: string) => `var(--color-${v})`;
-const bandHex = (b: string) => (b === "low" ? colors.lime : b === "moderate" ? colors.blue : b === "elevated" ? colors.amber : colors.red);
-const hpiVar = (b: string) => (b === "peak" || b === "primed" ? "lime" : b === "moderate" ? "blue" : b === "compromised" ? "amber" : "red");
+// State colours via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
+const bandHex = (b: string) => roleHex(riskRole(b)); // injury-risk scale → hex (recharts)
+const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)]; // → accent token name ("lime"/…)
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 type Region = { tissue: MuscleGroup; x: number; y: number; w: number; h: number };
@@ -46,7 +48,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 /** AURORA Performance (web) — full bespoke Athlete Twin (HPI, trajectory chart,
  *  tissue body-map + injury table, RtP panel), reusing the exact engines. */
 export default function AuroraPerformance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
   if (sessions.length === 0) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -124,7 +126,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
                 {risk.tissues.map((t) => (
                   <tr key={t.tissue}>
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 13, padding: 8, textTransform: "capitalize", borderBottom: `1px solid ${C("line")}` }}>{cap(t.tissue)}</td>
-                    <td style={{ padding: 8, borderBottom: `1px solid ${C("line")}` }}>{chip(t.risk > 0 ? `var(--color-${t.band === "low" ? "lime" : t.band === "moderate" ? "blue" : t.band === "elevated" ? "amber" : "red"})` : C("ash"), String(t.risk))}</td>
+                    <td style={{ padding: 8, borderBottom: `1px solid ${C("line")}` }}>{chip(t.risk > 0 ? C(ROLE_COLOR[riskRole(t.band)]) : C("ash"), String(t.risk))}</td>
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: 8, color: t.risk > 0 ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{(t.prob * 100).toFixed(1)}%</td>
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: 8, color: t.enoughHistory ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 11, padding: 8, color: C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.drivers[0]?.label ?? "—"}</td>

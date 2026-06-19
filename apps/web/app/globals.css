@@ -126,7 +126,7 @@ body {
    be reached by a class selector), so swapping them here re-rounds every Card,
    Chip, Select, input and tooltip across the whole app at once. */
 :root { --r-card: 16px; --r-chip: 5px; --r-field: 9px; --r-tip: 8px; }
-[data-template="aurora"] { --r-card: 24px; --r-chip: 999px; --r-field: 14px; --r-tip: 14px; }
+[data-template="aurora"] { --r-card: 28px; --r-chip: 999px; --r-field: 16px; --r-tip: 14px; }
 
 /* AURORA turns the Liquid-Glass surface into a SOLID ink2 card (the bespoke
    Aurora look) — flat fill, solid hairline border, no blur/grain/sheen/glow —
@@ -276,6 +276,18 @@ body {
 }
 .cmd-orb:hover .cmd-dot { transform: rotate(45deg) scale(1.05); border-radius: 9px; }
 @keyframes cmdFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+
+/* Win pop-in — a PR/achievement should LAND, not just appear (Today recap badges).
+   Honours reduced-motion. */
+@keyframes winPop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.win-pop { animation: winPop .42s cubic-bezier(.2,.7,.3,1.2) both; }
+@media (prefers-reduced-motion: reduce) { .win-pop { animation: none; } }
+
+/* Screen entrance — content fades + rises when you change screens, so Aurora
+   navigation feels like motion, not a hard cut (matches the mobile transition). */
+@keyframes auroraEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.aurora-enter { animation: auroraEnter .26s cubic-bezier(.2,.7,.3,1) both; }
+@media (prefers-reduced-motion: reduce) { .aurora-enter { animation: none; } }
 
 .cmd-scrim {
   position: fixed;

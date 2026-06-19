@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -696,7 +696,7 @@ export default function Workout() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
 
-  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} />;
+  if (phase === "done" && summary) return <Summary summary={summary} router={router} t={t} units={prefs.units} haptics={prefs.haptics} />;
 
   const ssLabels = supersetLabels(exercises);
 
@@ -717,6 +717,7 @@ export default function Workout() {
         </Pressable>
       </View>
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         <TextInput
           value={title}
@@ -770,7 +771,7 @@ export default function Workout() {
                 <Pressable
                   onPress={() => setRestSince(null)}
                   hitSlop={8}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: accent }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: R.field, borderWidth: 1, borderColor: accent }}
                 >
                   <Text style={{ fontFamily: F.bold, fontSize: 12, color: txt(C, accent) }}>■ {t("workout.stopRest")}</Text>
                 </Pressable>
@@ -782,7 +783,7 @@ export default function Workout() {
                     <Pressable
                       key={sec}
                       onPress={() => pickRest(sec)}
-                      style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
+                      style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: R.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
                     >
                       <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.blue) : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
                     </Pressable>
@@ -827,7 +828,7 @@ export default function Workout() {
                   <Pressable
                     onPress={() => supersetWithPrev(nextUid)}
                     hitSlop={6}
-                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
                   >
                     <Text style={{ fontFamily: F.mono, fontSize: 11, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("workout.supersetJoined") : t("workout.superset")}</Text>
                   </Pressable>
@@ -874,7 +875,7 @@ export default function Workout() {
                         <Pressable
                           onPress={() => cycleType(x.uid, i)}
                           onLongPress={() => removeSet(x.uid, i)}
-                          style={{ width: 28, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
+                          style={{ width: 28, height: 30, borderRadius: R.field, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
                         >
                           <Text style={{ fontFamily: F.mono, fontSize: 13, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                         </Pressable>
@@ -926,7 +927,7 @@ export default function Workout() {
                       {prefs.quickIncrement > 0 && (
                         <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                           {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
-                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line }}>
+                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: R.field, borderWidth: 1, borderColor: C.line }}>
                               <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
                             </Pressable>
                           ))}
@@ -1007,7 +1008,7 @@ export default function Workout() {
                 placeholderTextColor={C.ash}
                 autoFocus
                 onSubmitEditing={() => addExercise(custom)}
-                style={{ fontFamily: F.reg, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
+                style={{ fontFamily: F.reg, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
               />
 
               {recentShown.length > 0 && (
@@ -1072,6 +1073,7 @@ export default function Workout() {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
 
@@ -1127,11 +1129,13 @@ function Summary({
   router,
   t,
   units,
+  haptics,
 }: {
   summary: Summ;
   router: ReturnType<typeof useRouter>;
   t: (k: string) => string;
   units: WeightUnit;
+  haptics: boolean;
 }) {
   const C = useTheme().palette;
   const R = auroraRadii(useTemplate().template === "aurora");
@@ -1141,6 +1145,27 @@ function Summary({
   // climax (and our download engine), so the CTA leans into it.
   const hasWin = prs.length > 0 || cardioPrs.length > 0;
   const milestone = firstEver || hasWin;
+
+  // Finishing is the payoff — make it FELT. A success haptic (a heavier knock
+  // layered on for a PR/first), and a spring entrance on the hero badge so the
+  // win lands instead of just appearing.
+  const pop = useRef(new Animated.Value(milestone ? 0.6 : 0.85)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    let knock: ReturnType<typeof setTimeout> | undefined;
+    if (haptics) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      if (milestone) {
+        knock = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 150);
+      }
+    }
+    Animated.parallel([
+      Animated.spring(pop, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 320, useNativeDriver: true }),
+    ]).start();
+    return () => { if (knock) clearTimeout(knock); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const shareLabel = firstEver
     ? t("summary.shareFirst")
     : hasWin
@@ -1172,9 +1197,9 @@ function Summary({
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
         <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+          <Animated.View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center", transform: [{ scale: pop }] }}>
             <Text style={{ fontSize: 34, color: txt(C, C.lime), fontFamily: F.black }}>{firstEver ? "🎉" : "✓"}</Text>
-          </View>
+          </Animated.View>
           <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>
             {firstEver ? t("summary.firstTitle") : t("summary.complete")}
           </Text>
@@ -1183,9 +1208,9 @@ function Summary({
           )}
         </View>
 
-        {/* PR celebration — the reason to keep coming back */}
+        {/* PR celebration — the reason to keep coming back (fades/scales in) */}
         {prs.length > 0 && (
-          <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12 }}>
+          <Animated.View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12, opacity: fade, transform: [{ scale: pop }] }}>
             <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.lime) }}>
               🏆 {prs.length} {t("summary.newPrs")}
             </Text>
@@ -1194,7 +1219,7 @@ function Summary({
                 {prLine(p)}
               </Text>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* Cardio PR celebration — runs count too */}

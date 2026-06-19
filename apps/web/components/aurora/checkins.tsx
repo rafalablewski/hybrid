@@ -58,7 +58,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
     setSaving(false);
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: 14, width: "100%", boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none" };
 
   return (
@@ -138,7 +138,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
             </div>
             {c.note && <div style={{ fontSize: 14, lineHeight: 1.5, marginTop: 6 }}>{c.note}</div>}
             {c.coachReply && (
-              <div style={{ marginTop: 10, borderLeft: `2px solid ${C("violet")}`, paddingLeft: 10 }}>
+              <div style={{ marginTop: 10, paddingLeft: 10 }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>Coach</div>
                 <div style={{ fontSize: 14, lineHeight: 1.5, marginTop: 4 }}>{c.coachReply}</div>
               </div>

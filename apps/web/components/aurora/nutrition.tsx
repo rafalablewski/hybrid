@@ -61,7 +61,7 @@ export default function AuroraNutrition() {
     setSaving(false);
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: 14, width: "100%", boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
 
   return (
@@ -79,7 +79,7 @@ export default function AuroraNutrition() {
       </div>
 
       {coachDiet?.diet && (
-        <div style={{ ...card, marginTop: 16, borderLeft: `3px solid ${C("violet")}` }}>
+        <div style={{ ...card, marginTop: 16, }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
             Assigned by {coachDiet.coachName ?? "your coach"} · read-only
           </div>
@@ -197,7 +197,7 @@ function Bar({ cur, target, color }: { cur: number; target: number; color: strin
 function MacroRow({ label, cur, target, color }: { label: string; cur: number; target: number; color: string }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
-    <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 16, marginTop: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, marginTop: 12 }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
         <Bar cur={cur} target={target} color={color} />

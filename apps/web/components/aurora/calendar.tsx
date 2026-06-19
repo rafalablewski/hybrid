@@ -6,7 +6,7 @@ import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6 }}>{label}</span>;
 type EventRow = { id: string; name: string; sport: string; date: string };
 type AssignmentRow = { id: string; name: string; date: string; status: string };

@@ -68,7 +68,7 @@ export default function AuroraCoachApply() {
       </Text>
 
       {isCoach ? (
-        <ACard style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Already verified</Text>
           <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
             You already have coach access — open the Coach tab to manage your athletes.
@@ -81,7 +81,7 @@ export default function AuroraCoachApply() {
       ) : (
         <>
           {existing && (
-            <ACard style={{ borderLeftWidth: 3, borderLeftColor: statusColor(existing.status), marginTop: 16 }}>
+            <ACard style={{ marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
                 Application · {existing.status}
               </Text>

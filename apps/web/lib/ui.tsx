@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors } from "@hybrid/core";
+import { colors, ROLE_COLOR, type SemanticRole } from "@hybrid/core";
 
 // Tokens come from @hybrid/core (the shared identity). Surface + primary-text
 // tokens resolve through CSS variables (globals.css @theme + [data-theme])
@@ -20,6 +20,13 @@ export const LIME = colors.lime,
   VIOLET = colors.violet,
   AMBER = colors.amber,
   RED = colors.red;
+
+// Resolve a SHARED semantic role (@hybrid/core semantic.ts) to a colour. `roleHex`
+// returns raw hex (for recharts/SVG + the classic screens); `roleVar` returns the
+// themed CSS var (for the Aurora screens). State colour goes through ONE source,
+// so web + mobile can't drift on what a colour means.
+export const roleHex = (role: SemanticRole): string => colors[ROLE_COLOR[role]];
+export const roleVar = (role: SemanticRole): string => `var(--color-${ROLE_COLOR[role]})`;
 
 // Fixed near-black for text/icons placed ON a bright accent fill (lime/amber/…).
 // Stays dark in BOTH themes (accent fills are bright in both), so it must NOT be

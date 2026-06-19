@@ -12,7 +12,7 @@ import { useLoggerPrefs } from "@/lib/logger-prefs";
 const PERIODS: { id: ExercisePeriod; label: string }[] = [{ id: "8w", label: "8 wk" }, { id: "6m", label: "6 mo" }, { id: "1y", label: "1 yr" }, { id: "all", label: "All" }];
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 18 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18 } as const;
 
 function Stat({ label, value, c }: { label: string; value: string | number; c?: string }) {
   return (

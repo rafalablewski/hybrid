@@ -70,7 +70,9 @@ export default function AuroraAskCoach() {
               {source === "ai" ? "Claude" : "Engine"}
             </span>
           )}
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: 1.5, marginTop: 8, color: C("chalk") }}>
+          {/* Coaching PROSE in the display sans (reads like a coach talking),
+              not mono (which reads like a terminal log); chips stay mono. */}
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 14.5, lineHeight: 1.55, marginTop: 8, color: C("chalk") }}>
             {text}
           </div>
         </div>

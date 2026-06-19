@@ -49,6 +49,7 @@ import AuroraRunTrack from "./aurora/run-track";
 import AuroraCoach from "./aurora/coach";
 import AuroraUpgrade from "./aurora/upgrade";
 import AuroraOrg from "./aurora/org";
+import { AuroraAthleteAnalytics, AuroraCoachAnalytics, AuroraOperatorAnalytics } from "./aurora/analytics";
 import AuroraTalent from "./aurora/talent";
 import AuroraTactical from "./aurora/tactical";
 import AuroraTeamCompare from "./aurora/team-compare";
@@ -505,6 +506,9 @@ export default function AppShell() {
           </div>
         </header>
 
+        {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
+            changes (Aurora only). The banners/header above stay put. */}
+        <div key={screen} className={aurora ? "aurora-enter" : undefined}>
         {screen === "analytics" && (
           <>
             {allowedScopes.length > 1 && (
@@ -570,9 +574,9 @@ export default function AppShell() {
                 </div>
               );
             })()}
-            {scope === "athlete" && <AthleteAnalytics sessions={sessions} />}
-            {scope === "coach" && <CoachAnalytics roster={roster} />}
-            {scope === "operator" && <OperatorAnalytics />}
+            {scope === "athlete" && (aurora ? <AuroraAthleteAnalytics sessions={sessions} /> : <AthleteAnalytics sessions={sessions} />)}
+            {scope === "coach" && (aurora ? <AuroraCoachAnalytics roster={roster} /> : <CoachAnalytics roster={roster} />)}
+            {scope === "operator" && (aurora ? <AuroraOperatorAnalytics /> : <OperatorAnalytics />)}
           </>
         )}
 
@@ -697,6 +701,7 @@ export default function AppShell() {
         {screen === "statistics" && <StatisticsScreen embedded />}
 
         {screen === "settings" && <AccountSettings />}
+        </div>
       </main>
 
       {/* Aurora: the floating pill bottom nav (coexists with the sidebar) — the

@@ -3,17 +3,18 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog, toBiometrics,
+  hpiRole, riskRole,
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, type CoreSignal } from "../../lib/api";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, roleColor } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const hpiColor = (b: string, C: Palette) => (b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red);
-const riskColor = (b: string, C: Palette) => (b === "low" ? C.lime : b === "moderate" ? C.blue : b === "elevated" ? C.amber : C.red);
+const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
+const riskColor = (b: string, C: Palette) => roleColor(C, riskRole(b));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** AURORA Performance — the Athlete Twin (HPI cockpit, 14-day trajectory,

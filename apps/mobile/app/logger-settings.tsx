@@ -5,8 +5,14 @@ import { useLang } from "../lib/i18n";
 import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
+import AuroraLoggerSettings from "../components/aurora/logger-settings";
 
 type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
+
+export default function LoggerSettings() {
+  if (useTemplate().template === "aurora") return <AuroraLoggerSettings />;
+  return <ClassicLoggerSettings />;
+}
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },
@@ -25,7 +31,7 @@ const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
 ];
 
 /** Logger settings — make the live workout's hardcoded behavior configurable. */
-export default function LoggerSettings() {
+function ClassicLoggerSettings() {
   const C = useTheme().palette;
   const { t } = useLang();
   const prefs = useLoggerPrefs();

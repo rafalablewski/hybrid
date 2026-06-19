@@ -111,7 +111,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
         {step === "plan" && (
           <Step title="Your plan" sub={plan ? "" : "Pick a goal to see a recommendation."}>
             {plan ? (
-              <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 }}>
+              <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{plan.planName}</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks</div>
                 <div style={{ fontSize: 14, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>

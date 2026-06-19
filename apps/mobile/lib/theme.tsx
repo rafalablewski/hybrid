@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { THEMES, colors, type ThemeName, type ThemePalette } from "@hybrid/core";
+import { THEMES, colors, ROLE_COLOR, type SemanticRole, type ThemeName, type ThemePalette } from "@hybrid/core";
 
 /**
  * Mobile theme. Surfaces/text flip with the OS appearance (or an explicit
@@ -51,6 +51,11 @@ export function txt(palette: Palette, c: string): string {
       return c;
   }
 }
+
+/** Resolve a SHARED semantic role (@hybrid/core semantic.ts) to a palette fill.
+ *  The one client mapping every state colour goes through, so meaning lives in
+ *  core and can't drift per-screen. Wrap with txt() when used as TEXT. */
+export const roleColor = (palette: Palette, role: SemanticRole): string => palette[ROLE_COLOR[role]];
 
 const KEY = "hybrid-theme-pref";
 

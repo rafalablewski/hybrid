@@ -83,7 +83,7 @@ export default function AuroraTalent() {
     alert("Thanks — our team will review it.");
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 13, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
   const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 13, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
@@ -92,7 +92,7 @@ export default function AuroraTalent() {
 
   return (
     <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ ...card, borderLeft: `3px solid ${C("violet")}` }}>
+      <div style={{ ...card, }}>
         <div style={kicker("violet")}>Talent Graph · benchmarks & discovery</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
           Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real
@@ -163,7 +163,7 @@ export default function AuroraTalent() {
         </div>
       </div>
 
-      <div style={{ ...card, borderLeft: `3px solid ${C("lime")}` }}>
+      <div style={{ ...card, }}>
         <div style={kicker("lime")}>Discover talent</div>
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           <select value={q.sport} onChange={(e) => setQ({ ...q, sport: e.target.value })} style={selectStyle}>

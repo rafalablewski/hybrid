@@ -9,6 +9,7 @@ import { useNavAccess } from "../../lib/access";
 import { fetchMyAccessRequests, requestAccess, WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
+import { AuroraScreen } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 
@@ -19,7 +20,7 @@ const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casu
 // access to lives on the web app only — keep in sync with the HREF map in
 // components/liquid-glass.tsx.
 const MOBILE_NAV_IDS = new Set([
-  "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar",
+  "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar", "builder",
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "settings", "onboarding",
   "statistics", "timer", "notifications",
@@ -39,6 +40,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
   {
     titleKey: "more.plan",
     links: [
+      { id: "builder", labelKey: "nav.builder", sub: "compose a routine", href: "/builder", color: C.lime },
       { id: "plans", labelKey: "nav.plans", sub: "browse & enroll", href: "/(tabs)/plans", color: C.lime },
       { id: "periodize", labelKey: "nav.periodize", sub: "your season · phases", href: "/periodize", color: C.violet },
       { id: "competition", labelKey: "nav.competition", sub: "peak on the day", href: "/competition", color: C.amber },
@@ -113,16 +115,40 @@ export default function More() {
   // `onboarding` is the universal setup flow — it's no longer a nav item (so
   // navVisibleTo can't gate it), but every persona can re-run it, so it always
   // shows. Everything else is persona/access gated as before.
+  // `onboarding` is the universal setup flow (no longer a nav item). `builder`
+  // IS an athlete-gated nav item, but the Train launcher offers "Build a routine"
+  // to everyone, so we surface it here for everyone too (parity with Train) —
+  // both bypass the persona filter and always show.
+  const ALWAYS = new Set(["onboarding", "builder"]);
   const sections = SECTIONS.map((s) => ({
     ...s,
-    links: s.links.filter((l) => l.id === "onboarding" || navVisibleTo(persona, l.id, access)),
+    links: s.links.filter((l) => ALWAYS.has(l.id) || navVisibleTo(persona, l.id, access)),
   })).filter((s) => s.links.length > 0);
 
-  return (
-    <Screen>
+  // Aurora wraps the hub in the airy AuroraScreen (blob field + nav clearance);
+  // classic keeps the glass Screen. Same content either way.
+  const body = (
+    <>
       <Kicker>{t("nav.more")}</Kicker>
       <H1>{t("more.title")}</H1>
       <Mono style={{ marginTop: 6 }}>{t("more.intro")}</Mono>
+
+      {/* SETTINGS — pinned to the TOP of the hub. The bottom-nav glyph is a cog,
+          so users tap "More" expecting Settings; lead with it (and the account
+          summary) so that expectation is met immediately, and it's no longer
+          buried at the very bottom where the floating nav covered it. */}
+      <Pressable
+        onPress={() => router.push("/settings")}
+        style={{ marginTop: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>⚙  {t("settings.title")}</Text>
+          <Mono style={{ marginTop: 3, fontSize: 11 }}>
+            {[role.toUpperCase(), entitlement === "paid" ? "FULL · PAID" : "FREE"].join(" · ")} — {t("settings.sub")}
+          </Mono>
+        </View>
+        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
+      </Pressable>
 
       {/* Mode toggle — a client picks the lean tracker (Simple, free) or the
           full athlete toolkit (Full, a paid upgrade). Coaches/admins get their
@@ -255,20 +281,11 @@ export default function More() {
         </View>
       )}
 
-      <Pressable
-        onPress={() => router.push("/settings")}
-        style={{ marginTop: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
-      >
-        <View>
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("settings.title")}</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>{t("settings.sub")}</Mono>
-        </View>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
-      </Pressable>
-
-      <Pressable onPress={signOut} style={{ marginTop: 18, alignItems: "center" }}>
+      <Pressable onPress={signOut} style={{ marginTop: 24, alignItems: "center" }}>
         <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("common.signout")}</Text>
       </Pressable>
-    </Screen>
+    </>
   );
+
+  return aurora ? <AuroraScreen>{body}</AuroraScreen> : <Screen>{body}</Screen>;
 }

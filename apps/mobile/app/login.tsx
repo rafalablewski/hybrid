@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { brand } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { useSession } from "../lib/session";
 
 // Set when an account is first created, consumed on the next authenticated
 // entry — so a brand-new user lands in onboarding to set their persona + goal +
@@ -25,6 +26,7 @@ function ClassicLogin() {
   const C = useTheme().palette;
   const router = useRouter();
   const { t } = useLang();
+  const { session } = useSession();
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
   const live = isSupabaseConfigured();
   const [mode, setMode] = useState<"signin" | "signup">(modeParam === "signup" ? "signup" : "signin");
@@ -33,6 +35,14 @@ function ClassicLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Navigate only once the session lands in context — see the Aurora login for
+  // the full rationale: replacing the instant signInWithPassword resolves races
+  // the SessionProvider listener and the (tabs) guard bounces back to /login
+  // (the "login fails on the first try, works on the second" bug).
+  const [navTo, setNavTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (navTo && session) router.replace(navTo);
+  }, [navTo, session, router]);
 
   const submit = async () => {
     setBusy(true);
@@ -54,7 +64,7 @@ function ClassicLogin() {
         return;
       }
       await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      router.replace("/onboarding");
+      setNavTo("/onboarding");
       return;
     }
 
@@ -65,10 +75,10 @@ function ClassicLogin() {
     const pending = await AsyncStorage.getItem(PENDING_ONBOARDING).catch(() => null);
     if (pending) {
       await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      router.replace("/onboarding");
+      setNavTo("/onboarding");
       return;
     }
-    router.replace("/(tabs)");
+    setNavTo("/(tabs)");
   };
   const fail = (m: string) => {
     setError(m);

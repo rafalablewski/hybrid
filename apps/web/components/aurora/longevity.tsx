@@ -36,7 +36,7 @@ export default function AuroraLongevity() {
   const fields: [keyof typeof f, string, string][] = [
     ["age", "Age", "yr"], ["restingHr", "Resting HR", "bpm"], ["hrv", "HRV", "ms"], ["vo2", "VO₂", "ml/kg/min"], ["sleepH", "Sleep", "h"],
   ];
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
   const input = { fontFamily: "var(--font-mono)", fontSize: 14, padding: "12px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, width: "100%", boxSizing: "border-box" as const };
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{label}</span>;
 

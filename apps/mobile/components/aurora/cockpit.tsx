@@ -4,18 +4,18 @@ import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession, computePerformanceState, runTotals, toTrainingLog, toBiometrics,
-  velocityProfiles, SPORTS, LEVELS, type LoggedSession, type Macrocycle,
+  velocityProfiles, hpiRole, SPORTS, LEVELS, type LoggedSession, type Macrocycle,
 } from "@hybrid/core";
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, roleColor } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const hpiColor = (b: string, C: Palette) => (b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red);
+const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
 
 /** AURORA Athlete Cockpit — same live snapshots (goal/season → route →
  *  performance → sport → velocity → endurance) + freemium teaser as the classic. */

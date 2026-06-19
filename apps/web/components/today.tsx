@@ -16,6 +16,9 @@ import {
   currentPhase,
   planToday,
   planDayToBlocks,
+  hpiRole,
+  riskRole,
+  accountabilityRole,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
@@ -26,18 +29,15 @@ import AskCoach from "./ai-coach";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { readIntake, type Intake } from "@/lib/intake";
 import {
-  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
+  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, roleHex,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
 
-const hpiColor = (b: string) =>
-  b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
-// Injury-risk band → brand color (low good ⇄ high alert). Mirrors the retired
-// Dashboard's tissue panel, now folded into Today's Twin card.
-const riskColor = (b: string) =>
-  b === "low" ? LIME : b === "moderate" ? BLUE : b === "elevated" ? AMBER : RED;
-const bandColor = (b: string) =>
-  b === "thriving" || b === "steady" ? LIME : b === "new" || b === "wobbling" ? BLUE : b === "at-risk" ? AMBER : RED;
+// State colours resolve through the SHARED semantic vocabulary (@hybrid/core
+// semantic.ts) so web + mobile can't drift on what a colour means.
+const hpiColor = (b: string) => roleHex(hpiRole(b));
+const riskColor = (b: string) => roleHex(riskRole(b));
+const bandColor = (b: string) => roleHex(accountabilityRole(b));
 // "new" is the day-one state — show it as "getting started", not the raw key.
 const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
 const MUSCLE_LABEL: Record<string, string> = {

@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
+import { readinessRole } from "@hybrid/core";
 import { fetchVideoAnalyses, type VideoAnalysis } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, roleColor } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraVideo from "../components/aurora/video";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const scoreColor = (s: number, C: Palette) => (s >= 80 ? C.lime : s >= 60 ? C.blue : s >= 40 ? C.amber : C.red);
+// Technique score (0–100) on the shared good-score scale (green→amber→red).
+const scoreColor = (s: number, C: Palette) => roleColor(C, readinessRole(s));
 
 /** Video — markerless motion-analysis results (joint angles, asymmetry,
  *  technique score). Capture is phone-side; this lists real recordings. Mobile port. */

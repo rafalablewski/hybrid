@@ -5,8 +5,8 @@ import { DEFAULT_TEMPLATE, resolveTemplate, TEMPLATE_STORAGE_KEY, type TemplateN
 /**
  * Active UI template (see @hybrid/core templates.ts). A per-device preference —
  * mirrors the ThemeProvider pattern — selecting which screen layout each route
- * renders (classic HYBRID vs the rounded "aurora" look). Defaults to `classic`
- * so existing users are untouched until they switch it in Settings.
+ * renders (classic HYBRID vs the rounded "aurora" look). Defaults to `aurora`
+ * (the main HYBRID look); a stored preference from the Settings switcher wins.
  */
 const KEY = TEMPLATE_STORAGE_KEY;
 

@@ -15,7 +15,7 @@ import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, marginBottom: 12 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, marginBottom: 12 } as const;
 const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: "var(--font-mono)",
   fontSize: 14,
@@ -102,7 +102,7 @@ export default function AuroraCoach() {
       {incoming.length > 0 && (
         <Section title="Coaching requests" color={C("violet")}>
           {incoming.map((l) => (
-            <div key={l.id} style={{ ...card, borderLeft: `3px solid ${C("violet")}` }}>
+            <div key={l.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{personName(l.coach)}</div>
@@ -159,7 +159,7 @@ export default function AuroraCoach() {
         <CoachInvite />
 
         {clients.map((l) => (
-          <div key={l.id} onClick={() => setOpenLink(l)} style={{ ...card, borderLeft: `3px solid ${C("lime")}`, cursor: "pointer" }}>
+          <div key={l.id} onClick={() => setOpenLink(l)} style={{ ...card, cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{personName(l.client)}</div>
@@ -380,7 +380,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           </div>
         </div>
         {notes.map((n) => (
-          <div key={n.id} style={{ ...card, borderLeft: `3px solid ${n.private ? C("amber") : C("line")}` }}>
+          <div key={n.id} style={{ ...card, }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               {n.private ? <Chip c={C("amber")}>Private</Chip> : <span />}
               <Mono s={{ fontSize: 11 }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
@@ -450,7 +450,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           <Mono>No check-ins submitted yet.</Mono>
         ) : (
           checkins.map((c) => (
-            <div key={c.id} style={{ ...card, borderLeft: `3px solid ${c.coachReply ? C("line") : C("blue")}` }}>
+            <div key={c.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{new Date(c.weekOf).toLocaleDateString()}</div>
                 {c.adherencePct != null && <Mono s={{ fontSize: 12 }}>{c.adherencePct}% adherence</Mono>}
@@ -461,7 +461,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               </Mono>
               {c.note && <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
-                <div style={{ marginTop: 10, borderLeft: `2px solid ${C("violet")}`, paddingLeft: 10 }}>
+                <div style={{ marginTop: 10, paddingLeft: 10 }}>
                   <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Your reply</Mono>
                   <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
                 </div>

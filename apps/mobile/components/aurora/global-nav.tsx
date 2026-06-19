@@ -1,4 +1,5 @@
-import { View, Pressable } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navVisibleTo, type AuroraIconName } from "@hybrid/core";
@@ -7,6 +8,7 @@ import { useNavAccess } from "../../lib/access";
 import { useSession } from "../../lib/session";
 import { useTemplate } from "../../lib/template";
 import { useTheme } from "../../lib/theme";
+import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
 // The five funnel destinations, mirroring the uploaded design's bottom nav —
@@ -31,7 +33,7 @@ const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout"]);
  * Replaces the per-Tabs Aurora bar; Classic keeps its glass tab bar + command orb.
  */
 export default function AuroraGlobalNav() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const router = useRouter();
   const segments = useSegments() as string[];
   const insets = useSafeAreaInsets();
@@ -53,21 +55,21 @@ export default function AuroraGlobalNav() {
   const showCockpit = navVisibleTo(persona, "cockpit", access);
   const tabs = TABS.filter((t) => t.id !== "cockpit" || showCockpit);
 
+  // Liquid-glass pill: a frosted BlurView lets the screen fizz through the bar —
+  // but LIGHTER than the classic GlassCard (no grain/sheen, a more opaque tint
+  // film so the nav stays legible over any content). Shadow on the OUTER view
+  // (a rounded drop shadow); the INNER view clips the blur to the pill radius.
+  const light = scheme === "light";
+  const film = light ? "rgba(243,244,239,0.62)" : "rgba(20,22,20,0.55)";
+  const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.16)";
+  const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.12)";
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: Math.max(insets.bottom, 12), paddingHorizontal: 18, alignItems: "center" }}>
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
           width: "100%",
           maxWidth: 420,
-          backgroundColor: C.ink2,
-          borderWidth: 1,
-          borderColor: C.line,
           borderRadius: 999,
-          paddingHorizontal: 10,
-          paddingVertical: 9,
           shadowColor: "#000",
           shadowOpacity: 0.35,
           shadowRadius: 18,
@@ -75,6 +77,22 @@ export default function AuroraGlobalNav() {
           elevation: 12,
         }}
       >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderRadius: 999,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: border,
+          paddingHorizontal: 10,
+          paddingVertical: 9,
+        }}
+      >
+        <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
+        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
         {tabs.map((tab) => {
           const focused = activeSeg === tab.seg;
           return (
@@ -85,14 +103,21 @@ export default function AuroraGlobalNav() {
               accessibilityState={{ selected: focused }}
               accessibilityLabel={tab.label}
               hitSlop={6}
-              style={{ flex: 1, height: 52, alignItems: "center", justifyContent: "center" }}
+              style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}
             >
-              <View style={{ width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
-                <AuroraIcon name={tab.glyph} size={22} color={focused ? C.ink : C.ash} />
+              {/* A bare icon left "More" reading as a Settings cog. The label
+                  under every glyph names the destination (incl. "More") so the
+                  bar is self-explanatory and the active tab is unmistakable. */}
+              <View style={{ width: 44, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
+                <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
               </View>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
+                {tab.label}
+              </Text>
             </Pressable>
           );
         })}
+      </View>
       </View>
     </View>
   );

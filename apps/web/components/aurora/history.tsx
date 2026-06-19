@@ -7,7 +7,7 @@ import { SessionDetail } from "../screens";
 
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{label}</span>;
 const rowBtn = (color: string, disabled: boolean) => ({ fontFamily: "var(--font-mono)", fontSize: 12, color, background: `color-mix(in srgb, ${color} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 40%, transparent)`, borderRadius: 999, padding: "6px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 } as const);
 

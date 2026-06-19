@@ -6,19 +6,19 @@ import {
   performanceTrajectory,
   toTrainingLog,
   toBiometrics,
+  hpiRole,
+  riskRole,
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
 import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, roleColor } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraPerformance from "../components/aurora/performance";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const hpiColor = (b: string, C: Palette) =>
-  b === "peak" || b === "primed" ? C.lime : b === "moderate" ? C.blue : b === "compromised" ? C.amber : C.red;
-const riskColor = (b: string, C: Palette) =>
-  b === "low" ? C.lime : b === "moderate" ? C.blue : b === "elevated" ? C.amber : C.red;
+const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
+const riskColor = (b: string, C: Palette) => roleColor(C, riskRole(b));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Performance — the Athlete Twin: HPI cockpit, 14-day trajectory, tissue-level

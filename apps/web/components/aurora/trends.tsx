@@ -14,7 +14,7 @@ const C = (v: string) => `var(--color-${v})`;
 const TREND_GLYPH: Record<TrendDir, { g: string; c: string }> = { up: { g: "▲", c: "lime" }, down: { g: "▼", c: "amber" }, flat: { g: "→", c: "ash" } };
 const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
 const PERIODS: { id: ExercisePeriod; label: string }[] = [{ id: "8w", label: "8 wk" }, { id: "6m", label: "6 mo" }, { id: "1y", label: "1 yr" }, { id: "all", label: "All" }];
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
 /** AURORA Trends (web) — full bespoke analytics hub reusing the exact engines +
  *  recharts volume/tonnage/muscle bars. */

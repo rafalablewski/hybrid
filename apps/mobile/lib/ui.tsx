@@ -9,14 +9,17 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  KeyboardAvoidingView,
+  Platform,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { colors } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useTemplate } from "./template";
+import { auroraScrollClearance } from "./layout";
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 export const glassShadow: ViewStyle = {
@@ -172,24 +175,35 @@ export function Screen({
   onRefresh?: () => void;
 }) {
   const { palette } = useTheme();
+  // Aurora renders a FLOATING pill nav over every screen (incl. pushed pages),
+  // so the last bit of content (share buttons, sign-out, the Builder CTA) would
+  // sit UNDER the bar. Reserve room for it so everything stays scrollable into
+  // view. Classic keeps the tight padding (its bar is a real, laid-out tab bar).
+  const aurora = useTemplate().template === "aurora";
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
       <GlassField />
-      <ScrollView
-        contentContainerStyle={{ padding: 18, paddingBottom: 48 }}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={!!refreshing}
-              onRefresh={onRefresh}
-              tintColor={palette.lime}
-              colors={[palette.lime]}
-            />
-          ) : undefined
-        }
-      >
-        {children}
-      </ScrollView>
+      {/* Lift the form above the keyboard so low inputs/submit buttons aren't
+          hidden when the keyboard opens (no screen had keyboard avoidance). */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={{ padding: 18, paddingBottom: aurora ? auroraScrollClearance(insets.bottom) : 48 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={!!refreshing}
+                onRefresh={onRefresh}
+                tintColor={palette.lime}
+                colors={[palette.lime]}
+              />
+            ) : undefined
+          }
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -218,11 +232,12 @@ export function Card({
   accent?: string;
 }) {
   const { palette } = useTheme();
-  // Aurora gives every card a softer, larger corner radius (callers can still
-  // override via style.borderRadius). The classic radius is untouched.
+  // Aurora gives every card the reference card radius (28 — matches the kit's
+  // RADIUS.card and the /hybrid design). Callers can override via style. Classic
+  // radius is untouched.
   const aurora = useTemplate().template === "aurora";
   if (glass) {
-    const gs: ViewStyle | undefined = aurora ? { borderRadius: 24, ...(style ?? {}) } : style;
+    const gs: ViewStyle | undefined = aurora ? { borderRadius: 28, ...(style ?? {}) } : style;
     return (
       <GlassCard style={gs} accent={accent}>
         {children}
@@ -236,7 +251,7 @@ export function Card({
           backgroundColor: palette.card,
           borderWidth: 1,
           borderColor: palette.line,
-          borderRadius: aurora ? 24 : 16,
+          borderRadius: aurora ? 28 : 16,
           padding: 16,
           marginBottom: 12,
         },

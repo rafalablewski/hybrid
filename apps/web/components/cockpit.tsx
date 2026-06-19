@@ -7,6 +7,7 @@ import {
   runTotals,
   toTrainingLog,
   velocityProfiles,
+  hpiRole,
   LEVELS,
   type Biometrics,
   type LoggedSession,
@@ -17,12 +18,12 @@ import Onboarding from "./onboarding";
 import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import {
-  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
+  LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, roleHex,
   disp, cond, mono, Mono, Card, txt,
 } from "@/lib/ui";
 
-const hpiColor = (b: string) =>
-  b === "peak" || b === "primed" ? LIME : b === "moderate" ? BLUE : b === "compromised" ? AMBER : RED;
+// State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
+const hpiColor = (b: string) => roleHex(hpiRole(b));
 
 type CockpitProps = {
   sessions: LoggedSession[];

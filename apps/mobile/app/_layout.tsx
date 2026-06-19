@@ -26,7 +26,15 @@ function Shell() {
   return (
     <>
       <StatusBar style={scheme === "light" ? "dark" : "light"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.ink } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.ink } }}>
+        {/* The signed-in app shell. Auth/funnel screens (welcome/login) can sit
+            BELOW it in the stack after a sign-in (welcome → login → replace to
+            tabs leaves welcome underneath), so the iOS edge swipe-back used to
+            pop the whole app back to "Start your journey" — looking like a
+            sign-out. Disable the back gesture on the shell so swiping inside the
+            app (e.g. the Today pager) never escapes to the auth screens. */}
+        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+      </Stack>
       <AuroraGlobalNav />
     </>
   );
