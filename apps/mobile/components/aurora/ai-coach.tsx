@@ -52,7 +52,9 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
             {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.blue) : null}
             {note.hpi != null ? chip(`HPI ${note.hpi}`, C.violet) : null}
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: embedded ? 13.5 : 15, lineHeight: embedded ? 21 : 24, color: txt(C, C.chalk) }}>{note.text}</Text>
+          {/* Coaching PROSE in Archivo (reads like a coach talking), not mono
+              (which reads like a terminal log). Mono stays for the data chips. */}
+          <Text style={{ fontFamily: F.reg, fontSize: embedded ? 14 : 15.5, lineHeight: embedded ? 21 : 24, color: txt(C, C.chalk) }}>{note.text}</Text>
         </View>
       ) : null}
 
