@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYBRID — Local Launch Strategy: Gyms & Personal Trainers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0d0c;
+    --ink-2:#141614;
+    --ink-3:#1c1f1b;
+    --line:#2a2e28;
+    --lime:#c4f035;
+    --lime-dim:#9bbf2a;
+    --blue:#7fd4e8;
+    --violet:#c9a9f0;
+    --amber:#f0b45e;
+    --fg:#f3f5ef;
+    --fg-dim:#a7ad9e;
+    --fg-faint:#6f756a;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:"Archivo",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --cond:"Archivo Narrow","Archivo",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--fg);
+    font-family:var(--disp);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  section{padding:84px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--lime);margin-bottom:18px;display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--lime);display:inline-block}
+  h1{font-weight:900;font-size:clamp(40px,7vw,82px);line-height:.98;letter-spacing:-.03em}
+  h2{font-weight:800;font-size:clamp(28px,4.4vw,46px);line-height:1.02;letter-spacing:-.02em;margin-bottom:14px}
+  h3{font-weight:700;font-size:20px;letter-spacing:-.01em}
+  .lead{font-size:clamp(17px,2vw,20px);color:var(--fg-dim);max-width:62ch}
+  .lime{color:var(--lime)}
+  .dim{color:var(--fg-dim)}
+  .faint{color:var(--fg-faint)}
+  strong{color:var(--fg);font-weight:700}
+
+  /* ---------- top nav ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:rgba(12,13,12,.82);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-.02em;font-size:18px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px var(--lime)}
+  .navlinks{display:flex;gap:26px;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-dim)}
+  .navlinks a:hover{color:var(--lime)}
+  @media(max-width:760px){.navlinks{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;padding:120px 0 96px;overflow:hidden;
+    background:
+      radial-gradient(900px 420px at 78% -10%, rgba(196,240,53,.14), transparent 60%),
+      radial-gradient(700px 500px at 0% 110%, rgba(127,212,232,.07), transparent 55%);
+  }
+  .hero .tag{
+    display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--lime);border:1px solid var(--line);border-radius:999px;padding:7px 14px;margin-bottom:26px;
+    background:var(--ink-2);
+  }
+  .hero h1 span{color:var(--lime)}
+  .hero .lead{margin-top:24px;font-size:clamp(18px,2.2vw,22px)}
+  .heromath{
+    display:flex;flex-wrap:wrap;gap:14px;margin-top:38px;
+  }
+  .chip{
+    border:1px solid var(--line);background:var(--ink-2);border-radius:14px;
+    padding:16px 20px;min-width:150px;
+  }
+  .chip b{display:block;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1}
+  .chip span{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim)}
+  .chip.lime b{color:var(--lime)}
+
+  /* ---------- generic grids ---------- */
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:880px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .card{
+    border:1px solid var(--line);background:var(--ink-2);border-radius:18px;padding:26px;
+    transition:border-color .2s, transform .2s;
+  }
+  .card:hover{border-color:#3a4036;transform:translateY(-2px)}
+  .card .ic{font-size:24px;margin-bottom:14px}
+  .card h3{margin-bottom:8px}
+  .card p{color:var(--fg-dim);font-size:15px}
+  .card ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:9px}
+  .card li{position:relative;padding-left:22px;font-size:14.5px;color:var(--fg-dim)}
+  .card li::before{content:"→";position:absolute;left:0;color:var(--lime);font-weight:700}
+
+  .pillar{border-top:3px solid var(--line)}
+  .pillar.gym{border-top-color:var(--blue)}
+  .pillar.pt{border-top-color:var(--lime)}
+  .pillar.client{border-top-color:var(--violet)}
+  .pillar.you{border-top-color:var(--amber)}
+  .pillar .who{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:6px}
+
+  /* ---------- product feature strip ---------- */
+  .feat{display:flex;gap:16px;align-items:flex-start;padding:20px 0;border-bottom:1px solid var(--line)}
+  .feat:last-child{border-bottom:none}
+  .feat .num{font-family:var(--mono);color:var(--lime);font-size:14px;min-width:34px;font-weight:700}
+  .feat h3{margin-bottom:4px}
+  .feat p{color:var(--fg-dim);font-size:15px}
+
+  /* ---------- offer cards ---------- */
+  .offer{position:relative;overflow:hidden}
+  .offer.hot{border-color:var(--lime-dim);background:linear-gradient(180deg, rgba(196,240,53,.06), var(--ink-2))}
+  .offer .price{font-size:38px;font-weight:900;letter-spacing:-.02em;line-height:1}
+  .offer .price small{font-size:15px;font-weight:600;color:var(--fg-dim)}
+  .offer .badge{position:absolute;top:16px;right:16px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--lime);padding:4px 9px;border-radius:999px;font-weight:700}
+
+  /* ---------- funnel / math ---------- */
+  .mathwrap{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+  @media(max-width:880px){.mathwrap{grid-template-columns:1fr}}
+  .funnel{display:flex;flex-direction:column;gap:10px}
+  .frow{display:flex;align-items:center;gap:14px}
+  .fbar{
+    height:46px;border-radius:10px;display:flex;align-items:center;padding:0 16px;font-weight:700;
+    background:linear-gradient(90deg, rgba(196,240,53,.22), rgba(196,240,53,.05));
+    border:1px solid var(--line);white-space:nowrap;
+  }
+  .frow .lab{font-size:13px;color:var(--fg-dim);min-width:0}
+  .frow .lab b{color:var(--fg)}
+  .stat-big{border:1px solid var(--line);background:var(--ink-2);border-radius:16px;padding:22px}
+  .stat-big .n{font-size:34px;font-weight:900;color:var(--lime);letter-spacing:-.02em;line-height:1}
+  .stat-big .l{font-size:13px;color:var(--fg-dim);margin-top:6px}
+  .assump{font-family:var(--mono);font-size:12px;color:var(--fg-faint);margin-top:18px;line-height:1.7}
+  .assump b{color:var(--fg-dim)}
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:8px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);font-weight:500}
+  td.q{color:var(--fg);font-weight:600;width:34%}
+  td.a{color:var(--fg-dim)}
+  tr:hover td{background:var(--ink-2)}
+
+  /* ---------- timeline ---------- */
+  .timeline{display:flex;flex-direction:column;gap:0}
+  .tstep{display:grid;grid-template-columns:120px 1fr;gap:24px;padding:24px 0;border-bottom:1px solid var(--line)}
+  .tstep:last-child{border-bottom:none}
+  .tstep .wk{font-family:var(--mono);font-size:13px;color:var(--lime);font-weight:700;letter-spacing:.04em}
+  .tstep .wk small{display:block;color:var(--fg-faint);font-weight:400;letter-spacing:0;margin-top:4px}
+  .tstep h3{margin-bottom:8px}
+  .tstep p{color:var(--fg-dim);font-size:15px}
+  .tstep ul{margin-top:10px;list-style:none;display:flex;flex-direction:column;gap:7px}
+  .tstep li{padding-left:20px;position:relative;color:var(--fg-dim);font-size:14.5px}
+  .tstep li::before{content:"✓";position:absolute;left:0;color:var(--lime)}
+  @media(max-width:600px){.tstep{grid-template-columns:1fr;gap:10px}}
+
+  /* ---------- script box ---------- */
+  .script{
+    border-left:3px solid var(--lime);background:var(--ink-2);border-radius:0 14px 14px 0;
+    padding:22px 26px;font-size:16px;color:var(--fg);line-height:1.7;
+  }
+  .script .who{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin-bottom:10px}
+  .script em{color:var(--lime);font-style:normal;font-weight:700}
+
+  /* ---------- cta ---------- */
+  .cta{
+    text-align:center;
+    background:radial-gradient(700px 360px at 50% 0%, rgba(196,240,53,.12), transparent 60%);
+  }
+  .btnrow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .btn{
+    display:inline-block;padding:15px 28px;border-radius:12px;font-weight:700;font-size:15px;
+    border:1px solid var(--line);background:var(--ink-2);color:var(--fg);
+  }
+  .btn.primary{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+  .oneliner{
+    font-size:clamp(22px,3.4vw,34px);font-weight:800;letter-spacing:-.02em;max-width:20ch;margin:0 auto;line-height:1.15;
+  }
+  .oneliner .lime{color:var(--lime)}
+
+  footer{padding:40px 0;text-align:center;color:var(--fg-faint);font-family:var(--mono);font-size:12px;letter-spacing:.06em}
+
+  .secnum{font-family:var(--mono);font-size:13px;color:var(--fg-faint);margin-bottom:6px}
+
+  @media print{
+    .topbar{display:none}
+    section{padding:34px 0;break-inside:avoid}
+    body{background:#fff;color:#111}
+    .card,.stat-big,.script{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP NAV ===== -->
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>HYBRID</div>
+    <nav class="navlinks">
+      <a href="#why">Why</a>
+      <a href="#value">Who gets what</a>
+      <a href="#product">Product</a>
+      <a href="#offer">The offer</a>
+      <a href="#math">The math</a>
+      <a href="#plan">The plan</a>
+      <a href="#cta">Close</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">Local launch playbook · Beachhead strategy</span>
+    <h1>Win the <span>floor</span> before<br>you win the app store.</h1>
+    <p class="lead">The fastest way to HYBRID's first real users isn't ads — it's the gyms and trainers who already own the trust. Give the trainers a tool that makes them money, give their clients an app that actually adapts, and the members follow. This is the script, the offer, and the math to land <strong>5 gyms and 5 trainers</strong>.</p>
+
+    <div class="heromath">
+      <div class="chip lime"><b>5</b><span>Local gyms</span></div>
+      <div class="chip"><b>1,500</b><span>Gym members (300 ea.)</span></div>
+      <div class="chip lime"><b>5</b><span>Personal trainers</span></div>
+      <div class="chip"><b>150</b><span>PT clients (30 ea.)</span></div>
+      <div class="chip"><b>1,650</b><span>People in reach</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== WHY NOW ===== -->
+<section id="why">
+  <div class="wrap">
+    <div class="secnum">01</div>
+    <div class="eyebrow">The wedge</div>
+    <h2>Trainers are the door. Members are the room.</h2>
+    <p class="lead">A cold app install converts at a percent or two. A tool your trainer hands you in person — and uses with you every week — converts at a different order of magnitude. So we don't sell HYBRID to 1,650 strangers. We sell it to <strong>10 people</strong> (5 owners, 5 trainers) and let them carry it to the floor.</p>
+
+    <div class="grid g3" style="margin-top:38px">
+      <div class="card">
+        <div class="ic">🏋️</div>
+        <h3>The gym owner's pain</h3>
+        <p>Members drift, ghost, and churn. The gym has zero visibility into who's about to quit and no scalable way to make membership feel coached — only the front desk and a hope.</p>
+      </div>
+      <div class="card">
+        <div class="ic">🧑‍🏫</div>
+        <h3>The trainer's pain</h3>
+        <p>Programming in spreadsheets and texts. Capped at the clients they can hold in their head. Check-ins eat their evenings, and clients who travel or train solo fall off.</p>
+      </div>
+      <div class="card">
+        <div class="ic">📱</div>
+        <h3>The member's pain</h3>
+        <p>Generic plans that ignore how recovered they are today. No feedback loop, no sense of progress, nothing that makes them want to come back tomorrow.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHO GETS WHAT ===== -->
+<section id="value">
+  <div class="wrap">
+    <div class="secnum">02</div>
+    <div class="eyebrow">Three sides, one product</div>
+    <h2>What each side actually walks away with.</h2>
+    <p class="lead">Every pitch lives or dies on one question: <em class="lime">“what's in it for me?”</em> Here it is, separated out — because the gym owner, the trainer, the client, and you each have a different one.</p>
+
+    <div class="grid g2" style="margin-top:38px">
+
+      <div class="card pillar gym">
+        <div class="who">For the gym</div>
+        <h3>A retention + differentiation layer — for free</h3>
+        <ul>
+          <li><strong>Churn radar:</strong> the Accountability Engine flags members going quiet <em>before</em> they cancel, so staff can reach out with a reason.</li>
+          <li><strong>“Coached gym” positioning:</strong> every membership comes with a smart training app — a sales line competitors don't have.</li>
+          <li><strong>Trainer upsell engine:</strong> the app makes PT visibly valuable, so more members buy sessions (the gym's margin).</li>
+          <li><strong>Zero ops:</strong> no hardware, no integration, no admin. You stick a QR code on the wall and we run the rest.</li>
+        </ul>
+      </div>
+
+      <div class="card pillar pt">
+        <div class="who">For the personal trainer</div>
+        <h3>More clients, less admin, recurring online income</h3>
+        <ul>
+          <li><strong>Build once, assign to many:</strong> author a multi-week program, push it to a client or a whole group in two taps.</li>
+          <li><strong>The weekly check-in loop:</strong> clients submit, you review &amp; reply in-app — the #1 ritual that makes people pay monthly.</li>
+          <li><strong>Coach remotely:</strong> hold 40 athletes on one seat, including the ones who travel or train at home. Income beyond floor hours.</li>
+          <li><strong>Adaptive does the grunt work:</strong> loads auto-adjust to each client's recovery, so your plan stays right between sessions.</li>
+        </ul>
+      </div>
+
+      <div class="card pillar client">
+        <div class="who">For their clients &amp; members</div>
+        <h3>A coach in their pocket that actually adapts</h3>
+        <ul>
+          <li><strong>Today's session, dosed to today's recovery</strong> — readiness &amp; the HPI score, not a static PDF.</li>
+          <li><strong>Progress they can see &amp; share:</strong> PRs, weekly recaps, streaks, a “future self” projection that rewards showing up.</li>
+          <li><strong>Their trainer, always on:</strong> assigned plans, check-in replies, and nudges between sessions.</li>
+          <li><strong>Free to start:</strong> log, follow a plan, track history — no card needed to feel the value.</li>
+        </ul>
+      </div>
+
+      <div class="card pillar you">
+        <div class="who">For you (the founder)</div>
+        <h3>Distribution, recurring revenue, and a data flywheel</h3>
+        <ul>
+          <li><strong>1,650 warm users</strong> from 10 conversations, not a cold ad budget.</li>
+          <li><strong>Recurring B2B revenue:</strong> trainers pay monthly seats — predictable MRR that compounds with their retention.</li>
+          <li><strong>Consumer upsell:</strong> gym members convert to Pro on their own once they're hooked.</li>
+          <li><strong>Proof + data:</strong> real outcomes, testimonials, and the training data that makes the engine smarter — your moat.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRODUCT ===== -->
+<section id="product">
+  <div class="wrap">
+    <div class="secnum">03</div>
+    <div class="eyebrow">What HYBRID is</div>
+    <h2>Not a tracking app. An adaptive coaching system.</h2>
+    <p class="lead">When you're standing in the gym office, these are the five things to actually show — the features that make a trainer lean in. All shipped, web <em class="lime">and</em> iPhone.</p>
+
+    <div style="margin-top:30px">
+      <div class="feat">
+        <div class="num">01</div>
+        <div>
+          <h3>Adaptive prescription <span class="faint">— the engine</span></h3>
+          <p>Every session's working loads are dosed from the athlete's own logged lifts and how recovered they are today (readiness + the 0–100 Hybrid Performance Index). The plan moves with the person — that's the part a spreadsheet can't do.</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="num">02</div>
+        <div>
+          <h3>The coach console <span class="faint">— assign, group, program</span></h3>
+          <p>A trainer builds a plan or a full multi-week program and pushes it straight into a client's account — or to a whole client group at once. Mutual-consent linking, private coach↔client.</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="num">03</div>
+        <div>
+          <h3>The weekly check-in <span class="faint">— the retention heartbeat</span></h3>
+          <p>Bodyweight, sleep, soreness, mood, adherence, a note — client submits, trainer reviews and replies in-app. This is the recurring ritual that turns a one-off plan into a monthly subscription.</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="num">04</div>
+        <div>
+          <h3>The come-back loop <span class="faint">— for the members</span></h3>
+          <p>PR celebrations, shareable weekly recaps, forgiving streaks, the Future-Self simulator, and an Accountability Engine that predicts the quit and fires the right nudge. Built to pull people back tomorrow.</p>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="num">05</div>
+        <div>
+          <h3>Goal-first plan library <span class="faint">— free to follow</span></h3>
+          <p>Curated plans across strength, physique, endurance, Hyrox/CrossFit, tactical and health. A member can browse, enroll, and follow one free — so there's value before anyone pays.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== THE OFFER ===== -->
+<section id="offer">
+  <div class="wrap">
+    <div class="secnum">04</div>
+    <div class="eyebrow">The deal you put on the table</div>
+    <h2>Make the “yes” free and the upside obvious.</h2>
+    <p class="lead">Lead with a no-risk pilot. The point of the first 90 days is proof and testimonials, not revenue. Price is real, but the founding-partner terms make saying yes easy.</p>
+
+    <div class="grid g3" style="margin-top:38px">
+
+      <div class="card offer">
+        <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:8px">Gym partner</div>
+        <h3>Free, forever (during launch)</h3>
+        <div class="price" style="margin:14px 0">$0<small> / partner gym</small></div>
+        <p class="dim" style="font-size:14.5px">The gym pays nothing. Every member gets the free app; the gym gets the churn radar and the “coached gym” story. You get distribution and a logo.</p>
+        <ul style="list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:9px">
+          <li class="dim" style="font-size:14px">→ Branded QR + onboarding poster</li>
+          <li class="dim" style="font-size:14px">→ Staff walkthrough &amp; member launch event</li>
+          <li class="dim" style="font-size:14px">→ Optional revenue share on PT seats</li>
+        </ul>
+      </div>
+
+      <div class="card offer hot">
+        <div class="badge">Founding 90-day</div>
+        <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin-bottom:8px">Personal trainer — Coach seat</div>
+        <h3>Free for 90 days, then $79/mo</h3>
+        <div class="price" style="margin:14px 0">$79<small> / mo · up to 40 athletes</small></div>
+        <p class="dim" style="font-size:14.5px">The Coach <strong>Pro</strong> seat: client groups + bulk plan assignment + the program builder. Their rostered clients get the full adaptive (Pro) experience <em class="lime">included on the seat</em> — no per-client fee.</p>
+        <ul style="list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:9px">
+          <li class="dim" style="font-size:14px">→ Starter $29/mo (≤10) · Pro $79/mo (≤40)</li>
+          <li class="dim" style="font-size:14px">→ Business $199/mo (≤150 + Team OS)</li>
+          <li class="dim" style="font-size:14px">→ One client win in 90 days = it pays for itself</li>
+        </ul>
+      </div>
+
+      <div class="card offer">
+        <div class="who" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin-bottom:8px">Member / self-serve</div>
+        <h3>Free, with a Pro upgrade</h3>
+        <div class="price" style="margin:14px 0">$12.99<small> / mo · or $99/yr</small></div>
+        <p class="dim" style="font-size:14.5px">Members start free (log, follow a plan, history). Pro unlocks the adaptive layer: the Twin, AI coach, VBT, nutrition, unlimited history. This is your consumer revenue line.</p>
+        <ul style="list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:9px">
+          <li class="dim" style="font-size:14px">→ Free tier hooks them first</li>
+          <li class="dim" style="font-size:14px">→ Annual ≈ 36% off, better retention</li>
+          <li class="dim" style="font-size:14px">→ Coached clients don't pay this — it's on the trainer's seat</li>
+        </ul>
+      </div>
+
+    </div>
+    <p class="assump"><b>Why free first:</b> the only thing you can't buy back is the first reference. Trade 90 days of seat revenue for case studies, testimonials, and a roster that's already sticky when billing turns on.</p>
+  </div>
+</section>
+
+<!-- ===== THE MATH ===== -->
+<section id="math">
+  <div class="wrap">
+    <div class="secnum">05</div>
+    <div class="eyebrow">The numbers, conservatively</div>
+    <h2>What 5 gyms &amp; 5 trainers is actually worth.</h2>
+    <p class="lead">Deliberately conservative funnel assumptions. The goal here isn't a hockey stick — it's showing the beachhead pays its way <em class="lime">and</em> seeds the consumer engine.</p>
+
+    <div class="mathwrap" style="margin-top:38px">
+
+      <div>
+        <h3 style="margin-bottom:18px;color:var(--fg-dim);font-size:14px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase">Gym-member funnel → consumer Pro</h3>
+        <div class="funnel">
+          <div class="frow">
+            <div class="fbar" style="width:100%">1,500 members reached</div>
+          </div>
+          <div class="frow">
+            <div class="fbar" style="width:78%">450 install the free app <span class="faint" style="margin-left:8px">30%</span></div>
+          </div>
+          <div class="frow">
+            <div class="fbar" style="width:52%">180 active after 30 days <span class="faint" style="margin-left:8px">40%</span></div>
+          </div>
+          <div class="frow">
+            <div class="fbar" style="width:30%">~45 convert to Pro <span class="faint" style="margin-left:8px">~10%</span></div>
+          </div>
+        </div>
+        <p class="assump">
+          <b>Member assumptions:</b> 30% install (in-person + QR + trainer push beats cold ads), 40% still active at 30 days, ~10% of those upgrade to Pro.
+        </p>
+
+        <h3 style="margin:30px 0 14px;color:var(--fg-dim);font-size:14px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase">Trainer side → recurring B2B</h3>
+        <p class="dim" style="font-size:15px">5 trainers × <strong>$79/mo</strong> Coach Pro seat (after the 90-day founding period). Their 150 clients get the full adaptive experience on those seats — sticky, coach-paid, no per-client churn.</p>
+      </div>
+
+      <div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px">
+          <div class="stat-big">
+            <div class="n">$395</div>
+            <div class="l">Coach-seat MRR<br>(5 × $79/mo)</div>
+          </div>
+          <div class="stat-big">
+            <div class="n">~$585</div>
+            <div class="l">Consumer Pro MRR<br>(45 × $12.99)</div>
+          </div>
+          <div class="stat-big">
+            <div class="n">~$980</div>
+            <div class="l">Total MRR<br>from the beachhead</div>
+          </div>
+          <div class="stat-big">
+            <div class="n">~$11.7k</div>
+            <div class="l">Year-1 ARR run-rate<br>at steady state</div>
+          </div>
+          <div class="stat-big" style="grid-column:1/-1">
+            <div class="n">630</div>
+            <div class="l">Active users seeded (180 members + 150 coached clients + organic spread) — the testimonials, outcomes &amp; training data that fund everything after.</div>
+          </div>
+        </div>
+        <p class="assump"><b>The real prize</b> isn't the ~$980/mo. It's <b>10 reference accounts</b>, a library of before/afters, and a data flywheel — the assets that make gym #6 through #60 a copy-paste, and make consumer ads actually convert later.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== THE PLAN ===== -->
+<section id="plan">
+  <div class="wrap">
+    <div class="secnum">06</div>
+    <div class="eyebrow">Execution</div>
+    <h2>The 8-week ground game.</h2>
+    <p class="lead">A repeatable playbook. Land trainers first (they're the multiplier), prove it on one cohort, then open the floodgates to the members.</p>
+
+    <div class="timeline" style="margin-top:34px">
+      <div class="tstep">
+        <div class="wk">Weeks 1–2<small>Land the trainers</small></div>
+        <div>
+          <h3>Sign 5 trainers on founding seats</h3>
+          <p>Start with the people who make you money. Demo the coach console live, set up their first program, and onboard 2–3 of their clients with them in the room.</p>
+          <ul>
+            <li>1-on-1 demo focused on the check-in + assign-to-group loop</li>
+            <li>Free 90-day founding seat in exchange for a testimonial + 1 case study</li>
+            <li>Get their first real client logging before you leave</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tstep">
+        <div class="wk">Weeks 2–4<small>Sign the gyms</small></div>
+        <div>
+          <h3>Walk into 5 gym offices with proof</h3>
+          <p>Now you're not selling an idea — you're showing a trainer in their own gym already using it. Pitch the owner on retention + “coached gym” positioning, free.</p>
+          <ul>
+            <li>Lead with the churn radar and zero-ops setup</li>
+            <li>Offer the PT-seat revenue share as the sweetener</li>
+            <li>Agree a member launch date + put up the QR posters</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tstep">
+        <div class="wk">Weeks 4–6<small>Activate the floor</small></div>
+        <div>
+          <h3>Member launch events</h3>
+          <p>A staffed table at each gym for a week: scan-to-install, free plan enrollment, first session logged on the spot. Bring the trainers — members trust them, not you.</p>
+          <ul>
+            <li>QR → install → follow a free plan → log session #1, same visit</li>
+            <li>Small incentive (PR board, raffle, free PT consult) to drive installs</li>
+            <li>Capture quick video testimonials while energy is high</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tstep">
+        <div class="wk">Weeks 6–8<small>Prove &amp; systematize</small></div>
+        <div>
+          <h3>Measure, package, repeat</h3>
+          <p>Pull the numbers — installs, 30-day actives, check-in streaks, PRs. Turn the best stories into a one-page case study. That deck makes gym #6 a 20-minute close.</p>
+          <ul>
+            <li>Weekly check-in with each trainer; remove friction fast</li>
+            <li>Publish 2–3 case studies + before/afters</li>
+            <li>Turn billing on for trainers as the 90-day window closes</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== OBJECTIONS ===== -->
+<section>
+  <div class="wrap">
+    <div class="secnum">07</div>
+    <div class="eyebrow">In the room</div>
+    <h2>Objection handling.</h2>
+    <p class="lead">The five things you'll actually hear, and the one-line answer for each.</p>
+    <table style="margin-top:26px">
+      <thead><tr><th>What they say</th><th>What you say</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="q">“My clients already have an app / spreadsheet.”</td>
+          <td class="a">“Does it adjust today's loads to how recovered they are, and let them check in with you weekly in two taps? That's the part that keeps them paying you.”</td>
+        </tr>
+        <tr>
+          <td class="q">“I don't have time to learn new software.”</td>
+          <td class="a">“I'll set up your first program and onboard two clients with you, today, in 20 minutes. If it's not faster than your spreadsheet, walk away.”</td>
+        </tr>
+        <tr>
+          <td class="q">(Gym) “What does this cost us?”</td>
+          <td class="a">“Nothing. Members get it free, you get churn alerts and a coached-gym story. The only money flows when a trainer chooses a paid seat — and we'll share that with you.”</td>
+        </tr>
+        <tr>
+          <td class="q">“What if my members don't use it?”</td>
+          <td class="a">“That's exactly what the accountability engine is for — it flags the ones going quiet so you can pull them back. Inactivity is the problem it solves, not a risk.”</td>
+        </tr>
+        <tr>
+          <td class="q">“$79 is a lot per month.”</td>
+          <td class="a">“It's free for 90 days, and it holds up to 40 clients online. One retained online client covers it — everything after is margin you didn't have before.”</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== SCRIPT ===== -->
+<section>
+  <div class="wrap">
+    <div class="secnum">08</div>
+    <div class="eyebrow">The 30-second opener</div>
+    <h2>How you start the conversation.</h2>
+    <div class="grid g2" style="margin-top:28px">
+      <div class="script">
+        <div class="who">To a trainer</div>
+        “You're capped at the clients you can hold in your head, and check-ins eat your evenings. HYBRID lets you build a program once, push it to a whole group, and run the weekly check-in loop in-app — so you can coach <em>40 clients online</em>, not just the ones on the floor. Free for 90 days. Give me 20 minutes and I'll set up your first client with you.”
+      </div>
+      <div class="script">
+        <div class="who">To a gym owner</div>
+        “Your biggest leak is members who quietly stop showing up before they cancel. HYBRID gives every member a smart training app for free, flags the ones going quiet so your staff can step in, and makes your trainers visibly more valuable — so more members buy PT. It costs you nothing and there's nothing to install. Can we run a 90-day pilot?”
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section id="cta" class="cta">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center">The close</div>
+    <p class="oneliner">Ten conversations. <span class="lime">Sixteen hundred</span> users. One sticky beachhead.</p>
+    <div class="btnrow">
+      <a class="btn primary" href="#offer">Lock in 5 founding trainers</a>
+      <a class="btn" href="#math">Show the math</a>
+    </div>
+    <p class="dim" style="margin-top:28px;max-width:54ch;margin-left:auto;margin-right:auto">Land the trainers, prove it on one cohort, walk into the gyms with evidence. Then gym #6 — and the consumer launch — are just the same playbook with the volume turned up.</p>
+  </div>
+</section>
+
+<footer>
+  HYBRID · Local launch strategy · acid-lime #c4f035 on ink #0c0d0c · built to be printed, screenshared, or left behind
+</footer>
+
+</body>
+</html>
