@@ -108,13 +108,15 @@ function until(iso: string | null): string {
 
 export default function AgentHQ() {
   const [data, setData] = useState<Overview | null>(null);
+  const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("command");
 
   const load = useCallback(() => {
+    setErr(null);
     fetch("/api/admin/agents/overview")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => setData(d))
-      .catch(() => setData(null));
+      .catch(() => { setData(null); setErr("Couldn't load the operations center — try refreshing."); });
   }, []);
   useEffect(load, [load]);
 
@@ -152,7 +154,7 @@ export default function AgentHQ() {
         </button>
       </div>
 
-      {tab === "command" && <Command data={data} />}
+      {tab === "command" && <Command data={data} err={err} />}
       {tab === "scorecards" && <Scorecards data={data} onChange={load} />}
       {tab === "work" && <Work data={data} onRan={load} />}
       {tab === "approvals" && <Approvals onChange={load} />}
@@ -164,7 +166,8 @@ export default function AgentHQ() {
 
 // ---- Command center ------------------------------------------------------
 
-function Command({ data }: { data: Overview | null }) {
+function Command({ data, err }: { data: Overview | null; err?: string | null }) {
+  if (err) return <Mono s={{ display: "block", padding: 20 }} c={RED}>{err}</Mono>;
   if (!data) return <Mono s={{ display: "block", padding: 20 }} c={ASH}>Loading the operations center…</Mono>;
   const { stats, agents, trend, recent, upcoming } = data;
 

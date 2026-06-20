@@ -73,6 +73,7 @@ export async function POST(request: Request) {
     // Unique violation on name/slug (Prisma P2002).
     if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002")
       return NextResponse.json({ error: "an exercise with that name already exists" }, { status: 409 });
-    throw e;
+    console.error("[admin exercises] create failed", e);
+    return NextResponse.json({ error: "could not create exercise" }, { status: 500 });
   }
 }

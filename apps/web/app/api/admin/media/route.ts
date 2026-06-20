@@ -75,6 +75,7 @@ export async function POST(request: Request) {
   } catch (e) {
     if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002")
       return NextResponse.json({ error: "that file path is already registered" }, { status: 409 });
-    throw e;
+    console.error("[admin media] register failed", e);
+    return NextResponse.json({ error: "could not register asset" }, { status: 500 });
   }
 }

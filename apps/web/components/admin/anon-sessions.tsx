@@ -23,6 +23,7 @@ const trunc = (s: string) => (s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}
 export default function AdminAnonSessions() {
   const [sessions, setSessions] = useState<AnonSession[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/admin/anon-sessions")
@@ -36,8 +37,13 @@ export default function AdminAnonSessions() {
   const remove = async (id: string, title: string) => {
     if (!window.confirm(`Permanently delete the anonymous workout “${title}”? This can't be undone.`)) return;
     setBusy(id);
+    setErr(null);
     try {
-      await fetch(`/api/admin/anon-sessions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/anon-sessions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      load();
+    } catch {
+      setErr("Delete failed — re-syncing.");
       load();
     } finally {
       setBusy(null);
@@ -52,6 +58,12 @@ export default function AdminAnonSessions() {
         </Mono>
         <Mono s={{ fontSize: 12 }} c={ASH}>{sessions ? `${sessions.length.toLocaleString()} sessions` : "…"}</Mono>
       </div>
+
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+          {err}
+        </Mono>
+      )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>

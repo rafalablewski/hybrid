@@ -115,7 +115,13 @@ export default function AdminMedia() {
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusy(true);
-    await fetch(`/api/admin/media/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/media/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That change didn't save — re-syncing.");
+    }
     setBusy(false);
     setEdit(null);
     load();
@@ -124,7 +130,13 @@ export default function AdminMedia() {
   async function remove(a: Asset) {
     if (!confirm(`Delete “${a.title}” permanently (file + catalog entry)?`)) return;
     setBusy(true);
-    await fetch(`/api/admin/media/${a.id}`, { method: "DELETE" });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/media/${a.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Delete failed — re-syncing.");
+    }
     setBusy(false);
     load();
   }

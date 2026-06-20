@@ -247,19 +247,24 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const save = async () => {
     setSaving(true);
     setMsg(null);
-    const res = await fetch(`/api/admin/users/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, language, featureGrants: grants }),
-    });
-    const body = await res.json().catch(() => ({}));
-    setSaving(false);
-    if (res.ok) {
-      setD((prev) => (prev ? { ...prev, role, language, featureGrants: grants } : prev));
-      setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
-      onSaved();
-    } else {
-      setMsg({ ok: false, text: body.error ?? "Update failed." });
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, language, featureGrants: grants }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setD((prev) => (prev ? { ...prev, role, language, featureGrants: grants } : prev));
+        setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
+        onSaved();
+      } else {
+        setMsg({ ok: false, text: body.error ?? "Update failed." });
+      }
+    } catch {
+      setMsg({ ok: false, text: "Network error — try again." });
+    } finally {
+      setSaving(false);
     }
   };
 

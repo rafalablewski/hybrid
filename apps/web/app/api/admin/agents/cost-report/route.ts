@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { costUsd } from "@hybrid/core";
-import { requireAdmin, requireAgentOperator } from "@/lib/admin";
+import { requireAdmin, requireAgentOperator, audit } from "@/lib/admin";
 import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { postSlack } from "@/lib/slack";
@@ -95,5 +95,14 @@ export async function POST(request: Request) {
   const lines = [`*Agent cost report — ${rep.month}*`, `${rep.runs} runs · $${rep.total.toFixed(2)} total`];
   for (const p of rep.perAgent.slice(0, 10)) lines.push(`• ${p.name}: ${p.runs} runs, $${p.cost.toFixed(2)}`);
   const sent = await postSlack(lines.join("\n"));
+
+  await audit({
+    actor: gate.admin,
+    action: "agent.costreport.send",
+    summary: `Sent the ${rep.month} cost report to Slack ($${rep.total.toFixed(2)}, ${rep.runs} runs)${sent ? "" : " — Slack not configured"}`,
+    metadata: { month: rep.month, total: rep.total, runs: rep.runs, sent },
+    req: request,
+  });
+
   return NextResponse.json({ sent, month: rep.month, total: rep.total, reason: sent ? undefined : "SLACK_WEBHOOK_URL not set" });
 }

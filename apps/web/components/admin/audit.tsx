@@ -22,11 +22,16 @@ export default function AdminAuditLog() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<Resp | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), pageSize: "50" });
     if (action) params.set("action", action);
-    fetch(`/api/admin/audit?${params}`).then((r) => r.json()).then(setData).catch(() => setData(null));
+    setErr(null);
+    fetch(`/api/admin/audit?${params}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setData)
+      .catch(() => { setData(null); setErr("Couldn't load the audit log — try reloading."); });
   }, [action, page]);
 
   useEffect(() => {
@@ -60,6 +65,12 @@ export default function AdminAuditLog() {
         />
         <Mono s={{ fontSize: 12 }} c={ASH}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </div>
+
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={RED}>
+          {err}
+        </Mono>
+      )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>

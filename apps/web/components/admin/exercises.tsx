@@ -167,11 +167,17 @@ export default function AdminExercises() {
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusy(true);
-    await fetch(`/api/admin/exercises/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/exercises/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That change didn't save — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -179,7 +185,13 @@ export default function AdminExercises() {
   async function remove(x: Exercise) {
     if (!confirm(`Delete “${x.name}” permanently?`)) return;
     setBusy(true);
-    await fetch(`/api/admin/exercises/${x.id}`, { method: "DELETE" });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/exercises/${x.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Delete failed — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -316,6 +328,10 @@ export default function AdminExercises() {
             <button disabled={busy} onClick={() => setEditing(null)} style={ghostBtn}>Cancel</button>
           </div>
         </Card>
+      )}
+
+      {err && editing === null && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -32,6 +32,7 @@ export default function AdminModeration() {
   const [reports, setReports] = useState<ReportItem[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/admin/moderation")
@@ -52,11 +53,17 @@ export default function AdminModeration() {
   async function moderateProfile(id: string, action: "approve" | "reject") {
     const note = action === "reject" ? prompt("Reason for rejection (optional, shown to no one):") ?? undefined : undefined;
     setBusy(id);
-    await fetch(`/api/admin/moderation/profile/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action, note }),
-    });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/moderation/profile/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, note }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That action didn't go through — re-syncing the queue.");
+    }
     setBusy(null);
     load();
   }
@@ -64,11 +71,17 @@ export default function AdminModeration() {
   async function resolveReport(id: string, action: "dismiss" | "resolve" | "takedown") {
     const note = action === "takedown" ? prompt("Takedown note (optional):") ?? undefined : undefined;
     setBusy(id);
-    await fetch(`/api/admin/moderation/report/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action, note }),
-    });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/moderation/report/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, note }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That action didn't go through — re-syncing the queue.");
+    }
     setBusy(null);
     load();
   }
@@ -112,6 +125,12 @@ export default function AdminModeration() {
           </button>
         ))}
       </div>
+
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+          {err}
+        </Mono>
+      )}
 
       {tab === "profiles" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
