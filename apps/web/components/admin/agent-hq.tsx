@@ -315,7 +315,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
       <span style={{ width: 9, height: 9, borderRadius: 99, background: DOT[a.status] ?? ASH, flexShrink: 0, boxShadow: a.status === "active" ? `0 0 6px ${LIME}` : undefined }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ ...disp, fontWeight: head ? 800 : 600, fontSize: head ? 15 : 13, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ ...disp, fontWeight: head ? 800 : 600, fontSize: head ? 15 : 14, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {a.name}
         </div>
         <Mono s={{ fontSize: 11, display: "block" }} c={ASH}>
