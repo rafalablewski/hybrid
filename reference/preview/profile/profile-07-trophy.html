@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 07 — Trophy Case</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--amber:#f0b45e;--violet:#c9a9f0;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.screen{position:absolute;inset:0;padding:50px 20px 96px;z-index:10;display:flex;flex-direction:column}
+.head{display:flex;align-items:center;gap:12px}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);border:1px solid #4a4d44;flex:none;display:grid;place-items:center;font-weight:900;color:var(--lime-t)}
+.nm{font-weight:900;font-size:18px;letter-spacing:-.01em}.hd{font-family:var(--mono);font-size:9.5px;color:var(--ash);margin-top:2px}
+.seclab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin:20px 2px 10px}
+.badges{display:flex;gap:10px}
+.bd{flex:1;aspect-ratio:1;border-radius:18px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;position:relative}
+.bd .g{font-size:24px}
+.bd.on{border-color:var(--lime);background:rgba(196,240,53,.08);box-shadow:0 0 24px -8px rgba(196,240,53,.5)}
+.bd.lock{opacity:.45}
+.prs{margin-top:6px}
+.pr{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid var(--line);border-radius:14px;margin-top:9px;background:var(--ink2)}
+.pr .l{display:flex;align-items:center;gap:11px}
+.pr .tr{font-size:15px}
+.pr .nm2{font-weight:700;font-size:14px}.pr .sub{font-family:var(--mono);font-size:9px;color:var(--ash);margin-top:2px}
+.pr .v{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--lime-t)}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:3px}.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="screen">
+    <div class="head">
+      <div class="av">YL</div>
+      <div><div class="nm">Youssef Labidi</div><div class="hd">12 PRs · 8 badges · LVL 7</div></div>
+    </div>
+    <div class="seclab">Achievements</div>
+    <div class="badges">
+      <div class="bd on"><div class="g">🏆</div></div>
+      <div class="bd on"><div class="g">🔥</div></div>
+      <div class="bd on"><div class="g">⚡</div></div>
+      <div class="bd lock"><div class="g">🔒</div></div>
+    </div>
+    <div class="seclab">Recent personal records</div>
+    <div class="prs">
+      <div class="pr"><div class="l"><div class="tr">🏆</div><div><div class="nm2">Back Squat</div><div class="sub">E1RM · +5 kg</div></div></div><div class="v">182 kg</div></div>
+      <div class="pr"><div class="l"><div class="tr">🏆</div><div><div class="nm2">Deadlift</div><div class="sub">E1RM · +7.5 kg</div></div></div><div class="v">221 kg</div></div>
+      <div class="pr"><div class="l"><div class="tr">🏃</div><div><div class="nm2">5K Run</div><div class="sub">pace PR · −12s/km</div></div></div><div class="v">19:48</div></div>
+    </div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">07</div><div class="t">Trophy Case</div><div class="d">Badges + the PR wall — the athlete’s wins, glowing. Identity through achievement.</div></div>
+</div></body></html>

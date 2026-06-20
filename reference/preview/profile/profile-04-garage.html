@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 04 — Garage</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.screen{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column}
+/* hero stage */
+.stage{position:relative;height:340px;background:radial-gradient(120% 80% at 50% 12%,#1b1e16 0%,#0c0d0c 62%);padding:50px 22px 0;overflow:hidden}
+.stage::after{content:"";position:absolute;left:50%;bottom:46px;transform:translateX(-50%);width:230px;height:30px;border-radius:50%;background:radial-gradient(circle,rgba(196,240,53,.25),transparent 70%);filter:blur(4px)}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.gear{position:absolute;top:50px;right:22px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--ash)}
+/* body silhouette */
+.figwrap{position:absolute;left:0;right:0;top:64px;display:grid;place-items:center}
+.fig{width:120px;height:210px;opacity:.92}
+.status{position:absolute;left:22px;right:22px;bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.status .nm{font-weight:900;font-size:22px;letter-spacing:-.02em}
+.status .hd{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:3px}
+.pill{font-family:var(--mono);font-size:10px;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:6px 12px}
+/* lower */
+.body{flex:1;padding:18px 20px 96px;background:var(--ink)}
+.quick{display:flex;gap:9px}
+.q{flex:1;border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center;background:var(--ink2)}
+.q .n{font-weight:900;font-size:22px}.q .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--ash);text-transform:uppercase;margin-top:4px}
+.act{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;text-align:center;border-radius:999px;padding:14px;font-weight:700;font-size:13px}
+.btn.p{background:var(--lime);color:var(--ink)}.btn.s{background:var(--ink2);border:1px solid var(--line);color:var(--chalk)}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:3px}.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="screen">
+    <div class="stage">
+      <div class="kick">Profile</div>
+      <div class="gear">⚙</div>
+      <div class="figwrap">
+        <svg class="fig" viewBox="0 0 120 210" fill="none" stroke="#c4f035" stroke-width="1.4" stroke-opacity=".85">
+          <circle cx="60" cy="22" r="15"/>
+          <path d="M60 37 V70 M60 46 L30 64 M60 46 L90 64 M60 70 L42 132 M60 70 L78 132 M42 132 L38 200 M78 132 L82 200"/>
+          <path d="M44 70 H76 L78 110 H42 Z" stroke-opacity=".4"/>
+        </svg>
+      </div>
+      <div class="status">
+        <div><div class="nm">Youssef Labidi</div><div class="hd">HYBRID ATHLETE · HYROX</div></div>
+        <div class="pill">PRIMED</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="quick">
+        <div class="q"><div class="n">82</div><div class="k">HPI</div></div>
+        <div class="q"><div class="n">74<span style="font-size:11px;color:var(--ash)">%</span></div><div class="k">Ready</div></div>
+        <div class="q"><div class="n">16w</div><div class="k">Streak</div></div>
+      </div>
+      <div class="act"><div class="btn p">Edit profile</div><div class="btn s">Share</div></div>
+    </div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">04</div><div class="t">Garage</div><div class="d">Tesla “your car” staging — a lit body model on a black stage, status pill, quick stats below.</div></div>
+</div></body></html>

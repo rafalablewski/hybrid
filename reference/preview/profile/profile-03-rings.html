@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 03 — Stat Rings</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none}.blob{position:absolute;width:280px;height:280px;border-radius:50%;filter:blur(20px);opacity:.08}
+.screen{position:absolute;inset:0;padding:50px 20px 96px;z-index:10;display:flex;flex-direction:column;align-items:center}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);align-self:flex-start}
+/* center ring with avatar */
+.dialwrap{position:relative;width:200px;height:200px;margin-top:18px}
+.ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--lime) 0 74%,#23261f 74% 100%);-webkit-mask:radial-gradient(farthest-side,transparent 78%,#000 79%);mask:radial-gradient(farthest-side,transparent 78%,#000 79%)}
+.ring.r2{inset:18px;background:conic-gradient(var(--blue) 0 82%,#23261f 82% 100%)}
+.ring.r3{inset:36px;background:conic-gradient(var(--violet) 0 64%,#23261f 64% 100%)}
+.avc{position:absolute;inset:56px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);border:1px solid #4a4d44;display:grid;place-items:center;font-weight:900;font-size:30px;color:var(--lime-t)}
+.nm{font-weight:900;font-size:22px;letter-spacing:-.02em;margin-top:18px}
+.hd{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:4px}
+.legend{display:flex;gap:8px;margin-top:20px;width:100%}
+.lg{flex:1;border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center}
+.lg .d{width:8px;height:8px;border-radius:50%;margin:0 auto 7px}
+.lg .n{font-weight:900;font-size:18px}
+.lg .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--ash);text-transform:uppercase;margin-top:3px}
+.full{margin-top:16px;width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:16px;padding:13px 16px}
+.full .t{font-weight:700;font-size:13px}.full .c{font-family:var(--mono);font-size:10px;color:var(--lime-t);border:1px solid var(--lime);border-radius:999px;padding:4px 10px}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:3px}.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--lime);top:-100px;left:-80px"></div></div>
+  <div class="screen">
+    <div class="kick">Profile</div>
+    <div class="dialwrap">
+      <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <div class="avc">YL</div>
+    </div>
+    <div class="nm">Youssef Labidi</div>
+    <div class="hd">@youssef · Hybrid Athlete</div>
+    <div class="legend">
+      <div class="lg"><div class="d" style="background:var(--lime)"></div><div class="n">82</div><div class="k">HPI</div></div>
+      <div class="lg"><div class="d" style="background:var(--blue)"></div><div class="n">74</div><div class="k">Readiness</div></div>
+      <div class="lg"><div class="d" style="background:var(--violet)"></div><div class="n">64</div><div class="k">Recovery</div></div>
+    </div>
+    <div class="full"><div class="t">HYBRID Full membership</div><div class="c">ACTIVE</div></div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">03</div><div class="t">Stat Rings</div><div class="d">Apple-Fitness concentric dials around the avatar — HPI / readiness / recovery read as shapes.</div></div>
+</div></body></html>
