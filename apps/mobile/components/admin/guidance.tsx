@@ -169,7 +169,7 @@ function Cmd({ lines }: { lines: string }) {
           paddingVertical: 3,
         }}
       >
-        <Mono color={copied ? palette.onAccent : palette.ash} style={{ fontSize: 10 }}>{copied ? "copied" : "copy"}</Mono>
+        <Mono color={copied ? palette.onAccent : palette.ash} style={{ fontSize: 11 }}>{copied ? "copied" : "copy"}</Mono>
       </Pressable>
     </View>
   );

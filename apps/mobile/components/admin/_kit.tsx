@@ -45,7 +45,7 @@ export function Stat({ label, value, sub, color }: { label: string; value: React
   const { palette } = useTheme();
   return (
     <Card>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: color ? txt(palette, color) : palette.chalk, marginTop: 4 }}>{value}</Text>
       {sub ? <Mono color={palette.ash} style={{ marginTop: 2 }}>{sub}</Mono> : null}
     </Card>

@@ -446,7 +446,7 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
         <View style={{ marginTop: 12 }}>
           {run.steps.map((s, i) => (
             <View key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-              <Mono color={palette.violet} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>
+              <Mono color={palette.violet} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8 }}>
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
               <Mono color={palette.ash} style={{ fontSize: 11, marginVertical: 2 }}>"{s.task}"</Mono>
@@ -457,7 +457,7 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
             <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 20 }}>{run.output || "(no output)"}</Mono>
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
-            <Mono color={palette.ash} style={{ fontSize: 10, marginTop: 6 }}>
+            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6 }}>
               {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
             </Mono>
           )}
@@ -530,7 +530,7 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
               <MiniChip color={palette.ash}>{s.enabled ? "on" : "off"}</MiniChip>
             </View>
             <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 4 }}>{s.task}</Mono>
-            <Mono color={palette.ash} style={{ fontSize: 10, marginTop: 4 }}>
+            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>
               {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleDateString()}` : "never run"}
               {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleDateString()}` : ""}
             </Mono>
@@ -584,12 +584,12 @@ function History({ agentId }: { agentId: string }) {
               <View style={{ marginTop: 8 }}>
                 {r.steps.map((s, i) => (
                   <View key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-                    <Mono color={palette.violet} style={{ fontSize: 10, textTransform: "uppercase" }}>↳ {s.role}</Mono>
+                    <Mono color={palette.violet} style={{ fontSize: 11, textTransform: "uppercase" }}>↳ {s.role}</Mono>
                     <Mono color={palette.chalk} style={{ fontSize: 11 }}>{s.output}</Mono>
                   </View>
                 ))}
                 <Mono color={palette.chalk} style={{ fontSize: 12, lineHeight: 18 }}>{r.output}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: 10, marginTop: 6 }}>
+                <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6 }}>
                   {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
                 </Mono>
               </View>
@@ -666,7 +666,7 @@ function MiniChip({ children, color }: { children: React.ReactNode; color: strin
   const { palette } = useTheme();
   return (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: 10, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: 11, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
     </View>

@@ -26,7 +26,7 @@ export default function AdminSystem() {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
       {/* health */}
       <Card style={{ borderLeft: `3px solid ${s.db.ok ? LIME : RED}` }}>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={s.db.ok ? LIME : RED}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={s.db.ok ? LIME : RED}>
           Database
         </Mono>
         <Row k="Status" v={<Chip c={s.db.ok ? LIME : RED}>{s.db.ok ? "online" : "unreachable"}</Chip>} />
@@ -36,7 +36,7 @@ export default function AdminSystem() {
 
       {/* deployment */}
       <Card>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
           Deployment
         </Mono>
         <Row k="Environment" v={s.deployment.env} />
@@ -47,7 +47,7 @@ export default function AdminSystem() {
 
       {/* versions */}
       <Card>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
           Versions
         </Mono>
         <Row k="@hybrid/core" v={s.versions.core} />
@@ -57,7 +57,7 @@ export default function AdminSystem() {
 
       {/* env presence */}
       <Card>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
           Environment (presence only — no secrets)
         </Mono>
         {Object.entries(s.env).map(([k, present]) => (
@@ -71,8 +71,8 @@ export default function AdminSystem() {
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: `1px solid ${LINE}` }}>
-      <Mono s={{ fontSize: 12 }} c={ASH}>{k}</Mono>
-      {typeof v === "string" ? <Mono s={{ fontSize: 12 }} c={CHALK}>{v}</Mono> : v}
+      <Mono s={{ fontSize: 13 }} c={ASH}>{k}</Mono>
+      {typeof v === "string" ? <Mono s={{ fontSize: 13 }} c={CHALK}>{v}</Mono> : v}
     </div>
   );
 }

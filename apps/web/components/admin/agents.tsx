@@ -355,7 +355,7 @@ export default function AdminAgents() {
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Agents aren&apos;t persisted yet</div>
-          <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
             The <b>AgentConfig</b> table doesn&apos;t exist yet — run{" "}
             <span style={{ color: txt(AMBER) }}>reference/sql-agents.sql</span> in Supabase to make agents persist. You can
             still preview the role presets below.
@@ -365,14 +365,14 @@ export default function AdminAgents() {
 
       {err && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <Mono s={{ fontSize: 12 }} c={AMBER}>{err}</Mono>
-          <button onClick={() => setErr(null)} style={{ ...mono, fontSize: 11, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "4px 8px", color: txt(ASH), cursor: "pointer" }}>
+          <Mono s={{ fontSize: 13 }} c={AMBER}>{err}</Mono>
+          <button onClick={() => setErr(null)} style={{ ...mono, fontSize: 12, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "6px 8px", color: txt(ASH), cursor: "pointer" }}>
             Dismiss
           </button>
         </Card>
       )}
 
-      <Mono s={{ fontSize: 11, display: "block", marginBottom: 12 }} c={ASH}>
+      <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={ASH}>
         Define your executive team. Edits to a KPI, responsibility, or guardrail rewrite the agent&apos;s live system
         prompt — shown in the preview as you type. The runtime executes these server-side (needs ANTHROPIC_API_KEY).
       </Mono>
@@ -411,7 +411,7 @@ export default function AdminAgents() {
                     <Chip c={STATUS_COLOR[a.status]}>{a.status}</Chip>
                     <Chip c={a.authority === "executive" ? VIOLET : ASH}>{a.role}</Chip>
                   </div>
-                  <Mono s={{ fontSize: 10, display: "block", marginTop: 6 }} c={ASH}>
+                  <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
                     {a.model.replace("claude-", "")} · effort {a.effort} · {a.kpis.length} KPIs
                   </Mono>
                 </div>
@@ -431,7 +431,7 @@ export default function AdminAgents() {
           ))}
           {agents && agents.length === 0 && (
             <Card>
-              <Mono s={{ fontSize: 13, textAlign: "center", display: "block", padding: 20 }} c={ASH}>
+              <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 20 }} c={ASH}>
                 No agents yet — create one from a preset above.
               </Mono>
             </Card>
@@ -576,7 +576,7 @@ export default function AdminAgents() {
               }
             >
               {draft.status !== "active" ? (
-                <Mono s={{ fontSize: 12, display: "block" }} c={ASH}>
+                <Mono s={{ fontSize: 13, display: "block" }} c={ASH}>
                   Activate the agent (status → active) to run it.
                 </Mono>
               ) : (
@@ -596,12 +596,12 @@ export default function AdminAgents() {
                       {runBusy ? "Running…" : "Run agent"}
                     </button>
                     {dirty && (
-                      <Mono s={{ fontSize: 11 }} c={AMBER}>
+                      <Mono s={{ fontSize: 12 }} c={AMBER}>
                         Save your changes before running.
                       </Mono>
                     )}
                     {runBusy && runStatus && (
-                      <Mono s={{ fontSize: 11 }} c={LIME}>
+                      <Mono s={{ fontSize: 12 }} c={LIME}>
                         {runStatus}
                       </Mono>
                     )}
@@ -611,13 +611,13 @@ export default function AdminAgents() {
                     <div style={{ marginTop: 12 }}>
                       {liveSteps.map((s, i) => (
                         <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${VIOLET}` }}>
-                          <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
+                          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
                             ↳ delegated to {s.role} — {s.agent}
                           </Mono>
-                          <Mono s={{ fontSize: 11, display: "block", margin: "2px 0 4px" }} c={ASH}>
+                          <Mono s={{ fontSize: 12, display: "block", margin: "2px 0 4px" }} c={ASH}>
                             “{s.task}”
                           </Mono>
-                          <div style={{ ...mono, fontSize: 12, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>
+                          <div style={{ ...mono, fontSize: 13, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>
                             {s.output || (runBusy ? "…" : "")}
                           </div>
                         </div>
@@ -625,7 +625,7 @@ export default function AdminAgents() {
                       <div
                         style={{
                           ...mono,
-                          fontSize: 13,
+                          fontSize: 14,
                           lineHeight: 1.6,
                           color: CHALK,
                           background: INK,
@@ -638,7 +638,7 @@ export default function AdminAgents() {
                         {(run ? run.output : liveText) || (runBusy ? "…" : "(no output)")}
                       </div>
                       {run && (run.usage.input > 0 || run.usage.output > 0) && (
-                        <Mono s={{ fontSize: 10, display: "block", marginTop: 6 }} c={ASH}>
+                        <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
                           {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
                         </Mono>
                       )}
@@ -661,8 +661,8 @@ export default function AdminAgents() {
                         <Chip c={s.enabled ? LIME : ASH}>{s.cadence}</Chip>
                         <Chip c={ASH}>{s.enabled ? "on" : "off"}</Chip>
                       </div>
-                      <div style={{ ...mono, fontSize: 12, color: CHALK, whiteSpace: "pre-wrap", marginTop: 4 }}>{s.task}</div>
-                      <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>
+                      <div style={{ ...mono, fontSize: 13, color: CHALK, whiteSpace: "pre-wrap", marginTop: 4 }}>{s.task}</div>
+                      <Mono s={{ fontSize: 11, display: "block", marginTop: 4 }} c={ASH}>
                         {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleString()}` : "never run"}
                         {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
                       </Mono>
@@ -698,12 +698,12 @@ export default function AdminAgents() {
                       <div key={t.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                         <span style={{ width: 7, height: 7, borderRadius: 99, background: c, flexShrink: 0, marginTop: 5 }} />
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ ...disp, fontSize: 13, fontWeight: 700, color: CHALK }}>
-                            {t.title} <Mono s={{ fontSize: 10 }} c={c}>{t.kind}</Mono>
+                          <div style={{ ...disp, fontSize: 14, fontWeight: 700, color: CHALK }}>
+                            {t.title} <Mono s={{ fontSize: 11 }} c={c}>{t.kind}</Mono>
                           </div>
-                          {t.detail && <Mono s={{ fontSize: 11, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{t.detail}</Mono>}
+                          {t.detail && <Mono s={{ fontSize: 12, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{t.detail}</Mono>}
                         </div>
-                        <Mono s={{ fontSize: 10, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} · {t.actor}</Mono>
+                        <Mono s={{ fontSize: 11, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} · {t.actor}</Mono>
                       </div>
                     );
                   })}
@@ -716,8 +716,8 @@ export default function AdminAgents() {
               <Section title="History" hint={`${runs.length} recent run${runs.length === 1 ? "" : "s"} (transcripts)`}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {runs.map((r) => (
-                    <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "8px 12px" }}>
-                      <summary style={{ ...mono, fontSize: 12, color: CHALK, cursor: "pointer", listStyle: "none" }}>
+                    <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
+                      <summary style={{ ...mono, fontSize: 13, color: CHALK, cursor: "pointer", listStyle: "none" }}>
                         <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
                         <Chip c={ASH}>{r.runtime}</Chip>
                         <span style={{ color: txt(ASH) }}>{new Date(r.createdAt).toLocaleString()}</span>
@@ -726,12 +726,12 @@ export default function AdminAgents() {
                       <div style={{ marginTop: 8 }}>
                         {r.steps.map((s, i) => (
                           <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${VIOLET}` }}>
-                            <Mono s={{ fontSize: 10, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
-                            <div style={{ ...mono, fontSize: 11, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
+                            <Mono s={{ fontSize: 11, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
+                            <div style={{ ...mono, fontSize: 12, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
                           </div>
                         ))}
-                        <div style={{ ...mono, fontSize: 12, color: CHALK, whiteSpace: "pre-wrap" }}>{r.output}</div>
-                        <Mono s={{ fontSize: 10, display: "block", marginTop: 6 }} c={ASH}>
+                        <div style={{ ...mono, fontSize: 13, color: CHALK, whiteSpace: "pre-wrap" }}>{r.output}</div>
+                        <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
                           {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
                         </Mono>
                       </div>
@@ -746,7 +746,7 @@ export default function AdminAgents() {
               <pre
                 style={{
                   ...mono,
-                  fontSize: 11,
+                  fontSize: 12,
                   lineHeight: 1.55,
                   color: CHALK,
                   background: INK,
@@ -766,7 +766,7 @@ export default function AdminAgents() {
           </Card>
         ) : (
           <Card>
-            <Mono s={{ fontSize: 13, textAlign: "center", display: "block", padding: 40 }} c={ASH}>
+            <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 40 }} c={ASH}>
               Select an agent to edit, or create one from a preset.
             </Mono>
           </Card>
@@ -787,7 +787,7 @@ function reportsOf(agents: AgentDefinition[] | null, role: string): AgentDefinit
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "block" }}>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
+      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
         {label}
         {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
       </Mono>
@@ -799,7 +799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
+      <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
         {title}
         {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
       </Mono>
@@ -873,9 +873,9 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
 
 const input: React.CSSProperties = {
   ...mono,
-  fontSize: 13,
+  fontSize: 14,
   width: "100%",
-  padding: "8px 10px",
+  padding: "10px 10px",
   borderRadius: "var(--r-field)",
   background: INK2,
   color: CHALK,
@@ -884,9 +884,9 @@ const input: React.CSSProperties = {
 };
 const presetBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 700,
-  padding: "8px 14px",
+  padding: "10px 14px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
@@ -895,11 +895,11 @@ const presetBtn: React.CSSProperties = {
 };
 const primaryBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
-  padding: "8px 14px",
+  padding: "10px 14px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LIME}`,
@@ -908,11 +908,11 @@ const primaryBtn: React.CSSProperties = {
 };
 const dangerBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
-  padding: "8px 14px",
+  padding: "10px 14px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
@@ -921,10 +921,10 @@ const dangerBtn: React.CSSProperties = {
 };
 const addBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 600,
   textAlign: "left",
-  padding: "7px 10px",
+  padding: "9px 10px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px dashed ${LINE}`,
@@ -945,9 +945,9 @@ const removeBtn: React.CSSProperties = {
 };
 const chipBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 600,
-  padding: "6px 11px",
+  padding: "8px 11px",
   borderRadius: 999,
   cursor: "pointer",
   border: `1px solid ${LINE}`,

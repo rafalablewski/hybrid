@@ -80,7 +80,7 @@ export default function AdminUsers() {
           placeholder="Search email or name…"
           style={{
             ...mono,
-            fontSize: 13,
+            fontSize: 14,
             flex: 1,
             minWidth: 220,
             padding: "10px 14px",
@@ -115,7 +115,7 @@ export default function AdminUsers() {
                   key={h || i}
                   style={{
                     ...mono,
-                    fontSize: 10,
+                    fontSize: 11,
                     color: ASH,
                     textTransform: "uppercase",
                     letterSpacing: ".08em",
@@ -140,18 +140,18 @@ export default function AdminUsers() {
               >
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <div style={{ ...disp, fontWeight: 600, fontSize: 14 }}>{u.name || "—"}</div>
-                  <Mono s={{ fontSize: 11 }} c={ASH}>{u.email}</Mono>
+                  <Mono s={{ fontSize: 12 }} c={ASH}>{u.email}</Mono>
                 </td>
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <Chip c={roleColor[u.role] ?? CHALK}>{u.role}</Chip>
                 </td>
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
-                  <Mono s={{ fontSize: 12 }} c={CHALK}>{u.language.toUpperCase()}</Mono>
+                  <Mono s={{ fontSize: 13 }} c={CHALK}>{u.language.toUpperCase()}</Mono>
                 </td>
-                <td style={{ ...mono, fontSize: 13, color: CHALK, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   {u.sessions}
                 </td>
-                <td style={{ ...mono, fontSize: 12, color: ASH, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td style={{ ...mono, fontSize: 13, color: ASH, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   {fmt(u.createdAt)}
                 </td>
                 <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}`, color: ASH }}>→</td>
@@ -159,7 +159,7 @@ export default function AdminUsers() {
             ))}
             {data && data.users.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ ...mono, fontSize: 13, color: ASH, textAlign: "center", padding: 40 }}>
+                <td colSpan={6} style={{ ...mono, fontSize: 14, color: ASH, textAlign: "center", padding: 40 }}>
                   {loading ? "Loading…" : "No users match."}
                 </td>
               </tr>
@@ -172,7 +172,7 @@ export default function AdminUsers() {
       {/* pagination */}
       {data && data.pages > 1 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
-          <Mono s={{ fontSize: 12 }} c={ASH}>
+          <Mono s={{ fontSize: 13 }} c={ASH}>
             {data.total.toLocaleString()} users · page {data.page} / {data.pages}
           </Mono>
           <div style={{ display: "flex", gap: 8 }}>
@@ -202,7 +202,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
       disabled={disabled}
       style={{
         ...cond,
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: ".05em",
@@ -210,7 +210,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
         background: CARD,
         border: `1px solid ${LINE}`,
         borderRadius: "var(--r-field)",
-        padding: "8px 14px",
+        padding: "10px 14px",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
       }}
@@ -320,9 +320,9 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <Mono s={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>User record</Mono>
+            <Mono s={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>User record</Mono>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>{d?.name || "—"}</div>
-            <Mono s={{ fontSize: 12 }} c={ASH}>{d?.email ?? "…"}</Mono>
+            <Mono s={{ fontSize: 13 }} c={ASH}>{d?.email ?? "…"}</Mono>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
@@ -343,18 +343,18 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               {Object.entries(d.counts).map(([k, v]) => (
                 <div key={k} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                   <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{v}</div>
-                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
+                  <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
                 </div>
               ))}
             </div>
 
             {d.orgs.length > 0 && (
               <div style={{ marginBottom: 20 }}>
-                <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>Organizations</Mono>
+                <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>Organizations</Mono>
                 {d.orgs.map((o) => (
                   <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
-                    <Mono s={{ fontSize: 13 }} c={CHALK}>{o.name}</Mono>
-                    <Mono s={{ fontSize: 12 }} c={VIOLET}>{o.role}</Mono>
+                    <Mono s={{ fontSize: 14 }} c={CHALK}>{o.name}</Mono>
+                    <Mono s={{ fontSize: 13 }} c={VIOLET}>{o.role}</Mono>
                   </div>
                 ))}
               </div>
@@ -362,12 +362,12 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
             {/* role / language editor */}
             <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
-              <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
                 Manage access
               </Mono>
               <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
                 <label style={{ flex: 1 }}>
-                  <Mono s={{ fontSize: 11, display: "block", marginBottom: 5 }} c={ASH}>Role</Mono>
+                  <Mono s={{ fontSize: 12, display: "block", marginBottom: 5 }} c={ASH}>Role</Mono>
                   <Select value={role} onChange={(e) => setRole(e.target.value)} style={{ width: "100%" }}>
                     <option value="CLIENT">Client</option>
                     <option value="COACH">Coach</option>
@@ -375,7 +375,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   </Select>
                 </label>
                 <label style={{ flex: 1 }}>
-                  <Mono s={{ fontSize: 11, display: "block", marginBottom: 5 }} c={ASH}>Language</Mono>
+                  <Mono s={{ fontSize: 12, display: "block", marginBottom: 5 }} c={ASH}>Language</Mono>
                   <Select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ width: "100%" }}>
                     <option value="en">EN</option>
                     <option value="pl">PL</option>
@@ -386,7 +386,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
               {/* per-user feature grants — unlock a feature for THIS person on
                   top of their persona (e.g. give a casual user the analytics). */}
-              <Mono s={{ fontSize: 11, display: "block", marginTop: 6, marginBottom: 8 }} c={ASH}>
+              <Mono s={{ fontSize: 12, display: "block", marginTop: 6, marginBottom: 8 }} c={ASH}>
                 Feature access — unlock individual features beyond this user&apos;s persona.
               </Mono>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
@@ -398,9 +398,9 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                       onClick={() => toggleGrant(item.id)}
                       style={{
                         ...mono,
-                        fontSize: 12,
+                        fontSize: 13,
                         textAlign: "left",
-                        padding: "8px 10px",
+                        padding: "10px 10px",
                         borderRadius: "var(--r-field)",
                         cursor: "pointer",
                         border: `1px solid ${on ? LIME : LINE}`,
@@ -415,7 +415,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               </div>
 
               {msg && (
-                <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
+                <Mono s={{ fontSize: 13, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
                   {msg.text}
                 </Mono>
               )}
@@ -442,10 +442,10 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
             {/* danger zone — irreversible account deletion (cascades all data) */}
             <div style={{ borderTop: `1px solid ${RED}44`, marginTop: 22, paddingTop: 18 }}>
-              <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={RED}>
+              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={RED}>
                 Danger zone
               </Mono>
-              <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginBottom: 12 }} c={ASH}>
+              <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginBottom: 12 }} c={ASH}>
                 Permanently delete this account and everything attached to it — sessions, check-ins,
                 memberships. This cannot be undone.
               </Mono>
