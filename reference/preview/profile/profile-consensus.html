@@ -108,6 +108,10 @@ body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:10
 .nav .it .tx{font-family:var(--mono);font-size:8px;letter-spacing:.04em}
 .nav .it.on{color:var(--chalk)}
 .nav .av3{width:28px;height:28px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+/* elevated center Train action — punches up through the bar like a launch button */
+.nav .fab{display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateY(-20px)}
+.nav .fab .c{width:60px;height:60px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:4px solid var(--ink);box-shadow:0 10px 24px -6px rgba(196,240,53,.6)}
+.nav .fab .tx{font-family:var(--mono);font-size:8px;letter-spacing:.06em;color:var(--lime-t);transform:translateY(-2px)}
 
 .lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}
 .lab .t{font-weight:800;font-size:16px;margin-top:4px}.lab .d{color:var(--ash);font-size:12px;margin-top:5px;max-width:330px;line-height:1.55}
@@ -195,8 +199,15 @@ body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:10
 
   <div class="nav">
     <div class="it"><div class="g">▦</div><div class="tx">Today</div></div>
-    <div class="it"><div class="g">＋</div><div class="tx">Train</div></div>
     <div class="it"><div class="g">▤</div><div class="tx">History</div></div>
+    <div class="fab">
+      <div class="c">
+        <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="#0c0d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/>
+        </svg>
+      </div>
+      <div class="tx">Train</div>
+    </div>
     <div class="it"><div class="g">•••</div><div class="tx">More</div></div>
     <div class="it on"><div class="av3"></div><div class="tx">You</div></div>
   </div>
