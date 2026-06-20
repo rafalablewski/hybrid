@@ -82,6 +82,7 @@ import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
 import AuroraToday from "./aurora/today";
+import AuroraProfile from "./aurora/profile";
 import AuroraPillNav from "./aurora/pill-nav";
 import { useTemplate } from "@/lib/use-template";
 import Cockpit from "./cockpit";
@@ -586,6 +587,16 @@ export default function AppShell() {
           ) : (
             <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />
           )
+        )}
+
+        {screen === "profile" && (
+          <AuroraProfile
+            sessions={sessions}
+            bio={bio ?? undefined}
+            macro={macro}
+            currentWeek={currentWeek}
+            onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }}
+          />
         )}
 
         {screen === "upgrade" && (aurora ? <AuroraUpgrade onUpgraded={() => setScreen("today")} /> : <Upgrade onUpgraded={() => setScreen("today")} />)}

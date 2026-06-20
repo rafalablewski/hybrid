@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 01 — Athlete ID Card</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(18px);opacity:.08}
+.screen{position:absolute;inset:0;padding:50px 20px 96px;z-index:10;display:flex;flex-direction:column}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.mono{font-family:var(--mono)}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.gear{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--ash);font-size:15px}
+/* ID card */
+.card{position:relative;border-radius:24px;padding:20px;overflow:hidden;border:1px solid #34381f;
+  background:linear-gradient(160deg,#1a1c14 0%,#0e100d 60%);box-shadow:0 24px 50px -24px rgba(196,240,53,.25)}
+.card::before{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(115deg,rgba(196,240,53,.05) 0 1px,transparent 1px 14px);opacity:.6}
+.card::after{content:"";position:absolute;top:-60px;right:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)}
+.cardtop{display:flex;align-items:center;justify-content:space-between;position:relative}
+.brand{font-weight:900;letter-spacing:.04em;font-size:15px}.brand b{color:var(--lime)}
+.tier{font-family:var(--mono);font-size:10px;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:5px 11px;letter-spacing:.1em}
+.who{display:flex;align-items:center;gap:14px;margin-top:26px;position:relative}
+.av{width:64px;height:64px;border-radius:20px;background:linear-gradient(140deg,#3a3d36,#161816);border:1px solid #4a4d44;flex:none;display:grid;place-items:center;font-weight:900;font-size:22px;color:var(--lime-t)}
+.who .nm{font-weight:900;font-size:21px;letter-spacing:-.02em}
+.who .hd{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:3px}
+.meta{display:flex;justify-content:space-between;margin-top:24px;position:relative;border-top:1px solid rgba(255,255,255,.08);padding-top:14px}
+.meta .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--ash);text-transform:uppercase}
+.meta .v{font-family:var(--mono);font-size:12px;color:var(--chalk);margin-top:4px}
+/* stat strip */
+.stats{display:flex;gap:9px;margin-top:16px}
+.st{flex:1;border:1px solid var(--line);border-radius:16px;padding:14px 12px;background:var(--ink2)}
+.st .n{font-weight:900;font-size:23px;letter-spacing:-.02em}
+.st .k{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ash);text-transform:uppercase;margin-top:4px}
+/* actions */
+.act{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;text-align:center;border-radius:999px;padding:14px;font-weight:700;font-size:13px}
+.btn.p{background:var(--lime);color:var(--ink)}
+.btn.s{background:var(--ink2);border:1px solid var(--line);color:var(--chalk)}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}
+.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}
+.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}
+.lab .t{font-weight:800;font-size:16px;margin-top:3px}
+.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--lime);top:-120px;right:-90px"></div><div class="blob" style="background:var(--violet);bottom:-120px;left:-90px"></div></div>
+  <div class="screen">
+    <div class="top"><div class="kick">Profile</div><div class="gear">⚙</div></div>
+    <div class="card">
+      <div class="cardtop"><div class="brand">HYBRID<b>.</b></div><div class="tier">FULL · MEMBER</div></div>
+      <div class="who">
+        <div class="av">YL</div>
+        <div><div class="nm">Youssef Labidi</div><div class="hd">@youssef · Hybrid Athlete</div></div>
+      </div>
+      <div class="meta">
+        <div><div class="l">Member since</div><div class="v">2024</div></div>
+        <div><div class="l">Athlete ID</div><div class="v">0x4A1F·82</div></div>
+        <div><div class="l">Sport</div><div class="v">Hyrox</div></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="st"><div class="n">82</div><div class="k">HPI</div></div>
+      <div class="st"><div class="n">16<span style="font-size:12px;color:var(--ash)">w</span></div><div class="k">Streak</div></div>
+      <div class="st"><div class="n">12</div><div class="k">PRs</div></div>
+    </div>
+    <div class="act"><div class="btn p">Edit profile</div><div class="btn s">Share card</div></div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">01</div><div class="t">Athlete ID Card</div><div class="d">A Wallet / key-card credential as the hero — tier, member-since, athlete ID, guilloché etch.</div></div>
+</div></body></html>

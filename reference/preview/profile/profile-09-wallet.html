@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 09 — Wallet Stack</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.screen{position:absolute;inset:0;padding:50px 20px 96px;z-index:10;display:flex;flex-direction:column}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.h1{font-weight:900;font-size:26px;letter-spacing:-.03em;margin-top:6px}
+.stack{position:relative;margin-top:20px;height:430px}
+.pass{position:absolute;left:0;right:0;border-radius:20px;padding:16px 18px;border:1px solid var(--line);box-shadow:0 -8px 24px -12px rgba(0,0,0,.8)}
+.pass .top{display:flex;align-items:center;justify-content:space-between}
+.pass .bn{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ash)}
+.pass .st{font-family:var(--mono);font-size:9px;border-radius:999px;padding:4px 9px}
+/* membership (front, full) */
+.p1{top:0;height:200px;z-index:4;background:linear-gradient(160deg,#1b1d14,#0e100c);border-color:#34381f}
+.p1 .nm{font-weight:900;font-size:22px;letter-spacing:-.02em;margin-top:34px}
+.p1 .hd{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:4px}
+.p1 .strip{display:flex;justify-content:space-between;margin-top:26px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px}
+.p1 .strip .l{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--ash);text-transform:uppercase}
+.p1 .strip .v{font-family:var(--mono);font-size:11px;margin-top:3px}
+.p2{top:168px;height:120px;z-index:3;background:var(--ink2)}
+.p3{top:300px;height:120px;z-index:2;background:var(--ink2)}
+.av{width:42px;height:42px;border-radius:12px;background:linear-gradient(140deg,#3a3d36,#161816);border:1px solid #4a4d44;display:grid;place-items:center;font-weight:900;color:var(--lime-t)}
+.prow{display:flex;align-items:center;gap:12px;margin-top:14px}
+.prow .t{font-weight:700;font-size:14px}.prow .s{font-family:var(--mono);font-size:9px;color:var(--ash);margin-top:2px}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:3px}.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="screen">
+    <div class="kick">Profile</div>
+    <div class="h1">Your passes</div>
+    <div class="stack">
+      <div class="pass p1">
+        <div class="top"><div class="bn">HYBRID · MEMBERSHIP</div><div class="st" style="border:1px solid var(--lime);color:var(--lime-t)">FULL</div></div>
+        <div class="nm">Youssef Labidi</div>
+        <div class="hd">@youssef · Hybrid Athlete</div>
+        <div class="strip">
+          <div><div class="l">Since</div><div class="v">2024</div></div>
+          <div><div class="l">HPI</div><div class="v" style="color:var(--lime-t)">82</div></div>
+          <div><div class="l">ID</div><div class="v">0x4A1F</div></div>
+        </div>
+      </div>
+      <div class="pass p2">
+        <div class="top"><div class="bn">COACH LINK</div><div class="st" style="border:1px solid var(--violet);color:var(--violet)">ACTIVE</div></div>
+        <div class="prow"><div class="av">SC</div><div><div class="t">Sara Cohen</div><div class="s">Strength &amp; Hyrox · since Mar</div></div></div>
+      </div>
+      <div class="pass p3">
+        <div class="top"><div class="bn">CONNECTED DEVICE</div><div class="st" style="border:1px solid var(--blue);color:var(--blue)">SYNCED</div></div>
+        <div class="prow"><div class="av">⌚</div><div><div class="t">WHOOP 4.0</div><div class="s">recovery · sleep · strain</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">09</div><div class="t">Wallet Stack</div><div class="d">Apple-Wallet pass stack — membership on top, coach link &amp; connected devices tucked behind.</div></div>
+</div></body></html>

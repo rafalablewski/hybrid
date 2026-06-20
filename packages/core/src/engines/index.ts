@@ -29,6 +29,7 @@ export * from "./nutrition";
 export * from "./load";
 export * from "./compliance";
 export * from "./calendar";
+export * from "./achievements";
 export * from "./forceplate";
 export * from "./composition";
 export * from "./segment";

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 10 — Control Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.screen{position:absolute;inset:0;padding:50px 18px 96px;z-index:10;display:flex;flex-direction:column}
+.idrow{display:flex;align-items:center;gap:13px}
+.av{width:54px;height:54px;border-radius:16px;background:linear-gradient(140deg,#3a3d36,#161816);border:1px solid #4a4d44;flex:none;display:grid;place-items:center;font-weight:900;font-size:20px;color:var(--lime-t)}
+.kick{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+.nm{font-weight:900;font-size:20px;letter-spacing:-.02em}.hd{font-family:var(--mono);font-size:9.5px;color:var(--ash);margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.t{border:1px solid var(--line);border-radius:20px;padding:15px;background:var(--ink2);position:relative;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.t .ico{width:32px;height:32px;border-radius:10px;background:rgba(243,244,239,.06);border:1px solid var(--line);display:grid;place-items:center;font-size:15px}
+.t .lblk{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+.t .big{font-weight:900;font-size:24px;letter-spacing:-.02em}
+.t .sm{font-weight:700;font-size:14px;margin-top:2px}
+.t.wide{grid-column:1 / -1;min-height:0;flex-direction:row;align-items:center;gap:13px}
+.t.up{border-color:#34381f;background:linear-gradient(150deg,#181a12,#0e100c)}
+.t.up .go{margin-left:auto;background:var(--lime);color:var(--ink);font-weight:700;font-size:12px;border-radius:999px;padding:8px 15px}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t2{font-weight:800;font-size:16px;margin-top:3px}.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="screen">
+    <div class="idrow">
+      <div class="av">YL</div>
+      <div><div class="kick">Profile</div><div class="nm">Youssef Labidi</div><div class="hd">HYBRID ATHLETE · FULL</div></div>
+    </div>
+    <div class="grid">
+      <div class="t up wide"><div class="lblk" style="color:var(--lime-t)">Full membership · active</div><div class="go">Manage</div></div>
+      <div class="t"><div class="ico">◈</div><div><div class="lblk">Hybrid index</div><div class="big">82</div></div></div>
+      <div class="t"><div class="ico">∿</div><div><div class="lblk">Readiness</div><div class="big">74<span style="font-size:12px;color:var(--ash)">%</span></div></div></div>
+      <div class="t"><div class="ico">⚖</div><div><div class="lblk">Body</div><div class="sm">78.4 kg · 11%</div></div></div>
+      <div class="t"><div class="ico">🏆</div><div><div class="lblk">Records</div><div class="sm">12 PRs · LVL 7</div></div></div>
+      <div class="t"><div class="ico">⌚</div><div><div class="lblk">Devices</div><div class="sm">WHOOP · synced</div></div></div>
+      <div class="t"><div class="ico">⚙</div><div><div class="lblk">Account</div><div class="sm">Settings</div></div></div>
+    </div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">10</div><div class="t2">Control Center</div><div class="d">A tile grid of profile modules — stats, body, records, devices, settings. Glanceable, modular.</div></div>
+</div></body></html>

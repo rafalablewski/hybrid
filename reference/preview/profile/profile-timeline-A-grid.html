@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Timeline A — Activity Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:330px;height:748px;border-radius:48px;background:var(--ink);border:1px solid var(--line);box-shadow:0 44px 100px -32px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:23px;border-radius:14px;background:#000;z-index:60}
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none}.blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(22px);opacity:.06}
+.bar{position:absolute;top:0;left:0;right:0;height:90px;z-index:30;display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 12px;background:linear-gradient(180deg,var(--ink) 60%,transparent)}
+.bar .k{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--ash);text-transform:uppercase}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg div{font-family:var(--mono);font-size:10px;padding:6px 11px;color:var(--ash)}.seg div.on{background:var(--lime);color:var(--ink)}
+.screen{position:absolute;inset:0;padding:98px 20px 96px;z-index:10;overflow-y:auto;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}
+.h1{font-weight:900;font-size:24px;letter-spacing:-.03em}
+.subline{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:8px}
+.subline b{color:var(--lime-t)}
+/* heatmap */
+.card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#121410,#0d0f0c);padding:18px;margin-top:18px}
+.months{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;color:var(--ash);letter-spacing:.1em;margin-bottom:8px;padding:0 2px}
+#grid{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;height:150px}
+.cell{border-radius:3px;background:#1b1e18}
+.cell.l1{background:rgba(196,240,53,.28)}.cell.l2{background:rgba(196,240,53,.5)}.cell.l3{background:rgba(196,240,53,.74)}.cell.l4{background:var(--lime)}
+.legend{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:12px;font-family:var(--mono);font-size:8.5px;color:var(--ash)}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+/* recent */
+.sh{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 12px}.sh .t{font-weight:800;font-size:15px}.sh .a{font-family:var(--mono);font-size:10px;color:var(--ash)}
+.row{display:flex;align-items:center;gap:13px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:var(--ink2);margin-bottom:9px}
+.row .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.row .nm{font-weight:700;font-size:14px}.row .sub{font-family:var(--mono);font-size:9px;color:var(--ash);margin-top:2px}
+.row .v{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ash);text-align:right}.row .v b{color:var(--chalk)}
+.scrollfade{position:absolute;left:0;right:0;bottom:86px;height:44px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:64px;border-radius:999px;background:rgba(20,22,20,.92);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:40}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ash)}.nav .it .g{width:40px;height:34px;display:grid;place-items:center;font-size:15px}.nav .it .tx{font-family:var(--mono);font-size:8px}.nav .it.on{color:var(--chalk)}
+.nav .fab{display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateY(-20px)}.nav .fab .c{width:60px;height:60px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:4px solid var(--ink);box-shadow:0 10px 24px -6px rgba(196,240,53,.6)}.nav .fab .tx{font-family:var(--mono);font-size:8px;color:var(--lime-t);transform:translateY(-2px)}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:4px}.lab .d{color:var(--ash);font-size:12px;margin-top:5px;max-width:330px;line-height:1.55}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--lime);top:-120px;right:-90px"></div></div>
+  <div class="bar"><div class="k">Training</div><div class="seg"><div class="on">YEAR</div><div>6M</div></div></div>
+  <div class="screen">
+    <div class="h1">Activity</div>
+    <div class="subline"><b>248</b> sessions · <b>16-week</b> streak · 1.24M kg moved</div>
+    <div class="card">
+      <div class="months"><span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>SEP</span><span>NOW</span></div>
+      <div id="grid"></div>
+      <div class="legend">Less <i style="background:#1b1e18"></i><i style="background:rgba(196,240,53,.28)"></i><i style="background:rgba(196,240,53,.5)"></i><i style="background:rgba(196,240,53,.74)"></i><i style="background:var(--lime)"></i> More</div>
+    </div>
+    <div class="sh"><div class="t">Recent</div><div class="a">All sessions →</div></div>
+    <div class="row"><div class="dot" style="background:var(--lime)"></div><div><div class="nm">Lower · Heavy</div><div class="sub">TODAY · 1h 02m</div></div><div class="v"><b>14.2t</b><br>2 PRs</div></div>
+    <div class="row"><div class="dot" style="background:var(--blue)"></div><div><div class="nm">Zone 2 Run</div><div class="sub">YESTERDAY · 48m</div></div><div class="v"><b>8.4 km</b><br>5:42/km</div></div>
+    <div class="row"><div class="dot" style="background:var(--violet)"></div><div><div class="nm">Hyrox Sim</div><div class="sub">SUN · 1h 11m</div></div><div class="v"><b>conditioning</b></div></div>
+  </div>
+  <div class="scrollfade"></div>
+  <div class="nav">
+    <div class="it"><div class="g">▦</div><div class="tx">Today</div></div>
+    <div class="it on"><div class="g">▤</div><div class="tx">History</div></div>
+    <div class="fab"><div class="c"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="#0c0d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><div class="tx">Train</div></div>
+    <div class="it"><div class="g">•••</div><div class="tx">More</div></div>
+    <div class="it"><div class="g"><svg viewBox="0 0 72 72" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M54 56.125C52.4497 49.125 46.607 45 36.0004 45C25.3938 45 19.5503 49.125 18 56.125M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63ZM36 36C40 36 42 33.8571 42 28.5C42 23.1429 40 21 36 21C32 21 30 23.1429 30 28.5C30 33.8571 32 36 36 36Z"/></svg></div><div class="tx">You</div></div>
+  </div>
+</div>
+<div class="lab"><div class="n">TIMELINE · OPTION A</div><div class="t">Activity Grid</div><div class="d">A year of training as a contribution heatmap — every cell a day, lime intensity = load. Glance the streak &amp; consistency at once, recent sessions below. (Apple Activity × GitHub.)</div></div>
+</div>
+<script>
+const g=document.getElementById('grid');let s=23;const r=()=>{s=(s*9301+49297)%233280;return s/233280;};
+for(let i=0;i<7*18;i++){const v=r();let c=0;if(v>.5)c=1;if(v>.68)c=2;if(v>.83)c=3;if(v>.93)c=4;const d=document.createElement('i');d.className='cell l'+c;g.appendChild(d);}
+</script>
+</body></html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Timeline C — Telemetry Track</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:330px;height:748px;border-radius:48px;background:var(--ink);border:1px solid var(--line);box-shadow:0 44px 100px -32px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:23px;border-radius:14px;background:#000;z-index:60}
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none}.blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(22px);opacity:.06}
+.bar{position:absolute;top:0;left:0;right:0;height:90px;z-index:30;display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 12px;background:linear-gradient(180deg,var(--ink) 60%,transparent)}
+.bar .k{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--ash);text-transform:uppercase}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.seg div{font-family:var(--mono);font-size:10px;padding:6px 11px;color:var(--ash)}.seg div.on{background:var(--lime);color:var(--ink)}
+.screen{position:absolute;inset:0;padding:98px 20px 96px;z-index:10;overflow-y:auto;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}
+.h1{font-weight:900;font-size:24px;letter-spacing:-.03em}
+.subline{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:7px}.subline b{color:var(--lime-t)}
+/* telemetry panel */
+.panel{margin-top:18px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#121410,#0d0f0c);padding:16px 14px 12px;position:relative;overflow:hidden}
+.plbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;color:var(--ash);text-transform:uppercase;padding:0 4px}
+.graph{position:relative;height:96px;margin-top:6px}
+.graph svg{position:absolute;inset:0;width:100%;height:100%}
+.track{display:flex;align-items:flex-end;gap:0;height:100%;}
+.bcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.bcol b{width:7px;border-radius:3px;background:#2c2f27}
+.bcol.on b{background:var(--lime);box-shadow:0 0 12px -2px rgba(196,240,53,.7)}
+.axis{display:flex;margin-top:8px;padding:0 2px}
+.axis span{flex:1;text-align:center;font-family:var(--mono);font-size:8px;color:var(--ash)}
+.axis span.on{color:var(--lime-t)}
+/* selected session detail */
+.detail{margin-top:14px;border:1px solid rgba(196,240,53,.4);border-radius:20px;background:var(--ink2);padding:16px}
+.detail .top{display:flex;align-items:center;justify-content:space-between}
+.detail .ti{font-weight:800;font-size:16px;letter-spacing:-.01em}
+.detail .tag{font-family:var(--mono);font-size:8px;letter-spacing:.08em;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:3px 9px;text-transform:uppercase}
+.detail .tm{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:4px}
+.met{display:flex;margin-top:14px;border-top:1px solid var(--line);padding-top:13px}
+.met .m{flex:1;border-right:1px solid var(--line)}.met .m:last-child{border-right:0}
+.met .v{font-weight:900;font-size:18px;letter-spacing:-.02em}.met .k{font-family:var(--mono);font-size:8px;letter-spacing:.08em;color:var(--ash);text-transform:uppercase;margin-top:4px}
+.lifts{margin-top:13px;display:flex;flex-direction:column;gap:7px}
+.lift{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px}.lift .n{color:var(--chalk)}.lift .s{color:var(--ash)}.lift .s b{color:var(--lime-t)}
+.scrollfade{position:absolute;left:0;right:0;bottom:86px;height:44px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:64px;border-radius:999px;background:rgba(20,22,20,.92);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:40}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ash)}.nav .it .g{width:40px;height:34px;display:grid;place-items:center;font-size:15px}.nav .it .tx{font-family:var(--mono);font-size:8px}.nav .it.on{color:var(--chalk)}
+.nav .fab{display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateY(-20px)}.nav .fab .c{width:60px;height:60px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:4px solid var(--ink);box-shadow:0 10px 24px -6px rgba(196,240,53,.6)}.nav .fab .tx{font-family:var(--mono);font-size:8px;color:var(--lime-t);transform:translateY(-2px)}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:4px}.lab .d{color:var(--ash);font-size:12px;margin-top:5px;max-width:330px;line-height:1.55}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--lime);top:-120px;right:-90px"></div></div>
+  <div class="bar"><div class="k">Performance log</div><div class="seg"><div class="on">8W</div><div>6M</div></div></div>
+  <div class="screen">
+    <div class="h1">Telemetry</div>
+    <div class="subline">load per session · <b>HPI</b> trend overlaid</div>
+    <div class="panel">
+      <div class="plbl">Session load · 8 weeks · tap a bar</div>
+      <div class="graph">
+        <div class="track">
+          <div class="bcol"><b style="height:38%"></b></div><div class="bcol"><b style="height:52%"></b></div>
+          <div class="bcol"><b style="height:46%"></b></div><div class="bcol"><b style="height:64%"></b></div>
+          <div class="bcol"><b style="height:50%"></b></div><div class="bcol"><b style="height:70%"></b></div>
+          <div class="bcol"><b style="height:58%"></b></div><div class="bcol"><b style="height:78%"></b></div>
+          <div class="bcol"><b style="height:66%"></b></div><div class="bcol"><b style="height:84%"></b></div>
+          <div class="bcol"><b style="height:74%"></b></div><div class="bcol on"><b style="height:96%"></b></div>
+        </div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline points="4,70 12,60 21,64 29,50 38,55 46,42 54,48 62,34 71,40 79,26 87,32 96,16"
+            fill="none" stroke="#7fd4e8" stroke-width="1.4" stroke-opacity=".9" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div class="axis"><span>W1</span><span></span><span>W3</span><span></span><span>W5</span><span></span><span>W7</span><span></span><span>W9</span><span></span><span></span><span class="on">NOW</span></div>
+    </div>
+    <div class="detail">
+      <div class="top"><div class="ti">Lower · Heavy</div><div class="tag">Selected</div></div>
+      <div class="tm">TODAY · 07:42 · 1h 02m · readiness 74</div>
+      <div class="met"><div class="m"><div class="v">14.2t</div><div class="k">Volume</div></div><div class="m"><div class="v">22</div><div class="k">Sets</div></div><div class="m"><div class="v">2</div><div class="k">PRs</div></div></div>
+      <div class="lifts">
+        <div class="lift"><div class="n">Back Squat</div><div class="s">5×3 · <b>182 e1RM ▲</b></div></div>
+        <div class="lift"><div class="n">RDL</div><div class="s">4×6 · 140 kg</div></div>
+        <div class="lift"><div class="n">Leg Press</div><div class="s">3×10 · 300 kg</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="scrollfade"></div>
+  <div class="nav">
+    <div class="it"><div class="g">▦</div><div class="tx">Today</div></div>
+    <div class="it on"><div class="g">▤</div><div class="tx">History</div></div>
+    <div class="fab"><div class="c"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="#0c0d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><div class="tx">Train</div></div>
+    <div class="it"><div class="g">•••</div><div class="tx">More</div></div>
+    <div class="it"><div class="g"><svg viewBox="0 0 72 72" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M54 56.125C52.4497 49.125 46.607 45 36.0004 45C25.3938 45 19.5503 49.125 18 56.125M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63ZM36 36C40 36 42 33.8571 42 28.5C42 23.1429 40 21 36 21C32 21 30 23.1429 30 28.5C30 33.8571 32 36 36 36Z"/></svg></div><div class="tx">You</div></div>
+  </div>
+</div>
+<div class="lab"><div class="n">TIMELINE · OPTION C</div><div class="t">Telemetry Track</div><div class="d">Tesla-dashboard logic — every session a bar (load), the HPI trend traced over the top, latest lit. Tap a bar to expand its full readout below. Data-forward.</div></div>
+</div></body></html>

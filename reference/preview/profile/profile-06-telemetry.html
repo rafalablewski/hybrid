@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile 06 — Telemetry</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:320px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);box-shadow:0 40px 90px -30px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:22px;border-radius:14px;background:#000;z-index:40}
+.screen{position:absolute;inset:0;padding:50px 20px 96px;z-index:10;display:flex;flex-direction:column}
+.head{display:flex;align-items:center;gap:12px}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.av{width:46px;height:46px;border-radius:13px;background:linear-gradient(140deg,#3a3d36,#161816);border:1px solid #4a4d44;flex:none;display:grid;place-items:center;font-weight:900;color:var(--lime-t);margin-left:auto}
+.nm{font-weight:900;font-size:18px;letter-spacing:-.01em}.hd{font-family:var(--mono);font-size:9.5px;color:var(--ash);margin-top:2px}
+.panel{margin-top:16px;border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(180deg,#121410,#0d0f0c)}
+.ph{display:flex;align-items:baseline;justify-content:space-between}
+.ph .k{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+.ph .v{font-weight:900;font-size:24px;letter-spacing:-.02em}.ph .v b{color:var(--lime)}
+.graph{height:60px;margin-top:12px;display:flex;align-items:flex-end;gap:3px}
+.graph i{flex:1;border-radius:2px;background:#2c2f27}
+.graph i.l{background:var(--lime)}.graph i.b{background:var(--blue)}
+.axis{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--mono);font-size:8px;color:var(--ash);letter-spacing:.05em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.cell{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--ink2)}
+.cell .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+.cell .v{font-weight:900;font-size:22px;margin-top:6px}.cell .s{font-family:var(--mono);font-size:9px;color:var(--lime-t);margin-top:4px}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:62px;border-radius:999px;background:rgba(20,22,20,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30}
+.nav .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:15px}.nav .av2{width:32px;height:32px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:3px}.lab .d{color:var(--ash);font-size:12px;margin-top:4px;max-width:300px;line-height:1.5}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="screen">
+    <div class="head">
+      <div><div class="kick">Profile · Telemetry</div><div class="nm" style="margin-top:6px">Youssef Labidi</div><div class="hd">HYBRID ATHLETE · FULL</div></div>
+      <div class="av">YL</div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="k">HPI — 90 day trace</div><div class="v">8<b>2</b></div></div>
+      <div class="graph">
+        <i style="height:42%"></i><i style="height:50%"></i><i style="height:46%"></i><i style="height:58%"></i><i style="height:54%"></i><i style="height:64%"></i><i style="height:60%"></i><i style="height:72%"></i><i style="height:68%"></i><i style="height:80%"></i><i class="l" style="height:92%"></i>
+      </div>
+      <div class="axis"><span>MAR</span><span>APR</span><span>MAY</span><span>NOW</span></div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <div class="ph"><div class="k">Readiness — 14 day</div><div class="v">74<b style="font-size:14px">%</b></div></div>
+      <div class="graph">
+        <i class="b" style="height:60%"></i><i class="b" style="height:72%"></i><i class="b" style="height:55%"></i><i class="b" style="height:80%"></i><i class="b" style="height:68%"></i><i class="b" style="height:74%"></i><i class="b" style="height:88%"></i>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="cell"><div class="k">Volume / wk</div><div class="v">31.2t</div><div class="s">▲ +6%</div></div>
+      <div class="cell"><div class="k">Streak</div><div class="v">16 wk</div><div class="s">personal best</div></div>
+    </div>
+  </div>
+  <div class="nav"><div class="ic">▦</div><div class="ic">＋</div><div class="ic">▤</div><div class="ic">•••</div><div class="av2"></div></div>
+</div>
+<div class="lab"><div class="n">06</div><div class="t">Telemetry</div><div class="d">Tesla dashboard traces — your performance plotted over time, technical labels, live feel.</div></div>
+</div></body></html>

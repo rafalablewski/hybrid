@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Timeline B — Session Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:330px;height:748px;border-radius:48px;background:var(--ink);border:1px solid var(--line);box-shadow:0 44px 100px -32px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:23px;border-radius:14px;background:#000;z-index:60}
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none}.blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(22px);opacity:.06}
+.bar{position:absolute;top:0;left:0;right:0;height:90px;z-index:30;display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 12px;background:linear-gradient(180deg,var(--ink) 60%,transparent)}
+.bar .k{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--ash);text-transform:uppercase}
+.bar .gear{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--chalk);font-size:14px}
+.screen{position:absolute;inset:0;padding:96px 20px 96px;z-index:10;overflow-y:auto;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}
+.h1{font-weight:900;font-size:24px;letter-spacing:-.03em}
+.subline{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:7px}.subline b{color:var(--lime-t)}
+/* timeline */
+.tl{position:relative;margin-top:20px;padding-left:30px}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:10px;width:1.5px;background:linear-gradient(var(--line),transparent)}
+.sep{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--ash);text-transform:uppercase;margin:6px 0 12px -30px;padding-left:30px}
+.ev{position:relative;margin-bottom:14px}
+.node{position:absolute;left:-30px;top:16px;width:20px;height:20px;border-radius:50%;background:var(--ink);border:2px solid var(--line);display:grid;place-items:center}
+.node i{width:7px;height:7px;border-radius:50%}
+.node.lime{border-color:var(--lime)}.node.lime i{background:var(--lime)}
+.node.blue{border-color:var(--blue)}.node.blue i{background:var(--blue)}
+.node.violet{border-color:var(--violet)}.node.violet i{background:var(--violet)}
+.ec{border:1px solid var(--line);border-radius:18px;background:var(--ink2);padding:15px}
+.ec .top{display:flex;align-items:center;justify-content:space-between}
+.ec .ti{font-weight:800;font-size:15px;letter-spacing:-.01em}
+.ec .tm{font-family:var(--mono);font-size:9px;color:var(--ash)}
+.ec .chip{font-family:var(--mono);font-size:8px;letter-spacing:.08em;border:1px solid var(--line);border-radius:999px;padding:3px 8px;color:var(--ash);text-transform:uppercase}
+.met{display:flex;gap:0;margin-top:13px;border-top:1px solid var(--line);padding-top:12px}
+.met .m{flex:1;border-right:1px solid var(--line)}.met .m:last-child{border-right:0}
+.met .v{font-weight:800;font-size:15px}.met .k{font-family:var(--mono);font-size:8px;letter-spacing:.08em;color:var(--ash);text-transform:uppercase;margin-top:3px}
+.prc{display:inline-flex;align-items:center;gap:6px;margin-top:11px;font-family:var(--mono);font-size:10px;color:var(--lime-t);background:rgba(196,240,53,.08);border:1px solid rgba(196,240,53,.4);border-radius:999px;padding:5px 11px}
+.scrollfade{position:absolute;left:0;right:0;bottom:86px;height:44px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:64px;border-radius:999px;background:rgba(20,22,20,.92);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:40}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ash)}.nav .it .g{width:40px;height:34px;display:grid;place-items:center;font-size:15px}.nav .it .tx{font-family:var(--mono);font-size:8px}.nav .it.on{color:var(--chalk)}
+.nav .fab{display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateY(-20px)}.nav .fab .c{width:60px;height:60px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:4px solid var(--ink);box-shadow:0 10px 24px -6px rgba(196,240,53,.6)}.nav .fab .tx{font-family:var(--mono);font-size:8px;color:var(--lime-t);transform:translateY(-2px)}
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}.lab .t{font-weight:800;font-size:16px;margin-top:4px}.lab .d{color:var(--ash);font-size:12px;margin-top:5px;max-width:330px;line-height:1.55}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--violet);bottom:40px;left:-100px"></div></div>
+  <div class="bar"><div class="k">Training log</div><div class="gear">⚲</div></div>
+  <div class="screen">
+    <div class="h1">Timeline</div>
+    <div class="subline"><b>5</b> sessions this week · <b>6h 14m</b></div>
+    <div class="tl">
+      <div class="sep">Today</div>
+      <div class="ev">
+        <div class="node lime"><i></i></div>
+        <div class="ec">
+          <div class="top"><div class="ti">Lower · Heavy</div><div class="chip">Strength</div></div>
+          <div class="tm">07:42 · 1h 02m</div>
+          <div class="met"><div class="m"><div class="v">14.2t</div><div class="k">Volume</div></div><div class="m"><div class="v">22</div><div class="k">Sets</div></div><div class="m"><div class="v">182</div><div class="k">Sq e1RM</div></div></div>
+          <div class="prc">🏆 2 new PRs · Squat +5 kg</div>
+        </div>
+      </div>
+      <div class="sep">Yesterday</div>
+      <div class="ev">
+        <div class="node blue"><i></i></div>
+        <div class="ec">
+          <div class="top"><div class="ti">Zone 2 Run</div><div class="chip">Cardio</div></div>
+          <div class="tm">18:10 · 48m</div>
+          <div class="met"><div class="m"><div class="v">8.4<span style="font-size:10px;color:var(--ash)">km</span></div><div class="k">Distance</div></div><div class="m"><div class="v">5:42</div><div class="k">Pace /km</div></div><div class="m"><div class="v">142</div><div class="k">Avg HR</div></div></div>
+        </div>
+      </div>
+      <div class="sep">Sunday</div>
+      <div class="ev">
+        <div class="node violet"><i></i></div>
+        <div class="ec">
+          <div class="top"><div class="ti">Hyrox Simulation</div><div class="chip">Conditioning</div></div>
+          <div class="tm">09:30 · 1h 11m</div>
+          <div class="met"><div class="m"><div class="v">8</div><div class="k">Stations</div></div><div class="m"><div class="v">71:20</div><div class="k">Time</div></div><div class="m"><div class="v">RPE 9</div><div class="k">Effort</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scrollfade"></div>
+  <div class="nav">
+    <div class="it"><div class="g">▦</div><div class="tx">Today</div></div>
+    <div class="it on"><div class="g">▤</div><div class="tx">History</div></div>
+    <div class="fab"><div class="c"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="#0c0d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><div class="tx">Train</div></div>
+    <div class="it"><div class="g">•••</div><div class="tx">More</div></div>
+    <div class="it"><div class="g"><svg viewBox="0 0 72 72" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M54 56.125C52.4497 49.125 46.607 45 36.0004 45C25.3938 45 19.5503 49.125 18 56.125M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63ZM36 36C40 36 42 33.8571 42 28.5C42 23.1429 40 21 36 21C32 21 30 23.1429 30 28.5C30 33.8571 32 36 36 36Z"/></svg></div><div class="tx">You</div></div>
+  </div>
+</div>
+<div class="lab"><div class="n">TIMELINE · OPTION B</div><div class="t">Session Log</div><div class="d">A vertical, chronological timeline — a connector spine, a type-coloured node per session, each card carrying its key spec readout + PR badges. (Apple Health × Tesla trip history.)</div></div>
+</div></body></html>

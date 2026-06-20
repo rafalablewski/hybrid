@@ -61,6 +61,7 @@ import { useLang } from "../lib/i18n";
 import { F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
+import { AuroraField } from "../components/aurora/kit";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
 // helpers let the live logger pick up the new look without duplicating its
@@ -702,6 +703,10 @@ export default function Workout() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
+      {/* Aurora's ambient blob field behind the logger — the live screen owns its
+          own shell (sticky timer header), so it drops in the same backdrop the
+          rest of the Aurora app uses rather than wrapping in AuroraScreen. */}
+      {aurora && <AuroraField />}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ width: 64 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("workout.cancel")}</Text>
@@ -1138,7 +1143,8 @@ function Summary({
   haptics: boolean;
 }) {
   const C = useTheme().palette;
-  const R = auroraRadii(useTemplate().template === "aurora");
+  const aurora = useTemplate().template === "aurora";
+  const R = auroraRadii(aurora);
   const cardRef = useRef<View>(null);
   const { title, prs, bests, cardioPrs, firstEver } = summary;
   // A PR or a first-ever workout is the moment worth posting — the share is the
@@ -1195,6 +1201,7 @@ function Summary({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
+      {aurora && <AuroraField />}
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
         <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
           <Animated.View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center", transform: [{ scale: pop }] }}>

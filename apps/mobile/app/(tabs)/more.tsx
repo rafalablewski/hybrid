@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, Linking } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { navVisibleTo, NAV_ITEMS, FUNNEL } from "@hybrid/core";
+import { navVisibleTo, NAV_ITEMS, FUNNEL, AURORA_NAV_ICONS, type AuroraIconName } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { useSession } from "../../lib/session";
 import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/persona";
@@ -10,8 +10,28 @@ import { fetchMyAccessRequests, requestAccess, WEB_APP_URL } from "../../lib/api
 import { useLang } from "../../lib/i18n";
 import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
 import { AuroraScreen } from "../../components/aurora/kit";
-import { useTheme, txt } from "../../lib/theme";
+import { AuroraIcon } from "../../components/aurora/icons";
+import { useTheme, txt, type Palette } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
+
+// Springboard glyph for a hub destination — the shared design-kit line icon for
+// each nav id (one source of truth, AURORA_NAV_ICONS); falls back to a generic
+// info glyph for the handful of non-nav entries (e.g. onboarding).
+const navIcon = (id: string): AuroraIconName => AURORA_NAV_ICONS[id] ?? "info";
+
+/** One springboard cell: a rounded-square glyph tile with a label beneath.
+ *  Monochrome by design — no per-item accent text (the old rainbow labels are
+ *  gone); the only accent in the hub is the single Unlock-Full card. */
+function Tile({ icon, label, onPress, palette }: { icon: AuroraIconName; label: string; onPress: () => void; palette: Palette }) {
+  return (
+    <Pressable onPress={onPress} style={{ width: "25%", alignItems: "center", paddingVertical: 8, gap: 8 }}>
+      <View style={{ width: 58, height: 58, borderRadius: 18, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
+        <AuroraIcon name={icon} size={24} color={palette.chalk} />
+      </View>
+      <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: 11, color: palette.chalk, textAlign: "center" }}>{label}</Text>
+    </Pressable>
+  );
+}
 
 // Features worth requesting (everything not casual-by-default).
 const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
@@ -86,7 +106,6 @@ export default function More() {
   // radius, CTAs → pills) so the More hub isn't a classic island in Aurora.
   const aurora = useTemplate().template === "aurora";
   const rCard = aurora ? 22 : 14;
-  const rCta = aurora ? 999 : 14;
   const { signOut, role, entitlement } = useSession();
   const persona = usePersona();
   const choice = useClientPersonaChoice();
@@ -139,10 +158,13 @@ export default function More() {
           buried at the very bottom where the floating nav covered it. */}
       <Pressable
         onPress={() => router.push("/settings")}
-        style={{ marginTop: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+        style={{ marginTop: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 16, flexDirection: "row", alignItems: "center", gap: 14 }}
       >
+        <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name="settings" size={20} color={C.chalk} />
+        </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>⚙  {t("settings.title")}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>{t("settings.title")}</Text>
           <Mono style={{ marginTop: 3, fontSize: 11 }}>
             {[role.toUpperCase(), entitlement === "paid" ? "FULL · PAID" : "FREE"].join(" · ")} — {t("settings.sub")}
           </Mono>
@@ -191,13 +213,17 @@ export default function More() {
       {persona === "casual" && (
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "more" }); router.push("/upgrade"); }}
-          style={{ marginTop: 18, backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: rCta, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+          style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 22, padding: 18, overflow: "hidden", shadowColor: C.lime, shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 }}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+          {/* Premium 'membership card' sheen — RN has no gradient, so a soft
+              low-opacity lime disc in the corner gives the glow. */}
+          <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.lime}24` }} />
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 2, color: txt(C, C.lime) }}>UPGRADE</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>Unlock Full</Text>
+          <Mono style={{ marginTop: 5, fontSize: 11, maxWidth: 230 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
+          <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>Go Full →</Text>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
         </Pressable>
       )}
 
@@ -205,29 +231,25 @@ export default function More() {
       {navVisibleTo(persona, "cockpit", access) && (
         <Pressable
           onPress={() => router.push("/(tabs)/cockpit")}
-          style={{ marginTop: 18, backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: `${C.blue}55`, borderRadius: rCta, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+          style={{ marginTop: 14, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 16, flexDirection: "row", alignItems: "center", gap: 14 }}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 16, color: txt(C, C.blue) }}>◈ Athlete cockpit</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>goal · season · performance · sport · velocity · endurance</Mono>
+          <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="user-circle" size={20} color={C.chalk} />
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.blue) }}>→</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>Athlete cockpit</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>goal · season · performance · sport · velocity</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
         </Pressable>
       )}
 
       {sections.map((section) => (
-        <View key={section.titleKey} style={{ marginTop: 18 }}>
+        <View key={section.titleKey} style={{ marginTop: 20 }}>
           <Kicker>{t(section.titleKey)}</Kicker>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
             {section.links.map((l) => (
-              <Pressable
-                key={l.labelKey}
-                onPress={() => router.push(l.href)}
-                style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 14 }}
-              >
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, l.color) }}>{t(l.labelKey)} →</Text>
-                <Mono style={{ marginTop: 2, fontSize: 11 }}>{l.sub}</Mono>
-              </Pressable>
+              <Tile key={l.labelKey} icon={navIcon(l.id)} label={t(l.labelKey)} onPress={() => router.push(l.href)} palette={C} />
             ))}
           </View>
         </View>

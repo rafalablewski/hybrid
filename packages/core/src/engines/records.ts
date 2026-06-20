@@ -70,6 +70,20 @@ export function prsForSession(all: LoggedSession[], id: string): PrHit[] {
   return newPrsInSession(target, prior);
 }
 
+/**
+ * Total lifetime personal records — genuine improvements (a lift beating its own
+ * prior best) across the whole history, oldest→newest. First-time lifts are
+ * excluded so the count reads as "records broken", not "distinct lifts tried".
+ */
+export function lifetimePrCount(sessions: LoggedSession[]): number {
+  const asc = [...sessions].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
+  let n = 0;
+  for (let i = 0; i < asc.length; i++) {
+    n += newPrsInSession(asc[i]!, asc.slice(0, i)).filter((h) => h.previous != null).length;
+  }
+  return n;
+}
+
 // ----- Cardio records (distance & pace) -----
 
 export interface CardioPrHit {

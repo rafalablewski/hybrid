@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile — consensus build (Apple / Tesla)</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;
+  --ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;
+  --disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:330px;height:748px;border-radius:48px;background:var(--ink);border:1px solid var(--line);box-shadow:0 44px 100px -32px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:23px;border-radius:14px;background:#000;z-index:60}
+
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(22px);opacity:.06}
+
+/* top bar — Apple/Tesla account chrome: a quiet title + a settings glyph */
+.bar{position:absolute;top:0;left:0;right:0;height:90px;z-index:30;display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 12px;background:linear-gradient(180deg,var(--ink) 60%,transparent)}
+.bar .k{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--ash);text-transform:uppercase}
+.bar .gear{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--chalk);font-size:15px}
+
+.screen{position:absolute;inset:0;padding:98px 20px 94px;z-index:10;overflow-y:auto;-ms-overflow-style:none;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+
+/* ACCOUNT HERO — centered avatar + name + Apple-ID-style identifier */
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center}
+.avwrap{position:relative;width:98px;height:98px}
+.av{width:98px;height:98px;border-radius:50%;background:linear-gradient(150deg,#3a3d36,#16181400);border:1px solid #4a4d44;display:grid;place-items:center;font-weight:900;font-size:34px;color:var(--lime-t);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.edit{position:absolute;right:-1px;bottom:-1px;width:30px;height:30px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-size:13px;border:3px solid var(--ink)}
+.nm{font-weight:900;font-size:25px;letter-spacing:-.025em;margin-top:15px;display:flex;align-items:center;gap:9px}
+.tier{font-family:var(--mono);font-size:9px;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:3px 9px;letter-spacing:.08em}
+.sub{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:8px;letter-spacing:.02em}
+.role{font-size:12.5px;color:var(--chalk);margin-top:8px;opacity:.85}
+
+/* SPEC STRIP — Tesla hairline-divided metric bar (replaces social stat counts) */
+.spec{display:flex;border:1px solid var(--line);border-radius:18px;background:var(--ink2);margin-top:20px}
+.spec .c{flex:1;text-align:center;padding:15px 0;border-right:1px solid var(--line)}
+.spec .c:last-child{border-right:0}
+.spec .n{font-weight:900;font-size:22px;letter-spacing:-.02em}
+.spec .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--ash);text-transform:uppercase;margin-top:5px}
+
+/* actions */
+.act{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;text-align:center;border-radius:14px;padding:13px;font-weight:700;font-size:13px;background:var(--ink2);border:1px solid var(--line);color:var(--chalk)}
+.btn.p{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+
+.div{height:1px;background:var(--line);margin:22px 0}
+
+/* ID card (01) */
+.idc{position:relative;border-radius:22px;padding:18px;overflow:hidden;border:1px solid #34381f;background:linear-gradient(160deg,#1a1c14,#0e100d 60%)}
+.idc::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(196,240,53,.05) 0 1px,transparent 1px 14px);opacity:.7}
+.idc::after{content:"";position:absolute;top:-60px;right:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)}
+.idc .t{display:flex;align-items:center;justify-content:space-between;position:relative}
+.idc .bn{font-weight:900;font-size:13px;letter-spacing:.04em}.idc .bn b{color:var(--lime)}
+.idc .ch{font-family:var(--mono);font-size:9px;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:4px 9px;letter-spacing:.1em}
+.idc .meta{display:flex;justify-content:space-between;margin-top:30px;position:relative}
+.idc .meta .l{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--ash);text-transform:uppercase}
+.idc .meta .v{font-family:var(--mono);font-size:12px;color:var(--chalk);margin-top:4px}
+.idc .meta .v b{color:var(--lime-t)}
+
+/* HPI hero (02) */
+.hpi{margin-top:14px;border:1px solid var(--line);border-radius:22px;padding:18px;background:linear-gradient(180deg,#121410,#0d0f0c)}
+.hpi .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--ash);text-transform:uppercase}
+.hpi .band{display:inline-block;font-family:var(--mono);font-size:9px;color:var(--lime-t);border:1px solid var(--line);border-radius:999px;padding:4px 10px;margin-top:8px}
+.hpi .big{font-weight:900;font-size:80px;line-height:.86;letter-spacing:-.05em;margin-top:10px}
+.hpi .big b{color:var(--lime)}
+.hpi .trace{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:14px}
+.hpi .trace i{flex:1;border-radius:2px;background:#2c2f27}
+.hpi .trace i.l{background:var(--lime)}
+.hpi .delta{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:9px}.hpi .delta b{color:var(--lime-t)}
+
+/* section header */
+.sh{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 13px}
+.sh .t{font-weight:800;font-size:15px;letter-spacing:-.01em}
+.sh .a{font-family:var(--mono);font-size:10px;color:var(--ash)}
+
+/* ACHIEVEMENTS — squared premium badges (Tesla/Apple, not story circles) */
+.ach{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+.ach::-webkit-scrollbar{display:none}
+.ab{flex:none;width:76px;text-align:center}
+.ab .sq{width:76px;height:76px;border-radius:20px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:27px}
+.ab.on .sq{border-color:rgba(196,240,53,.45);background:linear-gradient(160deg,#181a12,#0e100c);box-shadow:0 0 22px -10px rgba(196,240,53,.6)}
+.ab .l{font-size:10px;color:var(--ash);margin-top:8px}
+
+/* PR list (07) */
+.pr{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:9px;background:var(--ink2)}
+.pr .l{display:flex;align-items:center;gap:11px}
+.pr .tr{font-size:16px}
+.pr .nm2{font-weight:700;font-size:14px}.pr .sub2{font-family:var(--mono);font-size:9px;color:var(--ash);margin-top:2px}
+.pr .v{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--lime-t)}
+
+/* module tiles (10) */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:20px;padding:15px;background:var(--ink2);min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .ico{width:32px;height:32px;border-radius:10px;background:rgba(243,244,239,.06);border:1px solid var(--line);display:grid;place-items:center;font-size:15px}
+.tile .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+.tile .big2{font-weight:900;font-size:23px;letter-spacing:-.02em}
+.tile .sm{font-weight:700;font-size:13.5px;margin-top:2px}
+
+/* ACTIVITY GRID — a year of training as a heatmap (timeline option A) */
+.actgrid{border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#121410,#0d0f0c);padding:16px}
+.actgrid .months{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--ash);letter-spacing:.08em;margin-bottom:8px;padding:0 2px}
+#hgrid{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;height:132px}
+.hc{border-radius:2.5px;background:#1b1e18}
+.hc.l1{background:rgba(196,240,53,.28)}.hc.l2{background:rgba(196,240,53,.5)}.hc.l3{background:rgba(196,240,53,.74)}.hc.l4{background:var(--lime)}
+.actgrid .legend{display:flex;align-items:center;gap:5px;margin-top:11px;font-family:var(--mono);font-size:8px;color:var(--ash)}
+.actgrid .legend i{width:10px;height:10px;border-radius:2.5px;display:inline-block}
+.actgrid .legend i.l0{background:#1b1e18}.actgrid .legend i.l1{background:rgba(196,240,53,.28)}.actgrid .legend i.l2{background:rgba(196,240,53,.5)}.actgrid .legend i.l3{background:rgba(196,240,53,.74)}.actgrid .legend i.l4{background:var(--lime)}
+.scrollfade{position:absolute;left:0;right:0;bottom:86px;height:46px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
+
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:64px;border-radius:999px;background:rgba(20,22,20,.92);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:40}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ash)}
+.nav .it .g{width:40px;height:34px;border-radius:999px;display:grid;place-items:center;font-size:15px}
+.nav .it .tx{font-family:var(--mono);font-size:8px;letter-spacing:.04em}
+.nav .it.on{color:var(--chalk)}
+.nav .av3{width:28px;height:28px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+/* elevated center Train action — punches up through the bar like a launch button */
+.nav .fab{display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateY(-20px)}
+.nav .fab .c{width:60px;height:60px;border-radius:50%;background:var(--lime);display:grid;place-items:center;border:4px solid var(--ink);box-shadow:0 10px 24px -6px rgba(196,240,53,.6)}
+.nav .fab .tx{font-family:var(--mono);font-size:8px;letter-spacing:.06em;color:var(--lime-t);transform:translateY(-2px)}
+
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}
+.lab .t{font-weight:800;font-size:16px;margin-top:4px}.lab .d{color:var(--ash);font-size:12px;margin-top:5px;max-width:330px;line-height:1.55}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--lime);top:-120px;right:-90px"></div><div class="blob" style="background:var(--violet);bottom:60px;left:-100px"></div></div>
+
+  <div class="bar"><div class="k">Profile</div><div class="gear">⚙</div></div>
+
+  <div class="screen">
+    <!-- ACCOUNT HERO — Apple ID / Tesla account style -->
+    <div class="hero">
+      <div class="avwrap">
+        <div class="av">YL</div>
+        <div class="edit">✎</div>
+      </div>
+      <div class="nm">Youssef Labidi <span class="tier">FULL</span></div>
+      <div class="sub">HYBRID ID · youssef@hybrid.app</div>
+      <div class="role">Hybrid Athlete · Hyrox · member since 2024</div>
+    </div>
+
+    <!-- SPEC STRIP — hairline-divided metrics -->
+    <div class="spec">
+      <div class="c"><div class="n">82</div><div class="k">HPI</div></div>
+      <div class="c"><div class="n">16w</div><div class="k">Streak</div></div>
+      <div class="c"><div class="n">12</div><div class="k">PRs</div></div>
+    </div>
+
+    <div class="act">
+      <div class="btn p">Edit profile</div>
+      <div class="btn">Share card</div>
+    </div>
+
+    <div class="div"></div>
+
+    <!-- ID card (01) -->
+    <div class="idc">
+      <div class="t"><div class="bn">HYBRID<b>.</b> · MEMBERSHIP</div><div class="ch">FULL · MEMBER</div></div>
+      <div class="meta">
+        <div><div class="l">Member since</div><div class="v">2024</div></div>
+        <div><div class="l">Athlete ID</div><div class="v">0x4A1F·82</div></div>
+        <div><div class="l">Index</div><div class="v"><b>82</b></div></div>
+      </div>
+    </div>
+
+    <!-- HUGE HPI (02) -->
+    <div class="hpi">
+      <div class="lbl">Hybrid Performance Index</div>
+      <div class="big">8<b>2</b></div>
+      <span class="band">BAND · ADVANCED</span>
+      <div class="trace">
+        <i style="height:40%"></i><i style="height:48%"></i><i style="height:44%"></i><i style="height:56%"></i><i style="height:52%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:70%"></i><i style="height:66%"></i><i style="height:80%"></i><i style="height:76%"></i><i class="l" style="height:94%"></i>
+      </div>
+      <div class="delta"><b>▲ +4</b> vs last 30 days · strength 86 · engine 78 · recovery 81</div>
+    </div>
+
+    <!-- Training activity (timeline A) — year heatmap -->
+    <div class="sh"><div class="t">Training</div><div class="a">248 sessions →</div></div>
+    <div class="actgrid">
+      <div class="months"><span>JAN</span><span>APR</span><span>JUL</span><span>OCT</span><span>NOW</span></div>
+      <div id="hgrid"></div>
+      <div class="legend"><span style="color:var(--lime-t)">16-week streak</span><span style="flex:1"></span>Less <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> More</div>
+    </div>
+
+    <!-- Achievements (07) — squared badges -->
+    <div class="sh"><div class="t">Achievements</div><div class="a">See all →</div></div>
+    <div class="ach">
+      <div class="ab on"><div class="sq">🏆</div><div class="l">200 kg</div></div>
+      <div class="ab on"><div class="sq">🔥</div><div class="l">16 wk</div></div>
+      <div class="ab on"><div class="sq">⚡</div><div class="l">Sub-20</div></div>
+      <div class="ab on"><div class="sq">🥇</div><div class="l">Hyrox</div></div>
+      <div class="ab"><div class="sq" style="color:var(--ash)">🔒</div><div class="l">Locked</div></div>
+    </div>
+
+    <!-- Personal records (07) -->
+    <div class="sh"><div class="t">Personal records</div><div class="a">See all →</div></div>
+    <div class="pr"><div class="l"><div class="tr">🏆</div><div><div class="nm2">Back Squat</div><div class="sub2">E1RM · +5 kg</div></div></div><div class="v">182 kg</div></div>
+    <div class="pr"><div class="l"><div class="tr">🏆</div><div><div class="nm2">Deadlift</div><div class="sub2">E1RM · +7.5 kg</div></div></div><div class="v">221 kg</div></div>
+    <div class="pr"><div class="l"><div class="tr">🏃</div><div><div class="nm2">5K Run</div><div class="sub2">pace PR · −12 s/km</div></div></div><div class="v">19:48</div></div>
+
+    <!-- Module tiles (10) -->
+    <div class="sh"><div class="t">Your athlete</div><div class="a">Customize</div></div>
+    <div class="grid">
+      <div class="tile"><div class="ico">∿</div><div><div class="k">Readiness</div><div class="big2">74<span style="font-size:12px;color:var(--ash)">%</span></div></div></div>
+      <div class="tile"><div class="ico">⚖</div><div><div class="k">Body</div><div class="sm">78.4 kg · 11%</div></div></div>
+      <div class="tile"><div class="ico">⌚</div><div><div class="k">Devices</div><div class="sm">WHOOP · synced</div></div></div>
+      <div class="tile"><div class="ico">👥</div><div><div class="k">Coach</div><div class="sm">Sara C. · active</div></div></div>
+    </div>
+  </div>
+
+  <div class="scrollfade"></div>
+
+  <div class="nav">
+    <div class="it"><div class="g">▦</div><div class="tx">Today</div></div>
+    <div class="it"><div class="g">▤</div><div class="tx">History</div></div>
+    <div class="fab">
+      <div class="c">
+        <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="#0c0d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/>
+        </svg>
+      </div>
+      <div class="tx">Train</div>
+    </div>
+    <div class="it"><div class="g">•••</div><div class="tx">More</div></div>
+    <div class="it on" style="color:var(--lime-t)">
+      <div class="g">
+        <!-- icons2/user-circle — the design-kit account glyph -->
+        <svg viewBox="0 0 72 72" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M54 56.125C52.4497 49.125 46.607 45 36.0004 45C25.3938 45 19.5503 49.125 18 56.125M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63ZM36 36C40 36 42 33.8571 42 28.5C42 23.1429 40 21 36 21C32 21 30 23.1429 30 28.5C30 33.8571 32 36 36 36Z"/>
+        </svg>
+      </div>
+      <div class="tx">You</div>
+    </div>
+  </div>
+</div>
+
+<div class="lab">
+  <div class="n">PROFILE · CONSENSUS v2</div>
+  <div class="t">Apple ID / Tesla account style</div>
+  <div class="d">Re-cut header: centered avatar with an edit badge (no story ring), an Apple-ID identifier instead of a social @handle, a Tesla hairline spec strip instead of follower counts, and achievements as squared badges. Lower feed unchanged — ID card (01), huge HPI (02), PRs (07), module tiles (10).</div>
+</div>
+</div>
+<script>
+(function(){var g=document.getElementById('hgrid');if(!g)return;var s=23;function r(){s=(s*9301+49297)%233280;return s/233280;}
+for(var i=0;i<7*17;i++){var v=r(),c=0;if(v>.5)c=1;if(v>.68)c=2;if(v>.83)c=3;if(v>.93)c=4;var d=document.createElement('i');d.className='hc l'+c;g.appendChild(d);}})();
+</script>
+</body></html>

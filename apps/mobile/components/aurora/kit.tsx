@@ -31,8 +31,10 @@ import type { AuroraIconName } from "@hybrid/core";
 export const RADIUS = { card: 28, field: 16, pill: 999 } as const;
 
 /** Ambient soft blobs — a calmer version of the classic GlassField, giving the
- *  rounded screens an airy gradient-like backdrop without a native gradient dep. */
-function AuroraField() {
+ *  rounded screens an airy gradient-like backdrop without a native gradient dep.
+ *  Exported so screens that own their own shell (e.g. the live logger, with its
+ *  sticky timer header) can drop the same backdrop behind their content. */
+export function AuroraField() {
   const { palette } = useTheme();
   const blob = (color: string, style: ViewStyle): ViewStyle => ({
     position: "absolute",
