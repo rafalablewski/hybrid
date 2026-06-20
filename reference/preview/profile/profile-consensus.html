@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HYBRID · Profile — consensus build</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;
+  --ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;
+  --disp:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--lime-t:#d6f56a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:100vh;display:grid;place-items:center;padding:34px;-webkit-font-smoothing:antialiased}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:330px;height:748px;border-radius:48px;background:var(--ink);border:1px solid var(--line);box-shadow:0 44px 100px -32px #000,inset 0 0 0 6px #000;position:relative;overflow:hidden}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:23px;border-radius:14px;background:#000;z-index:60}
+
+/* ambient field */
+.field{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(20px);opacity:.07}
+
+/* sticky top bar */
+.bar{position:absolute;top:0;left:0;right:0;height:92px;z-index:30;display:flex;align-items:flex-end;justify-content:space-between;padding:0 18px 12px;
+  background:linear-gradient(180deg,var(--ink) 58%,transparent);}
+.bar .u{display:flex;align-items:center;gap:6px;font-weight:800;font-size:18px;letter-spacing:-.01em}
+.bar .tick{width:15px;height:15px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-size:9px;font-weight:900}
+.bar .ico{display:flex;gap:16px;color:var(--chalk);font-size:17px}
+
+/* scroll area */
+.screen{position:absolute;inset:0;padding:96px 18px 92px;z-index:10;overflow-y:auto;-ms-overflow-style:none;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+
+/* header */
+.head{display:flex;align-items:center;gap:18px}
+.ring{width:88px;height:88px;border-radius:50%;padding:3px;background:conic-gradient(from 210deg,var(--lime),var(--blue),var(--violet),var(--lime));flex:none}
+.ring .av{width:100%;height:100%;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);border:2px solid var(--ink);display:grid;place-items:center;font-weight:900;font-size:28px;color:var(--lime-t)}
+.stats{flex:1;display:flex;justify-content:space-between;text-align:center}
+.stats .s .n{font-weight:900;font-size:21px;letter-spacing:-.02em}
+.stats .s .k{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--ash);text-transform:uppercase;margin-top:3px}
+
+.bio{margin-top:14px}
+.bio .nm{font-weight:900;font-size:17px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.bio .tier{font-family:var(--mono);font-size:9px;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:3px 9px;letter-spacing:.08em}
+.bio .hd{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:5px}
+.bio .txt{font-size:12.5px;color:var(--chalk);margin-top:7px;line-height:1.5}
+
+/* action buttons */
+.act{display:flex;gap:8px;margin-top:14px}
+.btn{flex:1;text-align:center;border-radius:12px;padding:11px;font-weight:700;font-size:13px;background:var(--ink2);border:1px solid var(--line);color:var(--chalk)}
+.btn.p{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+.btn.sq{flex:0 0 44px;display:grid;place-items:center}
+
+/* highlights */
+.hl{display:flex;gap:14px;margin-top:18px;overflow-x:auto;scrollbar-width:none}
+.hl::-webkit-scrollbar{display:none}
+.h{flex:none;width:62px;text-align:center}
+.h .c{width:60px;height:60px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:23px}
+.h.on .c{border-color:var(--lime);box-shadow:0 0 18px -6px rgba(196,240,53,.6);background:rgba(196,240,53,.07)}
+.h .l{font-size:10px;color:var(--ash);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* divider */
+.div{height:1px;background:var(--line);margin:20px 0}
+
+/* ID card */
+.idc{position:relative;border-radius:22px;padding:18px;overflow:hidden;border:1px solid #34381f;background:linear-gradient(160deg,#1a1c14,#0e100d 60%)}
+.idc::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(196,240,53,.05) 0 1px,transparent 1px 14px);opacity:.7}
+.idc::after{content:"";position:absolute;top:-60px;right:-50px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)}
+.idc .t{display:flex;align-items:center;justify-content:space-between;position:relative}
+.idc .bn{font-weight:900;font-size:13px;letter-spacing:.04em}.idc .bn b{color:var(--lime)}
+.idc .ch{font-family:var(--mono);font-size:9px;border:1px solid var(--lime);color:var(--lime-t);border-radius:999px;padding:4px 9px;letter-spacing:.1em}
+.idc .meta{display:flex;justify-content:space-between;margin-top:30px;position:relative}
+.idc .meta .l{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--ash);text-transform:uppercase}
+.idc .meta .v{font-family:var(--mono);font-size:12px;color:var(--chalk);margin-top:4px}
+.idc .meta .v b{color:var(--lime-t)}
+
+/* HPI hero */
+.hpi{margin-top:14px;border:1px solid var(--line);border-radius:22px;padding:18px;background:linear-gradient(180deg,#121410,#0d0f0c)}
+.hpi .top{display:flex;align-items:flex-start;justify-content:space-between}
+.hpi .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--ash);text-transform:uppercase}
+.hpi .band{font-family:var(--mono);font-size:9px;color:var(--lime-t);border:1px solid var(--line);border-radius:999px;padding:4px 10px;margin-top:2px}
+.hpi .big{font-weight:900;font-size:80px;line-height:.86;letter-spacing:-.05em;margin-top:8px}
+.hpi .big b{color:var(--lime)}
+.hpi .trace{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:14px}
+.hpi .trace i{flex:1;border-radius:2px;background:#2c2f27}
+.hpi .trace i.l{background:var(--lime)}
+.hpi .delta{font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:9px}.hpi .delta b{color:var(--lime-t)}
+
+/* section header */
+.sh{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 12px}
+.sh .t{font-weight:800;font-size:15px;letter-spacing:-.01em}
+.sh .a{font-family:var(--mono);font-size:10px;color:var(--ash)}
+
+/* PR list */
+.pr{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:9px;background:var(--ink2)}
+.pr .l{display:flex;align-items:center;gap:11px}
+.pr .tr{font-size:16px}
+.pr .nm{font-weight:700;font-size:14px}.pr .sub{font-family:var(--mono);font-size:9px;color:var(--ash);margin-top:2px}
+.pr .v{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--lime-t)}
+
+/* module tiles */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:20px;padding:15px;background:var(--ink2);min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .ico{width:32px;height:32px;border-radius:10px;background:rgba(243,244,239,.06);border:1px solid var(--line);display:grid;place-items:center;font-size:15px}
+.tile .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+.tile .big2{font-weight:900;font-size:23px;letter-spacing:-.02em}
+.tile .sm{font-weight:700;font-size:13.5px;margin-top:2px}
+
+.scrollfade{position:absolute;left:0;right:0;bottom:84px;height:46px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
+
+/* bottom nav */
+.nav{position:absolute;left:14px;right:14px;bottom:16px;height:64px;border-radius:999px;background:rgba(20,22,20,.92);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:40}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ash)}
+.nav .it .g{width:40px;height:34px;border-radius:999px;display:grid;place-items:center;font-size:15px}
+.nav .it .tx{font-family:var(--mono);font-size:8px;letter-spacing:.04em}
+.nav .it.on{color:var(--chalk)}
+.nav .av3{width:28px;height:28px;border-radius:50%;background:linear-gradient(140deg,#3a3d36,#161816);outline:2px solid var(--lime);outline-offset:2px}
+
+.lab{text-align:center}.lab .n{font-family:var(--mono);font-size:11px;color:var(--lime);letter-spacing:.14em}
+.lab .t{font-weight:800;font-size:16px;margin-top:4px}.lab .d{color:var(--ash);font-size:12px;margin-top:5px;max-width:330px;line-height:1.55}
+</style></head>
+<body><div class="wrap">
+<div class="phone">
+  <div class="field"><div class="blob" style="background:var(--lime);top:-110px;right:-90px"></div><div class="blob" style="background:var(--violet);bottom:60px;left:-100px"></div></div>
+
+  <!-- top bar -->
+  <div class="bar">
+    <div class="u">youssef <span class="tick">✓</span> <span style="color:var(--ash);font-size:13px">▾</span></div>
+    <div class="ico"><span>↗</span><span>☰</span></div>
+  </div>
+
+  <div class="screen">
+    <!-- header: story-ring avatar + 3 stats -->
+    <div class="head">
+      <div class="ring"><div class="av">YL</div></div>
+      <div class="stats">
+        <div class="s"><div class="n">82</div><div class="k">HPI</div></div>
+        <div class="s"><div class="n">16w</div><div class="k">Streak</div></div>
+        <div class="s"><div class="n">12</div><div class="k">PRs</div></div>
+      </div>
+    </div>
+
+    <!-- bio -->
+    <div class="bio">
+      <div class="nm">Youssef Labidi <span class="tier">FULL</span></div>
+      <div class="hd">@youssef · Hybrid Athlete · Hyrox</div>
+      <div class="txt">Sub-70 Hyrox chaser. Strength × endurance, no compromise. 🇫🇷 · member since ’24</div>
+    </div>
+
+    <!-- actions -->
+    <div class="act">
+      <div class="btn p">Edit profile</div>
+      <div class="btn">Share</div>
+      <div class="btn sq">⌄</div>
+    </div>
+
+    <!-- highlights (achievements as stories) -->
+    <div class="hl">
+      <div class="h on"><div class="c">🏆</div><div class="l">200 kg</div></div>
+      <div class="h on"><div class="c">🔥</div><div class="l">16 wk</div></div>
+      <div class="h on"><div class="c">⚡</div><div class="l">Sub-20</div></div>
+      <div class="h on"><div class="c">🥇</div><div class="l">Hyrox</div></div>
+      <div class="h"><div class="c" style="color:var(--ash)">+</div><div class="l">More</div></div>
+    </div>
+
+    <div class="div"></div>
+
+    <!-- ID card (from 01) -->
+    <div class="idc">
+      <div class="t"><div class="bn">HYBRID<b>.</b> · MEMBERSHIP</div><div class="ch">FULL · MEMBER</div></div>
+      <div class="meta">
+        <div><div class="l">Member since</div><div class="v">2024</div></div>
+        <div><div class="l">Athlete ID</div><div class="v">0x4A1F·82</div></div>
+        <div><div class="l">Index</div><div class="v"><b>82</b></div></div>
+      </div>
+    </div>
+
+    <!-- HUGE HPI (from 02) -->
+    <div class="hpi">
+      <div class="top">
+        <div><div class="lbl">Hybrid Performance Index</div><div class="band">BAND · ADVANCED</div></div>
+      </div>
+      <div class="big">8<b>2</b></div>
+      <div class="trace">
+        <i style="height:40%"></i><i style="height:48%"></i><i style="height:44%"></i><i style="height:56%"></i><i style="height:52%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:70%"></i><i style="height:66%"></i><i style="height:80%"></i><i style="height:76%"></i><i class="l" style="height:94%"></i>
+      </div>
+      <div class="delta"><b>▲ +4</b> vs last 30 days · strength 86 · engine 78 · recovery 81</div>
+    </div>
+
+    <!-- Personal records (from 07) -->
+    <div class="sh"><div class="t">Personal records</div><div class="a">See all →</div></div>
+    <div class="pr"><div class="l"><div class="tr">🏆</div><div><div class="nm">Back Squat</div><div class="sub">E1RM · +5 kg</div></div></div><div class="v">182 kg</div></div>
+    <div class="pr"><div class="l"><div class="tr">🏆</div><div><div class="nm">Deadlift</div><div class="sub">E1RM · +7.5 kg</div></div></div><div class="v">221 kg</div></div>
+    <div class="pr"><div class="l"><div class="tr">🏃</div><div><div class="nm">5K Run</div><div class="sub">pace PR · −12 s/km</div></div></div><div class="v">19:48</div></div>
+
+    <!-- Module tiles (from 10) -->
+    <div class="sh"><div class="t">Your athlete</div><div class="a">Customize</div></div>
+    <div class="grid">
+      <div class="tile"><div class="ico">∿</div><div><div class="k">Readiness</div><div class="big2">74<span style="font-size:12px;color:var(--ash)">%</span></div></div></div>
+      <div class="tile"><div class="ico">⚖</div><div><div class="k">Body</div><div class="sm">78.4 kg · 11%</div></div></div>
+      <div class="tile"><div class="ico">⌚</div><div><div class="k">Devices</div><div class="sm">WHOOP · synced</div></div></div>
+      <div class="tile"><div class="ico">👥</div><div><div class="k">Coach</div><div class="sm">Sara C. · active</div></div></div>
+    </div>
+  </div>
+
+  <div class="scrollfade"></div>
+
+  <!-- bottom nav with Profile (You) active -->
+  <div class="nav">
+    <div class="it"><div class="g">▦</div><div class="tx">Today</div></div>
+    <div class="it"><div class="g">＋</div><div class="tx">Train</div></div>
+    <div class="it"><div class="g">▤</div><div class="tx">History</div></div>
+    <div class="it"><div class="g">•••</div><div class="tx">More</div></div>
+    <div class="it on"><div class="av3"></div><div class="tx">You</div></div>
+  </div>
+</div>
+
+<div class="lab">
+  <div class="n">PROFILE · CONSENSUS</div>
+  <div class="t">Instagram-style athlete profile</div>
+  <div class="d">Story-ring header + 3-stat row + highlights &amp; action buttons (Instagram DNA), then your picks stacked into the feed: the membership ID card (01), the huge HPI hero with trace (02), achievements highlights + personal-records list (07), and the module tiles (10). Scrolls like a feed; “You” is the new nav tab.</div>
+</div>
+</div></body></html>
