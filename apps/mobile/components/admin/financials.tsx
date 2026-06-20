@@ -18,7 +18,7 @@ import {
   type EntitlementCell,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Intro, Stat, Input, PillBtn, Segmented } from "./_kit";
 
@@ -101,13 +101,13 @@ export default function AdminFinancials() {
       </Intro>
 
       {/* headline always on top */}
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} sub={`ARR ${usdFull(r.arr)}`} color={palette.lime} />
         <Stat label="Gross margin" value={`${Math.round(r.grossMargin * 100)}%`}
           sub={r.grossProfit >= 0 ? `+${usdFull(r.grossProfit)}/mo` : `−${usdFull(-r.grossProfit)}/mo`}
           color={r.grossProfit >= 0 ? palette.lime : palette.red} />
       </View>
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="LTV : CAC" value={x1(r.ltvToCac)} sub={ltvCacOk ? "healthy (≥3×)" : "below 3×"} color={ltvCacOk ? palette.lime : palette.amber} />
         <Stat label="Rule of 40" value={Math.round(h.ruleOf40).toString()} sub={h.ruleOf40 >= 40 ? "passes (≥40)" : "below 40"} color={band(palette, h.ruleOf40, 40, 25)} />
       </View>
@@ -159,22 +159,22 @@ function RevenueTab({
         const share = monthly != null && r.revenue.total > 0 ? (monthly / r.revenue.total) * 100 : null;
         return (
           <Card key={stream.id} accent={color}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: palette.chalk }}>{stream.label}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{stream.label}</Text>
               {stream.future && <Chip color={palette.ash}>Future</Chip>}
             </View>
             {monthly != null ? (
-              <Mono color={color} style={{ fontSize: 13, marginTop: 2 }}>
+              <Mono color={color} style={{ fontSize: fs.body, marginTop: 2 }}>
                 {usdFull(monthly)}/mo modeled{share != null ? ` · ${share.toFixed(0)}% of MRR` : ""}
               </Mono>
             ) : (
-              <Mono color={palette.ash} style={{ fontSize: 12, marginTop: 2 }}>not in live margin</Mono>
+              <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 2 }}>not in live margin</Mono>
             )}
-            <Mono color={palette.ash} style={{ fontSize: 12, marginTop: 4 }}>{stream.whoPays}</Mono>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{stream.whoPays}</Mono>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
               {stream.tiers.map((t) => <Chip key={t.name} color={color}>{t.name} · {t.price}</Chip>)}
             </View>
-            <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 10, lineHeight: 17 }}>{stream.howItWorks}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 10, lineHeight: 17 }}>{stream.howItWorks}</Mono>
           </Card>
         );
       })}
@@ -186,18 +186,18 @@ function RevenueTab({
         const eq = (n: number) => `≈ $${toUsd(n, m.fxPerUsd).toFixed(2)}`;
         return (
           <Card key={m.id}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: palette.chalk }}>{m.flag} {m.market}</Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm, flexWrap: "wrap" }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{m.flag} {m.market}</Text>
               <Chip color={palette.blue}>{m.currency} · {Math.round(m.priceIndex * 100)}% of US</Chip>
             </View>
-            <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 8 }}>
+            <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 8 }}>
               Pro {loc(m.proMonthly)}/mo ({eq(m.proMonthly)}) · {loc(m.proAnnual)}/yr
             </Mono>
-            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
               Coach {loc(m.coachStarter)}·{loc(m.coachPro)}·{loc(m.coachBusiness)}/mo · Org {loc(m.orgLow)}–{loc(m.orgHigh)}/athlete/yr
             </Mono>
-            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>{m.tax} · Stripe {m.stripeFee}</Mono>
-            <Mono color={palette.chalk} style={{ fontSize: 11, marginTop: 6, lineHeight: 16 }}>{m.rationale}</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>{m.tax} · Stripe {m.stripeFee}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{m.rationale}</Mono>
           </Card>
         );
       })}
@@ -224,19 +224,19 @@ function PlanMatrix() {
         return (
           <View key={`${row.group}-${i}`}>
             {groupHeader && (
-              <Mono color={palette.amber} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, marginTop: 14, marginBottom: 4 }}>
+              <Mono color={palette.amber} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, marginTop: 14, marginBottom: 4 }}>
                 {row.group}
               </Mono>
             )}
             <Card style={{ marginBottom: 8 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.chalk }}>{row.feature}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 6 }}>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{row.feature}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.md, marginTop: 6 }}>
                 {PLAN_COLUMNS.map((c) => {
                   const v = row[c.id];
                   return (
-                    <View key={c.id} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Mono color={planColor[c.id]} style={{ fontSize: 11 }}>{c.label}</Mono>
-                      <Mono color={cellColor(v)} style={{ fontSize: 11 }}>{cellText(v)}</Mono>
+                    <View key={c.id} style={{ flexDirection: "row", alignItems: "center", gap: space.xxs }}>
+                      <Mono color={planColor[c.id]} style={{ fontSize: fs.micro }}>{c.label}</Mono>
+                      <Mono color={cellColor(v)} style={{ fontSize: fs.micro }}>{cellText(v)}</Mono>
                     </View>
                   );
                 })}
@@ -258,13 +258,13 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
       {agentCost && agentCost.runs > 0 && (
         <Card accent={palette.blue}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: palette.chalk }}>Actual AI agent spend</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>Actual AI agent spend</Text>
             <Chip color={palette.blue}>real · 30d</Chip>
           </View>
-          <Mono color={palette.chalk} style={{ fontSize: 13, marginTop: 4 }}>
+          <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
             {usdFull(agentCost.spend)} over {agentCost.runs.toLocaleString()} runs (≈ {usdFull(agentCost.spend / 30)}/day)
           </Mono>
-          <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6, lineHeight: 16 }}>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>
             Measured from real agent runs (tokens × model list price). Calibrate the modeled AI COGS below against it.
           </Mono>
         </Card>
@@ -276,16 +276,16 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
         return (
           <Card key={c.id} accent={accent}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: palette.chalk }}>{c.label}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{c.label}</Text>
               <Chip color={accent}>{c.kind === "fixed" ? "fixed" : "COGS"}</Chip>
             </View>
-            <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 4 }}>{c.rate}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }}>{c.rate}</Mono>
             {live != null && (
-              <Mono color={palette.ash} style={{ fontSize: 12, marginTop: 2 }}>
+              <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 2 }}>
                 ≈ {usdFull(live)}/mo{share != null ? ` · ${share.toFixed(0)}% of revenue` : ""}
               </Mono>
             )}
-            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6, lineHeight: 16 }}>{c.note}</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{c.note}</Mono>
             {c.id === "fixed" && <FixedOpexBreakdown />}
           </Card>
         );
@@ -302,25 +302,25 @@ function FixedOpexBreakdown() {
   return (
     <View style={{ marginTop: 12 }}>
       {recurring.map((i) => (
-        <View key={i.label} style={{ flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 6, gap: 8 }}>
-          <Mono color={palette.chalk} style={{ fontSize: 12, flex: 1 }}>{i.label}</Mono>
-          <Mono color={palette.ash} style={{ fontSize: 11 }}>{i.billed}</Mono>
-          <Mono color={palette.ash} style={{ fontSize: 12, width: 56, textAlign: "right" }}>{usdFull(i.monthlyUsd)}</Mono>
+        <View key={i.label} style={{ flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 6, gap: space.sm }}>
+          <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{i.label}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{i.billed}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.caption, width: 56, textAlign: "right" }}>{usdFull(i.monthlyUsd)}</Mono>
         </View>
       ))}
       <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 }}>
-        <Mono color={palette.amber} style={{ fontSize: 12 }}>Recurring run-rate</Mono>
-        <Mono color={palette.amber} style={{ fontSize: 12 }}>{usdFull(total)}</Mono>
+        <Mono color={palette.amber} style={{ fontSize: fs.caption }}>Recurring run-rate</Mono>
+        <Mono color={palette.amber} style={{ fontSize: fs.caption }}>{usdFull(total)}</Mono>
       </View>
       {extras.length > 0 && (
-        <Mono color={palette.ash} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, marginTop: 8 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, marginTop: 8 }}>
           Not in the monthly run-rate
         </Mono>
       )}
       {extras.map((i) => (
-        <View key={i.label} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, gap: 8 }}>
-          <Mono color={palette.ash} style={{ fontSize: 11, flex: 1 }}>{i.note ? `${i.label} · ${i.note}` : i.label}</Mono>
-          <Mono color={palette.ash} style={{ fontSize: 11 }}>{i.billed}</Mono>
+        <View key={i.label} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, gap: space.sm }}>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }}>{i.note ? `${i.label} · ${i.note}` : i.label}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{i.billed}</Mono>
         </View>
       ))}
     </View>
@@ -346,7 +346,7 @@ function CalcTab({
         kicker={seedErr ? "Live counts unavailable — model defaults" : seed ? `Seeded: ${seed.totalUsers.toLocaleString()} users · ${seed.coaches} coaches` : "Loading…"}
         title="Unit-economics calculator"
       />
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 12 }}>
         <PillBtn label="Reseed live" color={palette.lime} outline onPress={reseed} disabled={!seed} />
         <PillBtn label="Defaults" color={palette.ash} outline onPress={reset} />
       </View>
@@ -377,15 +377,15 @@ function CalcTab({
         </View>
       </Card>
 
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="MRR" value={usdFull(r.revenue.total)} color={palette.lime} />
         <Stat label="ARR" value={usdFull(r.arr)} color={palette.lime} />
       </View>
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="Blended ARPU" value={`$${r.blendedArpu.toFixed(2)}`} sub={`${r.payingUnits.toLocaleString()} paying`} />
         <Stat label="Gross margin" value={`${Math.round(r.grossMargin * 100)}%`} color={r.grossProfit >= 0 ? palette.lime : palette.red} />
       </View>
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="Blended LTV" value={Number.isFinite(r.ltv) ? usdFull(r.ltv) : "∞"} color={palette.violet} />
         <Stat label="CAC payback" value={mo(r.cacPaybackMonths)} color={Number.isFinite(r.cacPaybackMonths) && r.cacPaybackMonths <= 12 ? palette.lime : palette.amber} />
       </View>
@@ -401,7 +401,7 @@ function CalcTab({
           <PnL k="Fixed opex" v={`−${usdFull(r.cogs.fixed)}`} />
           <PnL k={r.grossProfit >= 0 ? "Contribution" : "Burn"} v={`${r.grossProfit >= 0 ? "" : "−"}${usdFull(Math.abs(r.grossProfit))}`} c={r.grossProfit >= 0 ? palette.lime : palette.red} bold />
         </View>
-        <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 10, lineHeight: 16 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10, lineHeight: 16 }}>
           Break-even at {Number.isFinite(r.breakEvenProUsers) ? `${r.breakEvenProUsers.toLocaleString()} Pro subscribers` : "— (Pro contribution ≤ 0)"} holding other assumptions fixed.
         </Mono>
       </Card>
@@ -452,10 +452,10 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
   return (
     <Card accent={color}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-        <Text style={{ fontFamily: F.black, fontSize: 16, color: palette.chalk }}>{seg.label}</Text>
-        <Mono color={palette.ash} style={{ fontSize: 12 }}>{seg.payingUnits.toLocaleString()} paying</Mono>
+        <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{seg.label}</Text>
+        <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{seg.payingUnits.toLocaleString()} paying</Mono>
       </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
         <SegMetric label="ARPU /mo" value={`$${seg.arpu.toFixed(2)}`} />
         <SegMetric label="Contribution margin" value={`${Math.round(seg.grossMargin * 100)}%`} c={seg.grossMargin >= 0 ? palette.chalk : palette.red} />
         <SegMetric label="LTV" value={Number.isFinite(seg.ltv) ? usdFull(seg.ltv) : "∞"} c={color} />
@@ -463,7 +463,7 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
         <SegMetric label="CAC payback" value={mo(seg.cacPaybackMonths)} c={paybackOk ? palette.lime : palette.amber} />
         <SegMetric label="LTV : CAC" value={x1(seg.ltvToCac)} c={ratioOk ? palette.lime : palette.amber} />
       </View>
-      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 10 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10 }}>
         {Math.round(seg.monthlyChurn * 1000) / 10}% monthly churn · ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo avg lifetime
       </Mono>
     </Card>
@@ -474,7 +474,7 @@ function SegMetric({ label, value, c }: { label: string; value: string; c?: stri
   const { palette } = useTheme();
   return (
     <View style={{ width: "47%", backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 8 }}>
-      <Mono color={palette.ash} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: 17, color: c ? txt(palette, c) : palette.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );
@@ -484,10 +484,10 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
   const { palette } = useTheme();
   return (
     <Card accent={c}>
-      <Mono color={palette.ash} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</Mono>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: txt(palette, c), marginTop: 2 }}>{value}</Text>
-      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>{note}</Mono>
-      <Mono color={palette.chalk} style={{ fontSize: 11, marginTop: 6, lineHeight: 16 }}>{says}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</Mono>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: txt(palette, c), marginTop: 2 }}>{value}</Text>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{note}</Mono>
+      <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{says}</Mono>
     </Card>
   );
 }
@@ -508,20 +508,20 @@ function ForecastTab({
   return (
     <View>
       <SectionLabel kicker="MRR trajectory + cumulative cash" title="12-month forecast" />
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="MRR in 12 mo" value={usdFull(ps.endingMrr)} sub={`ARR ${usdFull(ps.endingArr)}`} color={palette.lime} />
         <Stat label="Cash in 12 mo" value={usdFull(ps.cumulativeCashEnd)}
           sub={ps.cumulativeCashEnd >= a.cashOnHand ? `+${usdFull(ps.cumulativeCashEnd - a.cashOnHand)}` : `−${usdFull(a.cashOnHand - ps.cumulativeCashEnd)}`}
           color={ps.cumulativeCashEnd >= 0 ? palette.lime : palette.red} />
       </View>
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="P&L break-even" value={ps.breakEvenMonth === null ? ">12 mo" : ps.breakEvenMonth === 0 ? "now" : `mo ${ps.breakEvenMonth}`} color={ps.breakEvenMonth !== null ? palette.lime : palette.amber} />
         <Stat label="Cash-out" value={ps.cashOutMonth === null ? "—" : `mo ${ps.cashOutMonth}`} sub={ps.cashOutMonth === null ? "never within 12mo" : "runs dry"} color={ps.cashOutMonth === null ? palette.lime : palette.red} />
       </View>
 
       <Card>
         <Kicker color={palette.lime}>MRR vs cumulative cash · next 12 months</Kicker>
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 8, marginBottom: 8 }}>
+        <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 8 }}>
           <Legend color={palette.lime} label="MRR" />
           <Legend color={palette.blue} label="cum. cash" />
         </View>
@@ -531,15 +531,15 @@ function ForecastTab({
           return (
             <View key={p.month} style={{ marginBottom: 8 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Mono color={palette.ash} style={{ fontSize: 11 }}>M{p.month}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: 11 }}>{usd(p.mrr)} · {usd(p.cumulativeCash)}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>M{p.month}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{usd(p.mrr)} · {usd(p.cumulativeCash)}</Mono>
               </View>
               <BarRow value={mrrPct} color={palette.lime} />
               <BarRow value={cashPct} color={p.cumulativeCash < 0 ? palette.red : palette.blue} />
             </View>
           );
         })}
-        <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6, lineHeight: 16 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>
           MRR compounds at the net monthly rate (new + expansion − churn); variable COGS scale with
           revenue while fixed opex holds. Cash bars turn red when cumulative cash is negative.
           Assumptions, not booked revenue.
@@ -555,7 +555,7 @@ function SectionLabel({ kicker, title }: { kicker: string; title: string }) {
   return (
     <View style={{ marginTop: 18, marginBottom: 10 }}>
       <Kicker color={palette.amber}>{kicker}</Kicker>
-      <Text style={{ fontFamily: F.black, fontSize: 18, color: palette.chalk, marginTop: 2 }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{title}</Text>
     </View>
   );
 }
@@ -587,8 +587,8 @@ function PnL({ k, v, c, bold }: { k: string; v: string; c?: string; bold?: boole
   const { palette } = useTheme();
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: palette.line }}>
-      <Mono color={bold ? palette.chalk : palette.ash} style={{ fontSize: 12, fontFamily: bold ? F.bold : F.mono }}>{k}</Mono>
-      <Text style={{ fontFamily: bold ? F.black : F.mono, fontSize: 12, color: c ? txt(palette, c) : palette.chalk }}>{v}</Text>
+      <Mono color={bold ? palette.chalk : palette.ash} style={{ fontSize: fs.caption, fontFamily: bold ? F.bold : F.mono }}>{k}</Mono>
+      <Text style={{ fontFamily: bold ? F.black : F.mono, fontSize: fs.caption, color: c ? txt(palette, c) : palette.chalk }}>{v}</Text>
     </View>
   );
 }
@@ -598,7 +598,7 @@ function Legend({ color, label }: { color: string; label: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
-      <Mono color={palette.ash} style={{ fontSize: 11 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{label}</Mono>
     </View>
   );
 }
@@ -620,10 +620,10 @@ function Glossary() {
       <View style={{ marginTop: 10 }}>
         {METRIC_GUIDE.map((m) => (
           <View key={m.id} style={{ borderLeftWidth: 2, borderLeftColor: palette.line, paddingLeft: 10, marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: palette.chalk }}>{m.label}</Text>
-            <Mono color={palette.chalk} style={{ fontSize: 11, marginTop: 3, lineHeight: 16 }}>{m.what}</Mono>
-            <Mono color={palette.violet} style={{ fontSize: 11, marginTop: 3 }}>= {m.formula}</Mono>
-            <Mono color={palette.lime} style={{ fontSize: 11, marginTop: 2 }}>{m.benchmark}</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: palette.chalk }}>{m.label}</Text>
+            <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 3, lineHeight: 16 }}>{m.what}</Mono>
+            <Mono color={palette.violet} style={{ fontSize: fs.micro, marginTop: 3 }}>= {m.formula}</Mono>
+            <Mono color={palette.lime} style={{ fontSize: fs.micro, marginTop: 2 }}>{m.benchmark}</Mono>
           </View>
         ))}
       </View>

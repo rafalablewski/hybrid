@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Stat, ErrorNote } from "./_kit";
 
@@ -56,12 +56,12 @@ export default function AdminSecurity() {
         <Kicker>Posture score</Kicker>
         <Text style={{ fontFamily: F.black, fontSize: 40, color: txt(palette, scoreColor), lineHeight: 44, marginTop: 4 }}>
           {d.posture.score}
-          <Text style={{ fontFamily: F.bold, fontSize: 20, color: palette.ash }}>/100</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: palette.ash }}>/100</Text>
         </Text>
-        <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>{d.posture.pass}/{d.posture.total} controls green</Mono>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{d.posture.pass}/{d.posture.total} controls green</Mono>
       </Card>
 
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <View style={{ flex: 1 }}><Stat label="Passing" value={d.posture.pass} color={palette.lime} /></View>
         <View style={{ flex: 1 }}><Stat label="Action req" value={d.posture.manual} color={palette.amber} /></View>
         <View style={{ flex: 1 }}><Stat label="To do" value={d.posture.todo} color={palette.red} /></View>
@@ -69,7 +69,7 @@ export default function AdminSecurity() {
 
       {d.posture.criticalOpen > 0 && (
         <Card accent={palette.red}>
-          <Mono color={palette.red} style={{ fontSize: 13, lineHeight: 18 }}>
+          <Mono color={palette.red} style={{ fontSize: fs.body, lineHeight: 18 }}>
             ⚠ {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
           </Mono>
         </Card>
@@ -78,14 +78,14 @@ export default function AdminSecurity() {
       {/* Live runtime checks */}
       <Card>
         <Kicker color={palette.blue}>Live runtime checks · this deployment</Kicker>
-        <View style={{ marginTop: 10, gap: 8 }}>
+        <View style={{ marginTop: 10, gap: space.sm }}>
           {d.runtime.map((r) => {
             const c = r.ok === null ? palette.ash : r.ok ? palette.lime : palette.red;
             return (
-              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
                 <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c }} />
-                <Mono color={palette.chalk} style={{ fontSize: 13, flex: 1 }}>{r.label}</Mono>
-                <Mono color={c} style={{ fontSize: 11 }}>{r.ok === null ? "n/a" : r.ok ? "ok" : "fail"}</Mono>
+                <Mono color={palette.chalk} style={{ fontSize: fs.body, flex: 1 }}>{r.label}</Mono>
+                <Mono color={c} style={{ fontSize: fs.micro }}>{r.ok === null ? "n/a" : r.ok ? "ok" : "fail"}</Mono>
               </View>
             );
           })}
@@ -101,15 +101,15 @@ export default function AdminSecurity() {
             <View style={{ marginTop: 8 }}>
               {items.map((c) => (
                 <Card key={c.id} accent={statusColor(c.status)}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap", marginBottom: 6 }}>
                     <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: statusColor(c.status) }} />
-                    <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk, flex: 1 }}>{c.title}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{c.title}</Text>
                     <Chip color={sevColor[c.severity]}>{c.severity}</Chip>
                     <Chip color={statusColor(c.status)}>{statusLabel(c.status)}</Chip>
                   </View>
-                  <Mono color={palette.ash} style={{ fontSize: 12, lineHeight: 18 }}>{c.detail}</Mono>
+                  <Mono color={palette.ash} style={{ fontSize: fs.caption, lineHeight: 18 }}>{c.detail}</Mono>
                   {c.evidence ? (
-                    <Mono color={c.status === "pass" ? palette.lime : palette.amber} style={{ fontSize: 11, marginTop: 6 }}>
+                    <Mono color={c.status === "pass" ? palette.lime : palette.amber} style={{ fontSize: fs.micro, marginTop: 6 }}>
                       {c.status === "pass" ? "✓ " : "→ "}{c.evidence}
                     </Mono>
                   ) : null}
@@ -120,7 +120,7 @@ export default function AdminSecurity() {
         );
       })}
 
-      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 8 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
         Generated {new Date(d.generatedAt).toISOString().slice(0, 19).replace("T", " ")} · green controls are enforced by tests in CI.
       </Mono>
     </View>

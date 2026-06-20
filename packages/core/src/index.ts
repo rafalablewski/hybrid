@@ -42,6 +42,7 @@ export * from "./plates";
 export * from "./logger-prefs";
 export * from "./guidance";
 export * from "./account";
+export * from "./scale";
 
 /** Sprint marker so both clients can show what's wired up. */
 export const CORE_VERSION = "0.1.0-sprint2";

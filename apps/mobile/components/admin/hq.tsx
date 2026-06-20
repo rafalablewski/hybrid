@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { Card, Mono, Kicker, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, Segmented, PillBtn } from "./_kit";
 
@@ -204,7 +204,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
       {/* 7-day activity as bar rows (recharts is web-only) */}
       <Card>
         <Kicker color={palette.amber}>Activity · runs · last 7 days</Kicker>
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 8, marginBottom: 6 }}>
+        <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 6 }}>
           <Legend color={palette.lime} label="ok" />
           <Legend color={palette.red} label="error" />
         </View>
@@ -213,8 +213,8 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
           return trend.map((d) => (
             <View key={d.day} style={{ marginBottom: 8 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Mono color={palette.ash} style={{ fontSize: 11 }}>{d.day}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: 11 }}>{d.ok + d.error}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{d.day}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{d.ok + d.error}</Mono>
               </View>
               <StackBar ok={d.ok} error={d.error} max={max} />
             </View>
@@ -277,12 +277,12 @@ function OrgChart({ agents }: { agents: AgentLite[] }) {
   if (agents.length === 0) return <Mono color={palette.ash}>No agents yet — create your team in "AI agents".</Mono>;
 
   return (
-    <View style={{ gap: 12 }}>
+    <View style={{ gap: space.md }}>
       {groups.out.map((g) => (
         <View key={g.head.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
           <Node a={g.head} head />
           {g.reports.length > 0 && (
-            <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: palette.line, gap: 8 }}>
+            <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: palette.line, gap: space.sm }}>
               {g.reports.map((r) => <Node key={r.id} a={r} />)}
             </View>
           )}
@@ -291,7 +291,7 @@ function OrgChart({ agents }: { agents: AgentLite[] }) {
       {groups.independents.length > 0 && (
         <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
           <Kicker color={palette.ash}>Independent</Kicker>
-          <View style={{ marginTop: 8, gap: 8 }}>
+          <View style={{ marginTop: 8, gap: space.sm }}>
             {groups.independents.map((r) => <Node key={r.id} a={r} />)}
           </View>
         </View>
@@ -309,7 +309,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
         <Text style={{ fontFamily: head ? F.bold : F.semi, fontSize: head ? 15 : 13, color: palette.chalk }} numberOfLines={1}>
           {a.name}
         </Text>
-        <Mono color={palette.ash} style={{ fontSize: 11 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro }}>
           {a.role} · {a.model.replace("claude-", "")}{a.runtime === "managed" ? " · 🧠" : ""}
         </Mono>
       </View>
@@ -339,16 +339,16 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 10 }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOT(palette)[s.status] ?? palette.ash }} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
-          <Mono color={palette.ash} style={{ fontSize: 11 }}>{s.role} · {s.model.replace("claude-", "")}{s.runtime === "managed" ? " · 🧠" : ""}</Mono>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} · {s.model.replace("claude-", "")}{s.runtime === "managed" ? " · 🧠" : ""}</Mono>
         </View>
         <MiniChip color={s.authority === "executive" ? palette.violet : palette.ash}>{s.authority}</MiniChip>
       </View>
 
       <View style={{ marginBottom: 10 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-          <Mono color={palette.ash} style={{ fontSize: 11 }}>Success rate (7d)</Mono>
-          <Mono color={srColor} style={{ fontSize: 11 }}>{sr == null ? "no runs" : `${sr}%`}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>Success rate (7d)</Mono>
+          <Mono color={srColor} style={{ fontSize: fs.micro }}>{sr == null ? "no runs" : `${sr}%`}</Mono>
         </View>
         <View style={{ height: 7, borderRadius: 4, backgroundColor: palette.ink2, overflow: "hidden" }}>
           <View style={{ width: `${sr ?? 0}%`, height: "100%", backgroundColor: srColor, borderRadius: 4 }} />
@@ -359,13 +359,13 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <Mini label="Runs 7d" value={String(s.runs7d)} />
         <Mini label="Cost 7d" value={fmtUsd(s.cost7d)} />
       </Row2>
-      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6 }}>last run {s.lastRunAt ? ago(s.lastRunAt) : "—"} · {fmtTok(s.tokens7d)} tok</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>last run {s.lastRunAt ? ago(s.lastRunAt) : "—"} · {fmtTok(s.tokens7d)} tok</Mono>
 
       <Kicker color={palette.amber}>{"\n"}KPIs — target vs actual</Kicker>
       {s.kpis.length === 0 ? (
         <Mono color={palette.ash} style={{ marginTop: 6 }}>No KPIs set.</Mono>
       ) : (
-        <View style={{ marginTop: 8, gap: 10 }}>
+        <View style={{ marginTop: 8, gap: space.ms }}>
           {s.kpis.map((k, i) => <KpiRow key={i} agentId={s.id} k={k} actual={s.actuals[k.metric]} onLogged={onChange} />)}
         </View>
       )}
@@ -396,10 +396,10 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
   return (
     <View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.chalk, flex: 1 }}>{k.metric}</Text>
-        <Mono color={palette.ash} style={{ fontSize: 11 }}>target {targetLabel}</Mono>
+        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk, flex: 1 }}>{k.metric}</Text>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro }}>target {targetLabel}</Mono>
       </View>
-      <Mono color={actual ? (target != null ? (onTarget ? palette.lime : palette.amber) : palette.chalk) : palette.ash} style={{ fontSize: 12, marginTop: 2 }}>
+      <Mono color={actual ? (target != null ? (onTarget ? palette.lime : palette.amber) : palette.chalk) : palette.ash} style={{ fontSize: fs.caption, marginTop: 2 }}>
         {actual ? `actual ${actual.value}${pct != null ? ` · ${pct}% of target` : ""}` : "no actual logged"}
       </Mono>
       {target != null && actual && (
@@ -407,7 +407,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
           <View style={{ height: "100%", width: `${Math.min(100, Math.max(0, pct ?? 0))}%`, backgroundColor: onTarget ? palette.lime : palette.amber, borderRadius: 3 }} />
         </View>
       )}
-      <View style={{ flexDirection: "row", gap: 6, marginTop: 6, alignItems: "center" }}>
+      <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, alignItems: "center" }}>
         <View style={{ flex: 1 }}>
           <InlineNumberInput value={val} onChangeText={setVal} placeholder="log actual…" />
         </View>
@@ -463,14 +463,14 @@ function Approvals({ onChange }: { onChange: () => void }) {
       <ErrorNote error={err} onDismiss={() => setErr(null)} />
       {items.map((a) => (
         <Card key={a.id} accent={palette.amber}>
-          <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk }}>{a.agentName}</Text>
+          <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.agentName}</Text>
             <MiniChip color={palette.ash}>{a.runtime}</MiniChip>
             {a.estimateUsd > 0 && <MiniChip color={palette.violet}>est ${a.estimateUsd.toFixed(2)}</MiniChip>}
           </View>
-          <Mono color={palette.ash} style={{ fontSize: 12, marginTop: 4 }}>{a.task}</Mono>
-          <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{a.task}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
+          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
             <PillBtn label="Approve & run" disabled={busy === a.id} onPress={() => decide(a.id, "approve")} />
             <PillBtn label="Deny" outline color={palette.ash} disabled={busy === a.id} onPress={() => decide(a.id, "deny")} />
           </View>
@@ -528,16 +528,16 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
             {unread > 0 && <PillBtn label="Mark all read" outline color={palette.ash} disabled={busy} onPress={() => markRead()} />}
           </View>
           {list.map((n) => (
-            <View key={n.id} style={{ flexDirection: "row", gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line, opacity: n.read ? 0.5 : 1 }}>
+            <View key={n.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line, opacity: n.read ? 0.5 : 1 }}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sevColor(n.severity), marginTop: 5 }} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.chalk }}>{n.title}</Text>
-                {n.body && <Mono color={palette.ash} style={{ fontSize: 11 }} numberOfLines={2}>{n.body}</Mono>}
+                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{n.title}</Text>
+                {n.body && <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={2}>{n.body}</Mono>}
               </View>
-              <Mono color={palette.ash} style={{ fontSize: 11 }}>{ago(n.createdAt)}</Mono>
+              <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{ago(n.createdAt)}</Mono>
               {!n.read && (
                 <Pressable onPress={() => markRead(n.id)} disabled={busy} hitSlop={8}>
-                  <Mono color={palette.ash} style={{ fontSize: 14 }}>✕</Mono>
+                  <Mono color={palette.ash} style={{ fontSize: fs.bodyLg }}>✕</Mono>
                 </Pressable>
               )}
             </View>
@@ -549,15 +549,15 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
           <Kicker color={palette.amber}>Schedules that can't fire · the agent isn't active</Kicker>
           <View style={{ marginTop: 8 }}>
             {brokenSchedules.map((b) => (
-              <View key={b.id} style={{ flexDirection: "row", gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+              <View key={b.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
                 <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: palette.amber, marginTop: 5 }} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.chalk }}>{b.agentName}</Text>
+                  <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{b.agentName}</Text>
                     <MiniChip color={palette.violet}>{b.cadence}</MiniChip>
                     <MiniChip color={palette.amber}>{b.reason}</MiniChip>
                   </View>
-                  <Mono color={palette.ash} style={{ fontSize: 11 }} numberOfLines={1}>{b.task}</Mono>
+                  <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={1}>{b.task}</Mono>
                 </View>
               </View>
             ))}
@@ -599,9 +599,9 @@ function DigestTab() {
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
       <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
-        <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: 12, lineHeight: 18 }}>{error ?? (d ? d.text : "Loading…")}</Mono>
+        <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{error ?? (d ? d.text : "Loading…")}</Mono>
       </View>
-      <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: 11, marginTop: 8 }}>
+      <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
         {sent ?? (d && !d.slackConfigured ? "Set SLACK_WEBHOOK_URL in the server env to enable delivery." : "Posts daily at 08:05 UTC.")}
       </Mono>
     </Card>
@@ -643,25 +643,25 @@ function CostTab() {
         <Kicker color={palette.amber}>Monthly cost · real agent spend</Kicker>
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
-      <Mono color={palette.ash} style={{ fontSize: 11, marginBottom: 8 }}>CSV export is web-only.</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV export is web-only.</Mono>
       {[d.current, d.previous].map((m, i) => (
         <Card key={m.month}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <Kicker color={i === 0 ? palette.amber : palette.ash}>{m.month}{i === 0 ? " · MTD" : ""}</Kicker>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 26, color: palette.chalk, marginVertical: 4 }}>{fmtUsd(m.total)}</Text>
-          <Mono color={palette.ash} style={{ fontSize: 11 }}>{m.runs} runs</Mono>
+          <Text style={{ fontFamily: F.black, fontSize: fs.display, color: palette.chalk, marginVertical: 4 }}>{fmtUsd(m.total)}</Text>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{m.runs} runs</Mono>
           <View style={{ marginTop: 8 }}>
             {m.perAgent.length === 0 ? (
-              <Mono color={palette.ash} style={{ fontSize: 11 }}>No spend this month.</Mono>
+              <Mono color={palette.ash} style={{ fontSize: fs.micro }}>No spend this month.</Mono>
             ) : (
               (() => {
                 const max = Math.max(1, ...m.perAgent.map((p) => p.cost));
                 return m.perAgent.slice(0, 8).map((p) => (
                   <View key={p.name} style={{ marginBottom: 6 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <Mono color={palette.ash} style={{ fontSize: 11, flex: 1 }} numberOfLines={1}>{p.name}</Mono>
-                      <Mono color={palette.chalk} style={{ fontSize: 11 }}>{fmtUsd(p.cost)} · {p.runs}r</Mono>
+                      <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }} numberOfLines={1}>{p.name}</Mono>
+                      <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{fmtUsd(p.cost)} · {p.runs}r</Mono>
                     </View>
                     <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.line, overflow: "hidden", marginTop: 2 }}>
                       <View style={{ width: `${Math.max(3, Math.round((p.cost / max) * 100))}%`, height: "100%", backgroundColor: palette.violet, borderRadius: 3 }} />
@@ -673,7 +673,7 @@ function CostTab() {
           </View>
         </Card>
       ))}
-      {sent && <Mono color={palette.lime} style={{ fontSize: 11, marginTop: 4 }}>{sent}</Mono>}
+      {sent && <Mono color={palette.lime} style={{ fontSize: fs.micro, marginTop: 4 }}>{sent}</Mono>}
     </View>
   );
 }
@@ -724,7 +724,7 @@ function Reports() {
         </Card>
       )}
       <Segmented options={FILTERS.map((f) => ({ value: f, label: f }))} value={filter} onChange={(v) => setFilter(v as (typeof FILTERS)[number])} />
-      <Mono color={palette.ash} style={{ fontSize: 11, marginBottom: 8 }}>CSV / PDF export is web-only.</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV / PDF export is web-only.</Mono>
 
       {runs === null ? (
         <Loading />
@@ -740,27 +740,27 @@ function Reports() {
           return (
             <Card key={r.id}>
               <Pressable onPress={() => setOpenId(open ? null : r.id)}>
-                <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
                   <MiniChip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</MiniChip>
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk }}>{r.agentName}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{r.agentName}</Text>
                   <MiniChip color={palette.ash}>{r.agentRole}</MiniChip>
                   {r.steps.length > 0 && <MiniChip color={palette.violet}>{r.steps.length} delegated</MiniChip>}
                 </View>
-                <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>{new Date(r.createdAt).toLocaleString()}</Mono>
-                <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 4 }} numberOfLines={open ? undefined : 1}>{r.task}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{new Date(r.createdAt).toLocaleString()}</Mono>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }} numberOfLines={open ? undefined : 1}>{r.task}</Mono>
               </Pressable>
               {open && (
                 <View style={{ marginTop: 10 }}>
                   {r.steps.map((s, i) => (
                     <View key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-                      <Mono color={palette.violet} style={{ fontSize: 11, textTransform: "uppercase" }}>↳ {s.role} — {s.agent}</Mono>
-                      <Mono color={palette.chalk} style={{ fontSize: 11 }}>{s.output}</Mono>
+                      <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase" }}>↳ {s.role} — {s.agent}</Mono>
+                      <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{s.output}</Mono>
                     </View>
                   ))}
                   <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
-                    <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 20 }}>{r.output || "(no output)"}</Mono>
+                    <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{r.output || "(no output)"}</Mono>
                   </View>
-                  <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 8 }}>
+                  <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
                     {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
                   </Mono>
                 </View>
@@ -776,7 +776,7 @@ function Reports() {
 // ---- shared bits ---------------------------------------------------------
 
 function Row2({ children }: { children: React.ReactNode }) {
-  return <View style={{ flexDirection: "row", gap: 12 }}>{children}</View>;
+  return <View style={{ flexDirection: "row", gap: space.md }}>{children}</View>;
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
@@ -784,7 +784,7 @@ function Legend({ color, label }: { color: string; label: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
-      <Mono color={palette.ash} style={{ fontSize: 11 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{label}</Mono>
     </View>
   );
 }
@@ -804,13 +804,13 @@ function StackBar({ ok, error, max }: { ok: number; error: number; max: number }
 function FeedRow({ dot, title, body, right, rightColor }: { dot?: string; title: string; body: string; right: string; rightColor?: string }) {
   const { palette } = useTheme();
   return (
-    <View style={{ flexDirection: "row", gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+    <View style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
       {dot ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot, marginTop: 5 }} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.chalk }} numberOfLines={1}>{title}</Text>
-        <Mono color={palette.ash} style={{ fontSize: 11 }} numberOfLines={1}>{body}</Mono>
+        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }} numberOfLines={1}>{title}</Text>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={1}>{body}</Mono>
       </View>
-      <Mono color={rightColor ?? palette.ash} style={{ fontSize: 11 }}>{right}</Mono>
+      <Mono color={rightColor ?? palette.ash} style={{ fontSize: fs.micro }}>{right}</Mono>
     </View>
   );
 }
@@ -819,8 +819,8 @@ function Mini({ label, value }: { label: string; value: string }) {
   const { palette } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 10 }}>
-      <Mono color={palette.ash} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</Mono>
-      <Text style={{ fontFamily: F.black, fontSize: 16, color: palette.chalk, marginTop: 2 }}>{value}</Text>
+      <Mono color={palette.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</Mono>
+      <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );
 }
@@ -829,7 +829,7 @@ function MiniChip({ children, color }: { children: React.ReactNode; color: strin
   const { palette } = useTheme();
   return (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: 11, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
     </View>
@@ -847,7 +847,7 @@ function InlineNumberInput({ value, onChangeText, placeholder }: { value: string
       keyboardType="numeric"
       style={{
         fontFamily: F.mono,
-        fontSize: 13,
+        fontSize: fs.body,
         color: palette.chalk,
         backgroundColor: palette.ink2,
         borderWidth: 1,

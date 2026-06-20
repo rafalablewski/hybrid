@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Stats = {
@@ -47,7 +47,7 @@ export default function AdminOverview() {
   const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: VIOLET, CLIENT: LIME };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: space.lg }}>
       <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} c={LIME} />
       <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" c={LIME} />
       <Stat label="Sessions logged" value={s.sessions.toLocaleString()} c={CHALK} />
@@ -61,8 +61,8 @@ export default function AdminOverview() {
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={s.growth}>
             <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-            <XAxis dataKey="week" stroke={ASH} style={{ ...mono, fontSize: 12 }} />
-            <YAxis stroke={ASH} style={{ ...mono, fontSize: 12 }} allowDecimals={false} />
+            <XAxis dataKey="week" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
+            <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} allowDecimals={false} />
             <Tooltip contentStyle={tip} />
             <Line type="monotone" dataKey="signups" stroke={LIME} strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="sessions" stroke={BLUE} strokeWidth={2} dot={false} />
@@ -75,8 +75,8 @@ export default function AdminOverview() {
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={s.planPopularity}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="goal" stroke={ASH} style={{ ...mono, fontSize: 12 }} />
-              <YAxis stroke={ASH} style={{ ...mono, fontSize: 12 }} allowDecimals={false} />
+              <XAxis dataKey="goal" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
+              <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} allowDecimals={false} />
               <Tooltip contentStyle={tip} />
               <Bar dataKey="n" fill={LIME} radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -85,24 +85,24 @@ export default function AdminOverview() {
       )}
 
       <ChartFrame span={1} title="Roles" kicker="User base" c={AMBER}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-          {s.roleSplit.length === 0 && <Mono s={{ fontSize: 14 }}>No users yet.</Mono>}
+        <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 4 }}>
+          {s.roleSplit.length === 0 && <Mono s={{ fontSize: fs.bodyLg }}>No users yet.</Mono>}
           {s.roleSplit.map((r) => (
             <div key={r.role} style={{ display: "flex", justifyContent: "space-between" }}>
-              <Mono s={{ fontSize: 14 }} c={roleColor[r.role] ?? CHALK}>{r.role}</Mono>
-              <Mono s={{ fontSize: 13 }}>{r.n}</Mono>
+              <Mono s={{ fontSize: fs.bodyLg }} c={roleColor[r.role] ?? CHALK}>{r.role}</Mono>
+              <Mono s={{ fontSize: fs.body }}>{r.n}</Mono>
             </div>
           ))}
         </div>
       </ChartFrame>
 
       <ChartFrame span={1} title="Languages" kicker="Users by locale" c={BLUE}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-          {s.langSplit.length === 0 && <Mono s={{ fontSize: 14 }}>—</Mono>}
+        <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 4 }}>
+          {s.langSplit.length === 0 && <Mono s={{ fontSize: fs.bodyLg }}>—</Mono>}
           {s.langSplit.map((l) => (
             <div key={l.lang} style={{ display: "flex", justifyContent: "space-between" }}>
-              <Mono s={{ fontSize: 14 }} c={CHALK}>{l.lang.toUpperCase()}</Mono>
-              <Mono s={{ fontSize: 13 }}>{l.n}</Mono>
+              <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{l.lang.toUpperCase()}</Mono>
+              <Mono s={{ fontSize: fs.body }}>{l.n}</Mono>
             </div>
           ))}
         </div>

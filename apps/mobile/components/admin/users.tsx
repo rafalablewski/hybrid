@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
 import { NAV_ITEMS } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, ErrorNote, Input, PillBtn, Segmented, KV } from "./_kit";
 
@@ -95,14 +95,14 @@ export default function AdminUsers() {
           <View key={u.id}>
             <Pressable onPress={() => setSelected(selected === u.id ? null : u.id)}>
               <Card>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space.ms }}>
                   <View style={{ flexShrink: 1 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 15, color: palette.chalk }}>{u.name || "—"}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{u.name || "—"}</Text>
                     <Mono color={palette.ash} style={{ marginTop: 2 }}>{u.email}</Mono>
                   </View>
                   <Chip color={roleColor[u.role] ?? palette.chalk}>{u.role}</Chip>
                 </View>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
                   <Chip color={palette.ash}>{u.language.toUpperCase()}</Chip>
                   <Chip color={palette.ash}>{u.sessions} sessions</Chip>
                   <Chip color={palette.ash}>joined {fmt(u.createdAt)}</Chip>
@@ -129,7 +129,7 @@ export default function AdminUsers() {
           <Mono color={palette.ash}>
             {data.total.toLocaleString()} · page {data.page}/{data.pages}
           </Mono>
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flexDirection: "row", gap: space.sm }}>
             <PillBtn label="← Prev" outline color={palette.chalk} disabled={page <= 1} onPress={() => setPage((p) => Math.max(1, p - 1))} />
             <PillBtn label="Next →" outline color={palette.chalk} disabled={page >= data.pages} onPress={() => setPage((p) => p + 1)} />
           </View>
@@ -234,10 +234,10 @@ function UserDetail({
     <Card accent={palette.amber} style={{ marginTop: -4 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flexShrink: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
             User record
           </Text>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: palette.chalk, marginTop: 2 }}>{d.name || "—"}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{d.name || "—"}</Text>
           <Mono color={palette.ash}>{d.email}</Mono>
         </View>
         <Pressable onPress={onClose} hitSlop={10}>
@@ -245,7 +245,7 @@ function UserDetail({
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12, marginBottom: 14 }}>
         <Chip color={roleColor[d.role] ?? palette.chalk}>{d.role}</Chip>
         <Chip color={d.linkedAuth ? palette.lime : palette.ash}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
         <Chip color={palette.blue}>joined {fmt(d.createdAt)}</Chip>
@@ -261,7 +261,7 @@ function UserDetail({
 
       {d.orgs.length > 0 && (
         <View style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
             Organizations
           </Text>
           {d.orgs.map((o) => (
@@ -272,11 +272,11 @@ function UserDetail({
 
       {/* role / language editor */}
       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
           Manage access
         </Text>
 
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Role</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Role</Text>
         <Segmented<RoleVal>
           options={[
             { value: "CLIENT", label: "Client" },
@@ -287,7 +287,7 @@ function UserDetail({
           onChange={setRole}
         />
 
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Language</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Language</Text>
         <Segmented<LangVal>
           options={[
             { value: "en", label: "EN" },
@@ -298,10 +298,10 @@ function UserDetail({
           onChange={setLanguage}
         />
 
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginTop: 4, marginBottom: 8, lineHeight: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginTop: 4, marginBottom: 8, lineHeight: 16 }}>
           Feature access — unlock individual features beyond this user&apos;s persona.
         </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 14 }}>
           {GRANTABLE.map((item) => {
             const on = grants.includes(item.id);
             return (
@@ -317,7 +317,7 @@ function UserDetail({
                   paddingHorizontal: 12,
                 }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(palette, on ? palette.lime : palette.ash) }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(palette, on ? palette.lime : palette.ash) }}>
                   {on ? "✓ " : "+ "}
                   {item.label}
                 </Text>
@@ -342,7 +342,7 @@ function UserDetail({
 
       {/* danger zone */}
       <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
           Danger zone
         </Text>
         <Mono color={palette.ash} style={{ lineHeight: 18, marginBottom: 12 }}>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, PillBtn } from "./_kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
@@ -91,20 +91,20 @@ export default function AdminFlags() {
 
       {flags?.map((f) => (
         <Card key={f.key} accent={f.enabled ? palette.lime : palette.ash}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 4 }}>
             <Chip color={f.enabled ? palette.lime : palette.ash}>{f.enabled ? "on" : "off"}</Chip>
             {f.overridden ? <Chip color={palette.amber}>overridden</Chip> : <Chip color={palette.ash}>default</Chip>}
             <Chip color={palette.ash}>{f.audience}</Chip>
           </View>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk }}>{f.label}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{f.label}</Text>
           <Mono color={palette.ash} style={{ marginTop: 2, lineHeight: 18 }}>{f.description}</Mono>
-          <Mono color={palette.ash} style={{ marginTop: 6, fontSize: 11 }}>
+          <Mono color={palette.ash} style={{ marginTop: 6, fontSize: fs.micro }}>
             {f.key} · default {f.defaultEnabled ? "on" : "off"}
             {f.updatedByEmail ? ` · last by ${f.updatedByEmail}` : ""}
           </Mono>
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginTop: 10, marginBottom: 6 }}>Audience</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginTop: 10, marginBottom: 6 }}>Audience</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
             {AUDIENCES.map((a) => (
               <PillBtn
                 key={a}
@@ -117,7 +117,7 @@ export default function AdminFlags() {
             ))}
           </View>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
             <PillBtn
               label={f.enabled ? "Turn off" : "Turn on"}
               color={f.enabled ? palette.ash : palette.lime}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { ALL_MUSCLES } from "@hybrid/core";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
@@ -247,28 +247,28 @@ export default function AdminExercises() {
 
       {editing !== null && (
         <Card accent={palette.lime}>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk, marginBottom: 12 }}>
             {editing === "new" ? "New exercise" : "Edit exercise"}
           </Text>
 
           <Input label="Name (the engine key)" value={draft.name} onChangeText={(t) => setDraft({ ...draft, name: t })} placeholder="e.g. Zercher Squat" />
           <Input label="Category (optional)" value={draft.category} onChangeText={(t) => setDraft({ ...draft, category: t })} placeholder="e.g. Lower / Olympic" />
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Pattern</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Pattern</Text>
           <Segmented options={PATTERN_OPTS} value={draft.pattern} onChange={(v) => setDraft({ ...draft, pattern: v })} />
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Kind</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Kind</Text>
           <Segmented options={KIND_OPTS} value={draft.kind} onChange={(v) => setDraft({ ...draft, kind: v })} />
 
           <Input label="Base load (kg, blank for conditioning)" value={draft.baseLoad} onChangeText={(t) => setDraft({ ...draft, baseLoad: t })} placeholder="100" keyboardType="numeric" />
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Energy system (conditioning)</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Energy system (conditioning)</Text>
           <Segmented options={SYSTEM_OPTS} value={draft.system} onChange={(v) => setDraft({ ...draft, system: v })} />
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 6 }}>
             Muscles worked (drives fatigue + volume)
           </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 12 }}>
             {ALL_MUSCLES.map((m) => {
               const on = draft.muscles.includes(m);
               return (
@@ -291,7 +291,7 @@ export default function AdminExercises() {
 
           {err ? <ErrorNote error={err} /> : null}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
             <PillBtn label="Save draft" outline disabled={busy} onPress={() => save("draft")} />
             <PillBtn label={editing === "new" ? "Publish" : "Save & publish"} disabled={busy} onPress={() => save("published")} />
             <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEditing(null)} />
@@ -303,23 +303,23 @@ export default function AdminExercises() {
 
       {filtered.map((x) => (
         <Card key={x.id} accent={statusColor(x.status)}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(x.status)}>{x.status}</Chip>
             <Chip color={palette.ash}>{x.pattern}</Chip>
             <Chip color={palette.ash}>{x.kind}</Chip>
             {x.baseLoad != null ? <Chip color={palette.ash}>{`${x.baseLoad}kg base`}</Chip> : null}
             {x.system ? <Chip color={palette.ash}>{x.system}</Chip> : null}
           </View>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk }}>{x.name}</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{x.name}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 6 }}>
             {x.muscles.map((m) => <Chip key={m} color={palette.lime}>{m}</Chip>)}
           </View>
-          {x.aliases.length > 0 ? <Mono color={palette.ash} style={{ marginTop: 6, fontSize: 11 }}>{`aka ${x.aliases.join(", ")}`}</Mono> : null}
+          {x.aliases.length > 0 ? <Mono color={palette.ash} style={{ marginTop: 6, fontSize: fs.micro }}>{`aka ${x.aliases.join(", ")}`}</Mono> : null}
           {x.cues.length > 0 ? (
             <Mono color={palette.ash} style={{ marginTop: 6, lineHeight: 18 }}>{x.cues.map((c) => `• ${c}`).join("\n")}</Mono>
           ) : null}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
             <PillBtn label="Edit" outline color={palette.ash} disabled={busy} onPress={() => openEdit(x)} />
             {x.status !== "published" ? (
               <PillBtn label="Publish" outline disabled={busy} onPress={() => patch(x.id, { status: "published" })} />

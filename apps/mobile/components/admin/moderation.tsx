@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Segmented, PillBtn } from "./_kit";
 
@@ -124,7 +124,7 @@ export default function AdminModeration() {
           ) : (
             profiles.map((p) => (
               <Card key={p.id} accent={palette.amber}>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
                   <Chip color={palette.amber}>pending</Chip>
                   <Chip color={palette.ash}>{p.sport}</Chip>
                   <Chip color={palette.ash}>
@@ -132,14 +132,14 @@ export default function AdminModeration() {
                     {p.age}
                   </Chip>
                 </View>
-                <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk }}>{p.name}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{p.name}</Text>
                 <Mono color={palette.ash} style={{ marginTop: 2 }}>{p.email}</Mono>
                 <Mono color={palette.ash} style={{ marginTop: 6, lineHeight: 18 }}>
                   {Object.entries(p.metrics ?? {})
                     .map(([k, v]) => `${k}: ${v}`)
                     .join("  ·  ") || "no metrics"}
                 </Mono>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
                   <PillBtn
                     label="Approve"
                     onPress={() => moderateProfile(p.id, "approve")}
@@ -177,7 +177,7 @@ export default function AdminModeration() {
           ) : (
             reports.map((r) => (
               <Card key={r.id} accent={palette.red}>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
                   <Chip color={palette.red}>{r.reason}</Chip>
                   <Chip color={palette.ash}>{r.targetType}</Chip>
                   {r.target && (
@@ -186,7 +186,7 @@ export default function AdminModeration() {
                     </Chip>
                   )}
                 </View>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>
                   {r.target
                     ? `${r.target.name} · ${r.target.sport}`
                     : `${r.targetType}:${r.targetId.slice(0, 8)} (target gone)`}
@@ -199,7 +199,7 @@ export default function AdminModeration() {
                 <Mono color={palette.ash} style={{ marginTop: 6 }}>
                   reported by {r.reporterEmail} · {new Date(r.createdAt).toLocaleDateString()}
                 </Mono>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
                   <PillBtn
                     label="Take down"
                     onPress={() =>

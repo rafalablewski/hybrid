@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
 // Operator help surface (Governance → Guidance). Renders the plain-language
 // runbooks that live in @hybrid/core (guidance.ts) so the copy stays the single
@@ -18,7 +18,7 @@ export default function AdminGuidance() {
       <Card style={{ position: "sticky", top: 16, padding: 14 }}>
         {/* guide switcher — only when there's more than one guide */}
         {GUIDES.length > 1 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${LINE}` }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${LINE}` }}>
             {GUIDES.map((g) => (
               <button
                 key={g.id}
@@ -28,7 +28,7 @@ export default function AdminGuidance() {
                 }}
                 style={{
                   ...mono,
-                  fontSize: 11,
+                  fontSize: fs.micro,
                   textTransform: "uppercase",
                   letterSpacing: ".08em",
                   padding: "7px 9px",
@@ -44,7 +44,7 @@ export default function AdminGuidance() {
             ))}
           </div>
         )}
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
           {guide.title}
         </Mono>
         <nav>
@@ -69,7 +69,7 @@ export default function AdminGuidance() {
                 background: active === s.id ? `${LIME}1c` : "transparent",
                 color: txt(active === s.id ? LIME : ASH),
                 ...disp,
-                fontSize: 14,
+                fontSize: fs.bodyLg,
                 fontWeight: 600,
               }}
             >
@@ -78,30 +78,30 @@ export default function AdminGuidance() {
             </button>
           ))}
         </nav>
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${LINE}` }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${LINE}` }} c={ASH}>
           Last reviewed {guide.updated}
         </Mono>
       </Card>
 
       {/* sections */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
         {guide.sections.map((s) => (
           // id + scrollMarginTop on the WRAPPER so the whole card (border +
           // padding) clears the viewport top when jumped to from the TOC.
           <div key={s.id} id={`guide-${s.id}`} style={{ scrollMarginTop: 16 }}>
             <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: s.summary ? 4 : 12 }}>
-                <span style={{ fontSize: 18, color: txt(LIME) }}>{s.icon}</span>
-                <h2 style={{ ...disp, fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", color: CHALK, margin: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginBottom: s.summary ? 4 : 12 }}>
+                <span style={{ fontSize: fs.title, color: txt(LIME) }}>{s.icon}</span>
+                <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.heading, letterSpacing: "-.02em", color: CHALK, margin: 0 }}>
                   {s.title}
                 </h2>
               </div>
               {s.summary && (
-                <Mono s={{ fontSize: 13, display: "block", marginBottom: 14 }} c={ASH}>
+                <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }} c={ASH}>
                   {s.summary}
                 </Mono>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
                 {s.blocks.map((b, i) => (
                   <Block key={i} b={b} />
                 ))}
@@ -116,7 +116,7 @@ export default function AdminGuidance() {
 
 function Block({ b }: { b: GuideBlock }) {
   if (b.t === "p") {
-    return <p style={{ ...disp, fontSize: 14, lineHeight: 1.65, color: CHALK, margin: 0 }}>{b.text}</p>;
+    return <p style={{ ...disp, fontSize: fs.bodyLg, lineHeight: 1.65, color: CHALK, margin: 0 }}>{b.text}</p>;
   }
   if (b.t === "note") {
     return (
@@ -128,7 +128,7 @@ function Block({ b }: { b: GuideBlock }) {
           padding: "10px 14px",
         }}
       >
-        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 4 }} c={AMBER}>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 4 }} c={AMBER}>
           Note
         </Mono>
         <span style={{ ...disp, fontSize: 13.5, lineHeight: 1.6, color: CHALK }}>{b.text}</span>
@@ -156,13 +156,13 @@ function Block({ b }: { b: GuideBlock }) {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              gap: 12,
+              gap: space.md,
               padding: "9px 0",
               borderBottom: i < b.rows.length - 1 ? `1px solid ${LINE}` : "none",
             }}
           >
             <span style={{ ...disp, fontSize: 13.5, color: CHALK }}>{r.goal}</span>
-            <Mono s={{ fontSize: 13, textAlign: "right", flexShrink: 0 }} c={LIME}>
+            <Mono s={{ fontSize: fs.body, textAlign: "right", flexShrink: 0 }} c={LIME}>
               {r.path}
             </Mono>
           </div>
@@ -172,9 +172,9 @@ function Block({ b }: { b: GuideBlock }) {
   }
   // steps
   return (
-    <ol style={{ ...disp, margin: 0, paddingLeft: 0, listStyle: "none", counterReset: "g", display: "flex", flexDirection: "column", gap: 8 }}>
+    <ol style={{ ...disp, margin: 0, paddingLeft: 0, listStyle: "none", counterReset: "g", display: "flex", flexDirection: "column", gap: space.sm }}>
       {b.items.map((it, i) => (
-        <li key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <li key={i} style={{ display: "flex", gap: space.md, alignItems: "flex-start" }}>
           <span
             style={{
               flexShrink: 0,
@@ -185,7 +185,7 @@ function Block({ b }: { b: GuideBlock }) {
               border: `1px solid ${LIME}55`,
               color: txt(LIME),
               ...mono,
-              fontSize: 12,
+              fontSize: fs.caption,
               fontWeight: 700,
               display: "grid",
               placeItems: "center",
@@ -246,7 +246,7 @@ function Cmd({ lines }: { lines: string }) {
           top: 8,
           right: 8,
           ...mono,
-          fontSize: 11,
+          fontSize: fs.micro,
           textTransform: "uppercase",
           letterSpacing: ".08em",
           color: txt(copied ? INK : ASH),

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { Card, Mono, Kicker, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Segmented } from "./_kit";
 
@@ -32,16 +32,16 @@ export default function AdminGuidance() {
       ) : null}
 
       <Kicker color={palette.amber}>{guide.title}</Kicker>
-      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4, marginBottom: 12 }}>Last reviewed {guide.updated}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4, marginBottom: 12 }}>Last reviewed {guide.updated}</Mono>
 
       {guide.sections.map((s) => (
         <Card key={s.id}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: s.summary ? 4 : 12 }}>
-            <Text style={{ fontSize: 18, color: txt(palette, palette.lime) }}>{s.icon}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: s.summary ? 4 : 12 }}>
+            <Text style={{ fontSize: fs.title, color: txt(palette, palette.lime) }}>{s.icon}</Text>
             <Text style={{ fontFamily: F.black, fontSize: 19, color: palette.chalk, letterSpacing: -0.4, flex: 1 }}>{s.title}</Text>
           </View>
-          {s.summary ? <Mono color={palette.ash} style={{ fontSize: 12, marginBottom: 12 }}>{s.summary}</Mono> : null}
-          <View style={{ gap: 12 }}>
+          {s.summary ? <Mono color={palette.ash} style={{ fontSize: fs.caption, marginBottom: 12 }}>{s.summary}</Mono> : null}
+          <View style={{ gap: space.md }}>
             {s.blocks.map((b, i) => (
               <Block key={i} b={b} />
             ))}
@@ -56,7 +56,7 @@ function Block({ b }: { b: GuideBlock }) {
   const { palette } = useTheme();
 
   if (b.t === "p") {
-    return <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 22, color: palette.chalk }}>{b.text}</Text>;
+    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: palette.chalk }}>{b.text}</Text>;
   }
 
   if (b.t === "note") {
@@ -91,14 +91,14 @@ function Block({ b }: { b: GuideBlock }) {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              gap: 12,
+              gap: space.md,
               paddingVertical: 9,
               borderBottomWidth: i < b.rows.length - 1 ? 1 : 0,
               borderBottomColor: palette.line,
             }}
           >
             <Text style={{ fontFamily: F.reg, fontSize: 13.5, color: palette.chalk, flex: 1 }}>{r.goal}</Text>
-            <Mono color={palette.lime} style={{ fontSize: 12, textAlign: "right", flexShrink: 1 }}>{r.path}</Mono>
+            <Mono color={palette.lime} style={{ fontSize: fs.caption, textAlign: "right", flexShrink: 1 }}>{r.path}</Mono>
           </View>
         ))}
       </View>
@@ -107,9 +107,9 @@ function Block({ b }: { b: GuideBlock }) {
 
   // steps
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: space.sm }}>
       {b.items.map((it, i) => (
-        <View key={i} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+        <View key={i} style={{ flexDirection: "row", gap: space.md, alignItems: "flex-start" }}>
           <View
             style={{
               width: 22,
@@ -123,7 +123,7 @@ function Block({ b }: { b: GuideBlock }) {
               marginTop: 1,
             }}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(palette, palette.lime) }}>{i + 1}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(palette, palette.lime) }}>{i + 1}</Text>
           </View>
           <Text style={{ fontFamily: F.reg, fontSize: 13.5, lineHeight: 21, color: palette.chalk, flex: 1 }}>{it}</Text>
         </View>
@@ -169,7 +169,7 @@ function Cmd({ lines }: { lines: string }) {
           paddingVertical: 3,
         }}
       >
-        <Mono color={copied ? palette.onAccent : palette.ash} style={{ fontSize: 11 }}>{copied ? "copied" : "copy"}</Mono>
+        <Mono color={copied ? palette.onAccent : palette.ash} style={{ fontSize: fs.micro }}>{copied ? "copied" : "copy"}</Mono>
       </Pressable>
     </View>
   );

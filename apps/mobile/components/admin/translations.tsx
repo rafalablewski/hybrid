@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { allTranslationKeys, baselineString, LANGS, type Lang } from "@hybrid/core";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
@@ -140,7 +140,7 @@ export default function AdminTranslations() {
 
       {capped.map((key) => (
         <Card key={key}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: palette.chalk, marginBottom: 8 }}>{key}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.chalk, marginBottom: 8 }}>{key}</Text>
           {LANG_LIST.map((lang) => {
             const ck = `${lang}:${key}`;
             const eff = effective(lang, key);
@@ -150,8 +150,8 @@ export default function AdminTranslations() {
             const dirty = (edits[ck] ?? eff) !== eff;
             return (
               <View key={lang} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash }}>{LANGS[lang]}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs, marginBottom: 4 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash }}>{LANGS[lang]}</Text>
                   {overridden ? <Chip color={palette.lime}>override</Chip> : null}
                   {missing ? <Chip color={palette.amber}>missing</Chip> : null}
                 </View>
@@ -162,7 +162,7 @@ export default function AdminTranslations() {
                   multiline
                   style={{ marginBottom: 6 }}
                 />
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
                   {dirty ? (
                     <PillBtn label="Save" disabled={savingCell === ck} onPress={() => save(lang, key, edits[ck] ?? "")} />
                   ) : null}

@@ -10,7 +10,7 @@ import {
   type BenchmarkMetric,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Segmented, Stat, ErrorNote } from "./_kit";
 
@@ -52,11 +52,11 @@ function Capabilities() {
 
   return (
     <View>
-      <Mono color={palette.ash} style={{ fontSize: 13, marginBottom: 14 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.body, marginBottom: 14 }}>
         Living registry of every capability — kept current as features ship, block, or get planned.
       </Mono>
 
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         {order.map((st) => (
           <View key={st} style={{ flex: 1 }}>
             <Stat label={meta[st].label} value={capabilitiesByStatus(st).length} color={meta[st].color} />
@@ -79,7 +79,7 @@ function Capabilities() {
         );
       })}
 
-      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 14 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 14 }}>
         Source: packages/core/src/capabilities.ts · {CAPABILITIES.length} capabilities tracked.
       </Mono>
     </View>
@@ -90,15 +90,15 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
   const { palette } = useTheme();
   return (
     <Card accent={color}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
         <Chip color={palette.ash}>{cap.area}</Chip>
       </View>
       <Mono color={palette.chalk} style={{ fontSize: 12.5, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
       {cap.blockedBy ? (
         <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.amber}12`, borderWidth: 1, borderColor: `${palette.amber}40` }}>
           <Kicker color={palette.amber}>Needs</Kicker>
-          <Mono color={palette.chalk} style={{ fontSize: 12, lineHeight: 18, marginTop: 3 }}>{cap.blockedBy}</Mono>
+          <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18, marginTop: 3 }}>{cap.blockedBy}</Mono>
         </View>
       ) : null}
     </Card>
@@ -131,27 +131,27 @@ function DataNet() {
     <View>
       <Card accent={palette.violet}>
         <Kicker color={palette.violet}>Data network · benchmarking intelligence</Kicker>
-        <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 19, marginTop: 6 }}>
+        <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>
           The flywheel: every consented athlete sharpens the cohort norms and (with labeled outcomes) the injury
           calibration. De-identified — only cohorts with ≥ {K_ANON} athletes are released.
         </Mono>
       </Card>
 
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <View style={{ flex: 1 }}><Stat label="Athletes" value={d.stats.athletes} color={palette.lime} /></View>
         <View style={{ flex: 1 }}><Stat label="Observations" value={d.stats.observations} color={palette.blue} /></View>
       </View>
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: space.md }}>
         <View style={{ flex: 1 }}><Stat label="Cohorts" value={d.stats.cohorts} /></View>
         <View style={{ flex: 1 }}><Stat label={`Releasable (≥${K_ANON})`} value={d.stats.releasableCohorts} color={palette.violet} /></View>
       </View>
 
       <Card accent={d.calibration.n > 0 ? palette.lime : palette.ash}>
         <Kicker color={palette.blue}>Injury calibration</Kicker>
-        <Mono color={palette.chalk} style={{ fontSize: 13, marginTop: 4 }}>
+        <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
           model {d.calibration.version} · {d.calibration.n > 0 ? `refit on ${d.calibration.n} outcomes` : "synthetic prior"}
         </Mono>
-        <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2, lineHeight: 16 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2, lineHeight: 16 }}>
           labels: {d.calibration.positives} injured · {d.calibration.negatives} healthy · σ(a + b·score): a=
           {d.calibration.coeffs.intercept.toFixed(2)}, b={d.calibration.coeffs.slope.toFixed(2)}
         </Mono>
@@ -160,18 +160,18 @@ function DataNet() {
       <Card>
         <Kicker>Cohort norms (released)</Kicker>
         {d.norms.length === 0 ? (
-          <Mono color={palette.ash} style={{ fontSize: 13, marginTop: 10, lineHeight: 19 }}>
+          <Mono color={palette.ash} style={{ fontSize: fs.body, marginTop: 10, lineHeight: 19 }}>
             No cohort has reached {K_ANON} consented athletes yet — aggregates are suppressed until then.
           </Mono>
         ) : (
           <View style={{ marginTop: 10 }}>
             {d.norms.map((nrm) => (
               <View key={nrm.cohortKey} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: palette.line }}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <Mono color={palette.chalk} style={{ fontSize: 12, flex: 1 }}>{nrm.sport} · {nrm.sex} · {nrm.ageBand}</Mono>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+                  <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{nrm.sport} · {nrm.sex} · {nrm.ageBand}</Mono>
                   <Chip color={palette.blue}>{METRIC_LABEL[nrm.metric]}</Chip>
                 </View>
-                <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
                   n={nrm.n} · mean {nrm.mean} · sd {nrm.sd} · P10 {nrm.p10} · P50 {nrm.p50} · P90 {nrm.p90}
                 </Mono>
               </View>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, ErrorNote, PillBtn } from "./_kit";
 
@@ -79,14 +79,14 @@ export default function AdminAnon() {
       ) : (
         sessions.map((s) => (
           <Card key={s.id}>
-            <Text style={{ fontFamily: F.semi, fontSize: 15, color: palette.chalk }}>{s.title}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{s.title}</Text>
             <Mono color={palette.ash} style={{ marginTop: 2 }}>
               {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
               {s.blocks.length
                 ? ` · ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}`
                 : ""}
             </Mono>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
               <Chip color={platformColor(s.platform)}>{s.platform ?? "—"}</Chip>
               <Chip color={palette.ash}>{trunc(s.deviceId)}</Chip>
             </View>

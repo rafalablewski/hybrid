@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { groupedNav, NAV_ITEMS, sanitizePersonaAccess, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
-import { LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 const navLabel = (id: string) => NAV_ITEMS.find((i) => i.id === id)?.label ?? id;
 type AccessReq = { id: string; userEmail: string; navId: string; createdAt: string };
@@ -34,27 +34,27 @@ function RoleModel() {
     const yes = v === "full" || v === "yes" || v === "yes (+private)";
     const no = v === "no";
     return (
-      <td style={{ ...mono, fontSize: 13, textAlign: "center", padding: "11px 6px", borderBottom: `1px solid ${LINE}`, color: txt(no ? ASH : yes ? LIME : AMBER) }}>
+      <td style={{ ...mono, fontSize: fs.body, textAlign: "center", padding: "11px 6px", borderBottom: `1px solid ${LINE}`, color: txt(no ? ASH : yes ? LIME : AMBER) }}>
         {no ? "—" : v}
       </td>
     );
   };
   return (
     <div style={{ marginBottom: 20 }}>
-      <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
         Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not the role
         label alone.
       </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.md, marginBottom: 14 }}>
         {ROLE_MODEL.map(([n, c, d]) => (
           <Card key={n} style={{ borderLeft: `3px solid ${c}` }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: txt(c) }}>{n}</div>
-            <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{d}</Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, color: txt(c) }}>{n}</div>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{d}</Mono>
           </Card>
         ))}
       </div>
       <Card>
-        <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={ASH}>
           Permission matrix
         </Mono>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
@@ -62,7 +62,7 @@ function RoleModel() {
           <thead>
             <tr>
               {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
-                <th key={h} style={{ ...mono, fontSize: 12, color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER), textTransform: "uppercase", textAlign: i === 0 ? "left" : "center", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
+                <th key={h} style={{ ...mono, fontSize: fs.caption, color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER), textTransform: "uppercase", textAlign: i === 0 ? "left" : "center", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
                   {h}
                 </th>
               ))}
@@ -71,7 +71,7 @@ function RoleModel() {
           <tbody>
             {ROLE_PERMISSIONS.map((p) => (
               <tr key={p.cap}>
-                <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "11px 6px", borderBottom: `1px solid ${LINE}` }}>{p.cap}</td>
+                <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "11px 6px", borderBottom: `1px solid ${LINE}` }}>{p.cap}</td>
                 {cell(p.client)}
                 {cell(p.coach)}
                 {cell(p.admin)}
@@ -170,8 +170,8 @@ export default function AdminAccess() {
 
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Overrides not persisted yet</div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginBottom: 6 }}>Overrides not persisted yet</div>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
             The <b>FeatureFlag</b> table doesn&apos;t exist yet — run{" "}
             <span style={{ color: txt(AMBER) }}>reference/sql-feature-flags.sql</span> in Supabase to make these persist.
             Until then the app runs on the code defaults below.
@@ -181,19 +181,19 @@ export default function AdminAccess() {
 
       {requests.length > 0 && (
         <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
-          <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={VIOLET}>
             Pending access requests · {requests.length}
           </Mono>
-          <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "grid", gap: space.sm }}>
             {requests.map((r) => (
-              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{r.userEmail}</div>
-                  <Mono s={{ fontSize: 12, display: "block", marginTop: 2 }} c={ASH}>wants <b style={{ color: txt(CHALK) }}>{navLabel(r.navId)}</b></Mono>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{r.userEmail}</div>
+                  <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>wants <b style={{ color: txt(CHALK) }}>{navLabel(r.navId)}</b></Mono>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => decide(r.id, "approve")} style={{ ...mono, fontSize: 13, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Approve</button>
-                  <button onClick={() => decide(r.id, "deny")} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Deny</button>
+                <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
+                  <button onClick={() => decide(r.id, "approve")} style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Approve</button>
+                  <button onClick={() => decide(r.id, "deny")} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Deny</button>
                 </div>
               </div>
             ))}
@@ -201,42 +201,42 @@ export default function AdminAccess() {
         </Card>
       )}
 
-      <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
         Set the <b>minimum persona</b> for each feature. Personas nest (Casual ⊂ Athlete ⊂ Coach ⊂ Admin),
         so lowering a feature exposes it to <i>more</i> users. Anything above casual is hidden from a free user — the
         paid upgrade is sold on the single <b style={{ color: txt(LIME) }}>Unlock Full</b> page, not as per-feature locks.
         Changes take effect on the next client load — no deploy.
         {busy ? " · saving…" : ""}
       </Mono>
-      <Mono s={{ fontSize: 12, display: "block", marginBottom: 16 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 16 }} c={ASH}>
         {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
       </Mono>
 
       {err && (
-        <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }} c={AMBER}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }} c={AMBER}>
           {err}
         </Mono>
       )}
 
-      <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ display: "grid", gap: space.lg }}>
         {groups.map(({ group, items }) => (
           <Card key={group}>
-            <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={VIOLET}>
+            <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={VIOLET}>
               {GROUP_LABEL[group]}
             </Mono>
-            <div style={{ display: "grid", gap: 8 }}>
+            <div style={{ display: "grid", gap: space.sm }}>
               {items.map((item) => {
                 const def = codeDefault(item);
                 const current = overrides[item.id] ?? def;
                 const overridden = overrides[item.id] !== undefined;
                 return (
-                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>
+                      <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>
                         {item.icon} {item.label}
                         {overridden && <span style={{ marginLeft: 8 }}><Chip c={AMBER}>overridden</Chip></span>}
                       </div>
-                      <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>
+                      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
                         {item.id} · default: {PERSONA_LABEL[def]}
                       </Mono>
                     </div>

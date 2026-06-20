@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, type ViewStyle } from "react-native";
-import { F, Card, Mono } from "../../lib/ui";
+import { fs, space, F, Card, Mono } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
@@ -20,7 +20,7 @@ export function Banner({ tone = "amber", title, children }: { tone?: "amber" | "
   const accent = tone === "red" ? palette.red : palette.amber;
   return (
     <Card accent={accent} style={{ marginBottom: 14 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
       {children ? <Mono color={palette.chalk} style={{ lineHeight: 18 }}>{children}</Mono> : null}
     </Card>
   );
@@ -31,7 +31,7 @@ export function ErrorNote({ error, onDismiss }: { error: string | null; onDismis
   const { palette } = useTheme();
   if (!error) return null;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: `${palette.amber}14`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: `${palette.amber}14`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
       <Mono color={palette.amber} style={{ flex: 1 }}>{error}</Mono>
       {onDismiss ? (
         <Pressable onPress={onDismiss} hitSlop={8}><Mono color={palette.ash}>Dismiss</Mono></Pressable>
@@ -45,8 +45,8 @@ export function Stat({ label, value, sub, color }: { label: string; value: React
   const { palette } = useTheme();
   return (
     <Card>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: color ? txt(palette, color) : palette.chalk, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: color ? txt(palette, color) : palette.chalk, marginTop: 4 }}>{value}</Text>
       {sub ? <Mono color={palette.ash} style={{ marginTop: 2 }}>{sub}</Mono> : null}
     </Card>
   );
@@ -73,7 +73,7 @@ export function Input({
   const { palette } = useTheme();
   return (
     <View style={[{ marginBottom: 10 }, style]}>
-      {label ? <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>{label}</Text> : null}
+      {label ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>{label}</Text> : null}
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -83,7 +83,7 @@ export function Input({
         keyboardType={keyboardType}
         style={{
           fontFamily: F.mono,
-          fontSize: 14,
+          fontSize: fs.bodyLg,
           color: palette.chalk,
           backgroundColor: palette.ink2,
           borderWidth: 1,
@@ -130,7 +130,7 @@ export function PillBtn({
         alignSelf: "flex-start",
       }}
     >
-      <Text style={{ fontFamily: F.bold, fontSize: 12, color: outline ? txt(palette, c) : palette.onAccent }}>{label}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: outline ? txt(palette, c) : palette.onAccent }}>{label}</Text>
     </Pressable>
   );
 }
@@ -147,7 +147,7 @@ export function Segmented<T extends string>({
 }) {
   const { palette } = useTheme();
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -163,7 +163,7 @@ export function Segmented<T extends string>({
               paddingHorizontal: 13,
             }}
           >
-            <Text style={{ fontFamily: F.semi, fontSize: 12, color: on ? txt(palette, palette.amber) : palette.ash }}>{o.label}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(palette, palette.amber) : palette.ash }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -175,9 +175,9 @@ export function Segmented<T extends string>({
 export function KV({ k, v }: { k: string; v: ReactNode }) {
   const { palette } = useTheme();
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.md, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: palette.line }}>
       <Mono color={palette.ash}>{k}</Mono>
-      <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.chalk, flexShrink: 1, textAlign: "right" }}>{v}</Text>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk, flexShrink: 1, textAlign: "right" }}>{v}</Text>
     </View>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { NAV_ITEMS } from "@hybrid/core";
-import { INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 // Features worth granting a single user beyond their persona (everything that
 // isn't visible to a casual user by default).
@@ -70,7 +70,7 @@ export default function AdminUsers() {
   return (
     <div>
       {/* controls */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: space.ms, marginBottom: 16, flexWrap: "wrap" }}>
         <input
           value={q}
           onChange={(e) => {
@@ -80,7 +80,7 @@ export default function AdminUsers() {
           placeholder="Search email or name…"
           style={{
             ...mono,
-            fontSize: 14,
+            fontSize: fs.bodyLg,
             flex: 1,
             minWidth: 220,
             padding: "10px 14px",
@@ -115,7 +115,7 @@ export default function AdminUsers() {
                   key={h || i}
                   style={{
                     ...mono,
-                    fontSize: 11,
+                    fontSize: fs.micro,
                     color: ASH,
                     textTransform: "uppercase",
                     letterSpacing: ".08em",
@@ -139,19 +139,19 @@ export default function AdminUsers() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
-                  <div style={{ ...disp, fontWeight: 600, fontSize: 14 }}>{u.name || "—"}</div>
-                  <Mono s={{ fontSize: 12 }} c={ASH}>{u.email}</Mono>
+                  <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{u.name || "—"}</div>
+                  <Mono s={{ fontSize: fs.caption }} c={ASH}>{u.email}</Mono>
                 </td>
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <Chip c={roleColor[u.role] ?? CHALK}>{u.role}</Chip>
                 </td>
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
-                  <Mono s={{ fontSize: 13 }} c={CHALK}>{u.language.toUpperCase()}</Mono>
+                  <Mono s={{ fontSize: fs.body }} c={CHALK}>{u.language.toUpperCase()}</Mono>
                 </td>
-                <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td style={{ ...mono, fontSize: fs.bodyLg, color: CHALK, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   {u.sessions}
                 </td>
-                <td style={{ ...mono, fontSize: 13, color: ASH, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td style={{ ...mono, fontSize: fs.body, color: ASH, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   {fmt(u.createdAt)}
                 </td>
                 <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}`, color: ASH }}>→</td>
@@ -159,7 +159,7 @@ export default function AdminUsers() {
             ))}
             {data && data.users.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ ...mono, fontSize: 14, color: ASH, textAlign: "center", padding: 40 }}>
+                <td colSpan={6} style={{ ...mono, fontSize: fs.bodyLg, color: ASH, textAlign: "center", padding: 40 }}>
                   {loading ? "Loading…" : "No users match."}
                 </td>
               </tr>
@@ -172,10 +172,10 @@ export default function AdminUsers() {
       {/* pagination */}
       {data && data.pages > 1 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
-          <Mono s={{ fontSize: 13 }} c={ASH}>
+          <Mono s={{ fontSize: fs.body }} c={ASH}>
             {data.total.toLocaleString()} users · page {data.page} / {data.pages}
           </Mono>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: space.sm }}>
             <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>← Prev</PageBtn>
             <PageBtn disabled={page >= data.pages} onClick={() => setPage((p) => p + 1)}>Next →</PageBtn>
           </div>
@@ -202,7 +202,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
       disabled={disabled}
       style={{
         ...cond,
-        fontSize: 13,
+        fontSize: fs.body,
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: ".05em",
@@ -320,9 +320,9 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <Mono s={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>User record</Mono>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>User record</Mono>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>{d?.name || "—"}</div>
-            <Mono s={{ fontSize: 13 }} c={ASH}>{d?.email ?? "…"}</Mono>
+            <Mono s={{ fontSize: fs.body }} c={ASH}>{d?.email ?? "…"}</Mono>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
@@ -331,7 +331,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
           <Mono>Loading…</Mono>
         ) : (
           <>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
+            <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 18 }}>
               <Chip c={roleColor[d.role] ?? CHALK}>{d.role}</Chip>
               <Chip c={d.linkedAuth ? LIME : ASH}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
               <Chip c={BLUE}>joined {fmt(d.createdAt)}</Chip>
@@ -339,22 +339,22 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
             </div>
 
             {/* activity counts */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: space.sm, marginBottom: 20 }}>
               {Object.entries(d.counts).map(([k, v]) => (
                 <div key={k} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{v}</div>
-                  <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>{v}</div>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
                 </div>
               ))}
             </div>
 
             {d.orgs.length > 0 && (
               <div style={{ marginBottom: 20 }}>
-                <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>Organizations</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>Organizations</Mono>
                 {d.orgs.map((o) => (
                   <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
-                    <Mono s={{ fontSize: 14 }} c={CHALK}>{o.name}</Mono>
-                    <Mono s={{ fontSize: 13 }} c={VIOLET}>{o.role}</Mono>
+                    <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.name}</Mono>
+                    <Mono s={{ fontSize: fs.body }} c={VIOLET}>{o.role}</Mono>
                   </div>
                 ))}
               </div>
@@ -362,12 +362,12 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
             {/* role / language editor */}
             <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
                 Manage access
               </Mono>
-              <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+              <div style={{ display: "flex", gap: space.ms, marginBottom: 12 }}>
                 <label style={{ flex: 1 }}>
-                  <Mono s={{ fontSize: 12, display: "block", marginBottom: 5 }} c={ASH}>Role</Mono>
+                  <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 5 }} c={ASH}>Role</Mono>
                   <Select value={role} onChange={(e) => setRole(e.target.value)} style={{ width: "100%" }}>
                     <option value="CLIENT">Client</option>
                     <option value="COACH">Coach</option>
@@ -375,7 +375,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   </Select>
                 </label>
                 <label style={{ flex: 1 }}>
-                  <Mono s={{ fontSize: 12, display: "block", marginBottom: 5 }} c={ASH}>Language</Mono>
+                  <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 5 }} c={ASH}>Language</Mono>
                   <Select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ width: "100%" }}>
                     <option value="en">EN</option>
                     <option value="pl">PL</option>
@@ -386,10 +386,10 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
               {/* per-user feature grants — unlock a feature for THIS person on
                   top of their persona (e.g. give a casual user the analytics). */}
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6, marginBottom: 8 }} c={ASH}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, marginBottom: 8 }} c={ASH}>
                 Feature access — unlock individual features beyond this user&apos;s persona.
               </Mono>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xs, marginBottom: 14 }}>
                 {GRANTABLE.map((item) => {
                   const on = grants.includes(item.id);
                   return (
@@ -398,7 +398,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                       onClick={() => toggleGrant(item.id)}
                       style={{
                         ...mono,
-                        fontSize: 13,
+                        fontSize: fs.body,
                         textAlign: "left",
                         padding: "10px 10px",
                         borderRadius: "var(--r-field)",
@@ -415,7 +415,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               </div>
 
               {msg && (
-                <Mono s={{ fontSize: 13, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
+                <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
                   {msg.text}
                 </Mono>
               )}
@@ -427,7 +427,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   width: "100%",
                   ...disp,
                   fontWeight: 800,
-                  fontSize: 14,
+                  fontSize: fs.bodyLg,
                   color: ON_ACCENT,
                   background: dirty && !saving ? AMBER : LINE,
                   border: "none",
@@ -442,10 +442,10 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
             {/* danger zone — irreversible account deletion (cascades all data) */}
             <div style={{ borderTop: `1px solid ${RED}44`, marginTop: 22, paddingTop: 18 }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={RED}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={RED}>
                 Danger zone
               </Mono>
-              <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginBottom: 12 }} c={ASH}>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginBottom: 12 }} c={ASH}>
                 Permanently delete this account and everything attached to it — sessions, check-ins,
                 memberships. This cannot be undone.
               </Mono>
@@ -456,7 +456,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                   width: "100%",
                   ...disp,
                   fontWeight: 800,
-                  fontSize: 14,
+                  fontSize: fs.bodyLg,
                   color: txt(RED),
                   background: `${RED}14`,
                   border: `1px solid ${RED}66`,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, ErrorNote, Segmented, KV } from "./_kit";
 
@@ -70,7 +70,7 @@ export default function AdminDirectory() {
           ) : (
             orgs.map((o) => (
               <Card key={o.id}>
-                <Text style={{ fontFamily: F.semi, fontSize: 15, color: palette.chalk, marginBottom: 6 }}>{o.name}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk, marginBottom: 6 }}>{o.name}</Text>
                 <KV k="Teams" v={o.teams} />
                 <KV k="Members" v={o.members} />
                 <KV k="Created" v={fmt(o.createdAt)} />
@@ -84,7 +84,7 @@ export default function AdminDirectory() {
         <View>
           <Intro>Coach ↔ client links across the platform.</Intro>
           {counts.length > 0 && (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 12 }}>
               {counts.map((c) => (
                 <Chip key={c.status} color={statusColor[c.status] ?? palette.chalk}>
                   {c.status} · {c.n}
@@ -100,7 +100,7 @@ export default function AdminDirectory() {
             links.map((l) => (
               <Card key={l.id}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 14, color: palette.chalk, flexShrink: 1 }}>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk, flexShrink: 1 }}>
                     {l.coach} → {l.client}
                   </Text>
                   <Chip color={statusColor[l.status] ?? palette.chalk}>{l.status}</Chip>
