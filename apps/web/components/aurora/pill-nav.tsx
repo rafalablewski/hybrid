@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { groupedNav, navForPersona, navVisibleTo, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
 import { useFlags } from "@/lib/use-flags";
 import { useLang } from "@/lib/i18n";
@@ -16,10 +16,11 @@ import { AuroraIcon } from "./icons";
  * gates to Aurora (renders null in Classic). Glyphs are the uploaded design-kit
  * line icons only. "More" opens a sheet with the full persona-filtered nav.
  */
+// PRIMARY pills sit either side of the elevated center Train action. Cockpit was
+// removed from the bar (it still lives in the More sheet's grouped nav); the bar
+// reads Today · History · [Train] · More · You.
 const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
   { id: "today", icon: "village", label: "Today" },
-  { id: "cockpit", icon: "user-circle", label: "Cockpit" },
-  { id: "log", icon: "list-add", label: "Train" },
   { id: "history", icon: "copy", label: "History" },
 ];
 
@@ -38,8 +39,11 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
   const go = (id: string) => { setMoreOpen(false); onSelect(id); };
 
-  const tabs = PRIMARY.filter((p) => p.id !== "cockpit" || navVisibleTo(persona, "cockpit", access));
-  const moreActive = moreOpen || (activeId != null && !tabs.some((tb) => tb.id === activeId));
+  const tabs = PRIMARY;
+  // "More" lights only when the active screen isn't one of the five bar slots
+  // (Today, History, Train/log, You/profile) and the sheet isn't explicitly open.
+  const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "profile"]);
+  const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
   const groups = groupedNav(navForPersona(persona, undefined, access))
     .map((g) => ({ ...g, items: g.items.filter((it) => isEnabled(`nav.${it.id}`)) }))
     .filter((g) => g.items.length > 0);
@@ -97,10 +101,13 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             than the classic .liquid-glass (translucent tint + a top rim highlight,
             no grain/sheen). */}
         <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
+          {/* Today · History | [Train] | More · You */}
           {tabs.map((tab) => (
             <PillButton key={tab.id} icon={tab.icon} label={label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
+          <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
           <PillButton icon="settings" label="More" active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
+          <PillButton icon="user-circle" label={label("profile", "You")} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>
       </div>
     </>
@@ -112,6 +119,29 @@ function PillButton({ icon, label, active, onClick }: { icon: AuroraIconName; la
     <button onClick={onClick} aria-label={label} aria-pressed={active} style={{ flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
       <span style={{ width: 52, height: 52, borderRadius: 26, display: "grid", placeItems: "center", background: active ? C("chalk") : "transparent" }}>
         <AuroraIcon name={icon} size={22} strokeWidth={2.6} color={active ? C("ink") : C("ash")} />
+      </span>
+    </button>
+  );
+}
+
+/**
+ * The elevated center Train action — a larger lime circle raised above the bar
+ * (an ink ring + soft lime glow) with an inline dumbbell glyph, like the mockup.
+ */
+function TrainFab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} aria-label={label} aria-pressed={active} style={{ flex: 1, height: 52, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer" }}>
+      <span
+        style={{
+          width: 58, height: 58, borderRadius: "50%", display: "grid", placeItems: "center",
+          background: C("lime"), border: `4px solid ${C("ink")}`,
+          boxShadow: `0 10px 24px -6px color-mix(in srgb, var(--color-lime) 60%, transparent)${active ? `, 0 0 0 2px color-mix(in srgb, var(--color-lime) 40%, transparent)` : ""}`,
+          transform: "translateY(-20px)",
+        }}
+      >
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke={C("ink")} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />
+        </svg>
       </span>
     </button>
   );
