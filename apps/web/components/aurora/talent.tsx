@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Bench = { metric: BenchmarkMetric; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
 type Report = { cohort: { sport: string; sex: string; age: number }; benchmarks: Bench[]; overall: number; potential: number; modelVersion: string };
@@ -16,6 +17,7 @@ const pctColor = (p: number) => (p >= 90 ? "lime" : p >= 70 ? "blue" : p >= 40 ?
  *  flow: benchmarks, maturation-adjusted potential and discovery, in the rounded
  *  Aurora style. */
 export default function AuroraTalent() {
+  const isMobile = useIsMobile();
   const [profile, setProfile] = useState<Profile>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [hpi, setHpi] = useState<number | null>(null);
@@ -103,7 +105,7 @@ export default function AuroraTalent() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
         <div style={card}>
           <div style={kicker("ash")}>Your profile</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>

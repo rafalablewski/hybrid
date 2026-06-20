@@ -40,7 +40,7 @@ function GoalGrid({ pick }: { pick: (id: string) => void }) {
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
             {group.category}
           </Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 16 }}>
             {group.goals.map((g) => (
               <Card
                 key={g.id}
@@ -85,7 +85,7 @@ function PlanList({
           No plans here yet — plans for this goal are on the way.
         </Mono>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
         {goal.plans.map((p) => (
           <Card
             key={p.id}
@@ -157,7 +157,7 @@ function PlanDetailView({
         {plan.weeks} weeks · {plan.sessions}×/week · {d.level}
       </Mono>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12, marginBottom: 16 }}>
         <Info label="Who it's for" value={d.forWho} />
         <Info label="Outcome" value={d.outcome} />
         <Info label="Session length" value={d.sessionLength} />
@@ -193,7 +193,8 @@ function PlanDetailView({
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
             {session.day}
           </Mono>
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
+          <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10, minWidth: 420 }}>
             <thead>
               <tr>
                 {["Exercise", "Sets×Reps", "Rest", "RPE"].map((h) => (
@@ -217,6 +218,7 @@ function PlanDetailView({
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       ))}
 

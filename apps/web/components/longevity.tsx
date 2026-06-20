@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { longevityReport } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type ApiSignal = { kind: string; value: number; ts: string };
 
 const deltaColor = (d: number) => (d <= -3 ? LIME : d < 1 ? BLUE : d < 4 ? AMBER : RED);
 
 export default function Longevity() {
+  const isMobile = useIsMobile();
   const [f, setF] = useState({ age: "", restingHr: "", hrv: "", vo2: "", sleepH: "" });
 
   // prefill recovery markers from the latest signals
@@ -52,7 +54,7 @@ export default function Longevity() {
         </Mono>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Markers</Mono>
           <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>recovery markers prefilled from your latest signals when available</Mono>

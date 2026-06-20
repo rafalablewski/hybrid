@@ -181,31 +181,33 @@ export default function Trends({
             ))}
           </div>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${LINE}` }}>
-            {([["exercise", "name"], ["freq", "sessions"], ["best e1RM", "bestE1rm"], ["volume", "volume"], ["trend", null]] as const).map(([h, k]) => (
-              <button key={h} disabled={!k} onClick={() => k && sortBy(k)}
-                style={{ ...mono, fontSize: 10, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? LIME : ASH }}>
-                {h}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
-              </button>
-            ))}
+        <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
+          <div style={{ minWidth: 480 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${LINE}` }}>
+              {([["exercise", "name"], ["freq", "sessions"], ["best e1RM", "bestE1rm"], ["volume", "volume"], ["trend", null]] as const).map(([h, k]) => (
+                <button key={h} disabled={!k} onClick={() => k && sortBy(k)}
+                  style={{ ...mono, fontSize: 10, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? LIME : ASH }}>
+                  {h}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+                </button>
+              ))}
+            </div>
+            {sortedTable.map((r) => {
+              const tr = TREND_GLYPH[r.trend];
+              return (
+                <button
+                  key={r.name}
+                  onClick={() => onOpenExercise?.(r.name)}
+                  style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, padding: "9px 0", border: "none", borderTop: `1px solid ${LINE}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%" }}
+                >
+                  <Mono s={{ fontSize: 13, color: onOpenExercise ? LIME : CHALK }}>{r.name}</Mono>
+                  <Mono s={{ fontSize: 13 }}>{r.sessions}×</Mono>
+                  <Mono s={{ fontSize: 13 }} c={r.kind === "strength" ? CHALK : ASH}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : "–"}</Mono>
+                  <Mono s={{ fontSize: 13 }}>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</Mono>
+                  <span style={{ ...mono, fontSize: 13, color: tr.c }}>{tr.g}</span>
+                </button>
+              );
+            })}
           </div>
-          {sortedTable.map((r) => {
-            const tr = TREND_GLYPH[r.trend];
-            return (
-              <button
-                key={r.name}
-                onClick={() => onOpenExercise?.(r.name)}
-                style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, padding: "9px 0", border: "none", borderTop: `1px solid ${LINE}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%" }}
-              >
-                <Mono s={{ fontSize: 13, color: onOpenExercise ? LIME : CHALK }}>{r.name}</Mono>
-                <Mono s={{ fontSize: 13 }}>{r.sessions}×</Mono>
-                <Mono s={{ fontSize: 13 }} c={r.kind === "strength" ? CHALK : ASH}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : "–"}</Mono>
-                <Mono s={{ fontSize: 13 }}>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</Mono>
-                <span style={{ ...mono, fontSize: 13, color: tr.c }}>{tr.g}</span>
-              </button>
-            );
-          })}
         </div>
       </Card>
     </div>

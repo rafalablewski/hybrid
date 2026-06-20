@@ -92,21 +92,23 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
             {PERIODS.map((p) => <button key={p.id} onClick={() => setPeriod(p.id)} style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "4px 12px", borderRadius: 999, cursor: "pointer", color: period === p.id ? C("ink") : C("ash"), background: period === p.id ? C("lime") : "transparent", border: `1px solid ${period === p.id ? C("lime") : C("line")}` }}>{p.label}</button>)}
           </div>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-            {([["exercise", "name"], ["freq", "sessions"], ["best e1RM", "bestE1rm"], ["volume", "volume"], ["trend", null]] as const).map(([h, k]) => (
-              <button key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{h}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
-            ))}
+        <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
+          <div style={{ minWidth: 420 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
+              {([["exercise", "name"], ["freq", "sessions"], ["best e1RM", "bestE1rm"], ["volume", "volume"], ["trend", null]] as const).map(([h, k]) => (
+                <button key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{h}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
+              ))}
+            </div>
+            {sortedTable.map((r) => { const tr = TREND_GLYPH[r.trend]; return (
+              <button key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, padding: "9px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: 13 }}>
+                <span style={{ color: onOpenExercise ? C("lime") : C("chalk") }}>{r.name}</span>
+                <span>{r.sessions}×</span>
+                <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : "–"}</span>
+                <span>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</span>
+                <span style={{ color: C(tr.c) }}>{tr.g}</span>
+              </button>
+            ); })}
           </div>
-          {sortedTable.map((r) => { const tr = TREND_GLYPH[r.trend]; return (
-            <button key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: 8, padding: "9px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: 13 }}>
-              <span style={{ color: onOpenExercise ? C("lime") : C("chalk") }}>{r.name}</span>
-              <span>{r.sessions}×</span>
-              <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : "–"}</span>
-              <span>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</span>
-              <span style={{ color: C(tr.c) }}>{tr.g}</span>
-            </button>
-          ); })}
         </div>
       </div>
     </div>

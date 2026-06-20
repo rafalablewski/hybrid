@@ -302,6 +302,8 @@ export default function WorkoutBlocks({
 
           {b.kind === "strength" ? (
             <>
+              <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+              <div style={{ minWidth: detailed ? 360 : 240 }}>
               <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
                 <span />
                 <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load ({units})</Mono>
@@ -380,6 +382,8 @@ export default function WorkoutBlocks({
                   </button>
                 </div>
               ))}
+              </div>
+              </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
                   + set
@@ -426,7 +430,8 @@ export default function WorkoutBlocks({
               )}
             </>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+            <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 6, minWidth: 360 }}>
               {["format", "work (s)", "rest (s)", "rounds", "minutes"].map((h) => (
                 <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
                   {h}
@@ -437,6 +442,7 @@ export default function WorkoutBlocks({
               <input value={condVal(b.uid, "rest", b.rest)} onChange={(e) => setCondNum(b.uid, "rest", e.target.value)} placeholder="20" style={input} />
               <input value={condVal(b.uid, "rounds", b.rounds)} onChange={(e) => setCondNum(b.uid, "rounds", e.target.value)} placeholder="8" style={input} />
               <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="12" style={input} />
+            </div>
             </div>
           )}
         </Card>

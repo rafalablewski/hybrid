@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -20,6 +21,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   const [selected, setSelected] = useState<string>(todayKey());
   const [events, setEvents] = useState<EventRow[]>([]);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+  const isMobile = useIsMobile();
 
   const loadAssignments = () => fetch("/api/assignments").then((r) => (r.ok ? r.json() : { assignments: [] })).then((d: { assignments?: AssignmentRow[] }) => setAssignments((d.assignments ?? []).map((a) => ({ ...a, date: a.date.slice(0, 10) })))).catch(() => setAssignments([]));
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, minWidth: 36, height: 36, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 20 }}>{monthLabel}</div>

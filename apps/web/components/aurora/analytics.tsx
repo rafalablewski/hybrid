@@ -19,7 +19,7 @@ import type { RosterRow } from "@/lib/use-roster";
  */
 const C = (v: string) => `var(--color-${v})`;
 const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 };
-const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 };
+const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 16 };
 const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: 12 } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -236,7 +236,8 @@ export function AuroraOperatorAnalytics() {
 /* Shared rounded table */
 function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 360 }}>
       <thead>
         <tr>{head.map((h) => <th key={h} style={{ ...mono, fontSize: 10.5, color: C("ash"), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>{h}</th>)}</tr>
       </thead>
@@ -250,5 +251,6 @@ function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

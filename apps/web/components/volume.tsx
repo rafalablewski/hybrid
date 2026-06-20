@@ -88,14 +88,16 @@ export default function Volume({ sessions }: { sessions: LoggedSession[] }) {
               </button>
             )}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr repeat(5, 1fr)", gap: 6, marginTop: 12, alignItems: "center" }}>
-            <span />
-            {(["MV", "MEV", "MAV lo", "MAV hi", "MRV"] as const).map((h) => (
-              <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase", textAlign: "center" }}>{h}</Mono>
-            ))}
-            {ALL_MUSCLES.map((m) => (
-              <Row key={m} m={m} label={MUSCLE_LABEL[m] ?? m} l={lm[m]} onEdit={editField} />
-            ))}
+          <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr repeat(5, 1fr)", gap: 6, marginTop: 12, alignItems: "center", minWidth: 420 }}>
+              <span />
+              {(["MV", "MEV", "MAV lo", "MAV hi", "MRV"] as const).map((h) => (
+                <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase", textAlign: "center" }}>{h}</Mono>
+              ))}
+              {ALL_MUSCLES.map((m) => (
+                <Row key={m} m={m} label={MUSCLE_LABEL[m] ?? m} l={lm[m]} onEdit={editField} />
+              ))}
+            </div>
           </div>
           <Mono s={{ fontSize: 11, color: ASH, display: "block", marginTop: 10 }}>
             Landmarks are individual — tune them to your own recovery. Values clamp to a sane order automatically; blank a field to restore its default.

@@ -15,6 +15,7 @@ import {
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, Mono, Card, ChartFrame, txt,
 } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
   { id: "lose", label: "Lose" },
@@ -25,6 +26,7 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
 export default function Nutrition() {
+  const isMobile = useIsMobile();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -123,7 +125,7 @@ export default function Nutrition() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
         <ChartFrame title="Today vs adaptive target" kicker="macros" c={LIME}>
           {personalized ? (
             <>
@@ -145,7 +147,7 @@ export default function Nutrition() {
                 check-in) and log a few days of intake, and we&apos;ll estimate your maintenance from
                 your own energy balance and set goal-aware macros.
               </Mono>
-              <div style={{ display: "flex", gap: 18 }}>
+              <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
                 <Today2 label="Logged today" value={`${Math.round(today.kcal)} kcal`} />
                 <Today2 label="Protein" value={`${Math.round(today.protein)}g`} />
                 <Today2 label="Carbs" value={`${Math.round(today.carbs)}g`} />

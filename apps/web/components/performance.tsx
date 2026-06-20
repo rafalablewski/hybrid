@@ -16,6 +16,7 @@ import {
   colors,
 } from "@hybrid/core";
 import RtpPanel from "./rtp-panel";
+import { useIsMobile } from "@/lib/use-media-query";
 
 // Raw hex for SVG fills — these go on SVG presentation attributes where the
 // themed `var(--color-*)` constants from lib/ui can't resolve.
@@ -66,6 +67,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 }
 
 export default function Performance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
+  const isMobile = useIsMobile();
   if (sessions.length === 0)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
@@ -90,7 +92,7 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
         <Card style={{ borderLeft: `3px solid ${hpiColor(state.hpi.band)}` }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Athlete Twin · HPI</Mono>
           <div style={{ ...disp, fontWeight: 900, fontSize: 56, color: hpiColor(state.hpi.band), lineHeight: 1.1, margin: "6px 0" }}>
@@ -144,13 +146,13 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>Injury risk · tissue map</Mono>
           <Mono s={{ fontSize: 10 }} c={ASH}>model {risk.modelVersion} · calibrated probability</Mono>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
-          <div style={{ display: "flex", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
+          <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
             <Figure regions={FRONT} label="anterior" byTissue={byTissue} />
             <Figure regions={BACK} label="posterior" byTissue={byTissue} />
           </div>
-          <div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
               <thead>
                 <tr>
                   {["Tissue", "Risk", "P(injury)", "ACWR", "Top driver"].map((h) => (

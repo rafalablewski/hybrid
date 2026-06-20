@@ -58,10 +58,12 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Your landmarks · weekly sets</span>
             {customized && <button onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), background: "none", border: "none", cursor: "pointer" }}>Reset to defaults</button>}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr repeat(5, 1fr)", gap: 6, marginTop: 12, alignItems: "center" }}>
-            <span />
-            {(["MV", "MEV", "MAV lo", "MAV hi", "MRV"] as const).map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", textAlign: "center", color: C("ash") }}>{h}</span>)}
-            {ALL_MUSCLES.map((m) => <Row key={m} m={m} label={MUSCLE_LABEL[m] ?? m} l={lm[m]} onEdit={editField} />)}
+          <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr repeat(5, 1fr)", gap: 6, marginTop: 12, alignItems: "center", minWidth: 460 }}>
+              <span />
+              {(["MV", "MEV", "MAV lo", "MAV hi", "MRV"] as const).map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", textAlign: "center", color: C("ash") }}>{h}</span>)}
+              {ALL_MUSCLES.map((m) => <Row key={m} m={m} label={MUSCLE_LABEL[m] ?? m} l={lm[m]} onEdit={editField} />)}
+            </div>
           </div>
         </div>
       )}

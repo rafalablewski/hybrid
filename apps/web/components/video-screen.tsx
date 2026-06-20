@@ -36,7 +36,7 @@ export default function VideoScreen() {
         </Mono>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 14 }}>
         {analyses.length === 0 && <Mono s={{ fontSize: 13 }}>No analyses yet — record a clip on the phone to see the engine output.</Mono>}
         {analyses.map((a) => (
           <Card key={a.id}>

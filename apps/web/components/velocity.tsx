@@ -120,7 +120,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 16 }}>
         {/* estimated 1RM headline */}
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
@@ -213,7 +213,7 @@ export default function Velocity({ sessions }: { sessions: LoggedSession[] }) {
         </ChartFrame>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 16, marginTop: 16 }}>
         {/* velocity zones reference */}
         <ChartFrame title="Velocity zones" kicker="training quality" c={BLUE}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (

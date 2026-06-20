@@ -11,6 +11,7 @@ import {
   type OrgRole,
   type TeamNode,
 } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Org = { id: string; name: string; role: OrgRole };
 type Member = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
@@ -52,6 +53,7 @@ export default function AuroraOrg() {
   const [inviteRole, setInviteRole] = useState<OrgRole>("COACH");
   const [inviteErr, setInviteErr] = useState("");
   const [athlete, setAthlete] = useState<AthleteView | null>(null);
+  const isMobile = useIsMobile();
 
   const loadOrgs = async () => {
     const res = await fetch("/api/org");
@@ -172,8 +174,8 @@ export default function AuroraOrg() {
           ))}
           {orgs.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No organizations yet — create one to run a club or academy.</span>}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <input value={newOrg} onChange={(e) => setNewOrg(e.target.value)} placeholder="New organization name" style={input} />
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          <input value={newOrg} onChange={(e) => setNewOrg(e.target.value)} placeholder="New organization name" style={{ ...input, flex: "1 1 200px", minWidth: 0 }} />
           <button onClick={createOrg} style={btn("lime")}>Create org</button>
         </div>
       </div>
@@ -185,7 +187,7 @@ export default function AuroraOrg() {
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, color: C("chalk") }}>{roleScope(detail.myRole)}</div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
             <div style={card}>
               <div style={kicker("ash")}>Team hierarchy</div>
               <div style={{ marginTop: 12 }}>
@@ -202,7 +204,7 @@ export default function AuroraOrg() {
               </div>
               {canManage && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={input} />
+                  <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={{ ...input, flex: "1 1 140px", minWidth: 0 }} />
                   <select value={newTeamParent} onChange={(e) => setNewTeamParent(e.target.value)} style={selectStyle}>
                     <option value="">(top level)</option>
                     {tree.map((t) => (
@@ -218,7 +220,7 @@ export default function AuroraOrg() {
               <div style={kicker("ash")}>Staff & athletes</div>
               <div style={{ marginTop: 12 }}>
                 {detail.members.map((m) => (
-                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
+                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <div style={{ minWidth: 0 }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, display: "block", color: m.role === "ATHLETE" && canSeeAthletes ? C("blue") : C("chalk") }}>
                         {m.role === "ATHLETE" && canSeeAthletes ? (
@@ -249,7 +251,7 @@ export default function AuroraOrg() {
               {canManage && (
                 <div style={{ marginTop: 12 }}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={input} />
+                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={{ ...input, flex: "1 1 160px", minWidth: 0 }} />
                     <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)} style={selectStyle}>
                       {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                     </select>

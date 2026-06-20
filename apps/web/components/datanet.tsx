@@ -63,7 +63,7 @@ export default function DataNet() {
       </Card>
 
       {stats && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 12 }}>
           <Stat label="Athletes (consented)" value={stats.athletes} c={LIME} />
           <Stat label="Observations" value={stats.observations} c={BLUE} />
           <Stat label="Cohorts" value={stats.cohorts} c={CHALK} />
@@ -105,7 +105,7 @@ export default function DataNet() {
               then. As discoverable profiles accumulate, norms refit from these and replace the priors.
             </Mono>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
               <thead>
                 <tr>
                   {["Cohort", "Metric", "n", "Mean", "SD", "P10", "P50", "P90"].map((h) => (

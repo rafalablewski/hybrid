@@ -96,7 +96,7 @@ export default function RunTrack({ onSaved }: { onSaved?: () => void }) {
 
       {/* Live stats */}
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: 12 }}>
           <Stat label="Time" value={mmss(elapsed)} color={CHALK} />
           <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={BLUE} />
           <Stat label="Pace /km" value={pace ?? "—"} color={LIME} />

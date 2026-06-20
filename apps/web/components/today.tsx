@@ -27,6 +27,7 @@ import {
 import ReconciledWeek from "./reconciled-week";
 import AskCoach from "./ai-coach";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
+import { useIsMobile } from "@/lib/use-media-query";
 import { readIntake, type Intake } from "@/lib/intake";
 import {
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, roleHex,
@@ -71,6 +72,7 @@ export default function Today({
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Twin). Switchable from Settings.
   const isAthlete = usePersona() !== "casual";
+  const isMobile = useIsMobile();
   // A coached (free) client: not an athlete, but gets a READ-ONLY view of the
   // plan their coach assigned (see useHasActiveCoach).
   const coached = useHasActiveCoach();
@@ -117,7 +119,7 @@ export default function Today({
   );
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
       {/* PLAN TODAY + AI COACH — a horizontal, scroll-snapping row (swipe right
           for the AI coach). Spans both columns; each card snaps to full width. */}
       <div
@@ -382,7 +384,7 @@ export default function Today({
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
             Performance State · Athlete Twin
           </Mono>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
             <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
             <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
