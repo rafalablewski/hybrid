@@ -280,10 +280,10 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
   );
 }
 
-export function Mono({ children, style, color }: { children: ReactNode; style?: TextStyle; color?: string }) {
+export function Mono({ children, style, color, numberOfLines }: { children: ReactNode; style?: TextStyle; color?: string; numberOfLines?: number }) {
   const { palette } = useTheme();
   return (
-    <Text style={[{ fontFamily: F.mono, fontSize: 13, color: color ? txt(palette, color) : palette.ash }, style]}>
+    <Text numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: 13, color: color ? txt(palette, color) : palette.ash }, style]}>
       {children}
     </Text>
   );
