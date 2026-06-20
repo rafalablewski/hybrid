@@ -73,3 +73,41 @@ export function loadIntensity(days: Record<string, DaySummary>): (date: string) 
     return d ? Math.min(1, d.load / max) : 0;
   };
 }
+
+export interface HeatCell {
+  date: string; // YYYY-MM-DD
+  /** 0 = rest, 1..4 = increasing training load that day */
+  level: 0 | 1 | 2 | 3 | 4;
+  count: number; // sessions that day
+  load: number; // summed sRPE load
+}
+
+/**
+ * GitHub-style training heatmap: the last `weeks` calendar weeks as COLUMNS,
+ * each a Monday→Sunday array of 7 day cells. Each cell carries a 0..4 intensity
+ * level from that day's sRPE load relative to the athlete's busiest day in the
+ * window, so the grid reads as a "year of training" at a glance. The final
+ * column is the week containing `now` (future days simply read as level 0).
+ */
+export function trainingHeatmap(sessions: LoggedSession[], weeks = 26, now = Date.now()): HeatCell[][] {
+  const days = sessionsByDay(sessions);
+  const maxLoad = Math.max(1, ...Object.values(days).map((d) => d.load));
+  const today = new Date(now);
+  const dow = (today.getUTCDay() + 6) % 7; // 0 = Monday
+  const mondayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - dow * DAY;
+  const startMs = mondayMs - (weeks - 1) * 7 * DAY;
+  const cols: HeatCell[][] = [];
+  for (let w = 0; w < weeks; w++) {
+    const col: HeatCell[] = [];
+    for (let d = 0; d < 7; d++) {
+      const key = fmt(startMs + (w * 7 + d) * DAY);
+      const summary = days[key];
+      const load = summary?.load ?? 0;
+      const frac = load / maxLoad;
+      const level = load <= 0 ? 0 : frac > 0.75 ? 4 : frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1;
+      col.push({ date: key, level: level as HeatCell["level"], count: summary?.count ?? 0, load });
+    }
+    cols.push(col);
+  }
+  return cols;
+}
