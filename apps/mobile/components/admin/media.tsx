@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Image, Alert } from "react-native";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
@@ -135,7 +135,7 @@ export default function AdminMedia() {
             />
           ) : null}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(a.status)}>{a.status}</Chip>
             <Chip color={palette.ash}>{a.kind}</Chip>
             {a.sizeBytes ? <Chip color={palette.ash}>{fmtSize(a.sizeBytes)}</Chip> : null}
@@ -146,7 +146,7 @@ export default function AdminMedia() {
               <Input label="Title" value={form.title} onChangeText={(t) => setForm({ ...form, title: t })} placeholder="Title" />
               <Input label="Alt / caption" value={form.alt} onChangeText={(t) => setForm({ ...form, alt: t })} placeholder="Alt / caption" />
               <Input label="Tags (comma-separated)" value={form.tags} onChangeText={(t) => setForm({ ...form, tags: t })} placeholder="tags, comma-separated" />
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
                 <PillBtn
                   label="Save"
                   disabled={busy}
@@ -163,13 +163,13 @@ export default function AdminMedia() {
             </View>
           ) : (
             <>
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk }}>{a.title}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.title}</Text>
               {a.tags.length > 0 ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 6 }}>
                   {a.tags.map((t) => <Chip key={t} color={palette.ash}>{t}</Chip>)}
                 </View>
               ) : null}
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
                 <PillBtn label="Show URL" outline color={palette.ash} onPress={() => showUrl(a)} />
                 <PillBtn label="Edit" outline color={palette.ash} disabled={busy} onPress={() => openEdit(a)} />
                 {a.status !== "published" ? (

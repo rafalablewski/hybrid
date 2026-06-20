@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
 
@@ -72,15 +72,15 @@ export default function AdminAudit() {
             placeholder="Filter by action (e.g. user.update)…"
           />
         </View>
-        <Mono color={palette.ash} style={{ fontSize: 12 }}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
+        <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </View>
 
-      {err ? <Mono color={palette.red} style={{ fontSize: 12, marginBottom: 12 }}>{err}</Mono> : null}
+      {err ? <Mono color={palette.red} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono> : null}
 
       {loading && !data ? <Loading /> : null}
 
       {data && data.entries.length === 0 ? (
-        <Mono color={palette.ash} style={{ fontSize: 13, textAlign: "center", paddingVertical: 30 }}>No audit events recorded yet.</Mono>
+        <Mono color={palette.ash} style={{ fontSize: fs.body, textAlign: "center", paddingVertical: 30 }}>No audit events recorded yet.</Mono>
       ) : null}
 
       {data?.entries.map((e) => {
@@ -88,23 +88,23 @@ export default function AdminAudit() {
         return (
           <Card key={e.id}>
             <Pressable onPress={() => setOpen(isOpen ? null : e.id)}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <Mono color={palette.ash} style={{ fontSize: 11 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>
                   {new Date(e.createdAt).toISOString().slice(0, 19).replace("T", " ")}
                 </Mono>
                 <Chip color={palette.amber}>{e.action}</Chip>
               </View>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6 }}>
-                <Mono color={palette.chalk} style={{ fontSize: 12, flex: 1 }}>{e.actorEmail}</Mono>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 6 }}>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{e.actorEmail}</Mono>
                 <Text style={{ color: palette.ash, fontFamily: F.mono }}>{isOpen ? "▾" : "▸"}</Text>
               </View>
-              <Mono color={palette.ash} style={{ fontSize: 12, marginTop: 4 }}>
+              <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>
                 {e.summary || (e.targetType ? `${e.targetType}:${e.targetId?.slice(0, 8)}` : "—")}
               </Mono>
             </Pressable>
             {isOpen ? (
               <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: palette.ink2 }}>
-                <Mono color={palette.ash} style={{ fontSize: 11, lineHeight: 16 }}>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro, lineHeight: 16 }}>
                   {JSON.stringify({ ip: e.ip, targetType: e.targetType, targetId: e.targetId, metadata: e.metadata }, null, 2)}
                 </Mono>
               </View>
@@ -114,9 +114,9 @@ export default function AdminAudit() {
       })}
 
       {data && data.pages > 1 ? (
-        <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 10, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: space.ms, marginTop: 12 }}>
           <PillBtn label="← Prev" outline disabled={page <= 1} onPress={() => setPage((p) => Math.max(1, p - 1))} />
-          <Mono color={palette.ash} style={{ fontSize: 12 }}>{data.page} / {data.pages}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{data.page} / {data.pages}</Mono>
           <PillBtn label="Next →" outline disabled={page >= data.pages} onPress={() => setPage((p) => p + 1)} />
         </View>
       ) : null}

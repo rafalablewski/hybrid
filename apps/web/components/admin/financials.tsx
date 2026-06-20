@@ -33,7 +33,7 @@ import {
   type SegmentEconomics,
   type EntitlementCell,
 } from "@hybrid/core";
-import {
+import { fs, space,
   LINE,
   LIME,
   CHALK,
@@ -147,7 +147,7 @@ export default function AdminFinancials() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-      <Mono s={{ fontSize: 14, lineHeight: 1.55 }}>
+      <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.55 }}>
         How HYBRID makes money, what it costs to run, and a live unit-economics
         model — seeded from real platform counts, every assumption editable. Read
         it top to bottom: the <strong style={{ color: CHALK }}>headline</strong> sizes the business,{" "}
@@ -163,7 +163,7 @@ export default function AdminFinancials() {
       {showGlossary && <Glossary />}
 
       {/* ---- headline ---- */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: space.lg }}>
         <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} sub={`ARR ${usdFull(r.arr)}`} c={LIME} />
         <Stat
           label="Gross margin"
@@ -187,7 +187,7 @@ export default function AdminFinancials() {
 
       {/* ---- how we make money ---- */}
       <Section title="How HYBRID makes money" kicker="Revenue streams · who pays · what they pay for">
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
           {REVENUE_STREAMS.map((stream) => {
             const color = STREAM_COLOR[stream.id];
             const monthly =
@@ -195,20 +195,20 @@ export default function AdminFinancials() {
             const shareOfMrr = monthly != null && r.revenue.total > 0 ? (monthly / r.revenue.total) * 100 : null;
             return (
               <Card key={stream.id} style={{ borderLeft: `3px solid ${color}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>
                     {stream.label}
                     {stream.future && <span style={{ marginLeft: 8 }}><Chip c={ASH}>Future</Chip></span>}
                   </div>
                   {monthly != null ? (
-                    <Mono s={{ fontSize: 14 }} c={color}>
+                    <Mono s={{ fontSize: fs.bodyLg }} c={color}>
                       {usdFull(monthly)}/mo modeled{shareOfMrr != null ? ` · ${shareOfMrr.toFixed(0)}% of MRR` : ""}
                     </Mono>
                   ) : (
-                    <Mono s={{ fontSize: 13 }} c={ASH}>not in live margin</Mono>
+                    <Mono s={{ fontSize: fs.body }} c={ASH}>not in live margin</Mono>
                   )}
                 </div>
-                <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={ASH}>
+                <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }} c={ASH}>
                   {stream.whoPays}
                 </Mono>
                 <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap" }}>
@@ -242,7 +242,7 @@ export default function AdminFinancials() {
           expects. The <span style={{ color: txt(LIME) }}>≈ USD</span> figure is what we keep before that
           market&apos;s tax + Stripe fee, so two markets at the same headline can net very differently.
         </Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: space.md }}>
           {MARKET_PRICING.map((m) => (
             <MarketCard key={m.id} m={m} />
           ))}
@@ -263,11 +263,11 @@ export default function AdminFinancials() {
       <Section title="What it costs us" kicker="Cost of goods + fixed opex (COGS drivers)">
         {agentCost && agentCost.runs > 0 && (
           <Card style={{ borderLeft: `3px solid ${BLUE}`, marginBottom: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>Actual AI agent spend</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>Actual AI agent spend</div>
               <Chip c={BLUE}>real · last 30d</Chip>
             </div>
-            <Mono s={{ fontSize: 14, display: "block", marginTop: 4 }} c={CHALK}>
+            <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 4 }} c={CHALK}>
               {usdFull(agentCost.spend)} over {agentCost.runs.toLocaleString()} runs (≈ {usdFull(agentCost.spend / 30)}/day)
             </Mono>
             <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
@@ -275,20 +275,20 @@ export default function AdminFinancials() {
             </Mono>
           </Card>
         )}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: space.md }}>
           {COST_DRIVERS.map((c) => {
             const live =
               c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "support" ? r.cogs.support : c.id === "fixed" ? r.cogs.fixed : null;
             const shareOfRev = live != null && r.revenue.total > 0 ? (live / r.revenue.total) * 100 : null;
             return (
               <Card key={c.id} style={{ borderLeft: `3px solid ${c.kind === "fixed" ? AMBER : RED}`, gridColumn: c.id === "fixed" ? "1 / -1" : undefined }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{c.label}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{c.label}</div>
                   <Chip c={c.kind === "fixed" ? AMBER : RED}>{c.kind === "fixed" ? "fixed" : "COGS"}</Chip>
                 </div>
-                <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>{c.rate}</Mono>
+                <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }} c={CHALK}>{c.rate}</Mono>
                 {live != null && (
-                  <Mono s={{ fontSize: 13, display: "block", marginTop: 2 }} c={ASH}>
+                  <Mono s={{ fontSize: fs.body, display: "block", marginTop: 2 }} c={ASH}>
                     ≈ {usdFull(live)}/mo{shareOfRev != null ? ` · ${shareOfRev.toFixed(0)}% of revenue` : ""}
                   </Mono>
                 )}
@@ -313,12 +313,12 @@ export default function AdminFinancials() {
               : "Loading live counts…"
         }
       >
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1.1fr) minmax(0,1fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1.1fr) minmax(0,1fr)", gap: space.lg }}>
           {/* inputs */}
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Assumptions</Mono>
-              <div style={{ display: "flex", gap: 6 }}>
+              <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Assumptions</Mono>
+              <div style={{ display: "flex", gap: space.xs }}>
                 <Btn label="Reseed live" active={useLive} onClick={reseed} disabled={!seed} />
                 <Btn label="Defaults" active={false} onClick={reset} />
               </div>
@@ -371,8 +371,8 @@ export default function AdminFinancials() {
           </Card>
 
           {/* outputs */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: space.md }}>
               <Stat label="MRR" value={usdFull(r.revenue.total)} c={LIME} />
               <Stat label="ARR" value={usdFull(r.arr)} c={LIME} />
               <Stat label="Blended ARPU" value={`$${r.blendedArpu.toFixed(2)}`} sub={`${r.payingUnits.toLocaleString()} paying`} c={CHALK} />
@@ -385,8 +385,8 @@ export default function AdminFinancials() {
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={revChart}>
                   <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                  <XAxis dataKey="name" stroke={ASH} style={{ ...mono, fontSize: 12 }} />
-                  <YAxis stroke={ASH} style={{ ...mono, fontSize: 12 }} tickFormatter={usd} width={44} />
+                  <XAxis dataKey="name" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
+                  <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={44} />
                   <Tooltip contentStyle={tip} formatter={(v) => usdFull(Number(v))} cursor={{ fill: `${LIME}10` }} />
                   <Bar dataKey="v" radius={[4, 4, 0, 0]}>
                     {revChart.map((d) => (
@@ -398,7 +398,7 @@ export default function AdminFinancials() {
             </ChartFrame>
 
             <Card>
-              <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>
+              <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>
                 Monthly P&L
               </Mono>
               <PnL k="Revenue (MRR)" v={usdFull(r.revenue.total)} c={LIME} />
@@ -428,7 +428,7 @@ export default function AdminFinancials() {
           ARPU, contribution margin, churn and CAC. The bar on each metric is{" "}
           <span style={{ color: txt(LIME) }}>green</span> when it clears the healthy benchmark.
         </Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: space.md }}>
           <SegmentCard seg={r.segments.b2c} color={LIME} />
           <SegmentCard seg={r.segments.coach} color={VIOLET} />
         </div>
@@ -436,7 +436,7 @@ export default function AdminFinancials() {
 
       {/* ---- SaaS health scorecard ---- */}
       <Section title="SaaS health scorecard" kicker="The efficiency ratios investors read first">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.md }}>
           <Indicator
             label="Rule of 40"
             value={Math.round(h.ruleOf40).toString()}
@@ -480,7 +480,7 @@ export default function AdminFinancials() {
             says="Capital efficiency of growth. <1× great, >2× inefficient."
           />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12, marginTop: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.md, marginTop: 12 }}>
           <Indicator
             label="Runway"
             value={h.runwayMonths === Infinity ? "∞" : `${Math.floor(h.runwayMonths)} mo`}
@@ -507,7 +507,7 @@ export default function AdminFinancials() {
 
       {/* ---- 12-month projection ---- */}
       <Section title="12-month forecast" kicker="MRR trajectory + cumulative cash">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12, marginBottom: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: space.md, marginBottom: 14 }}>
           <Stat label="MRR in 12 mo" value={usdFull(ps.endingMrr)} sub={`ARR ${usdFull(ps.endingArr)}`} c={LIME} />
           <Stat
             label="Cash in 12 mo"
@@ -537,16 +537,16 @@ export default function AdminFinancials() {
                 </linearGradient>
               </defs>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="month" stroke={ASH} style={{ ...mono, fontSize: 12 }} tickFormatter={(m) => `M${m}`} />
-              <YAxis yAxisId="mrr" stroke={ASH} style={{ ...mono, fontSize: 12 }} tickFormatter={usd} width={48} />
-              <YAxis yAxisId="cash" orientation="right" stroke={ASH} style={{ ...mono, fontSize: 12 }} tickFormatter={usd} width={48} />
+              <XAxis dataKey="month" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={(m) => `M${m}`} />
+              <YAxis yAxisId="mrr" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={48} />
+              <YAxis yAxisId="cash" orientation="right" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={48} />
               <Tooltip
                 contentStyle={tip}
                 labelFormatter={(m) => `Month ${m}`}
                 formatter={(v, name) => [usdFull(Number(v)), name === "mrr" ? "MRR" : "Cumulative cash"]}
                 cursor={{ stroke: ASH }}
               />
-              <Legend wrapperStyle={{ ...mono, fontSize: 12 }} formatter={(name) => (name === "mrr" ? "MRR" : "Cumulative cash")} />
+              <Legend wrapperStyle={{ ...mono, fontSize: fs.caption }} formatter={(name) => (name === "mrr" ? "MRR" : "Cumulative cash")} />
               <ReferenceLine yAxisId="cash" y={0} stroke={RED} strokeDasharray="4 4" />
               <Area yAxisId="mrr" type="monotone" dataKey="mrr" stroke={LIME} strokeWidth={2} fill="url(#mrrFill)" />
               <Line yAxisId="cash" type="monotone" dataKey="cumulativeCash" stroke={BLUE} strokeWidth={2} dot={false} />
@@ -571,10 +571,10 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
   return (
     <Card style={{ borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{seg.label}</div>
-        <Mono s={{ fontSize: 13 }} c={ASH}>{seg.payingUnits.toLocaleString()} paying</Mono>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{seg.label}</div>
+        <Mono s={{ fontSize: fs.body }} c={ASH}>{seg.payingUnits.toLocaleString()} paying</Mono>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginTop: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: space.sm, marginTop: 12 }}>
         <Metric label="ARPU /mo" value={`$${seg.arpu.toFixed(2)}`} c={CHALK} />
         <Metric label="Contribution margin" value={`${Math.round(seg.grossMargin * 100)}%`} c={seg.grossMargin >= 0 ? CHALK : RED} />
         <Metric label="LTV" value={Number.isFinite(seg.ltv) ? usdFull(seg.ltv) : "∞"} c={color} />
@@ -582,7 +582,7 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
         <Metric label="CAC payback" value={mo(seg.cacPaybackMonths)} c={paybackOk ? LIME : AMBER} />
         <Metric label="LTV : CAC" value={x1(seg.ltvToCac)} c={ratioOk ? LIME : AMBER} />
       </div>
-      <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={ASH}>
         {Math.round(seg.monthlyChurn * 100 * 10) / 10}% monthly churn · ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo average lifetime
       </Mono>
     </Card>
@@ -597,14 +597,14 @@ function MarketCard({ m }: { m: (typeof MARKET_PRICING)[number] }) {
   const indexColor = m.priceIndex >= 0.95 ? LIME : m.priceIndex >= 0.7 ? AMBER : BLUE;
   return (
     <Card style={{ borderLeft: `3px solid ${indexColor}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>
           <span style={{ marginRight: 8 }}>{m.flag}</span>
           {m.market}
         </div>
         <Chip c={indexColor}>{m.currency} · {indexPct}% of US</Chip>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginTop: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: space.sm, marginTop: 12 }}>
         <PriceBox label="Pro · monthly" value={loc(m.proMonthly)} sub={eq(m.proMonthly)} />
         <PriceBox label="Pro · annual" value={loc(m.proAnnual)} sub={`${eq(m.proAnnual)} · ${loc(m.proAnnual / 12)}/mo`} />
       </div>
@@ -613,7 +613,7 @@ function MarketCard({ m }: { m: (typeof MARKET_PRICING)[number] }) {
         <span style={{ color: txt(CHALK) }}>{loc(m.coachStarter)} · {loc(m.coachPro)} · {loc(m.coachBusiness)}</span>/mo
         {" · "}Org <span style={{ color: txt(CHALK) }}>{loc(m.orgLow)}–{loc(m.orgHigh)}</span>/athlete/yr
       </Mono>
-      <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>
         {m.tax} · Stripe {m.stripeFee}
       </Mono>
       <Mono s={{ fontSize: 12.5, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>
@@ -626,8 +626,8 @@ function MarketCard({ m }: { m: (typeof MARKET_PRICING)[number] }) {
 function PriceBox({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 10px" }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginTop: 2 }}>{value}</div>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, marginTop: 2 }}>{value}</div>
       <Mono s={{ fontSize: 11.5, display: "block", marginTop: 1 }} c={ASH}>{sub}</Mono>
     </div>
   );
@@ -642,15 +642,15 @@ function FixedOpexBreakdown() {
       style={{
         display: "grid",
         gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr) 70px",
-        gap: 8,
+        gap: space.sm,
         alignItems: "center",
         padding: "7px 0",
         borderBottom: `1px solid ${LINE}`,
       }}
     >
-      <Mono s={{ fontSize: 13, fontWeight: muted ? 400 : 600 }} c={muted ? ASH : CHALK}>{label}</Mono>
+      <Mono s={{ fontSize: fs.body, fontWeight: muted ? 400 : 600 }} c={muted ? ASH : CHALK}>{label}</Mono>
       <Mono s={{ fontSize: 12.5, textAlign: "right" }} c={ASH}>{billed}</Mono>
-      <Mono s={{ fontSize: 13, textAlign: "right", fontWeight: 700 }} c={c}>{monthly}</Mono>
+      <Mono s={{ fontSize: fs.body, textAlign: "right", fontWeight: 700 }} c={c}>{monthly}</Mono>
     </div>
   );
   return (
@@ -659,19 +659,19 @@ function FixedOpexBreakdown() {
         style={{
           display: "grid",
           gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr) 70px",
-          gap: 8,
+          gap: space.sm,
           padding: "0 0 6px",
           borderBottom: `1px solid ${LINE}`,
         }}
       >
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Item</Mono>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>As billed</Mono>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>$/mo</Mono>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Item</Mono>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>As billed</Mono>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }} c={ASH}>$/mo</Mono>
       </div>
       {recurring.map((i) => row(i.label, i.billed, usdFull(i.monthlyUsd)))}
       {row("Recurring run-rate", "", usdFull(total), AMBER)}
       {extras.length > 0 && (
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginTop: 12, marginBottom: 2 }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginTop: 12, marginBottom: 2 }} c={ASH}>
           Not in the monthly run-rate
         </Mono>
       )}
@@ -689,7 +689,7 @@ function PlanMatrix() {
         key={key}
         style={{
           ...mono,
-          fontSize: 13,
+          fontSize: fs.body,
           textAlign: "center",
           padding: "10px 6px",
           borderBottom: `1px solid ${LINE}`,
@@ -709,12 +709,12 @@ function PlanMatrix() {
       <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
         <thead>
           <tr>
-            <th style={{ ...mono, fontSize: 12, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
+            <th style={{ ...mono, fontSize: fs.caption, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
               Feature
             </th>
             {PLAN_COLUMNS.map((c) => (
               <th key={c.id} style={{ padding: "10px 6px", borderBottom: `1px solid ${LINE}`, textAlign: "center", minWidth: 110 }}>
-                <div style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(c.id === "free" ? ASH : c.id === "pro" ? LIME : c.id === "coach" ? VIOLET : BLUE) }}>{c.label}</div>
+                <div style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(c.id === "free" ? ASH : c.id === "pro" ? LIME : c.id === "coach" ? VIOLET : BLUE) }}>{c.label}</div>
                 <Mono s={{ fontSize: 10.5, display: "block", marginTop: 2 }} c={ASH}>{c.price}</Mono>
               </th>
             ))}
@@ -728,12 +728,12 @@ function PlanMatrix() {
                 {groupHeader && (
                   <tr>
                     <td colSpan={1 + PLAN_COLUMNS.length} style={{ padding: "12px 6px 4px" }}>
-                      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{row.group}</Mono>
+                      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{row.group}</Mono>
                     </td>
                   </tr>
                 )}
                 <tr>
-                  <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>{row.feature}</td>
+                  <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>{row.feature}</td>
                   {entCell(row.free, `${i}-free`)}
                   {entCell(row.pro, `${i}-pro`)}
                   {entCell(row.coach, `${i}-coach`)}
@@ -745,7 +745,7 @@ function PlanMatrix() {
         </tbody>
       </table>
       </div>
-      <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
         {PLAN_COLUMNS.map((c) => `${c.label}: ${c.who}`).join(" · ")}
       </Mono>
     </Card>
@@ -755,8 +755,8 @@ function PlanMatrix() {
 function Metric({ label, value, c = CHALK }: { label: string; value: string; c?: string }) {
   return (
     <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 10px" }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(c), marginTop: 2 }}>{value}</div>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: txt(c), marginTop: 2 }}>{value}</div>
     </div>
   );
 }
@@ -764,11 +764,11 @@ function Metric({ label, value, c = CHALK }: { label: string; value: string; c?:
 function Indicator({ label, value, c, note, says }: { label: string; value: string; c: string; note: string; says: string }) {
   return (
     <Card style={{ borderLeft: `3px solid ${c}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{label}</Mono>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm }}>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{label}</Mono>
       </div>
       <div style={{ ...disp, fontWeight: 800, fontSize: 28, color: txt(c), lineHeight: 1.1, margin: "4px 0 2px" }}>{value}</div>
-      <Mono s={{ fontSize: 12 }} c={ASH}>{note}</Mono>
+      <Mono s={{ fontSize: fs.caption }} c={ASH}>{note}</Mono>
       <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={CHALK}>{says}</Mono>
     </Card>
   );
@@ -777,18 +777,18 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
 function Glossary() {
   return (
     <Card>
-      <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
         Metric glossary
       </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.md }}>
         {METRIC_GUIDE.map((m) => (
           <div key={m.id} style={{ borderLeft: `2px solid ${LINE}`, paddingLeft: 10 }}>
             <div style={{ ...disp, fontWeight: 700, fontSize: 13.5 }}>{m.label}</div>
             <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 3 }} c={CHALK}>{m.what}</Mono>
-            <Mono s={{ fontSize: 12, lineHeight: 1.4, display: "block", marginTop: 4 }} c={ASH}>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.4, display: "block", marginTop: 4 }} c={ASH}>
               <span style={{ color: txt(VIOLET) }}>= </span>{m.formula}
             </Mono>
-            <Mono s={{ fontSize: 12, lineHeight: 1.4, display: "block", marginTop: 2 }} c={LIME}>{m.benchmark}</Mono>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.4, display: "block", marginTop: 2 }} c={LIME}>{m.benchmark}</Mono>
           </div>
         ))}
       </div>
@@ -802,7 +802,7 @@ function Section({ title, kicker, children }: { title: string; kicker: string; c
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{kicker}</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{kicker}</Mono>
         <div style={{ ...disp, fontWeight: 800, fontSize: 19, marginTop: 2 }}>{title}</div>
       </div>
       {children}
@@ -813,7 +813,7 @@ function Section({ title, kicker, children }: { title: string; kicker: string; c
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>
         {label}
       </Mono>
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{children}</div>
@@ -837,10 +837,10 @@ function Num({
   suffix?: string;
 }) {
   return (
-    <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-      <Mono s={{ fontSize: 13 }} c={ASH}>{label}</Mono>
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {prefix && <Mono s={{ fontSize: 13 }} c={ASH}>{prefix}</Mono>}
+    <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
+      <Mono s={{ fontSize: fs.body }} c={ASH}>{label}</Mono>
+      <div style={{ display: "flex", alignItems: "center", gap: space.xxs }}>
+        {prefix && <Mono s={{ fontSize: fs.body }} c={ASH}>{prefix}</Mono>}
         <input
           type="number"
           value={value}
@@ -849,7 +849,7 @@ function Num({
           onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
           style={{
             ...mono,
-            fontSize: 14,
+            fontSize: fs.bodyLg,
             width: 84,
             textAlign: "right",
             padding: "8px 8px",
@@ -860,7 +860,7 @@ function Num({
             outline: "none",
           }}
         />
-        {suffix && <Mono s={{ fontSize: 13 }} c={ASH}>{suffix}</Mono>}
+        {suffix && <Mono s={{ fontSize: fs.body }} c={ASH}>{suffix}</Mono>}
       </div>
     </label>
   );
@@ -884,10 +884,10 @@ function Range({
   suffix?: string;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.xxs }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Mono s={{ fontSize: 13 }} c={ASH}>{label}</Mono>
-        <Mono s={{ fontSize: 13 }} c={CHALK}>{value}{suffix}</Mono>
+        <Mono s={{ fontSize: fs.body }} c={ASH}>{label}</Mono>
+        <Mono s={{ fontSize: fs.body }} c={CHALK}>{value}{suffix}</Mono>
       </div>
       <input
         type="range"
@@ -909,7 +909,7 @@ function Btn({ label, active, onClick, disabled }: { label: string; active: bool
       disabled={disabled}
       style={{
         ...mono,
-        fontSize: 12,
+        fontSize: fs.caption,
         padding: "7px 9px",
         borderRadius: "var(--r-field)",
         cursor: disabled ? "not-allowed" : "pointer",
@@ -934,7 +934,7 @@ function PnL({ k, v, c = CHALK, bold }: { k: string; v: string; c?: string; bold
 
 const linkBtn: React.CSSProperties = {
   ...mono,
-  fontSize: 13,
+  fontSize: fs.body,
   color: txt(AMBER),
   background: "none",
   border: "none",

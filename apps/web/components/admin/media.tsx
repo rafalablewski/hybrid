@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import {
+import { fs, space,
   INK,
   INK2,
   LINE,
@@ -157,7 +157,7 @@ export default function AdminMedia() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Media library not initialized</div>
-        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>MediaAsset</b> table + <b>media</b> bucket don&apos;t exist yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-media-library.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
@@ -166,8 +166,8 @@ export default function AdminMedia() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
-        <Mono s={{ fontSize: 13 }} c={ASH}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 10 }}>
+        <Mono s={{ fontSize: fs.body }} c={ASH}>
           {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} · public CDN URLs
         </Mono>
         <div>
@@ -187,21 +187,21 @@ export default function AdminMedia() {
           </button>
         </div>
       </div>
-      <Mono s={{ fontSize: 12, display: "block", marginBottom: 16 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 16 }} c={ASH}>
         Upload demo clips + images once; copy a URL into an exercise&apos;s demo-video field or an announcement.
       </Mono>
 
-      {err && <Mono s={{ fontSize: 13, display: "block", marginBottom: 14 }} c={RED}>{err}</Mono>}
+      {err && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }} c={RED}>{err}</Mono>}
       {!supabase && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 14 }}>
-          <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block" }} c={CHALK}>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block" }} c={CHALK}>
             Storage isn&apos;t configured in this environment — uploading is disabled. The catalog below still lists
             registered assets.
           </Mono>
         </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: space.md }}>
         {list?.map((a) => (
           <Card key={a.id} style={{ padding: 0, overflow: "hidden", borderLeft: `3px solid ${STATUS_COLOR[a.status] ?? ASH}` }}>
             <div style={{ aspectRatio: "16 / 10", background: INK, display: "grid", placeItems: "center", overflow: "hidden" }}>
@@ -227,16 +227,16 @@ export default function AdminMedia() {
                   <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="Title" style={input} />
                   <input value={editForm.alt} onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })} placeholder="Alt / caption" style={{ ...input, marginTop: 6 }} />
                   <input value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} placeholder="tags, comma-separated" style={{ ...input, marginTop: 6 }} />
-                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: space.xs, marginTop: 8 }}>
                     <button disabled={busy} onClick={() => patch(a.id, { title: editForm.title, alt: editForm.alt || null, tags: editForm.tags.split(",").map((t) => t.trim()).filter(Boolean) })} style={miniBtn}>Save</button>
                     <button disabled={busy} onClick={() => setEdit(null)} style={miniBtn}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
                   {a.tags.length > 0 && <div style={{ marginTop: 6 }}>{a.tags.map((t) => <Chip key={t} c={ASH}>{t}</Chip>)}</div>}
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                  <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 10 }}>
                     <button onClick={() => copy(a.url, a.id)} style={miniBtn}>{copied === a.id ? "Copied ✓" : "Copy URL"}</button>
                     <button disabled={busy} onClick={() => openEdit(a)} style={miniBtn}>Edit</button>
                     {a.status !== "published" ? (
@@ -256,7 +256,7 @@ export default function AdminMedia() {
 
       {list && list.length === 0 && (
         <Card>
-          <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
+          <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
             No media yet. Upload a demo clip or image to start the library.
           </Mono>
         </Card>
@@ -268,7 +268,7 @@ export default function AdminMedia() {
 const input: React.CSSProperties = {
   ...mono,
   width: "100%",
-  fontSize: 13,
+  fontSize: fs.body,
   padding: "10px 10px",
   borderRadius: "var(--r-field)",
   background: INK2,
@@ -279,7 +279,7 @@ const input: React.CSSProperties = {
 };
 const primaryBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
@@ -292,7 +292,7 @@ const primaryBtn: React.CSSProperties = {
 };
 const miniBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: fs.caption,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",

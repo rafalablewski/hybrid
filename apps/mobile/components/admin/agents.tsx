@@ -14,7 +14,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { Card, Mono, Kicker, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 
@@ -178,7 +178,7 @@ export default function AdminAgents() {
       </Mono>
 
       {/* ---- create row ---- */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 16 }}>
         {presets.map((p) => (
           <PillBtn key={p.key} label={`+ ${p.role}`} outline color={palette.chalk} disabled={busy} onPress={() => createFrom(p.key)} />
         ))}
@@ -199,16 +199,16 @@ export default function AdminAgents() {
               accent={STATUS_COLOR(palette)[a.status]}
               style={selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined}
             >
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: palette.chalk }} numberOfLines={1}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
                     {a.name}
                   </Text>
-                  <View style={{ flexDirection: "row", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                  <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
                     <MiniChip color={STATUS_COLOR(palette)[a.status]}>{a.status}</MiniChip>
                     <MiniChip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</MiniChip>
                   </View>
-                  <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6 }}>
+                  <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
                     {a.model.replace("claude-", "")} · effort {a.effort} · {a.kpis.length} KPIs
                   </Mono>
                 </View>
@@ -268,8 +268,8 @@ function Editor({
   return (
     <Card style={{ marginTop: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: palette.chalk }}>Edit agent</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk }}>Edit agent</Text>
+        <View style={{ flexDirection: "row", gap: space.sm }}>
           <PillBtn label={dirty ? "Save" : "Saved"} disabled={busy || !dirty} onPress={onSave} />
           <PillBtn label="Delete" outline color={palette.ash} disabled={busy} onPress={onDelete} />
         </View>
@@ -333,7 +333,7 @@ function Editor({
       <StringList items={draft.collaborators} onChange={(v) => set("collaborators", v)} placeholder="+ Add a role" />
 
       <SectionHead title="Tools" />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
         {TOOL_OPTIONS.map((t) => {
           const on = draft.tools.includes(t.value);
           return (
@@ -380,7 +380,7 @@ function Editor({
       </Pressable>
       {showPrompt && (
         <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
-          <Mono color={palette.chalk} style={{ fontSize: 11, lineHeight: 17 }}>{preview}</Mono>
+          <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: 17 }}>{preview}</Mono>
         </View>
       )}
     </Card>
@@ -438,26 +438,26 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
         onChangeText={setTask}
         placeholder="e.g. Draft a Q3 priority and pull in finance + marketing input."
       />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <PillBtn label={runBusy ? "Running…" : "Run agent"} disabled={runBusy || dirty || !task.trim()} onPress={runTask} />
-        {dirty && <Mono color={palette.amber} style={{ fontSize: 11 }}>Save your changes before running.</Mono>}
+        {dirty && <Mono color={palette.amber} style={{ fontSize: fs.micro }}>Save your changes before running.</Mono>}
       </View>
       {run && (
         <View style={{ marginTop: 12 }}>
           {run.steps.map((s, i) => (
             <View key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-              <Mono color={palette.violet} style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8 }}>
+              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.8 }}>
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
-              <Mono color={palette.ash} style={{ fontSize: 11, marginVertical: 2 }}>"{s.task}"</Mono>
-              <Mono color={palette.chalk} style={{ fontSize: 12, lineHeight: 18 }}>{s.output}</Mono>
+              <Mono color={palette.ash} style={{ fontSize: fs.micro, marginVertical: 2 }}>"{s.task}"</Mono>
+              <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{s.output}</Mono>
             </View>
           ))}
           <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
-            <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 20 }}>{run.output || "(no output)"}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{run.output || "(no output)"}</Mono>
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
-            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6 }}>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
               {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
             </Mono>
           )}
@@ -520,23 +520,23 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
   }
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: space.sm }}>
       {schedules.map((s) => (
-        <View key={s.id} style={{ flexDirection: "row", gap: 8, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 10 }}>
+        <View key={s.id} style={{ flexDirection: "row", gap: space.sm, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 10 }}>
           <Toggle on={s.enabled} onToggle={() => toggle(s)} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <View style={{ flexDirection: "row", gap: 6 }}>
+            <View style={{ flexDirection: "row", gap: space.xs }}>
               <MiniChip color={s.enabled ? palette.lime : palette.ash}>{s.cadence}</MiniChip>
               <MiniChip color={palette.ash}>{s.enabled ? "on" : "off"}</MiniChip>
             </View>
-            <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 4 }}>{s.task}</Mono>
-            <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>
+            <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }}>{s.task}</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
               {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleDateString()}` : "never run"}
               {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleDateString()}` : ""}
             </Mono>
           </View>
           <Pressable onPress={() => del(s.id)} hitSlop={8}>
-            <Mono color={palette.ash} style={{ fontSize: 18 }}>×</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.title }}>×</Mono>
           </Pressable>
         </View>
       ))}
@@ -567,29 +567,29 @@ function History({ agentId }: { agentId: string }) {
   if (runs.length === 0) return <Mono color={palette.ash}>No runs yet.</Mono>;
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: space.sm }}>
       {runs.map((r) => {
         const open = openId === r.id;
         return (
           <View key={r.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
             <Pressable onPress={() => setOpenId(open ? null : r.id)}>
-              <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
                 <MiniChip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</MiniChip>
                 <MiniChip color={palette.ash}>{r.runtime}</MiniChip>
-                <Mono color={palette.ash} style={{ fontSize: 11 }}>{new Date(r.createdAt).toLocaleString()}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{new Date(r.createdAt).toLocaleString()}</Mono>
               </View>
-              <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 4 }} >{r.task}</Mono>
+              <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }} >{r.task}</Mono>
             </Pressable>
             {open && (
               <View style={{ marginTop: 8 }}>
                 {r.steps.map((s, i) => (
                   <View key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-                    <Mono color={palette.violet} style={{ fontSize: 11, textTransform: "uppercase" }}>↳ {s.role}</Mono>
-                    <Mono color={palette.chalk} style={{ fontSize: 11 }}>{s.output}</Mono>
+                    <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase" }}>↳ {s.role}</Mono>
+                    <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{s.output}</Mono>
                   </View>
                 ))}
-                <Mono color={palette.chalk} style={{ fontSize: 12, lineHeight: 18 }}>{r.output}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 6 }}>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{r.output}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
                   {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
                 </Mono>
               </View>
@@ -606,14 +606,14 @@ function History({ agentId }: { agentId: string }) {
 function StringList({ items, onChange, placeholder }: { items: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const { palette } = useTheme();
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: space.xs }}>
       {items.map((it, i) => (
-        <View key={i} style={{ flexDirection: "row", gap: 6, alignItems: "flex-start" }}>
+        <View key={i} style={{ flexDirection: "row", gap: space.xs, alignItems: "flex-start" }}>
           <View style={{ flex: 1 }}>
             <Input value={it} onChangeText={(v) => onChange(items.map((x, j) => (j === i ? v : x)))} style={{ marginBottom: 0 }} />
           </View>
           <Pressable onPress={() => onChange(items.filter((_, j) => j !== i))} hitSlop={8} style={{ paddingTop: 8 }}>
-            <Mono color={palette.ash} style={{ fontSize: 18 }}>×</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.title }}>×</Mono>
           </Pressable>
         </View>
       ))}
@@ -625,7 +625,7 @@ function StringList({ items, onChange, placeholder }: { items: string[]; onChang
 function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => void }) {
   const { palette } = useTheme();
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: space.ms }}>
       {items.map((k, i) => (
         <View key={i} style={{ borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 10 }}>
           <Input label="metric" value={k.metric} onChangeText={(v) => onChange(items.map((x, j) => (j === i ? { ...x, metric: v } : x)))} style={{ marginBottom: 6 }} />
@@ -649,7 +649,7 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const { palette } = useTheme();
-  return <Mono color={palette.ash} style={{ fontSize: 11, marginBottom: 6 }}>{children}</Mono>;
+  return <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 6 }}>{children}</Mono>;
 }
 
 function SectionHead({ title, hint }: { title: string; hint?: string }) {
@@ -657,7 +657,7 @@ function SectionHead({ title, hint }: { title: string; hint?: string }) {
   return (
     <View style={{ marginTop: 16, marginBottom: 10, paddingTop: 14, borderTopWidth: 1, borderTopColor: palette.line }}>
       <Kicker color={palette.amber}>{title}</Kicker>
-      {hint ? <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>{hint}</Mono> : null}
+      {hint ? <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{hint}</Mono> : null}
     </View>
   );
 }
@@ -666,7 +666,7 @@ function MiniChip({ children, color }: { children: React.ReactNode; color: strin
   const { palette } = useTheme();
   return (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: 11, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
     </View>
@@ -687,7 +687,7 @@ function ToolToggle({ label, on, onPress }: { label: string; on: boolean; onPres
         paddingHorizontal: 12,
       }}
     >
-      <Text style={{ fontFamily: F.semi, fontSize: 12, color: on ? txt(palette, palette.lime) : palette.ash }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(palette, palette.lime) : palette.ash }}>
         {on ? "✓ " : "+ "}{label}
       </Text>
     </Pressable>

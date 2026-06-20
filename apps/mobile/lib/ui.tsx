@@ -16,8 +16,12 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
-import { colors } from "@hybrid/core";
+import { colors, fs, space } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
+
+// Re-export the shared scale (same source the web client uses) so screens can
+//   import { fs, space } from "../../lib/ui"  →  fontSize: fs.body, gap: space.lg
+export { fs, space };
 import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 
@@ -44,7 +48,7 @@ export function GlassCard({
   intensity = 38,
   tint,
   accent,
-  padding = 16,
+  padding = space.lg,
 }: {
   children: ReactNode;
   style?: ViewStyle;
@@ -67,7 +71,7 @@ export function GlassCard({
   // view does the clipping. Honour a caller-supplied borderRadius on both.
   const radius = typeof style?.borderRadius === "number" ? style.borderRadius : 18;
   return (
-    <View style={[glassShadow, { marginBottom: 12, borderRadius: radius }, style]}>
+    <View style={[glassShadow, { marginBottom: space.md, borderRadius: radius }, style]}>
       <View style={{ borderRadius: radius, overflow: "hidden", borderWidth: 1, borderColor: border }}>
         <BlurView intensity={intensity} tint={t} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
@@ -252,8 +256,8 @@ export function Card({
           borderWidth: 1,
           borderColor: palette.line,
           borderRadius: aurora ? 28 : 16,
-          padding: 16,
-          marginBottom: 12,
+          padding: space.lg,
+          marginBottom: space.md,
         },
         style,
       ]}
@@ -269,7 +273,7 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
     <Text
       style={{
         fontFamily: F.mono,
-        fontSize: 11,
+        fontSize: fs.micro,
         textTransform: "uppercase",
         letterSpacing: 1.2,
         color: color ? txt(palette, color) : palette.ash,
@@ -283,7 +287,7 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
 export function Mono({ children, style, color, numberOfLines }: { children: ReactNode; style?: TextStyle; color?: string; numberOfLines?: number }) {
   const { palette } = useTheme();
   return (
-    <Text numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: 13, color: color ? txt(palette, color) : palette.ash }, style]}>
+    <Text numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: fs.body, color: color ? txt(palette, color) : palette.ash }, style]}>
       {children}
     </Text>
   );
@@ -299,7 +303,7 @@ export function Chip({ children, color = C.lime }: { children: ReactNode; color?
   const aurora = useTemplate().template === "aurora";
   return (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: 11, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
     </View>
@@ -332,7 +336,7 @@ export function Button({
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: 15, color: palette.onAccent }}>{label}</Text>
+      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: palette.onAccent }}>{label}</Text>
     </Pressable>
   );
 }

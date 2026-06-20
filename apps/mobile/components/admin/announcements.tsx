@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
-import { Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
@@ -204,17 +204,17 @@ export default function AdminAnnouncements() {
 
       {editing !== null && (
         <Card accent={palette.lime}>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk, marginBottom: 12 }}>
             {editing === "new" ? "New announcement" : "Edit announcement"}
           </Text>
 
           <Input label="Title" value={draft.title} onChangeText={(t) => setDraft({ ...draft, title: t })} placeholder="e.g. Editable plan templates are live" />
           <Input label="Body" value={draft.body} onChangeText={(t) => setDraft({ ...draft, body: t })} placeholder="What every athlete should see…" multiline />
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Level</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Level</Text>
           <Segmented options={LEVEL_OPTS} value={draft.level} onChange={(v) => setDraft({ ...draft, level: v })} />
 
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: palette.ash, marginBottom: 4 }}>Audience</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Audience</Text>
           <Segmented options={AUDIENCE_OPTS} value={draft.audience} onChange={(v) => setDraft({ ...draft, audience: v })} />
 
           <Input label="Publish at — ISO, optional" value={draft.publishAt} onChangeText={(t) => setDraft({ ...draft, publishAt: t })} placeholder="2026-07-01T09:00:00Z" />
@@ -234,7 +234,7 @@ export default function AdminAnnouncements() {
 
           {err ? <ErrorNote error={err} /> : null}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
             <PillBtn label="Save draft" outline disabled={busy} onPress={() => save("draft")} />
             <PillBtn label={editing === "new" ? "Publish" : "Save & publish"} disabled={busy} onPress={() => save("published")} />
             <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEditing(null)} />
@@ -246,21 +246,21 @@ export default function AdminAnnouncements() {
 
       {list?.map((a) => (
         <Card key={a.id} accent={statusColor(a.status)}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(a.status)}>{a.status}</Chip>
             <Chip color={levelColor(a.level)}>{a.level}</Chip>
             <Chip color={palette.ash}>{a.audience}</Chip>
             {a.pinned ? <Chip color={palette.amber}>pinned</Chip> : null}
           </View>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: palette.chalk }}>{a.title}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{a.title}</Text>
           <Mono color={palette.ash} style={{ marginTop: 4, lineHeight: 18 }}>{a.body}</Mono>
-          <Mono color={palette.ash} style={{ marginTop: 8, fontSize: 11 }}>
+          <Mono color={palette.ash} style={{ marginTop: 8, fontSize: fs.micro }}>
             {a.authorEmail}
             {a.publishAt ? ` · live ${new Date(a.publishAt).toLocaleString()}` : ""}
             {a.expiresAt ? ` · ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
           </Mono>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
             <PillBtn label="Edit" outline color={palette.ash} disabled={busy} onPress={() => openEdit(a)} />
             {a.status !== "published" ? (
               <PillBtn label="Publish" outline disabled={busy} onPress={() => patch(a.id, { status: "published" })} />

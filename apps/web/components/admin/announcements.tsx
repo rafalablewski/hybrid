@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
+import { fs, space,
   INK,
   INK2,
   LINE,
@@ -172,7 +172,7 @@ export default function AdminAnnouncements() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Announcements not initialized</div>
-        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Announcement</b> table doesn&apos;t exist yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-announcement.sql</span> in the Supabase SQL Editor to
           create it, then reload.
@@ -183,7 +183,7 @@ export default function AdminAnnouncements() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Mono s={{ fontSize: 13 }} c={ASH}>
+        <Mono s={{ fontSize: fs.body }} c={ASH}>
           {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} · broadcast to the app
         </Mono>
         {editing === null && (
@@ -195,7 +195,7 @@ export default function AdminAnnouncements() {
 
       {editing !== null && (
         <Card style={{ marginBottom: 18, borderLeft: `3px solid ${LIME}` }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 14 }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginBottom: 14 }}>
             {editing === "new" ? "New announcement" : "Edit announcement"}
           </div>
 
@@ -220,7 +220,7 @@ export default function AdminAnnouncements() {
             />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.md }}>
             <Field label="Level">
               <Select value={draft.level} onChange={(e) => setDraft({ ...draft, level: e.target.value as Draft["level"] })}>
                 <option value="info">Info</option>
@@ -253,18 +253,18 @@ export default function AdminAnnouncements() {
             </Field>
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 16px", cursor: "pointer" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: space.sm, margin: "6px 0 16px", cursor: "pointer" }}>
             <input type="checkbox" checked={draft.pinned} onChange={(e) => setDraft({ ...draft, pinned: e.target.checked })} />
-            <Mono s={{ fontSize: 14 }} c={CHALK}>Pin as a dismissible banner at the top of the app</Mono>
+            <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>Pin as a dismissible banner at the top of the app</Mono>
           </label>
 
           {err && (
-            <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
+            <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
               {err}
             </Mono>
           )}
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
             <button disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>
               Save draft
             </button>
@@ -279,15 +279,15 @@ export default function AdminAnnouncements() {
       )}
 
       {err && editing === null && (
-        <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
           {err}
         </Mono>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
         {list?.map((a) => (
           <Card key={a.id} style={{ borderLeft: `3px solid ${STATUS_COLOR[a.status]}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start" }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ marginBottom: 6 }}>
                   <Chip c={STATUS_COLOR[a.status]}>{a.status}</Chip>
@@ -295,11 +295,11 @@ export default function AdminAnnouncements() {
                   <Chip c={ASH}>{a.audience}</Chip>
                   {a.pinned && <Chip c={AMBER}>📌 pinned</Chip>}
                 </div>
-                <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{a.title}</div>
-                <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4, whiteSpace: "pre-wrap" }} c={ASH}>
+                <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{a.title}</div>
+                <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4, whiteSpace: "pre-wrap" }} c={ASH}>
                   {a.body}
                 </Mono>
-                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={ASH}>
+                <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={ASH}>
                   {a.authorEmail}
                   {a.publishAt ? ` · live ${new Date(a.publishAt).toLocaleString()}` : ""}
                   {a.expiresAt ? ` · ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
@@ -307,7 +307,7 @@ export default function AdminAnnouncements() {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 14 }}>
+            <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 14 }}>
               <button disabled={busy} onClick={() => openEdit(a)} style={miniBtn}>Edit</button>
               {a.status !== "published" ? (
                 <button disabled={busy} onClick={() => patch(a.id, { status: "published" })} style={miniBtn}>Publish</button>
@@ -329,7 +329,7 @@ export default function AdminAnnouncements() {
 
         {list && list.length === 0 && (
           <Card>
-            <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
+            <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
               No announcements yet. Create one to broadcast to the app.
             </Mono>
           </Card>
@@ -342,7 +342,7 @@ export default function AdminAnnouncements() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <Mono s={{ fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
         {label}
       </Mono>
       {children}
@@ -353,7 +353,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const input: React.CSSProperties = {
   ...mono,
   width: "100%",
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   padding: "10px 14px",
   borderRadius: "var(--r-card)",
   background: INK2,
@@ -365,7 +365,7 @@ const input: React.CSSProperties = {
 
 const baseBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
@@ -379,7 +379,7 @@ const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color:
 const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LINE, LIME, CHALK, ASH, ON_ACCENT, cond } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, ON_ACCENT, cond } from "@/lib/ui";
 import CapabilitiesScreen from "../capabilities";
 import DataNet from "../datanet";
 
@@ -12,7 +12,7 @@ export default function AdminContent() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: space.sm, marginBottom: 20 }}>
         {(
           [
             ["capabilities", "Capabilities"],
@@ -24,7 +24,7 @@ export default function AdminContent() {
             onClick={() => setTab(id)}
             style={{
               ...cond,
-              fontSize: 14,
+              fontSize: fs.bodyLg,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: ".05em",

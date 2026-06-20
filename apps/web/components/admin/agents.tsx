@@ -14,7 +14,7 @@ import {
   type AgentStatus,
   type Kpi,
 } from "@hybrid/core";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
@@ -354,8 +354,8 @@ export default function AdminAgents() {
     <div>
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Agents aren&apos;t persisted yet</div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginBottom: 6 }}>Agents aren&apos;t persisted yet</div>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
             The <b>AgentConfig</b> table doesn&apos;t exist yet — run{" "}
             <span style={{ color: txt(AMBER) }}>reference/sql-agents.sql</span> in Supabase to make agents persist. You can
             still preview the role presets below.
@@ -364,21 +364,21 @@ export default function AdminAgents() {
       )}
 
       {err && (
-        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <Mono s={{ fontSize: 13 }} c={AMBER}>{err}</Mono>
-          <button onClick={() => setErr(null)} style={{ ...mono, fontSize: 12, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "6px 8px", color: txt(ASH), cursor: "pointer" }}>
+        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
+          <Mono s={{ fontSize: fs.body }} c={AMBER}>{err}</Mono>
+          <button onClick={() => setErr(null)} style={{ ...mono, fontSize: fs.caption, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "6px 8px", color: txt(ASH), cursor: "pointer" }}>
             Dismiss
           </button>
         </Card>
       )}
 
-      <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 12 }} c={ASH}>
         Define your executive team. Edits to a KPI, responsibility, or guardrail rewrite the agent&apos;s live system
         prompt — shown in the preview as you type. The runtime executes these server-side (needs ANTHROPIC_API_KEY).
       </Mono>
 
       {/* ---- create row ---- */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 16 }}>
         {presets.map((p) => (
           <button key={p.key} disabled={busy} onClick={() => createFrom(p.key)} style={presetBtn}>
             + {p.role}
@@ -389,9 +389,9 @@ export default function AdminAgents() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(260px, 340px) 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(260px, 340px) 1fr", gap: space.lg, alignItems: "start" }}>
         {/* ---- roster ---- */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
           {agents?.map((a) => (
             <Card
               key={a.id}
@@ -402,16 +402,16 @@ export default function AdminAgents() {
                 outline: selectedId === a.id ? `1px solid ${AMBER}` : undefined,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, alignItems: "flex-start" }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {a.name}
                   </div>
                   <div style={{ marginTop: 4 }}>
                     <Chip c={STATUS_COLOR[a.status]}>{a.status}</Chip>
                     <Chip c={a.authority === "executive" ? VIOLET : ASH}>{a.role}</Chip>
                   </div>
-                  <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+                  <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                     {a.model.replace("claude-", "")} · effort {a.effort} · {a.kpis.length} KPIs
                   </Mono>
                 </div>
@@ -431,7 +431,7 @@ export default function AdminAgents() {
           ))}
           {agents && agents.length === 0 && (
             <Card>
-              <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 20 }} c={ASH}>
+              <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 20 }} c={ASH}>
                 No agents yet — create one from a preset above.
               </Mono>
             </Card>
@@ -441,9 +441,9 @@ export default function AdminAgents() {
         {/* ---- editor ---- */}
         {draft ? (
           <Card>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 8 }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>Edit agent</div>
-              <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: space.sm }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>Edit agent</div>
+              <div style={{ display: "flex", gap: space.sm }}>
                 <button disabled={busy || !dirty} onClick={save} style={{ ...primaryBtn, opacity: dirty ? 1 : 0.5 }}>
                   {dirty ? "Save changes" : "Saved"}
                 </button>
@@ -453,7 +453,7 @@ export default function AdminAgents() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.md }}>
               <Field label="Name">
                 <input style={input} value={draft.name} onChange={(e) => set("name", e.target.value)} />
               </Field>
@@ -524,7 +524,7 @@ export default function AdminAgents() {
             </Section>
 
             <Section title="Tools">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm }}>
                 {TOOL_OPTIONS.map((t) => {
                   const on = draft.tools.includes(t.value);
                   return (
@@ -542,7 +542,7 @@ export default function AdminAgents() {
 
             {/* ---- spend controls ---- */}
             <Section title="Spend controls" hint="0 = off">
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.md }}>
                 <Field label="Approval threshold ($)" hint="hold for a 2nd operator when est. run cost ≥ this">
                   <input
                     style={input}
@@ -576,7 +576,7 @@ export default function AdminAgents() {
               }
             >
               {draft.status !== "active" ? (
-                <Mono s={{ fontSize: 13, display: "block" }} c={ASH}>
+                <Mono s={{ fontSize: fs.body, display: "block" }} c={ASH}>
                   Activate the agent (status → active) to run it.
                 </Mono>
               ) : (
@@ -587,7 +587,7 @@ export default function AdminAgents() {
                     value={task}
                     onChange={(e) => setTask(e.target.value)}
                   />
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginTop: 8 }}>
                     <button
                       disabled={runBusy || dirty || !task.trim()}
                       onClick={runTask}
@@ -596,12 +596,12 @@ export default function AdminAgents() {
                       {runBusy ? "Running…" : "Run agent"}
                     </button>
                     {dirty && (
-                      <Mono s={{ fontSize: 12 }} c={AMBER}>
+                      <Mono s={{ fontSize: fs.caption }} c={AMBER}>
                         Save your changes before running.
                       </Mono>
                     )}
                     {runBusy && runStatus && (
-                      <Mono s={{ fontSize: 12 }} c={LIME}>
+                      <Mono s={{ fontSize: fs.caption }} c={LIME}>
                         {runStatus}
                       </Mono>
                     )}
@@ -611,13 +611,13 @@ export default function AdminAgents() {
                     <div style={{ marginTop: 12 }}>
                       {liveSteps.map((s, i) => (
                         <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${VIOLET}` }}>
-                          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
+                          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
                             ↳ delegated to {s.role} — {s.agent}
                           </Mono>
-                          <Mono s={{ fontSize: 12, display: "block", margin: "2px 0 4px" }} c={ASH}>
+                          <Mono s={{ fontSize: fs.caption, display: "block", margin: "2px 0 4px" }} c={ASH}>
                             “{s.task}”
                           </Mono>
-                          <div style={{ ...mono, fontSize: 13, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>
+                          <div style={{ ...mono, fontSize: fs.body, lineHeight: 1.5, color: CHALK, whiteSpace: "pre-wrap" }}>
                             {s.output || (runBusy ? "…" : "")}
                           </div>
                         </div>
@@ -625,7 +625,7 @@ export default function AdminAgents() {
                       <div
                         style={{
                           ...mono,
-                          fontSize: 14,
+                          fontSize: fs.bodyLg,
                           lineHeight: 1.6,
                           color: CHALK,
                           background: INK,
@@ -638,7 +638,7 @@ export default function AdminAgents() {
                         {(run ? run.output : liveText) || (runBusy ? "…" : "(no output)")}
                       </div>
                       {run && (run.usage.input > 0 || run.usage.output > 0) && (
-                        <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+                        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                           {run.usage.input.toLocaleString()} in · {run.usage.output.toLocaleString()} out tokens
                         </Mono>
                       )}
@@ -650,9 +650,9 @@ export default function AdminAgents() {
 
             {/* ---- schedules ---- */}
             <Section title="Schedules" hint="standing tasks the agent runs on a cadence (fires via cron; only while active)">
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
                 {schedules.map((s) => (
-                  <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
+                  <div key={s.id} style={{ display: "flex", gap: space.sm, alignItems: "flex-start", background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                     <button onClick={() => toggleSchedule(s)} style={toggle(s.enabled)} title={s.enabled ? "Disable" : "Enable"}>
                       <span style={knob(s.enabled)} />
                     </button>
@@ -661,8 +661,8 @@ export default function AdminAgents() {
                         <Chip c={s.enabled ? LIME : ASH}>{s.cadence}</Chip>
                         <Chip c={ASH}>{s.enabled ? "on" : "off"}</Chip>
                       </div>
-                      <div style={{ ...mono, fontSize: 13, color: CHALK, whiteSpace: "pre-wrap", marginTop: 4 }}>{s.task}</div>
-                      <Mono s={{ fontSize: 11, display: "block", marginTop: 4 }} c={ASH}>
+                      <div style={{ ...mono, fontSize: fs.body, color: CHALK, whiteSpace: "pre-wrap", marginTop: 4 }}>{s.task}</div>
+                      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>
                         {s.lastRunAt ? `last ${new Date(s.lastRunAt).toLocaleString()}` : "never run"}
                         {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
                       </Mono>
@@ -671,7 +671,7 @@ export default function AdminAgents() {
                   </div>
                 ))}
 
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
                   <input
                     style={{ ...input, flex: "1 1 200px", width: "auto" }}
                     placeholder="Standing task, e.g. Daily ops status across the team."
@@ -695,15 +695,15 @@ export default function AdminAgents() {
                   {timeline.map((t) => {
                     const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : VIOLET;
                     return (
-                      <div key={t.id} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                      <div key={t.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                         <span style={{ width: 7, height: 7, borderRadius: 99, background: c, flexShrink: 0, marginTop: 5 }} />
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ ...disp, fontSize: 14, fontWeight: 700, color: CHALK }}>
-                            {t.title} <Mono s={{ fontSize: 11 }} c={c}>{t.kind}</Mono>
+                          <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>
+                            {t.title} <Mono s={{ fontSize: fs.micro }} c={c}>{t.kind}</Mono>
                           </div>
-                          {t.detail && <Mono s={{ fontSize: 12, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{t.detail}</Mono>}
+                          {t.detail && <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{t.detail}</Mono>}
                         </div>
-                        <Mono s={{ fontSize: 11, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} · {t.actor}</Mono>
+                        <Mono s={{ fontSize: fs.micro, flexShrink: 0 }} c={ASH}>{new Date(t.ts).toLocaleString()} · {t.actor}</Mono>
                       </div>
                     );
                   })}
@@ -714,10 +714,10 @@ export default function AdminAgents() {
             {/* ---- run history ---- */}
             {runs.length > 0 && (
               <Section title="History" hint={`${runs.length} recent run${runs.length === 1 ? "" : "s"} (transcripts)`}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
                   {runs.map((r) => (
                     <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
-                      <summary style={{ ...mono, fontSize: 13, color: CHALK, cursor: "pointer", listStyle: "none" }}>
+                      <summary style={{ ...mono, fontSize: fs.body, color: CHALK, cursor: "pointer", listStyle: "none" }}>
                         <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
                         <Chip c={ASH}>{r.runtime}</Chip>
                         <span style={{ color: txt(ASH) }}>{new Date(r.createdAt).toLocaleString()}</span>
@@ -726,12 +726,12 @@ export default function AdminAgents() {
                       <div style={{ marginTop: 8 }}>
                         {r.steps.map((s, i) => (
                           <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${VIOLET}` }}>
-                            <Mono s={{ fontSize: 11, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
-                            <div style={{ ...mono, fontSize: 12, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
+                            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
+                            <div style={{ ...mono, fontSize: fs.caption, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
                           </div>
                         ))}
-                        <div style={{ ...mono, fontSize: 13, color: CHALK, whiteSpace: "pre-wrap" }}>{r.output}</div>
-                        <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+                        <div style={{ ...mono, fontSize: fs.body, color: CHALK, whiteSpace: "pre-wrap" }}>{r.output}</div>
+                        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                           {r.inputTokens.toLocaleString()} in · {r.outputTokens.toLocaleString()} out · {r.ranByEmail ?? "—"}
                         </Mono>
                       </div>
@@ -746,7 +746,7 @@ export default function AdminAgents() {
               <pre
                 style={{
                   ...mono,
-                  fontSize: 12,
+                  fontSize: fs.caption,
                   lineHeight: 1.55,
                   color: CHALK,
                   background: INK,
@@ -766,7 +766,7 @@ export default function AdminAgents() {
           </Card>
         ) : (
           <Card>
-            <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 40 }} c={ASH}>
+            <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 40 }} c={ASH}>
               Select an agent to edit, or create one from a preset.
             </Mono>
           </Card>
@@ -787,7 +787,7 @@ function reportsOf(agents: AgentDefinition[] | null, role: string): AgentDefinit
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "block" }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
         {label}
         {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
       </Mono>
@@ -799,7 +799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
-      <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
         {title}
         {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> · {hint}</span> : null}
       </Mono>
@@ -810,9 +810,9 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 function StringList({ items, onChange, placeholder }: { items: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
       {items.map((it, i) => (
-        <div key={i} style={{ display: "flex", gap: 6 }}>
+        <div key={i} style={{ display: "flex", gap: space.xs }}>
           <input
             style={input}
             value={it}
@@ -832,9 +832,9 @@ function StringList({ items, onChange, placeholder }: { items: string[]; onChang
 
 function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => void }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
       {items.map((k, i) => (
-        <div key={i} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div key={i} style={{ display: "flex", gap: space.xs, flexWrap: "wrap" }}>
           <input
             style={{ ...input, flex: "1 1 120px", width: "auto" }}
             placeholder="metric"
@@ -873,7 +873,7 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
 
 const input: React.CSSProperties = {
   ...mono,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   width: "100%",
   padding: "10px 10px",
   borderRadius: "var(--r-field)",
@@ -884,7 +884,7 @@ const input: React.CSSProperties = {
 };
 const presetBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   fontWeight: 700,
   padding: "10px 14px",
   borderRadius: "var(--r-field)",
@@ -895,7 +895,7 @@ const presetBtn: React.CSSProperties = {
 };
 const primaryBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
@@ -908,7 +908,7 @@ const primaryBtn: React.CSSProperties = {
 };
 const dangerBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
@@ -921,7 +921,7 @@ const dangerBtn: React.CSSProperties = {
 };
 const addBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: fs.body,
   fontWeight: 600,
   textAlign: "left",
   padding: "9px 10px",
@@ -933,7 +933,7 @@ const addBtn: React.CSSProperties = {
 };
 const removeBtn: React.CSSProperties = {
   ...mono,
-  fontSize: 16,
+  fontSize: fs.subtitle,
   lineHeight: 1,
   width: 34,
   flexShrink: 0,
@@ -945,7 +945,7 @@ const removeBtn: React.CSSProperties = {
 };
 const chipBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: fs.body,
   fontWeight: 600,
   padding: "8px 11px",
   borderRadius: 999,

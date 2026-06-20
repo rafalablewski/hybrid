@@ -9,7 +9,7 @@ import {
   type PersonaAccess,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
 
@@ -163,16 +163,16 @@ export default function AdminAccess() {
             <Kicker color={palette.violet}>Pending coach applications · {apps.length}</Kicker>
             <View style={{ marginTop: 10 }}>
               {apps.length === 0 ? (
-                <Mono style={{ fontSize: 13 }}>No pending applications.</Mono>
+                <Mono style={{ fontSize: fs.body }}>No pending applications.</Mono>
               ) : (
                 apps.map((a) => (
                   <View key={a.id} style={{ borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 10 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: 14, color: palette.chalk }}>{a.userEmail}</Text>
-                    <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 4, lineHeight: 17 }}>{a.credentials}</Mono>
-                    <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 4 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{a.userEmail}</Text>
+                    <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4, lineHeight: 17 }}>{a.credentials}</Mono>
+                    <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
                       {new Date(a.createdAt).toLocaleDateString()}
                     </Mono>
-                    <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                    <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
                       <PillBtn label="Approve" color={palette.lime} onPress={() => decideApp(a.id, "approve")} />
                       <PillBtn label="Deny" color={palette.ash} outline onPress={() => decideApp(a.id, "deny")} />
                     </View>
@@ -187,15 +187,15 @@ export default function AdminAccess() {
             <Kicker color={palette.violet}>Pending access requests · {requests.length}</Kicker>
             <View style={{ marginTop: 10 }}>
               {requests.length === 0 ? (
-                <Mono style={{ fontSize: 13 }}>No pending requests.</Mono>
+                <Mono style={{ fontSize: fs.body }}>No pending requests.</Mono>
               ) : (
                 requests.map((r) => (
                   <View key={r.id} style={{ borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 10 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: 14, color: palette.chalk }}>{r.userEmail}</Text>
-                    <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{r.userEmail}</Text>
+                    <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>
                       wants <Text style={{ color: palette.chalk }}>{navLabel(r.navId)}</Text>
                     </Mono>
-                    <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                    <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
                       <PillBtn label="Approve" color={palette.lime} onPress={() => decideReq(r.id, "approve")} />
                       <PillBtn label="Deny" color={palette.ash} outline onPress={() => decideReq(r.id, "deny")} />
                     </View>
@@ -217,8 +217,8 @@ export default function AdminAccess() {
             const c = palette[key];
             return (
               <Card key={name} accent={c}>
-                <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(palette, c) }}>{name}</Text>
-                <Mono color={palette.chalk} style={{ fontSize: 12, marginTop: 6, lineHeight: 17 }}>{desc}</Mono>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(palette, c) }}>{name}</Text>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 6, lineHeight: 17 }}>{desc}</Mono>
               </Card>
             );
           })}
@@ -227,14 +227,14 @@ export default function AdminAccess() {
             <View style={{ marginTop: 12 }}>
               {/* header */}
               <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: palette.line, paddingBottom: 6 }}>
-                <Mono color={palette.ash} style={{ flex: 2, fontSize: 11 }}>CAP</Mono>
-                <Mono color={palette.lime} style={{ flex: 1, fontSize: 11, textAlign: "center" }}>CLIENT</Mono>
-                <Mono color={palette.violet} style={{ flex: 1, fontSize: 11, textAlign: "center" }}>COACH</Mono>
-                <Mono color={palette.amber} style={{ flex: 1, fontSize: 11, textAlign: "center" }}>ADMIN</Mono>
+                <Mono color={palette.ash} style={{ flex: 2, fontSize: fs.micro }}>CAP</Mono>
+                <Mono color={palette.lime} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>CLIENT</Mono>
+                <Mono color={palette.violet} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>COACH</Mono>
+                <Mono color={palette.amber} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>ADMIN</Mono>
               </View>
               {ROLE_PERMISSIONS.map((p) => (
                 <View key={p.cap} style={{ flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 8 }}>
-                  <Text style={{ flex: 2, fontFamily: F.semi, fontSize: 12, color: palette.chalk, paddingRight: 6 }}>{p.cap}</Text>
+                  <Text style={{ flex: 2, fontFamily: F.semi, fontSize: fs.caption, color: palette.chalk, paddingRight: 6 }}>{p.cap}</Text>
                   <PermCell v={p.client} />
                   <PermCell v={p.coach} />
                   <PermCell v={p.admin} />
@@ -258,7 +258,7 @@ export default function AdminAccess() {
             Admin), so lowering a feature exposes it to more users. Changes take effect on the next
             client load — no deploy.{busy ? " · saving…" : ""}
           </Intro>
-          <Mono color={palette.ash} style={{ marginBottom: 14, fontSize: 11 }}>
+          <Mono color={palette.ash} style={{ marginBottom: 14, fontSize: fs.micro }}>
             {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
           </Mono>
           <ErrorNote error={err} onDismiss={() => setErr(null)} />
@@ -273,16 +273,16 @@ export default function AdminAccess() {
                   const overridden = overrides[item.id] !== undefined;
                   return (
                     <View key={item.id} style={{ borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 10 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <Text style={{ fontFamily: F.bold, fontSize: 14, color: palette.chalk }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>
                           {item.icon} {item.label}
                         </Text>
                         {overridden && <Chip color={palette.amber}>overridden</Chip>}
                       </View>
-                      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>
+                      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>
                         {item.id} · default: {PERSONA_LABEL[def]}
                       </Mono>
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
                         {PERSONAS.map((p) => {
                           const on = p === current;
                           return (
@@ -300,7 +300,7 @@ export default function AdminAccess() {
                                 opacity: busy ? 0.6 : 1,
                               }}
                             >
-                              <Text style={{ fontFamily: F.semi, fontSize: 11, color: on ? txt(palette, palette.lime) : palette.ash }}>
+                              <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: on ? txt(palette, palette.lime) : palette.ash }}>
                                 {PERSONA_LABEL[p]}
                               </Text>
                             </Pressable>
@@ -325,7 +325,7 @@ function PermCell({ v }: { v: string }) {
   const no = v === "no";
   const color = no ? palette.ash : yes ? palette.lime : palette.amber;
   return (
-    <Mono color={color} style={{ flex: 1, fontSize: 11, textAlign: "center" }}>
+    <Mono color={color} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>
       {no ? "—" : v}
     </Mono>
   );

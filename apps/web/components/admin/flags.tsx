@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Flag = {
   key: string;
@@ -71,8 +71,8 @@ export default function AdminFlags() {
     <div>
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Overrides not persisted yet</div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginBottom: 6 }}>Overrides not persisted yet</div>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
             The <b>FeatureFlag</b> table doesn&apos;t exist yet — run{" "}
             <span style={{ color: txt(AMBER) }}>reference/sql-feature-flags.sql</span> in Supabase to make toggles persist.
             Until then the app runs on the registry defaults below.
@@ -81,34 +81,34 @@ export default function AdminFlags() {
       )}
 
       {err && (
-        <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
           {err}
         </Mono>
       )}
 
-      <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 14 }} c={ASH}>
         {flags ? `${flags.length} flags` : "…"} · toggles take effect on the next client load — no deploy.
       </Mono>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
         {flags?.map((f) => (
           <Card key={f.key} style={{ borderLeft: `3px solid ${f.enabled ? LIME : ASH}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ marginBottom: 4 }}>
                   <Chip c={f.enabled ? LIME : ASH}>{f.enabled ? "on" : "off"}</Chip>
                   {f.overridden ? <Chip c={AMBER}>overridden</Chip> : <Chip c={ASH}>default</Chip>}
                   <Chip c={ASH}>{f.audience}</Chip>
                 </div>
-                <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{f.label}</div>
-                <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 2 }} c={ASH}>{f.description}</Mono>
-                <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+                <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{f.label}</div>
+                <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 2 }} c={ASH}>{f.description}</Mono>
+                <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                   {f.key} · default {f.defaultEnabled ? "on" : "off"}
                   {f.updatedByEmail ? ` · last by ${f.updatedByEmail}` : ""}
                 </Mono>
               </div>
 
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: space.sm, alignItems: "center", flexShrink: 0 }}>
                 <Select
                   value={f.audience}
                   onChange={(e) => upsert(f.key, { enabled: f.enabled, audience: e.target.value })}
@@ -135,7 +135,7 @@ export default function AdminFlags() {
 
         {flags && flags.length === 0 && (
           <Card>
-            <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
+            <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
               No flags in the registry.
             </Mono>
           </Card>
@@ -165,7 +165,7 @@ function knob(on: boolean): React.CSSProperties {
 }
 const resetBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: fs.caption,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",

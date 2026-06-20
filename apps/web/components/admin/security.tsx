@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Control = {
@@ -43,13 +43,13 @@ export default function AdminSecurity() {
   return (
     <div>
       {/* posture summary */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1.2fr 1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1.2fr 1fr 1fr 1fr", gap: space.lg, marginBottom: 16 }}>
         <Card style={{ borderLeft: `3px solid ${scoreColor}` }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Posture score</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Posture score</Mono>
           <div style={{ ...disp, fontWeight: 800, fontSize: 40, color: scoreColor, lineHeight: 1.05, margin: "4px 0 2px" }}>
-            {d.posture.score}<span style={{ fontSize: 20, color: ASH }}>/100</span>
+            {d.posture.score}<span style={{ fontSize: fs.heading, color: ASH }}>/100</span>
           </div>
-          <Mono s={{ fontSize: 12 }} c={ASH}>{d.posture.pass}/{d.posture.total} controls green</Mono>
+          <Mono s={{ fontSize: fs.caption }} c={ASH}>{d.posture.pass}/{d.posture.total} controls green</Mono>
         </Card>
         <CountCard label="Passing" value={d.posture.pass} c={LIME} />
         <CountCard label="Action required" value={d.posture.manual} c={AMBER} />
@@ -58,7 +58,7 @@ export default function AdminSecurity() {
 
       {d.posture.criticalOpen > 0 && (
         <Card style={{ borderLeft: `3px solid ${RED}`, marginBottom: 16 }}>
-          <Mono s={{ fontSize: 14 }} c={RED}>
+          <Mono s={{ fontSize: fs.bodyLg }} c={RED}>
             ⚠ {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
           </Mono>
         </Card>
@@ -66,15 +66,15 @@ export default function AdminSecurity() {
 
       {/* live runtime checks */}
       <Card style={{ marginBottom: 20 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={BLUE}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={BLUE}>
           Live runtime checks · this deployment
         </Mono>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap: space.ms }}>
           {d.runtime.map((r) => (
-            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: space.ms }}>
               <Dot c={r.ok === null ? ASH : r.ok ? LIME : RED} />
-              <Mono s={{ fontSize: 14 }} c={CHALK}>{r.label}</Mono>
-              <Mono s={{ fontSize: 12, marginLeft: "auto" }} c={r.ok === null ? ASH : r.ok ? LIME : RED}>
+              <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{r.label}</Mono>
+              <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={r.ok === null ? ASH : r.ok ? LIME : RED}>
                 {r.ok === null ? "n/a" : r.ok ? "ok" : "fail"}
               </Mono>
             </div>
@@ -87,23 +87,23 @@ export default function AdminSecurity() {
         const items = d.controls.filter((c) => c.category === cat);
         return (
           <div key={cat} style={{ marginBottom: 22 }}>
-            <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
+            <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
               {cat} · {items.filter((i) => i.status === "pass").length}/{items.length}
             </Mono>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
               {items.map((c) => (
                 <Card key={c.id} style={{ borderLeft: `3px solid ${statusColor(c.status)}`, padding: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginBottom: 6, flexWrap: "wrap" }}>
                     <Dot c={statusColor(c.status)} />
-                    <span style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{c.title}</span>
-                    <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+                    <span style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{c.title}</span>
+                    <span style={{ marginLeft: "auto", display: "flex", gap: space.xs }}>
                       <Chip c={sevColor[c.severity]}>{c.severity}</Chip>
                       <Chip c={statusColor(c.status)}>{statusLabel(c.status)}</Chip>
                     </span>
                   </div>
-                  <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block" }} c={ASH}>{c.detail}</Mono>
+                  <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block" }} c={ASH}>{c.detail}</Mono>
                   {c.evidence && (
-                    <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={c.status === "pass" ? LIME : AMBER}>
+                    <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={c.status === "pass" ? LIME : AMBER}>
                       {c.status === "pass" ? "✓ " : "→ "}{c.evidence}
                     </Mono>
                   )}
@@ -114,7 +114,7 @@ export default function AdminSecurity() {
         );
       })}
 
-      <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={ASH}>
         Generated {new Date(d.generatedAt).toISOString().slice(0, 19).replace("T", " ")} · green controls are enforced
         by tests in CI.
       </Mono>
@@ -125,7 +125,7 @@ export default function AdminSecurity() {
 function CountCard({ label, value, c }: { label: string; value: number; c: string }) {
   return (
     <Card>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>{label}</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>{label}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: 34, color: c, lineHeight: 1.1, margin: "6px 0 0" }}>{value}</div>
     </Card>
   );

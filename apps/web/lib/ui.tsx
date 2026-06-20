@@ -2,7 +2,11 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, ROLE_COLOR, type SemanticRole } from "@hybrid/core";
+import { colors, ROLE_COLOR, type SemanticRole, fs, space } from "@hybrid/core";
+
+// Re-export the shared scale so screens import sizing from one place:
+//   import { fs, space } from "@/lib/ui"  →  fontSize: fs.body, gap: space.lg
+export { fs, space };
 
 // Tokens come from @hybrid/core (the shared identity). Surface + primary-text
 // tokens resolve through CSS variables (globals.css @theme + [data-theme])
@@ -81,7 +85,7 @@ export const tip = {
   border: `1px solid ${LINE}`,
   borderRadius: "var(--r-tip)",
   ...mono,
-  fontSize: 12,
+  fontSize: fs.caption,
 } as const;
 
 export function Mono({
@@ -117,7 +121,7 @@ export function Card({
 }) {
   if (glass) {
     return (
-      <Glass span={span} variant={variant} onClick={onClick} style={{ padding: 20, ...style }}>
+      <Glass span={span} variant={variant} onClick={onClick} style={{ padding: space.xl, ...style }}>
         {children}
       </Glass>
     );
@@ -129,7 +133,7 @@ export function Card({
         background: CARD,
         border: `1px solid ${LINE}`,
         borderRadius: "var(--r-card)",
-        padding: 20,
+        padding: space.xl,
         gridColumn: span ? `span ${span}` : undefined,
         cursor: onClick ? "pointer" : undefined,
         ...style,
@@ -191,7 +195,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
       style={{
         ...cond,
         display: "inline-block",
-        fontSize: 12,
+        fontSize: fs.caption,
         fontWeight: 600,
         letterSpacing: ".05em",
         textTransform: "uppercase",
@@ -289,7 +293,7 @@ export function Select({
         }}
         style={{
           ...mono,
-          fontSize: 13,
+          fontSize: fs.body,
           padding: pill ? "8px 14px" : "8px 10px",
           borderRadius: pill ? 999 : "var(--r-field)",
           background: INK2,
@@ -353,7 +357,7 @@ export function Stat({
 }) {
   return (
     <Card glass>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>
         {label}
       </Mono>
       <div
@@ -370,7 +374,7 @@ export function Stat({
       </div>
       {sub && (
         <Mono
-          s={{ fontSize: 12 }}
+          s={{ fontSize: fs.caption }}
           c={sub.startsWith("−") || sub.startsWith("↓") ? RED : LIME}
         >
           {sub}
@@ -398,7 +402,7 @@ export function ChartFrame({
       <div style={{ marginBottom: 14 }}>
         {kicker && (
           <Mono
-            s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}
+            s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}
             c={c}
           >
             {kicker}

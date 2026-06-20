@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type PendingProfile = {
   id: string;
@@ -90,7 +90,7 @@ export default function AdminModeration() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Moderation not initialized</div>
-        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The moderation tables aren&apos;t set up yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-moderation.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
@@ -102,14 +102,14 @@ export default function AdminModeration() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
         {([["profiles", `Pending profiles${pCount ? ` · ${pCount}` : ""}`], ["reports", `Reports${rCount ? ` · ${rCount}` : ""}`]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
             style={{
               ...cond,
-              fontSize: 14,
+              fontSize: fs.bodyLg,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: ".05em",
@@ -127,14 +127,14 @@ export default function AdminModeration() {
       </div>
 
       {err && (
-        <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
           {err}
         </Mono>
       )}
 
       {tab === "profiles" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Mono s={{ fontSize: 12, display: "block" }} c={ASH}>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
+          <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>
             Discoverable talent profiles awaiting approval before they surface in discovery.
           </Mono>
           {profiles?.map((p) => (
@@ -144,12 +144,12 @@ export default function AdminModeration() {
                 <Chip c={ASH}>{p.sport}</Chip>
                 <Chip c={ASH}>{p.sex}{p.age}</Chip>
               </div>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{p.name}</div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 2 }} c={ASH}>{p.email}</Mono>
-              <Mono s={{ fontSize: 13, display: "block", marginTop: 6 }} c={ASH}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{p.name}</div>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>{p.email}</Mono>
+              <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6 }} c={ASH}>
                 {Object.entries(p.metrics ?? {}).map(([k, v]) => `${k}: ${v}`).join("  ·  ") || "no metrics"}
               </Mono>
-              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 14 }}>
                 <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "approve")} style={primaryBtn}>Approve</button>
                 <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "reject")} style={{ ...ghostBtn, color: txt(RED), borderColor: `${RED}55` }}>Reject</button>
               </div>
@@ -160,8 +160,8 @@ export default function AdminModeration() {
       )}
 
       {tab === "reports" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Mono s={{ fontSize: 12, display: "block" }} c={ASH}>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
+          <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>
             User-flagged content. Take down to drop the target from discovery; dismiss if it&apos;s fine.
           </Mono>
           {reports?.map((r) => (
@@ -171,14 +171,14 @@ export default function AdminModeration() {
                 <Chip c={ASH}>{r.targetType}</Chip>
                 {r.target && <Chip c={r.target.moderationStatus === "approved" ? LIME : AMBER}>{r.target.moderationStatus}</Chip>}
               </div>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 15 }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.note }}>
                 {r.target ? `${r.target.name} · ${r.target.sport}` : `${r.targetType}:${r.targetId.slice(0, 8)} (target gone)`}
               </div>
-              {r.detail && <Mono s={{ fontSize: 13, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>“{r.detail}”</Mono>}
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>
+              {r.detail && <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>“{r.detail}”</Mono>}
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>
                 reported by {r.reporterEmail} · {new Date(r.createdAt).toLocaleDateString()}
               </Mono>
-              <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
                 <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "takedown")} style={{ ...primaryBtn, background: RED, border: `1px solid ${RED}` }}>Take down</button>
                 <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "dismiss")} style={ghostBtn}>Dismiss</button>
                 <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "resolve")} style={ghostBtn}>Mark resolved</button>
@@ -195,14 +195,14 @@ export default function AdminModeration() {
 function Empty({ children }: { children: React.ReactNode }) {
   return (
     <Card>
-      <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>{children}</Mono>
+      <Mono s={{ fontSize: fs.bodyLg, textAlign: "center", display: "block", padding: 24 }} c={ASH}>{children}</Mono>
     </Card>
   );
 }
 
 const primaryBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
@@ -215,7 +215,7 @@ const primaryBtn: React.CSSProperties = {
 };
 const ghostBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
