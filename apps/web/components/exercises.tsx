@@ -16,6 +16,7 @@ import {
 } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const PERIODS: { id: ExercisePeriod; label: string }[] = [
   { id: "8w", label: "8 wk" },
@@ -36,6 +37,7 @@ function Stat({ label, value, c = CHALK }: { label: string; value: string | numb
 }
 
 export default function Exercises({ sessions, focus }: { sessions: LoggedSession[]; focus?: string }) {
+  const isMobile = useIsMobile();
   const history = useMemo(() => exerciseHistory(sessions), [sessions]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string>("");
@@ -66,7 +68,7 @@ export default function Exercises({ sessions, focus }: { sessions: LoggedSession
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start", maxWidth: 1040 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start", maxWidth: 1040 }}>
       {/* Exercise list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <Header />
@@ -146,7 +148,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
           </Card>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12 }}>
               <Stat label="Runs" value={stats.efforts} />
               <Stat label="Distance" value={`${stats.distanceKm} km`} c={BLUE} />
               <Stat label="Longest" value={`${stats.longestKm} km`} />
@@ -181,7 +183,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
   }
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12 }}>
         <Stat label="Best e1RM" value={fmtWeight(stats.bestE1rm, units)} c={LIME} />
         <Stat label="Working sets" value={stats.workingSets} />
         <Stat label="Volume" value={fmtTonnage(stats.volume, units)} />

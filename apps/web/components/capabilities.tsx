@@ -24,7 +24,7 @@ export default function CapabilitiesScreen() {
       </Mono>
 
       {/* counts */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 16, marginBottom: 20 }}>
         {order.map((st) => {
           const m = STATUS_META[st];
           const n = capabilitiesByStatus(st).length;

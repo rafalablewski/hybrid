@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Flag = {
   key: string;
@@ -23,6 +23,7 @@ export default function AdminFlags() {
   const [flags, setFlags] = useState<Flag[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/admin/flags")
@@ -38,18 +39,30 @@ export default function AdminFlags() {
 
   async function upsert(key: string, body: Record<string, unknown>) {
     setBusy(key);
-    await fetch("/api/admin/flags", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ key, ...body }),
-    });
+    setErr(null);
+    try {
+      const res = await fetch("/api/admin/flags", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key, ...body }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Couldn't save that change — re-syncing.");
+    }
     setBusy(null);
     load();
   }
 
   async function reset(key: string) {
     setBusy(key);
-    await fetch(`/api/admin/flags/${encodeURIComponent(key)}`, { method: "DELETE" });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/flags/${encodeURIComponent(key)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Couldn't reset that flag — re-syncing.");
+    }
     setBusy(null);
     load();
   }
@@ -65,6 +78,12 @@ export default function AdminFlags() {
             Until then the app runs on the registry defaults below.
           </Mono>
         </Card>
+      )}
+
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+          {err}
+        </Mono>
       )}
 
       <Mono s={{ fontSize: 11, display: "block", marginBottom: 14 }} c={ASH}>

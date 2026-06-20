@@ -115,7 +115,13 @@ export default function AdminMedia() {
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusy(true);
-    await fetch(`/api/admin/media/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/media/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That change didn't save — re-syncing.");
+    }
     setBusy(false);
     setEdit(null);
     load();
@@ -124,7 +130,13 @@ export default function AdminMedia() {
   async function remove(a: Asset) {
     if (!confirm(`Delete “${a.title}” permanently (file + catalog entry)?`)) return;
     setBusy(true);
-    await fetch(`/api/admin/media/${a.id}`, { method: "DELETE" });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/media/${a.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Delete failed — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -189,7 +201,7 @@ export default function AdminMedia() {
         </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
         {list?.map((a) => (
           <Card key={a.id} style={{ padding: 0, overflow: "hidden", borderLeft: `3px solid ${STATUS_COLOR[a.status] ?? ASH}` }}>
             <div style={{ aspectRatio: "16 / 10", background: INK, display: "grid", placeItems: "center", overflow: "hidden" }}>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin, requireAgentOperator } from "@/lib/admin";
+import { requireAdmin, requireAgentOperator, audit } from "@/lib/admin";
 import { rateLimit } from "@/lib/guard";
 import { buildDigest } from "@/lib/agent-digest";
 import { postSlack, slackConfigured } from "@/lib/slack";
@@ -20,5 +20,14 @@ export async function POST(request: Request) {
 
   const { text } = await buildDigest();
   const sent = await postSlack(text);
+
+  await audit({
+    actor: gate.admin,
+    action: "agent.digest.send",
+    summary: `Sent the agent digest to Slack${sent ? "" : " — Slack not configured"}`,
+    metadata: { sent },
+    req: request,
+  });
+
   return NextResponse.json({ sent, reason: sent ? undefined : "SLACK_WEBHOOK_URL not set" });
 }

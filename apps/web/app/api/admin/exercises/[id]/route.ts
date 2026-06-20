@@ -60,7 +60,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (e) {
     if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002")
       return NextResponse.json({ error: "an exercise with that name already exists" }, { status: 409 });
-    throw e;
+    console.error("[admin exercises] update failed", e);
+    return NextResponse.json({ error: "could not update exercise" }, { status: 500 });
   }
 }
 

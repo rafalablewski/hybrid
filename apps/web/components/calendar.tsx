@@ -8,6 +8,7 @@ import {
 import {
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip,
 } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -15,6 +16,7 @@ type EventRow = { id: string; name: string; sport: string; date: string };
 type AssignmentRow = { id: string; name: string; date: string; status: string };
 
 export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
+  const isMobile = useIsMobile();
   const now = new Date();
   const [year, setYear] = useState(now.getUTCFullYear());
   const [month, setMonth] = useState(now.getUTCMonth());
@@ -75,7 +77,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
   const selAssignments = assignmentsByDay[selected] ?? [];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 16, alignItems: "start" }}>
       <Card>
         {/* header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>

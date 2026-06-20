@@ -117,7 +117,7 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
       </Card>
 
       {/* the bundle */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 14, marginTop: 14 }}>
         {BUNDLE.map((cat) => (
           <Card key={cat.kicker}>
             <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={cat.color}>{cat.kicker}</Mono>

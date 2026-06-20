@@ -50,7 +50,7 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
         <AuroraIcon name="navigation" size={24} color={C("blue")} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${easyPct != null ? 4 : 3}, 1fr)`, gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 14 }}>
         <Stat label="Runs" value={totals.efforts} /><Stat label="Distance" value={`${totals.distanceKm} km`} c={C("blue")} /><Stat label="Time" value={`${Math.round(totals.minutes / 6) / 10} h`} />{easyPct != null && <Stat label="Easy %" value={`${easyPct}%`} c={C("lime")} />}
       </div>
 
@@ -88,15 +88,19 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
 
       <div style={card}>
         {head("blue", "By movement")}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-          {["move", "runs", "km", "longest", "best pace"].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
-        </div>
-        {stats.map((r) => (
-          <div key={r.move} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "8px 0", borderTop: `1px solid ${C("line")}`, fontFamily: "var(--font-mono)", fontSize: 13 }}>
-            <span style={{ color: C("chalk") }}>{r.move}</span><span style={{ color: C("ash") }}>{r.efforts}</span><span style={{ color: C("ash") }}>{r.distanceKm}</span><span style={{ color: C("ash") }}>{r.longestKm || "–"}</span>
-            <span style={{ color: r.bestPaceSecPerKm != null ? C("blue") : C("ash") }}>{r.bestPaceSecPerKm != null ? `${paceClock(r.bestPaceSecPerKm)} /km` : "–"}</span>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+          <div style={{ minWidth: 420 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
+              {["move", "runs", "km", "longest", "best pace"].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
+            </div>
+            {stats.map((r) => (
+              <div key={r.move} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "8px 0", borderTop: `1px solid ${C("line")}`, fontFamily: "var(--font-mono)", fontSize: 13 }}>
+                <span style={{ color: C("chalk") }}>{r.move}</span><span style={{ color: C("ash") }}>{r.efforts}</span><span style={{ color: C("ash") }}>{r.distanceKm}</span><span style={{ color: C("ash") }}>{r.longestKm || "–"}</span>
+                <span style={{ color: r.bestPaceSecPerKm != null ? C("blue") : C("ash") }}>{r.bestPaceSecPerKm != null ? `${paceClock(r.bestPaceSecPerKm)} /km` : "–"}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

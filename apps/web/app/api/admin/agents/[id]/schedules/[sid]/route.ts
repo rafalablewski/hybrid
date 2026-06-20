@@ -15,8 +15,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const limited = rateLimit(request, { key: "admin-agent-sched-patch", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
-  const { sid } = await params;
-  const existing = await prisma.agentSchedule.findUnique({ where: { id: sid } });
+  const { id, sid } = await params;
+  // Scope the schedule to its parent agent — a schedule id alone must never be
+  // enough to mutate it under a different [id] (IDOR). 404 on a mismatch.
+  const existing = await prisma.agentSchedule.findFirst({ where: { id: sid, agentId: id } });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const parsed = await readJsonLimited<{ task?: unknown; cadence?: unknown; enabled?: unknown }>(request, 16 * 1024);
@@ -65,8 +67,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const limited = rateLimit(request, { key: "admin-agent-sched-delete", limit: 30, windowMs: 60_000 });
   if (limited) return limited;
 
-  const { sid } = await params;
-  const existing = await prisma.agentSchedule.findUnique({ where: { id: sid } });
+  const { id, sid } = await params;
+  // Scope to the parent agent (see PATCH) — no cross-agent delete by id alone.
+  const existing = await prisma.agentSchedule.findFirst({ where: { id: sid, agentId: id } });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   await prisma.agentSchedule.delete({ where: { id: sid } });

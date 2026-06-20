@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SessionBlock } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -19,6 +20,7 @@ export default function AuroraBuilder() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const isMobile = useIsMobile();
 
   const load = useCallback(async () => {
     try {
@@ -53,7 +55,7 @@ export default function AuroraBuilder() {
   const del = async (id: string) => { await fetch(`/api/templates/${id}`, { method: "DELETE" }); load(); };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workout name"
           style={{ ...input, fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, width: "100%", marginBottom: 8 }} />

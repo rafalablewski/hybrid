@@ -172,6 +172,25 @@ export default function More() {
         <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
       </Pressable>
 
+      {/* ADMIN CONSOLE — operators only. Parity with the web sidebar's pinned
+          "Admin console" button; opens the mobile /admin surface. The route is
+          additionally gated server-side on every /api/admin call. */}
+      {role === "admin" && (
+        <Pressable
+          onPress={() => router.push("/admin")}
+          style={{ marginTop: 14, backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}80`, borderRadius: rCard, padding: 16, flexDirection: "row", alignItems: "center", gap: 14 }}
+        >
+          <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="verified" size={20} color={C.amber} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>Admin console</Text>
+            <Mono style={{ marginTop: 2, fontSize: 11 }}>users · moderation · agents · CMS · governance</Mono>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.amber) }}>→</Text>
+        </Pressable>
+      )}
+
       {/* Mode toggle — a client picks the lean tracker (Simple, free) or the
           full athlete toolkit (Full, a paid upgrade). Coaches/admins get their
           surface from their role; Coach is no longer a self-serve mode. */}

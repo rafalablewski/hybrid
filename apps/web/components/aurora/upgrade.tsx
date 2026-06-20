@@ -5,6 +5,7 @@ import { FUNNEL } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { setClientPersona } from "@/lib/persona";
 import { track } from "@/lib/track";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -50,6 +51,7 @@ const BUNDLE: { kicker: string; color: string; items: { ic: string; nm: string; 
 
 export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void }) {
   const { entitlement } = useSession();
+  const isMobile = useIsMobile();
   const paid = entitlement === "paid";
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -127,7 +129,7 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
       </div>
 
       {/* the bundle */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14, marginTop: 14 }}>
         {BUNDLE.map((cat) => (
           <div key={cat.kicker} style={card}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8, color: cat.color }}>{cat.kicker}</div>

@@ -9,6 +9,7 @@ import {
 } from "@hybrid/core";
 import RtpPanel from "../rtp-panel";
 import { AuroraIcon } from "./icons";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const SVG_INK2 = colors.ink2;
 const C = (v: string) => `var(--color-${v})`;
@@ -48,6 +49,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 /** AURORA Performance (web) — full bespoke Athlete Twin (HPI, trajectory chart,
  *  tissue body-map + injury table, RtP panel), reusing the exact engines. */
 export default function AuroraPerformance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
+  const isMobile = useIsMobile();
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
   if (sessions.length === 0) {
     return (
@@ -72,7 +74,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Performance</h1>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
         <div style={card}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Athlete Twin · HPI</div>
           <div style={{ fontWeight: 900, fontSize: 56, color: C(hpiVar(state.hpi.band)), lineHeight: 1.1, margin: "6px 0" }}>{state.hpi.score}</div>
@@ -110,13 +112,13 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>Injury risk · tissue map</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>model {risk.modelVersion} · calibrated probability</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
-          <div style={{ display: "flex", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
+          <div style={{ display: "flex", gap: 16, justifyContent: isMobile ? "center" : "flex-start" }}>
             <Figure regions={FRONT} label="anterior" byTissue={byTissue} />
             <Figure regions={BACK} label="posterior" byTissue={byTissue} />
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto", maxWidth: "100%", minWidth: 0 }}>
+            <table style={{ width: "100%", minWidth: 420, borderCollapse: "collapse" }}>
               <thead>
                 <tr>{["Tissue", "Risk", "P(injury)", "ACWR", "Top driver"].map((h) => (
                   <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", color: C("ash"), textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${C("line")}` }}>{h}</th>

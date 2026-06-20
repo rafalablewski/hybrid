@@ -26,7 +26,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
       {GOAL_GROUPS.map((group) => (
         <div key={group.category} style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10, color: C("ash") }}>{group.category}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 16 }}>
             {group.goals.map((g) => (
               <div key={g.id} style={{ ...card, cursor: "pointer" }} onClick={() => setGoalId(g.id)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 22, color: g.color }}>{g.icon}</span><div style={{ fontWeight: 800, fontSize: 18 }}>{g.name}</div></div>
@@ -47,7 +47,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
       {backLink(back, "All goals")}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 16px" }}><span style={{ fontSize: 24, color: goal.color }}>{goal.icon}</span><h2 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>{goal.name}</h2></div>
       {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No plans here yet — plans for this goal are on the way.</p>}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
         {goal.plans.map((p) => (
           <div key={p.id} style={{ ...card, cursor: "pointer" }} onClick={() => pick(p.id)}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontWeight: 800, fontSize: 18 }}>{p.name}</div>{p.hot && chip(C("lime"), "Popular")}</div>
@@ -75,7 +75,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 4px" }}><h2 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>{plan.name}</h2>{plan.hot && chip(C("lime"), "Popular")}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>{plan.weeks} weeks · {plan.sessions}×/week · {d.level}</div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12, marginBottom: 16 }}>
         <Info label="Who it's for" value={d.forWho} /><Info label="Outcome" value={d.outcome} /><Info label="Session length" value={d.sessionLength} /><Info label="Equipment" value={d.equipment} />
       </div>
 
@@ -89,7 +89,8 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       {d.days.map((session, di) => (
         <div key={di} style={{ ...card, marginBottom: 16 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("amber") }}>{session.day}</div>
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
+          <div style={{ overflowX: "auto", maxWidth: "100%", marginTop: 10 }}>
+          <table style={{ width: "100%", minWidth: 340, borderCollapse: "collapse" }}>
             <thead><tr>{["Exercise", "Sets×Reps", "Rest", "RPE"].map((h) => <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), textTransform: "uppercase", textAlign: "left", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>{h}</th>)}</tr></thead>
             <tbody>{session.items?.map((it, i) => (
               <tr key={i}>
@@ -100,6 +101,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
               </tr>
             ))}</tbody>
           </table>
+          </div>
         </div>
       ))}
 

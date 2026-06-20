@@ -50,7 +50,7 @@ export default function AdminAgentRuns() {
         </Card>
       )}
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
         {FILTERS.map((f) => (
           <button
             key={f}

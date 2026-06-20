@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Bench = { metric: BenchmarkMetric; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
 type Report = { cohort: { sport: string; sex: string; age: number }; benchmarks: Bench[]; overall: number; potential: number; modelVersion: string };
@@ -21,6 +22,7 @@ export default function Talent() {
   // discovery
   const [q, setQ] = useState({ sport: "", metric: "hpi" as BenchmarkMetric, minPct: "80", byPotential: false });
   const [results, setResults] = useState<Result[]>([]);
+  const isMobile = useIsMobile();
 
   const load = async () => {
     const res = await fetch("/api/talent");
@@ -95,7 +97,7 @@ export default function Talent() {
         </Mono>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Your profile</Mono>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>

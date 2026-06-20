@@ -4,12 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import type { SessionBlock } from "@hybrid/core";
 import { INK2, LINE, LIME, CHALK, ASH, VIOLET, RED, ON_ACCENT, disp, cond, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const input = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
 
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
 export default function Builder() {
+  const isMobile = useIsMobile();
   const [name, setName] = useState("New workout");
   const [description, setDescription] = useState("");
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
@@ -50,7 +52,7 @@ export default function Builder() {
   const del = async (id: string) => { await fetch(`/api/templates/${id}`, { method: "DELETE" }); load(); };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 16, alignItems: "start" }}>
       <div>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workout name"
           style={{ ...input, ...disp, fontSize: 20, fontWeight: 800, width: "100%", marginBottom: 8 }} />

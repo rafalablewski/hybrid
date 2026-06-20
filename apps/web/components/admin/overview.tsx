@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "recharts";
 import { LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Stats = {
   totalUsers: number;
@@ -31,6 +32,7 @@ type Stats = {
 export default function AdminOverview() {
   const [s, setS] = useState<Stats | null>(null);
   const [err, setErr] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -45,7 +47,7 @@ export default function AdminOverview() {
   const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: VIOLET, CLIENT: LIME };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 16 }}>
       <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} c={LIME} />
       <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" c={LIME} />
       <Stat label="Sessions logged" value={s.sessions.toLocaleString()} c={CHALK} />

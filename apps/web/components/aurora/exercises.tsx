@@ -8,6 +8,7 @@ import {
 } from "@hybrid/core";
 import { LINE, LIME, ASH, BLUE, tip, mono } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const PERIODS: { id: ExercisePeriod; label: string }[] = [{ id: "8w", label: "8 wk" }, { id: "6m", label: "6 mo" }, { id: "1y", label: "1 yr" }, { id: "all", label: "All" }];
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
@@ -34,6 +35,7 @@ export default function AuroraExercises({ sessions, focus }: { sessions: LoggedS
   const active = selected || history[0]?.name || "";
   const filtered = history.filter((e) => e.name.toLowerCase().includes(query.toLowerCase()));
   const { countWarmupsInVolume: iw, units } = useLoggerPrefs();
+  const isMobile = useIsMobile();
   const stats = useMemo(() => (active ? exerciseDashboard(sessions, active, period, Date.now(), iw) : null), [sessions, active, period, iw]);
   const input = { fontFamily: "var(--font-mono)", fontSize: 13, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 12px", width: "100%", boxSizing: "border-box" as const };
 
@@ -47,7 +49,7 @@ export default function AuroraExercises({ sessions, focus }: { sessions: LoggedS
   }
 
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gridTemplateColumns: "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start" }}>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <h1 style={{ fontWeight: 900, fontSize: 22, margin: 0 }}>Exercises</h1>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search exercises…" style={input} />
@@ -86,7 +88,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
     if (stats.efforts === 0) return <div style={{ ...card, textAlign: "center", padding: 32 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No runs of this movement in this period.</span></div>;
     return (
       <>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 12 }}>
           <Stat label="Runs" value={stats.efforts} /><Stat label="Distance" value={`${stats.distanceKm} km`} c={C("blue")} /><Stat label="Longest" value={`${stats.longestKm} km`} /><Stat label="Best pace" value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} c={C("blue")} />
         </div>
         {paceData.length > 1 && (
@@ -105,7 +107,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
   if (stats.workingSets === 0) return <div style={{ ...card, textAlign: "center", padding: 32 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No working sets of this lift in this period.</span></div>;
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 12 }}>
         <Stat label="Best e1RM" value={fmtWeight(stats.bestE1rm, units)} c={C("lime")} /><Stat label="Working sets" value={stats.workingSets} /><Stat label="Volume" value={fmtTonnage(stats.volume, units)} /><Stat label="Sessions" value={stats.sessions} />
       </div>
       {e1rmData.length > 1 ? (

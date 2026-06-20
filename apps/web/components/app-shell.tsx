@@ -28,6 +28,7 @@ import {
   GlassField,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
+import { useIsMobile } from "@/lib/use-media-query";
 import {
   AthleteAnalytics,
   CoachAnalytics,
@@ -157,6 +158,23 @@ export default function AppShell() {
   const { theme, toggle } = useTheme();
   const aurora = useTemplate().template === "aurora";
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
+  // On phones/tablets the fixed sidebar becomes an off-canvas drawer (hamburger
+  // + scrim); on desktop it stays the sticky collapsible rail. Mirrors the admin
+  // console shell (components/admin/panel.tsx).
+  const isMobile = useIsMobile();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const railCollapsed = collapsed && !isMobile;
+  useEffect(() => {
+    if (!isMobile) setDrawerOpen(false);
+  }, [isMobile]);
+  useEffect(() => {
+    if (!isMobile || !drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isMobile, drawerOpen]);
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Twin.
   const bio = bioFromSignals ?? bioFromBiometrics;
@@ -223,22 +241,50 @@ export default function AppShell() {
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
       <GlassField />
 
-      {/* sidebar — always present on web (both templates, every screen) */}
+      {/* scrim — only on mobile while the drawer is open; taps close it */}
+      {isMobile && drawerOpen && (
+        <div
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden
+          style={{ position: "fixed", inset: 0, zIndex: 59, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)" }}
+        />
+      )}
+
+      {/* sidebar — sticky rail on desktop, off-canvas drawer on mobile */}
       <aside
         className="lg-sidebar"
-        style={{
-          width: collapsed ? 72 : 240,
-          borderRight: `1px solid ${LINE}`,
-          padding: collapsed ? "24px 10px" : "24px 16px",
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          flexShrink: 0,
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 1,
-          transition: "width .28s cubic-bezier(.22,1,.36,1), padding .28s cubic-bezier(.22,1,.36,1)",
-        }}
+        style={
+          isMobile
+            ? {
+                width: 256,
+                maxWidth: "85vw",
+                borderRight: `1px solid ${LINE}`,
+                padding: "24px 16px",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                height: "100vh",
+                display: "flex",
+                flexDirection: "column",
+                zIndex: 60,
+                transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
+                transition: "transform .28s cubic-bezier(.22,1,.36,1)",
+                boxShadow: drawerOpen ? "0 24px 60px -20px rgba(0,0,0,.7)" : "none",
+              }
+            : {
+                width: railCollapsed ? 72 : 240,
+                borderRight: `1px solid ${LINE}`,
+                padding: railCollapsed ? "24px 10px" : "24px 16px",
+                position: "sticky",
+                top: 0,
+                height: "100vh",
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                zIndex: 1,
+                transition: "width .28s cubic-bezier(.22,1,.36,1), padding .28s cubic-bezier(.22,1,.36,1)",
+              }
+        }
       >
         {/* brand */}
         <div
@@ -247,12 +293,12 @@ export default function AppShell() {
             fontWeight: 900,
             fontSize: 22,
             letterSpacing: "-.04em",
-            padding: collapsed ? "0 0 22px" : "0 4px 22px",
-            textAlign: collapsed ? "center" : "left",
+            padding: railCollapsed ? "0 0 22px" : "0 4px 22px",
+            textAlign: railCollapsed ? "center" : "left",
             flexShrink: 0,
           }}
         >
-          {collapsed ? "H" : "HYBRID"}
+          {railCollapsed ? "H" : "HYBRID"}
           <span style={{ color: LIME_T }}>.</span>
         </div>
         <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
@@ -261,7 +307,7 @@ export default function AppShell() {
             if (visible.length === 0) return null;
             return (
               <div key={group} style={{ marginBottom: 14 }}>
-                {!collapsed && (
+                {!railCollapsed && (
                   <Mono
                     s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
                     c={ASH}
@@ -277,15 +323,15 @@ export default function AppShell() {
                   return (
                     <button
                       key={id}
-                      onClick={() => { setPendingBlocks(undefined); setScreen(id); }}
-                      title={collapsed ? label : undefined}
+                      onClick={() => { setPendingBlocks(undefined); setScreen(id); setDrawerOpen(false); }}
+                      title={railCollapsed ? label : undefined}
                       style={{
                         width: "100%",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: collapsed ? "center" : "flex-start",
-                        gap: collapsed ? 0 : 12,
-                        padding: collapsed ? "10px 0" : "10px 12px",
+                        justifyContent: railCollapsed ? "center" : "flex-start",
+                        gap: railCollapsed ? 0 : 12,
+                        padding: railCollapsed ? "10px 0" : "10px 12px",
                         marginBottom: 2,
                         borderRadius: 10,
                         cursor: "pointer",
@@ -301,7 +347,7 @@ export default function AppShell() {
                       <span style={{ fontSize: 16, display: "grid", placeItems: "center", width: 18, height: 18 }}>
                         {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
                       </span>
-                      {!collapsed && label}
+                      {!railCollapsed && label}
                     </button>
                   );
                 })}
@@ -313,15 +359,15 @@ export default function AppShell() {
               opens the single Full bundle page. Keeps the nav clean (no locks). */}
           {showUpgradeEntry && isEnabled("nav.upgrade") && (
             <button
-              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); setPendingBlocks(undefined); setScreen("upgrade"); }}
-              title={collapsed ? "Unlock Full" : undefined}
+              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); setPendingBlocks(undefined); setScreen("upgrade"); setDrawerOpen(false); }}
+              title={railCollapsed ? "Unlock Full" : undefined}
               style={{
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: collapsed ? "center" : "flex-start",
-                gap: collapsed ? 0 : 11,
-                padding: collapsed ? "12px 0" : "12px",
+                justifyContent: railCollapsed ? "center" : "flex-start",
+                gap: railCollapsed ? 0 : 11,
+                padding: railCollapsed ? "12px 0" : "12px",
                 marginTop: 8,
                 borderRadius: 12,
                 cursor: "pointer",
@@ -332,7 +378,7 @@ export default function AppShell() {
               }}
             >
               <span style={{ fontSize: 16 }}>✦</span>
-              {!collapsed && (
+              {!railCollapsed && (
                 <span style={{ flex: 1 }}>
                   <span style={{ ...disp, fontWeight: 800, fontSize: 14, display: "block" }}>Unlock Full</span>
                   <Mono s={{ fontSize: 10.5, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
@@ -346,11 +392,11 @@ export default function AppShell() {
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: collapsed ? "center" : "flex-start",
+              justifyContent: railCollapsed ? "center" : "flex-start",
               gap: 10,
-              padding: collapsed ? "8px 0" : "10px 12px",
+              padding: railCollapsed ? "8px 0" : "10px 12px",
               borderRadius: 10,
-              background: collapsed ? "transparent" : INK2,
+              background: railCollapsed ? "transparent" : INK2,
             }}
           >
             <div
@@ -368,11 +414,11 @@ export default function AppShell() {
                 fontSize: 14,
                 flexShrink: 0,
               }}
-              title={collapsed ? `${session.name} · ${session.role}` : undefined}
+              title={railCollapsed ? `${session.name} · ${session.role}` : undefined}
             >
               {initial}
             </div>
-            {!collapsed && (
+            {!railCollapsed && (
               <div style={{ overflow: "hidden" }}>
                 <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}>
                   {session.name}
@@ -385,8 +431,8 @@ export default function AppShell() {
           </div>
           {session.role === "admin" && (
             <button
-              onClick={() => router.push("/admin")}
-              title={collapsed ? "Admin console" : undefined}
+              onClick={() => { setDrawerOpen(false); router.push("/admin"); }}
+              title={railCollapsed ? "Admin console" : undefined}
               style={{
                 width: "100%",
                 marginTop: 8,
@@ -403,37 +449,39 @@ export default function AppShell() {
                 cursor: "pointer",
               }}
             >
-              {collapsed ? "⬡" : "Admin console ↗"}
+              {railCollapsed ? "⬡" : "Admin console ↗"}
             </button>
           )}
-          <button
-            onClick={toggleCollapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            style={{
-              width: "100%",
-              marginTop: 8,
-              ...cond,
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: ".05em",
-              color: txt(ASH),
-              background: INK2,
-              border: `1px solid ${LINE}`,
-              borderRadius: 10,
-              padding: "8px 0",
-              cursor: "pointer",
-            }}
-          >
-            {collapsed ? "»" : "« Collapse"}
-          </button>
+          {!isMobile && (
+            <button
+              onClick={toggleCollapsed}
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              style={{
+                width: "100%",
+                marginTop: 8,
+                ...cond,
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: ".05em",
+                color: txt(ASH),
+                background: INK2,
+                border: `1px solid ${LINE}`,
+                borderRadius: 10,
+                padding: "8px 0",
+                cursor: "pointer",
+              }}
+            >
+              {collapsed ? "»" : "« Collapse"}
+            </button>
+          )}
           <button
             onClick={() => {
               logout();
               router.replace("/login");
             }}
-            title={collapsed ? t("common.signout") : undefined}
+            title={railCollapsed ? t("common.signout") : undefined}
             style={{
               width: "100%",
               marginTop: 8,
@@ -450,29 +498,41 @@ export default function AppShell() {
               cursor: "pointer",
             }}
           >
-            {collapsed ? "⏻" : t("common.signout")}
+            {railCollapsed ? "⏻" : t("common.signout")}
           </button>
         </div>
       </aside>
 
       {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
-      <main style={{ flex: 1, padding: aurora ? "24px 32px 120px" : "24px 32px", maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      <main style={{ flex: 1, padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {/* Classic shows the app kicker + screen title here. Aurora screens
               render their own bespoke header, so we drop this to avoid a doubled
-              page title — but keep the theme/lang controls (right). */}
-          {aurora ? <div /> : (
-          <div>
-            <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
-              app.hybrid.app
-            </Mono>
-            <h1 style={{ ...disp, fontWeight: 900, fontSize: 30, letterSpacing: "-.03em", marginTop: 2, textTransform: "capitalize" }}>
-              {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
-            </h1>
+              page title — but keep the theme/lang controls (right). On mobile a
+              hamburger opens the nav drawer. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            {isMobile && (
+              <button
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open menu"
+                style={{ width: 40, height: 40, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: 10, border: `1px solid ${LINE}`, background: INK2, color: CHALK, fontSize: 18, cursor: "pointer" }}
+              >
+                ☰
+              </button>
+            )}
+            {aurora ? <div /> : (
+            <div style={{ minWidth: 0 }}>
+              <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
+                app.hybrid.app
+              </Mono>
+              <h1 style={{ ...disp, fontWeight: 900, fontSize: isMobile ? 22 : 30, letterSpacing: "-.03em", marginTop: 2, textTransform: "capitalize" }}>
+                {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
+              </h1>
+            </div>
+            )}
           </div>
-          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               onClick={toggle}

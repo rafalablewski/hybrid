@@ -62,7 +62,7 @@ export default function AuroraNutrition() {
   };
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
-  const numField = { fontFamily: "var(--font-mono)", fontSize: 14, width: "100%", boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
+  const numField = { fontFamily: "var(--font-mono)", fontSize: 14, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -118,7 +118,7 @@ export default function AuroraNutrition() {
         <div style={{ ...card, marginTop: 16 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Today vs adaptive target</div>
           <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 10 }}>Your targets adapt to you — add a weigh-in (in a weekly check-in) and log a few days of intake, and we&apos;ll estimate your maintenance and set goal-aware macros.</p>
-          <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap" }}>
             {[["Logged today", `${Math.round(today.kcal)} kcal`], ["Protein", `${Math.round(today.protein)}g`], ["Carbs", `${Math.round(today.carbs)}g`], ["Fat", `${Math.round(today.fat)}g`]].map(([l, v]) => (
               <div key={l}><div style={{ fontWeight: 900, fontSize: 17 }}>{v}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>{l}</div></div>
             ))}
@@ -152,7 +152,7 @@ export default function AuroraNutrition() {
           <AuroraIcon name="add" size={20} color={C("violet")} />
           <b style={{ fontSize: 15 }}>Add to today</b>
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
           <input value={f.kcal} onChange={(e) => setF((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
           <input value={f.protein} onChange={(e) => setF((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder="protein" style={numField} />
           <input value={f.carbs} onChange={(e) => setF((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder="carbs" style={numField} />

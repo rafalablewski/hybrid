@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type State = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
 
@@ -17,6 +18,7 @@ export default function Tactical() {
   const [state, setState] = useState<State | null>(null);
   const [load, setLoad] = useState("78");
   const [work, setWork] = useState("80");
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetch("/api/state").then(async (r) => {
@@ -46,7 +48,7 @@ export default function Tactical() {
         </Mono>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
         <Card style={{ borderLeft: `3px solid ${dr ? statusColor[dr.status] : LINE}` }}>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Deployment readiness</Mono>
           <div style={{ ...disp, fontWeight: 900, fontSize: 54, color: dr ? statusColor[dr.status] : ASH, lineHeight: 1.1, margin: "6px 0" }}>

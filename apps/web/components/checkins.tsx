@@ -78,7 +78,7 @@ export default function Checkins({ sessions }: { sessions: LoggedSession[] }) {
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginTop: 20 }} c={BLUE}>
           Daily check-in · today
         </Mono>
-        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 14 }}>
           {RATINGS.map((r) => (
             <div key={r.key}>
               <Mono s={{ fontSize: 11, textTransform: "uppercase" }}>{r.label}</Mono>

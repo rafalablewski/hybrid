@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildSystemPrompt,
   MODELS,
@@ -15,6 +15,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
 type RunStep = { agent: string; role: string; task: string; output: string };
@@ -52,6 +53,7 @@ type Schedule = {
 const STATUS_COLOR: Record<AgentStatus, string> = { active: LIME, paused: AMBER, draft: ASH };
 
 export default function AdminAgents() {
+  const isMobile = useIsMobile();
   const [agents, setAgents] = useState<AgentDefinition[] | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
   const [unavailable, setUnavailable] = useState(false);
@@ -59,6 +61,7 @@ export default function AdminAgents() {
   const [draft, setDraft] = useState<AgentDefinition | null>(null);
   const [original, setOriginal] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const [task, setTask] = useState("");
   const [runBusy, setRunBusy] = useState(false);
   const [run, setRun] = useState<RunResult | null>(null);
@@ -84,16 +87,30 @@ export default function AdminAgents() {
 
   useEffect(load, [load]);
 
-  // When a selection changes, snapshot the agent into an editable draft.
+  // When a selection changes, snapshot the agent into an editable draft and
+  // clear the transient run/task state. When `agents` is merely refetched for
+  // the SAME selection (e.g. after a save calls load()), we must NOT wipe the
+  // editor — only re-sync the dirty baseline so `dirty` clears, and adopt the
+  // refreshed values into the draft only if there are no unsaved local edits.
+  const prevSelId = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const a = agents?.find((x) => x.id === selectedId) ?? null;
-    setDraft(a ? structuredClone(a) : null);
-    setOriginal(a ? JSON.stringify(a) : "");
-    setRun(null);
-    setLiveText("");
-    setLiveSteps([]);
-    setRunStatus("");
-    setTask("");
+    const selectionChanged = prevSelId.current !== selectedId;
+    prevSelId.current = selectedId;
+    if (selectionChanged) {
+      setDraft(a ? structuredClone(a) : null);
+      setOriginal(a ? JSON.stringify(a) : "");
+      setRun(null);
+      setLiveText("");
+      setLiveSteps([]);
+      setRunStatus("");
+      setTask("");
+      return;
+    }
+    const next = a ? JSON.stringify(a) : "";
+    setDraft((d) => (d && JSON.stringify(d) === original ? (a ? structuredClone(a) : null) : d));
+    setOriginal(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `original` is read as the pre-refresh baseline; including it would loop.
   }, [selectedId, agents]);
 
   const loadRuns = useCallback(() => {
@@ -137,26 +154,36 @@ export default function AdminAgents() {
 
   async function addSchedule() {
     if (!selectedId || !newTask.trim()) return;
-    await fetch(`/api/admin/agents/${selectedId}/schedules`, {
+    setErr(null);
+    const res = await fetch(`/api/admin/agents/${selectedId}/schedules`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ task: newTask.trim(), cadence: newCadence }),
-    });
+    }).catch(() => null);
+    if (!res || !res.ok) {
+      const d = res ? await res.json().catch(() => ({})) : {};
+      setErr(d.error || "Could not add the schedule.");
+      return;
+    }
     setNewTask("");
     loadSchedules();
   }
 
   async function toggleSchedule(s: Schedule) {
-    await fetch(`/api/admin/agents/${selectedId}/schedules/${s.id}`, {
+    setErr(null);
+    const res = await fetch(`/api/admin/agents/${selectedId}/schedules/${s.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ enabled: !s.enabled }),
-    });
+    }).catch(() => null);
+    if (!res || !res.ok) setErr("Could not update the schedule.");
     loadSchedules();
   }
 
   async function deleteSchedule(id: string) {
-    await fetch(`/api/admin/agents/${selectedId}/schedules/${id}`, { method: "DELETE" });
+    setErr(null);
+    const res = await fetch(`/api/admin/agents/${selectedId}/schedules/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res || !res.ok) setErr("Could not delete the schedule.");
     loadSchedules();
   }
 
@@ -165,6 +192,7 @@ export default function AdminAgents() {
 
   async function createFrom(preset?: string) {
     setBusy(true);
+    setErr(null);
     const body = preset
       ? { preset }
       : { role: "Custom", mandate: "Describe this agent's mission.", status: "draft" };
@@ -172,9 +200,13 @@ export default function AdminAgents() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-    });
-    const d = await r.json().catch(() => ({}));
+    }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
     setBusy(false);
+    if (!r || !r.ok) {
+      setErr(d.error || "Could not create the agent.");
+      return;
+    }
     if (d.agent?.id) {
       await new Promise<void>((res) => {
         fetch("/api/admin/agents")
@@ -192,12 +224,17 @@ export default function AdminAgents() {
 
   async function patch(id: string, body: Partial<AgentDefinition>) {
     setBusy(true);
-    await fetch(`/api/admin/agents/${id}`, {
+    setErr(null);
+    const res = await fetch(`/api/admin/agents/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-    });
+    }).catch(() => null);
     setBusy(false);
+    if (!res || !res.ok) {
+      const d = res ? await res.json().catch(() => ({})) : {};
+      setErr(d.error || "Could not save changes — they were not applied.");
+    }
     load();
   }
 
@@ -210,8 +247,14 @@ export default function AdminAgents() {
   async function remove(id: string) {
     if (!confirm("Delete this agent? This cannot be undone.")) return;
     setBusy(true);
-    await fetch(`/api/admin/agents/${id}`, { method: "DELETE" });
+    setErr(null);
+    const res = await fetch(`/api/admin/agents/${id}`, { method: "DELETE" }).catch(() => null);
     setBusy(false);
+    if (!res || !res.ok) {
+      const d = res ? await res.json().catch(() => ({})) : {};
+      setErr(d.error || "Could not delete the agent.");
+      return;
+    }
     if (selectedId === id) setSelectedId(null);
     load();
   }
@@ -320,6 +363,15 @@ export default function AdminAgents() {
         </Card>
       )}
 
+      {err && (
+        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <Mono s={{ fontSize: 12 }} c={AMBER}>{err}</Mono>
+          <button onClick={() => setErr(null)} style={{ ...mono, fontSize: 11, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "4px 8px", color: txt(ASH), cursor: "pointer" }}>
+            Dismiss
+          </button>
+        </Card>
+      )}
+
       <Mono s={{ fontSize: 11, display: "block", marginBottom: 12 }} c={ASH}>
         Define your executive team. Edits to a KPI, responsibility, or guardrail rewrite the agent&apos;s live system
         prompt — shown in the preview as you type. The runtime executes these server-side (needs ANTHROPIC_API_KEY).
@@ -337,7 +389,7 @@ export default function AdminAgents() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 340px) 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(260px, 340px) 1fr", gap: 16, alignItems: "start" }}>
         {/* ---- roster ---- */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {agents?.map((a) => (
@@ -401,7 +453,7 @@ export default function AdminAgents() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
               <Field label="Name">
                 <input style={input} value={draft.name} onChange={(e) => set("name", e.target.value)} />
               </Field>
@@ -490,7 +542,7 @@ export default function AdminAgents() {
 
             {/* ---- spend controls ---- */}
             <Section title="Spend controls" hint="0 = off">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                 <Field label="Approval threshold ($)" hint="hold for a 2nd operator when est. run cost ≥ this">
                   <input
                     style={input}
@@ -619,9 +671,9 @@ export default function AdminAgents() {
                   </div>
                 ))}
 
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <input
-                    style={input}
+                    style={{ ...input, flex: "1 1 200px", width: "auto" }}
                     placeholder="Standing task, e.g. Daily ops status across the team."
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
@@ -782,21 +834,21 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       {items.map((k, i) => (
-        <div key={i} style={{ display: "flex", gap: 6 }}>
+        <div key={i} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <input
-            style={{ ...input, flex: "0 0 32%" }}
+            style={{ ...input, flex: "1 1 120px", width: "auto" }}
             placeholder="metric"
             value={k.metric}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, metric: e.target.value } : x)))}
           />
           <input
-            style={input}
+            style={{ ...input, flex: "2 1 120px", width: "auto" }}
             placeholder="target (text)"
             value={k.target}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, target: e.target.value } : x)))}
           />
           <input
-            style={{ ...input, flex: "0 0 96px" }}
+            style={{ ...input, flex: "0 1 96px" }}
             type="number"
             placeholder="# target"
             title="Optional numeric target for the scorecard"

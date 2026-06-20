@@ -61,7 +61,7 @@ export default function AuroraPeriodize({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 16 }}>
         {macro.blocks.map((b) => (
           <div key={b.key} style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>

@@ -7,6 +7,7 @@ import {
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES, type LoggedSession,
 } from "@hybrid/core";
 import { LINE, LIME, ASH, VIOLET, tip, mono } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const C = (v: string) => `var(--color-${v})`;
 const zoneVar = (id: string) => (id === "absolute-strength" ? "red" : id === "strength-speed" ? "amber" : id === "speed-strength" ? "lime" : id === "accelerative" ? "blue" : "violet");
@@ -16,6 +17,7 @@ const chip = (color: string, label: string) => <span style={{ background: `color
 /** AURORA Velocity (web) — full bespoke VBT screen reusing the exact engine +
  *  the recharts load-velocity profile. */
 export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[] }) {
+  const isMobile = useIsMobile();
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
   const noData = lifts.length === 0;
   const [lift, setLift] = useState<string>(lifts[0] ?? "");
@@ -52,7 +54,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
         {lifts.map((l) => <button key={l} onClick={() => setLift(l)} style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 700, padding: "6px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active === l ? C("lime") : C("line")}`, background: active === l ? C("lime") : "transparent", color: active === l ? C("ink") : C("ash") }}>{l}</button>)}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 16 }}>
         <div style={card}>
           {head("lime", "Estimated 1RM · from velocity")}
           <div style={{ fontWeight: 800, fontSize: 44, lineHeight: 1.05, margin: "8px 0 2px" }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<span style={{ fontSize: 20, color: C("ash") }}> kg</span></div>
@@ -92,7 +94,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginTop: 16 }}>
         <div style={card}>
           {head("blue", "Velocity zones · training quality")}
           <div style={{ marginTop: 8 }}>

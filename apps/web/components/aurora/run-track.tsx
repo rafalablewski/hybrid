@@ -89,7 +89,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
 
       {/* Live stats */}
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: 12 }}>
           <Stat label="Time" value={mmss(elapsed)} color={C("chalk")} />
           <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={C("blue")} />
           <Stat label="Pace /km" value={pace ?? "—"} color={C("lime")} />

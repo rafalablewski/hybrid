@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Control = {
   id: string;
@@ -27,6 +28,7 @@ const sevColor: Record<Control["severity"], string> = { critical: RED, high: AMB
 export default function AdminSecurity() {
   const [d, setD] = useState<Resp | null>(null);
   const [err, setErr] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetch("/api/admin/security").then((r) => (r.ok ? r.json() : Promise.reject())).then(setD).catch(() => setErr(true));
@@ -41,7 +43,7 @@ export default function AdminSecurity() {
   return (
     <div>
       {/* posture summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1.2fr 1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
         <Card style={{ borderLeft: `3px solid ${scoreColor}` }}>
           <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Posture score</Mono>
           <div style={{ ...disp, fontWeight: 800, fontSize: 40, color: scoreColor, lineHeight: 1.05, margin: "4px 0 2px" }}>
@@ -67,7 +69,7 @@ export default function AdminSecurity() {
         <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={BLUE}>
           Live runtime checks · this deployment
         </Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap: 10 }}>
           {d.runtime.map((r) => (
             <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Dot c={r.ok === null ? ASH : r.ok ? LIME : RED} />
@@ -91,7 +93,7 @@ export default function AdminSecurity() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {items.map((c) => (
                 <Card key={c.id} style={{ borderLeft: `3px solid ${statusColor(c.status)}`, padding: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
                     <Dot c={statusColor(c.status)} />
                     <span style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{c.title}</span>
                     <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>

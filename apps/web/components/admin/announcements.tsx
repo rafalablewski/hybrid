@@ -20,6 +20,7 @@ import {
   Select,
   txt,
 } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Announcement = {
   id: string;
@@ -69,6 +70,7 @@ export default function AdminAnnouncements() {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const load = useCallback(() => {
     fetch("/api/admin/announcements")
@@ -137,11 +139,17 @@ export default function AdminAnnouncements() {
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusy(true);
-    await fetch(`/api/admin/announcements/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/announcements/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That change didn't save — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -149,7 +157,13 @@ export default function AdminAnnouncements() {
   async function remove(a: Announcement) {
     if (!confirm(`Delete “${a.title}” permanently?`)) return;
     setBusy(true);
-    await fetch(`/api/admin/announcements/${a.id}`, { method: "DELETE" });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/announcements/${a.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Delete failed — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -206,7 +220,7 @@ export default function AdminAnnouncements() {
             />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
             <Field label="Level">
               <Select value={draft.level} onChange={(e) => setDraft({ ...draft, level: e.target.value as Draft["level"] })}>
                 <option value="info">Info</option>
@@ -262,6 +276,12 @@ export default function AdminAnnouncements() {
             </button>
           </div>
         </Card>
+      )}
+
+      {err && editing === null && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+          {err}
+        </Mono>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

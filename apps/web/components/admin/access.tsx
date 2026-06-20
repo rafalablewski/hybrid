@@ -45,7 +45,7 @@ function RoleModel() {
         Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not the role
         label alone.
       </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12, marginBottom: 14 }}>
         {ROLE_MODEL.map(([n, c, d]) => (
           <Card key={n} style={{ borderLeft: `3px solid ${c}` }}>
             <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: txt(c) }}>{n}</div>
@@ -57,7 +57,8 @@ function RoleModel() {
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={ASH}>
           Permission matrix
         </Mono>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
@@ -78,6 +79,7 @@ function RoleModel() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );
@@ -102,6 +104,7 @@ export default function AdminAccess() {
   const [overrides, setOverrides] = useState<PersonaAccess>({});
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const [requests, setRequests] = useState<AccessReq[]>([]);
   const groups = groupedNav();
 
@@ -138,16 +141,24 @@ export default function AdminAccess() {
   const codeDefault = (item: { minPersona?: Persona }): Persona => item.minPersona ?? "casual";
 
   const change = async (id: string, def: Persona, chosen: Persona) => {
+    const prev = { ...overrides }; // snapshot for rollback
     const next: PersonaAccess = { ...overrides };
     if (chosen === def) delete next[id];
     else next[id] = chosen;
     setOverrides(next);
     setBusy(true);
-    await fetch("/api/admin/flags", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ key: KEY, value: next }),
-    }).catch(() => {});
+    setErr(null);
+    try {
+      const res = await fetch("/api/admin/flags", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key: KEY, value: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setOverrides(prev); // roll back the optimistic change
+      setErr("Couldn't save that access change — reverted.");
+    }
     setBusy(false);
   };
 
@@ -200,6 +211,12 @@ export default function AdminAccess() {
       <Mono s={{ fontSize: 11, display: "block", marginBottom: 16 }} c={ASH}>
         {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
       </Mono>
+
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 16 }} c={AMBER}>
+          {err}
+        </Mono>
+      )}
 
       <div style={{ display: "grid", gap: 16 }}>
         {groups.map(({ group, items }) => (

@@ -106,7 +106,8 @@ export default function AdminUsers() {
       </div>
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["User", "Role", "Lang", "Sessions", "Joined", ""].map((h, i) => (
@@ -165,6 +166,7 @@ export default function AdminUsers() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* pagination */}
@@ -247,19 +249,24 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const save = async () => {
     setSaving(true);
     setMsg(null);
-    const res = await fetch(`/api/admin/users/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, language, featureGrants: grants }),
-    });
-    const body = await res.json().catch(() => ({}));
-    setSaving(false);
-    if (res.ok) {
-      setD((prev) => (prev ? { ...prev, role, language, featureGrants: grants } : prev));
-      setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
-      onSaved();
-    } else {
-      setMsg({ ok: false, text: body.error ?? "Update failed." });
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, language, featureGrants: grants }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setD((prev) => (prev ? { ...prev, role, language, featureGrants: grants } : prev));
+        setMsg({ ok: true, text: "Saved · change recorded in the audit log." });
+        onSaved();
+      } else {
+        setMsg({ ok: false, text: body.error ?? "Update failed." });
+      }
+    } catch {
+      setMsg({ ok: false, text: "Network error — try again." });
+    } finally {
+      setSaving(false);
     }
   };
 

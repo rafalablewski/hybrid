@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 type Org = { id: string; name: string; createdAt: string; teams: number; members: number };
 type Link = { id: string; status: string; createdAt: string; coach: string; client: string; notes: number };
@@ -13,14 +13,26 @@ export default function AdminDirectory() {
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [links, setLinks] = useState<Link[] | null>(null);
   const [counts, setCounts] = useState<{ status: string; n: number }[]>([]);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/orgs").then((r) => r.json()).then((d) => setOrgs(d.orgs)).catch(() => setOrgs([]));
-    fetch("/api/admin/coaching").then((r) => r.json()).then((d) => { setLinks(d.links); setCounts(d.counts); }).catch(() => setLinks([]));
+    fetch("/api/admin/orgs")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setOrgs(d.orgs))
+      .catch(() => { setOrgs([]); setErr("Couldn't load the directory — try reloading."); });
+    fetch("/api/admin/coaching")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => { setLinks(d.links); setCounts(d.counts); })
+      .catch(() => { setLinks([]); setErr("Couldn't load the directory — try reloading."); });
   }, []);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block" }} c={RED}>
+          {err}
+        </Mono>
+      )}
       {/* organizations */}
       <section>
         <SectionTitle title="Organizations" kicker={`${orgs?.length ?? 0} total`} c={BLUE} />
@@ -77,7 +89,8 @@ function SectionTitle({ title, kicker, c }: { title: string; kicker: string; c: 
 
 function Table({ head, align, children }: { head: string[]; align: ("left" | "right")[]; children: React.ReactNode }) {
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+    <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
       <thead>
         <tr>
           {head.map((h, i) => (
@@ -89,6 +102,7 @@ function Table({ head, align, children }: { head: string[]; align: ("left" | "ri
       </thead>
       <tbody>{children}</tbody>
     </table>
+    </div>
   );
 }
 

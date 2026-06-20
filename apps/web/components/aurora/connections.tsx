@@ -40,7 +40,7 @@ export default function AuroraConnections() {
       <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Connections</h1>
       <p style={{ fontSize: 14, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>Every device writes into one Signal stream — the engines never learn a vendor exists. Connect a wearable and your readiness, HPI and injury risk update automatically.</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14, marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 14, marginTop: 16 }}>
         {providers.map((p) => {
           const c = connected(p.id);
           return (

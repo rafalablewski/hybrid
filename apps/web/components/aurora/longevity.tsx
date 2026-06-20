@@ -51,7 +51,7 @@ export default function AuroraLongevity() {
       <div style={{ ...card, marginTop: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Your markers</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>prefilled from your latest signals when available</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 10, marginTop: 12 }}>
           {fields.map(([k, label, unit]) => (
             <label key={k}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>{label} ({unit})</span>

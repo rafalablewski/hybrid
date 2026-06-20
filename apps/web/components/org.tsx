@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 import {
   buildTeamTree,
   flattenTree,
@@ -51,6 +52,7 @@ export default function Org() {
   const [inviteRole, setInviteRole] = useState<OrgRole>("COACH");
   const [inviteErr, setInviteErr] = useState("");
   const [athlete, setAthlete] = useState<AthleteView | null>(null);
+  const isMobile = useIsMobile();
 
   const loadOrgs = async () => {
     const res = await fetch("/api/org");
@@ -165,12 +167,12 @@ export default function Org() {
           ))}
           {orgs.length === 0 && <Mono s={{ fontSize: 13 }}>No organizations yet — create one to run a club or academy.</Mono>}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
           <input
             value={newOrg}
             onChange={(e) => setNewOrg(e.target.value)}
             placeholder="New organization name"
-            style={input}
+            style={{ ...input, flex: 1, minWidth: 180 }}
           />
           <button onClick={createOrg} style={btn(LIME)}>Create org</button>
         </div>
@@ -185,7 +187,7 @@ export default function Org() {
             <Mono s={{ fontSize: 13, display: "block", marginTop: 6 }} c={CHALK}>{roleScope(detail.myRole)}</Mono>
           </Card>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
             <Card>
               <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Team hierarchy</Mono>
               <div style={{ marginTop: 12 }}>
@@ -210,7 +212,7 @@ export default function Org() {
               </div>
               {canManage && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={input} />
+                  <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={{ ...input, flex: 1, minWidth: 140 }} />
                   <Select value={newTeamParent} onChange={(e) => setNewTeamParent(e.target.value)}>
                     <option value="">(top level)</option>
                     {tree.map((t) => (
@@ -239,7 +241,7 @@ export default function Org() {
                       <Mono s={{ fontSize: 10 }} c={ASH}>{teamName(m.teamId)}</Mono>
                     </div>
                     {canManage ? (
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                         <Select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ fontSize: 11, paddingTop: 5, paddingBottom: 5, paddingLeft: 7 }}>
                           {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                         </Select>
@@ -257,7 +259,7 @@ export default function Org() {
               {canManage && (
                 <div style={{ marginTop: 12 }}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={input} />
+                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={{ ...input, flex: 1, minWidth: 160 }} />
                     <Select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)}>
                       {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                     </Select>

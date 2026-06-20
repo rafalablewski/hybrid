@@ -13,6 +13,7 @@ import {
   disp, cond, mono, Mono, Card, txt,
 } from "@/lib/ui";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const EXP: Experience[] = ["beginner", "intermediate", "advanced"];
 const EQUIP: Equipment[] = ["full", "home", "minimal"];
@@ -25,6 +26,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
   const persona = useClientPersonaChoice();
+  const isMobile = useIsMobile();
 
   const plan = useMemo(
     () => (goal ? recommendPlan({ goal, experience, daysPerWeek: days, equipment }) : null),
@@ -71,7 +73,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
 
       <Card style={{ marginBottom: 14, borderLeft: `3px solid ${LIME}` }}>
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>How do you want to use HYBRID?</Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 8, marginTop: 10 }}>
           {([
             { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app." },
             { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit." },
@@ -96,7 +98,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
         {ONBOARDING_GOAL_GROUPS.map((group) => (
           <div key={group.category} style={{ marginTop: 14 }}>
             <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>{group.category}</Mono>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 8, marginTop: 6 }}>
               {group.goals.map((g) => (
                 <button
                   key={g.id}
@@ -112,7 +114,7 @@ export default function Onboarding({ onEnrolled }: { onEnrolled: () => void }) {
         ))}
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 14 }}>
         <Card>
           <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>2 · Experience</Mono>
           <Pills options={EXP} value={experience} onPick={(v) => setExperience(v as Experience)} />

@@ -21,6 +21,7 @@ import {
   Select,
   txt,
 } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Exercise = {
   id: string;
@@ -85,6 +86,7 @@ export default function AdminExercises() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const isMobile = useIsMobile();
 
   const load = useCallback(() => {
     fetch("/api/admin/exercises")
@@ -167,11 +169,17 @@ export default function AdminExercises() {
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusy(true);
-    await fetch(`/api/admin/exercises/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/exercises/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("That change didn't save — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -179,7 +187,13 @@ export default function AdminExercises() {
   async function remove(x: Exercise) {
     if (!confirm(`Delete “${x.name}” permanently?`)) return;
     setBusy(true);
-    await fetch(`/api/admin/exercises/${x.id}`, { method: "DELETE" });
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/exercises/${x.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setErr("Delete failed — re-syncing.");
+    }
     setBusy(false);
     load();
   }
@@ -202,12 +216,12 @@ export default function AdminExercises() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search the library…"
-          style={{ ...mono, fontSize: 13, flex: 1, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: 12 }} c={ASH}>
           {list ? `${list.length} custom` : "…"} · + built-ins
@@ -229,7 +243,7 @@ export default function AdminExercises() {
             {editing === "new" ? "New exercise" : "Edit exercise"}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
             <Field label="Name (the engine key)">
               <input value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Zercher Squat" style={input} />
             </Field>
@@ -289,7 +303,7 @@ export default function AdminExercises() {
             </div>
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
             <Field label="Equipment (comma-separated)">
               <input value={draft.equipment} onChange={(e) => setDraft({ ...draft, equipment: e.target.value })} placeholder="barbell, rack" style={input} />
             </Field>
@@ -316,6 +330,10 @@ export default function AdminExercises() {
             <button disabled={busy} onClick={() => setEditing(null)} style={ghostBtn}>Cancel</button>
           </div>
         </Card>
+      )}
+
+      {err && editing === null && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -12,6 +12,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type CoachStatus = "pending" | "approved" | "denied";
 type Section = "general" | "notifications" | "privacy" | "security" | "coaching" | "data";
@@ -35,6 +36,7 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
 ];
 
 export default function AccountSettings() {
+  const isMobile = useIsMobile();
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
   const { theme, setTheme } = useTheme();
@@ -399,7 +401,7 @@ export default function AccountSettings() {
           <Mono s={{ fontSize: 13, display: "block", marginTop: 6 }} c={CHALK}>
             How much of the app you see. Switch anytime.
           </Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 8, marginTop: 12 }}>
             {/* Simple (casual) — always selectable, free. */}
             <button
               onClick={() => setClientPersona("casual")}

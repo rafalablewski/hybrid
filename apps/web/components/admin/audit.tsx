@@ -22,11 +22,16 @@ export default function AdminAuditLog() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<Resp | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), pageSize: "50" });
     if (action) params.set("action", action);
-    fetch(`/api/admin/audit?${params}`).then((r) => r.json()).then(setData).catch(() => setData(null));
+    setErr(null);
+    fetch(`/api/admin/audit?${params}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setData)
+      .catch(() => { setData(null); setErr("Couldn't load the audit log — try reloading."); });
   }, [action, page]);
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export default function AdminAuditLog() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
         <input
           value={action}
           onChange={(e) => {
@@ -56,13 +61,20 @@ export default function AdminAuditLog() {
             setPage(1);
           }}
           placeholder="Filter by action (e.g. user.update)…"
-          style={{ ...mono, fontSize: 13, flex: 1, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: 12 }} c={ASH}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </div>
 
+      {err && (
+        <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={RED}>
+          {err}
+        </Mono>
+      )}
+
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["When", "Actor", "Action", "Target", ""].map((h, i) => (
@@ -111,6 +123,7 @@ export default function AdminAuditLog() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {data && data.pages > 1 && (

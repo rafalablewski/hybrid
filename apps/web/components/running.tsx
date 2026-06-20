@@ -69,7 +69,7 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 980 }}>
       <Header />
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${easyPct != null ? 4 : 3}, 1fr)`, gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 14 }}>
         <Stat label="Runs" value={totals.efforts} />
         <Stat label="Distance" value={`${totals.distanceKm} km`} c={BLUE} />
         <Stat label="Time" value={`${Math.round(totals.minutes / 6) / 10} h`} />
@@ -142,7 +142,8 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
           By movement
         </Mono>
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
+          <div style={{ minWidth: 480 }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${LINE}` }}>
             {["move", "runs", "km", "longest", "best pace"].map((h) => (
               <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>{h}</Mono>
@@ -159,6 +160,7 @@ export default function Running({ sessions }: { sessions: LoggedSession[] }) {
               </Mono>
             </div>
           ))}
+          </div>
         </div>
       </Card>
     </div>

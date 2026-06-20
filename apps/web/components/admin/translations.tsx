@@ -129,7 +129,8 @@ export default function AdminTranslations() {
       </Mono>
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", tableLayout: "fixed" }}>
           <thead>
             <tr>
               <th style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}`, width: "22%" }}>Key</th>
@@ -199,6 +200,7 @@ export default function AdminTranslations() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {visible.length > capped.length && (

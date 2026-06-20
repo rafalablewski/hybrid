@@ -35,6 +35,7 @@ import {
   txt,
 } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useIsMobile } from "@/lib/use-media-query";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
   currentPhase,
@@ -95,6 +96,7 @@ export function AthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[]
 
 function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
   const units = useLoggerPrefs().units;
+  const isMobile = useIsMobile();
   const vol = totalVolume(sessions);
   const prs = bestE1rmByLift(sessions).slice(0, 6);
   const topLift = liftNames(sessions)[0];
@@ -110,7 +112,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
   const best = prs[0];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16 }}>
       <Stat label="Sessions" value={sessions.length} c={LIME} />
       <Stat label="Total volume" value={fmtTonnage(vol, units)} />
       <Stat
@@ -148,7 +150,8 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
 
       {prs.length > 0 && (
         <ChartFrame span={4} title="Personal records" kicker="Best e1RM per lift">
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 360 }}>
             <thead>
               <tr>
                 {["Lift", "Best e1RM", "When"].map((h) => (
@@ -185,6 +188,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
               ))}
             </tbody>
           </table>
+          </div>
         </ChartFrame>
       )}
     </div>
@@ -207,6 +211,7 @@ export function CoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) {
 }
 
 function RealCoach({ roster }: { roster: RosterRow[] }) {
+  const isMobile = useIsMobile();
   const avgAdh = Math.round(roster.reduce((s, c) => s + c.adherence, 0) / roster.length);
   const reads = roster.filter((c) => typeof c.readiness === "number");
   const avgRead = reads.length
@@ -215,7 +220,7 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
   const totalVol = roster.reduce((s, c) => s + c.volume, 0);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16 }}>
       <Stat label="Clients" value={roster.length} c={VIOLET} />
       <Stat label="Avg adherence" value={avgAdh + "%"} c={LIME} />
       <Stat label="Avg readiness" value={avgRead ?? "—"} c={BLUE} />
@@ -234,7 +239,8 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
       </ChartFrame>
 
       <ChartFrame span={4} title="Client roster" kicker="Your consented athletes" c={VIOLET}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
           <thead>
             <tr>
               {["Athlete", "Readiness", "Adherence", "Sessions", "Last"].map((h) => (
@@ -258,6 +264,7 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
             ))}
           </tbody>
         </table>
+        </div>
       </ChartFrame>
     </div>
   );
@@ -267,6 +274,7 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
 export function OperatorAnalytics() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [err, setErr] = useState(false);
+  const isMobile = useIsMobile();
   useEffect(() => {
     fetch("/api/admin/stats")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
@@ -288,7 +296,7 @@ export function OperatorAnalytics() {
     );
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16 }}>
       <Stat label="Total users" value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} c={LIME} />
       <Stat label="Active (30d)" value={stats.mau.toLocaleString()} sub="trained in 30d" c={LIME} />
       <Stat label="Sessions logged" value={stats.sessions.toLocaleString()} c={CHALK} />
@@ -352,6 +360,7 @@ export function PeriodizeScreen({
   sessions?: LoggedSession[];
   bio?: Biometrics | null;
 }) {
+  const isMobile = useIsMobile();
   if (!enrolled)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
@@ -402,7 +411,7 @@ export function PeriodizeScreen({
         </div>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 16 }}>
         {macro.blocks.map((b) => (
           <Card key={b.key} style={{ borderLeft: `3px solid ${b.color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -673,6 +682,7 @@ export function SessionDetail({
   onOpenExercise?: (name: string) => void;
 }) {
   const units = useLoggerPrefs().units;
+  const isMobile = useIsMobile();
   const prs = prsForSession(all, session.id);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const prSet = new Set(prs.map((p) => p.lift));
@@ -723,7 +733,7 @@ export function SessionDetail({
         </Mono>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: 16 }}>
         <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
         <Stat label="Sets" value={sets} />
         <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks), units)} c={LIME} />
@@ -759,7 +769,7 @@ export function SessionDetail({
         </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: series.length > 1 ? "repeat(2, 1fr)" : "1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: !isMobile && series.length > 1 ? "repeat(2, 1fr)" : "1fr", gap: 16 }}>
         {muscles.length > 0 && (
           <ChartFrame title="Muscle focus" kicker="Tonnage by muscle">
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

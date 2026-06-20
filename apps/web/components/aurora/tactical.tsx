@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type State = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
 
@@ -18,6 +19,7 @@ const statusColor: Record<DutyStatus, string> = {
  *  unitReadiness engines: Deployment Readiness Index + unit go/no-go, in the
  *  rounded Aurora style. */
 export default function AuroraTactical() {
+  const isMobile = useIsMobile();
   const [state, setState] = useState<State | null>(null);
   const [load, setLoad] = useState("78");
   const [work, setWork] = useState("80");
@@ -53,7 +55,7 @@ export default function AuroraTactical() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
         <div style={{ ...card, }}>
           <div style={kicker("blue")}>Deployment readiness</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 54, color: dr ? C(statusColor[dr.status]) : C("ash"), lineHeight: 1.1, margin: "6px 0" }}>
