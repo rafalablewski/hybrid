@@ -119,7 +119,7 @@ export default function AdminAccess() {
 
   // --- persona override (optimistic with rollback, writes the flag) ---
   const change = async (id: string, def: Persona, chosen: Persona) => {
-    const prev = overrides;
+    const prev = { ...overrides };
     const next: PersonaAccess = { ...overrides };
     if (chosen === def) delete next[id];
     else next[id] = chosen;

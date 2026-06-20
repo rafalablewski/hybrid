@@ -573,13 +573,15 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
 function DigestTab() {
   const { palette } = useTheme();
   const [d, setD] = useState<{ text: string; slackConfigured: boolean } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
 
   useEffect(() => {
-    adminGet<{ text?: string; slackConfigured?: boolean }>("/api/admin/agents/digest").then((r) =>
-      setD(r.ok && r.data ? { text: r.data.text ?? "", slackConfigured: Boolean(r.data.slackConfigured) } : null),
-    );
+    adminGet<{ text?: string; slackConfigured?: boolean }>("/api/admin/agents/digest").then((r) => {
+      if (r.ok && r.data) setD({ text: r.data.text ?? "", slackConfigured: Boolean(r.data.slackConfigured) });
+      else setError(r.error || "Failed to load daily digest.");
+    });
   }, []);
 
   async function send() {
@@ -597,7 +599,7 @@ function DigestTab() {
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
       <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
-        <Mono color={palette.chalk} style={{ fontSize: 12, lineHeight: 18 }}>{d ? d.text : "Loading…"}</Mono>
+        <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: 12, lineHeight: 18 }}>{error ?? (d ? d.text : "Loading…")}</Mono>
       </View>
       <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: 10, marginTop: 8 }}>
         {sent ?? (d && !d.slackConfigured ? "Set SLACK_WEBHOOK_URL in the server env to enable delivery." : "Posts daily at 08:05 UTC.")}
@@ -613,13 +615,15 @@ type MonthRep = { month: string; total: number; runs: number; perAgent: { name: 
 function CostTab() {
   const { palette } = useTheme();
   const [d, setD] = useState<{ current: MonthRep; previous: MonthRep } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
 
   useEffect(() => {
-    adminGet<{ current?: MonthRep; previous?: MonthRep }>("/api/admin/agents/cost-report").then((r) =>
-      setD(r.ok && r.data?.current && r.data.previous ? { current: r.data.current, previous: r.data.previous } : null),
-    );
+    adminGet<{ current?: MonthRep; previous?: MonthRep }>("/api/admin/agents/cost-report").then((r) => {
+      if (r.ok && r.data?.current && r.data.previous) setD({ current: r.data.current, previous: r.data.previous });
+      else setError(r.error || "Failed to load cost report.");
+    });
   }, []);
 
   async function send() {
@@ -630,6 +634,7 @@ function CostTab() {
     setSent(r.data?.sent ? "Sent to Slack ✓" : r.data?.reason || r.data?.error || r.error || "not sent");
   }
 
+  if (error) return <ErrorNote error={error} />;
   if (!d) return <Loading />;
 
   return (

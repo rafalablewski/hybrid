@@ -351,13 +351,13 @@ function Editor({
       <Input
         label="Approval threshold ($) · hold for a 2nd operator at/above this est. cost"
         keyboardType="numeric"
-        value={draft.approvalThresholdUsd ? String(draft.approvalThresholdUsd) : ""}
+        value={draft.approvalThresholdUsd != null ? String(draft.approvalThresholdUsd) : ""}
         onChangeText={(v) => set("approvalThresholdUsd", v === "" ? 0 : Number(v) || 0)}
       />
       <Input
         label="Weekly budget cap ($) · auto-pause at/above 7-day spend"
         keyboardType="numeric"
-        value={draft.budgetUsd7d ? String(draft.budgetUsd7d) : ""}
+        value={draft.budgetUsd7d != null ? String(draft.budgetUsd7d) : ""}
         onChangeText={(v) => set("budgetUsd7d", v === "" ? 0 : Number(v) || 0)}
       />
 

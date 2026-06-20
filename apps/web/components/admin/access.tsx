@@ -141,7 +141,7 @@ export default function AdminAccess() {
   const codeDefault = (item: { minPersona?: Persona }): Persona => item.minPersona ?? "casual";
 
   const change = async (id: string, def: Persona, chosen: Persona) => {
-    const prev = overrides; // snapshot for rollback
+    const prev = { ...overrides }; // snapshot for rollback
     const next: PersonaAccess = { ...overrides };
     if (chosen === def) delete next[id];
     else next[id] = chosen;
