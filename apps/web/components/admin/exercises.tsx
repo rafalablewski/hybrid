@@ -202,7 +202,7 @@ export default function AdminExercises() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Exercise library not initialized</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Exercise</b> table doesn&apos;t exist yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-exercise.sql</span> in the Supabase SQL Editor to create it,
           then reload.
@@ -221,9 +221,9 @@ export default function AdminExercises() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search the library…"
-          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 14, flex: 1, minWidth: 200, maxWidth: 320, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
-        <Mono s={{ fontSize: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 13 }} c={ASH}>
           {list ? `${list.length} custom` : "…"} · + built-ins
         </Mono>
         {editing === null && (
@@ -232,7 +232,7 @@ export default function AdminExercises() {
           </button>
         )}
       </div>
-      <Mono s={{ fontSize: 11, display: "block", marginBottom: 14 }} c={ASH}>
+      <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={ASH}>
         Custom exercises merge over the built-in catalog by name and become pickable across the app. The 9 built-ins
         live in code; you only manage additions + overrides here.
       </Mono>
@@ -284,11 +284,11 @@ export default function AdminExercises() {
                     onClick={() => toggleMuscle(m)}
                     style={{
                       ...cond,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: ".04em",
-                      padding: "6px 12px",
+                      padding: "8px 12px",
                       borderRadius: "var(--r-field)",
                       cursor: "pointer",
                       border: `1px solid ${on ? LIME : LINE}`,
@@ -322,7 +322,7 @@ export default function AdminExercises() {
             <input value={draft.videoUrl} onChange={(e) => setDraft({ ...draft, videoUrl: e.target.value })} placeholder="https://…" style={input} />
           </Field>
 
-          {err && <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>}
+          {err && <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>}
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>Save draft</button>
@@ -333,7 +333,7 @@ export default function AdminExercises() {
       )}
 
       {err && editing === null && (
-        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>
+        <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -348,9 +348,9 @@ export default function AdminExercises() {
             </div>
             <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{x.name}</div>
             <div style={{ marginTop: 6 }}>{x.muscles.map((m) => <Chip key={m} c={LIME}>{m}</Chip>)}</div>
-            {x.aliases.length > 0 && <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>aka {x.aliases.join(", ")}</Mono>}
+            {x.aliases.length > 0 && <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>aka {x.aliases.join(", ")}</Mono>}
             {x.cues.length > 0 && (
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }} c={ASH}>
+              <Mono s={{ fontSize: 13, display: "block", marginTop: 6, lineHeight: 1.5 }} c={ASH}>
                 {x.cues.map((c) => `• ${c}`).join("\n")}
               </Mono>
             )}
@@ -370,7 +370,7 @@ export default function AdminExercises() {
 
         {list && filtered.length === 0 && (
           <Card>
-            <Mono s={{ fontSize: 13, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
+            <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
               {list.length === 0 ? "No custom exercises yet. Add one to extend the catalog." : "No matches."}
             </Mono>
           </Card>
@@ -383,7 +383,7 @@ export default function AdminExercises() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <Mono s={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
+      <Mono s={{ fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
         {label}
       </Mono>
       {children}
@@ -394,7 +394,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const input: React.CSSProperties = {
   ...mono,
   width: "100%",
-  fontSize: 13,
+  fontSize: 14,
   padding: "10px 14px",
   borderRadius: "var(--r-card)",
   background: INK2,
@@ -405,7 +405,7 @@ const input: React.CSSProperties = {
 };
 const baseBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
@@ -419,11 +419,11 @@ const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color:
 const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
-  padding: "6px 12px",
+  padding: "8px 12px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,

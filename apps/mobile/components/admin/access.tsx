@@ -279,7 +279,7 @@ export default function AdminAccess() {
                         </Text>
                         {overridden && <Chip color={palette.amber}>overridden</Chip>}
                       </View>
-                      <Mono color={palette.ash} style={{ fontSize: 10, marginTop: 2 }}>
+                      <Mono color={palette.ash} style={{ fontSize: 11, marginTop: 2 }}>
                         {item.id} · default: {PERSONA_LABEL[def]}
                       </Mono>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>

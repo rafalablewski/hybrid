@@ -24,11 +24,11 @@ export default function AdminContent() {
             onClick={() => setTab(id)}
             style={{
               ...cond,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: ".05em",
-              padding: "8px 16px",
+              padding: "10px 16px",
               borderRadius: "var(--r-field)",
               cursor: "pointer",
               border: `1px solid ${tab === id ? LIME : LINE}`,

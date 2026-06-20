@@ -165,7 +165,7 @@ function BarRow({ value, max, color }: { value: number; max: number; color: stri
       <View style={{ flex: 1, height: 8, borderRadius: 4, backgroundColor: palette.line, overflow: "hidden" }}>
         <View style={{ width: `${pct}%`, height: "100%", backgroundColor: color, borderRadius: 4 }} />
       </View>
-      <Mono color={palette.ash} style={{ fontSize: 10, width: 26, textAlign: "right" }}>{value}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: 11, width: 26, textAlign: "right" }}>{value}</Mono>
     </View>
   );
 }

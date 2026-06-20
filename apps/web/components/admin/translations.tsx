@@ -96,7 +96,7 @@ export default function AdminTranslations() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Localization not initialized</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Translation</b> table doesn&apos;t exist yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-translation.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
@@ -112,7 +112,7 @@ export default function AdminTranslations() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search keys or text…"
-          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 14, flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Select value={prefix} onChange={(e) => setPrefix(e.target.value)}>
           {prefixes.map((p) => <option key={p} value={p}>{p === "all" ? "All groups" : p}</option>)}
@@ -123,7 +123,7 @@ export default function AdminTranslations() {
           <option value="missing">Missing a translation</option>
         </Select>
       </div>
-      <Mono s={{ fontSize: 11, display: "block", marginBottom: 14 }} c={ASH}>
+      <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={ASH}>
         {loaded ? `${keys.length} keys · ${overrideCount} override${overrideCount === 1 ? "" : "s"}` : "…"} · edits layer
         over the shipped strings live — empty a field to revert to baseline.
       </Mono>
@@ -133,9 +133,9 @@ export default function AdminTranslations() {
         <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", tableLayout: "fixed" }}>
           <thead>
             <tr>
-              <th style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}`, width: "22%" }}>Key</th>
+              <th style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}`, width: "22%" }}>Key</th>
               {LANG_LIST.map((l) => (
-                <th key={l} style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}` }}>
+                <th key={l} style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}` }}>
                   {LANGS[l]}
                 </th>
               ))}
@@ -144,7 +144,7 @@ export default function AdminTranslations() {
           <tbody>
             {capped.map((key) => (
               <tr key={key}>
-                <td style={{ ...mono, fontSize: 11, color: CHALK, padding: "8px 14px", borderBottom: `1px solid ${LINE}`, wordBreak: "break-word", verticalAlign: "top" }}>
+                <td style={{ ...mono, fontSize: 12, color: CHALK, padding: "10px 14px", borderBottom: `1px solid ${LINE}`, wordBreak: "break-word", verticalAlign: "top" }}>
                   {key}
                 </td>
                 {LANG_LIST.map((lang) => {
@@ -154,7 +154,7 @@ export default function AdminTranslations() {
                   const overridden = isOverridden(lang, key);
                   const missing = !baselineString(lang, key) && !overridden;
                   return (
-                    <td key={lang} style={{ padding: "6px 10px", borderBottom: `1px solid ${LINE}`, verticalAlign: "top" }}>
+                    <td key={lang} style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}`, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
                         <textarea
                           value={val}
@@ -167,9 +167,9 @@ export default function AdminTranslations() {
                           style={{
                             ...mono,
                             width: "100%",
-                            fontSize: 12,
+                            fontSize: 13,
                             lineHeight: 1.4,
-                            padding: "6px 8px",
+                            padding: "8px 8px",
                             borderRadius: "var(--r-field)",
                             background: INK2,
                             color: txt(missing && !val ? ASH : CHALK),
@@ -184,7 +184,7 @@ export default function AdminTranslations() {
                           <button
                             title="Revert to baseline"
                             onClick={() => save(lang, key, "")}
-                            style={{ background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", fontSize: 13, padding: "4px 2px", flexShrink: 0 }}
+                            style={{ background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", fontSize: 14, padding: "6px 2px", flexShrink: 0 }}
                           >
                             ↺
                           </button>
@@ -196,7 +196,7 @@ export default function AdminTranslations() {
               </tr>
             ))}
             {loaded && visible.length === 0 && (
-              <tr><td colSpan={1 + LANG_LIST.length} style={{ ...mono, fontSize: 13, color: txt(ASH), textAlign: "center", padding: 32 }}>No keys match.</td></tr>
+              <tr><td colSpan={1 + LANG_LIST.length} style={{ ...mono, fontSize: 14, color: txt(ASH), textAlign: "center", padding: 32 }}>No keys match.</td></tr>
             )}
           </tbody>
         </table>
@@ -204,7 +204,7 @@ export default function AdminTranslations() {
       </Card>
 
       {visible.length > capped.length && (
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 10, textAlign: "center" }} c={ASH}>
+        <Mono s={{ fontSize: 12, display: "block", marginTop: 10, textAlign: "center" }} c={ASH}>
           Showing {capped.length} of {visible.length} — refine the search or group filter to narrow.
         </Mono>
       )}
@@ -221,7 +221,7 @@ function Legend({ c, children }: { c: string; children: React.ReactNode }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span style={{ width: 10, height: 10, borderRadius: 3, border: `1px solid ${c}`, background: `${c}22`, display: "inline-block" }} />
-      <Mono s={{ fontSize: 11 }} c={ASH}>{children}</Mono>
+      <Mono s={{ fontSize: 12 }} c={ASH}>{children}</Mono>
     </span>
   );
 }

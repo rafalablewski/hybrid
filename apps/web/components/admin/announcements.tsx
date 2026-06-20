@@ -172,7 +172,7 @@ export default function AdminAnnouncements() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Announcements not initialized</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>Announcement</b> table doesn&apos;t exist yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-announcement.sql</span> in the Supabase SQL Editor to
           create it, then reload.
@@ -183,7 +183,7 @@ export default function AdminAnnouncements() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Mono s={{ fontSize: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 13 }} c={ASH}>
           {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} · broadcast to the app
         </Mono>
         {editing === null && (
@@ -255,11 +255,11 @@ export default function AdminAnnouncements() {
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0 16px", cursor: "pointer" }}>
             <input type="checkbox" checked={draft.pinned} onChange={(e) => setDraft({ ...draft, pinned: e.target.checked })} />
-            <Mono s={{ fontSize: 13 }} c={CHALK}>Pin as a dismissible banner at the top of the app</Mono>
+            <Mono s={{ fontSize: 14 }} c={CHALK}>Pin as a dismissible banner at the top of the app</Mono>
           </label>
 
           {err && (
-            <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+            <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
               {err}
             </Mono>
           )}
@@ -279,7 +279,7 @@ export default function AdminAnnouncements() {
       )}
 
       {err && editing === null && (
-        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+        <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
           {err}
         </Mono>
       )}
@@ -296,10 +296,10 @@ export default function AdminAnnouncements() {
                   {a.pinned && <Chip c={AMBER}>📌 pinned</Chip>}
                 </div>
                 <div style={{ ...disp, fontWeight: 800, fontSize: 16 }}>{a.title}</div>
-                <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 4, whiteSpace: "pre-wrap" }} c={ASH}>
+                <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4, whiteSpace: "pre-wrap" }} c={ASH}>
                   {a.body}
                 </Mono>
-                <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={ASH}>
                   {a.authorEmail}
                   {a.publishAt ? ` · live ${new Date(a.publishAt).toLocaleString()}` : ""}
                   {a.expiresAt ? ` · ends ${new Date(a.expiresAt).toLocaleString()}` : ""}
@@ -329,7 +329,7 @@ export default function AdminAnnouncements() {
 
         {list && list.length === 0 && (
           <Card>
-            <Mono s={{ fontSize: 13, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
+            <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
               No announcements yet. Create one to broadcast to the app.
             </Mono>
           </Card>
@@ -342,7 +342,7 @@ export default function AdminAnnouncements() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <Mono s={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
+      <Mono s={{ fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
         {label}
       </Mono>
       {children}
@@ -353,7 +353,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const input: React.CSSProperties = {
   ...mono,
   width: "100%",
-  fontSize: 13,
+  fontSize: 14,
   padding: "10px 14px",
   borderRadius: "var(--r-card)",
   background: INK2,
@@ -365,7 +365,7 @@ const input: React.CSSProperties = {
 
 const baseBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
@@ -379,11 +379,11 @@ const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color:
 const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
-  padding: "6px 12px",
+  padding: "8px 12px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,

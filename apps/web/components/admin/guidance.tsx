@@ -28,10 +28,10 @@ export default function AdminGuidance() {
                 }}
                 style={{
                   ...mono,
-                  fontSize: 10,
+                  fontSize: 11,
                   textTransform: "uppercase",
                   letterSpacing: ".08em",
-                  padding: "5px 9px",
+                  padding: "7px 9px",
                   borderRadius: "var(--r-field)",
                   cursor: "pointer",
                   border: `1px solid ${g.id === guideId ? `${AMBER}66` : LINE}`,
@@ -44,7 +44,7 @@ export default function AdminGuidance() {
             ))}
           </div>
         )}
-        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
+        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
           {guide.title}
         </Mono>
         <nav>
@@ -60,7 +60,7 @@ export default function AdminGuidance() {
                 display: "flex",
                 gap: 9,
                 alignItems: "center",
-                padding: "8px 10px",
+                padding: "10px 10px",
                 marginBottom: 2,
                 borderRadius: "var(--r-field)",
                 border: "none",
@@ -69,7 +69,7 @@ export default function AdminGuidance() {
                 background: active === s.id ? `${LIME}1c` : "transparent",
                 color: txt(active === s.id ? LIME : ASH),
                 ...disp,
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 600,
               }}
             >
@@ -78,7 +78,7 @@ export default function AdminGuidance() {
             </button>
           ))}
         </nav>
-        <Mono s={{ fontSize: 10, display: "block", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${LINE}` }} c={ASH}>
+        <Mono s={{ fontSize: 11, display: "block", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${LINE}` }} c={ASH}>
           Last reviewed {guide.updated}
         </Mono>
       </Card>
@@ -97,7 +97,7 @@ export default function AdminGuidance() {
                 </h2>
               </div>
               {s.summary && (
-                <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={ASH}>
+                <Mono s={{ fontSize: 13, display: "block", marginBottom: 14 }} c={ASH}>
                   {s.summary}
                 </Mono>
               )}
@@ -128,7 +128,7 @@ function Block({ b }: { b: GuideBlock }) {
           padding: "10px 14px",
         }}
       >
-        <Mono s={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 4 }} c={AMBER}>
+        <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 4 }} c={AMBER}>
           Note
         </Mono>
         <span style={{ ...disp, fontSize: 13.5, lineHeight: 1.6, color: CHALK }}>{b.text}</span>
@@ -162,7 +162,7 @@ function Block({ b }: { b: GuideBlock }) {
             }}
           >
             <span style={{ ...disp, fontSize: 13.5, color: CHALK }}>{r.goal}</span>
-            <Mono s={{ fontSize: 12, textAlign: "right", flexShrink: 0 }} c={LIME}>
+            <Mono s={{ fontSize: 13, textAlign: "right", flexShrink: 0 }} c={LIME}>
               {r.path}
             </Mono>
           </div>
@@ -185,7 +185,7 @@ function Block({ b }: { b: GuideBlock }) {
               border: `1px solid ${LIME}55`,
               color: txt(LIME),
               ...mono,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
               display: "grid",
               placeItems: "center",
@@ -225,7 +225,7 @@ function Cmd({ lines }: { lines: string }) {
       <pre
         style={{
           ...mono,
-          fontSize: 12.5,
+          fontSize: 13.5,
           lineHeight: 1.7,
           color: CHALK,
           background: INK,
@@ -246,14 +246,14 @@ function Cmd({ lines }: { lines: string }) {
           top: 8,
           right: 8,
           ...mono,
-          fontSize: 10,
+          fontSize: 11,
           textTransform: "uppercase",
           letterSpacing: ".08em",
           color: txt(copied ? INK : ASH),
           background: copied ? LIME : INK2,
           border: `1px solid ${LINE}`,
           borderRadius: "var(--r-field)",
-          padding: "3px 8px",
+          padding: "5px 8px",
           cursor: "pointer",
         }}
       >

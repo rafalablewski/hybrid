@@ -29,7 +29,7 @@ export default function AdminDirectory() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {err && (
-        <Mono s={{ fontSize: 12, display: "block" }} c={RED}>
+        <Mono s={{ fontSize: 13, display: "block" }} c={RED}>
           {err}
         </Mono>
       )}
@@ -41,9 +41,9 @@ export default function AdminDirectory() {
             {orgs?.map((o) => (
               <tr key={o.id}>
                 <Td><span style={{ ...disp, fontWeight: 600, fontSize: 14 }}>{o.name}</span></Td>
-                <Td right><Mono s={{ fontSize: 13 }} c={CHALK}>{o.teams}</Mono></Td>
-                <Td right><Mono s={{ fontSize: 13 }} c={CHALK}>{o.members}</Mono></Td>
-                <Td right><Mono s={{ fontSize: 12 }} c={ASH}>{fmt(o.createdAt)}</Mono></Td>
+                <Td right><Mono s={{ fontSize: 14 }} c={CHALK}>{o.teams}</Mono></Td>
+                <Td right><Mono s={{ fontSize: 14 }} c={CHALK}>{o.members}</Mono></Td>
+                <Td right><Mono s={{ fontSize: 13 }} c={ASH}>{fmt(o.createdAt)}</Mono></Td>
               </tr>
             ))}
             <Empty data={orgs} cols={4} label="No organizations yet." />
@@ -63,11 +63,11 @@ export default function AdminDirectory() {
           <Table head={["Coach", "Client", "Status", "Notes", "Since"]} align={["left", "left", "left", "right", "right"]}>
             {links?.map((l) => (
               <tr key={l.id}>
-                <Td><Mono s={{ fontSize: 13 }} c={CHALK}>{l.coach}</Mono></Td>
-                <Td><Mono s={{ fontSize: 13 }} c={CHALK}>{l.client}</Mono></Td>
+                <Td><Mono s={{ fontSize: 14 }} c={CHALK}>{l.coach}</Mono></Td>
+                <Td><Mono s={{ fontSize: 14 }} c={CHALK}>{l.client}</Mono></Td>
                 <Td><Chip c={statusColor[l.status] ?? CHALK}>{l.status}</Chip></Td>
-                <Td right><Mono s={{ fontSize: 13 }} c={ASH}>{l.notes}</Mono></Td>
-                <Td right><Mono s={{ fontSize: 12 }} c={ASH}>{fmt(l.createdAt)}</Mono></Td>
+                <Td right><Mono s={{ fontSize: 14 }} c={ASH}>{l.notes}</Mono></Td>
+                <Td right><Mono s={{ fontSize: 13 }} c={ASH}>{fmt(l.createdAt)}</Mono></Td>
               </tr>
             ))}
             <Empty data={links} cols={5} label="No coaching links yet." />
@@ -81,7 +81,7 @@ export default function AdminDirectory() {
 function SectionTitle({ title, kicker, c }: { title: string; kicker: string; c: string }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em" }} c={c}>{kicker}</Mono>
+      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em" }} c={c}>{kicker}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: 19, marginTop: 2 }}>{title}</div>
     </div>
   );
@@ -94,7 +94,7 @@ function Table({ head, align, children }: { head: string[]; align: ("left" | "ri
       <thead>
         <tr>
           {head.map((h, i) => (
-            <th key={h} style={{ ...mono, fontSize: 10, color: ASH, textTransform: "uppercase", letterSpacing: ".08em", textAlign: align[i], padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+            <th key={h} style={{ ...mono, fontSize: 11, color: ASH, textTransform: "uppercase", letterSpacing: ".08em", textAlign: align[i], padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
               {h}
             </th>
           ))}
@@ -111,7 +111,7 @@ function Td({ children, right }: { children: React.ReactNode; right?: boolean })
 }
 
 function Empty({ data, cols, label }: { data: unknown[] | null; cols: number; label: string }) {
-  if (data === null) return <tr><td colSpan={cols} style={{ ...mono, fontSize: 13, color: ASH, textAlign: "center", padding: 32 }}>Loading…</td></tr>;
-  if (data.length === 0) return <tr><td colSpan={cols} style={{ ...mono, fontSize: 13, color: ASH, textAlign: "center", padding: 32 }}>{label}</td></tr>;
+  if (data === null) return <tr><td colSpan={cols} style={{ ...mono, fontSize: 14, color: ASH, textAlign: "center", padding: 32 }}>Loading…</td></tr>;
+  if (data.length === 0) return <tr><td colSpan={cols} style={{ ...mono, fontSize: 14, color: ASH, textAlign: "center", padding: 32 }}>{label}</td></tr>;
   return null;
 }

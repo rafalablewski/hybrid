@@ -45,7 +45,7 @@ export default function CoachApplications() {
 
   return (
     <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={VIOLET}>
+      <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={VIOLET}>
         Pending coach applications · {apps.length}
       </Mono>
       <div style={{ display: "grid", gap: 8 }}>
@@ -53,14 +53,14 @@ export default function CoachApplications() {
           <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{a.userEmail}</div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>{a.credentials}</Mono>
-              <Mono s={{ fontSize: 10, display: "block", marginTop: 4 }} c={ASH}>
+              <Mono s={{ fontSize: 13, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>{a.credentials}</Mono>
+              <Mono s={{ fontSize: 11, display: "block", marginTop: 4 }} c={ASH}>
                 {new Date(a.createdAt).toLocaleDateString()}
               </Mono>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-              <button onClick={() => decide(a.id, "approve")} style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "7px 14px", cursor: "pointer" }}>Approve</button>
-              <button onClick={() => decide(a.id, "deny")} style={{ ...mono, fontSize: 12, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "7px 14px", cursor: "pointer" }}>Deny</button>
+              <button onClick={() => decide(a.id, "approve")} style={{ ...mono, fontSize: 13, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Approve</button>
+              <button onClick={() => decide(a.id, "deny")} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Deny</button>
             </div>
           </div>
         ))}

@@ -53,14 +53,14 @@ export default function AdminAnonSessions() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Mono s={{ fontSize: 12, lineHeight: 1.5 }} c={ASH}>
+        <Mono s={{ fontSize: 13, lineHeight: 1.5 }} c={ASH}>
           Guest workouts logged on a device before any account existed.
         </Mono>
-        <Mono s={{ fontSize: 12 }} c={ASH}>{sessions ? `${sessions.length.toLocaleString()} sessions` : "…"}</Mono>
+        <Mono s={{ fontSize: 13 }} c={ASH}>{sessions ? `${sessions.length.toLocaleString()} sessions` : "…"}</Mono>
       </div>
 
       {err && (
-        <Mono s={{ fontSize: 12, display: "block", marginBottom: 12 }} c={RED}>
+        <Mono s={{ fontSize: 13, display: "block", marginBottom: 12 }} c={RED}>
           {err}
         </Mono>
       )}
@@ -73,7 +73,7 @@ export default function AdminAnonSessions() {
               {["Workout", "Platform", "Device", "Started", ""].map((h, i) => (
                 <th
                   key={h || i}
-                  style={{ ...mono, fontSize: 10, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: i === 4 ? "right" : "left", padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}
+                  style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: i === 4 ? "right" : "left", padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}
                 >
                   {h}
                 </th>
@@ -85,7 +85,7 @@ export default function AdminAnonSessions() {
               <tr key={s.id} onMouseEnter={(e) => (e.currentTarget.style.background = INK2)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <div style={{ ...disp, fontWeight: 600, fontSize: 14 }}>{s.title}</div>
-                  <Mono s={{ fontSize: 11 }} c={ASH}>
+                  <Mono s={{ fontSize: 12 }} c={ASH}>
                     {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
                     {s.blocks.length ? ` · ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}` : ""}
                   </Mono>
@@ -93,17 +93,17 @@ export default function AdminAnonSessions() {
                 <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <Chip c={platformColor(s.platform)}>{s.platform ?? "—"}</Chip>
                 </td>
-                <td style={{ ...mono, fontSize: 12, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   {trunc(s.deviceId)}
                 </td>
-                <td style={{ ...mono, fontSize: 12, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
+                <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
                   {fmt(s.startedAt)}
                 </td>
                 <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   <button
                     onClick={() => remove(s.id, s.title)}
                     disabled={busy === s.id}
-                    style={{ ...mono, fontSize: 12, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: "var(--r-field)", padding: "6px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? 0.5 : 1 }}
+                    style={{ ...mono, fontSize: 13, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: "var(--r-field)", padding: "8px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? 0.5 : 1 }}
                   >
                     Delete
                   </button>
@@ -112,7 +112,7 @@ export default function AdminAnonSessions() {
             ))}
             {sessions && sessions.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ ...mono, fontSize: 13, color: txt(ASH), textAlign: "center", padding: 40 }}>
+                <td colSpan={5} style={{ ...mono, fontSize: 14, color: txt(ASH), textAlign: "center", padding: 40 }}>
                   No anonymous workouts.
                 </td>
               </tr>

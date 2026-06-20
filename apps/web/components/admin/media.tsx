@@ -157,7 +157,7 @@ export default function AdminMedia() {
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Media library not initialized</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.6, display: "block" }} c={CHALK}>
           The <b>MediaAsset</b> table + <b>media</b> bucket don&apos;t exist yet. Run{" "}
           <span style={{ color: txt(AMBER) }}>reference/sql-media-library.sql</span> in the Supabase SQL Editor, then reload.
         </Mono>
@@ -167,7 +167,7 @@ export default function AdminMedia() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
-        <Mono s={{ fontSize: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 13 }} c={ASH}>
           {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} · public CDN URLs
         </Mono>
         <div>
@@ -187,14 +187,14 @@ export default function AdminMedia() {
           </button>
         </div>
       </div>
-      <Mono s={{ fontSize: 11, display: "block", marginBottom: 16 }} c={ASH}>
+      <Mono s={{ fontSize: 12, display: "block", marginBottom: 16 }} c={ASH}>
         Upload demo clips + images once; copy a URL into an exercise&apos;s demo-video field or an announcement.
       </Mono>
 
-      {err && <Mono s={{ fontSize: 12, display: "block", marginBottom: 14 }} c={RED}>{err}</Mono>}
+      {err && <Mono s={{ fontSize: 13, display: "block", marginBottom: 14 }} c={RED}>{err}</Mono>}
       {!supabase && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 14 }}>
-          <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block" }} c={CHALK}>
+          <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block" }} c={CHALK}>
             Storage isn&apos;t configured in this environment — uploading is disabled. The catalog below still lists
             registered assets.
           </Mono>
@@ -256,7 +256,7 @@ export default function AdminMedia() {
 
       {list && list.length === 0 && (
         <Card>
-          <Mono s={{ fontSize: 13, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
+          <Mono s={{ fontSize: 14, textAlign: "center", display: "block", padding: 24 }} c={ASH}>
             No media yet. Upload a demo clip or image to start the library.
           </Mono>
         </Card>
@@ -268,8 +268,8 @@ export default function AdminMedia() {
 const input: React.CSSProperties = {
   ...mono,
   width: "100%",
-  fontSize: 12,
-  padding: "8px 10px",
+  fontSize: 13,
+  padding: "10px 10px",
   borderRadius: "var(--r-field)",
   background: INK2,
   color: CHALK,
@@ -279,7 +279,7 @@ const input: React.CSSProperties = {
 };
 const primaryBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".05em",
@@ -292,11 +292,11 @@ const primaryBtn: React.CSSProperties = {
 };
 const miniBtn: React.CSSProperties = {
   ...cond,
-  fontSize: 11,
+  fontSize: 12,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: ".04em",
-  padding: "5px 10px",
+  padding: "7px 10px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LINE}`,
