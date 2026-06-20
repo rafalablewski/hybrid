@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Chip, Button, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraPlans from "../../components/aurora/plans";
@@ -41,13 +41,13 @@ function ClassicPlans() {
       <Mono style={{ marginTop: 6, marginBottom: 14 }}>{t("plans.chooseGoal")}</Mono>
       {GOAL_GROUPS.map((group) => (
         <View key={group.category} style={{ marginBottom: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{group.category}</Text>
           {group.goals.map((g) => (
             <Pressable key={g.id} onPress={() => setGoalId(g.id)}>
               <Card style={{ borderLeftWidth: 3, borderLeftColor: g.color }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
                   <Text style={{ fontSize: 22, color: g.color }}>{g.icon}</Text>
-                  <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{g.name}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{g.name}</Text>
                 </View>
                 <Mono style={{ marginTop: 8, lineHeight: 19 }}>{g.blurb}</Mono>
                 <Mono color={g.color} style={{ marginTop: 8 }}>
@@ -68,7 +68,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   return (
     <Screen>
       <Back onPress={back} label={t("plans.allGoals")} />
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginVertical: 8 }}>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 8 }}>
         {goal.icon} {goal.name}
       </Text>
       {goal.plans.length === 0 && (
@@ -106,7 +106,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
   return (
     <Screen>
       <Back onPress={back} label={goal.name} />
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
       <Mono style={{ marginBottom: 14 }}>
         {plan.weeks} {t("plans.weeks")} · {plan.sessions}×/wk · {d.level}
       </Mono>
@@ -118,10 +118,10 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
 
       <Card>
         <Kicker color={C.lime}>{t("plan.split")}</Kicker>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
           {d.split.map((day, i) => (
             <View key={i} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: day.toLowerCase() === "rest" ? C.ash : C.chalk }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: day.toLowerCase() === "rest" ? C.ash : C.chalk }}>
                 {day}
               </Text>
             </View>
@@ -134,7 +134,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
           <Kicker color={C.amber}>{session.day}</Kicker>
           {session.items?.map((it, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk, flex: 1 }}>{it.name}</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
               <Mono color={C.chalk}>{it.sr}</Mono>
             </View>
           ))}

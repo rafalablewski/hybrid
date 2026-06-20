@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -37,24 +37,24 @@ export default function AuroraCalendar() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: 26 }}>Calendar</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>Calendar</AHeading>
         <View style={{ marginLeft: "auto" }}><AuroraIcon name="calendar" size={24} color={txt(C, C.lime)} /></View>
       </View>
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{label}</Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{label}</Text>
+          <View style={{ flexDirection: "row", gap: space.sm }}>
             <Pressable onPress={() => go(-1)} style={navBtn}><AuroraIcon name="back" size={18} color={C.chalk} /></Pressable>
             <Pressable onPress={() => go(1)} style={navBtn}><AuroraIcon name="back" size={18} color={C.chalk} style={{ transform: [{ rotate: "180deg" }] }} /></Pressable>
           </View>
         </View>
         <View style={{ flexDirection: "row" }}>
-          {WEEKDAYS.map((d, i) => <Text key={i} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 10, color: C.ash }}>{d}</Text>)}
+          {WEEKDAYS.map((d, i) => <Text key={i} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{d}</Text>)}
         </View>
         {matrix.map((week, wi) => (
           <View key={wi} style={{ flexDirection: "row", marginTop: 4 }}>
@@ -65,7 +65,7 @@ export default function AuroraCalendar() {
               const isSel = cell.date === selected;
               return (
                 <Pressable key={cell.date} onPress={() => setSelected(cell.date)} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: 12, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: day ? `rgba(196,240,53,${0.1 + inten * 0.5})` : C.ink }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
                   {day ? <Text style={{ fontFamily: F.bold, fontSize: 9, color: C.onAccent, backgroundColor: C.lime, borderRadius: 4, paddingHorizontal: 3, marginTop: 1, overflow: "hidden" }}>{day.count}</Text> : null}
                 </Pressable>
               );
@@ -74,15 +74,15 @@ export default function AuroraCalendar() {
         ))}
       </ACard>
 
-      <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
       {selSessions.length === 0 ? (
-        <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}>Nothing logged this day.</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>Nothing logged this day.</Text>
       ) : selSessions.map((s) => (
         <ACard key={s.id} style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{s.title}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} blocks</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} blocks</Text>
         </ACard>
       ))}
     </AuroraScreen>

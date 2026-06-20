@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isValidTotpCode } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { LINE, LIME, CHALK, ASH, RED, AMBER, INK2, ON_ACCENT, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, RED, AMBER, INK2, ON_ACCENT, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type Factor = { id: string; friendly_name?: string | null; status: string };
 type Enroll = { factorId: string; qr: string; secret: string };
@@ -92,20 +92,20 @@ export default function MfaSettings() {
 
   return (
     <Card style={{ borderLeft: `3px solid ${verified.length ? LIME : AMBER}`, marginBottom: 16 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={verified.length ? LIME : AMBER}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={verified.length ? LIME : AMBER}>
         Two-factor authentication
       </Mono>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-        <div style={{ ...disp, fontWeight: 700, fontSize: 18 }}>Authenticator app (TOTP)</div>
+      <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 8 }}>
+        <div style={{ ...disp, fontWeight: 700, fontSize: fs.title }}>Authenticator app (TOTP)</div>
         <Chip c={verified.length ? LIME : ASH}>{verified.length ? "on" : "off"}</Chip>
       </div>
-      <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>
         Adds a one-time code on sign-in — strongly recommended for admin accounts. Works with any
         authenticator (1Password, Authy, Google Authenticator).
       </Mono>
 
       {!live && (
-        <Mono s={{ fontSize: 12, display: "block", marginTop: 12 }} c={ASH}>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={ASH}>
           Real auth required — add the Supabase keys to enable MFA.
         </Mono>
       )}
@@ -115,7 +115,7 @@ export default function MfaSettings() {
           {/* existing factors */}
           {verified.map((f) => (
             <div key={f.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
-              <Mono s={{ fontSize: 13 }} c={CHALK}>{f.friendly_name || "Authenticator"}</Mono>
+              <Mono s={{ fontSize: fs.body }} c={CHALK}>{f.friendly_name || "Authenticator"}</Mono>
               <button onClick={() => remove(f.id)} disabled={busy} style={removeBtn}>Remove</button>
             </div>
           ))}
@@ -129,21 +129,21 @@ export default function MfaSettings() {
 
           {enroll && (
             <div style={{ marginTop: 14 }}>
-              <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={ASH}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={ASH}>
                 Scan this with your authenticator, then enter the 6-digit code to confirm.
               </Mono>
               {/* Supabase returns the QR as an SVG data URL */}
               <img src={enroll.qr} alt="2FA QR code" style={{ width: 168, height: 168, background: "#fff", borderRadius: 10, padding: 6 }} />
-              <Mono s={{ fontSize: 11, display: "block", margin: "8px 0 12px", wordBreak: "break-all" }} c={ASH}>
+              <Mono s={{ fontSize: fs.micro, display: "block", margin: "8px 0 12px", wordBreak: "break-all" }} c={ASH}>
                 Manual key: <span style={{ color: CHALK }}>{enroll.secret}</span>
               </Mono>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: space.sm }}>
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
                   placeholder="000000"
-                  style={{ ...mono, fontSize: 16, letterSpacing: ".2em", flex: 1, padding: "11px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+                  style={{ ...mono, fontSize: fs.subtitle, letterSpacing: ".2em", flex: 1, padding: "11px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
                 />
                 <button onClick={confirm} disabled={busy || !isValidTotpCode(code)} style={{ ...primaryBtn, marginTop: 0, width: "auto", padding: "0 18px" }}>
                   Confirm
@@ -154,7 +154,7 @@ export default function MfaSettings() {
           )}
 
           {msg && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 12 }} c={msg.ok ? LIME : RED}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={msg.ok ? LIME : RED}>
               {msg.text}
             </Mono>
           )}
@@ -167,7 +167,7 @@ export default function MfaSettings() {
 const primaryBtn = {
   ...disp,
   fontWeight: 800,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   width: "100%",
   marginTop: 14,
   padding: "11px 0",
@@ -180,7 +180,7 @@ const primaryBtn = {
 
 const removeBtn = {
   ...mono,
-  fontSize: 12,
+  fontSize: fs.caption,
   color: txt(RED),
   background: "transparent",
   border: `1px solid ${LINE}`,

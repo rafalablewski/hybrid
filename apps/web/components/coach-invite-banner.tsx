@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LIME, ASH, CHALK, VIOLET, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LIME, ASH, CHALK, VIOLET, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
 type Invite = { id: string; status: string; coach?: { name: string | null; email: string } };
 
@@ -45,29 +45,29 @@ export default function CoachInviteBanner() {
   if (invites.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 16, display: "grid", gap: 8 }}>
+    <div style={{ marginBottom: 16, display: "grid", gap: space.sm }}>
       {invites.map((inv) => (
         <Card key={inv.id} style={{ borderLeft: `3px solid ${VIOLET}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
             <div>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Coach invite</Mono>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 16, marginTop: 4 }}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Coach invite</Mono>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 4 }}>
                 {coachName(inv.coach)} wants to coach you
               </div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 2 }} c={ASH}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>
                 Accepting shares your training with them — you can end it anytime.
               </Mono>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: space.sm }}>
               <button
                 onClick={() => act(inv.id, "accept")}
-                style={{ ...mono, fontSize: 13, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 10, padding: "8px 16px", cursor: "pointer" }}
+                style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 10, padding: "8px 16px", cursor: "pointer" }}
               >
                 Accept
               </button>
               <button
                 onClick={() => act(inv.id, "end")}
-                style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}
+                style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}
               >
                 Decline
               </button>

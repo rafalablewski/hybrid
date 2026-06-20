@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/core";
+import { fs, space, sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
@@ -37,40 +37,40 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
     <div style={outer}>
       <div style={{ width: "100%", maxWidth: 460 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
             {!embedded && (
               <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
-                {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: 20 }}>←</span>}
+                {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
               </button>
             )}
-            <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0, lineHeight: 1.1 }}>Your<br />Statistics</h1>
+            <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, lineHeight: 1.1 }}>Your<br />Statistics</h1>
           </div>
           <div style={{ textAlign: "right", marginTop: 6 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>Weekly volume</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end", marginTop: 2 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>Weekly volume</div>
+            <div style={{ display: "flex", alignItems: "center", gap: space.xs, justifyContent: "flex-end", marginTop: 2 }}>
               <AuroraIcon name="arrow-up" size={16} color={C("lime")} />
-              <span style={{ fontWeight: 900, fontSize: 18 }}>{Math.round(recap.volume)} kg</span>
+              <span style={{ fontWeight: 900, fontSize: fs.title }}>{Math.round(recap.volume)} kg</span>
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.pill, padding: 4, marginTop: 18 }}>
+        <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.pill, padding: 4, marginTop: 18 }}>
           {RANGES.map((rg) => {
             const on = range === rg.id;
             return (
-              <button key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{rg.label}</button>
+              <button key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{rg.label}</button>
             );
           })}
         </div>
 
         <div style={{ marginTop: 18, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.chart, padding: "18px 18px 26px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b style={{ fontSize: 16 }}>Sessions</b>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{buckets.total} in {range}</span>
+            <b style={{ fontSize: fs.subtitle }}>Sessions</b>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{buckets.total} in {range}</span>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 130, marginTop: 16, gap: 7 }}>
             {buckets.buckets.map((b, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: space.xs }}>
                 <div style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 104), borderRadius: 6, background: i === buckets.peakIndex ? C("lime") : C("line") }} />
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash") }}>{b.label}</span>
               </div>
@@ -78,14 +78,14 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+        <div style={{ display: "flex", gap: space.md, marginTop: 16 }}>
           <Mini icon="verified" label="Active days" value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} radius={r.card} />
           <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("violet")} radius={r.card} />
           <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("amber")} radius={r.card} />
         </div>
 
         {!hasData && (
-          <p style={{ fontSize: 13, color: C("ash"), textAlign: "center", marginTop: 18, lineHeight: 1.5 }}>Log a few workouts and your real training stats fill in here.</p>
+          <p style={{ fontSize: fs.body, color: C("ash"), textAlign: "center", marginTop: 18, lineHeight: 1.5 }}>Log a few workouts and your real training stats fill in here.</p>
         )}
       </div>
     </div>
@@ -97,8 +97,8 @@ function Mini({ icon, label, value, color, radius }: { icon: Parameters<typeof A
   return (
     <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: radius, padding: 16 }}>
       <AuroraIcon name={icon} size={22} color={color} />
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), marginTop: 8 }}>{label}</div>
-      <div style={{ fontWeight: 900, fontSize: 20, marginTop: 2 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8 }}>{label}</div>
+      <div style={{ fontWeight: 900, fontSize: fs.heading, marginTop: 2 }}>{value}</div>
     </div>
   );
 }

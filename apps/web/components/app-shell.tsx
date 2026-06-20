@@ -7,7 +7,7 @@ import { AuroraIcon } from "./aurora/icons";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
-import {
+import { fs, space,
   INK,
   INK2,
   LINE,
@@ -339,12 +339,12 @@ export default function AppShell() {
                         background: screen === id ? `${LIME}1a` : "transparent",
                         color: txt(screen === id ? LIME : ASH),
                         ...disp,
-                        fontSize: 14,
+                        fontSize: fs.bodyLg,
                         fontWeight: 600,
                         textAlign: "left",
                       }}
                     >
-                      <span style={{ fontSize: 16, display: "grid", placeItems: "center", width: 18, height: 18 }}>
+                      <span style={{ fontSize: fs.subtitle, display: "grid", placeItems: "center", width: 18, height: 18 }}>
                         {auroraIcon ? <AuroraIcon name={auroraIcon} size={18} strokeWidth={2.6} /> : ic}
                       </span>
                       {!railCollapsed && label}
@@ -377,10 +377,10 @@ export default function AppShell() {
                 textAlign: "left",
               }}
             >
-              <span style={{ fontSize: 16 }}>✦</span>
+              <span style={{ fontSize: fs.subtitle }}>✦</span>
               {!railCollapsed && (
                 <span style={{ flex: 1 }}>
-                  <span style={{ ...disp, fontWeight: 800, fontSize: 14, display: "block" }}>Unlock Full</span>
+                  <span style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, display: "block" }}>Unlock Full</span>
                   <Mono s={{ fontSize: 10.5, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
                 </span>
               )}
@@ -393,7 +393,7 @@ export default function AppShell() {
               display: "flex",
               alignItems: "center",
               justifyContent: railCollapsed ? "center" : "flex-start",
-              gap: 10,
+              gap: space.ms,
               padding: railCollapsed ? "8px 0" : "10px 12px",
               borderRadius: 10,
               background: railCollapsed ? "transparent" : INK2,
@@ -411,7 +411,7 @@ export default function AppShell() {
                 ...disp,
                 fontWeight: 700,
                 color: LIME_T,
-                fontSize: 14,
+                fontSize: fs.bodyLg,
                 flexShrink: 0,
               }}
               title={railCollapsed ? `${session.name} · ${session.role}` : undefined}
@@ -420,10 +420,10 @@ export default function AppShell() {
             </div>
             {!railCollapsed && (
               <div style={{ overflow: "hidden" }}>
-                <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}>
+                <div style={{ ...disp, fontWeight: 600, fontSize: fs.body, whiteSpace: "nowrap" }}>
                   {session.name}
                 </div>
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>
                   {session.role}
                 </Mono>
               </div>
@@ -437,7 +437,7 @@ export default function AppShell() {
                 width: "100%",
                 marginTop: 8,
                 ...cond,
-                fontSize: 12,
+                fontSize: fs.caption,
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: ".05em",
@@ -461,7 +461,7 @@ export default function AppShell() {
                 width: "100%",
                 marginTop: 8,
                 ...cond,
-                fontSize: 12,
+                fontSize: fs.caption,
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: ".05em",
@@ -486,7 +486,7 @@ export default function AppShell() {
               width: "100%",
               marginTop: 8,
               ...cond,
-              fontSize: 12,
+              fontSize: fs.caption,
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: ".05em",
@@ -507,24 +507,24 @@ export default function AppShell() {
       <main style={{ flex: 1, padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
           {/* Classic shows the app kicker + screen title here. Aurora screens
               render their own bespoke header, so we drop this to avoid a doubled
               page title — but keep the theme/lang controls (right). On mobile a
               hamburger opens the nav drawer. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }}>
             {isMobile && (
               <button
                 onClick={() => setDrawerOpen(true)}
                 aria-label="Open menu"
-                style={{ width: 40, height: 40, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: 10, border: `1px solid ${LINE}`, background: INK2, color: CHALK, fontSize: 18, cursor: "pointer" }}
+                style={{ width: 40, height: 40, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: 10, border: `1px solid ${LINE}`, background: INK2, color: CHALK, fontSize: fs.title, cursor: "pointer" }}
               >
                 ☰
               </button>
             )}
             {aurora ? <div /> : (
             <div style={{ minWidth: 0 }}>
-              <Mono s={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
+              <Mono s={{ fontSize: fs.caption, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
                 app.hybrid.app
               </Mono>
               <h1 style={{ ...disp, fontWeight: 900, fontSize: isMobile ? 22 : 30, letterSpacing: "-.03em", marginTop: 2, textTransform: "capitalize" }}>
@@ -533,7 +533,7 @@ export default function AppShell() {
             </div>
             )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
             <button
               onClick={toggle}
               title="Toggle theme"
@@ -541,7 +541,7 @@ export default function AppShell() {
               style={{
                 ...cond,
                 fontWeight: 700,
-                fontSize: 13,
+                fontSize: fs.body,
                 textTransform: "uppercase",
                 letterSpacing: ".04em",
                 color: CHALK,
@@ -573,7 +573,7 @@ export default function AppShell() {
         {screen === "analytics" && (
           <>
             {allowedScopes.length > 1 && (
-              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <div style={{ display: "flex", gap: space.sm, marginBottom: 12 }}>
               {(
                 [
                   ["athlete", "Client", LIME],
@@ -588,7 +588,7 @@ export default function AppShell() {
                     onClick={() => setScope(id)}
                     style={{
                       ...cond,
-                      fontSize: 14,
+                      fontSize: fs.bodyLg,
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: ".04em",
@@ -618,7 +618,7 @@ export default function AppShell() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
+                    gap: space.ms,
                     padding: "10px 14px",
                     borderRadius: aurora ? 18 : 10,
                     background: `${acc}12`,
@@ -626,10 +626,10 @@ export default function AppShell() {
                     marginBottom: 20,
                   }}
                 >
-                  <span style={{ color: acc, fontSize: 14 }}>
+                  <span style={{ color: acc, fontSize: fs.bodyLg }}>
                     {scope === "operator" ? "⚙" : scope === "coach" ? "◆" : "●"}
                   </span>
-                  <Mono s={{ fontSize: 12, lineHeight: 1.3 }} c={CHALK}>
+                  <Mono s={{ fontSize: fs.caption, lineHeight: 1.3 }} c={CHALK}>
                     {txt}
                   </Mono>
                 </div>
@@ -849,10 +849,10 @@ function CommandMenu({
           <span className="lg-sheen" aria-hidden />
           <div className="cmd-head">
             <div>
-              <Mono s={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase" }} c={ASH}>
+              <Mono s={{ fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase" }} c={ASH}>
                 app.hybrid.app
               </Mono>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 16, marginTop: 2 }}>Jump to…</div>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 2 }}>Jump to…</div>
             </div>
             <button className="cmd-close" aria-label="Close" onClick={() => setOpen(false)}>
               ✕

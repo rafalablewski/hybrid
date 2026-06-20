@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { fs, space } from "@hybrid/core";
+
 import {
   BarChart,
   Bar,
@@ -37,7 +39,7 @@ const METRICS = [
 
 type MetricKey = (typeof METRICS)[number]["key"];
 
-const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: 12 } as const;
+const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 
 /** AURORA Team Compare (web) — same /api/coach/compare flow: lines athletes up
  *  side by side on any lift across e1RM / velocity-1RM / bar speed / volume /
@@ -74,10 +76,10 @@ export default function AuroraTeamCompare() {
   );
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
-  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
+  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
 
   if (loading)
-    return <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>Loading roster…</span>;
+    return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>Loading roster…</span>;
 
   if (athletes.length === 0)
     return (
@@ -85,7 +87,7 @@ export default function AuroraTeamCompare() {
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
           No comparable athletes yet
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: 1.6, color: C("ash") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, color: C("ash") }}>
           Team Compare lines up your athletes side by side on any lift — best e1RM, the
           velocity-based 1RM, bar speed, volume and reps. It reads your <b>active roster</b>
           {" "}(Coach screen → accepted clients) and computes from their real logged sessions.
@@ -97,10 +99,10 @@ export default function AuroraTeamCompare() {
   return (
     <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* lift + metric selectors */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: space.lg, marginBottom: 16 }}>
         <div>
-          <div style={{ ...kicker("ash"), fontSize: 10, marginBottom: 6 }}>Exercise</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>Exercise</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {lifts.map((l) => (
               <button key={l} onClick={() => setLift(l)} style={pill(lift === l, "lime")}>
                 {l}
@@ -109,8 +111,8 @@ export default function AuroraTeamCompare() {
           </div>
         </div>
         <div>
-          <div style={{ ...kicker("ash"), fontSize: 10, marginBottom: 6 }}>Metric</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>Metric</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {METRICS.map((m) => (
               <button key={m.key} onClick={() => setMetric(m.key)} style={pill(metric === m.key, m.color)}>
                 {m.label}
@@ -128,12 +130,12 @@ export default function AuroraTeamCompare() {
         <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * 46)}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 16, right: 24 }}>
             <CartesianGrid stroke={C("line")} strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" tick={{ fill: C("ash"), fontSize: 11 }} stroke={C("line")} />
+            <XAxis type="number" tick={{ fill: C("ash"), fontSize: fs.micro }} stroke={C("line")} />
             <YAxis
               type="category"
               dataKey="name"
               width={90}
-              tick={{ fill: C("ash"), fontSize: 12 }}
+              tick={{ fill: C("ash"), fontSize: fs.caption }}
               stroke={C("line")}
             />
             <Tooltip
@@ -152,7 +154,7 @@ export default function AuroraTeamCompare() {
 
       {/* full table */}
       <div style={{ ...card, marginTop: 16, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
           <thead>
             <tr style={{ textAlign: "left", color: C("ash") }}>
               <th style={th}>Athlete</th>
@@ -188,7 +190,7 @@ export default function AuroraTeamCompare() {
 function pill(active: boolean, c: string): React.CSSProperties {
   return {
     fontFamily: "var(--font-display)",
-    fontSize: 13,
+    fontSize: fs.body,
     fontWeight: 700,
     padding: "8px 16px",
     borderRadius: 999,
@@ -199,7 +201,7 @@ function pill(active: boolean, c: string): React.CSSProperties {
   };
 }
 
-const th: React.CSSProperties = { padding: "0 0 8px", fontWeight: 600, textTransform: "uppercase", fontSize: 10, letterSpacing: ".08em" };
+const th: React.CSSProperties = { padding: "0 0 8px", fontWeight: 600, textTransform: "uppercase", fontSize: fs.nano, letterSpacing: ".08em" };
 const thR: React.CSSProperties = { ...th, textAlign: "right" };
 const td: React.CSSProperties = { padding: "9px 0" };
 const tdR: React.CSSProperties = { ...td, textAlign: "right", color: C("ash") };

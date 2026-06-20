@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fs, space } from "@hybrid/core";
+
 import { useParams, useRouter } from "next/navigation";
 
 // Public claim landing for a coach invite (QR / link). If the visitor is signed
@@ -68,9 +70,9 @@ export default function InviteClaimPage() {
   return (
     <main style={{ minHeight: "100dvh", background: INK, color: FG, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 460, border: `1px solid ${LINE}`, background: CARD, borderRadius: 20, padding: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginBottom: 22 }}>
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: LIME, boxShadow: `0 0 14px ${LIME}` }} />
-          <b style={{ fontSize: 18, letterSpacing: "-.02em" }}>HYBRID</b>
+          <b style={{ fontSize: fs.title, letterSpacing: "-.02em" }}>HYBRID</b>
         </div>
 
         {info === null ? (
@@ -91,7 +93,7 @@ export default function InviteClaimPage() {
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.1 }}>
+            <h1 style={{ fontSize: fs.display, fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.1 }}>
               <span style={{ color: LIME }}>{coach}</span> invited you to train on HYBRID
             </h1>
             <p style={{ color: DIM, marginTop: 12, lineHeight: 1.6 }}>
@@ -109,7 +111,7 @@ export default function InviteClaimPage() {
             ) : signedIn === false ? (
               <>
                 <a href="/login" style={btn(false)}>Create your free account / Sign in</a>
-                <p style={{ color: DIM, fontSize: 13, marginTop: 12, lineHeight: 1.6 }}>
+                <p style={{ color: DIM, fontSize: fs.body, marginTop: 12, lineHeight: 1.6 }}>
                   Sign up with the email your coach used and you&apos;ll be connected automatically. Otherwise, reopen this link after signing in.
                 </p>
               </>
@@ -136,7 +138,7 @@ function btn(disabled: boolean): React.CSSProperties {
     background: LIME,
     color: INK,
     fontWeight: 800,
-    fontSize: 15,
+    fontSize: fs.note,
     border: "none",
     cursor: disabled ? "default" : "pointer",
     opacity: disabled ? 0.6 : 1,

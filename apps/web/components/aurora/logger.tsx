@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
+import { fs, space,
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
@@ -35,7 +35,7 @@ const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 const pill = (token: string): React.CSSProperties => {
   const c = C(token);
-  return { fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" };
+  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" };
 };
 
 /** AURORA Logger (web) — AI prescription + routines + the WorkoutBlocks editor,
@@ -184,15 +184,15 @@ export default function AuroraLogger({
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
             AI Coach{sessions.length > 0 ? ` · readiness ${rx.readiness}/100` : ""}
           </div>
           <button onClick={loadPrescribed} style={pill("violet")}>
             {sessions.length > 0 ? "Use prescribed →" : "Start a session →"}
           </button>
         </div>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>
           {sessions.length > 0
             ? rx.why
             : "Log a few sessions and the coach reads your real readiness, fatigue and velocity to prescribe the day. For now, tap above for a balanced starter you can edit."}
@@ -201,8 +201,8 @@ export default function AuroraLogger({
 
       {routines.length > 0 && (
         <div style={{ ...card, marginBottom: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your routines</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your routines</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
             {routines.map((r) => (
               <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" · ")}>
                 {r.name}
@@ -212,10 +212,10 @@ export default function AuroraLogger({
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: 8 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-          style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
           title="Toggle the RPE + velocity columns"
         >
           {prefs.detailed ? "Detailed ▾" : "Simple ▸"}
@@ -223,7 +223,7 @@ export default function AuroraLogger({
         {prefs.detailed && (
           <button
             onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
-            style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+            style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
             title="Log effort as RPE or RIR (reps in reserve)"
           >
             {prefs.rpeAsRir ? "RIR" : "RPE"}
@@ -250,19 +250,19 @@ export default function AuroraLogger({
       />
 
       {error && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginBottom: 10, color: C("red") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: C("red") }}>
           {error}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: space.ms, alignItems: "center", flexWrap: "wrap" }}>
         <button
           onClick={save}
           disabled={saving || blocks.length === 0}
           style={{
             fontFamily: "var(--font-display)",
             fontWeight: 800,
-            fontSize: 15,
+            fontSize: fs.note,
             background: C("lime"),
             color: C("ink"),
             border: "none",
@@ -282,7 +282,7 @@ export default function AuroraLogger({
         >
           ★ Save as routine
         </button>
-        {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
+        {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
       </div>
     </div>
   );
@@ -310,28 +310,28 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
       <div className="win-pop" style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
         <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
         <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? "First one done." : "Session complete."}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginTop: 6 }}>{sets} sets · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 6 }}>{sets} sets · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
       </div>
 
       {prs.length > 0 && (
         <div className="win-pop" style={{ ...card, borderColor: C("lime"), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: C("lime") }}>🏆 {prs.length} new PR{prs.length > 1 ? "s" : ""}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("lime") }}>🏆 {prs.length} new PR{prs.length > 1 ? "s" : ""}</div>
           {prs.slice(0, 5).map((p) => (
-            <div key={p.lift} style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6 }}>{prLine(p)}</div>
+            <div key={p.lift} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6 }}>{prLine(p)}</div>
           ))}
         </div>
       )}
 
       {cardioPrs.length > 0 && (
         <div className="win-pop" style={{ ...card, borderColor: C("blue"), background: "color-mix(in srgb, var(--color-blue) 8%, transparent)", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: C("blue") }}>🏃 {cardioPrs.length} cardio PR{cardioPrs.length > 1 ? "s" : ""}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("blue") }}>🏃 {cardioPrs.length} cardio PR{cardioPrs.length > 1 ? "s" : ""}</div>
           {cardioPrs.slice(0, 5).map((p) => (
-            <div key={`${p.move}-${p.kind}`} style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6 }}>{cardioLine(p)}</div>
+            <div key={`${p.move}-${p.kind}`} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6 }}>{cardioLine(p)}</div>
           ))}
         </div>
       )}
 
-      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 6 }}>
+      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 6 }}>
         Done →
       </button>
     </div>

@@ -11,7 +11,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt, roleColor } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraPerformance from "../components/aurora/performance";
@@ -73,14 +73,14 @@ function ClassicPerformance() {
       {/* HPI cockpit */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: hpiColor(state.hpi.band, C), marginTop: 14 }}>
         <Kicker color={C.blue}>HPI</Kicker>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 4 }}>
           <Text style={{ fontFamily: F.black, fontSize: 52, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
           <View>
             <Chip color={hpiColor(state.hpi.band, C)}>{state.hpi.band}</Chip>
-            <Mono color={C.ash} style={{ marginTop: 4, fontSize: 11 }}>limiter · {state.hpi.limiter}</Mono>
+            <Mono color={C.ash} style={{ marginTop: 4, fontSize: fs.micro }}>limiter · {state.hpi.limiter}</Mono>
           </View>
         </View>
-        <View style={{ marginTop: 14, gap: 10 }}>
+        <View style={{ marginTop: 14, gap: space.ms }}>
           {([
             ["Strength", state.hpi.components.strength, C.lime] as const,
             ["Endurance", state.hpi.components.endurance, C.blue] as const,
@@ -88,8 +88,8 @@ function ClassicPerformance() {
           ]).map(([l, v, col]) => (
             <View key={l}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Mono color={C.ash} style={{ fontSize: 11 }}>{l}</Mono>
-                <Mono color={col} style={{ fontSize: 11 }}>{v}</Mono>
+                <Mono color={C.ash} style={{ fontSize: fs.micro }}>{l}</Mono>
+                <Mono color={col} style={{ fontSize: fs.micro }}>{v}</Mono>
               </View>
               <View style={{ height: 6, borderRadius: 3, backgroundColor: C.ink2, marginTop: 3, overflow: "hidden" }}>
                 <View style={{ width: `${v}%`, height: "100%", backgroundColor: col }} />
@@ -111,8 +111,8 @@ function ClassicPerformance() {
           ))}
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-          <Mono color={C.ash} style={{ fontSize: 10 }}>-13d</Mono>
-          <Mono color={C.ash} style={{ fontSize: 10 }}>today · HPI {traj[traj.length - 1]?.hpi ?? "—"}</Mono>
+          <Mono color={C.ash} style={{ fontSize: fs.nano }}>-13d</Mono>
+          <Mono color={C.ash} style={{ fontSize: fs.nano }}>today · HPI {traj[traj.length - 1]?.hpi ?? "—"}</Mono>
         </View>
       </Card>
 
@@ -120,13 +120,13 @@ function ClassicPerformance() {
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.red, marginTop: 14 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Kicker color={C.red}>Injury risk · tissue</Kicker>
-          <Mono color={C.ash} style={{ fontSize: 10 }}>model {risk.modelVersion}</Mono>
+          <Mono color={C.ash} style={{ fontSize: fs.nano }}>model {risk.modelVersion}</Mono>
         </View>
         <View style={{ marginTop: 10 }}>
           {risk.tissues.map((t) => (
             <View key={t.tissue} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk, flex: 1 }}>{cap(t.tissue)}</Text>
-              <Mono color={t.risk > 0 ? C.chalk : C.ash} style={{ width: 70, textAlign: "right", fontSize: 12 }}>{(t.prob * 100).toFixed(1)}%</Mono>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{cap(t.tissue)}</Text>
+              <Mono color={t.risk > 0 ? C.chalk : C.ash} style={{ width: 70, textAlign: "right", fontSize: fs.caption }}>{(t.prob * 100).toFixed(1)}%</Mono>
               <View style={{ width: 64, alignItems: "flex-end" }}>
                 <Chip color={t.risk > 0 ? riskColor(t.band, C) : C.ash}>{t.risk}</Chip>
               </View>

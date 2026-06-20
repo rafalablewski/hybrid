@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
+import { fs, space, deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type State = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
@@ -41,21 +41,21 @@ export default function AuroraTactical() {
   const unit = squad.length ? unitReadiness(squad) : null;
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
-  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
-  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 14, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, width: "100%", outline: "none" };
-  const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
+  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
+  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, width: "100%", outline: "none" };
+  const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
   return (
-    <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ ...card, }}>
         <div style={kicker("amber")}>Tactical / SOF · deployment readiness</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
           Not &ldquo;are you fit?&rdquo; but &ldquo;are you deployable?&rdquo; — the same Twin signals (HPI, injury risk)
           fused with occupational capacity into a Deployment Readiness Index and a unit go/no-go.
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <div style={{ ...card, }}>
           <div style={kicker("blue")}>Deployment readiness</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 54, color: dr ? C(statusColor[dr.status]) : C("ash"), lineHeight: 1.1, margin: "6px 0" }}>
@@ -64,21 +64,21 @@ export default function AuroraTactical() {
           {dr && chip(statusColor[dr.status], dr.status.replace("-", " "))}
           {dr && dr.limiters.length > 0 && (
             <div style={{ marginTop: 10 }}>
-              {dr.limiters.map((l) => <div key={l} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("amber") }}>⚠ {l}</div>)}
+              {dr.limiters.map((l) => <div key={l} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>⚠ {l}</div>)}
             </div>
           )}
           {hasData ? (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} · injury risk {state!.injuryRisk}/100</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} · injury risk {state!.injuryRisk}/100</div>
           ) : (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 10, color: C("ash") }}>Log training to compute your Deployment Readiness Index from your Twin.</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>Log training to compute your Deployment Readiness Index from your Twin.</div>
           )}
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
             <label style={{ flex: 1 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Load carriage</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Load carriage</span>
               <input value={load} onChange={(e) => setLoad(e.target.value)} inputMode="numeric" style={input} />
             </label>
             <label style={{ flex: 1 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Work capacity</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Work capacity</span>
               <input value={work} onChange={(e) => setWork(e.target.value)} inputMode="numeric" style={input} />
             </label>
           </div>
@@ -92,15 +92,15 @@ export default function AuroraTactical() {
           <div style={{ marginTop: 12 }}>
             {unit?.members.map((m) => (
               <div key={m.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: m.name === "You" ? C("lime") : C("chalk") }}>{m.name}</span>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>DRI {m.dri}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: m.name === "You" ? C("lime") : C("chalk") }}>{m.name}</span>
+                <div style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>DRI {m.dri}</span>
                   {chip(statusColor[m.status], m.status.replace("-", " "))}
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, marginTop: 10, color: C("ash") }}>Unit roll-up shows your own readiness · connect a real unit through the Org Graph.</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 10, color: C("ash") }}>Unit roll-up shows your own readiness · connect a real unit through the Org Graph.</div>
         </div>
       </div>
     </div>

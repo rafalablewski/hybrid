@@ -16,7 +16,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraVelocity from "../../components/aurora/velocity";
@@ -80,7 +80,7 @@ function ClassicVelocity() {
       <Screen refreshing={refreshing} onRefresh={load}>
         <Kicker>{t("nav.velocity")} · VBT</Kicker>
         <Card style={{ marginTop: 8, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>No bar speed yet</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>No bar speed yet</Text>
           <Mono style={{ marginTop: 8, textAlign: "center", lineHeight: 19 }}>
             Add a velocity (m/s) to a strength set in the live workout — across a few loads — and your
             load–velocity profile, 1RM and zones build here from your real lifts.
@@ -94,10 +94,10 @@ function ClassicVelocity() {
       <Kicker>{t("nav.velocity")} · VBT</Kicker>
 
       {/* lift selector */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8, marginBottom: 4 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8, marginBottom: 4 }}>
         {lifts.map((l) => (
           <Pressable key={l} onPress={() => setLift(l)} style={pill(active === l, C.lime)}>
-            <Text style={{ fontFamily: F.semi, fontSize: 12, color: active === l ? txt(C, C.lime) : C.ash }}>{l}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: active === l ? txt(C, C.lime) : C.ash }}>{l}</Text>
           </Pressable>
         ))}
       </View>
@@ -107,7 +107,7 @@ function ClassicVelocity() {
         <Kicker color={C.lime}>Estimated 1RM · from velocity</Kicker>
         <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>
           {resolved ? profile.estimated1rm.toFixed(1) : "—"}
-          <Text style={{ fontSize: 18, color: C.ash }}> kg</Text>
+          <Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text>
         </Text>
         <Mono style={{ marginTop: 2 }}>
           {resolved
@@ -122,7 +122,7 @@ function ClassicVelocity() {
         <View style={{ marginTop: 10 }}>
           <Plot points={points} profile={profile} />
         </View>
-        <Mono style={{ marginTop: 8, fontSize: 11 }}>
+        <Mono style={{ marginTop: 8, fontSize: fs.micro }}>
           <Text style={{ color: txt(C, C.lime) }}>●</Text> measured  ·  <Text style={{ color: txt(C, C.violet) }}>—</Text> fit → 1RM at MVT
         </Mono>
       </Card>
@@ -136,9 +136,9 @@ function ClassicVelocity() {
           <Stepper label="+" onPress={() => setTargetVel((v) => Math.min(1.3, +(v + 0.05).toFixed(2)))} />
         </View>
         {rec ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
             <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.violet) }}>
-              {rec.load} <Text style={{ fontSize: 14, color: C.ash }}>kg</Text>
+              {rec.load} <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>kg</Text>
             </Text>
             <Mono>≈ {rec.percent1rm.toFixed(0)}% 1RM</Mono>
             <Chip color={zoneColor(rec.zone.id)}>{rec.zone.label}</Chip>
@@ -153,13 +153,13 @@ function ClassicVelocity() {
         <Kicker color={C.blue}>Velocity zones · training quality</Kicker>
         <View style={{ marginTop: 8 }}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (
-            <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: zoneColor(z.id) }} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.chalk }}>{z.label}</Text>
-                <Mono style={{ fontSize: 11 }}>{z.focus}</Mono>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{z.label}</Text>
+                <Mono style={{ fontSize: fs.micro }}>{z.focus}</Mono>
               </View>
-              <Mono color={C.chalk} style={{ fontSize: 11 }}>
+              <Mono color={C.chalk} style={{ fontSize: fs.micro }}>
                 {z.max === Infinity ? `≥${z.min}` : `${z.min}–${z.max}`} m/s
               </Mono>
             </View>
@@ -177,7 +177,7 @@ function ClassicVelocity() {
             recentSets.map((r, i) => {
               const z = velocityZone(r.vel);
               return (
-                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 7, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                   <Mono color={C.chalk} style={{ width: 64 }}>{r.load} kg</Mono>
                   <Mono style={{ width: 36 }}>{r.reps}×</Mono>
                   <Mono color={C.chalk} style={{ width: 52 }}>{r.vel.toFixed(2)}</Mono>
@@ -187,7 +187,7 @@ function ClassicVelocity() {
             })
           )}
         </View>
-        <Mono style={{ marginTop: 10, fontSize: 11 }}>
+        <Mono style={{ marginTop: 10, fontSize: fs.micro }}>
           Per-rep trajectory &amp; bar path need the bar sensor / camera capture (see Capabilities).
         </Mono>
       </Card>

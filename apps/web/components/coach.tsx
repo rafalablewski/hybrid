@@ -11,7 +11,7 @@ import {
   plansForGoal,
   type LoggedSession,
 } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import CoachPrograms from "./coach-programs";
 import CoachInvite from "./coach-invite";
 import CoachDiet from "./coach-diet";
@@ -93,10 +93,10 @@ export default function CoachScreen() {
             <Card key={l.id} style={{ borderLeft: `3px solid ${VIOLET}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{personName(l.coach)}</div>
-                  <Mono s={{ fontSize: 12 }}>wants to coach you</Mono>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
+                  <Mono s={{ fontSize: fs.caption }}>wants to coach you</Mono>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: space.sm }}>
                   <Btn label="Accept" color={LIME} onClick={() => act(l.id, "accept")} />
                   <Btn label="Decline" color={ASH} onClick={() => act(l.id, "end")} />
                 </div>
@@ -114,7 +114,7 @@ export default function CoachScreen() {
           coaches.map((l) => (
             <Card key={l.id}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{personName(l.coach)}</div>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
                 <Btn label="End" color={ASH} onClick={() => act(l.id, "end")} />
               </div>
             </Card>
@@ -125,18 +125,18 @@ export default function CoachScreen() {
       {/* coaching: invite + roster */}
       <Section title="Coaching" color={VIOLET}>
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Invite an athlete</Mono>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Invite an athlete</Mono>
+          <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="athlete@email.com"
-              style={{ ...mono, fontSize: 14, flex: 1, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+              style={{ ...mono, fontSize: fs.bodyLg, flex: 1, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
             />
             <Btn label="Invite" color={LIME} onClick={invite} />
           </div>
           {msg && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={msg.ok ? LIME : AMBER}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? LIME : AMBER}>
               {msg.text}
             </Mono>
           )}
@@ -149,10 +149,10 @@ export default function CoachScreen() {
           <Card key={l.id} onClick={() => setOpenLink(l)} style={{ borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{personName(l.client)}</div>
-                <Mono s={{ fontSize: 12 }}>{l.client?.email}</Mono>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.client)}</div>
+                <Mono s={{ fontSize: fs.caption }}>{l.client?.email}</Mono>
               </div>
-              <Mono s={{ fontSize: 12 }} c={LIME}>open →</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={LIME}>open →</Mono>
             </div>
           </Card>
         ))}
@@ -161,7 +161,7 @@ export default function CoachScreen() {
           <Card key={l.id}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{personName(l.client)}</div>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.client)}</div>
                 <Chip c={AMBER}>Pending</Chip>
               </div>
               <Btn label="Cancel" color={ASH} onClick={() => act(l.id, "end")} />
@@ -248,36 +248,36 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
     <>
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
-          <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block" }} c={CHALK}>
             Groups aren&apos;t persisted yet — run <span style={{ color: txt(AMBER) }}>reference/sql-coach-groups.sql</span> in Supabase to enable them.
           </Mono>
         </Card>
       )}
       <Card>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>New group</Mono>
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>New group</Mono>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
           <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Tuesday 6am squad"
-            style={{ ...mono, fontSize: 14, flex: 1, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }} />
+            style={{ ...mono, fontSize: fs.bodyLg, flex: 1, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }} />
           <Btn label="Create" color={newName.trim() ? LIME : ASH} onClick={create} />
         </div>
       </Card>
-      {msg && <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={LIME}>{msg}</Mono>}
+      {msg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4 }} c={LIME}>{msg}</Mono>}
       {groups.map((g) => (
         <Card key={g.id}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{g.name}</div>
+            <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{g.name}</div>
             <Btn label="Delete" color={ASH} onClick={() => del(g.id)} />
           </div>
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 4 }}>{g.clientIds.length} member{g.clientIds.length === 1 ? "" : "s"}</Mono>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }}>{g.clientIds.length} member{g.clientIds.length === 1 ? "" : "s"}</Mono>
           {clients.length === 0 ? (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }}>Invite athletes first — your active clients show up here to add.</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }}>Invite athletes first — your active clients show up here to add.</Mono>
           ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
               {clients.map((c) => {
                 const on = g.clientIds.includes(c.clientId);
                 return (
                   <button key={c.clientId} onClick={() => toggle(g, c.clientId)}
-                    style={{ ...mono, fontSize: 12, padding: "6px 10px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? LIME : LINE}`, background: on ? `${LIME}1c` : "transparent", color: txt(on ? LIME : ASH) }}>
+                    style={{ ...mono, fontSize: fs.caption, padding: "6px 10px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? LIME : LINE}`, background: on ? `${LIME}1c` : "transparent", color: txt(on ? LIME : ASH) }}>
                     {on ? "✓ " : ""}{c.name}
                   </button>
                 );
@@ -288,11 +288,11 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
             const goal = goalFor[g.id] || GEN_GOALS[0] || "Hybrid";
             const named = plansForGoal(goal);
             return (
-              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
-                <Select value={goal} onChange={(e) => { setGoalFor((m) => ({ ...m, [g.id]: e.target.value })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }} style={{ fontSize: 14, flex: 1, minWidth: 130 }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <Select value={goal} onChange={(e) => { setGoalFor((m) => ({ ...m, [g.id]: e.target.value })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 130 }}>
                   {GEN_GOALS.map((gg) => <option key={gg} value={gg}>{gg}</option>)}
                 </Select>
-                <Select value={planFor[g.id] ?? ""} onChange={(e) => setPlanFor((m) => ({ ...m, [g.id]: e.target.value }))} style={{ fontSize: 14, flex: 1, minWidth: 150 }} disabled={named.length === 0}>
+                <Select value={planFor[g.id] ?? ""} onChange={(e) => setPlanFor((m) => ({ ...m, [g.id]: e.target.value }))} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 150 }} disabled={named.length === 0}>
                   <option value="">{named.length ? "Engine-prescribed (by goal)" : "By goal (no named plans yet)"}</option>
                   {named.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </Select>
@@ -480,16 +480,16 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   return (
     <div style={{ maxWidth: 820 }}>
       <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
-        <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← Roster</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← Roster</Mono>
       </button>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>{personName(link.client)}</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client)}</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
 
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
         {tags.map((t) => (
-          <span key={t} style={{ ...cond, fontSize: 12, color: txt(BLUE), background: `${BLUE}1f`, border: `1px solid ${BLUE}55`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span key={t} style={{ ...cond, fontSize: fs.caption, color: txt(BLUE), background: `${BLUE}1f`, border: `1px solid ${BLUE}55`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
             {t}
-            <button onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: txt(BLUE), cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1 }}>×</button>
+            <button onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: txt(BLUE), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
           </span>
         ))}
         <input
@@ -497,7 +497,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") addTag(); }}
           placeholder="+ tag"
-          style={{ ...mono, fontSize: 12, width: 90, padding: "5px 8px", borderRadius: 999, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: fs.caption, width: 90, padding: "5px 8px", borderRadius: 999, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
       </div>
 
@@ -512,12 +512,12 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             onChange={(e) => setNoteBody(e.target.value)}
             placeholder="Add a note…"
             rows={2}
-            style={{ ...mono, fontSize: 14, width: "100%", padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
+            style={{ ...mono, fontSize: fs.bodyLg, width: "100%", padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
           />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: space.xs, cursor: "pointer" }}>
               <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-              <Mono s={{ fontSize: 12 }} c={isPrivate ? AMBER : ASH}>Private (client never sees)</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={isPrivate ? AMBER : ASH}>Private (client never sees)</Mono>
             </label>
             <Btn label="Add note" color={LIME} onClick={addNote} />
           </div>
@@ -526,46 +526,46 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           <Card key={n.id} style={{ borderLeft: `3px solid ${n.private ? AMBER : LINE}` }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               {n.private ? <Chip c={AMBER}>Private</Chip> : <span />}
-              <Mono s={{ fontSize: 11 }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
+              <Mono s={{ fontSize: fs.micro }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
             </div>
-            <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{n.body}</Mono>
+            <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{n.body}</Mono>
           </Card>
         ))}
       </Section>
 
       <Section title="Programming" color={LIME}>
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
           {templates.length === 0 ? (
-            <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>
+            <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }}>
               No templates yet — build one on the Builder screen, then assign it here.
             </Mono>
           ) : (
-            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
               <Select value={assignId} onChange={(e) => setAssignId(e.target.value)}
-                style={{ fontSize: 14, flex: 1, minWidth: 180 }}>
+                style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 180 }}>
                 <option value="">Choose a template…</option>
                 {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </Select>
               <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)}
-                style={{ ...mono, fontSize: 14, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }} />
+                style={{ ...mono, fontSize: fs.bodyLg, padding: "9px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}` }} />
               <Btn label="Assign" color={assignId ? LIME : ASH} onClick={assign} />
             </div>
           )}
         </Card>
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a full plan</Mono>
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a full plan</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             Push a whole periodized plan into {personName(link.client)}&apos;s account — it becomes their plan on Today (adaptive, on your seat).
           </Mono>
           {(() => {
             const named = plansForGoal(genGoal);
             return (
-              <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-                <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); setGenPlanId(""); }} style={{ fontSize: 14, flex: 1, minWidth: 130 }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); setGenPlanId(""); }} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 130 }}>
                   {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
                 </Select>
-                <Select value={genPlanId} onChange={(e) => setGenPlanId(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 150 }} disabled={named.length === 0}>
+                <Select value={genPlanId} onChange={(e) => setGenPlanId(e.target.value)} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 150 }} disabled={named.length === 0}>
                   <option value="">{named.length ? "Engine-prescribed (by goal)" : "By goal (no named plans yet)"}</option>
                   {named.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </Select>
@@ -575,17 +575,17 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           })()}
         </Card>
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Generate a periodized week</Mono>
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Generate a periodized week</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             {sessions.length === 0
               ? "Once this athlete logs sessions, generate a varied week dosed from their own numbers."
               : `A phase-arbitrated week, days/week from their cadence (~${trainingDaysPerWeek(sessions)}/wk), loads from their logs.`}
           </Mono>
-          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
+          <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 150 }}>
               {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
             </Select>
-            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} style={{ fontSize: 14, minWidth: 150 }}>
+            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} style={{ fontSize: fs.bodyLg, minWidth: 150 }}>
               {genMacro.blocks.flatMap((b) =>
                 b.micros.map((m) => (
                   <option key={m.week} value={m.week}>{`Wk ${m.week} · ${b.label}${m.kind === "recovery" ? " (deload)" : ""}`}</option>
@@ -594,14 +594,14 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             </Select>
             <Btn label={generating ? "Generating…" : "Generate & assign"} color={sessions.length > 0 && !generating ? VIOLET : ASH} onClick={generateWeek} />
           </div>
-          {genMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={LIME}>{genMsg}</Mono>}
+          {genMsg && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{genMsg}</Mono>}
         </Card>
         {assignments.map((a) => (
           <Card key={a.id}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{a.name}</div>
-                <Mono s={{ fontSize: 12 }}>{new Date(a.date).toLocaleDateString()}</Mono>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
+                <Mono s={{ fontSize: fs.caption }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </div>
               <Chip c={a.status === "completed" ? LIME : a.status === "skipped" ? RED : AMBER}>{a.status}</Chip>
             </div>
@@ -616,18 +616,18 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           checkins.map((c) => (
             <Card key={c.id} style={{ borderLeft: `3px solid ${c.coachReply ? LINE : BLUE}` }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ ...disp, fontWeight: 600, fontSize: 15 }}>{new Date(c.weekOf).toLocaleDateString()}</div>
-                {c.adherencePct != null && <Mono s={{ fontSize: 12 }}>{c.adherencePct}% adherence</Mono>}
+                <div style={{ ...disp, fontWeight: 600, fontSize: fs.note }}>{new Date(c.weekOf).toLocaleDateString()}</div>
+                {c.adherencePct != null && <Mono s={{ fontSize: fs.caption }}>{c.adherencePct}% adherence</Mono>}
               </div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }}>
                 energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}
                 {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
               </Mono>
-              {c.note && <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{c.note}</Mono>}
+              {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>{c.note}</Mono>}
               {c.coachReply ? (
                 <div style={{ marginTop: 10, borderLeft: `2px solid ${VIOLET}`, paddingLeft: 10 }}>
-                  <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Your reply</Mono>
-                  <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4 }} c={CHALK}>{c.coachReply}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Your reply</Mono>
+                  <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4 }} c={CHALK}>{c.coachReply}</Mono>
                 </div>
               ) : replyFor === c.id ? (
                 <div style={{ marginTop: 10 }}>
@@ -636,9 +636,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Reply to your athlete…"
                     rows={2}
-                    style={{ ...mono, fontSize: 14, width: "100%", padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                    style={{ ...mono, fontSize: fs.bodyLg, width: "100%", padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical", boxSizing: "border-box" }}
                   />
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: space.sm, marginTop: 8 }}>
                     <Btn label="Send reply" color={LIME} onClick={() => sendReply(c.id)} />
                     <Btn label="Cancel" color={ASH} onClick={() => { setReplyFor(null); setReplyText(""); }} />
                   </div>
@@ -662,10 +662,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           sessions.map((s) => (
             <Card key={s.id}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ ...disp, fontWeight: 600, fontSize: 15 }}>{s.title}</div>
-                <Mono s={{ fontSize: 12 }}>{new Date(s.startedAt).toLocaleDateString()}</Mono>
+                <div style={{ ...disp, fontWeight: 600, fontSize: fs.note }}>{s.title}</div>
+                <Mono s={{ fontSize: fs.caption }}>{new Date(s.startedAt).toLocaleDateString()}</Mono>
               </div>
-              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 6 }}>
                 <Chip c={ASH}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
                 <Chip c={ASH}>{s.blocks.length} blocks</Chip>
                 {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
@@ -704,13 +704,13 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
               <Metric label="PRs" value={`${r.prs.length}`} c={r.prs.length ? LIME : ASH} />
             </div>
             {hasPrev && (
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 12 }} c={r.volumeDelta >= 0 ? LIME : AMBER}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={r.volumeDelta >= 0 ? LIME : AMBER}>
                 {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} sessions · {r.volumeDelta >= 0 ? "+" : ""}
                 {r.volumeDelta.toLocaleString()} kg vs last week
               </Mono>
             )}
             {r.prs.length > 0 && (
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={CHALK}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={CHALK}>
                 🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? " (first!)" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
               </Mono>
             )}
@@ -725,7 +725,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   return (
     <div>
       <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: txt(c) }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
 }
@@ -733,7 +733,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 function Section({ title, color, children }: { title: string; color: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 8px" }} c={color}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 8px" }} c={color}>
         {title}
       </Mono>
       {children}
@@ -750,7 +750,7 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
       }}
       style={{
         fontFamily: "'Archivo Narrow', sans-serif",
-        fontSize: 12,
+        fontSize: fs.caption,
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: ".04em",

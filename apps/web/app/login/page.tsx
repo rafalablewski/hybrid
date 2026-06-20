@@ -7,7 +7,7 @@ import { useSession, type Role } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useTemplate } from "@/lib/use-template";
 import AuroraLogin from "@/components/aurora/login";
-import { INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
 
 // Ported from the prototype's Auth screen (reference/HybridApp.jsx).
 // When Supabase keys are present this drives real Apple/Google/email auth;
@@ -189,7 +189,7 @@ function ClassicLoginPage() {
           <div style={{ ...disp, fontWeight: 900, fontSize: 40, letterSpacing: "-.05em" }}>
             HYBRID<span style={{ color: txt(LIME) }}>.</span>
           </div>
-          <Mono s={{ fontSize: 12, letterSpacing: ".25em", textTransform: "uppercase", marginTop: 6 }} c={LIME}>
+          <Mono s={{ fontSize: fs.caption, letterSpacing: ".25em", textTransform: "uppercase", marginTop: 6 }} c={LIME}>
             Strength · Conditioning
           </Mono>
         </div>
@@ -197,7 +197,7 @@ function ClassicLoginPage() {
         {/* MFA step-up: shown after a password sign-in when 2FA is required */}
         {mfaStep ? (
           <>
-            <Mono s={{ fontSize: 13, display: "block", marginBottom: 12, textAlign: "center" }} c={CHALK}>
+            <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12, textAlign: "center" }} c={CHALK}>
               Enter the 6-digit code from your authenticator app.
             </Mono>
             <input
@@ -206,23 +206,23 @@ function ClassicLoginPage() {
               inputMode="numeric"
               autoFocus
               placeholder="000000"
-              style={{ ...inputStyle, fontSize: 20, letterSpacing: ".3em", textAlign: "center" }}
+              style={{ ...inputStyle, fontSize: fs.heading, letterSpacing: ".3em", textAlign: "center" }}
             />
             {error && (
-              <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={RED}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
                 {error}
               </Mono>
             )}
             <button
               disabled={busy || !isValidTotpCode(mfaCode)}
               onClick={verifyMfa}
-              style={{ ...disp, fontWeight: 800, fontSize: 15, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: ON_ACCENT }}
+              style={{ ...disp, fontWeight: 800, fontSize: fs.note, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: ON_ACCENT }}
             >
               {busy ? "…" : "Verify →"}
             </button>
             <div style={{ textAlign: "center", marginTop: 16 }}>
               <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
-                <Mono s={{ fontSize: 12 }} c={ASH}>← cancel</Mono>
+                <Mono s={{ fontSize: fs.caption }} c={ASH}>← cancel</Mono>
               </button>
             </div>
           </>
@@ -231,10 +231,10 @@ function ClassicLoginPage() {
         {/* DEMO ONLY: pick which role to sign in as so you can see each surface */}
         {!live && (
           <>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }}>
               Sign in as (demo)
             </Mono>
-            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: space.sm, marginBottom: 8 }}>
               {ROLE_INFO.map((r) => {
                 const on = role === r.id;
                 return (
@@ -244,7 +244,7 @@ function ClassicLoginPage() {
                     style={{
                       flex: 1,
                       ...cond,
-                      fontSize: 13,
+                      fontSize: fs.body,
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: ".04em",
@@ -261,7 +261,7 @@ function ClassicLoginPage() {
                 );
               })}
             </div>
-            <Mono s={{ fontSize: 12, display: "block", marginBottom: 22, minHeight: 18 }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 22, minHeight: 18 }}>
               {ROLE_INFO.find((r) => r.id === role)!.blurb}
             </Mono>
           </>
@@ -275,7 +275,7 @@ function ClassicLoginPage() {
             style={{
               ...disp,
               fontWeight: 700,
-              fontSize: 15,
+              fontSize: fs.note,
               padding: 15,
               width: "100%",
               borderRadius: 13,
@@ -288,7 +288,7 @@ function ClassicLoginPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 10,
+              gap: space.ms,
             }}
           >
             {p.i && <b style={disp}>{p.i}</b>}
@@ -297,7 +297,7 @@ function ClassicLoginPage() {
         ))}
 
         <div style={{ textAlign: "center", margin: "14px 0" }}>
-          <Mono s={{ fontSize: 13 }}>or sign in with email</Mono>
+          <Mono s={{ fontSize: fs.body }}>or sign in with email</Mono>
         </div>
 
         {live && mode === "signup" && (
@@ -327,12 +327,12 @@ function ClassicLoginPage() {
         )}
 
         {error && (
-          <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={RED}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
             {error}
           </Mono>
         )}
         {notice && (
-          <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={LIME}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={LIME}>
             {notice}
           </Mono>
         )}
@@ -343,7 +343,7 @@ function ClassicLoginPage() {
           style={{
             ...disp,
             fontWeight: 800,
-            fontSize: 15,
+            fontSize: fs.note,
             width: "100%",
             padding: 14,
             borderRadius: 13,
@@ -367,7 +367,7 @@ function ClassicLoginPage() {
               }}
               style={{ background: "none", border: "none", cursor: "pointer" }}
             >
-              <Mono s={{ fontSize: 12 }} c={ASH}>
+              <Mono s={{ fontSize: fs.caption }} c={ASH}>
                 {mode === "signin" ? "Need an account? " : "Have an account? "}
                 <span style={{ color: txt(LIME) }}>
                   {mode === "signin" ? "Create one →" : "Sign in →"}
@@ -379,13 +379,13 @@ function ClassicLoginPage() {
 
         <div style={{ textAlign: "center", marginTop: 22 }}>
           <button onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
-            <Mono s={{ fontSize: 12, letterSpacing: ".06em", textTransform: "uppercase" }} c={ASH}>
+            <Mono s={{ fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase" }} c={ASH}>
               ← back
             </Mono>
           </button>
         </div>
 
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 24, textAlign: "center", lineHeight: 1.5 }}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 24, textAlign: "center", lineHeight: 1.5 }}>
           {live
             ? "Real auth · Supabase (Apple · Google · email)."
             : "Demo sign-in. Add Supabase keys to switch on real Apple / Google / email auth."}
@@ -399,7 +399,7 @@ function ClassicLoginPage() {
 
 const inputStyle = {
   ...mono,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   width: "100%",
   padding: "13px 14px",
   borderRadius: 12,

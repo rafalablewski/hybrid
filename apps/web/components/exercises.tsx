@@ -14,7 +14,7 @@ import {
   type ExerciseStats,
   type WeightUnit,
 } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, disp, mono, tip, Mono, Card, ChartFrame } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useIsMobile } from "@/lib/use-media-query";
 
@@ -31,7 +31,7 @@ function Stat({ label, value, c = CHALK }: { label: string; value: string | numb
   return (
     <Card>
       <div style={{ ...disp, fontWeight: 800, fontSize: 24, color: c }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>{label}</Mono>
     </Card>
   );
 }
@@ -61,24 +61,24 @@ export default function Exercises({ sessions, focus }: { sessions: LoggedSession
       <div style={{ maxWidth: 760 }}>
         <Header />
         <Card style={{ textAlign: "center", padding: 40 }}>
-          <Mono s={{ fontSize: 14 }}>No exercises logged yet. Log a workout and every movement you train gets its own progress dashboard here.</Mono>
+          <Mono s={{ fontSize: fs.bodyLg }}>No exercises logged yet. Log a workout and every movement you train gets its own progress dashboard here.</Mono>
         </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(220px, 280px) 1fr", gap: 20, alignItems: "start", maxWidth: 1040 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(220px, 280px) 1fr", gap: space.xl, alignItems: "start", maxWidth: 1040 }}>
       {/* Exercise list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
         <Header />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search exercises…"
-          style={{ ...mono, fontSize: 13, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 12px" }}
+          style={{ ...mono, fontSize: fs.body, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 12px" }}
         />
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 560, overflowY: "auto" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.xxs, maxHeight: 560, overflowY: "auto" }}>
           {filtered.map((e) => {
             const on = e.name === active;
             return (
@@ -94,29 +94,29 @@ export default function Exercises({ sessions, focus }: { sessions: LoggedSession
                   cursor: "pointer",
                 }}
               >
-                <div style={{ ...mono, fontSize: 13, color: CHALK, fontWeight: on ? 700 : 400 }}>{e.name}</div>
-                <div style={{ ...mono, fontSize: 10, color: ASH, marginTop: 2 }}>
+                <div style={{ ...mono, fontSize: fs.body, color: CHALK, fontWeight: on ? 700 : 400 }}>{e.name}</div>
+                <div style={{ ...mono, fontSize: fs.nano, color: ASH, marginTop: 2 }}>
                   {e.kind} · {e.count}×
                 </div>
               </button>
             );
           })}
-          {filtered.length === 0 && <Mono s={{ fontSize: 12, padding: 8 }}>No match.</Mono>}
+          {filtered.length === 0 && <Mono s={{ fontSize: fs.caption, padding: 8 }}>No match.</Mono>}
         </div>
       </div>
 
       {/* Dashboard */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.ms }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>{active}</div>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ display: "flex", gap: space.xxs }}>
             {PERIODS.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
                 style={{
                   ...mono,
-                  fontSize: 12,
+                  fontSize: fs.caption,
                   padding: "5px 11px",
                   borderRadius: 999,
                   cursor: "pointer",
@@ -144,11 +144,11 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       <>
         {empty ? (
           <Card style={{ textAlign: "center", padding: 32 }}>
-            <Mono s={{ fontSize: 13 }}>No runs of this movement in this period.</Mono>
+            <Mono s={{ fontSize: fs.body }}>No runs of this movement in this period.</Mono>
           </Card>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: space.md }}>
               <Stat label="Runs" value={stats.efforts} />
               <Stat label="Distance" value={`${stats.distanceKm} km`} c={BLUE} />
               <Stat label="Longest" value={`${stats.longestKm} km`} />
@@ -159,8 +159,8 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={paceData}>
                     <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                    <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-                    <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} />
+                    <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+                    <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} />
                     <Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} />
                     <Line type="monotone" dataKey="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} />
                   </LineChart>
@@ -177,13 +177,13 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
   if (stats.workingSets === 0) {
     return (
       <Card style={{ textAlign: "center", padding: 32 }}>
-        <Mono s={{ fontSize: 13 }}>No working sets of this lift in this period.</Mono>
+        <Mono s={{ fontSize: fs.body }}>No working sets of this lift in this period.</Mono>
       </Card>
     );
   }
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: space.md }}>
         <Stat label="Best e1RM" value={fmtWeight(stats.bestE1rm, units)} c={LIME} />
         <Stat label="Working sets" value={stats.workingSets} />
         <Stat label="Volume" value={fmtTonnage(stats.volume, units)} />
@@ -194,8 +194,8 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={e1rmData}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-              <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} domain={["auto", "auto"]} width={44} />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+              <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} width={44} />
               <Tooltip contentStyle={tip} formatter={(v) => `${v} ${units}`} />
               <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
             </LineChart>
@@ -203,25 +203,25 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
         </ChartFrame>
       ) : (
         <Card>
-          <Mono s={{ fontSize: 12 }}>Log this lift across a few sessions to see an e1RM trend.</Mono>
+          <Mono s={{ fontSize: fs.caption }}>Log this lift across a few sessions to see an e1RM trend.</Mono>
         </Card>
       )}
       {stats.bestSet && (
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Best set</Mono>
-          <div style={{ ...mono, fontSize: 15, color: CHALK, marginTop: 8 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Best set</Mono>
+          <div style={{ ...mono, fontSize: fs.note, color: CHALK, marginTop: 8 }}>
             {fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps} <span style={{ color: ASH }}>· e1RM {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</span>
           </div>
-          <Mono s={{ fontSize: 11, color: ASH, display: "block", marginTop: 8 }}>
+          <Mono s={{ fontSize: fs.micro, color: ASH, display: "block", marginTop: 8 }}>
             {stats.totalReps} reps · heaviest {fmtWeight(stats.heaviestLoad, units)} · all-time best e1RM {fmtWeight(stats.bestE1rmAllTime, units)}
           </Mono>
         </Card>
       )}
       {stats.velocity && (
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Velocity profile</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Velocity profile</Mono>
           <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: BLUE, marginTop: 8 }}>{fmtWeight(stats.velocity.e1rm, units)}</div>
-          <Mono s={{ fontSize: 11, color: ASH, display: "block", marginTop: 4 }}>
+          <Mono s={{ fontSize: fs.micro, color: ASH, display: "block", marginTop: 4 }}>
             velocity-estimated 1RM · fit r² {stats.velocity.r2} · {stats.velocity.n} loads · from logged bar speed
           </Mono>
         </Card>
@@ -234,7 +234,7 @@ function Header() {
   return (
     <div>
       <div style={{ ...disp, fontWeight: 800, fontSize: 22 }}>Exercises</div>
-      <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }}>Open any movement for its full progress history.</Mono>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4 }}>Open any movement for its full progress history.</Mono>
     </div>
   );
 }

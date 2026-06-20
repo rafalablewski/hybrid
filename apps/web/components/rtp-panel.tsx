@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
 import { evaluateRtp, STAGE_LABEL, type RtpStage } from "@hybrid/core";
 
 type AuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
@@ -51,26 +51,26 @@ export default function RtpPanel() {
 
   return (
     <Card style={{ borderLeft: `3px solid ${RED}` }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
         Return-to-play · gated protocols
       </Mono>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center" }}>
         <Select value={tissue} onChange={(e) => setTissue(e.target.value)} style={{ textTransform: "capitalize" }}>
           {TISSUES.map((t) => <option key={t} value={t}>{t}</option>)}
         </Select>
         <button onClick={create} style={btn}>Open protocol</button>
       </div>
 
-      <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
-        {active.length === 0 && <Mono s={{ fontSize: 13 }}>No active protocols. Open one when an athlete is injured.</Mono>}
+      <div style={{ marginTop: 14, display: "grid", gap: space.md }}>
+        {active.length === 0 && <Mono s={{ fontSize: fs.body }}>No active protocols. Open one when an athlete is injured.</Mono>}
         {active.map((p) => {
           const ev = evaluateRtp({ stage: p.stage, completed: p.completed });
           const cleared = p.stage === "cleared";
           return (
             <div key={p.id} style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Mono s={{ fontSize: 14, textTransform: "capitalize" }} c={CHALK}>{p.tissue}</Mono>
+                <Mono s={{ fontSize: fs.bodyLg, textTransform: "capitalize" }} c={CHALK}>{p.tissue}</Mono>
                 <Chip c={cleared ? LIME : BLUE}>{STAGE_LABEL[p.stage]}</Chip>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: INK2, margin: "10px 0", overflow: "hidden" }}>
@@ -79,18 +79,18 @@ export default function RtpPanel() {
               {!cleared && (
                 <>
                   {ev.gates.map((g) => (
-                    <label key={g.key} style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0", cursor: "pointer" }}>
+                    <label key={g.key} style={{ display: "flex", gap: space.sm, alignItems: "center", padding: "4px 0", cursor: "pointer" }}>
                       <input type="checkbox" checked={g.done} onChange={() => mutate(p.id, { action: "toggleGate", gate: g.key })} />
-                      <Mono s={{ fontSize: 13 }} c={g.done ? LIME : ASH}>{g.label}</Mono>
+                      <Mono s={{ fontSize: fs.body }} c={g.done ? LIME : ASH}>{g.label}</Mono>
                     </label>
                   ))}
-                  <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <button onClick={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} style={{ ...btn, opacity: ev.canAdvance ? 1 : 0.4 }}>
                       Advance → {ev.nextStage ? STAGE_LABEL[ev.nextStage] : ""}
                     </button>
                     {!ev.canAdvance && (
                       <>
-                        <Mono s={{ fontSize: 11 }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>
+                        <Mono s={{ fontSize: fs.micro }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>
                         <button onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: txt(RED), border: `1px solid ${RED}` }}>
                           Override
                         </button>
@@ -98,7 +98,7 @@ export default function RtpPanel() {
                     )}
                   </div>
                   {overrideFor === p.id && (
-                    <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: space.sm, marginTop: 8, alignItems: "center" }}>
                       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (logged to audit)" style={{ ...input, flex: 1, textTransform: "none" }} />
                       <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: ON_ACCENT }}>Force advance</button>
                     </div>
@@ -107,9 +107,9 @@ export default function RtpPanel() {
               )}
               {p.audit && p.audit.length > 0 && (
                 <div style={{ marginTop: 12, borderTop: `1px solid ${LINE}`, paddingTop: 10 }}>
-                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Audit trail</Mono>
+                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Audit trail</Mono>
                   {p.audit.slice(-5).reverse().map((a, i) => (
-                    <Mono key={i} s={{ fontSize: 11, display: "block", marginTop: 4 }} c={a.action === "override" ? RED : ASH}>
+                    <Mono key={i} s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={a.action === "override" ? RED : ASH}>
                       {new Date(a.ts).toLocaleDateString()} · {a.by} ({a.role.toLowerCase()}) · {auditText(a)}
                     </Mono>
                   ))}
@@ -134,5 +134,5 @@ function auditText(a: AuditEntry): string {
   }
 }
 
-const input: React.CSSProperties = { ...mono, fontSize: 13, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, textTransform: "capitalize" };
-const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "8px 14px", cursor: "pointer" };
+const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, textTransform: "capitalize" };
+const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "8px 14px", cursor: "pointer" };

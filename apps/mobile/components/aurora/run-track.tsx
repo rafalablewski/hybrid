@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { pacePerKm } from "@hybrid/core";
 import { createSession } from "../../lib/api";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -65,8 +65,8 @@ export default function AuroraRunTrack() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: 26 }}>Run tracking</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>Track a run — time it, log the distance, save it to your history.</Text>
+      <AHeading style={{ fontSize: fs.display }}>Run tracking</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>Track a run — time it, log the distance, save it to your history.</Text>
 
       {/* Map placeholder */}
       <ACard style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
@@ -74,8 +74,8 @@ export default function AuroraRunTrack() {
           <View style={{ position: "absolute", top: 24, left: 28, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime }} />
           <View style={{ position: "absolute", bottom: 28, right: 30, width: 12, height: 12, borderRadius: 6, backgroundColor: C.amber }} />
           <AuroraIcon name="location" size={30} color={C.ash} />
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 8 }}>Live route map</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: 17 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>Live route map</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: 17 }}>
             GPS route tracking goes live in the native app build. Timing &amp; distance below work everywhere.
           </Text>
         </View>
@@ -88,35 +88,35 @@ export default function AuroraRunTrack() {
           <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={txt(C, C.blue)} C={C} />
           <Stat label="Pace /km" value={pace ?? "—"} color={txt(C, C.lime)} C={C} />
         </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
           <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}</Text>
           </Pressable>
           <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Reset</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Reset</Text>
           </Pressable>
         </View>
       </ACard>
 
       <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginBottom: 6 }}>Distance (km)</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 6 }}>Distance (km)</Text>
         <TextInput
           value={distance}
           onChangeText={setDistance}
           keyboardType="numeric"
           placeholder="e.g. 5.0"
           placeholderTextColor={C.ash}
-          style={{ fontFamily: F.mono, fontSize: 16, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 11 }}
+          style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 11 }}
         />
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</Text>
       </ACard>
 
-      {msg && <Text style={{ fontFamily: F.mono, fontSize: 13, color: msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginBottom: 8 }}>{msg.text}</Text>}
+      {msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginBottom: 8 }}>{msg.text}</Text>}
 
       <APill label={saving ? "Saving…" : "Save run →"} onPress={save} disabled={saving} />
 
       <Pressable onPress={() => router.push("/(tabs)/running")} style={{ paddingVertical: 16, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>See your running analytics →</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>See your running analytics →</Text>
       </Pressable>
       <View style={{ height: 16 }} />
     </AuroraScreen>
@@ -126,7 +126,7 @@ export default function AuroraRunTrack() {
 function Stat({ label, value, color, C }: { label: string; value: string; color: string; C: ReturnType<typeof useTheme>["palette"] }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 24, color, marginTop: 4 }}>{value}</Text>
     </View>
   );

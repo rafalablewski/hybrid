@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { pacePerKm } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
@@ -73,8 +73,8 @@ export default function RunTrack({ onSaved }: { onSaved?: () => void }) {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Run tracking</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>Track a run — time it, log the distance, save it to your history.</Mono>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>Run tracking</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>Track a run — time it, log the distance, save it to your history.</Mono>
 
       {/* Map placeholder — live GPS route map lands with the native app build. */}
       <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
@@ -86,8 +86,8 @@ export default function RunTrack({ onSaved }: { onSaved?: () => void }) {
             <circle cx="380" cy="30" r="6" fill={AMBER} />
           </svg>
           <div style={{ position: "relative", textAlign: "center", padding: "0 24px" }}>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: CHALK }}>📍 Live route map</div>
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }} c={ASH}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, color: CHALK }}>📍 Live route map</div>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }} c={ASH}>
               GPS route tracking goes live in the native app build (the map needs on-device location). Timing &amp; distance below work everywhere.
             </Mono>
           </div>
@@ -96,36 +96,36 @@ export default function RunTrack({ onSaved }: { onSaved?: () => void }) {
 
       {/* Live stats */}
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.md }}>
           <Stat label="Time" value={mmss(elapsed)} color={CHALK} />
           <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={BLUE} />
           <Stat label="Pace /km" value={pace ?? "—"} color={LIME} />
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-          <button onClick={toggle} style={{ ...disp, fontWeight: 800, fontSize: 15, background: running ? AMBER : LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "12px 24px", cursor: "pointer" }}>
+        <div style={{ display: "flex", gap: space.ms, marginTop: 16, flexWrap: "wrap" }}>
+          <button onClick={toggle} style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: running ? AMBER : LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "12px 24px", cursor: "pointer" }}>
             {running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}
           </button>
-          <button onClick={reset} disabled={elapsed === 0} style={{ ...mono, fontSize: 13, color: ASH, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 12, padding: "12px 18px", cursor: elapsed === 0 ? "default" : "pointer", opacity: elapsed === 0 ? 0.5 : 1 }}>
+          <button onClick={reset} disabled={elapsed === 0} style={{ ...mono, fontSize: fs.body, color: ASH, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 12, padding: "12px 18px", cursor: elapsed === 0 ? "default" : "pointer", opacity: elapsed === 0 ? 0.5 : 1 }}>
             Reset
           </button>
         </div>
       </Card>
 
       <Card style={{ marginBottom: 16 }}>
-        <Mono s={{ fontSize: 12, display: "block", marginBottom: 6 }} c={ASH}>Distance (km)</Mono>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>Distance (km)</Mono>
         <input
           value={distance}
           onChange={(e) => setDistance(e.target.value)}
           placeholder="e.g. 5.0"
           inputMode="decimal"
-          style={{ ...mono, fontSize: 16, width: "100%", maxWidth: 200, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: fs.subtitle, width: "100%", maxWidth: 200, padding: "10px 12px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>In the native build, GPS fills this in automatically as you run.</Mono>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>In the native build, GPS fills this in automatically as you run.</Mono>
       </Card>
 
-      {msg && <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : AMBER}>{msg.text}</Mono>}
+      {msg && <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : AMBER}>{msg.text}</Mono>}
 
-      <button onClick={save} disabled={saving} style={{ ...disp, fontWeight: 800, fontSize: 15, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "14px 28px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+      <button onClick={save} disabled={saving} style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "14px 28px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
         {saving ? "Saving…" : "Save run →"}
       </button>
     </div>
@@ -135,8 +135,8 @@ export default function RunTrack({ onSaved }: { onSaved?: () => void }) {
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 26, color, marginTop: 4 }}>{value}</div>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, color, marginTop: 4 }}>{value}</div>
     </div>
   );
 }

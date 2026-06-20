@@ -9,7 +9,7 @@ import { TEMPLATES, ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NO
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -51,8 +51,8 @@ export default function AccountSettings() {
   // the section panels round to --r-card (28) via the Card component.
   const r = aurora ? 16 : 10;
   const rCard = aurora ? 16 : 12;
-  const editInput = { ...mono, fontSize: 14, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "9px 12px", outline: "none" } as const;
-  const editBtn = (c: string) => ({ ...mono, fontSize: 13, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
+  const editInput = { ...mono, fontSize: fs.bodyLg, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "9px 12px", outline: "none" } as const;
+  const editBtn = (c: string) => ({ ...mono, fontSize: fs.body, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
   const { lang, setLang } = useLang();
   const prefs = useLoggerPrefs();
   const [section, setSection] = useState<Section>("general");
@@ -255,16 +255,16 @@ export default function AccountSettings() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Settings</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>Account, preferences, security &amp; data.</Mono>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>Settings</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>Account, preferences, security &amp; data.</Mono>
 
       {/* Section nav — a professional, tabbed account area. */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, borderBottom: `1px solid ${LINE}`, paddingBottom: 12 }}>
+      <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 20, borderBottom: `1px solid ${LINE}`, paddingBottom: 12 }}>
         {SECTIONS.map((s) => (
           <button
             key={s.id}
             onClick={() => setSection(s.id)}
-            style={{ ...mono, fontSize: 13, padding: "7px 14px", borderRadius: 999, cursor: "pointer", color: section === s.id ? txt(LIME) : txt(ASH), background: section === s.id ? `${LIME}1a` : "transparent", border: `1px solid ${section === s.id ? LIME : LINE}` }}
+            style={{ ...mono, fontSize: fs.body, padding: "7px 14px", borderRadius: 999, cursor: "pointer", color: section === s.id ? txt(LIME) : txt(ASH), background: section === s.id ? `${LIME}1a` : "transparent", border: `1px solid ${section === s.id ? LIME : LINE}` }}
           >
             {s.label}
           </button>
@@ -276,118 +276,118 @@ export default function AccountSettings() {
         <>
           {/* Account identity */}
           <Card style={{ marginBottom: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Account</Mono>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 18, marginTop: 8 }}>{session?.name || session?.email || "Your account"}</div>
-            <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }} c={CHALK}>{session?.email}</Mono>
-            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-              <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}55`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
-              <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? "Full · paid" : "Free"}</span>
-              {session?.provider && <span style={{ ...mono, fontSize: 11, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>via {session.provider}</span>}
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Account</Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, marginTop: 8 }}>{session?.name || session?.email || "Your account"}</div>
+            <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }} c={CHALK}>{session?.email}</Mono>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}55`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
+              <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? "Full · paid" : "Free"}</span>
+              {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>via {session.provider}</span>}
             </div>
-            <button onClick={() => void logout()} style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer", marginTop: 14, padding: 0 }}>
+            <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer", marginTop: 14, padding: 0 }}>
               Sign out
             </button>
           </Card>
 
           {/* Edit profile — name / email (own Supabase auth) */}
           <Card style={{ marginBottom: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Edit profile</Mono>
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 12, marginBottom: 6 }} c={ASH}>Display name</Mono>
-            <div style={{ display: "flex", gap: 8 }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Edit profile</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12, marginBottom: 6 }} c={ASH}>Display name</Mono>
+            <div style={{ display: "flex", gap: space.sm }}>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={{ ...editInput, flex: 1 }} />
               <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>Save</button>
             </div>
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Change email</Mono>
-            <div style={{ display: "flex", gap: 8 }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Change email</Mono>
+            <div style={{ display: "flex", gap: space.sm }}>
               <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={session?.email ?? "new@email.com"} type="email" style={{ ...editInput, flex: 1 }} />
               <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>Update</button>
             </div>
-            {profileMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
-            {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>Profile editing needs a real signed-in account.</Mono>}
+            {profileMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
+            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>Profile editing needs a real signed-in account.</Mono>}
           </Card>
 
           {/* Preferences — appearance, language, workout logger */}
           <Card style={{ marginBottom: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Preferences</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Preferences</Mono>
 
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Appearance</Mono>
-            <div style={{ display: "flex", gap: 8 }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Appearance</Mono>
+            <div style={{ display: "flex", gap: space.sm }}>
               {(["dark", "light"] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setTheme(m)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
                 >
                   {m}
                 </button>
               ))}
             </div>
 
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Template</Mono>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Template</Mono>
+            <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
               {TEMPLATES.map((tpl) => (
                 <button
                   key={tpl.id}
                   onClick={() => setTemplate(tpl.id)}
                   title={tpl.description}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: template === tpl.id ? txt(LIME) : txt(ASH), background: template === tpl.id ? `${LIME}1a` : "transparent", border: `1px solid ${template === tpl.id ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: template === tpl.id ? txt(LIME) : txt(ASH), background: template === tpl.id ? `${LIME}1a` : "transparent", border: `1px solid ${template === tpl.id ? LIME : LINE}` }}
                 >
                   {tpl.label}
                 </button>
               ))}
             </div>
 
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Language</Mono>
-            <div style={{ display: "flex", gap: 8 }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Language</Mono>
+            <div style={{ display: "flex", gap: space.sm }}>
               {LANGS.map((l) => (
                 <button
                   key={l.id}
                   onClick={() => setLang(l.id)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}
                 >
                   {l.label}
                 </button>
               ))}
             </div>
 
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Workout logger</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Workout logger</Mono>
             <button
               onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
+              style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
             >
               {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
             </button>
 
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Units</Mono>
-            <div style={{ display: "flex", gap: 8 }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Units</Mono>
+            <div style={{ display: "flex", gap: space.sm }}>
               {(["kg", "lb"] as const).map((u) => (
                 <button
                   key={u}
                   onClick={() => setLoggerPref("units", u)}
-                  style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
+                  style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}
                 >
                   {u}
                 </button>
               ))}
             </div>
 
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
             <button
               onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)}
-              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
+              style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
             >
               {prefs.countWarmupsInVolume ? "Warm-ups count toward volume" : "Warm-ups excluded from volume"}
             </button>
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
               Controls whether warm-up &amp; cool-down sets count in the Volume landmarks, Trends and per-exercise volume. Off by default (RP-style). PRs &amp; e1RM always exclude warm-ups.
             </Mono>
             <button
               onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)}
-              style={{ ...mono, fontSize: 13, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
+              style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
             >
               {prefs.fractionalVolume ? "Secondary muscles = 0.5 sets" : "Every muscle = 1 set"}
             </button>
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
               Fractional volume counts a lift&apos;s secondary muscles as half a set (primary = the first muscle it trains).
             </Mono>
           </Card>
@@ -397,18 +397,18 @@ export default function AccountSettings() {
           from their role; a client applies to coach below. */}
       {isClient && (
         <Card style={{ marginBottom: 16 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Mode</Mono>
-          <Mono s={{ fontSize: 13, display: "block", marginTop: 6 }} c={CHALK}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Mode</Mono>
+          <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6 }} c={CHALK}>
             How much of the app you see. Switch anytime.
           </Mono>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.sm, marginTop: 12 }}>
             {/* Simple (casual) — always selectable, free. */}
             <button
               onClick={() => setClientPersona("casual")}
               style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `${LIME}14` : "transparent" }}
             >
-              <div style={{ ...disp, fontWeight: 700, fontSize: 15, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>Simple</div>
-              <Mono s={{ fontSize: 11 }}>track · review · share</Mono>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>Simple</div>
+              <Mono s={{ fontSize: fs.micro }}>track · review · share</Mono>
             </button>
 
             {/* Full (athlete) — a PAID upgrade. Locked until entitled. */}
@@ -417,7 +417,7 @@ export default function AccountSettings() {
               aria-disabled={!paid}
               style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `${LIME}14` : "transparent", opacity: paid ? 1 : 0.7 }}
             >
-              <div style={{ ...disp, fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 6, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "flex", alignItems: "center", gap: space.xs, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
                 Full
                 {!paid && (
                   <>
@@ -426,7 +426,7 @@ export default function AccountSettings() {
                   </>
                 )}
               </div>
-              <Mono s={{ fontSize: 11 }}>plans · sport · deep stats</Mono>
+              <Mono s={{ fontSize: fs.micro }}>plans · sport · deep stats</Mono>
             </button>
           </div>
           {/* Billing actions — upgrade when free, manage when paid. */}
@@ -435,21 +435,21 @@ export default function AccountSettings() {
               <button
                 onClick={upgrade}
                 disabled={billingBusy}
-                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
+                style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
               >
                 {billingBusy ? "Starting…" : "Upgrade to Full"}
               </button>
               {billingUnconfigured ? (
-                <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+                <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
                   Billing isn’t configured yet — coming soon.
                 </Mono>
               ) : (
-                <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+                <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
                   Unlocks plans, the sport engine &amp; deep stats.
                 </Mono>
               )}
               {billingMsg && (
-                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{billingMsg}</Mono>
+                <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{billingMsg}</Mono>
               )}
             </>
           ) : (
@@ -457,17 +457,17 @@ export default function AccountSettings() {
               <button
                 onClick={manageSubscription}
                 disabled={billingBusy}
-                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
+                style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
               >
                 {billingBusy ? "Opening…" : "Manage subscription"}
               </button>
               {billingUnconfigured && (
-                <Mono s={{ fontSize: 11, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+                <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
                   Billing isn’t configured yet — coming soon.
                 </Mono>
               )}
               {billingMsg && (
-                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{billingMsg}</Mono>
+                <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{billingMsg}</Mono>
               )}
             </>
           )}
@@ -479,28 +479,28 @@ export default function AccountSettings() {
       {/* ---- NOTIFICATIONS ---- */}
       {section === "notifications" && (
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Notifications</Mono>
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Notifications</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Mono>
           <div style={{ marginTop: 12 }}>
             {ACCOUNT_NOTIF_ROWS.map(({ key, title, desc }) => (
               <PrefRow key={key} title={title} desc={desc} on={!!notif[key]} onToggle={() => toggleNotif(key)} disabled={!authOn} />
             ))}
           </div>
-          {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+          {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
         </Card>
       )}
 
       {/* ---- PRIVACY ---- */}
       {section === "privacy" && (
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Privacy</Mono>
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={ASH}>You control what you share. Saved to your account &amp; synced across devices.</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Privacy</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>You control what you share. Saved to your account &amp; synced across devices.</Mono>
           <div style={{ marginTop: 12 }}>
             {ACCOUNT_PRIVACY_ROWS.map(({ key, title, desc }) => (
               <PrefRow key={key} title={title} desc={desc} on={!!priv[key]} onToggle={() => togglePriv(key)} disabled={!authOn} />
             ))}
           </div>
-          {!authOn && <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+          {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
         </Card>
       )}
 
@@ -511,18 +511,18 @@ export default function AccountSettings() {
           it in the admin queue, granting the COACH role on approval. */}
       {isClient && (
         <Card style={{ marginBottom: 16 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Become a coach</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Become a coach</Mono>
           {coachUnavailable ? (
-            <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }} c={ASH}>
+            <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={ASH}>
               Coach applications aren&apos;t enabled yet.
             </Mono>
           ) : coachStatus ? (
-            <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }} c={CHALK}>
+            <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>
               Your application is <b style={{ color: txt(coachStatus === "approved" ? LIME : coachStatus === "denied" ? RED : AMBER) }}>{coachStatus}</b>.
             </Mono>
           ) : (
             <>
-              <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }} c={CHALK}>
+              <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>
                 Tell us about your coaching background — an admin reviews each application.
               </Mono>
               <textarea
@@ -530,15 +530,15 @@ export default function AccountSettings() {
                 onChange={(e) => setCredentials(e.target.value)}
                 placeholder="Certifications, experience, who you coach…"
                 rows={3}
-                style={{ ...mono, fontSize: 13, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
+                style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
               />
               {coachMsg && (
-                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>
+                <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>
               )}
               <button
                 onClick={applyCoach}
                 disabled={!credentials.trim() || coachBusy}
-                style={{ ...disp, fontWeight: 800, fontSize: 14, color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}
+                style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}
               >
                 {coachBusy ? "Applying…" : "Apply"}
               </button>
@@ -556,22 +556,22 @@ export default function AccountSettings() {
         <>
           <MfaSettings />
           <Card style={{ marginTop: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Change password</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Change password</Mono>
             {session?.provider && session.provider !== "email" ? (
-              <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
                 You sign in with {session.provider} — manage your password there.
               </Mono>
             ) : (
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
                 <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password" type="password" style={{ ...editInput, flex: 1 }} />
                 <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>Update</button>
               </div>
             )}
-            {passwordMsg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
+            {passwordMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
           </Card>
           <Card style={{ marginTop: 16 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Active sessions</Mono>
-            <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Active sessions</Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
               Sign out of every device — revokes all other sessions and ends this one.
             </Mono>
             <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>Sign out everywhere</button>
@@ -583,25 +583,25 @@ export default function AccountSettings() {
       {section === "data" && (
       <>
       <Card style={{ marginBottom: 16 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Export my data</Mono>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Export my data</Mono>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
           Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.
         </Mono>
         <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>Download my data (JSON)</button>
       </Card>
       <Card style={{ borderLeft: `3px solid ${RED}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
           Danger zone — reset account
         </Mono>
-        <div style={{ ...disp, fontWeight: 700, fontSize: 18, marginTop: 8 }}>Erase all my data</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>
+        <div style={{ ...disp, fontWeight: 700, fontSize: fs.title, marginTop: 8 }}>Erase all my data</div>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>
           Permanently deletes everything tied to your account — logged sessions, signals &amp;
           biometrics, check-ins, plans &amp; macrocycles, templates &amp; assignments, connected
           devices, coaching links, and progress photos. Your login stays; you&apos;ll land in a
           fresh, empty account. <b style={{ color: txt(RED) }}>This cannot be undone.</b>
         </Mono>
 
-        <Mono s={{ fontSize: 12, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>
           Type <b style={{ color: CHALK }}>RESET</b> to confirm
         </Mono>
         <input
@@ -611,7 +611,7 @@ export default function AccountSettings() {
           autoCapitalize="characters"
           style={{
             ...mono,
-            fontSize: 15,
+            fontSize: fs.note,
             width: "100%",
             maxWidth: 240,
             padding: "10px 12px",
@@ -624,19 +624,19 @@ export default function AccountSettings() {
         />
 
         {msg && (
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={RED}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>
             {msg}
           </Mono>
         )}
 
-        <div style={{ display: "flex", gap: 10, marginTop: 16, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
           <button
             onClick={reset}
             disabled={!armed || busy}
             style={{
               ...disp,
               fontWeight: 800,
-              fontSize: 14,
+              fontSize: fs.bodyLg,
               color: "#fff",
               background: armed && !busy ? RED : `${RED}55`,
               border: "none",
@@ -649,7 +649,7 @@ export default function AccountSettings() {
           </button>
           <button
             onClick={() => void logout()}
-            style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}
+            style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}
           >
             Sign out instead
           </button>
@@ -666,8 +666,8 @@ function PrefRow({ title, desc, on, onToggle, disabled }: { title: string; desc:
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderTop: `1px solid ${LINE}` }}>
       <div style={{ flex: 1 }}>
-        <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{title}</div>
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>
+        <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{title}</div>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>
       </div>
       <button
         onClick={onToggle}

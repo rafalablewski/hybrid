@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachDiet, saveCoachDiet } from "../lib/api";
 
@@ -40,13 +40,13 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
 
   const field = (label: string, key: keyof Fields) => (
     <View style={{ flex: 1 }}>
-      <Mono color={C.ash} style={{ fontSize: 10, marginBottom: 4 }}>{label}</Mono>
+      <Mono color={C.ash} style={{ fontSize: fs.nano, marginBottom: 4 }}>{label}</Mono>
       <TextInput
         value={d[key]}
         onChangeText={(v) => setD((p) => ({ ...p, [key]: v.replace(/[^0-9]/g, "") }))}
         keyboardType="number-pad"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10 }}
+        style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10 }}
       />
     </View>
   );
@@ -54,7 +54,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
   return (
     <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
       <Kicker color={C.lime}>Assign diet · daily macros</Kicker>
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+      <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
         {field("kcal", "kcal")}
         {field("protein g", "protein")}
         {field("carbs g", "carbs")}
@@ -65,7 +65,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
         onChangeText={(v) => setD((p) => ({ ...p, note: v }))}
         placeholder="note (optional)"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, marginTop: 8 }}
+        style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, marginTop: 8 }}
       />
       <View style={{ marginTop: 10 }}><Button label="Save diet" color={C.lime} onPress={save} /></View>
       {msg !== "" && <Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono>}

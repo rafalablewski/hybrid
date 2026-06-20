@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -97,13 +97,13 @@ export default function AuroraLogin() {
         <AField value={password} onChange={setPassword} placeholder="Enter your password" secure icon="lock" />
 
         {!isSignup && (
-          <Text style={{ fontFamily: F.semi, fontSize: 13, color: palette.ash, textAlign: "right", marginBottom: 6 }}>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.ash, textAlign: "right", marginBottom: 6 }}>
             Forgot Password?
           </Text>
         )}
 
         {!!error && (
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: txt(palette, palette.red), marginBottom: 10 }}>{error}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginBottom: 10 }}>{error}</Text>
         )}
 
         <APill
@@ -122,7 +122,7 @@ export default function AuroraLogin() {
         }}
         style={{ marginTop: 28, alignItems: "center" }}
       >
-        <Text style={{ fontFamily: F.reg, fontSize: 14, color: palette.ash }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.ash }}>
           {isSignup ? "Already have an account? " : "Don't have an account? "}
           <Text style={{ fontFamily: F.bold, color: txt(palette, palette.lime) }}>
             {isSignup ? "Login Now" : "Register Now"}
@@ -131,7 +131,7 @@ export default function AuroraLogin() {
       </Pressable>
 
       {!live && (
-        <Text style={{ fontFamily: F.reg, fontSize: 12, color: palette.ash, textAlign: "center", marginTop: 18 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, textAlign: "center", marginTop: 18 }}>
           Set EXPO_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.
         </Text>
       )}

@@ -29,7 +29,7 @@ import AskCoach from "./ai-coach";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { useIsMobile } from "@/lib/use-media-query";
 import { readIntake, type Intake } from "@/lib/intake";
-import {
+import { fs, space,
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, roleHex,
   disp, cond, mono, tip, txt, Mono, Card, Chip, ChartFrame,
 } from "@/lib/ui";
@@ -119,14 +119,14 @@ export default function Today({
   );
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
       {/* PLAN TODAY + AI COACH — a horizontal, scroll-snapping row (swipe right
           for the AI coach). Spans both columns; each card snaps to full width. */}
       <div
         style={{
           gridColumn: "span 2",
           display: "flex",
-          gap: 16,
+          gap: space.lg,
           overflowX: "auto",
           scrollSnapType: "x mandatory",
           // hide the native scrollbar — the cards self-document the swipe
@@ -140,22 +140,22 @@ export default function Today({
           /* Enrolled in a REAL named plan → its exact day drives the card. */
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 {/* Free users follow the plan as written; the adaptive readiness
                     layer is the paid upgrade (strip below). */}
                 Your plan today{isAthlete ? ` · readiness ${rx.readiness}/100` : " · as written"}
               </Mono>
               <button onClick={() => onStart(planDayToBlocks(plan.items))} style={cta(LIME)}>Start session →</button>
             </div>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 2px" }}>{plan.planName}</div>
-            <Mono s={{ fontSize: 12, display: "block", marginBottom: 8 }} c={VIOLET}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 2px" }}>{plan.planName}</div>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 8 }} c={VIOLET}>
               {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} wk ${currentWeek}/${macro!.totalWeeks}` : ""}
             </Mono>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
               {plan.items.map((it, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingTop: 6, borderTop: i ? `1px solid ${LINE}` : "none" }}>
-                  <span style={{ ...disp, fontWeight: 600, fontSize: 14, color: txt(CHALK) }}>{it.name}</span>
-                  <Mono s={{ fontSize: 12 }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${LINE}` : "none" }}>
+                  <span style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, color: txt(CHALK) }}>{it.name}</span>
+                  <Mono s={{ fontSize: fs.caption }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
                 </div>
               ))}
             </div>
@@ -164,25 +164,25 @@ export default function Today({
         ) : sessions.length === 0 ? (
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today
               </Mono>
               <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
             </div>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>
               {phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
             </div>
             {/* Enrolled but not yet logged: show the plan/phase + today's session
                 from session zero, so onboarding visibly "did something". */}
             {phase ? (
               <>
-                <Mono s={{ fontSize: 11, display: "block", marginBottom: 4 }} c={VIOLET}>
+                <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 4 }} c={VIOLET}>
                   Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
                 </Mono>
-                <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+                <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
               </>
             ) : (
-              <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>
                 Log a workout and your plan, readiness, Athlete Twin and trends all build from your real
                 training — nothing here is pre-filled.
               </Mono>
@@ -191,32 +191,32 @@ export default function Today({
         ) : (
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today · readiness {rx.readiness}/100
               </Mono>
               <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
             </div>
-            <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>
               {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
             </div>
             {/* surface the macrocycle goal + phase when an athlete is enrolled;
                 otherwise fall back to today's prescription rationale. */}
             {phase && (
-              <Mono s={{ fontSize: 11, display: "block", marginBottom: 4 }} c={VIOLET}>
+              <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 4 }} c={VIOLET}>
                 Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
               </Mono>
             )}
-            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
           </Card>
         )}
 
         {/* card 2 — AI coach (swipe right) */}
         <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${VIOLET}` }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
             AI coach
           </Mono>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 26, margin: "8px 0 6px" }}>Ask your coach</div>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>Ask your coach</div>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
             Claude reads your real readiness, fatigue and velocity and writes you a personalized note for
             the day — what to push, what to hold back.
           </Mono>
@@ -237,15 +237,15 @@ export default function Today({
           onClick={() => onNavigate?.("plans")}
           style={{
             gridColumn: "span 2", display: "flex", justifyContent: "space-between", alignItems: "center",
-            gap: 12, padding: "14px 16px", borderRadius: 12, cursor: "pointer", textAlign: "left",
+            gap: space.md, padding: "14px 16px", borderRadius: 12, cursor: "pointer", textAlign: "left",
             border: `1px solid ${LIME}55`, background: `${LIME}12`, color: txt(CHALK),
           }}
         >
           <span>
-            <span style={{ ...disp, fontWeight: 800, fontSize: 15, display: "block" }}>▤ Follow a plan — free</span>
-            <Mono s={{ fontSize: 12, lineHeight: 1.4 }} c={ASH}>Browse the plan library and enroll. Following it is free; periodizing &amp; auto-progression are Full.</Mono>
+            <span style={{ ...disp, fontWeight: 800, fontSize: fs.note, display: "block" }}>▤ Follow a plan — free</span>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.4 }} c={ASH}>Browse the plan library and enroll. Following it is free; periodizing &amp; auto-progression are Full.</Mono>
           </span>
-          <span style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(LIME) }}>→</span>
+          <span style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: txt(LIME) }}>→</span>
         </button>
       )}
 
@@ -254,7 +254,7 @@ export default function Today({
           enrolled macro/week instead of demo data. */}
       {isAthlete && macro && phase && (
         <Card glass style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
             Training for · {macro.goalOrSport} · {phase.block.label} phase
           </Mono>
           <div style={{ ...disp, fontWeight: 900, fontSize: 22, margin: "8px 0 4px" }}>
@@ -284,13 +284,13 @@ export default function Today({
       {/* ON TRACK? — accountability */}
       <Card glass style={{ borderLeft: `3px solid ${bandColor(acc.band)}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={bandColor(acc.band)}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={bandColor(acc.band)}>
             On track? · {bandLabel(acc.band)}
           </Mono>
           <Chip c={bandColor(acc.band)}>{acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}</Chip>
         </div>
-        <div style={{ ...disp, fontWeight: 700, fontSize: 18, marginTop: 10 }}>{acc.intervention.headline}</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 4 }} c={CHALK}>
+        <div style={{ ...disp, fontWeight: 700, fontSize: fs.title, marginTop: 10 }}>{acc.intervention.headline}</div>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 4 }} c={CHALK}>
           {acc.intervention.message}
         </Mono>
         <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
@@ -299,7 +299,7 @@ export default function Today({
           <Metric label="This week" value={`${acc.sessionsLast7}/3`} c={CHALK} />
         </div>
         {acc.drivers.length > 0 && (
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }}>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }}>
             {acc.drivers.map((d) => d.label).join(" · ")}
           </Mono>
         )}
@@ -309,10 +309,10 @@ export default function Today({
       {sessions.length > 0 && (
         <Card glass style={{ borderLeft: `3px solid ${LIME}`, gridColumn: "span 2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
               Your week
             </Mono>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: space.sm }}>
               {recap.prs.length > 0 && <Chip c={LIME}>🏆 {recap.prs.length} PR</Chip>}
               {recap.cardioPrs.length > 0 && <Chip c={BLUE}>🏃 {recap.cardioPrs.length} PR</Chip>}
             </div>
@@ -326,13 +326,13 @@ export default function Today({
             {recap.topMuscle && <Metric label="Top muscle" value={MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle} c={BLUE} />}
           </div>
           {(recap.prevSessions > 0 || recap.prevVolume > 0) && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 12 }} c={recap.volumeDelta >= 0 ? LIME : AMBER}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={recap.volumeDelta >= 0 ? LIME : AMBER}>
               {recap.sessionsDelta >= 0 ? "+" : ""}{recap.sessionsDelta} sessions · {recap.volumeDelta >= 0 ? "+" : ""}
               {recap.volumeDelta.toLocaleString()} kg vs last week
             </Mono>
           )}
           {recap.prs.length > 0 && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={CHALK}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={CHALK}>
               {recap.prs
                 .slice(0, 4)
                 .map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? " (first!)" : ` (+${p.e1rm - p.previous})`}`)
@@ -345,33 +345,33 @@ export default function Today({
       {/* FUTURE SELF — athlete depth */}
       {isAthlete && (primaryLift && projection && !projection.insufficient && projGoal ? (
         <ChartFrame title={`Future self · ${primaryLift}`} kicker="projected from your behavior" c={VIOLET}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.ms, marginBottom: 8 }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: CHALK }}>{Math.round(projection.current)}</span>
             <span style={{ color: txt(ASH) }}>→</span>
             <span style={{ ...disp, fontWeight: 800, fontSize: 30, color: txt(VIOLET) }}>
               {Math.round(projection.series[projection.series.length - 1]!.value)}
             </span>
-            <Mono s={{ fontSize: 12 }}>kg e1RM · 12 wks</Mono>
+            <Mono s={{ fontSize: fs.caption }}>kg e1RM · 12 wks</Mono>
           </div>
           <ResponsiveContainer width="100%" height={150}>
             <LineChart data={projection.series} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="weeksAhead" unit="w" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} />
-              <YAxis domain={["dataMin - 5", "dataMax + 5"]} tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} />
+              <XAxis dataKey="weeksAhead" unit="w" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
+              <YAxis domain={["dataMin - 5", "dataMax + 5"]} tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
               <Tooltip contentStyle={tip} formatter={(v) => [`${v} kg`, "e1RM"]} />
-              {goal != null && <ReferenceLine y={goal} stroke={AMBER} strokeDasharray="4 4" label={{ value: `goal ${goal}`, fill: AMBER, fontSize: 10, position: "insideTopRight" }} />}
+              {goal != null && <ReferenceLine y={goal} stroke={AMBER} strokeDasharray="4 4" label={{ value: `goal ${goal}`, fill: AMBER, fontSize: fs.nano, position: "insideTopRight" }} />}
               <Line type="monotone" dataKey="value" stroke={VIOLET} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={CHALK}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={CHALK}>
             +{projection.ratePerWeek}kg/wk · reach {goal}kg{projGoal.etaWeeks ? ` in ~${Math.round(projGoal.etaWeeks)} wks` : ""}
             {projGoal.goalProbability != null ? ` · ${Math.round(projGoal.goalProbability * 100)}% likely` : ""} · consistency ×{projection.adherenceFactor}
           </Mono>
         </ChartFrame>
       ) : (
         <Card glass style={{ borderLeft: `3px solid ${VIOLET}` }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Future self</Mono>
-          <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Future self</Mono>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
             Log a lift across a few sessions and we&apos;ll project where you&apos;re headed — your 12-week
             strength, your goal ETA, and how likely you are to hit it.
           </Mono>
@@ -381,31 +381,31 @@ export default function Today({
       {/* TWIN mini — athlete depth, once there's real training to compute it from */}
       {isAthlete && sessions.length > 0 && (
         <Card glass style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
             Performance State · Athlete Twin
           </Mono>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 6, flexWrap: "wrap" }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
-            <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
+            <Mono s={{ fontSize: fs.caption }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
             <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
-              <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
-              <Mono s={{ fontSize: 12 }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
-              <Mono s={{ fontSize: 12 }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={LIME}>STR {state.hpi.components.strength}</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
             </div>
           </div>
           {/* INJURY RISK · by tissue — absorbed from the retired Dashboard so the
               tissue-level risk panel isn't lost when the screen goes away. */}
           <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Injury risk · by tissue</Mono>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Injury risk · by tissue</Mono>
             {risk.flagged.length === 0 ? (
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }} c={LIME}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={LIME}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
             ) : (
-              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: space.xs }}>
                 {risk.flagged.map((t) => (
-                  <div key={t.tissue} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                  <div key={t.tissue} style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
                     <Chip c={riskColor(t.band)}>{t.risk}</Chip>
-                    <Mono s={{ fontSize: 12, textTransform: "capitalize" }} c={CHALK}>{t.tissue}</Mono>
-                    <Mono s={{ fontSize: 11 }} c={ASH}>{t.drivers[0]?.label ?? ""}</Mono>
+                    <Mono s={{ fontSize: fs.caption, textTransform: "capitalize" }} c={CHALK}>{t.tissue}</Mono>
+                    <Mono s={{ fontSize: fs.micro }} c={ASH}>{t.drivers[0]?.label ?? ""}</Mono>
                   </div>
                 ))}
               </div>
@@ -425,14 +425,14 @@ function UpgradeStrip({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       style={{
         marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
-        gap: 10, padding: "9px 12px", borderRadius: 10, cursor: "pointer", textAlign: "left",
+        gap: space.ms, padding: "9px 12px", borderRadius: 10, cursor: "pointer", textAlign: "left",
         border: `1px solid ${VIOLET}55`, background: `${VIOLET}14`, color: txt(CHALK),
       }}
     >
       <Mono s={{ fontSize: 11.5, lineHeight: 1.4 }} c={CHALK}>
         ✦ Following the plan as written. <span style={{ color: txt(VIOLET) }}>Unlock Full</span> to auto-adjust loads to your recovery.
       </Mono>
-      <span style={{ ...disp, fontWeight: 800, fontSize: 15, color: txt(VIOLET) }}>→</span>
+      <span style={{ ...disp, fontWeight: 800, fontSize: fs.note, color: txt(VIOLET) }}>→</span>
     </button>
   );
 }
@@ -441,7 +441,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   return (
     <div>
       <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: txt(c) }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
 }
@@ -458,7 +458,7 @@ const snapCard: CSSProperties = {
 function cta(color: string) {
   return {
     ...cond,
-    fontSize: 13,
+    fontSize: fs.body,
     fontWeight: 800,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",

@@ -11,7 +11,7 @@ import {
   type NutritionGoal,
   type Signal,
 } from "@hybrid/core";
-import {
+import { fs, space,
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT,
   disp, cond, mono, tip, Mono, Card, ChartFrame, txt,
 } from "@/lib/ui";
@@ -94,55 +94,55 @@ export default function Nutrition() {
       {/* Coach-assigned diet (read-only) — shown when an active coach set macros. */}
       {coachDiet?.diet && (
         <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
             Assigned by {coachDiet.coachName ?? "your coach"} · read-only
           </Mono>
           <div style={{ display: "flex", gap: 22, marginTop: 10, flexWrap: "wrap" }}>
             {([["Energy", coachDiet.diet.kcal, "kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
               ([label, val, unit]) => (val != null ? (
                 <div key={label}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: 20, color: CHALK }}>{val}{unit === "g" ? "g" : ""}</div>
-                  <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}{unit === "kcal" ? " · kcal" : ""}</Mono>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading, color: CHALK }}>{val}{unit === "g" ? "g" : ""}</div>
+                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}{unit === "kcal" ? " · kcal" : ""}</Mono>
                 </div>
               ) : null),
             )}
           </div>
-          {coachDiet.diet.note && <Mono s={{ fontSize: 12, display: "block", marginTop: 10, lineHeight: 1.5 }} c={CHALK}>{coachDiet.diet.note}</Mono>}
+          {coachDiet.diet.note && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10, lineHeight: 1.5 }} c={CHALK}>{coachDiet.diet.note}</Mono>}
         </Card>
       )}
 
       {/* goal */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Goal</Mono>
+      <div style={{ display: "flex", gap: space.sm, marginBottom: 16, alignItems: "center" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Goal</Mono>
         {GOALS.map((g) => (
           <button
             key={g.id}
             onClick={() => setGoal(g.id)}
-            style={{ ...cond, fontSize: 13, fontWeight: 700, padding: "6px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}1a` : "transparent", color: txt(goal === g.id ? LIME : ASH) }}
+            style={{ ...cond, fontSize: fs.body, fontWeight: 700, padding: "6px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${goal === g.id ? LIME : LINE}`, background: goal === g.id ? `${LIME}1a` : "transparent", color: txt(goal === g.id ? LIME : ASH) }}
           >
             {g.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
         <ChartFrame title="Today vs adaptive target" kicker="macros" c={LIME}>
           {personalized ? (
             <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
                 <Bar label="Energy" cur={today.kcal} target={targets.kcal} unit="kcal" color={LIME} />
                 <Bar label="Protein" cur={today.protein} target={targets.protein} unit="g" color={VIOLET} />
                 <Bar label="Carbs" cur={today.carbs} target={targets.carbs} unit="g" color={BLUE} />
                 <Bar label="Fat" cur={today.fat} target={targets.fat} unit="g" color={AMBER} />
               </div>
-              <Mono s={{ fontSize: 11, display: "block", marginTop: 14, lineHeight: 1.5 }}>
+              <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 14, lineHeight: 1.5 }}>
                 Maintenance ≈ {maint.kcal} kcal · {targets.basis}
                 {maint.weightChangeKg != null ? ` · weight trend ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
               </Mono>
             </>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+            <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>
                 Your targets adapt to you — they&apos;re not pre-set. Add a weigh-in (in a weekly
                 check-in) and log a few days of intake, and we&apos;ll estimate your maintenance from
                 your own energy balance and set goal-aware macros.
@@ -158,21 +158,21 @@ export default function Nutrition() {
         </ChartFrame>
 
         <ChartFrame title="Add to today" kicker="manual macros" c={VIOLET}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.sm }}>
             <Field label="kcal" value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} />
             <Field label="protein (g)" value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} />
             <Field label="carbs (g)" value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} />
             <Field label="fat (g)" value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} />
           </div>
-          {error && <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={RED}>{error}</Mono>}
+          {error && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{error}</Mono>}
           <button
             onClick={add}
             disabled={saving}
-            style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 22px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
+            style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 22px", marginTop: 12, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
           >
             {saving ? "Adding…" : "Add →"}
           </button>
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }}>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }}>
             Food search + barcode is a separate, blocked layer (needs a food-DB partner) — see Capabilities.
           </Mono>
         </ChartFrame>
@@ -184,14 +184,14 @@ export default function Nutrition() {
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={weight.points} margin={{ left: -10, right: 8 }}>
                 <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} tickFormatter={(d: string) => d.slice(5)} />
-                <YAxis unit="kg" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
+                <XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} tickFormatter={(d: string) => d.slice(5)} />
+                <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
                 <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? "trend" : "raw"]} />
                 <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="smoothed" stroke={LIME} strokeWidth={2.5} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }}>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }}>
               <span style={{ color: txt(LIME) }}>—</span> trend (smoothed) · <span style={{ color: txt(ASH) }}>—</span> daily reading. Daily weight is noisy; the trend is the signal.
             </Mono>
           </ChartFrame>
@@ -199,13 +199,13 @@ export default function Nutrition() {
       )}
 
       <Card style={{ marginTop: 16 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Recent days</Mono>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Recent days</Mono>
         <div style={{ marginTop: 10 }}>
           {recent.length === 0 ? (
-            <Mono s={{ fontSize: 13 }}>Nothing logged yet — add today&apos;s macros above.</Mono>
+            <Mono s={{ fontSize: fs.body }}>Nothing logged yet — add today&apos;s macros above.</Mono>
           ) : (
             recent.map((d, i) => (
-              <div key={d.date} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8, padding: "8px 0", borderTop: i ? `1px solid ${LINE}` : "none", ...mono, fontSize: 13 }}>
+              <div key={d.date} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: space.sm, padding: "8px 0", borderTop: i ? `1px solid ${LINE}` : "none", ...mono, fontSize: fs.body }}>
                 <span style={{ color: CHALK }}>{d.date.slice(5)}</span>
                 <span style={{ color: CHALK }}>{Math.round(d.kcal)} kcal</span>
                 <span style={{ color: txt(ASH) }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</span>
@@ -224,8 +224,8 @@ function Bar({ label, cur, target, unit, color }: { label: string; cur: number; 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <Mono s={{ fontSize: 12 }} c={CHALK}>{label}</Mono>
-        <Mono s={{ fontSize: 12 }}>{Math.round(cur)} / {target} {unit}</Mono>
+        <Mono s={{ fontSize: fs.caption }} c={CHALK}>{label}</Mono>
+        <Mono s={{ fontSize: fs.caption }}>{Math.round(cur)} / {target} {unit}</Mono>
       </div>
       <div style={{ height: 8, borderRadius: 4, background: INK2, overflow: "hidden" }}>
         <div style={{ width: `${pct * 100}%`, height: 8, background: over ? RED : color }} />
@@ -237,8 +237,8 @@ function Bar({ label, cur, target, unit, color }: { label: string; cur: number; 
 function Today2({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: CHALK }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: CHALK }}>{value}</div>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
 }
@@ -246,13 +246,13 @@ function Today2({ label, value }: { label: string; value: string }) {
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4 }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }}>{label}</Mono>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         inputMode="numeric"
         placeholder="0"
-        style={{ ...mono, fontSize: 14, width: "100%", boxSizing: "border-box", background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none" }}
+        style={{ ...mono, fontSize: fs.bodyLg, width: "100%", boxSizing: "border-box", background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", outline: "none" }}
       />
     </div>
   );

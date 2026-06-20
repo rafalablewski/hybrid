@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { brand, CORE_VERSION, type AuroraIconName } from "@hybrid/core";
-import { GlassField } from "@/lib/ui";
+import { space, GlassField } from "@/lib/ui";
 import { useTemplate } from "@/lib/use-template";
 import { AuroraIcon } from "@/components/aurora/icons";
 
@@ -60,7 +60,7 @@ function AuroraLanding() {
       <main className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-24">
         <header className="flex items-center justify-between py-6">
           <div className="font-display text-2xl font-black tracking-tight">{brand.name}<span className="text-lime">.</span></div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
             <Link href="/notifications" aria-label="Notifications" style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--color-ink2)", border: "1px solid var(--color-line)", display: "grid", placeItems: "center" }}>
               <AuroraIcon name="bell" size={20} color="var(--color-ash)" />
             </Link>

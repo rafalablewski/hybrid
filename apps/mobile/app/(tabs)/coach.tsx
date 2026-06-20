@@ -14,7 +14,7 @@ import {
   type Note,
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, Button, Loading, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Chip, Button, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraCoach from "../../components/aurora/coach";
@@ -91,9 +91,9 @@ function ClassicCoach() {
               <Kicker color={C.violet}>{"\n"}{t("coach.requests")}</Kicker>
               {incoming.map((l) => (
                 <Card key={l.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{personName(l.coach)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}</Text>
                   <Mono style={{ marginBottom: 8 }}>{t("coach.wantsToCoach")}</Mono>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
+                  <View style={{ flexDirection: "row", gap: space.sm }}>
                     <Button label={t("common.accept")} color={C.lime} onPress={() => act(l.id, "accept")} />
                     <Pressable onPress={() => act(l.id, "end")} style={{ justifyContent: "center" }}>
                       <Mono>{t("common.decline")}</Mono>
@@ -111,7 +111,7 @@ function ClassicCoach() {
             coaches.map((l) => (
               <Card key={l.id}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{personName(l.coach)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}</Text>
                   <Pressable onPress={() => act(l.id, "end")}>
                     <Mono>{t("common.end")}</Mono>
                   </Pressable>
@@ -129,7 +129,7 @@ function ClassicCoach() {
               placeholderTextColor={C.ash}
               autoCapitalize="none"
               keyboardType="email-address"
-              style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginBottom: 10 }}
+              style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginBottom: 10 }}
             />
             <Button label={t("common.invite")} color={C.lime} onPress={invite} />
             {msg && (
@@ -147,7 +147,7 @@ function ClassicCoach() {
               <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                   <View>
-                    <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{personName(l.client)}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.client)}</Text>
                     <Mono>{l.client?.email}</Mono>
                   </View>
                   <Mono color={C.lime}>{t("common.open")} →</Mono>
@@ -159,7 +159,7 @@ function ClassicCoach() {
           {sent.map((l) => (
             <Card key={l.id}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{personName(l.client)}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.client)}</Text>
                 <Chip color={C.amber}>{t("coach.pending")}</Chip>
               </View>
             </Card>
@@ -231,10 +231,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           placeholder={t("coach.notePlaceholder")}
           placeholderTextColor={C.ash}
           multiline
-          style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, minHeight: 56 }}
+          style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, minHeight: 56 }}
         />
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-          <Pressable onPress={() => setIsPrivate((p) => !p)} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Pressable onPress={() => setIsPrivate((p) => !p)} style={{ flexDirection: "row", alignItems: "center", gap: space.xs }}>
             <Text style={{ color: isPrivate ? C.amber : C.ash, fontFamily: F.mono }}>{isPrivate ? "☑" : "☐"}</Text>
             <Mono color={isPrivate ? C.amber : C.ash}>{t("coach.private")}</Mono>
           </Pressable>
@@ -262,10 +262,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             sessions.map((s) => (
               <Card key={s.id}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 15, color: C.chalk }}>{s.title}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
                   <Mono>{new Date(s.startedAt).toLocaleDateString()}</Mono>
                 </View>
-                <View style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 6 }}>
                   <Chip color={C.ash}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
                   <Chip color={C.ash}>{s.blocks.length} blocks</Chip>
                 </View>
@@ -326,7 +326,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
   const C = useTheme().palette;
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 20, color }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
     </View>
   );

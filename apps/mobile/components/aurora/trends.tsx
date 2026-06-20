@@ -8,7 +8,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -51,22 +51,22 @@ export default function AuroraTrends() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: 26 }}>Trends</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>Trends</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>Volume over time, muscle breakdown and per-exercise analytics — tap a lift for its full dashboard.</ASub>
 
       {!trained ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, textAlign: "center", lineHeight: 19 }}>No strength training logged yet. Log some lifts and your volume trends, muscle breakdown and per-exercise analytics show up here.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>No strength training logged yet. Log some lifts and your volume trends, muscle breakdown and per-exercise analytics show up here.</Text>
         </ACard>
       ) : (
         <>
           <ACard style={{ marginTop: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Weekly working sets · 8 wk</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Weekly working sets · 8 wk</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", height: 80, gap: 5, marginTop: 12 }}>
               {weeks.map((w, i) => <View key={i} style={{ flex: 1, height: 6 + (w.sets / maxSets) * 64, borderRadius: 3, backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}66` }} />)}
             </View>
@@ -78,17 +78,17 @@ export default function AuroraTrends() {
 
           <ACard style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Muscle breakdown · this week</Text>
-              <Pressable onPress={() => router.push("/volume")}><Text style={{ fontFamily: F.semi, fontSize: 12, color: txt(C, C.lime) }}>Volume →</Text></Pressable>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Muscle breakdown · this week</Text>
+              <Pressable onPress={() => router.push("/volume")}><Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>Volume →</Text></Pressable>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
               {muscles.map((m) => {
                 const c = m.zone === "overreaching" ? C.red : m.zone === "under" ? C.amber : m.zone === "peak" ? C.blue : C.lime;
                 const on = m.muscle === focusMuscle;
                 return (
-                  <Pressable key={m.muscle} onPress={() => setSelMuscle(m.muscle)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: on ? c : `${c}55`, backgroundColor: `${c}${on ? "2e" : "14"}`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 6 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "700", color: txt(C, c) }}>{m.sets}</Text>
+                  <Pressable key={m.muscle} onPress={() => setSelMuscle(m.muscle)} style={{ flexDirection: "row", alignItems: "center", gap: space.xs, borderWidth: 1, borderColor: on ? c : `${c}55`, backgroundColor: `${c}${on ? "2e" : "14"}`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 6 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, c) }}>{m.sets}</Text>
                   </Pressable>
                 );
               })}
@@ -98,7 +98,7 @@ export default function AuroraTrends() {
               {muscleWeeks.map((s, i) => { const mx = Math.max(...muscleWeeks, 1); return <View key={i} style={{ flex: 1, height: 4 + (s / mx) * 48, borderRadius: 3, backgroundColor: i === muscleWeeks.length - 1 ? C.blue : `${C.blue}66` }} />; })}
             </View>
             {advice.length > 0 && (
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 10, lineHeight: 17 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 10, lineHeight: 17 }}>
                 {advice.filter((a) => a.action === "add").length > 0 && `Add: ${advice.filter((a) => a.action === "add").map((a) => MUSCLE_LABEL[a.muscle]).join(", ")}. `}
                 {advice.filter((a) => a.action === "reduce").length > 0 && `Ease off: ${advice.filter((a) => a.action === "reduce").map((a) => MUSCLE_LABEL[a.muscle]).join(", ")}.`}
               </Text>
@@ -106,11 +106,11 @@ export default function AuroraTrends() {
           </ACard>
 
           <ACard style={{ marginTop: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Exercise analytics</Text>
-            <View style={{ flexDirection: "row", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4, gap: 4, marginTop: 12 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Exercise analytics</Text>
+            <View style={{ flexDirection: "row", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4, gap: space.xxs, marginTop: 12 }}>
               {PERIODS.map((p) => { const on = period === p.id; return (
                 <Pressable key={p.id} onPress={() => setPeriod(p.id)} style={{ flex: 1, paddingVertical: 8, borderRadius: RADIUS.pill, backgroundColor: on ? C.lime : "transparent", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 11, color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.micro, color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                 </Pressable>
               ); })}
             </View>
@@ -122,10 +122,10 @@ export default function AuroraTrends() {
             </View>
             {sortedTable.map((r) => { const tr = TREND[r.trend]; return (
               <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercises", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
-                <Text style={{ flex: 2, fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>{r.name}</Text>
-                <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: C.ash }}>{r.sessions}×</Text>
-                <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: r.kind === "strength" ? C.chalk : C.ash }}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : `${r.volume}km`}</Text>
-                <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: txt(C, tr.c) }}>{tr.g}</Text>
+                <Text style={{ flex: 2, fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{r.name}</Text>
+                <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{r.sessions}×</Text>
+                <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: r.kind === "strength" ? C.chalk : C.ash }}>{r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : `${r.volume}km`}</Text>
+                <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: txt(C, tr.c) }}>{tr.g}</Text>
               </Pressable>
             ); })}
           </ACard>

@@ -28,7 +28,7 @@ import { fetchSessions } from "../../lib/api";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../../lib/share";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { AuroraScreen } from "../../components/aurora/kit";
@@ -108,13 +108,13 @@ export default function SessionDetail() {
     <>
       <Back router={router} t={t} />
 
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
       <Mono style={{ marginTop: 4 }}>
         {fmtDate(session.startedAt)} · {fmtTime(session.startedAt)}
         {session.readiness != null ? ` · ${t("home.readiness")} ${session.readiness}` : ""}
       </Mono>
 
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
         <Metric label={t("summary.minutes")} value={minutes != null ? String(minutes) : "—"} />
         <Metric label={t("summary.sets")} value={String(sets)} />
         <Metric label={t("summary.volumeMoved")} value={fmtTonnage(sessionVolume(session.blocks), units)} />
@@ -122,18 +122,18 @@ export default function SessionDetail() {
 
       {prs.length > 0 && (
         <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
           {prs.slice(0, 6).map((p) => (
-            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t, units)}</Text>
+            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>{prLine(p, t, units)}</Text>
           ))}
         </View>
       )}
 
       {cardioPrs.length > 0 && (
         <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.blue) }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.blue) }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
           {cardioPrs.slice(0, 6).map((p) => (
-            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
+            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
           ))}
         </View>
       )}
@@ -146,25 +146,25 @@ export default function SessionDetail() {
         {session.blocks.map((b, i) => (
           <Card key={i}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
                 {b.kind === "conditioning" ? (
-                  <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
                     {prSet.has(b.name) ? "🏆 " : ""}{b.name}
                   </Text>
                 ) : (
                   <Pressable onPress={() => router.push({ pathname: "/exercises", params: { name: b.name } })}>
-                    <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>
-                      {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name} <Text style={{ color: C.ash, fontSize: 13 }}>›</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
+                      {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name} <Text style={{ color: C.ash, fontSize: fs.body }}>›</Text>
                     </Text>
                   </Pressable>
                 )}
                 {ssLabels[i] && (
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
                 )}
               </View>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>
                   {fmtWeight(blockBestE1rm(b), units)} e1RM
                 </Text>
               )}
@@ -177,7 +177,7 @@ export default function SessionDetail() {
                   const stAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : C.ash;
                   const stTag = st === "warmup" ? " · warm-up" : st === "cooldown" ? " · cool-down" : st === "drop" ? " · drop" : "";
                   return (
-                  <View key={j} style={{ flexDirection: "row", gap: 12, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
+                  <View key={j} style={{ flexDirection: "row", gap: space.md, paddingVertical: 4, borderTopWidth: j ? 1 : 0, borderTopColor: C.line }}>
                     <Mono color={stAccent} style={{ width: 22 }}>{setTypeBadge(s, j)}</Mono>
                     <Mono color={C.chalk} style={{ flex: 1 }}>{s.load ? `${displayLoad(s.load, units)} ${units}` : "–"} × {s.reps || "–"}{stTag}</Mono>
                     {s.rest != null ? <Mono color={C.ash}>{mmss(s.rest)} {t("workout.restShort")}</Mono> : null}
@@ -210,7 +210,7 @@ export default function SessionDetail() {
             onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
             style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{t("summary.share")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.share")}</Text>
           </Pressable>
         </>
       )}
@@ -236,7 +236,7 @@ function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: stri
   const C = useTheme().palette;
   return (
     <Pressable onPress={() => router.back()} hitSlop={10}>
-      <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("nav.history")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("nav.history")}</Text>
     </Pressable>
   );
 }
@@ -259,7 +259,7 @@ function MuscleFocus({ blocks, t }: { blocks: LoggedSession["blocks"]; t: (k: st
   return (
     <Card style={{ marginTop: 16 }}>
       <Kicker>{t("session.muscleFocus")}</Kicker>
-      <View style={{ marginTop: 10, gap: 8 }}>
+      <View style={{ marginTop: 10, gap: space.sm }}>
         {vol.map((m) => (
           <View key={m.muscle}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>

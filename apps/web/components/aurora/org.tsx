@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
+import { fs, space,
   buildTeamTree,
   flattenTree,
   canManageOrg,
@@ -155,26 +155,26 @@ export default function AuroraOrg() {
   const teamName = (tid: string | null) => tree.find((t) => t.id === tid)?.name ?? "—";
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
-  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
-  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 14, padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
-  const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13, background: C(bg), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" });
-  const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
-  const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
-  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 13, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
+  const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
+  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
+  const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" });
+  const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
+  const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
+  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
 
   return (
-    <div style={{ display: "grid", gap: 16, fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
         <div style={kicker("lime")}>Org Graph · Team Operating System</div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           {orgs.map((o) => (
             <button key={o.id} onClick={() => setSelected(o.id)} style={orgChip(o.id === selected)}>
               {o.name} · {o.role.toLowerCase()}
             </button>
           ))}
-          {orgs.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No organizations yet — create one to run a club or academy.</span>}
+          {orgs.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>No organizations yet — create one to run a club or academy.</span>}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           <input value={newOrg} onChange={(e) => setNewOrg(e.target.value)} placeholder="New organization name" style={{ ...input, flex: "1 1 200px", minWidth: 0 }} />
           <button onClick={createOrg} style={btn("lime")}>Create org</button>
         </div>
@@ -184,26 +184,26 @@ export default function AuroraOrg() {
         <>
           <div style={card}>
             <div style={kicker("blue")}>Your access · {detail.myRole.toLowerCase()}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 6, color: C("chalk") }}>{roleScope(detail.myRole)}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6, color: C("chalk") }}>{roleScope(detail.myRole)}</div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
             <div style={card}>
               <div style={kicker("ash")}>Team hierarchy</div>
               <div style={{ marginTop: 12 }}>
-                {tree.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash") }}>No teams yet.</span>}
+                {tree.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>No teams yet.</span>}
                 {tree.map((t) => {
                   const count = detail.members.filter((m) => m.teamId === t.id).length;
                   return (
                     <div key={t.id} style={{ padding: "8px 10px", marginLeft: t.depth * 18, marginBottom: 4 }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: C("chalk") }}>{t.name}</span>
-                      {count > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginLeft: 8, color: C("ash") }}>{count} member{count === 1 ? "" : "s"}</span>}
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("chalk") }}>{t.name}</span>
+                      {count > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginLeft: 8, color: C("ash") }}>{count} member{count === 1 ? "" : "s"}</span>}
                     </div>
                   );
                 })}
               </div>
               {canManage && (
-                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
                   <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={{ ...input, flex: "1 1 140px", minWidth: 0 }} />
                   <select value={newTeamParent} onChange={(e) => setNewTeamParent(e.target.value)} style={selectStyle}>
                     <option value="">(top level)</option>
@@ -220,9 +220,9 @@ export default function AuroraOrg() {
               <div style={kicker("ash")}>Staff & athletes</div>
               <div style={{ marginTop: 12 }}>
                 {detail.members.map((m) => (
-                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
+                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.sm, flexWrap: "wrap", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <div style={{ minWidth: 0 }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, display: "block", color: m.role === "ATHLETE" && canSeeAthletes ? C("blue") : C("chalk") }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, display: "block", color: m.role === "ATHLETE" && canSeeAthletes ? C("blue") : C("chalk") }}>
                         {m.role === "ATHLETE" && canSeeAthletes ? (
                           <span style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)}>{m.name} →</span>
                         ) : (
@@ -230,14 +230,14 @@ export default function AuroraOrg() {
                         )}
                         {m.email ? <span style={{ color: C("ash") }}> · {m.email}</span> : null}
                       </span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>{teamName(m.teamId)}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{teamName(m.teamId)}</span>
                     </div>
                     {canManage ? (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...selectStyle, fontSize: 11, padding: "5px 7px" }}>
+                      <div style={{ display: "flex", gap: space.xs }}>
+                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
                           {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                         </select>
-                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: 11, padding: "5px 7px" }}>
+                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
                           <option value="">no team</option>
                           {tree.map((t) => <option key={t.id} value={t.id}>{"— ".repeat(t.depth)}{t.name}</option>)}
                         </select>
@@ -250,23 +250,23 @@ export default function AuroraOrg() {
               </div>
               {canManage && (
                 <div style={{ marginTop: 12 }}>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
                     <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="member@email.com" style={{ ...input, flex: "1 1 160px", minWidth: 0 }} />
                     <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)} style={selectStyle}>
                       {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                     </select>
                     <button onClick={invite} style={btn("lime")}>Add member</button>
                   </div>
-                  {inviteErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 6, color: C("amber") }}>{inviteErr}</div>}
+                  {inviteErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("amber") }}>{inviteErr}</div>}
                 </div>
               )}
               {canManage && detail.invites.length > 0 && (
                 <div style={{ marginTop: 14 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>Pending invites</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>Pending invites</div>
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{iv.email} · {iv.role.toLowerCase()}</span>
-                      <span style={{ cursor: "pointer", color: C("amber"), fontSize: 12, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)}>revoke</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} · {iv.role.toLowerCase()}</span>
+                      <span style={{ cursor: "pointer", color: C("amber"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)}>revoke</span>
                     </div>
                   ))}
                 </div>
@@ -280,7 +280,7 @@ export default function AuroraOrg() {
                 <div style={kicker("blue")}>Athlete Twin · {athlete.name}</div>
                 <span style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)}>✕</span>
               </div>
-              <div style={{ display: "flex", gap: 20, alignItems: "baseline", marginTop: 8 }}>
+              <div style={{ display: "flex", gap: space.xl, alignItems: "baseline", marginTop: 8 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 40, color: C(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>
                 <div>
                   {chip(hpiColor(athlete.hpi.band), athlete.hpi.band)}
@@ -288,17 +288,17 @@ export default function AuroraOrg() {
                   {chip(athlete.injury.flaggedCount ? "red" : "lime", `injury ${athlete.injury.overall}/100`)}
                 </div>
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 8, lineHeight: 1.5, color: C("chalk") }}>{athlete.summary}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 8, lineHeight: 1.5, color: C("chalk") }}>{athlete.summary}</div>
               {athlete.injury.tissues ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
                   {athlete.injury.tissues.filter((t) => t.risk > 0).map((t) => chip(hpiColor(t.band), `${t.tissue} ${t.risk}`))}
                 </div>
               ) : (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 8, color: C("ash") }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 8, color: C("ash") }}>
                   {athlete.injury.flaggedCount} tissue(s) flagged · tissue-level detail is medical-tier
                 </div>
               )}
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, marginTop: 8, color: C("ash") }}>{athlete.sessionCount} sessions logged</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 8, color: C("ash") }}>{athlete.sessionCount} sessions logged</div>
             </div>
           )}
         </>

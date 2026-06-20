@@ -5,7 +5,7 @@ import { FUNNEL } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { setClientPersona } from "@/lib/persona";
 import { track } from "@/lib/track";
-import {
+import { fs, space,
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT,
   disp, cond, Mono, Card, txt,
 } from "@/lib/ui";
@@ -77,7 +77,7 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
     <button
       onClick={act}
       disabled={busy}
-      style={{ ...cond, fontWeight: 800, fontSize: 15, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 12, padding: "13px 26px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
+      style={{ ...cond, fontWeight: 800, fontSize: fs.note, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 12, padding: "13px 26px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
     >
       {busy ? "Starting…" : paid ? "Switch to Full →" : "Upgrade to Full →"}
     </button>
@@ -85,33 +85,33 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
 
   return (
     <div style={{ maxWidth: 820 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Full · the upgrade</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Full · the upgrade</Mono>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 30, margin: "5px 0 0" }}>Unlock HYBRID Full</h2>
-      <Mono s={{ fontSize: 13, lineHeight: 1.7, display: "block", marginTop: 10, maxWidth: 660 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.7, display: "block", marginTop: 10, maxWidth: 660 }} c={CHALK}>
         One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays exactly as it is;
         the depth simply switches on.
       </Mono>
 
       {/* hero */}
       <div style={{ marginTop: 18, padding: 22, borderRadius: 18, border: `1px solid ${LIME}66`, background: `linear-gradient(135deg, ${LIME}20, ${VIOLET}1a)` }}>
-        <span style={{ ...cond, fontSize: 11, color: txt(LIME), border: `1px solid ${LIME}`, borderRadius: 999, padding: "3px 10px", fontWeight: 700 }}>
+        <span style={{ ...cond, fontSize: fs.micro, color: txt(LIME), border: `1px solid ${LIME}`, borderRadius: 999, padding: "3px 10px", fontWeight: 700 }}>
           12+ pro tools · one subscription
         </span>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
-          <Mono s={{ fontSize: 12 }}>One subscription · cancel anytime · pricing shown at checkout</Mono>
+        <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 14, flexWrap: "wrap" }}>
+          <Mono s={{ fontSize: fs.caption }}>One subscription · cancel anytime · pricing shown at checkout</Mono>
         </div>
         <div style={{ marginTop: 14 }}>{CTA}</div>
-        {msg && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={AMBER}>{msg}</Mono>}
+        {msg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={AMBER}>{msg}</Mono>}
       </div>
 
       {/* flagship — the Cockpit (assembles everything) */}
       <Card style={{ borderLeft: `3px solid ${LIME}`, marginTop: 16 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>The hub — everything in one place</Mono>
-        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 10 }}>
-          <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>◈</span>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>The hub — everything in one place</Mono>
+        <div style={{ display: "flex", gap: space.ms, alignItems: "flex-start", marginTop: 10 }}>
+          <span style={{ fontSize: fs.subtitle, width: 20, textAlign: "center" }}>◈</span>
           <div>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>Athlete Cockpit</div>
-            <Mono s={{ fontSize: 12, lineHeight: 1.5 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Mono>
+            <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>Athlete Cockpit</div>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.5 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Mono>
           </div>
         </div>
       </Card>
@@ -120,13 +120,13 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 14, marginTop: 14 }}>
         {BUNDLE.map((cat) => (
           <Card key={cat.kicker}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={cat.color}>{cat.kicker}</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={cat.color}>{cat.kicker}</Mono>
             {cat.items.map((it, i) => (
-              <div key={it.nm} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "7px 0", borderTop: i ? `1px solid ${LINE}` : "none" }}>
-                <span style={{ fontSize: 15, width: 20, textAlign: "center", color: txt(CHALK) }}>{it.ic}</span>
+              <div key={it.nm} style={{ display: "flex", gap: space.ms, alignItems: "flex-start", padding: "7px 0", borderTop: i ? `1px solid ${LINE}` : "none" }}>
+                <span style={{ fontSize: fs.note, width: 20, textAlign: "center", color: txt(CHALK) }}>{it.ic}</span>
                 <div>
                   <div style={{ ...disp, fontWeight: 700, fontSize: 13.5 }}>{it.nm}</div>
-                  <Mono s={{ fontSize: 11, lineHeight: 1.5 }}>{it.ds}</Mono>
+                  <Mono s={{ fontSize: fs.micro, lineHeight: 1.5 }}>{it.ds}</Mono>
                 </div>
               </div>
             ))}
@@ -135,7 +135,7 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
       </div>
 
       <div style={{ marginTop: 18 }}>{CTA}</div>
-      <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>
         {paid
           ? "You’re already paid — this just flips you to Full, no charge."
           : "Cancel anytime. Your logged training is always yours, on the free plan too."}

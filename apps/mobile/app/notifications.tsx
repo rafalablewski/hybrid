@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { buildActivityFeed, relativeTime, type ActivityAccent, type LoggedSession } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, type Assignment } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
-import { F } from "../lib/ui";
+import { fs, space, F } from "../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
@@ -36,21 +36,21 @@ export default function Notifications() {
 
   return (
     <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
         <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk }}>Notifications</Text>
         {feed.length > 0 && (
           <View style={{ marginLeft: "auto", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.onAccent }}>{feed.length}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.onAccent }}>{feed.length}</Text>
           </View>
         )}
       </View>
 
       {feed.length === 0 ? (
         <ACard style={{ marginTop: 22 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 20 }}>
             Nothing yet. Log a workout or get a session from your coach and your activity shows up here.
           </Text>
         </ACard>
@@ -59,15 +59,15 @@ export default function Notifications() {
           {feed.map((it) => {
             const col = accentColor(it.accent);
             return (
-              <View key={it.id} style={{ flexDirection: "row", gap: 12, alignItems: "center", marginBottom: 14 }}>
+              <View key={it.id} style={{ flexDirection: "row", gap: space.md, alignItems: "center", marginBottom: 14 }}>
                 <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: `${col}1f`, alignItems: "center", justifyContent: "center" }}>
                   <AuroraIcon name={it.icon} size={22} color={txt(C, col)} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{it.title}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{it.detail}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{it.title}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{it.detail}</Text>
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{relativeTime(it.at)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{relativeTime(it.at)}</Text>
               </View>
             );
           })}

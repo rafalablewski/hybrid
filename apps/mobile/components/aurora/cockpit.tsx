@@ -10,7 +10,7 @@ import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from ".
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -73,11 +73,11 @@ function Full() {
       <Section C={C} title="Goal & season" color={C.violet} openLabel={macro ? "Periodize" : "Set up"} onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}>
         {macro ? (
           <>
-            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{macro.goalOrSport}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{macro.goalOrSport}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}</Text>
           </>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>No season yet — enroll a goal and your periodized plan drives the weeks.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>No season yet — enroll a goal and your periodized plan drives the weeks.</Text>
         )}
         {/* SET UP / CHANGE PLAN — the onboarding funnel folded under Goal & season
             (the mobile analog of the web expander; parity with classic cockpit). */}
@@ -86,47 +86,47 @@ function Full() {
           style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: 2 }}>4 questions → a plan you&apos;ll finish.</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>4 questions → a plan you&apos;ll finish.</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.amber) }}>Open setup →</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>Open setup →</Text>
         </Pressable>
       </Section>
 
       <Section C={C} title={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color={C.lime} openLabel={hasData ? "Start" : "Start first"} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}</Text>
-        {hasData && <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}</Text>
+        {hasData && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
       </Section>
 
       <Section C={C} title="Performance · Athlete Twin" color={C.blue} openLabel="Performance" onOpen={() => router.push("/performance")}>
         {hasData ? (
           <>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
               <Text style={{ fontFamily: F.black, fontSize: 32, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
             </View>
             <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.blue) }}>END {state.hpi.components.endurance}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.violet) }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>END {state.hpi.components.endurance}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Text>
             </View>
-            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
+            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
           </>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>Your HPI, readiness and tissue load build from real training — log a session.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Your HPI, readiness and tissue load build from real training — log a session.</Text>
         )}
       </Section>
 
       <Section C={C} title="Sport S&C" color={C.amber} openLabel="Sport" onOpen={() => router.push("/(tabs)/sport")}>
         {sport ? (
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>Pick your sport — the engine ranks the strength & conditioning that transfers.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Pick your sport — the engine ranks the strength & conditioning that transfers.</Text>
         )}
       </Section>
 
       <Section C={C} title="Velocity & technique" color={C.blue} openLabel="Velocity" onOpen={() => router.push("/(tabs)/velocity")}>
-        <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>Bar speed → a velocity-estimated 1RM and autoregulated load. Log m/s per set to light it up.</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Bar speed → a velocity-estimated 1RM and autoregulated load. Log m/s per set to light it up.</Text>
       </Section>
 
       <Section C={C} title="Endurance" color={C.lime} openLabel="Running" onOpen={() => router.push("/(tabs)/running")}>
@@ -137,7 +137,7 @@ function Full() {
             <Stat C={C} label="min" value={totals.minutes.toLocaleString()} />
           </View>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</Text>
         )}
       </Section>
     </AuroraScreen>
@@ -148,12 +148,12 @@ function Section({ C, title, color, children, onOpen, openLabel }: { C: Palette;
   return (
     <ACard style={{ marginTop: 14 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, color) }}>{title}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, color) }}>{title}</Text>
         </View>
-        <Pressable onPress={onOpen} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 12, color: txt(C, color) }}>{openLabel}</Text>
+        <Pressable onPress={onOpen} style={{ flexDirection: "row", alignItems: "center", gap: space.xxs }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, color) }}>{openLabel}</Text>
           <AuroraIcon name="chevron-down" size={14} color={txt(C, color)} style={{ transform: [{ rotate: "-90deg" }] }} />
         </Pressable>
       </View>
@@ -165,8 +165,8 @@ function Section({ C, title, color, children, onOpen, openLabel }: { C: Palette;
 function Stat({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
     </View>
   );
 }
@@ -184,14 +184,14 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   const { palette: C } = useTheme();
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: 26 }}>Unlock your command center</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>Unlock your command center</AHeading>
       <ASub style={{ marginTop: 8 }}>Goal, season, your performance Twin, sport S&C, velocity and endurance — assembled into one screen. It&apos;s part of Full. Keep logging free; upgrade whenever you want the depth.</ASub>
       {TEASE.map((s) => (
-        <ACard key={s.kicker} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <ACard key={s.kicker} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: s.color(C) }} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, s.color(C)) }}>{s.kicker}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.chalk, marginTop: 4, lineHeight: 17 }}>{s.blurb}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, s.color(C)) }}>{s.kicker}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: 17 }}>{s.blurb}</Text>
           </View>
           <AuroraIcon name="lock" size={18} color={C.ash} />
         </ACard>

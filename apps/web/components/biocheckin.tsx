@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 
 // Manual readiness check-in. Writes HRV / resting HR / sleep to the Biometric
 // table AND the Signal ontology (the path wearable sync will feed); readiness +
@@ -54,16 +54,16 @@ export default function BioCheckin({ onSaved }: { onSaved: () => void }) {
 
   return (
     <Card span={2} style={{ borderLeft: `3px solid ${AMBER}` }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
         Readiness check-in
       </Mono>
-      <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }}>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4 }}>
         Enter today&apos;s wearable readings — your readiness recomputes from them.
       </Mono>
-      <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+      <div style={{ display: "flex", gap: space.md, marginTop: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
         {FIELDS.map((f) => (
           <div key={f.key}>
-            <Mono s={{ fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={f.color}>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={f.color}>
               {f.label} ({f.unit})
             </Mono>
             <input
@@ -71,14 +71,14 @@ export default function BioCheckin({ onSaved }: { onSaved: () => void }) {
               onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
               placeholder={f.ph}
               inputMode="decimal"
-              style={{ ...mono, fontSize: 15, width: 90, padding: "9px 11px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+              style={{ ...mono, fontSize: fs.note, width: 90, padding: "9px 11px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
             />
           </div>
         ))}
         <button
           onClick={save}
           disabled={saving}
-          style={{ ...disp, fontWeight: 800, fontSize: 14, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
+          style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
         >
           {saving ? "…" : done ? "✓ Saved" : "Save"}
         </button>

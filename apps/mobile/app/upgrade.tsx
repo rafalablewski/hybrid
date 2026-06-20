@@ -7,7 +7,7 @@ import { startCheckout } from "../lib/api";
 import { iapAvailable, purchaseFull } from "../lib/iap";
 import { supabase } from "../lib/supabase";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraUpgrade from "../components/aurora/upgrade";
@@ -74,35 +74,35 @@ function ClassicUpgrade() {
   return (
     <Screen>
       <Pressable onPress={() => router.back()} hitSlop={10}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: C.amber, marginTop: 10 }}>Full · the upgrade</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 4 }}>Unlock HYBRID Full</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber, marginTop: 10 }}>Full · the upgrade</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 4 }}>Unlock HYBRID Full</Text>
       <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
         One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays
         exactly as it is; the depth simply switches on.
       </Mono>
 
       <View style={{ alignSelf: "flex-start", marginTop: 12, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.lime }}>12+ pro tools · one subscription</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.lime }}>12+ pro tools · one subscription</Text>
       </View>
 
       {/* flagship — the Cockpit assembles everything */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
         <Kicker color={C.lime}>The hub — everything in one place</Kicker>
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 8 }}>◈ Athlete Cockpit</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>◈ Athlete Cockpit</Text>
         <Mono color={C.ash} style={{ marginTop: 2, lineHeight: 18 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Mono>
       </Card>
 
       {BUNDLE.map((cat) => (
         <Card key={cat.k} style={{ marginTop: 12 }}>
           <Kicker color={cat.c(C)}>{cat.k}</Kicker>
-          <View style={{ marginTop: 10, gap: 8 }}>
+          <View style={{ marginTop: 10, gap: space.sm }}>
             {cat.items.map((line) => (
-              <View key={line} style={{ flexDirection: "row", gap: 8 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 14, color: cat.c(C) }}>✓</Text>
-                <Text style={{ flex: 1, fontFamily: F.semi, fontSize: 14, color: C.chalk }}>{line}</Text>
+              <View key={line} style={{ flexDirection: "row", gap: space.sm }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: cat.c(C) }}>✓</Text>
+                <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{line}</Text>
               </View>
             ))}
           </View>
@@ -128,7 +128,7 @@ function ClassicUpgrade() {
         {busy ? (
           <ActivityIndicator color={C.onAccent} />
         ) : (
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>Subscribe</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>Subscribe</Text>
         )}
       </Pressable>
 
@@ -140,7 +140,7 @@ function ClassicUpgrade() {
       </Mono>
 
       <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: 18 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Maybe later</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Maybe later</Text>
       </Pressable>
     </Screen>
   );

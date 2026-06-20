@@ -2,7 +2,7 @@ import { View, Text, Switch, Pressable } from "react-native";
 import { REST_SECONDS_CHOICES, type LoggerPrefs } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraLoggerSettings from "../components/aurora/logger-settings";
@@ -52,8 +52,8 @@ function ClassicLoggerSettings() {
             style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t(r.titleKey)}</Text>
-              <Mono style={{ fontSize: 11, marginTop: 2, lineHeight: 16 }}>{t(r.descKey)}</Mono>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>
+              <Mono style={{ fontSize: fs.micro, marginTop: 2, lineHeight: 16 }}>{t(r.descKey)}</Mono>
             </View>
             <Switch
               value={prefs[r.key]}
@@ -69,7 +69,7 @@ function ClassicLoggerSettings() {
       {prefs.restTimer && (
         <Card style={{ marginTop: 14 }}>
           <Kicker color={C.lime}>{t("loggerPrefs.restDefault")}</Kicker>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
             {REST_SECONDS_CHOICES.map((sec) => {
               const on = prefs.restSeconds === sec;
               return (
@@ -78,7 +78,7 @@ function ClassicLoggerSettings() {
                   onPress={() => setLoggerPref("restSeconds", sec)}
                   style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 13, color: on ? txt(C, C.lime) : C.ash }}>{sec}s</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: on ? txt(C, C.lime) : C.ash }}>{sec}s</Text>
                 </Pressable>
               );
             })}
@@ -89,12 +89,12 @@ function ClassicLoggerSettings() {
       {/* Units — kg / lb (storage stays kg). */}
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>{t("loggerPrefs.units")}</Kicker>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
           {(["kg", "lb"] as const).map((u) => {
             const on = prefs.units === u;
             return (
               <Pressable key={u} onPress={() => setLoggerPref("units", u)} style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{u}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{u}</Text>
               </Pressable>
             );
           })}
@@ -104,12 +104,12 @@ function ClassicLoggerSettings() {
       {/* Quick-increment — +/- load stepper step, in the chosen unit. */}
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>{t("loggerPrefs.quickIncrement")}</Kicker>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
           {(prefs.units === "lb" ? [0, 5, 10] : [0, 2.5, 5]).map((inc) => {
             const on = prefs.quickIncrement === inc;
             return (
               <Pressable key={inc} onPress={() => setLoggerPref("quickIncrement", inc)} style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, color: on ? txt(C, C.lime) : C.ash }}>{inc === 0 ? t("common.off") : `±${inc}`}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: on ? txt(C, C.lime) : C.ash }}>{inc === 0 ? t("common.off") : `±${inc}`}</Text>
               </Pressable>
             );
           })}
@@ -119,7 +119,7 @@ function ClassicLoggerSettings() {
       {/* Default start view — what the "Start workout" hero opens with. */}
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>{t("loggerPrefs.defaultStart")}</Kicker>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
           {([["empty", "Empty"], ["ai", "AI"], ["last", "Repeat last"]] as const).map(([id, label]) => {
             const on = prefs.defaultStart === id;
             return (
@@ -128,7 +128,7 @@ function ClassicLoggerSettings() {
                 onPress={() => setLoggerPref("defaultStart", id)}
                 style={{ flex: 1, paddingVertical: 10, borderRadius: rChip, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
               </Pressable>
             );
           })}

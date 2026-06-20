@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { pacePerKm } from "@hybrid/core";
 import { createSession } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraRunTrack from "../components/aurora/run-track";
@@ -79,9 +79,9 @@ function ClassicRunTrack() {
         <View style={{ height: 200, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
           <View style={{ position: "absolute", top: 24, left: 28, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime }} />
           <View style={{ position: "absolute", bottom: 28, right: 30, width: 12, height: 12, borderRadius: 6, backgroundColor: C.amber }} />
-          <Text style={{ fontSize: 26 }}>📍</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 8 }}>Live route map</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: 17 }}>
+          <Text style={{ fontSize: fs.display }}>📍</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>Live route map</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: 17 }}>
             GPS route tracking goes live in the native app build. Timing &amp; distance below work everywhere.
           </Text>
         </View>
@@ -94,12 +94,12 @@ function ClassicRunTrack() {
           <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={txt(C, C.blue)} C={C} />
           <Stat label="Pace /km" value={pace ?? "—"} color={txt(C, C.lime)} C={C} />
         </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
           <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: 12, paddingVertical: 14, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}</Text>
           </Pressable>
           <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Reset</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Reset</Text>
           </Pressable>
         </View>
       </Card>
@@ -112,9 +112,9 @@ function ClassicRunTrack() {
           keyboardType="numeric"
           placeholder="e.g. 5.0"
           placeholderTextColor={C.ash}
-          style={{ fontFamily: F.mono, fontSize: 16, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11 }}
+          style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11 }}
         />
-        <Mono style={{ fontSize: 11, marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</Mono>
+        <Mono style={{ fontSize: fs.micro, marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</Mono>
       </Card>
 
       {msg && <Mono color={msg.ok ? C.lime : C.amber} style={{ marginVertical: 8 }}>{msg.text}</Mono>}
@@ -134,7 +134,7 @@ function ClassicRunTrack() {
 function Stat({ label, value, color, C }: { label: string; value: string; color: string; C: ReturnType<typeof useTheme>["palette"] }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 24, color, marginTop: 4 }}>{value}</Text>
     </View>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { longevityReport } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 
@@ -43,25 +43,25 @@ export default function Longevity() {
   ];
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: space.lg }}>
       <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
           Performance medicine · healthspan
         </Mono>
-        <Mono s={{ fontSize: 13, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
           The same recovery signals that drive readiness also predict healthspan. Estimate biological
           age vs chronological from resting HR, HRV, VO₂ and sleep. Heuristic v0 — not a diagnostic.
         </Mono>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Markers</Mono>
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>recovery markers prefilled from your latest signals when available</Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Markers</Mono>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>recovery markers prefilled from your latest signals when available</Mono>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.sm, marginTop: 12 }}>
             {fields.map(([k, label, unit]) => (
               <label key={k}>
-                <Mono s={{ fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>{label} ({unit})</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>{label} ({unit})</Mono>
                 <input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} inputMode="decimal" style={input} />
               </label>
             ))}
@@ -70,16 +70,16 @@ export default function Longevity() {
 
         {!hasMarkers ? (
           <Card style={{ borderLeft: `3px solid ${BLUE}` }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Biological age</Mono>
-            <Mono s={{ fontSize: 13, display: "block", marginTop: 10, lineHeight: 1.6 }} c={CHALK}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Biological age</Mono>
+            <Mono s={{ fontSize: fs.body, display: "block", marginTop: 10, lineHeight: 1.6 }} c={CHALK}>
               Enter at least one recovery marker (resting HR, HRV, VO₂ or sleep) — or connect a wearable —
               and your biological-age estimate appears here. Nothing is pre-filled.
             </Mono>
           </Card>
         ) : (
         <Card style={{ borderLeft: `3px solid ${deltaColor(report.delta)}` }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Biological age</Mono>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "6px 0" }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Biological age</Mono>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.md, margin: "6px 0" }}>
             <div style={{ ...disp, fontWeight: 900, fontSize: 48, color: deltaColor(report.delta) }}>{report.bioAge}</div>
             <Chip c={deltaColor(report.delta)}>{report.delta <= 0 ? `${report.delta}` : `+${report.delta}`} yr vs age</Chip>
             <Chip c={ASH}>healthspan {report.healthspanScore}</Chip>
@@ -87,17 +87,17 @@ export default function Longevity() {
           <div style={{ marginTop: 8 }}>
             {report.contributions.map((c) => (
               <div key={c.marker} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
-                <Mono s={{ fontSize: 12 }} c={CHALK}>{c.marker} <span style={{ color: ASH }}>· {c.note}</span></Mono>
-                <Mono s={{ fontSize: 12 }} c={c.deltaYears <= 0 ? LIME : AMBER}>{c.deltaYears <= 0 ? "" : "+"}{c.deltaYears} yr</Mono>
+                <Mono s={{ fontSize: fs.caption }} c={CHALK}>{c.marker} <span style={{ color: ASH }}>· {c.note}</span></Mono>
+                <Mono s={{ fontSize: fs.caption }} c={c.deltaYears <= 0 ? LIME : AMBER}>{c.deltaYears <= 0 ? "" : "+"}{c.deltaYears} yr</Mono>
               </div>
             ))}
           </div>
           {report.flags.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              {report.flags.map((fl) => <Mono key={fl} s={{ fontSize: 11, display: "block" }} c={AMBER}>⚠ {fl}</Mono>)}
+              {report.flags.map((fl) => <Mono key={fl} s={{ fontSize: fs.micro, display: "block" }} c={AMBER}>⚠ {fl}</Mono>)}
             </div>
           )}
-          <Mono s={{ fontSize: 10, display: "block", marginTop: 10 }} c={ASH}>model {report.modelVersion}</Mono>
+          <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 10 }} c={ASH}>model {report.modelVersion}</Mono>
         </Card>
         )}
       </div>
@@ -105,4 +105,4 @@ export default function Longevity() {
   );
 }
 
-const input: React.CSSProperties = { ...mono, fontSize: 14, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, width: "100%" };
+const input: React.CSSProperties = { ...mono, fontSize: fs.bodyLg, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, width: "100%" };

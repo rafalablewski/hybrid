@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, Mono, Card, Chip } from "@/lib/ui";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };
@@ -36,12 +36,12 @@ export default function Connections() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: space.lg }}>
       <Card style={{ borderLeft: `3px solid ${BLUE}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
           Connections · ingestion layer
         </Mono>
-        <Mono s={{ fontSize: 13, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
           Every device writes into one Signal stream — the engines never learn a vendor exists.
           Connect a wearable and your readiness, HPI, and injury risk update automatically.
         </Mono>
@@ -53,7 +53,7 @@ export default function Connections() {
           return (
             <Card key={p.id}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: CHALK }}>{p.label}</div>
+                <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: CHALK }}>{p.label}</div>
                 {c ? (
                   <Chip c={c.status === "active" ? LIME : AMBER}>{c.status}</Chip>
                 ) : p.configured ? (
@@ -62,17 +62,17 @@ export default function Connections() {
                   <Chip c={AMBER}>setup pending</Chip>
                 )}
               </div>
-              <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+              <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                 {p.provides.join(" · ")}
               </Mono>
 
               <div style={{ marginTop: 14 }}>
                 {p.auth === "native" ? (
-                  <Mono s={{ fontSize: 12 }}>Connect Apple Health from the mobile app.</Mono>
+                  <Mono s={{ fontSize: fs.caption }}>Connect Apple Health from the mobile app.</Mono>
                 ) : p.auth === "team" ? (
-                  <Mono s={{ fontSize: 12 }}>Provisioned by an admin (team feed).</Mono>
+                  <Mono s={{ fontSize: fs.caption }}>Provisioned by an admin (team feed).</Mono>
                 ) : !p.configured ? (
-                  <Mono s={{ fontSize: 12 }} c={AMBER}>Awaiting API credentials on this deployment.</Mono>
+                  <Mono s={{ fontSize: fs.caption }} c={AMBER}>Awaiting API credentials on this deployment.</Mono>
                 ) : c ? (
                   <button
                     onClick={() => sync(p.id)}
@@ -99,7 +99,7 @@ function btn(bg: string): React.CSSProperties {
   return {
     fontFamily: "'Archivo', sans-serif",
     fontWeight: 800,
-    fontSize: 13,
+    fontSize: fs.body,
     background: bg,
     color: ON_ACCENT,
     border: "none",

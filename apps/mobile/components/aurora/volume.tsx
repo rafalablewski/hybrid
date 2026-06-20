@@ -8,7 +8,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -55,13 +55,13 @@ export default function AuroraVolume() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: 26 }}>Volume</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>Volume</AHeading>
         <Pressable onPress={() => setEditing((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing || customized ? C.lime : C.line, backgroundColor: editing || customized ? `${C.lime}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? "Done" : customized ? "Landmarks ✎" : "Edit"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? "Done" : customized ? "Landmarks ✎" : "Edit"}</Text>
         </Pressable>
       </View>
       <ASub style={{ marginTop: 10 }}>Weekly working sets per muscle vs MEV (grow) · MAV (productive) · MRV (ceiling). Warm-ups don&apos;t count. Last 7 days.</ASub>
@@ -69,8 +69,8 @@ export default function AuroraVolume() {
       {editing && (
         <ACard style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Your landmarks · weekly sets</Text>
-            {customized && <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}><Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Reset</Text></Pressable>}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Your landmarks · weekly sets</Text>
+            {customized && <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Reset</Text></Pressable>}
           </View>
           <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 2 }}>
             <View style={{ width: 90 }} />
@@ -80,14 +80,14 @@ export default function AuroraVolume() {
           </View>
           {ALL_MUSCLES.map((m) => (
             <View key={m} style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
-              <Text style={{ width: 90, fontFamily: F.mono, fontSize: 11, color: C.chalk }}>{MUSCLE_LABEL[m] ?? m}</Text>
+              <Text style={{ width: 90, fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{MUSCLE_LABEL[m] ?? m}</Text>
               {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k) => (
                 <TextInput key={k} defaultValue={String(lm[m][k])} onEndEditing={(e) => editField(m, k, e.nativeEvent.text)} keyboardType="number-pad"
-                  style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }} />
+                  style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }} />
               ))}
             </View>
           ))}
-          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 12, lineHeight: 15 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: 15 }}>
             Tune to your own recovery. Values clamp to a sane order; blank a field to restore its default.
           </Text>
         </ACard>
@@ -95,18 +95,18 @@ export default function AuroraVolume() {
 
       {!trained && (
         <ACard style={{ marginTop: 14, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, textAlign: "center", lineHeight: 19 }}>No working strength sets in the last 7 days. Log some lifts and your per-muscle volume — and where it sits against MEV/MAV/MRV — shows up here.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>No working strength sets in the last 7 days. Log some lifts and your per-muscle volume — and where it sits against MEV/MAV/MRV — shows up here.</Text>
         </ACard>
       )}
 
       {trained && advice.length > 0 && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>This week — adjust volume</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>This week — adjust volume</Text>
           <View style={{ marginTop: 10, gap: 9 }}>
             {advice.map((s) => (
-              <View key={s.muscle} style={{ flexDirection: "row", gap: 8 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "700", color: txt(C, s.action === "reduce" ? C.red : C.amber), width: 110 }}>{s.action === "reduce" ? "↓" : "↑"} {MUSCLE_LABEL[s.muscle] ?? s.muscle}</Text>
-                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 12, color: C.ash, lineHeight: 17 }}>{adviceLine(s)}</Text>
+              <View key={s.muscle} style={{ flexDirection: "row", gap: space.sm }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: txt(C, s.action === "reduce" ? C.red : C.amber), width: 110 }}>{s.action === "reduce" ? "↓" : "↑"} {MUSCLE_LABEL[s.muscle] ?? s.muscle}</Text>
+                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{adviceLine(s)}</Text>
               </View>
             ))}
           </View>
@@ -115,8 +115,8 @@ export default function AuroraVolume() {
 
       {trained && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>By muscle · sets this week</Text>
-          <View style={{ marginTop: 14, gap: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>By muscle · sets this week</Text>
+          <View style={{ marginTop: 14, gap: space.lg }}>
             {rows.map((r) => <LandmarkBar key={r.muscle} s={r} zone={ZONE[r.zone]} />)}
           </View>
         </ACard>
@@ -132,8 +132,8 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
   return (
     <View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk }}>{MUSCLE_LABEL[s.muscle] ?? s.muscle}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{MUSCLE_LABEL[s.muscle] ?? s.muscle}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption }}>
           <Text style={{ color: txt(C, zone.c), fontWeight: "700" }}>{s.sets} sets</Text>
           <Text style={{ color: C.ash }}> · {zone.label}</Text>
         </Text>
@@ -144,7 +144,7 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
         <View style={{ position: "absolute", left: pct(s.landmark.mev), top: -2, bottom: -2, width: 2, backgroundColor: C.amber }} />
         <View style={{ position: "absolute", left: pct(s.landmark.mrv), top: -2, bottom: -2, width: 2, backgroundColor: C.red }} />
       </View>
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 5 }}>
+      <View style={{ flexDirection: "row", gap: space.md, marginTop: 5 }}>
         <Tick c={C.amber} label={`MEV ${s.landmark.mev}`} />
         <Tick c={C.lime} label={`MAV ${s.landmark.mavLow}–${s.landmark.mavHigh}`} />
         <Tick c={C.red} label={`MRV ${s.landmark.mrv}`} />
@@ -156,7 +156,7 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
 function Tick({ c, label }: { c: string; label: string }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.xxs }}>
       <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
       <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.5 }}>{label}</Text>
     </View>

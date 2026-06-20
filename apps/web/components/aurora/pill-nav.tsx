@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
+import { fs, space, groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type AuroraIconName } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
 import { useFlags } from "@/lib/use-flags";
 import { useLang } from "@/lib/i18n";
@@ -63,29 +63,29 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: C("ink"), border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
               >
                 <span style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--color-lime) 16%, transparent)", pointerEvents: "none" }} />
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".2em", color: C("lime") }}>UPGRADE</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".2em", color: C("lime") }}>UPGRADE</span>
                 <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>Unlock Full</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 5, maxWidth: 240 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 14, background: C("lime"), color: C("ink"), borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>Go Full →</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: C("lime"), color: C("ink"), borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>Go Full →</span>
               </button>
             )}
 
             {groups.map((g) => (
               <div key={g.group} style={{ marginBottom: 18 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
                   {t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`)}
                 </div>
                 {/* Springboard grid — rounded glyph tiles, one text colour (chalk),
                     matching the mobile More tab. Active tile takes the lime accent. */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 4 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: space.xxs }}>
                   {g.items.map(({ id, label: fb }) => {
                     const on = id === activeId;
                     return (
-                      <button key={id} onClick={() => go(id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
+                      <button key={id} onClick={() => go(id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: space.sm, padding: "10px 2px", background: "transparent", border: "none", cursor: "pointer" }}>
                         <span style={{ width: 54, height: 54, borderRadius: 18, display: "grid", placeItems: "center", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? "color-mix(in srgb, var(--color-lime) 12%, transparent)" : C("ink") }}>
                           <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.6} color={on ? C("lime") : C("chalk")} />
                         </span>
-                        <span style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 600, color: on ? C("lime") : C("chalk"), textAlign: "center", lineHeight: 1.2, maxWidth: 84, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label(id, fb)}</span>
+                        <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: on ? C("lime") : C("chalk"), textAlign: "center", lineHeight: 1.2, maxWidth: 84, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label(id, fb)}</span>
                       </button>
                     );
                   })}

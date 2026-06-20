@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
 // the exact same source the mobile app renders. Goal → plans → full detail.
@@ -32,27 +32,27 @@ export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void })
 function GoalGrid({ pick }: { pick: (id: string) => void }) {
   return (
     <div>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>
         Start with your goal — we&apos;ll show the plans built for it.
       </Mono>
       {GOAL_GROUPS.map((group) => (
         <div key={group.category} style={{ marginBottom: 24 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>
             {group.category}
           </Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.lg }}>
             {group.goals.map((g) => (
               <Card
                 key={g.id}
                 style={{ borderLeft: `3px solid ${g.color}`, cursor: "pointer" }}
                 onClick={() => pick(g.id)}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
                   <span style={{ fontSize: 22, color: g.color }}>{g.icon}</span>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{g.name}</div>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{g.name}</div>
                 </div>
-                <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 8 }}>{g.blurb}</Mono>
-                <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={g.color}>
+                <Mono s={{ fontSize: fs.caption, lineHeight: 1.5, display: "block", marginTop: 8 }}>{g.blurb}</Mono>
+                <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={g.color}>
                   {g.plans.length} plans →
                 </Mono>
               </Card>
@@ -76,16 +76,16 @@ function PlanList({
   return (
     <div>
       <BackLink onClick={back} label="All goals" />
-      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "6px 0 16px" }}>
         <span style={{ fontSize: 24, color: goal.color }}>{goal.icon}</span>
-        <h2 style={{ ...disp, fontWeight: 900, fontSize: 26 }}>{goal.name}</h2>
+        <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display }}>{goal.name}</h2>
       </div>
       {goal.plans.length === 0 && (
-        <Mono s={{ fontSize: 13, lineHeight: 1.6, display: "block" }}>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }}>
           No plans here yet — plans for this goal are on the way.
         </Mono>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg }}>
         {goal.plans.map((p) => (
           <Card
             key={p.id}
@@ -93,16 +93,16 @@ function PlanList({
             onClick={() => pick(p.id)}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{p.name}</div>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{p.name}</div>
               {p.hot && <Chip c={LIME}>Popular</Chip>}
             </div>
-            <Mono s={{ fontSize: 12, display: "block", margin: "6px 0 10px" }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", margin: "6px 0 10px" }}>
               {p.weeks} wks · {p.sessions}×/wk · {p.tag}
             </Mono>
-            <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block" }} c={CHALK}>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block" }} c={CHALK}>
               {p.desc}
             </Mono>
-            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
               {p.focus.map((f) => (
                 <Chip key={f} c={ASH}>
                   {f}
@@ -149,15 +149,15 @@ function PlanDetailView({
   return (
     <div style={{ maxWidth: 820 }}>
       <BackLink onClick={back} label={goal.name} />
-      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "6px 0 4px" }}>
         <h2 style={{ ...disp, fontWeight: 900, fontSize: 28 }}>{plan.name}</h2>
         {plan.hot && <Chip c={LIME}>Popular</Chip>}
       </div>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>
         {plan.weeks} weeks · {plan.sessions}×/week · {d.level}
       </Mono>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.md, marginBottom: 16 }}>
         <Info label="Who it's for" value={d.forWho} />
         <Info label="Outcome" value={d.outcome} />
         <Info label="Session length" value={d.sessionLength} />
@@ -165,16 +165,16 @@ function PlanDetailView({
       </div>
 
       <Card style={{ marginBottom: 16 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           Weekly split
         </Mono>
-        <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: space.xs, marginTop: 10, flexWrap: "wrap" }}>
           {d.split.map((day, i) => (
             <div
               key={i}
               style={{
                 ...mono,
-                fontSize: 12,
+                fontSize: fs.caption,
                 color: day.toLowerCase() === "rest" ? ASH : CHALK,
                 background: INK2,
                 border: `1px solid ${LINE}`,
@@ -190,7 +190,7 @@ function PlanDetailView({
 
       {d.days.map((session, di) => (
         <Card key={di} style={{ marginBottom: 16 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
             {session.day}
           </Mono>
           <div style={{ overflowX: "auto", maxWidth: "100%" }}>
@@ -200,7 +200,7 @@ function PlanDetailView({
                 {["Exercise", "Sets×Reps", "Rest", "RPE"].map((h) => (
                   <th
                     key={h}
-                    style={{ ...mono, fontSize: 11, color: ASH, textTransform: "uppercase", textAlign: "left", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}
+                    style={{ ...mono, fontSize: fs.micro, color: ASH, textTransform: "uppercase", textAlign: "left", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}
                   >
                     {h}
                   </th>
@@ -210,10 +210,10 @@ function PlanDetailView({
             <tbody>
               {session.items?.map((it, i) => (
                 <tr key={i}>
-                  <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.name}</td>
-                  <td style={{ ...mono, fontSize: 13, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.sr}</td>
-                  <td style={{ ...mono, fontSize: 13, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rest}</td>
-                  <td style={{ ...mono, fontSize: 13, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rpe}</td>
+                  <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.name}</td>
+                  <td style={{ ...mono, fontSize: fs.body, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.sr}</td>
+                  <td style={{ ...mono, fontSize: fs.body, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rest}</td>
+                  <td style={{ ...mono, fontSize: fs.body, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rpe}</td>
                 </tr>
               ))}
             </tbody>
@@ -230,7 +230,7 @@ function PlanDetailView({
         style={{
           ...disp,
           fontWeight: 800,
-          fontSize: 15,
+          fontSize: fs.note,
           background: state === "done" ? INK2 : LIME,
           color: state === "done" ? LIME : ON_ACCENT,
           border: state === "done" ? `1px solid ${LIME}` : "none",
@@ -247,7 +247,7 @@ function PlanDetailView({
             : `Enroll in ${plan.name} →`}
       </button>
       {state === "error" && (
-        <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={AMBER}>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={AMBER}>
           Couldn&apos;t enroll — sign in (real auth) and try again.
         </Mono>
       )}
@@ -258,8 +258,8 @@ function PlanDetailView({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <Card>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>{label}</Mono>
-      <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
         {value}
       </Mono>
     </Card>
@@ -269,7 +269,7 @@ function Info({ label, value }: { label: string; value: string }) {
 function BackLink({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 6 }}>
-      <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>
         ← {label}
       </Mono>
     </button>

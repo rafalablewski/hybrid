@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { plansForGoal } from "@hybrid/core";
-import { Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachGroups,
@@ -60,7 +60,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
     <View>
       {unavailable && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.amber, marginTop: 12 }}>
-          <Mono color={C.chalk} style={{ fontSize: 12, lineHeight: 18 }}>
+          <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>
             Groups aren&apos;t enabled yet — run reference/sql-coach-groups.sql in Supabase.
           </Mono>
         </Card>
@@ -68,32 +68,32 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
 
       <Card style={{ marginTop: 12 }}>
         <Kicker>New group</Kicker>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           <TextInput
             value={newName}
             onChangeText={setNewName}
             placeholder="e.g. Tuesday 6am squad"
             placeholderTextColor={C.ash}
-            style={{ flex: 1, fontFamily: F.mono, fontSize: 14, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}
+            style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}
           />
           <Button label="Create" onPress={create} />
         </View>
       </Card>
 
-      {msg && <Mono color={C.lime} style={{ marginTop: 6, fontSize: 12 }}>{msg}</Mono>}
+      {msg && <Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono>}
 
       {groups.map((g) => (
         <Card key={g.id} style={{ marginTop: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{g.name}</Text>
-            <Pressable onPress={() => del(g.id)}><Mono color={C.ash} style={{ fontSize: 12 }}>Delete</Mono></Pressable>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{g.name}</Text>
+            <Pressable onPress={() => del(g.id)}><Mono color={C.ash} style={{ fontSize: fs.caption }}>Delete</Mono></Pressable>
           </View>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>{g.clientIds.length} member{g.clientIds.length === 1 ? "" : "s"}</Mono>
+          <Mono style={{ marginTop: 2, fontSize: fs.micro }}>{g.clientIds.length} member{g.clientIds.length === 1 ? "" : "s"}</Mono>
 
           {clients.length === 0 ? (
-            <Mono style={{ marginTop: 8, fontSize: 12 }}>Invite athletes first — your active clients show up here to add.</Mono>
+            <Mono style={{ marginTop: 8, fontSize: fs.caption }}>Invite athletes first — your active clients show up here to add.</Mono>
           ) : (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
               {clients.map((c) => {
                 const on = g.clientIds.includes(c.clientId);
                 return (
@@ -102,14 +102,14 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                     onPress={() => toggle(g, c.clientId)}
                     style={{ borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.lime) : C.ash }}>{on ? "✓ " : ""}{c.name}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{on ? "✓ " : ""}{c.name}</Text>
                   </Pressable>
                 );
               })}
             </View>
           )}
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
             {GROUP_GOALS.map((gg) => {
               const sel = (goalFor[g.id] || GROUP_GOALS[0]) === gg;
               return (
@@ -118,7 +118,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                   onPress={() => { setGoalFor((m) => ({ ...m, [g.id]: gg })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }}
                   style={{ borderWidth: 1, borderColor: sel ? C.violet : C.line, backgroundColor: sel ? `${C.violet}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: sel ? txt(C, C.violet) : C.ash }}>{gg}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.violet) : C.ash }}>{gg}</Text>
                 </Pressable>
               );
             })}
@@ -128,7 +128,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
             if (named.length === 0) return null;
             const chosen = planFor[g.id] || "";
             return (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
                 {[{ id: "", name: "By goal" }, ...named].map((p) => {
                   const sel = chosen === p.id;
                   return (
@@ -137,7 +137,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                       onPress={() => setPlanFor((m) => ({ ...m, [g.id]: p.id }))}
                       style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
                     >
-                      <Text style={{ fontFamily: F.mono, fontSize: 12, color: sel ? txt(C, C.lime) : C.ash }}>{p.name}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.lime) : C.ash }}>{p.name}</Text>
                     </Pressable>
                   );
                 })}

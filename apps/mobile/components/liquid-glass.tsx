@@ -17,7 +17,7 @@ import { useNavAccess } from "../lib/access";
 import { useTheme } from "../lib/theme";
 // GlassCard + glassShadow live in lib/ui (Card's glass-by-default base), so the
 // surface is defined once and shared with every screen.
-import { F, GlassCard, glassShadow } from "../lib/ui";
+import { fs, space, F, GlassCard, glassShadow } from "../lib/ui";
 
 const AnimatedBlur = Animated.createAnimatedComponent(BlurView);
 
@@ -168,19 +168,19 @@ export function CommandMenu() {
                 <GlassCard intensity={50} padding={20} style={{ borderRadius: 28, marginBottom: 0 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <View>
-                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, color: palette.ash, textTransform: "uppercase" }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, color: palette.ash, textTransform: "uppercase" }}>
                         app.hybrid.app
                       </Text>
-                      <Text style={{ fontFamily: F.black, fontSize: 18, color: palette.chalk, marginTop: 2 }}>Jump to…</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>Jump to…</Text>
                     </View>
                     <Pressable
                       onPress={() => setOpen(false)}
                       style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: neutral(0.16), backgroundColor: neutral(0.07) }}
                     >
-                      <Text style={{ color: palette.chalk, fontSize: 15 }}>✕</Text>
+                      <Text style={{ color: palette.chalk, fontSize: fs.note }}>✕</Text>
                     </Pressable>
                   </View>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms }}>
                     {tiles.map((tile) => (
                       <Pressable
                         key={tile.id}
@@ -191,7 +191,7 @@ export function CommandMenu() {
                           borderRadius: 16,
                           paddingVertical: 14,
                           alignItems: "center",
-                          gap: 8,
+                          gap: space.sm,
                           backgroundColor: neutral(0.06),
                           borderWidth: 1,
                           borderColor: neutral(0.1),
@@ -209,9 +209,9 @@ export function CommandMenu() {
                             borderColor: neutral(0.18),
                           }}
                         >
-                          <Text style={{ fontSize: 20, color: palette.chalk }}>{glyph(tile.icon)}</Text>
+                          <Text style={{ fontSize: fs.heading, color: palette.chalk }}>{glyph(tile.icon)}</Text>
                         </View>
-                        <Text style={{ fontFamily: F.bold, fontSize: 12, color: palette.chalk }} numberOfLines={1}>
+                        <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: palette.chalk }} numberOfLines={1}>
                           {label(`nav.${tile.id}`, tile.label)}
                         </Text>
                         <Text style={{ fontFamily: F.mono, fontSize: 8, color: palette.ash, textTransform: "uppercase", letterSpacing: 0.6 }}>

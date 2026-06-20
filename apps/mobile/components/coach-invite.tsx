@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable, Share } from "react-native";
 import QRCode from "qrcode";
-import { Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachInvites, createCoachInvite, revokeCoachInvite, type CoachInviteRow } from "../lib/api";
 
@@ -66,7 +66,7 @@ export default function CoachInvite() {
   return (
     <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
       <Kicker color={C.lime}>Add a client</Kicker>
-      <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 4 }}>Invite someone not on HYBRID yet</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 4 }}>Invite someone not on HYBRID yet</Text>
       <Mono style={{ marginTop: 4, lineHeight: 18 }}>Share a link or QR, or enter their email. They get the free app and see what you assign (read-only).</Mono>
       <TextInput
         value={email}
@@ -75,7 +75,7 @@ export default function CoachInvite() {
         placeholderTextColor={C.ash}
         autoCapitalize="none"
         keyboardType="email-address"
-        style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
+        style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
       />
       <View style={{ marginTop: 10 }}><Button label={busy ? "Generating…" : "Generate invite"} color={C.lime} onPress={create} /></View>
       {msg && <Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono>}

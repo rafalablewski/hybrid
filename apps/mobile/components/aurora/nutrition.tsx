@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { fetchSignals, createSignal, getAssignedDiet, type CoreSignal } from "../../lib/api";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -66,11 +66,11 @@ export default function AuroraNutrition() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: 26 }}>Nutrition</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>Nutrition</AHeading>
       </View>
 
       <View style={{ marginTop: 16 }}>
@@ -79,20 +79,20 @@ export default function AuroraNutrition() {
 
       {coachDiet?.diet && (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>
             Assigned by {coachDiet.coachName ?? "your coach"} · read-only
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 8 }}>
             {([["Energy", coachDiet.diet.kcal, " kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
               ([label, val, unit]) => (val != null ? (
                 <View key={label}>
-                  <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{label}{unit === " kcal" ? " · kcal" : ""}</Text>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{label}{unit === " kcal" ? " · kcal" : ""}</Text>
                 </View>
               ) : null),
             )}
           </View>
-          {coachDiet.diet.note ? <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{coachDiet.diet.note}</Text> : null}
+          {coachDiet.diet.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{coachDiet.diet.note}</Text> : null}
         </ACard>
       )}
 
@@ -100,13 +100,13 @@ export default function AuroraNutrition() {
         <>
           {/* Calories hero */}
           <ACard style={{ marginTop: 16 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Calories</Text>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 6 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Calories</Text>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 6 }}>
               <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk }}>{Math.round(today.kcal)}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>/ {targets.kcal}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>/ {targets.kcal}</Text>
             </View>
             <Bar cur={today.kcal} target={targets.kcal} color={C.lime} />
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 10 }}>Maintenance ≈ {maint.kcal} kcal · {targets.basis}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>Maintenance ≈ {maint.kcal} kcal · {targets.basis}</Text>
           </ACard>
 
           <MacroRow label="Protein" cur={today.protein} target={targets.protein} color={C.blue} />
@@ -115,13 +115,13 @@ export default function AuroraNutrition() {
         </>
       ) : (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Today vs adaptive target</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 10, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Today vs adaptive target</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 10, lineHeight: 20 }}>
             Your targets adapt to you — add a weigh-in (in a weekly check-in) and log a few days of intake, and we&apos;ll estimate your maintenance and set goal-aware macros.
           </Text>
-          <View style={{ flexDirection: "row", gap: 16, marginTop: 14 }}>
+          <View style={{ flexDirection: "row", gap: space.lg, marginTop: 14 }}>
             {[["Today", `${Math.round(today.kcal)} kcal`], ["Protein", `${Math.round(today.protein)}g`], ["Carbs", `${Math.round(today.carbs)}g`], ["Fat", `${Math.round(today.fat)}g`]].map(([l, v]) => (
-              <View key={l}><Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{v}</Text><Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{l}</Text></View>
+              <View key={l}><Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{v}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{l}</Text></View>
             ))}
           </View>
         </ACard>
@@ -129,33 +129,33 @@ export default function AuroraNutrition() {
 
       {/* Add to today */}
       <ACard style={{ marginTop: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <AuroraIcon name="add" size={20} color={txt(C, C.violet)} />
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Add to today</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Add to today</Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
           <Cell value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} ph="kcal" />
           <Cell value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} ph="protein" />
           <Cell value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} ph="carbs" />
           <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph="fat" />
         </View>
         <APill label={saving ? "Adding…" : "Add"} onPress={add} disabled={saving} style={{ marginTop: 14 }} />
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 10, lineHeight: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>
           Manual macros (food search + barcode is a separate, blocked layer — see Capabilities).
         </Text>
       </ACard>
 
       {/* Recent */}
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Recent days</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Recent days</Text>
         <View style={{ marginTop: 8 }}>
           {recent.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Nothing logged yet.</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Nothing logged yet.</Text>
           ) : recent.map((d, i) => (
             <View key={d.date} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{d.date.slice(5)}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{Math.round(d.kcal)} kcal</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{d.date.slice(5)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{Math.round(d.kcal)} kcal</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{Math.round(d.protein)}p · {Math.round(d.carbs)}c · {Math.round(d.fat)}f</Text>
             </View>
           ))}
         </View>
@@ -180,10 +180,10 @@ function MacroRow({ label, cur, target, color }: { label: string; cur: number; t
   return (
     <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, marginTop: 12 }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{label}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text>
         <Bar cur={cur} target={target} color={color} />
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginLeft: 14 }}>{Math.round(cur)}/{target}g</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: 14 }}>{Math.round(cur)}/{target}g</Text>
     </View>
   );
 }
@@ -197,7 +197,7 @@ function Cell({ value, onChange, ph }: { value: string; onChange: (v: string) =>
       placeholder={ph}
       placeholderTextColor={C.ash}
       keyboardType="numeric"
-      style={{ flex: 1, fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 8, paddingVertical: 11, textAlign: "center" }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 8, paddingVertical: 11, textAlign: "center" }}
     />
   );
 }

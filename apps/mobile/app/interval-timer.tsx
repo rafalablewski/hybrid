@@ -9,7 +9,7 @@ import {
   type IntervalPhaseKind,
 } from "@hybrid/core";
 import { useTheme, txt } from "../lib/theme";
-import { F } from "../lib/ui";
+import { fs, space, F } from "../lib/ui";
 import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
@@ -70,15 +70,15 @@ export default function IntervalTimer() {
   return (
     <AuroraScreen scroll={false}>
       {/* header */}
-      <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+      <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <AuroraIcon name="play" size={18} color={C.ash} />
           <View>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{title}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{rounds} rounds · {workSec}s / {restSec}s</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{rounds} rounds · {workSec}s / {restSec}s</Text>
           </View>
         </View>
       </View>
@@ -91,10 +91,10 @@ export default function IntervalTimer() {
       <View style={{ alignItems: "center", marginTop: 8 }}>
         <View style={{ width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: txt(C, kindColor), opacity: 0.25 }} />
-          <Text style={{ fontFamily: F.mono, fontSize: 12, textTransform: "uppercase", letterSpacing: 2, color: txt(C, kindColor) }}>{kindLabel}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: 2, color: txt(C, kindColor) }}>{kindLabel}</Text>
           <Text style={{ fontFamily: F.black, fontSize: 56, color: C.chalk }}>{formatClock(pos.remaining)}</Text>
           {!pos.done && phase && phase.round > 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Round {phase.round}/{phase.totalRounds}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Round {phase.round}/{phase.totalRounds}</Text>
           )}
         </View>
         {/* linear progress of whole session */}
@@ -104,9 +104,9 @@ export default function IntervalTimer() {
       </View>
 
       {/* controls */}
-      <View style={{ flexDirection: "row", gap: 12, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
+      <View style={{ flexDirection: "row", gap: space.md, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
         <Pressable onPress={reset} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>↺</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>↺</Text>
         </Pressable>
         <Pressable
           onPress={() => (pos.done ? reset() : setRunning((r) => !r))}
@@ -119,11 +119,11 @@ export default function IntervalTimer() {
 
       {/* config (only before start) */}
       {editable && (
-        <View style={{ marginTop: 24, gap: 10 }}>
+        <View style={{ marginTop: 24, gap: space.ms }}>
           <Stepper label="Rounds" value={rounds} onChange={(d) => setRounds((v) => Math.max(1, Math.min(20, v + d)))} suffix="" />
           <Stepper label="Work" value={workSec} onChange={(d) => setWorkSec((v) => Math.max(5, Math.min(300, v + d * 5)))} suffix="s" step={5} />
           <Stepper label="Rest" value={restSec} onChange={(d) => setRestSec((v) => Math.max(0, Math.min(300, v + d * 5)))} suffix="s" step={5} />
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, textAlign: "center", marginTop: 4 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textAlign: "center", marginTop: 4 }}>
             Total {formatClock(total)} · 10s lead-in
           </Text>
         </View>
@@ -142,15 +142,15 @@ function Stepper({ label, value, onChange, suffix, step = 1 }: { label: string; 
   const { palette: C } = useTheme();
   const btn = (t: string, d: number) => (
     <Pressable onPress={() => onChange(d)} style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 20, color: txt(C, C.lime) }}>{t}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: txt(C, C.lime) }}>{t}</Text>
     </Pressable>
   );
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{label}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         {btn("−", -1)}
-        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
         {btn("+", 1)}
       </View>
     </View>

@@ -5,7 +5,7 @@ import {
   sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad,
   type LoggedSession,
 } from "@hybrid/core";
-import {
+import { fs, space,
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Chip,
 } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -77,12 +77,12 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
   const selAssignments = assignmentsByDay[selected] ?? [];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 16, alignItems: "start" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: space.lg, alignItems: "start" }}>
       <Card>
         {/* header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{monthLabel}</div>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>{monthLabel}</div>
+          <div style={{ display: "flex", gap: space.xs }}>
             <button onClick={() => go(-1)} style={navBtn}>‹</button>
             <button onClick={jumpToday} style={{ ...navBtn, width: "auto", padding: "0 12px" }}>Today</button>
             <button onClick={() => go(1)} style={navBtn}>›</button>
@@ -90,14 +90,14 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
         </div>
 
         {/* weekday row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs, marginBottom: 4 }}>
           {WEEKDAYS.map((d) => (
-            <Mono key={d} s={{ fontSize: 10, textAlign: "center", textTransform: "uppercase" }}>{d}</Mono>
+            <Mono key={d} s={{ fontSize: fs.nano, textAlign: "center", textTransform: "uppercase" }}>{d}</Mono>
           ))}
         </div>
 
         {/* grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs }}>
           {matrix.flat().map((cell) => {
             const day = byDay[cell.date];
             const ev = eventsByDay[cell.date];
@@ -121,7 +121,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ ...mono, fontSize: 11, color: txt(isToday ? LIME : CHALK), fontWeight: isToday ? 700 : 400 }}>
+                  <span style={{ ...mono, fontSize: fs.micro, color: txt(isToday ? LIME : CHALK), fontWeight: isToday ? 700 : 400 }}>
                     {Number(cell.date.slice(8, 10))}
                   </span>
                   <span style={{ display: "flex", gap: 3 }}>
@@ -131,7 +131,7 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
                 </div>
                 {day && (
                   <div style={{ marginTop: 4 }}>
-                    <span style={{ ...cond, fontSize: 11, fontWeight: 700, color: ON_ACCENT, background: LIME, borderRadius: 4, padding: "1px 5px" }}>
+                    <span style={{ ...cond, fontSize: fs.micro, fontWeight: 700, color: ON_ACCENT, background: LIME, borderRadius: 4, padding: "1px 5px" }}>
                       {day.count}×
                     </span>
                   </div>
@@ -140,22 +140,22 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
             );
           })}
         </div>
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }}>
           Cell shading = training load (sRPE) · <span style={{ color: txt(VIOLET) }}>●</span> assigned · <span style={{ color: txt(AMBER) }}>●</span> event
         </Mono>
       </Card>
 
       {/* day detail */}
       <Card>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
         </Mono>
 
         {selEvents.map((e) => (
           <div key={e.id} style={{ marginTop: 10 }}>
             <Chip c={AMBER}>Event</Chip>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 15, marginTop: 4 }}>{e.name}</div>
-            <Mono s={{ fontSize: 12 }}>{e.sport}</Mono>
+            <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, marginTop: 4 }}>{e.name}</div>
+            <Mono s={{ fontSize: fs.caption }}>{e.sport}</Mono>
           </div>
         ))}
 
@@ -163,11 +163,11 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
           <div key={a.id} style={{ marginTop: 10 }}>
             <Chip c={VIOLET}>Assigned</Chip>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{a.name}</div>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
               {a.status === "completed" ? (
                 <Chip c={LIME}>done</Chip>
               ) : (
-                <button onClick={() => markDone(a.id)} style={{ ...cond, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
+                <button onClick={() => markDone(a.id)} style={{ ...cond, fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
                   Mark done
                 </button>
               )}
@@ -176,18 +176,18 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
         ))}
 
         {selSessions.length === 0 && selEvents.length === 0 && selAssignments.length === 0 ? (
-          <Mono s={{ fontSize: 13, display: "block", marginTop: 12 }}>Nothing logged this day.</Mono>
+          <Mono s={{ fontSize: fs.body, display: "block", marginTop: 12 }}>Nothing logged this day.</Mono>
         ) : (
           selSessions.map((s) => (
             <div key={s.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{s.title}</div>
-              <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{s.title}</div>
+              <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
                 <Chip c={ASH}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
                 <Chip c={BLUE}>load {sessionLoad(s)}</Chip>
                 <Chip c={ASH}>{s.blocks.length} blocks</Chip>
                 {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
               </div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }}>
                 {s.blocks.map((b) => b.name).join(" · ")}
               </Mono>
             </div>
@@ -199,6 +199,6 @@ export default function Calendar({ sessions }: { sessions: LoggedSession[] }) {
 }
 
 const navBtn = {
-  ...disp, fontWeight: 800, fontSize: 16, width: 34, height: 34, borderRadius: 8,
+  ...disp, fontWeight: 800, fontSize: fs.subtitle, width: 34, height: 34, borderRadius: 8,
   border: `1px solid ${LINE}`, background: INK2, color: CHALK, cursor: "pointer",
 } as const;

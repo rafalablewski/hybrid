@@ -10,7 +10,7 @@ import { useAccountSettings } from "../../lib/account";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -64,12 +64,12 @@ export default function AuroraSettings() {
         <View style={{ width: 92, height: 92, borderRadius: 46, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="user" size={40} color={txt(C, C.lime)} />
         </View>
-        <AHeading style={{ fontSize: 20, marginTop: 14 }}>{name}</AHeading>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+        <AHeading style={{ fontSize: fs.heading, marginTop: 14 }}>{name}</AHeading>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           <Tag label={role.toUpperCase()} color={C.violet} />
           <Tag label={entitlement === "paid" ? "FULL · PAID" : "FREE"} color={entitlement === "paid" ? C.lime : C.ash} />
         </View>
-        {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
+        {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
       </View>
 
       <Section title="Profile">
@@ -81,8 +81,8 @@ export default function AuroraSettings() {
           <AField value={acct.newEmail} onChange={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} keyboard="email-address" />
           <APill label="Update email" variant="soft" disabled={acct.busy || !acct.newEmail.trim()} onPress={acct.changeEmail} />
         </Field>
-        {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: 12, color: acct.profileMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: -2 }}>{acct.profileMsg}</Text>}
-        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>Profile editing needs a real signed-in account.</Text>}
+        {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: -2 }}>{acct.profileMsg}</Text>}
+        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>Profile editing needs a real signed-in account.</Text>}
       </Section>
 
       <Section title="Preferences">
@@ -90,11 +90,11 @@ export default function AuroraSettings() {
           <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
         </Field>
         <Field icon="bell" label="Template">
-          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: -4, marginBottom: 10, lineHeight: 16 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: -4, marginBottom: 10, lineHeight: 16 }}>
             Switch the whole app between the classic look and the new rounded design.
           </Text>
           <ASegment options={TEMPLATES.map((tp) => ({ id: tp.id, label: tp.label }))} value={template} onPick={setTemplate} />
-          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: 10, lineHeight: 16 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>
             {TEMPLATES.find((tp) => tp.id === template)?.description}
           </Text>
         </Field>
@@ -109,7 +109,7 @@ export default function AuroraSettings() {
 
       <Section title="Notifications">
         <ACard style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, lineHeight: 16, marginBottom: 4 }}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 4 }}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Text>
           {ACCOUNT_NOTIF_ROWS.map((row) => (
             <ToggleRow key={row.key} C={C} title={row.title} desc={row.desc} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
           ))}
@@ -118,7 +118,7 @@ export default function AuroraSettings() {
 
       <Section title="Privacy">
         <ACard style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, lineHeight: 16, marginBottom: 4 }}>You control what you share. Saved to your account &amp; synced across devices.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 4 }}>You control what you share. Saved to your account &amp; synced across devices.</Text>
           {ACCOUNT_PRIVACY_ROWS.map((row) => (
             <ToggleRow key={row.key} C={C} title={row.title} desc={row.desc} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
           ))}
@@ -128,37 +128,37 @@ export default function AuroraSettings() {
       <Section title="Security">
         <Field icon="lock" label="Change password">
           {acct.provider && acct.provider !== "email" ? (
-            <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.chalk, lineHeight: 17 }}>You sign in with {acct.provider} — manage your password there.</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>You sign in with {acct.provider} — manage your password there.</Text>
           ) : (
             <>
               <AField value={acct.newPw} onChange={acct.setNewPw} placeholder="New password" secure icon="lock" />
               <APill label="Update password" variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} />
-              {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: 12, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
+              {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
             </>
           )}
         </Field>
         <Field icon="logout" label="Active sessions">
-          <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Sign out of every device — revokes all other sessions and ends this one.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Sign out of every device — revokes all other sessions and ends this one.</Text>
           <APill label="Sign out everywhere" variant="soft" onPress={acct.signOutEverywhere} />
         </Field>
       </Section>
 
       <Section title="Data">
         <Field icon="download" label="Export my data">
-          <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.</Text>
           {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label="Download my data (JSON)" variant="soft" onPress={acct.exportData} />}
-          {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
+          {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
         </Field>
       </Section>
 
       {/* Danger zone */}
       <ACard style={{ marginTop: 16, borderColor: `${C.red}55` }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <AuroraIcon name="logout" size={20} color={txt(C, C.red)} />
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.red) }}>{t("settings.resetTitle")}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.red) }}>{t("settings.resetTitle")}</Text>
         </View>
-        <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, marginTop: 8, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 14 }}>{t("settings.typeReset")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 8, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 14 }}>{t("settings.typeReset")}</Text>
         <TextInput
           value={confirm}
           onChangeText={setConfirm}
@@ -166,11 +166,11 @@ export default function AuroraSettings() {
           placeholderTextColor={C.ash}
           autoCapitalize="characters"
           autoCorrect={false}
-          style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, marginTop: 12 }}
+          style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, marginTop: 12 }}
         />
-        {!!error && <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
+        {!!error && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
         <Pressable onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 14 }}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: 15, color: "#fff" }}>{t("settings.eraseEverything")}</Text>}
+          {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.eraseEverything")}</Text>}
         </Pressable>
       </ACard>
 
@@ -183,7 +183,7 @@ function Tag({ label, color }: { label: string; color: string }) {
   const { palette: C } = useTheme();
   return (
     <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, color), letterSpacing: 0.5 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5 }}>{label}</Text>
     </View>
   );
 }
@@ -192,7 +192,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   const { palette: C } = useTheme();
   return (
     <View style={{ marginTop: 22 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>{title}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>{title}</Text>
       {children}
     </View>
   );
@@ -202,9 +202,9 @@ function Field({ icon, label, children }: { icon: AuroraIconName; label: string;
   const { palette: C } = useTheme();
   return (
     <ACard style={{ marginBottom: 12 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 12 }}>
         <AuroraIcon name={icon} size={20} color={C.ash} />
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{label}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text>
       </View>
       {children}
     </ACard>
@@ -215,11 +215,11 @@ function ListItem({ icon, label, sub, onPress }: { icon: AuroraIconName; label: 
   const { palette: C } = useTheme();
   return (
     <Pressable onPress={onPress}>
-      <ACard style={{ marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <ACard style={{ marginBottom: 12, flexDirection: "row", alignItems: "center", gap: space.md }}>
         <AuroraIcon name={icon} size={20} color={C.ash} />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{label}</Text>
-          {!!sub && <Text style={{ fontFamily: F.reg, fontSize: 11, color: C.ash, marginTop: 2, lineHeight: 15 }}>{sub}</Text>}
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text>
+          {!!sub && <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{sub}</Text>}
         </View>
         <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
       </ACard>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/core";
-import {
+import { fs, space,
   INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED,
   disp, cond, mono, Mono, Card, Chip,
 } from "@/lib/ui";
@@ -53,13 +53,13 @@ export default function TeamMonitor() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <Mono s={{ fontSize: 13 }}>Loading squad…</Mono>;
+  if (loading) return <Mono s={{ fontSize: fs.body }}>Loading squad…</Mono>;
 
   if (squad.length === 0)
     return (
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
         <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginBottom: 6 }}>No athletes to monitor yet</div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6 }}>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }}>
           The squad monitor is the screen you open every morning: each athlete&apos;s readiness (RAG),
           training-load ACWR, and injury-risk flag at a glance. It reads your <b>active roster</b>
           {" "}(Coach screen → accepted clients) and computes from their real sessions + check-ins.
@@ -94,7 +94,7 @@ export default function TeamMonitor() {
     <div>
       {/* summary strip */}
       {summary && (
-        <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: space.md, marginBottom: 16, flexWrap: "wrap" }}>
           <SummaryCard label="Athletes" value={summary.athletes} c={CHALK} />
           <SummaryCard label="Low readiness" value={summary.redReadiness} c={summary.redReadiness ? RED : LIME} />
           <SummaryCard label="ACWR flags" value={summary.acwrFlags} c={summary.acwrFlags ? AMBER : LIME} />
@@ -103,8 +103,8 @@ export default function TeamMonitor() {
       )}
 
       {/* auto-segment filter */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Segment</Mono>
+      <div style={{ display: "flex", gap: space.xs, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Segment</Mono>
         {SEGS.map((s) => (
           <button key={s} onClick={() => setSeg(s)} style={pill(seg === s)}>
             {s === "all" ? `All ${squad.length}` : `${SEGMENT_LABELS[s]} ${counts[s] ?? 0}`}
@@ -113,8 +113,8 @@ export default function TeamMonitor() {
       </div>
 
       {allTags.length > 0 && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Tag</Mono>
+        <div style={{ display: "flex", gap: space.xs, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Tag</Mono>
           <button onClick={() => setTag("")} style={pill(tag === "")}>All</button>
           {allTags.map((t) => (
             <button key={t} onClick={() => setTag(t)} style={pill(tag === t)}>{t}</button>
@@ -122,15 +122,15 @@ export default function TeamMonitor() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Sort by</Mono>
+      <div style={{ display: "flex", gap: space.sm, marginBottom: 12, alignItems: "center" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Sort by</Mono>
         {(["readiness", "acwr", "risk"] as const).map((k) => (
           <button key={k} onClick={() => setSort(k)} style={pill(sort === k)}>{k}</button>
         ))}
       </div>
 
       <Card style={{ overflowX: "auto", padding: 0 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: fs.body }}>
           <thead>
             <tr style={{ textAlign: "left", color: ASH }}>
               <th style={th}>Athlete</th>
@@ -149,7 +149,7 @@ export default function TeamMonitor() {
                 <td style={{ ...td, color: CHALK, fontFamily: "inherit" }}>
                   {a.name}
                   {(a.tags ?? []).length > 0 && (
-                    <span style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 3 }}>
+                    <span style={{ display: "flex", gap: space.xxs, flexWrap: "wrap", marginTop: 3 }}>
                       {a.tags!.map((t) => <Chip key={t} c={BLUE}>{t}</Chip>)}
                     </span>
                   )}
@@ -158,12 +158,12 @@ export default function TeamMonitor() {
                 <td style={tdC}><Dot c={readinessColor(a.readiness)} /> {a.readiness}</td>
                 <td style={tdC}>
                   <span style={{ color: acwrColor(a.acwrBand) }}>{a.acwr || "—"}</span>
-                  <Mono s={{ fontSize: 10, display: "block" }} c={acwrColor(a.acwrBand)}>{a.acwrBand}</Mono>
+                  <Mono s={{ fontSize: fs.nano, display: "block" }} c={acwrColor(a.acwrBand)}>{a.acwrBand}</Mono>
                 </td>
                 <td style={tdC}>{a.acute || "—"}</td>
                 <td style={tdC}>
                   <span style={{ color: riskColor(a.riskOverall) }}>{a.riskOverall}</span>
-                  {a.flagged && <Mono s={{ fontSize: 10, display: "block" }} c={RED}>{a.flagged}</Mono>}
+                  {a.flagged && <Mono s={{ fontSize: fs.nano, display: "block" }} c={RED}>{a.flagged}</Mono>}
                 </td>
                 <td style={tdC}>{a.hpi}</td>
                 <td style={tdR}>{fmtDate(a.lastSession)}</td>
@@ -173,7 +173,7 @@ export default function TeamMonitor() {
         </table>
       </Card>
 
-      <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }}>
+      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }}>
         ACWR (acute:chronic workload, 7d vs 28d-weekly) is a guide, not a verdict — read it with acute load
         and injury risk. Sweet-spot ≈ 0.8–1.3; caution 1.3–1.5; danger &gt;1.5; detraining &lt;0.8.
       </Mono>
@@ -185,7 +185,7 @@ function SummaryCard({ label, value, c }: { label: string; value: number; c: str
   return (
     <Card style={{ flex: 1, minWidth: 130 }}>
       <div style={{ ...disp, fontWeight: 800, fontSize: 30, color: c }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </Card>
   );
 }
@@ -196,13 +196,13 @@ function Dot({ c }: { c: string }) {
 
 function pill(active: boolean) {
   return {
-    ...cond, fontSize: 12, fontWeight: 700, textTransform: "uppercase" as const, padding: "5px 12px",
+    ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase" as const, padding: "5px 12px",
     borderRadius: 999, cursor: "pointer",
     border: `1px solid ${active ? LIME : LINE}`, background: active ? `${LIME}1a` : "transparent", color: active ? LIME : ASH,
   };
 }
 
-const th = { padding: "14px 16px", fontWeight: 600, textTransform: "uppercase" as const, fontSize: 10, letterSpacing: ".08em" };
+const th = { padding: "14px 16px", fontWeight: 600, textTransform: "uppercase" as const, fontSize: fs.nano, letterSpacing: ".08em" };
 const thC = { ...th, textAlign: "center" as const };
 const thR = { ...th, textAlign: "right" as const };
 const td = { padding: "12px 16px" };

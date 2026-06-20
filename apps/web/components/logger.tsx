@@ -8,7 +8,7 @@ import {
   type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
-import { INK2, LINE, CHALK, ASH, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, INK2, LINE, CHALK, ASH, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { blockBtn, uid, type EditableBlock } from "@/components/workout-blocks";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 
@@ -16,7 +16,7 @@ type Routine = { id: string; name: string; blocks: SessionBlock[] };
 
 const inputStyle = {
   ...mono,
-  fontSize: 20,
+  fontSize: fs.heading,
   fontWeight: 800,
   background: INK2,
   color: CHALK,
@@ -157,14 +157,14 @@ export default function Logger({
       {/* AI coach prescription */}
       <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
             AI Coach{sessions.length > 0 ? ` · readiness ${rx.readiness}/100` : ""}
           </Mono>
           <button onClick={loadPrescribed} style={blockBtn(VIOLET)}>
             {sessions.length > 0 ? "Use prescribed →" : "Start a session →"}
           </button>
         </div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 8 }}>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 8 }}>
           {sessions.length > 0
             ? rx.why
             : "Log a few sessions and the coach reads your real readiness, fatigue and velocity to prescribe the day. For now, tap above for a balanced starter you can edit."}
@@ -174,8 +174,8 @@ export default function Logger({
       {/* Your routines — load a saved workout to start */}
       {routines.length > 0 && (
         <Card style={{ borderLeft: `3px solid ${LIME}`, marginBottom: 16 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Your routines</Mono>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Your routines</Mono>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
             {routines.map((r) => (
               <button key={r.id} onClick={() => loadRoutine(r)} style={blockBtn(LIME)} title={r.blocks.map((b) => b.name).join(" · ")}>
                 {r.name}
@@ -188,7 +188,7 @@ export default function Logger({
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-          style={{ ...mono, fontSize: 12, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer", marginRight: 8 }}
+          style={{ ...mono, fontSize: fs.caption, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer", marginRight: 8 }}
           title="Toggle the RPE + velocity columns"
         >
           {prefs.detailed ? "Detailed ▾" : "Simple ▸"}
@@ -196,7 +196,7 @@ export default function Logger({
         {prefs.detailed && (
           <button
             onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
-            style={{ ...mono, fontSize: 12, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}
+            style={{ ...mono, fontSize: fs.caption, color: ASH, background: "none", border: `1px solid ${LINE}`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}
             title="Log effort as RPE or RIR (reps in reserve)"
           >
             {prefs.rpeAsRir ? "RIR" : "RPE"}
@@ -223,19 +223,19 @@ export default function Logger({
       />
 
       {error && (
-        <Mono s={{ fontSize: 12, display: "block", marginBottom: 10 }} c={RED}>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
           {error}
         </Mono>
       )}
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: space.ms, alignItems: "center", flexWrap: "wrap" }}>
         <button
           onClick={save}
           disabled={saving || blocks.length === 0}
           style={{
             ...disp,
             fontWeight: 800,
-            fontSize: 15,
+            fontSize: fs.note,
             background: LIME,
             color: ON_ACCENT,
             border: "none",
@@ -255,7 +255,7 @@ export default function Logger({
         >
           ★ Save as routine
         </button>
-        {routineMsg && <Mono s={{ fontSize: 12 }} c={routineMsg.startsWith("★") ? LIME : ASH}>{routineMsg}</Mono>}
+        {routineMsg && <Mono s={{ fontSize: fs.caption }} c={routineMsg.startsWith("★") ? LIME : ASH}>{routineMsg}</Mono>}
       </div>
     </div>
   );

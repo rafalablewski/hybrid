@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { buildIntervalPlan, intervalTotalSeconds, locateInterval, formatClock } from "@hybrid/core";
+import { fs, space, buildIntervalPlan, intervalTotalSeconds, locateInterval, formatClock } from "@hybrid/core";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
 
@@ -61,17 +61,17 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
   return (
     <div style={outer}>
       <div style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
           {!embedded && (
             <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
-              {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: 20 }}>←</span>}
+              {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
-          <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: "10px 14px", display: "flex", alignItems: "center", gap: space.ms }}>
             <AuroraIcon name="play" size={18} color={C("ash")} />
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Interval session</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>{rounds} rounds · {workSec}s / {restSec}s</div>
+              <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>Interval session</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rounds} rounds · {workSec}s / {restSec}s</div>
             </div>
           </div>
         </div>
@@ -82,10 +82,10 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
           <div style={{ position: "relative", width: 240, height: 240, borderRadius: "50%", border: `12px solid ${C("line")}`, display: "grid", placeItems: "center" }}>
             <div style={{ position: "absolute", inset: -12, borderRadius: "50%", border: `12px solid ${kindColor}`, opacity: 0.3 }} />
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, textTransform: "uppercase", letterSpacing: 2, color: kindColor }}>{kindLabel}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, textTransform: "uppercase", letterSpacing: 2, color: kindColor }}>{kindLabel}</div>
               <div style={{ fontWeight: 900, fontSize: 58 }}>{formatClock(pos.remaining)}</div>
               {!pos.done && phase && phase.round > 0 && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>Round {phase.round}/{phase.totalRounds}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>Round {phase.round}/{phase.totalRounds}</div>
               )}
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
         </div>
 
         <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
-          <button onClick={reset} style={{ width: 56, height: 56, borderRadius: 28, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", fontSize: 18 }}>↺</button>
+          <button onClick={reset} style={{ width: 56, height: 56, borderRadius: 28, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", fontSize: fs.title }}>↺</button>
           <button onClick={() => (pos.done ? reset() : setRunning((r) => !r))} style={{ width: 78, height: 78, borderRadius: 39, background: C("lime"), color: C("ink"), border: "none", cursor: "pointer", fontWeight: 900, fontSize: 24 }}>
             {running ? "❚❚" : pos.done ? "↺" : "▶"}
           </button>
@@ -103,11 +103,11 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
         </div>
 
         {editable && (
-          <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: space.md }}>
             <Stepper label="Rounds" value={`${rounds}×`} onMinus={() => setRounds((v) => Math.max(1, v - 1))} onPlus={() => setRounds((v) => Math.min(20, v + 1))} />
             <Stepper label="Work" value={`${workSec}s`} onMinus={() => setWorkSec((v) => Math.max(5, v - 5))} onPlus={() => setWorkSec((v) => Math.min(300, v + 5))} />
             <Stepper label="Rest" value={`${restSec}s`} onMinus={() => setRestSec((v) => Math.max(0, v - 5))} onPlus={() => setRestSec((v) => Math.min(300, v + 5))} />
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), textAlign: "center", marginTop: 2 }}>Total {formatClock(total)} · 10s lead-in</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", marginTop: 2 }}>Total {formatClock(total)} · 10s lead-in</div>
           </div>
         )}
       </div>
@@ -118,14 +118,14 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
 function Stepper({ label, value, onMinus, onPlus }: { label: string; value: string; onMinus: () => void; onPlus: () => void }) {
   const C = (v: string) => `var(--color-${v})`;
   const btn = (t: string, fn: () => void) => (
-    <button onClick={fn} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("lime"), cursor: "pointer", fontWeight: 900, fontSize: 20 }}>{t}</button>
+    <button onClick={fn} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("lime"), cursor: "pointer", fontWeight: 900, fontSize: fs.heading }}>{t}</button>
   );
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <div style={{ fontWeight: 700, fontSize: 15 }}>{label}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ fontWeight: 700, fontSize: fs.note }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: space.md }}>
         {btn("−", onMinus)}
-        <div style={{ fontWeight: 900, fontSize: 20, minWidth: 56, textAlign: "center" }}>{value}</div>
+        <div style={{ fontWeight: 900, fontSize: fs.heading, minWidth: 56, textAlign: "center" }}>{value}</div>
         {btn("+", onPlus)}
       </div>
     </div>

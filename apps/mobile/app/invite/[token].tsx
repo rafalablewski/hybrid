@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
 import { useTheme } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
 
 // Claim landing for a coach invite (QR / link / deep-link). Claims immediately
@@ -56,16 +56,16 @@ export default function InviteClaim() {
         <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} />
       ) : !session ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: 14, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: 20 }}>
             Create your free account or sign in to connect. Use the email your coach invited and you&apos;ll be linked automatically.
           </Text>
           <Pressable onPress={() => router.replace("/login")} style={{ marginTop: 20, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>Sign in / Create account</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>Sign in / Create account</Text>
           </Pressable>
         </>
       ) : state === "error" ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: 14, color: C.amber, textAlign: "center", marginTop: 12 }}>{msg}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.amber, textAlign: "center", marginTop: 12 }}>{msg}</Text>
           <Pressable onPress={() => void claim()} style={{ marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, color: C.lime }}>Try again</Text>
           </Pressable>

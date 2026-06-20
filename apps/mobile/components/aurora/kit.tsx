@@ -17,7 +17,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
@@ -272,7 +272,7 @@ export function APill({
         style,
       ]}
     >
-      <Text style={{ fontFamily: F.bold, fontSize: 16, color: fg }}>{label}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
     </Pressable>
   );
 }
@@ -301,7 +301,7 @@ export function AField({
       style={{
         flexDirection: "row",
         alignItems: "center",
-        gap: 12,
+        gap: space.md,
         backgroundColor: palette.ink2,
         borderWidth: 1,
         borderColor: palette.line,
@@ -319,7 +319,7 @@ export function AField({
         secureTextEntry={secure ? !visible : false}
         keyboardType={keyboard ?? "default"}
         autoCapitalize="none"
-        style={{ flex: 1, fontFamily: F.reg, fontSize: 15, color: palette.chalk, paddingVertical: 17 }}
+        style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: palette.chalk, paddingVertical: 17 }}
       />
       {secure && (
         <Pressable onPress={() => setVisible((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={visible ? "Hide password" : "Show password"}>
@@ -366,7 +366,7 @@ export function ASegment<T extends string>({
               backgroundColor: on ? palette.lime : "transparent",
             }}
           >
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: on ? palette.onAccent : palette.ash }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.onAccent : palette.ash }}>
               {o.label}
             </Text>
           </Pressable>
@@ -388,7 +388,7 @@ export function AHeading({ children, style }: { children: ReactNode; style?: Tex
 export function ASub({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette } = useTheme();
   return (
-    <Text style={[{ fontFamily: F.reg, fontSize: 15, color: palette.ash, lineHeight: 22 }, style]}>
+    <Text style={[{ fontFamily: F.reg, fontSize: fs.note, color: palette.ash, lineHeight: 22 }, style]}>
       {children}
     </Text>
   );

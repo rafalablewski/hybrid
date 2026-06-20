@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import {
+import { fs, space,
   colors, totalVolume, sessionVolume, bestE1rmByLift, e1rmSeries, liftNames,
   kgToUnit, fmtTonnage, fmtWeight, type LoggedSession,
 } from "@hybrid/core";
@@ -19,21 +19,21 @@ import type { RosterRow } from "@/lib/use-roster";
  */
 const C = (v: string) => `var(--color-${v})`;
 const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 };
-const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 16 };
-const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: 12 } as const;
+const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: space.lg };
+const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 /** A big rounded stat tile — accent kicker, oversized number, optional sub. */
 function AStat({ label, value, sub, accent = "chalk" }: { label: string; value: ReactNode; sub?: string; accent?: string }) {
   return (
-    <div style={{ ...card, padding: 20, display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ ...card, padding: 20, display: "flex", flexDirection: "column", gap: space.xs }}>
+      <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
         <span style={{ width: 8, height: 8, borderRadius: 4, background: C(accent) }} />
         <span style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
       </div>
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 34, lineHeight: 1, color: C(accent === "chalk" ? "chalk" : accent) }}>{value}</div>
-      {sub && <div style={{ ...mono, fontSize: 11, color: C("ash") }}>{sub}</div>}
+      {sub && <div style={{ ...mono, fontSize: fs.micro, color: C("ash") }}>{sub}</div>}
     </div>
   );
 }
@@ -42,8 +42,8 @@ function AStat({ label, value, sub, accent = "chalk" }: { label: string; value: 
 function AFrame({ title, kicker, accent = "lime", span = 2, children }: { title: string; kicker?: string; accent?: string; span?: number; children: ReactNode }) {
   return (
     <div style={{ ...card, gridColumn: `span ${span}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, color: C("chalk") }}>{title}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, gap: space.ms, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, color: C("chalk") }}>{title}</span>
         {kicker && <span style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".12em", color: C(accent) }}>{kicker}</span>}
       </div>
       {children}
@@ -54,13 +54,13 @@ function AFrame({ title, kicker, accent = "lime", span = 2, children }: { title:
 function AEmpty({ title, body }: { title: string; body: ReactNode }) {
   return (
     <div style={{ ...card, textAlign: "center", padding: 60 }}>
-      <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{title}</div>
-      <p style={{ ...mono, fontSize: 13, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>{body}</p>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.heading, color: C("chalk") }}>{title}</div>
+      <p style={{ ...mono, fontSize: fs.body, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>{body}</p>
     </div>
   );
 }
 
-const axis = { stroke: colors.ash, style: { ...mono, fontSize: 11 } } as const;
+const axis = { stroke: colors.ash, style: { ...mono, fontSize: fs.micro } } as const;
 
 /* ---------- CLIENT ---------- */
 export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[] }) {
@@ -139,7 +139,7 @@ export function AuroraCoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) 
           <BarChart data={roster} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />
             <XAxis type="number" domain={[0, 100]} {...axis} />
-            <YAxis type="category" dataKey="name" stroke={colors.ash} width={90} style={{ ...mono, fontSize: 10 }} />
+            <YAxis type="category" dataKey="name" stroke={colors.ash} width={90} style={{ ...mono, fontSize: fs.nano }} />
             <Tooltip contentStyle={chartTip} />
             <Bar dataKey="adherence" fill={colors.lime} radius={[0, 6, 6, 0]} />
           </BarChart>
@@ -205,14 +205,14 @@ export function AuroraOperatorAnalytics() {
 
       {stats.langSplit.length > 0 && (
         <AFrame title="Language split" kicker="Users by language" accent="blue" span={2}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 4 }}>
             {(() => {
               const max = Math.max(...stats.langSplit.map((x) => x.n)) || 1;
               return stats.langSplit.map((l) => (
                 <div key={l.lang}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ ...mono, fontSize: 13, color: C("chalk") }}>{l.lang}</span>
-                    <span style={{ ...mono, fontSize: 12, color: C("ash") }}>{l.n}</span>
+                    <span style={{ ...mono, fontSize: fs.body, color: C("chalk") }}>{l.lang}</span>
+                    <span style={{ ...mono, fontSize: fs.caption, color: C("ash") }}>{l.n}</span>
                   </div>
                   <div style={{ height: 6, borderRadius: 3, background: C("ink"), overflow: "hidden" }}>
                     <div style={{ width: `${(l.n / max) * 100}%`, height: "100%", background: C("blue") }} />
@@ -226,7 +226,7 @@ export function AuroraOperatorAnalytics() {
 
       {stats.totalUsers === 0 && (
         <div style={{ ...card, gridColumn: "span 4", textAlign: "center" }}>
-          <span style={{ ...mono, fontSize: 13, color: C("ash") }}>No users yet.</span>
+          <span style={{ ...mono, fontSize: fs.body, color: C("ash") }}>No users yet.</span>
         </div>
       )}
     </div>
@@ -245,7 +245,7 @@ function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
         {rows.map((r, i) => (
           <tr key={i}>
             {r.map((cell, j) => (
-              <td key={j} style={{ fontFamily: j === 0 ? "var(--font-display)" : "var(--font-mono)", fontWeight: j === 0 ? 600 : 400, fontSize: 14, color: C("chalk"), padding: "12px 0", borderBottom: `1px solid ${C("line")}` }}>{cell}</td>
+              <td key={j} style={{ fontFamily: j === 0 ? "var(--font-display)" : "var(--font-mono)", fontWeight: j === 0 ? 600 : 400, fontSize: fs.bodyLg, color: C("chalk"), padding: "12px 0", borderBottom: `1px solid ${C("line")}` }}>{cell}</td>
             ))}
           </tr>
         ))}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { LIME, ASH, CHALK, VIOLET, LINE, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, LIME, ASH, CHALK, VIOLET, LINE, disp, mono, Mono, Card } from "@/lib/ui";
 
 type Invite = { id: string; token: string; email: string | null; phone: string | null; url: string; expiresAt: string };
 
@@ -65,45 +65,45 @@ export default function CoachInvite() {
 
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Add a client</Mono>
-      <div style={{ ...disp, fontWeight: 700, fontSize: 16, marginTop: 4 }}>Invite someone who isn&apos;t on HYBRID yet</div>
-      <Mono s={{ fontSize: 12, display: "block", marginTop: 4, lineHeight: 1.6 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Add a client</Mono>
+      <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 4 }}>Invite someone who isn&apos;t on HYBRID yet</div>
+      <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.6 }} c={ASH}>
         Share a link, show the QR, or enter their email. They get the free app and see everything you assign (read-only) — connected to you automatically.
       </Mono>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginTop: 14 }}>
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client email (optional)" style={input} />
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="phone (optional)" style={input} />
         <button onClick={create} disabled={busy} style={cta(busy)}>{busy ? "Generating…" : "Generate invite"}</button>
       </div>
 
-      {note && <Mono s={{ fontSize: 12, display: "block", marginTop: 10 }} c={LIME}>{note}</Mono>}
+      {note && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={LIME}>{note}</Mono>}
 
       {created && (
         <div style={{ marginTop: 16, display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={created.qr} alt="Invite QR code" width={140} height={140} style={{ borderRadius: 12, background: "#fff", padding: 8 }} />
           <div style={{ flex: 1, minWidth: 220 }}>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Scan or share this link</Mono>
-            <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Scan or share this link</Mono>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 6, flexWrap: "wrap" }}>
               <input readOnly value={created.url} style={{ ...input, flex: 1, minWidth: 200 }} onFocus={(e) => e.currentTarget.select()} />
               <button onClick={() => copy(created.url)} style={cta(false)}>Copy</button>
             </div>
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>Expires in 30 days · single use.</Mono>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>Expires in 30 days · single use.</Mono>
           </div>
         </div>
       )}
 
       {invites.length > 0 && (
         <div style={{ marginTop: 18 }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Pending invites ({invites.length})</Mono>
-          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Pending invites ({invites.length})</Mono>
+          <div style={{ display: "grid", gap: space.xs, marginTop: 8 }}>
             {invites.map((i) => (
-              <div key={i.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderTop: `1px solid ${LINE}` }}>
-                <div style={{ ...mono, fontSize: 12, color: CHALK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div key={i.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: "8px 0", borderTop: `1px solid ${LINE}` }}>
+                <div style={{ ...mono, fontSize: fs.caption, color: CHALK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {i.email || i.phone || "link / QR invite"}
                 </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
                   <button onClick={() => copy(i.url)} style={ghost(LIME)}>Copy link</button>
                   <button onClick={() => revoke(i.token)} style={ghost(ASH)}>Revoke</button>
                 </div>
@@ -114,7 +114,7 @@ export default function CoachInvite() {
       )}
 
       {unavailable && (
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 12 }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 12 }} c={VIOLET}>
           Invites aren&apos;t enabled yet — run reference/sql-coach-invites.sql in Supabase.
         </Mono>
       )}
@@ -124,7 +124,7 @@ export default function CoachInvite() {
 
 const input: React.CSSProperties = {
   ...mono,
-  fontSize: 13,
+  fontSize: fs.body,
   color: CHALK,
   background: "var(--color-ink)",
   border: `1px solid ${LINE}`,
@@ -137,7 +137,7 @@ const input: React.CSSProperties = {
 function cta(disabled: boolean): React.CSSProperties {
   return {
     ...mono,
-    fontSize: 13,
+    fontSize: fs.body,
     fontWeight: 700,
     color: "#0c0d0c",
     background: LIME,
@@ -150,5 +150,5 @@ function cta(disabled: boolean): React.CSSProperties {
 }
 
 function ghost(color: string): React.CSSProperties {
-  return { ...mono, fontSize: 12, color, background: "none", border: "none", cursor: "pointer" };
+  return { ...mono, fontSize: fs.caption, color, background: "none", border: "none", cursor: "pointer" };
 }

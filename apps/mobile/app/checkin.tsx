@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Chip, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Chip, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraCheckin from "../components/aurora/checkin";
@@ -69,7 +69,7 @@ function ClassicCheckin() {
     <Screen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Daily check-in</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← back</Text>
       </View>
 
       <Card style={{ marginTop: 10 }}>
@@ -79,8 +79,8 @@ function ClassicCheckin() {
         </Mono>
         {RATINGS.map((r) => (
           <View key={r.key} style={{ marginTop: 12 }}>
-            <Mono color={C.chalk} style={{ fontSize: 12 }}>{r.label}</Mono>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+            <Mono color={C.chalk} style={{ fontSize: fs.caption }}>{r.label}</Mono>
+            <View style={{ flexDirection: "row", gap: space.sm, marginTop: 6 }}>
               {[1, 2, 3, 4, 5].map((n) => {
                 const sel = form[r.key] === n;
                 return (
@@ -96,7 +96,7 @@ function ClassicCheckin() {
             </View>
           </View>
         ))}
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14 }}>
           <Field value={form.bodyMassKg} onChange={(v) => setForm((s) => ({ ...s, bodyMassKg: v }))} ph="weight kg" />
           <Field value={form.adherencePct} onChange={(v) => setForm((s) => ({ ...s, adherencePct: v }))} ph="adherence %" />
         </View>
@@ -106,7 +106,7 @@ function ClassicCheckin() {
           placeholder="How did the week go? Anything your coach should know…"
           placeholderTextColor={C.ash}
           multiline
-          style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 70, textAlignVertical: "top" }}
+          style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 70, textAlignVertical: "top" }}
         />
         <Pressable
           onPress={() => paid && setForm((s) => ({ ...s, sharedWithCoach: !s.sharedWithCoach }))}
@@ -114,13 +114,13 @@ function ClassicCheckin() {
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingVertical: 11, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.violet : C.line, backgroundColor: form.sharedWithCoach && paid ? `${C.violet}1a` : "transparent", opacity: paid ? 1 : 0.6 }}
         >
           <View style={{ flex: 1, paddingRight: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>{paid ? "Share with coach" : "🔒 Share with coach"}</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{paid ? "Share with coach" : "🔒 Share with coach"}</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>
               {paid ? "Send this check-in to your coach" : "Full plan — share check-ins with your coach"}
             </Mono>
           </View>
           <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.violet : C.line, backgroundColor: form.sharedWithCoach && paid ? C.violet : "transparent" }}>
-            {form.sharedWithCoach && paid ? <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.ink }}>✓</Text> : null}
+            {form.sharedWithCoach && paid ? <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.ink }}>✓</Text> : null}
           </View>
         </Pressable>
         <View style={{ marginTop: 12 }}>
@@ -135,13 +135,13 @@ function ClassicCheckin() {
         history.map((c) => (
           <Card key={c.id}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
                 <Mono color={C.chalk}>{new Date(c.weekOf).toLocaleDateString()}</Mono>
                 {c.sharedWithCoach ? <Chip color={C.violet}>shared</Chip> : null}
               </View>
               <Mono>{c.adherencePct != null ? `${c.adherencePct}% adherence` : ""}</Mono>
             </View>
-            <Mono style={{ marginTop: 6, fontSize: 12 }}>
+            <Mono style={{ marginTop: 6, fontSize: fs.caption }}>
               energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}
               {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
             </Mono>
@@ -168,7 +168,7 @@ function Field({ value, onChange, ph }: { value: string; onChange: (v: string) =
       placeholder={ph}
       placeholderTextColor={C.ash}
       keyboardType="numeric"
-      style={{ flex: 1, fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 9 }}
     />
   );
 }

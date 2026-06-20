@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip, Select } from "@/lib/ui";
 import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 
@@ -83,24 +83,24 @@ export default function Talent() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: space.lg }}>
       <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
           Talent Graph · benchmarks & discovery
         </Mono>
-        <Mono s={{ fontSize: 13, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
           Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real
           talent from early physical maturity. Opt in to be discoverable — the talent market.
         </Mono>
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 6 }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
           Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}
         </Mono>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Your profile</Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Your profile</Mono>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.sm, marginTop: 12 }}>
             <Select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
               {SPORTS.map((s) => <option key={s}>{s}</option>)}
             </Select>
@@ -113,17 +113,17 @@ export default function Talent() {
             <input value={form.vo2} onChange={(e) => setForm({ ...form, vo2: e.target.value })} placeholder="VO₂ proxy" inputMode="decimal" style={input} />
             <input value={form.durability} onChange={(e) => setForm({ ...form, durability: e.target.value })} placeholder="Durability" inputMode="decimal" style={input} />
           </div>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10, cursor: "pointer" }}>
+          <label style={{ display: "flex", gap: space.sm, alignItems: "center", marginTop: 10, cursor: "pointer" }}>
             <input type="checkbox" checked={form.visibility === "discoverable"} onChange={(e) => setForm({ ...form, visibility: e.target.checked ? "discoverable" : "private" })} />
-            <Mono s={{ fontSize: 12 }} c={form.visibility === "discoverable" ? LIME : ASH}>Discoverable by clubs &amp; federations</Mono>
+            <Mono s={{ fontSize: fs.caption }} c={form.visibility === "discoverable" ? LIME : ASH}>Discoverable by clubs &amp; federations</Mono>
           </label>
           {profile?.visibility === "discoverable" && profile?.moderationStatus === "pending" && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={AMBER}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={AMBER}>
               ⏳ Pending review — your profile appears in discovery once a moderator approves it.
             </Mono>
           )}
           {profile?.moderationStatus === "rejected" && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={ASH}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={ASH}>
               This profile was not approved for discovery. Edit and re-save to request another review.
             </Mono>
           )}
@@ -131,25 +131,25 @@ export default function Talent() {
         </Card>
 
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Your benchmarks</Mono>
-          {!report && <Mono s={{ fontSize: 13, display: "block", marginTop: 12 }}>Save your profile to see percentiles.</Mono>}
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Your benchmarks</Mono>
+          {!report && <Mono s={{ fontSize: fs.body, display: "block", marginTop: 12 }}>Save your profile to see percentiles.</Mono>}
           {report && (
             <>
-              <div style={{ display: "flex", gap: 8, margin: "10px 0 14px" }}>
+              <div style={{ display: "flex", gap: space.sm, margin: "10px 0 14px" }}>
                 <Chip c={pctColor(report.overall)}>overall {report.overall}th</Chip>
                 <Chip c={pctColor(report.potential)}>potential {report.potential}th</Chip>
               </div>
               {report.benchmarks.map((b) => (
                 <div key={b.metric} style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <Mono s={{ fontSize: 12 }} c={CHALK}>{METRIC_LABEL[b.metric]}</Mono>
-                    <Mono s={{ fontSize: 11 }} c={ASH}>{b.value} · cohort {b.cohortMean}</Mono>
+                    <Mono s={{ fontSize: fs.caption }} c={CHALK}>{METRIC_LABEL[b.metric]}</Mono>
+                    <Mono s={{ fontSize: fs.micro }} c={ASH}>{b.value} · cohort {b.cohortMean}</Mono>
                   </div>
                   <div style={{ position: "relative", height: 8, borderRadius: 4, background: INK2, marginTop: 4, overflow: "hidden" }}>
                     <div style={{ width: `${b.potentialPercentile}%`, height: "100%", background: `${VIOLET}55`, position: "absolute" }} />
                     <div style={{ width: `${b.percentile}%`, height: "100%", background: pctColor(b.percentile), position: "absolute" }} />
                   </div>
-                  <Mono s={{ fontSize: 10 }} c={ASH}>{b.percentile}th{b.potentialPercentile > b.percentile ? ` · ${b.potentialPercentile}th potential` : ""}</Mono>
+                  <Mono s={{ fontSize: fs.nano }} c={ASH}>{b.percentile}th{b.potentialPercentile > b.percentile ? ` · ${b.potentialPercentile}th potential` : ""}</Mono>
                 </div>
               ))}
             </>
@@ -158,8 +158,8 @@ export default function Talent() {
       </div>
 
       <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Discover talent</Mono>
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Discover talent</Mono>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           <Select value={q.sport} onChange={(e) => setQ({ ...q, sport: e.target.value })}>
             <option value="">Any sport</option>
             {SPORTS.map((s) => <option key={s}>{s}</option>)}
@@ -168,24 +168,24 @@ export default function Talent() {
             {BENCHMARK_METRICS.map((m) => <option key={m} value={m}>{METRIC_LABEL[m]}</option>)}
           </Select>
           <input value={q.minPct} onChange={(e) => setQ({ ...q, minPct: e.target.value })} placeholder="min percentile" inputMode="numeric" style={{ ...input, width: 120 }} />
-          <label style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
+          <label style={{ display: "flex", gap: space.xs, alignItems: "center", cursor: "pointer" }}>
             <input type="checkbox" checked={q.byPotential} onChange={(e) => setQ({ ...q, byPotential: e.target.checked })} />
-            <Mono s={{ fontSize: 12 }}>by potential</Mono>
+            <Mono s={{ fontSize: fs.caption }}>by potential</Mono>
           </label>
           <button onClick={search} style={btn}>Search</button>
         </div>
         <div style={{ marginTop: 14 }}>
-          {results.length === 0 && <Mono s={{ fontSize: 13 }}>No discoverable athletes match yet.</Mono>}
+          {results.length === 0 && <Mono s={{ fontSize: fs.body }}>No discoverable athletes match yet.</Mono>}
           {results.map((r, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
-              <Mono s={{ fontSize: 13 }} c={CHALK}>{r.name} · {r.sport} · {r.sex}{r.age}</Mono>
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <Mono s={{ fontSize: fs.body }} c={CHALK}>{r.name} · {r.sport} · {r.sex}{r.age}</Mono>
+              <div style={{ display: "flex", gap: space.xs, alignItems: "center" }}>
                 <Chip c={pctColor(r.percentile)}>{r.percentile}th</Chip>
                 {r.potential > r.percentile && <Chip c={VIOLET}>{r.potential}th pot.</Chip>}
                 <button
                   onClick={() => flagProfile(r.id)}
                   title="Report this profile"
-                  style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: 14, padding: "2px 4px" }}
+                  style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: fs.bodyLg, padding: "2px 4px" }}
                 >
                   ⚑
                 </button>
@@ -198,5 +198,5 @@ export default function Talent() {
   );
 }
 
-const input: React.CSSProperties = { ...mono, fontSize: 13, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}` };
-const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" };
+const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}` };
+const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" };

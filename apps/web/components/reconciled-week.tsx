@@ -20,7 +20,7 @@ import {
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
 import { useTemplate } from "@/lib/use-template";
-import { LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
 
 /**
  * The reconciled week — the macrocycle phase arbitrates the daily route + sport
@@ -160,10 +160,10 @@ export default function ReconciledWeek({
       style={{ borderLeft: `3px solid ${VIOLET}`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
           This week · {reconciled.phase.label} · week {reconciled.phase.week}
         </Mono>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
           <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
             {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
           </Chip>
@@ -176,22 +176,22 @@ export default function ReconciledWeek({
           )}
         </div>
       </div>
-      {scheduled && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
+      {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
       <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
         <Metric label="Intensity" value={`${reconciled.intensity}`} c={CHALK} />
         <Metric label="Volume" value={`${reconciled.volume}`} c={CHALK} />
         <Metric label="Load ×" value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
         <Metric label="Volume ×" value={`${reconciled.volumeFactor.toFixed(2)}`} c={VIOLET} />
       </div>
-      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
         {reconciled.blocks.map((b, i) => (
           <div
             key={`${b.name}-${i}`}
             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderTop: `1px solid ${LINE}` }}
           >
             <div>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{b.name}</div>
-              <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }} c={b.source === "sport" ? AMBER : ASH}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{b.name}</div>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em" }} c={b.source === "sport" ? AMBER : ASH}>
                 {b.source === "sport" ? `sport · ${b.demand ?? ""}` : b.kind === "conditioning" ? "conditioning" : "primary lift"}
               </Mono>
             </div>
@@ -199,9 +199,9 @@ export default function ReconciledWeek({
           </div>
         ))}
       </div>
-      <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 12 }} c={CHALK}>{reconciled.why}</Mono>
+      <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 12 }} c={CHALK}>{reconciled.why}</Mono>
       {reconciled.dropped.length > 0 && (
-        <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
           Dropped: {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" · ")}
         </Mono>
       )}
@@ -213,7 +213,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   return (
     <div>
       <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
 }
@@ -221,7 +221,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 function cta(disabled: boolean, aurora = false) {
   return {
     ...cond,
-    fontSize: 13,
+    fontSize: fs.body,
     fontWeight: 800,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
