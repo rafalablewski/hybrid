@@ -57,6 +57,11 @@ export default function TabsLayout() {
         <Tabs.Screen name="history" options={{ title: t("nav.history"), tabBarIcon: icon("≣", aurora, "calendar") }} />
         <Tabs.Screen name="more" options={{ title: t("nav.more"), tabBarIcon: icon("⋯", aurora, "settings") }} />
 
+        {/* "You" (profile) — Aurora surfaces it as the 5th nav item via the global
+            pill bar (router-driven, ignores href); classic keeps it reachable but
+            hidden from its 5-tab bar to avoid clutter. */}
+        <Tabs.Screen name="you" options={{ href: aurora ? undefined : null }} />
+
         {/* Reachable from More / deep links, hidden from the bar to cut clutter. */}
         <Tabs.Screen name="plans" options={{ href: null }} />
         <Tabs.Screen name="sport" options={{ href: null }} />

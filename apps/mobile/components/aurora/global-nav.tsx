@@ -7,19 +7,24 @@ import { usePersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
 import { useSession } from "../../lib/session";
 import { useTemplate } from "../../lib/template";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
-// The five funnel destinations, mirroring the uploaded design's bottom nav —
+// The bottom nav: Today · History · [Train FAB] · More · You. Train is the
+// elevated centre action (a raised lime FAB that punches up through the bar);
+// Cockpit is no longer on the bar (it stays reachable from the More hub). Side
 // glyphs are design-kit line icons only (no custom-drawn marks).
-const TABS: { id: string; glyph: AuroraIconName; label: string; href: Href; seg: string }[] = [
+type Side = { id: string; glyph: AuroraIconName; label: string; href: Href; seg: string };
+const LEFT: Side[] = [
   { id: "today", glyph: "village", label: "Today", href: "/(tabs)", seg: "index" },
-  { id: "cockpit", glyph: "user-circle", label: "Cockpit", href: "/(tabs)/cockpit", seg: "cockpit" },
-  { id: "log", glyph: "list-add", label: "Train", href: "/(tabs)/log", seg: "log" },
   { id: "history", glyph: "copy", label: "History", href: "/(tabs)/history", seg: "history" },
-  { id: "more", glyph: "settings", label: "More", href: "/(tabs)/more", seg: "more" },
 ];
+const RIGHT: Side[] = [
+  { id: "more", glyph: "settings", label: "More", href: "/(tabs)/more", seg: "more" },
+  { id: "you", glyph: "user-circle", label: "You", href: "/(tabs)/you", seg: "you" },
+];
+const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 
 // Routes that should NOT show the bar: auth/funnel + the focused live workout
 // (accidental nav mid-set loses context). Everything else gets it.
@@ -52,8 +57,9 @@ export default function AuroraGlobalNav() {
   const inTabs = top === "(tabs)";
   const activeSeg = inTabs ? (segments[1] ?? "index") : null;
 
-  const showCockpit = navVisibleTo(persona, "cockpit", access);
-  const tabs = TABS.filter((t) => t.id !== "cockpit" || showCockpit);
+  // Cockpit was removed from the bar (it lives under the More hub now); this gate
+  // is kept referenced so the access/persona import stays meaningful.
+  void navVisibleTo(persona, "cockpit", access);
 
   // Liquid-glass pill: a frosted BlurView lets the screen fizz through the bar —
   // but LIGHTER than the classic GlassCard (no grain/sheen, a more opaque tint
@@ -63,6 +69,31 @@ export default function AuroraGlobalNav() {
   const film = light ? "rgba(243,244,239,0.62)" : "rgba(20,22,20,0.55)";
   const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.16)";
   const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.12)";
+  const trainFocused = activeSeg === TRAIN.seg;
+  const SideItem = ({ tab }: { tab: Side }) => {
+    const focused = activeSeg === tab.seg;
+    return (
+      <Pressable
+        key={tab.id}
+        onPress={() => { if (!focused) router.navigate(tab.href); }}
+        accessibilityRole="button"
+        accessibilityState={{ selected: focused }}
+        accessibilityLabel={tab.label}
+        hitSlop={6}
+        style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}
+      >
+        {/* A bare icon left "More" reading as a Settings cog. The label under
+            every glyph names the destination so the bar is self-explanatory. */}
+        <View style={{ width: 44, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
+          <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
+        </View>
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
+          {tab.label}
+        </Text>
+      </Pressable>
+    );
+  };
+
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: Math.max(insets.bottom, 12), paddingHorizontal: 18, alignItems: "center" }}>
       <View
@@ -77,6 +108,8 @@ export default function AuroraGlobalNav() {
           elevation: 12,
         }}
       >
+      {/* The frosted pill itself (clips the blur to the radius). The four side
+          items sit either side of a centre gap reserved for the elevated FAB. */}
       <View
         style={{
           flexDirection: "row",
@@ -93,30 +126,53 @@ export default function AuroraGlobalNav() {
         <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
         <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {tabs.map((tab) => {
-          const focused = activeSeg === tab.seg;
-          return (
-            <Pressable
-              key={tab.id}
-              onPress={() => { if (!focused) router.navigate(tab.href); }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: focused }}
-              accessibilityLabel={tab.label}
-              hitSlop={6}
-              style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}
-            >
-              {/* A bare icon left "More" reading as a Settings cog. The label
-                  under every glyph names the destination (incl. "More") so the
-                  bar is self-explanatory and the active tab is unmistakable. */}
-              <View style={{ width: 44, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
-                <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
-              </View>
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {LEFT.map((tab) => <SideItem key={tab.id} tab={tab} />)}
+        {/* centre gap — the raised Train FAB overlays this slot */}
+        <View style={{ width: 64 }} />
+        {RIGHT.map((tab) => <SideItem key={tab.id} tab={tab} />)}
+      </View>
+
+      {/* ELEVATED TRAIN FAB — a larger lime circle raised above the bar, with a
+          thick ink ring so it punches cleanly through, and a soft lime glow.
+          Rendered in the OUTER (non-clipped) wrapper so it can overflow upward. */}
+      <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, alignItems: "center" }}>
+        <Pressable
+          onPress={() => { if (!trainFocused) router.navigate(TRAIN.href); }}
+          accessibilityRole="button"
+          accessibilityState={{ selected: trainFocused }}
+          accessibilityLabel="Train"
+          hitSlop={8}
+          style={{ alignItems: "center", transform: [{ translateY: -22 }] }}
+        >
+          <View
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: C.lime,
+              borderWidth: 4,
+              borderColor: C.ink,
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: C.lime,
+              shadowOpacity: 0.55,
+              shadowRadius: 14,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 14,
+            }}
+          >
+            {/* Dumbbell — two plate stacks + a connecting handle, drawn from Views
+                (no SVG dep, matching the icon approach). */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
+              <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: C.ink, marginLeft: 1.5 }} />
+              <View style={{ width: 11, height: 4, backgroundColor: C.ink }} />
+              <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: C.ink, marginRight: 1.5 }} />
+              <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
+            </View>
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, color: txt(C, C.lime), marginTop: 3 }}>Train</Text>
+        </Pressable>
       </View>
       </View>
     </View>
