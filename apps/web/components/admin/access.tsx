@@ -45,7 +45,7 @@ function RoleModel() {
         Three roles, each scoped. Access is enforced server-side by <i>relationship</i>, not the role
         label alone.
       </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12, marginBottom: 14 }}>
         {ROLE_MODEL.map(([n, c, d]) => (
           <Card key={n} style={{ borderLeft: `3px solid ${c}` }}>
             <div style={{ ...disp, fontWeight: 800, fontSize: 16, color: txt(c) }}>{n}</div>
@@ -57,7 +57,8 @@ function RoleModel() {
         <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={ASH}>
           Permission matrix
         </Mono>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
@@ -78,6 +79,7 @@ function RoleModel() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

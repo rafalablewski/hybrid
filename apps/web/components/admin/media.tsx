@@ -201,7 +201,7 @@ export default function AdminMedia() {
         </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
         {list?.map((a) => (
           <Card key={a.id} style={{ padding: 0, overflow: "hidden", borderLeft: `3px solid ${STATUS_COLOR[a.status] ?? ASH}` }}>
             <div style={{ aspectRatio: "16 / 10", background: INK, display: "grid", placeItems: "center", overflow: "hidden" }}>

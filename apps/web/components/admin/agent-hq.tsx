@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 
 type AgentLite = {
@@ -122,7 +123,7 @@ export default function AgentHQ() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 18, borderBottom: `1px solid ${LINE}` }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 18, borderBottom: `1px solid ${LINE}`, overflowX: "auto" }}>
         {TABS.map((t) => {
           const badge = t.id === "inbox" ? data?.stats.attention ?? 0 : t.id === "approvals" ? data?.stats.pendingApprovals ?? 0 : 0;
           return (
@@ -140,6 +141,8 @@ export default function AgentHQ() {
                 color: txt(tab === t.id ? CHALK : ASH),
                 borderBottom: `2px solid ${tab === t.id ? AMBER : "transparent"}`,
                 marginBottom: -1,
+                flexShrink: 0,
+                whiteSpace: "nowrap",
               }}
             >
               {t.label}
@@ -149,7 +152,7 @@ export default function AgentHQ() {
             </button>
           );
         })}
-        <button onClick={load} style={{ ...mono, marginLeft: "auto", fontSize: 12, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer" }}>
+        <button onClick={load} style={{ ...mono, marginLeft: "auto", fontSize: 12, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}>
           ↻ refresh
         </button>
       </div>
@@ -167,6 +170,7 @@ export default function AgentHQ() {
 // ---- Command center ------------------------------------------------------
 
 function Command({ data, err }: { data: Overview | null; err?: string | null }) {
+  const isMobile = useIsMobile();
   if (err) return <Mono s={{ display: "block", padding: 20 }} c={RED}>{err}</Mono>;
   if (!data) return <Mono s={{ display: "block", padding: 20 }} c={ASH}>Loading the operations center…</Mono>;
   const { stats, agents, trend, recent, upcoming } = data;
@@ -183,7 +187,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
         {stats.attention > 0 && <Stat label="Needs attention" value={stats.attention} sub="see Inbox" c={RED} />}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: 16, alignItems: "start" }}>
         {/* org chart */}
         <Card>
           <SectionHead title="Org chart" kicker="the executive team" />
@@ -210,7 +214,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, alignItems: "start" }}>
         {/* recent activity feed */}
         <Card>
           <SectionHead title="Recent activity" kicker="latest runs across the org" />
@@ -258,7 +262,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
         <DigestCard />
         <MonthlyCostCard />
       </div>
@@ -325,6 +329,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
 // ---- Work ----------------------------------------------------------------
 
 function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
+  const isMobile = useIsMobile();
   const [agentId, setAgentId] = useState("");
   const [task, setTask] = useState("");
   const [busy, setBusy] = useState(false);
@@ -438,7 +443,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
       </Card>
 
       {/* board */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, alignItems: "start" }}>
         <Card>
           <SectionHead title="Queued" kicker="scheduled, waiting to fire" />
           {!data || data.upcoming.length === 0 ? (
@@ -481,7 +486,7 @@ function Scorecards({ data, onChange }: { data: Overview | null; onChange: () =>
   if (!data) return <Mono s={{ display: "block", padding: 20 }} c={ASH}>Loading scorecards…</Mono>;
   if (data.scorecards.length === 0) return <Empty>No agents yet — create your team in “AI agents”.</Empty>;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 16 }}>
       {data.scorecards.map((s) => <ScorecardCard key={s.id} s={s} onChange={onChange} />)}
     </div>
   );

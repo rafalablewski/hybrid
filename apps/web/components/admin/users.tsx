@@ -106,7 +106,8 @@ export default function AdminUsers() {
       </div>
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["User", "Role", "Lang", "Sessions", "Joined", ""].map((h, i) => (
@@ -165,6 +166,7 @@ export default function AdminUsers() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* pagination */}

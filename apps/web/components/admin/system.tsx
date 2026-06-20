@@ -23,7 +23,7 @@ export default function AdminSystem() {
   if (!s) return <Card style={{ textAlign: "center", padding: 60 }}><Mono>Loading…</Mono></Card>;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 16 }}>
       {/* health */}
       <Card style={{ borderLeft: `3px solid ${s.db.ok ? LIME : RED}` }}>
         <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={s.db.ok ? LIME : RED}>

@@ -15,6 +15,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
 type RunStep = { agent: string; role: string; task: string; output: string };
@@ -52,6 +53,7 @@ type Schedule = {
 const STATUS_COLOR: Record<AgentStatus, string> = { active: LIME, paused: AMBER, draft: ASH };
 
 export default function AdminAgents() {
+  const isMobile = useIsMobile();
   const [agents, setAgents] = useState<AgentDefinition[] | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
   const [unavailable, setUnavailable] = useState(false);
@@ -387,7 +389,7 @@ export default function AdminAgents() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 340px) 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(260px, 340px) 1fr", gap: 16, alignItems: "start" }}>
         {/* ---- roster ---- */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {agents?.map((a) => (
@@ -451,7 +453,7 @@ export default function AdminAgents() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
               <Field label="Name">
                 <input style={input} value={draft.name} onChange={(e) => set("name", e.target.value)} />
               </Field>
@@ -540,7 +542,7 @@ export default function AdminAgents() {
 
             {/* ---- spend controls ---- */}
             <Section title="Spend controls" hint="0 = off">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                 <Field label="Approval threshold ($)" hint="hold for a 2nd operator when est. run cost ≥ this">
                   <input
                     style={input}
@@ -669,9 +671,9 @@ export default function AdminAgents() {
                   </div>
                 ))}
 
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <input
-                    style={input}
+                    style={{ ...input, flex: "1 1 200px", width: "auto" }}
                     placeholder="Standing task, e.g. Daily ops status across the team."
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
@@ -832,21 +834,21 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       {items.map((k, i) => (
-        <div key={i} style={{ display: "flex", gap: 6 }}>
+        <div key={i} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <input
-            style={{ ...input, flex: "0 0 32%" }}
+            style={{ ...input, flex: "1 1 120px", width: "auto" }}
             placeholder="metric"
             value={k.metric}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, metric: e.target.value } : x)))}
           />
           <input
-            style={input}
+            style={{ ...input, flex: "2 1 120px", width: "auto" }}
             placeholder="target (text)"
             value={k.target}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, target: e.target.value } : x)))}
           />
           <input
-            style={{ ...input, flex: "0 0 96px" }}
+            style={{ ...input, flex: "0 1 96px" }}
             type="number"
             placeholder="# target"
             title="Optional numeric target for the scorecard"

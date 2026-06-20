@@ -53,6 +53,7 @@ import {
   ChartFrame,
   txt,
 } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 const STREAM_COLOR: Record<RevenueStreamId, string> = {
   b2c: LIME,
@@ -82,6 +83,7 @@ const band = (v: number, great: number, ok: number, higherBetter = true) => {
 };
 
 export default function AdminFinancials() {
+  const isMobile = useIsMobile();
   const [seed, setSeed] = useState<{ totalUsers: number; coaches: number } | null>(null);
   const [agentCost, setAgentCost] = useState<{ spend: number; runs: number } | null>(null);
   const [seedErr, setSeedErr] = useState(false);
@@ -161,7 +163,7 @@ export default function AdminFinancials() {
       {showGlossary && <Glossary />}
 
       {/* ---- headline ---- */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 16 }}>
         <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} sub={`ARR ${usdFull(r.arr)}`} c={LIME} />
         <Stat
           label="Gross margin"
@@ -240,7 +242,7 @@ export default function AdminFinancials() {
           expects. The <span style={{ color: txt(LIME) }}>≈ USD</span> figure is what we keep before that
           market&apos;s tax + Stripe fee, so two markets at the same headline can net very differently.
         </Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
           {MARKET_PRICING.map((m) => (
             <MarketCard key={m.id} m={m} />
           ))}
@@ -273,7 +275,7 @@ export default function AdminFinancials() {
             </Mono>
           </Card>
         )}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
           {COST_DRIVERS.map((c) => {
             const live =
               c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "support" ? r.cogs.support : c.id === "fixed" ? r.cogs.fixed : null;
@@ -311,7 +313,7 @@ export default function AdminFinancials() {
               : "Loading live counts…"
         }
       >
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.1fr) minmax(0,1fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1.1fr) minmax(0,1fr)", gap: 16 }}>
           {/* inputs */}
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -426,7 +428,7 @@ export default function AdminFinancials() {
           ARPU, contribution margin, churn and CAC. The bar on each metric is{" "}
           <span style={{ color: txt(LIME) }}>green</span> when it clears the healthy benchmark.
         </Mono>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>
           <SegmentCard seg={r.segments.b2c} color={LIME} />
           <SegmentCard seg={r.segments.coach} color={VIOLET} />
         </div>
@@ -434,7 +436,7 @@ export default function AdminFinancials() {
 
       {/* ---- SaaS health scorecard ---- */}
       <Section title="SaaS health scorecard" kicker="The efficiency ratios investors read first">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
           <Indicator
             label="Rule of 40"
             value={Math.round(h.ruleOf40).toString()}
@@ -478,7 +480,7 @@ export default function AdminFinancials() {
             says="Capital efficiency of growth. <1× great, >2× inefficient."
           />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12, marginTop: 12 }}>
           <Indicator
             label="Runway"
             value={h.runwayMonths === Infinity ? "∞" : `${Math.floor(h.runwayMonths)} mo`}
@@ -505,7 +507,7 @@ export default function AdminFinancials() {
 
       {/* ---- 12-month projection ---- */}
       <Section title="12-month forecast" kicker="MRR trajectory + cumulative cash">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12, marginBottom: 14 }}>
           <Stat label="MRR in 12 mo" value={usdFull(ps.endingMrr)} sub={`ARR ${usdFull(ps.endingArr)}`} c={LIME} />
           <Stat
             label="Cash in 12 mo"
@@ -703,7 +705,8 @@ function PlanMatrix() {
   // purely from the previous row (no render-phase mutation).
   return (
     <Card>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+      <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "8px 6px", borderBottom: `1px solid ${LINE}` }}>
@@ -741,6 +744,7 @@ function PlanMatrix() {
           })}
         </tbody>
       </table>
+      </div>
       <Mono s={{ fontSize: 11, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
         {PLAN_COLUMNS.map((c) => `${c.label}: ${c.who}`).join(" · ")}
       </Mono>
@@ -776,7 +780,7 @@ function Glossary() {
       <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
         Metric glossary
       </Mono>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12 }}>
         {METRIC_GUIDE.map((m) => (
           <div key={m.id} style={{ borderLeft: `2px solid ${LINE}`, paddingLeft: 10 }}>
             <div style={{ ...disp, fontWeight: 700, fontSize: 13.5 }}>{m.label}</div>

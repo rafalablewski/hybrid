@@ -66,7 +66,8 @@ export default function AdminAnonSessions() {
       )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["Workout", "Platform", "Device", "Started", ""].map((h, i) => (
@@ -118,6 +119,7 @@ export default function AdminAnonSessions() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

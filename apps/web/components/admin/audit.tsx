@@ -53,7 +53,7 @@ export default function AdminAuditLog() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
         <input
           value={action}
           onChange={(e) => {
@@ -61,7 +61,7 @@ export default function AdminAuditLog() {
             setPage(1);
           }}
           placeholder="Filter by action (e.g. user.update)…"
-          style={{ ...mono, fontSize: 13, flex: 1, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+          style={{ ...mono, fontSize: 13, flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: "var(--r-card)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
         <Mono s={{ fontSize: 12 }} c={ASH}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </div>
@@ -73,7 +73,8 @@ export default function AdminAuditLog() {
       )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["When", "Actor", "Action", "Target", ""].map((h, i) => (
@@ -122,6 +123,7 @@ export default function AdminAuditLog() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {data && data.pages > 1 && (

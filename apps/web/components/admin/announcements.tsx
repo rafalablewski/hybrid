@@ -20,6 +20,7 @@ import {
   Select,
   txt,
 } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 
 type Announcement = {
   id: string;
@@ -69,6 +70,7 @@ export default function AdminAnnouncements() {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const load = useCallback(() => {
     fetch("/api/admin/announcements")
@@ -218,7 +220,7 @@ export default function AdminAnnouncements() {
             />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
             <Field label="Level">
               <Select value={draft.level} onChange={(e) => setDraft({ ...draft, level: e.target.value as Draft["level"] })}>
                 <option value="info">Info</option>

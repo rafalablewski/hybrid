@@ -89,7 +89,8 @@ function SectionTitle({ title, kicker, c }: { title: string; kicker: string; c: 
 
 function Table({ head, align, children }: { head: string[]; align: ("left" | "right")[]; children: React.ReactNode }) {
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div style={{ overflowX: "auto", maxWidth: "100%" }}>
+    <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
       <thead>
         <tr>
           {head.map((h, i) => (
@@ -101,6 +102,7 @@ function Table({ head, align, children }: { head: string[]; align: ("left" | "ri
       </thead>
       <tbody>{children}</tbody>
     </table>
+    </div>
   );
 }
 
