@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from "react-native";
-import { F } from "../lib/ui";
+import { fs, F } from "../lib/ui";
 
 /** A labelled preference row with an on/off pill — shared by Notifications +
  *  Privacy on BOTH mobile Settings variants (classic + Aurora) so the toggle
@@ -17,8 +17,8 @@ export function ToggleRow({
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: C.line }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2, lineHeight: 15 }}>{desc}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{desc}</Text>
       </View>
       <Pressable
         onPress={onToggle}

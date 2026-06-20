@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fs, space } from "@hybrid/core";
+
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { AuroraIcon } from "./icons";
 
@@ -68,28 +70,28 @@ export default function AuroraProgress() {
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Progress photos</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Progress photos</h1>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <p style={{ fontSize: 14, lineHeight: 1.6, margin: "0 0 14px" }}>Same pose, same light, every couple of weeks. Private to you — stored under your own folder, never shared.</p>
+        <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 14px" }}>Same pose, same light, every couple of weeks. Private to you — stored under your own folder, never shared.</p>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={busy}
-          style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "13px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
+          style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "13px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
           <AuroraIcon name="add" size={18} color={C("ink")} />{busy ? "Uploading…" : "Add photo"}
         </button>
       </div>
 
       {photos.length === 0 ? (
-        <div style={{ fontSize: 13, color: C("ash"), marginTop: 16 }}>No photos yet — add your first to start the timeline.</div>
+        <div style={{ fontSize: fs.body, color: C("ash"), marginTop: 16 }}>No photos yet — add your first to start the timeline.</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginTop: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: space.md, marginTop: 16 }}>
           {photos.map((p) => (
             <div key={p.path} style={{ border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2") }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url} alt={p.date} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>{p.date}</span>
-                <button onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>delete</button>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{p.date}</span>
+                <button onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>delete</button>
               </div>
             </div>
           ))}

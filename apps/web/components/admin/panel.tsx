@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
-import { INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useTemplate } from "@/lib/use-template";
@@ -162,7 +162,7 @@ export default function AdminPanel() {
             {railCollapsed ? "H" : "HYBRID"}<span style={{ color: txt(AMBER) }}>.</span>
           </div>
           {!railCollapsed && (
-            <Mono s={{ fontSize: 10, letterSpacing: ".18em", textTransform: "uppercase" }} c={AMBER}>
+            <Mono s={{ fontSize: fs.nano, letterSpacing: ".18em", textTransform: "uppercase" }} c={AMBER}>
               Admin console
             </Mono>
           )}
@@ -198,12 +198,12 @@ export default function AdminPanel() {
                     background: section === s.id ? `${AMBER}1c` : "transparent",
                     color: txt(section === s.id ? AMBER : ASH),
                     ...disp,
-                    fontSize: 14,
+                    fontSize: fs.bodyLg,
                     fontWeight: 600,
                     textAlign: "left",
                   }}
                 >
-                  <span style={{ fontSize: 14, width: 18, display: "grid", placeItems: "center" }}>
+                  <span style={{ fontSize: fs.bodyLg, width: 18, display: "grid", placeItems: "center" }}>
                     {aurora ? <AuroraIcon name={s.auroraIcon} size={18} strokeWidth={2.6} /> : s.icon}
                   </span>
                   {!railCollapsed && s.label}
@@ -216,10 +216,10 @@ export default function AdminPanel() {
         <div style={{ flexShrink: 0, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
           {!railCollapsed && (
             <div style={{ padding: "8px 10px" }}>
-              <div style={{ ...disp, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ ...disp, fontWeight: 600, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {session?.name ?? "—"}
               </div>
-              <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={AMBER}>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={AMBER}>
                 {session?.role ?? "admin"}
               </Mono>
             </div>
@@ -254,7 +254,7 @@ export default function AdminPanel() {
       <main style={{ flex: 1, minWidth: 0, padding: isMobile ? "16px 16px 40px" : "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {/* mobile top bar — hamburger opens the drawer */}
         {isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: space.md, marginBottom: 16 }}>
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Open admin menu"
@@ -268,21 +268,21 @@ export default function AdminPanel() {
                 border: `1px solid ${LINE}`,
                 background: INK2,
                 color: CHALK,
-                fontSize: 18,
+                fontSize: fs.title,
                 cursor: "pointer",
               }}
             >
               ☰
             </button>
-            <div style={{ ...disp, fontWeight: 900, fontSize: 18, letterSpacing: "-.03em" }}>
+            <div style={{ ...disp, fontWeight: 900, fontSize: fs.title, letterSpacing: "-.03em" }}>
               HYBRID<span style={{ color: txt(AMBER) }}>.</span>
             </div>
           </div>
         )}
 
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
           <div>
-            <Mono s={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase" }} c={AMBER}>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase" }} c={AMBER}>
               admin.hybrid.app
             </Mono>
             <h1 style={{ ...disp, fontWeight: 900, fontSize: isMobile ? 24 : 30, letterSpacing: "-.03em", marginTop: 2 }}>
@@ -293,7 +293,7 @@ export default function AdminPanel() {
             <div
               style={{
                 ...mono,
-                fontSize: 11,
+                fontSize: fs.micro,
                 color: txt(ASH),
                 border: `1px solid ${LINE}`,
                 borderRadius: 999,
@@ -334,7 +334,7 @@ export default function AdminPanel() {
       width: "100%",
       marginTop: 6,
       ...cond,
-      fontSize: 12,
+      fontSize: fs.caption,
       fontWeight: 700,
       textTransform: "uppercase" as const,
       letterSpacing: ".05em",

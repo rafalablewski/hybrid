@@ -58,7 +58,7 @@ import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { F, Mono, Kicker, Card } from "../lib/ui";
+import { fs, space, F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import { AuroraField } from "../components/aurora/kit";
@@ -709,14 +709,14 @@ export default function Workout() {
       {aurora && <AuroraField />}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ width: 64 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("workout.cancel")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.cancel")}</Text>
         </Pressable>
         <View style={{ alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: paused ? txt(C, C.amber) : C.chalk, letterSpacing: 1 }}>{mmss(elapsed)}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: 9, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 1 }}>{paused ? t("workout.paused") : t("workout.elapsed")}</Text>
         </View>
         <Pressable onPress={finish} disabled={saving} style={{ width: 64, alignItems: "flex-end" }} hitSlop={10}>
-          <Text style={{ fontFamily: F.black, fontSize: 14, color: saving ? C.ash : txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: saving ? C.ash : txt(C, C.lime) }}>
             {saving ? "…" : t("workout.finish")}
           </Text>
         </Pressable>
@@ -738,19 +738,19 @@ export default function Workout() {
               : t("workout.firstExercise")}
           </Mono>
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.blue) }}>{t("workout.rpeWhat")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("workout.rpeWhat")}</Text>
           </Pressable>
         </View>
 
         {showTip && (
           <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>{t("workout.tipTitle")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("workout.tipTitle")}</Text>
               <Pressable onPress={dismissTip} hitSlop={8}>
-                <Text style={{ fontFamily: F.bold, fontSize: 12, color: txt(C, C.lime) }}>{t("workout.tipGot")}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("workout.tipGot")}</Text>
               </Pressable>
             </View>
-            <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, lineHeight: 19 }}>{t("workout.tipBody")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("workout.tipBody")}</Text>
           </View>
         )}
 
@@ -770,7 +770,7 @@ export default function Workout() {
           return (
             <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, accent) }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
                   {done ? t("workout.restDone") : t("workout.resting")} · {clock}
                 </Text>
                 <Pressable
@@ -778,10 +778,10 @@ export default function Workout() {
                   hitSlop={8}
                   style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: R.field, borderWidth: 1, borderColor: accent }}
                 >
-                  <Text style={{ fontFamily: F.bold, fontSize: 12, color: txt(C, accent) }}>■ {t("workout.stopRest")}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, accent) }}>■ {t("workout.stopRest")}</Text>
                 </Pressable>
               </View>
-              <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
+              <View style={{ flexDirection: "row", gap: space.xs, marginTop: 10 }}>
                 {[60, 90, 120, 180].map((sec) => {
                   const on = restTarget === sec;
                   return (
@@ -790,7 +790,7 @@ export default function Workout() {
                       onPress={() => pickRest(sec)}
                       style={{ flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: R.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
                     >
-                      <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? txt(C, C.blue) : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.blue) : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
                     </Pressable>
                   );
                 })}
@@ -815,15 +815,15 @@ export default function Workout() {
             }
           >
           <Card>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
               <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? txt(C, C.lime) : C.ash} />
               <Text style={{ fontFamily: F.mono, fontSize: 9, color: x.kind === "strength" ? txt(C, C.lime) : x.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>
                 {x.kind.toUpperCase()}
               </Text>
               {ssLabels[xi] && (
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
               )}
-              <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }} />
+              <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }} />
               {/* Superset with the exercise BELOW — placed on the upper card so
                   even the FIRST exercise can start a superset (no rest between). */}
               {x.kind === "strength" && exercises[xi + 1]?.kind === "strength" && (() => {
@@ -835,18 +835,18 @@ export default function Workout() {
                     hitSlop={6}
                     style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? C.lime : C.line, backgroundColor: joined ? `${C.lime}1f` : "transparent" }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 11, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("workout.supersetJoined") : t("workout.superset")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? txt(C, C.lime) : C.ash }}>⛓ {joined ? t("workout.supersetJoined") : t("workout.superset")}</Text>
                   </Pressable>
                 );
               })()}
               <Pressable onPress={() => moveExercise(x.uid, -1)} disabled={xi === 0} hitSlop={6}>
-                <Text style={{ color: xi === 0 ? C.line : C.ash, fontSize: 15 }}>↑</Text>
+                <Text style={{ color: xi === 0 ? C.line : C.ash, fontSize: fs.note }}>↑</Text>
               </Pressable>
               <Pressable onPress={() => moveExercise(x.uid, 1)} disabled={xi === exercises.length - 1} hitSlop={6}>
-                <Text style={{ color: xi === exercises.length - 1 ? C.line : C.ash, fontSize: 15 }}>↓</Text>
+                <Text style={{ color: xi === exercises.length - 1 ? C.line : C.ash, fontSize: fs.note }}>↓</Text>
               </Pressable>
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
-                <Text style={{ color: C.ash, fontSize: 15 }}>✕</Text>
+                <Text style={{ color: C.ash, fontSize: fs.note }}>✕</Text>
               </Pressable>
             </View>
 
@@ -857,12 +857,12 @@ export default function Workout() {
                   // for this lift, so progressive overload has a target to beat.
                   const last = lastByLift.get(x.name);
                   return last ? (
-                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginBottom: 8 }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginBottom: 8 }}>
                       {t("workout.lastTime")} · {blockSummary(last)}
                     </Text>
                   ) : null;
                 })()}
-                <View style={{ flexDirection: "row", gap: 6, marginBottom: 4 }}>
+                <View style={{ flexDirection: "row", gap: space.xs, marginBottom: 4 }}>
                   <ColHead w={28}>#</ColHead>
                   <ColHead>{prefs.units === "lb" ? "LB" : "KG"}</ColHead>
                   <ColHead>REPS</ColHead>
@@ -872,7 +872,7 @@ export default function Workout() {
                 </View>
                 {x.sets.map((s, i) => (
                   <SwipeRow key={s.uid ?? i} label={t("workout.deleteSet")} onDelete={() => removeSet(x.uid, i)}>
-                    <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                     {(() => {
                       const st = setType(s);
                       const accent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
@@ -882,7 +882,7 @@ export default function Workout() {
                           onLongPress={() => removeSet(x.uid, i)}
                           style={{ width: 28, height: 30, borderRadius: R.field, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
                         >
-                          <Text style={{ fontFamily: F.mono, fontSize: 13, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                         </Pressable>
                       );
                     })()}
@@ -891,36 +891,36 @@ export default function Workout() {
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     <View style={{ width: 22, justifyContent: "center" }}>
                       <Pressable onPress={() => moveSet(x.uid, i, -1)} disabled={i === 0} hitSlop={4} style={{ alignItems: "center" }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: 13, color: i === 0 ? C.line : C.ash }}>↑</Text>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === 0 ? C.line : C.ash }}>↑</Text>
                       </Pressable>
                       <Pressable onPress={() => moveSet(x.uid, i, 1)} disabled={i === x.sets.length - 1} hitSlop={4} style={{ alignItems: "center" }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: 13, color: i === x.sets.length - 1 ? C.line : C.ash }}>↓</Text>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === x.sets.length - 1 ? C.line : C.ash }}>↓</Text>
                       </Pressable>
                     </View>
                     <Pressable
                       onPress={() => toggleDone(x.uid, i, !s.done)}
                       style={{ width: 40, height: 40, borderRadius: R.field, alignItems: "center", justifyContent: "center", backgroundColor: s.done ? C.lime : C.ink2, borderWidth: 1, borderColor: s.done ? C.lime : C.line }}
                     >
-                      <Text style={{ fontSize: 16, color: s.done ? C.ink : C.ash, fontFamily: F.black }}>✓</Text>
+                      <Text style={{ fontSize: fs.subtitle, color: s.done ? C.ink : C.ash, fontFamily: F.black }}>✓</Text>
                     </Pressable>
                     </View>
                   </SwipeRow>
                 ))}
-                <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
+                <View style={{ flexDirection: "row", gap: space.lg, flexWrap: "wrap" }}>
                   <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.lime) }}>{t("workout.set")}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.lime) }}>{t("workout.set")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addWarmupSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupSet")}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.amber) }}>{t("workout.warmupSet")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addWarmupRamp(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.amber) }}>{t("workout.warmupRamp")}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.amber) }}>{t("workout.warmupRamp")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addCooldownSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, C.blue) }}>{t("workout.cooldownSet")}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.blue) }}>{t("workout.cooldownSet")}</Text>
                   </Pressable>
                   <Pressable onPress={() => addDropSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.ash }}>{t("workout.dropSet")}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>{t("workout.dropSet")}</Text>
                   </Pressable>
                 </View>
                 {/* Quick-increment + plate hint for the last set's load */}
@@ -928,21 +928,21 @@ export default function Workout() {
                   const last = x.sets[x.sets.length - 1];
                   const loadKg = last ? parseFloat(last.load) : NaN;
                   return (
-                    <View style={{ marginTop: 8, gap: 6 }}>
+                    <View style={{ marginTop: 8, gap: space.xs }}>
                       {prefs.quickIncrement > 0 && (
-                        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                        <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                           {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
                             <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: R.field, borderWidth: 1, borderColor: C.line }}>
-                              <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
+                              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{d > 0 ? `+${d}` : d}</Text>
                             </Pressable>
                           ))}
-                          <Mono style={{ fontSize: 11 }}>{prefs.units}</Mono>
+                          <Mono style={{ fontSize: fs.micro }}>{prefs.units}</Mono>
                         </View>
                       )}
                       {prefs.plateCalc && Number.isFinite(loadKg) && loadKg > 0 && (() => {
                         const pl = platesPerSide(loadKg, prefs.units);
                         return (
-                          <Mono style={{ fontSize: 11 }}>
+                          <Mono style={{ fontSize: fs.micro }}>
                             {pl.perSide.length ? `Per side: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${prefs.units})`}
                           </Mono>
                         );
@@ -953,7 +953,7 @@ export default function Workout() {
               </>
             ) : x.kind === "cardio" ? (
               <>
-                <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flexDirection: "row", gap: space.sm }}>
                   <View style={{ flex: 1 }}>
                     <ColHead>{t("workout.dist")}</ColHead>
                     <Cell value={x.distance ?? ""} onChange={(v) => condField(x.uid, "distance", v)} />
@@ -966,12 +966,12 @@ export default function Workout() {
                 {(() => {
                   const pace = pacePerKm({ distance: parseFloat(x.distance), minutes: parseFloat(x.minutes) });
                   return pace ? (
-                    <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.blue), marginTop: 8 }}>{t("workout.pace")} {pace}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue), marginTop: 8 }}>{t("workout.pace")} {pace}</Text>
                   ) : null;
                 })()}
               </>
             ) : (
-              <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flexDirection: "row", gap: space.sm }}>
                 <View style={{ flex: 1 }}>
                   <ColHead>MIN</ColHead>
                   <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
@@ -999,7 +999,7 @@ export default function Workout() {
                 onPress={() => addExercise(name, kind)}
                 style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.chip, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}
               >
-                <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, c) }}>{name}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, c) }}>{name}</Text>
               </Pressable>
             );
           };
@@ -1013,13 +1013,13 @@ export default function Workout() {
                 placeholderTextColor={C.ash}
                 autoFocus
                 onSubmitEditing={() => addExercise(custom)}
-                style={{ fontFamily: F.reg, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
+                style={{ fontFamily: F.reg, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
               />
 
               {recentShown.length > 0 && (
                 <>
                   <Kicker color={C.ash}>{t("workout.yourLifts")}</Kicker>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 4 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 8, marginBottom: 4 }}>
                     {recentShown.map((r) => chip(r.name, r.kind, `r-${r.name}`))}
                   </View>
                 </>
@@ -1028,7 +1028,7 @@ export default function Workout() {
               {libShown.length > 0 && (
                 <>
                   {recentShown.length > 0 && <Kicker color={C.ash}>{t("workout.library")}</Kicker>}
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 8 }}>
                     {libShown.map((name) => chip(name, inferBlockKind(name), `l-${name}`))}
                   </View>
                 </>
@@ -1036,12 +1036,12 @@ export default function Workout() {
 
               {q.length > 0 && !exact && (
                 <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 14, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>+ “{custom.trim()}”</Text>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{custom.trim()}”</Text>
                 </Pressable>
               )}
 
               <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} style={{ paddingTop: 12 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center" }}>{t("workout.close")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>{t("workout.close")}</Text>
               </Pressable>
             </Card>
           );
@@ -1050,21 +1050,21 @@ export default function Workout() {
             onPress={() => setPickerOpen(true)}
             style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
           >
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
           </Pressable>
         )}
 
         {!!error && <Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono>}
 
         {exercises.length > 0 && (
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 18 }}>
+          <View style={{ flexDirection: "row", gap: space.ms, marginTop: 18 }}>
             {/* Pause/hold sits next to Finish — freeze the clock for a phone call,
                 a long queue for the rack, or a between-blocks breather. */}
             <Pressable
               onPress={togglePause}
               style={{ paddingHorizontal: 18, borderRadius: R.cta, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: paused ? txt(C, C.amber) : C.ash }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: paused ? txt(C, C.amber) : C.ash }}>
                 {paused ? `▶ ${t("workout.resume")}` : `❚❚ ${t("workout.pause")}`}
               </Text>
             </Pressable>
@@ -1073,7 +1073,7 @@ export default function Workout() {
               disabled={saving}
               style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
             >
-              {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
+              {saving ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>{t("workout.finishWorkout")}</Text>}
             </Pressable>
           </View>
         )}
@@ -1085,7 +1085,7 @@ export default function Workout() {
       {/* Get-ready count-in — covers the screen on a fresh start until GO. */}
       {countdown != null && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash, letterSpacing: 3, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: 3, marginBottom: 12 }}>
             {t("workout.getReady").toUpperCase()}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: countdown > 0 ? 132 : 96, color: txt(C, C.lime) }}>
@@ -1105,12 +1105,12 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
         <Pressable onPress={() => {}} style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 36 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("rpe.title")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("rpe.title")}</Text>
             <Pressable onPress={onClose} hitSlop={10}>
-              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("rpe.close")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("rpe.close")}</Text>
             </Pressable>
           </View>
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, lineHeight: 19, marginBottom: 16 }}>{RPE_INTRO}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 19, marginBottom: 16 }}>{RPE_INTRO}</Text>
           <View style={{ flexDirection: "row", marginBottom: 6 }}>
             <Text style={{ width: 40, fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>RPE</Text>
             <Text style={{ width: 56, fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{t("rpe.rir")}</Text>
@@ -1118,9 +1118,9 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
           </View>
           {RPE_SCALE.map((step) => (
             <View key={step.rpe} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 5, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ width: 40, fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>{step.rpe}</Text>
-              <Text style={{ width: 56, fontFamily: F.mono, fontSize: 13, color: C.chalk }}>{step.rir}</Text>
-              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: 13, color: C.chalk }}>{step.meaning}</Text>
+              <Text style={{ width: 40, fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>{step.rpe}</Text>
+              <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{step.rir}</Text>
+              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{step.meaning}</Text>
             </View>
           ))}
         </Pressable>
@@ -1218,11 +1218,11 @@ function Summary({
         {/* PR celebration — the reason to keep coming back (fades/scales in) */}
         {prs.length > 0 && (
           <Animated.View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12, opacity: fade, transform: [{ scale: pop }] }}>
-            <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.lime) }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>
               🏆 {prs.length} {t("summary.newPrs")}
             </Text>
             {prs.slice(0, 4).map((p) => (
-              <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>
+              <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>
                 {prLine(p)}
               </Text>
             ))}
@@ -1232,11 +1232,11 @@ function Summary({
         {/* Cardio PR celebration — runs count too */}
         {cardioPrs.length > 0 && (
           <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.blue) }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.blue) }}>
               🏃 {cardioPrs.length} {t("summary.newCardioPrs")}
             </Text>
             {cardioPrs.slice(0, 4).map((p) => (
-              <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>
+              <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>
                 {cardioPrLine(p, t)}
               </Text>
             ))}
@@ -1269,31 +1269,31 @@ function Summary({
               : null),
           }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.ink }}>{shareLabel}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>{shareLabel}</Text>
         </Pressable>
 
         <View style={{ flex: 1, minHeight: 24 }} />
 
         {summary.pending && (
           <View style={{ backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.amber) }}>⟲ {t("summary.pendingSync")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>⟲ {t("summary.pendingSync")}</Text>
           </View>
         )}
 
         {summary.guest ? (
           <>
             <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
             <Pressable
               onPress={() => router.replace("/login?mode=signup")}
               style={{ backgroundColor: C.violet, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
             >
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: C.chalk }}>{t("summary.guestSave")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("summary.guestSave")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/welcome")} style={{ paddingVertical: 16, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("summary.notNow")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("summary.notNow")}</Text>
             </Pressable>
           </>
         ) : (
@@ -1304,10 +1304,10 @@ function Summary({
               onPress={() => router.replace("/(tabs)/history")}
               style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 15, alignItems: "center" }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t("summary.seeAnalysis")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("summary.seeAnalysis")}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/(tabs)")} style={{ paddingVertical: 16, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("summary.doneToday")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("summary.doneToday")}</Text>
             </Pressable>
           </>
         )}
@@ -1334,7 +1334,7 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
         onPress={() => setOpen(true)}
         style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: R.cta, paddingVertical: 15, alignItems: "center", marginTop: 18 }}
       >
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
     );
 
@@ -1346,20 +1346,20 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
 
   return (
     <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 14, padding: 14, marginTop: 18 }}>
-      <Mono color={C.lime} style={{ fontSize: 11, letterSpacing: 1 }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
+      <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 1 }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Routine name"
         placeholderTextColor={C.ash}
-        style={{ marginTop: 8, fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
       />
       <Pressable
         onPress={save}
         disabled={state === "saving"}
         style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
     </View>
   );
@@ -1426,7 +1426,7 @@ function SwipeRow({ children, onDelete, label }: { children: ReactNode; onDelete
         onPress={onDelete}
         style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 10 }}
       >
-        <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.chalk }}>{label}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
       </Pressable>
       <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: C.card }} {...pan.panHandlers}>
         {children}
@@ -1454,7 +1454,7 @@ function DragHandle({ onStart, onMove, onEnd, color }: { onStart: () => void; on
   ).current;
   return (
     <View {...pan.panHandlers} hitSlop={8} style={{ paddingRight: 2, paddingVertical: 4 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 16, color }}>⠿</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color }}>⠿</Text>
     </View>
   );
 }
@@ -1466,7 +1466,7 @@ function Cell({ value, onChange, done }: { value: string; onChange: (v: string) 
       value={value}
       onChangeText={onChange}
       keyboardType="numeric"
-      style={{ flex: 1, fontFamily: F.mono, fontSize: 16, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 10 }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 10 }}
     />
   );
 }

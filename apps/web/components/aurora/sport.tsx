@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
+import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 
@@ -41,12 +41,12 @@ export default function AuroraSport() {
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 8px" }}>Sport</h1>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>Sport</h1>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>
         Pick your sport — we prescribe the strength &amp; conditioning that transfers to it.
       </p>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 14 }}>
         {SPORT_NAMES.map((s) => {
           const on = s === sport;
           return (
@@ -55,11 +55,11 @@ export default function AuroraSport() {
               onClick={() => setSport(s)}
               style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 14,
+                fontSize: fs.bodyLg,
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                gap: space.xs,
                 padding: "9px 16px",
                 borderRadius: 999,
                 cursor: "pointer",
@@ -68,14 +68,14 @@ export default function AuroraSport() {
                 color: on ? C("chalk") : C("ash"),
               }}
             >
-              <span style={{ fontSize: 16 }}>{SPORTS[s]!.icon}</span>
+              <span style={{ fontSize: fs.subtitle }}>{SPORTS[s]!.icon}</span>
               {s}
             </button>
           );
         })}
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: space.sm, marginBottom: 16 }}>
         {LEVELS.map((l, i) => {
           const on = i === levelIdx;
           return (
@@ -84,7 +84,7 @@ export default function AuroraSport() {
               onClick={() => setLevelIdx(i)}
               style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 13,
+                fontSize: fs.body,
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: ".04em",
@@ -103,22 +103,22 @@ export default function AuroraSport() {
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: space.md }}>
           <span style={{ fontSize: 28 }}>{meta.icon}</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 20 }}>{sport}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{meta.family} · {LEVELS[levelIdx]}</div>
+            <div style={{ fontWeight: 800, fontSize: fs.heading }}>{sport}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{meta.family} · {LEVELS[levelIdx]}</div>
           </div>
         </div>
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{meta.marker.label}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{meta.marker.label}</div>
           <input
             value={markers[sport] ?? ""}
             onChange={(e) => setMarkers((m) => ({ ...m, [sport]: e.target.value }))}
             placeholder={meta.marker.ph}
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 14,
+              fontSize: fs.bodyLg,
               width: "100%",
               marginTop: 6,
               padding: "12px 14px",
@@ -133,10 +133,10 @@ export default function AuroraSport() {
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
           Today&apos;s prescribed S&amp;C
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 3, color: C("ash") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 3, color: C("ash") }}>
           {rx.personalized
             ? "Working loads computed from your logged lifts."
             : "Log these lifts and the loads tune to your own numbers."}
@@ -148,12 +148,12 @@ export default function AuroraSport() {
               style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{b.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("amber") }}>{b.demand}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{b.name}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>{b.demand}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("lime"), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{b.scheme}</span>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, marginTop: 4, color: C("ash") }}>
+                <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("lime"), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{b.scheme}</span>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 4, color: C("ash") }}>
                   {b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}
                 </div>
               </div>
@@ -163,17 +163,17 @@ export default function AuroraSport() {
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
           Exercise pool · why it transfers
         </div>
-        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.md }}>
           {rx.ranked.map((e) => (
             <div key={e.name}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{e.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{e.demand}</div>
+                <div style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{e.name}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{e.demand}</div>
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: 1.5, marginTop: 3, color: C("chalk") }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 3, color: C("chalk") }}>
                 {e.why}
               </div>
             </div>

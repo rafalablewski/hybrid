@@ -16,7 +16,7 @@ import {
 import { fetchSessions } from "../lib/api";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraExercises from "../components/aurora/exercises";
@@ -82,11 +82,11 @@ function ClassicExercises() {
             onChangeText={setQuery}
             placeholder="Search exercises…"
             placeholderTextColor={C.ash}
-            style={{ marginTop: 12, fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}
+            style={{ marginTop: 12, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}
           />
 
           {/* Exercise chips */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
             {filtered.slice(0, 24).map((e) => {
               const on = e.name === active;
               return (
@@ -95,14 +95,14 @@ function ClassicExercises() {
                   onPress={() => setSelected(e.name)}
                   style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent" }}
                 >
-                  <Text style={{ fontFamily: F.semi, fontSize: 12, color: on ? C.lime : C.ash }}>{e.name}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? C.lime : C.ash }}>{e.name}</Text>
                 </Pressable>
               );
             })}
           </View>
 
           {/* Period selector */}
-          <View style={{ flexDirection: "row", gap: 6, marginTop: 14 }}>
+          <View style={{ flexDirection: "row", gap: space.xs, marginTop: 14 }}>
             {PERIODS.map((p) => {
               const on = period === p.id;
               return (
@@ -111,7 +111,7 @@ function ClassicExercises() {
                   onPress={() => setPeriod(p.id)}
                   style={{ flex: 1, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: on ? C.lime : C.ash }}>{p.label}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? C.lime : C.ash }}>{p.label}</Text>
                 </Pressable>
               );
             })}
@@ -136,7 +136,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       );
     return (
       <>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
           <Metric label="RUNS" value={String(stats.efforts)} />
           <Metric label="KM" value={String(stats.distanceKm)} color={C.blue} />
           <Metric label="LONGEST" value={String(stats.longestKm)} />
@@ -159,7 +159,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
 
   return (
     <>
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
         <Metric label="BEST e1RM" value={fmtWeight(stats.bestE1rm, units)} color={C.lime} />
         <Metric label="SETS" value={String(stats.workingSets)} />
         <Metric label="VOLUME" value={fmtTonnage(stats.volume, units)} />
@@ -172,11 +172,11 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       {stats.bestSet && (
         <Card style={{ marginTop: 14 }}>
           <Kicker color={C.lime}>Best set</Kicker>
-          <Text style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, marginTop: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>
             {fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps}
             <Text style={{ color: C.ash }}> · e1RM {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</Text>
           </Text>
-          <Mono style={{ fontSize: 11, marginTop: 8 }}>
+          <Mono style={{ fontSize: fs.micro, marginTop: 8 }}>
             {stats.totalReps} reps · heaviest {fmtWeight(stats.heaviestLoad, units)} · all-time best {fmtWeight(stats.bestE1rmAllTime, units)}
           </Mono>
         </Card>
@@ -185,7 +185,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
         <Card style={{ marginTop: 14 }}>
           <Kicker color={C.blue}>Velocity profile</Kicker>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.blue), marginTop: 6 }}>{fmtWeight(stats.velocity.e1rm, units)}</Text>
-          <Mono style={{ fontSize: 11, marginTop: 4 }}>
+          <Mono style={{ fontSize: fs.micro, marginTop: 4 }}>
             velocity-estimated 1RM · fit r² {stats.velocity.r2} · {stats.velocity.n} loads
           </Mono>
         </Card>
@@ -227,7 +227,7 @@ function Metric({ label, value, color }: { label: string; value: string; color?:
   const C = useTheme().palette;
   return (
     <View style={{ flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 12, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 18, color: color ?? C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: color ?? C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.8, marginTop: 2 }}>{label}</Text>
     </View>
   );

@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import {
+import { fs, space,
   INK2,
   LINE,
   LIME,
@@ -84,7 +84,7 @@ export default function TeamCompare() {
   );
 
   if (loading)
-    return <Mono s={{ fontSize: 13 }}>Loading roster…</Mono>;
+    return <Mono s={{ fontSize: fs.body }}>Loading roster…</Mono>;
 
   if (athletes.length === 0)
     return (
@@ -92,7 +92,7 @@ export default function TeamCompare() {
         <div style={{ ...disp, fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
           No comparable athletes yet
         </div>
-        <Mono s={{ fontSize: 13, lineHeight: 1.6 }}>
+        <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }}>
           Team Compare lines up your athletes side by side on any lift — best e1RM, the
           velocity-based 1RM, bar speed, volume and reps. It reads your <b>active roster</b>
           {" "}(Coach screen → accepted clients) and computes from their real logged sessions.
@@ -104,12 +104,12 @@ export default function TeamCompare() {
   return (
     <div>
       {/* lift + metric selectors */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: space.lg, marginBottom: 16 }}>
         <div>
-          <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }}>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }}>
             Exercise
           </Mono>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {lifts.map((l) => (
               <button
                 key={l}
@@ -122,10 +122,10 @@ export default function TeamCompare() {
           </div>
         </div>
         <div>
-          <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }}>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }}>
             Metric
           </Mono>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {METRICS.map((m) => (
               <button
                 key={m.key}
@@ -143,12 +143,12 @@ export default function TeamCompare() {
         <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * 46)}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 16, right: 24 }}>
             <CartesianGrid stroke={LINE} strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" tick={{ fill: ASH, fontSize: 11 }} stroke={LINE} />
+            <XAxis type="number" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
             <YAxis
               type="category"
               dataKey="name"
               width={90}
-              tick={{ fill: ASH, fontSize: 12 }}
+              tick={{ fill: ASH, fontSize: fs.caption }}
               stroke={LINE}
             />
             <Tooltip
@@ -167,7 +167,7 @@ export default function TeamCompare() {
 
       {/* full table */}
       <Card style={{ marginTop: 16, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: fs.body }}>
           <thead>
             <tr style={{ textAlign: "left", color: ASH }}>
               <th style={th}>Athlete</th>
@@ -203,7 +203,7 @@ export default function TeamCompare() {
 function pill(active: boolean, c: string) {
   return {
     ...cond,
-    fontSize: 13,
+    fontSize: fs.body,
     fontWeight: 700,
     padding: "6px 14px",
     borderRadius: 999,
@@ -214,7 +214,7 @@ function pill(active: boolean, c: string) {
   } as const;
 }
 
-const th = { padding: "0 0 8px", fontWeight: 600, textTransform: "uppercase" as const, fontSize: 10, letterSpacing: ".08em" };
+const th = { padding: "0 0 8px", fontWeight: 600, textTransform: "uppercase" as const, fontSize: fs.nano, letterSpacing: ".08em" };
 const thR = { ...th, textAlign: "right" as const };
 const td = { padding: "9px 0" };
 const tdR = { ...td, textAlign: "right" as const, color: ASH };

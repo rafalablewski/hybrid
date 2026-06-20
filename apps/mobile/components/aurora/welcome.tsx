@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, AuroraMark, APill, AHeading, ASub } from "./kit";
 import { Text } from "react-native";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 
 /** AURORA welcome — the soft, centered entry from the Figma kit. */
 export default function AuroraWelcome() {
@@ -27,7 +27,7 @@ export default function AuroraWelcome() {
 
       <Text
         onPress={() => router.push("/workout?source=empty")}
-        style={{ fontFamily: F.bold, fontSize: 14, color: palette.chalk, textAlign: "center", marginTop: 28, textDecorationLine: "underline" }}
+        style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk, textAlign: "center", marginTop: 28, textDecorationLine: "underline" }}
       >
         Continue as a guest
       </Text>

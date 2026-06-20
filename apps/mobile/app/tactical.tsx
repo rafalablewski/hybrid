@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { deploymentReadiness, unitReadiness, type UnitMember } from "@hybrid/core";
 import { fetchState, type StateSnapshot } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraTactical from "../components/aurora/tactical";
@@ -67,7 +67,7 @@ function ClassicTactical() {
           <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 18 }}>Log training to compute your DRI from real readiness + injury risk.</Mono>
         ) : dr ? (
           <>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 4 }}>
               <Text style={{ fontFamily: F.black, fontSize: 48, color: txt(C, statusColor(dr.status, C)) }}>{dr.dri}</Text>
               <Chip color={statusColor(dr.status, C)}>{dr.status}</Chip>
             </View>
@@ -76,7 +76,7 @@ function ClassicTactical() {
               <Mono color={C.ash}>injury risk {state!.injuryRisk}</Mono>
             </View>
             {dr.limiters.length > 0 && <Mono color={C.amber} style={{ marginTop: 8, lineHeight: 18 }}>{dr.limiters.join(" · ")}</Mono>}
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+            <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
               <Field C={C} label="Load carriage" value={loadCarriage} onChange={setLoadCarriage} />
               <Field C={C} label="Work capacity" value={workCapacity} onChange={setWorkCapacity} />
             </View>
@@ -95,13 +95,13 @@ function ClassicTactical() {
           <View style={{ marginTop: 10 }}>
             {unit.members.map((m) => (
               <View key={m.name} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 7, borderTopWidth: 1, borderTopColor: C.line }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk, flex: 1 }}>{m.name}</Text>
-                <Mono color={C.chalk} style={{ width: 44, textAlign: "right", fontSize: 13 }}>{m.dri}</Mono>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{m.name}</Text>
+                <Mono color={C.chalk} style={{ width: 44, textAlign: "right", fontSize: fs.body }}>{m.dri}</Mono>
                 <View style={{ width: 110, alignItems: "flex-end" }}><Chip color={statusColor(m.status, C)}>{m.status}</Chip></View>
               </View>
             ))}
           </View>
-          <Mono color={C.ash} style={{ marginTop: 10, fontSize: 11 }}>Your readiness alongside an illustrative unit (real units plug in via the Org graph).</Mono>
+          <Mono color={C.ash} style={{ marginTop: 10, fontSize: fs.micro }}>Your readiness alongside an illustrative unit (real units plug in via the Org graph).</Mono>
         </Card>
       )}
       <View style={{ height: 16 }} />
@@ -112,13 +112,13 @@ function ClassicTactical() {
 function Field({ C, label, value, onChange }: { C: Palette; label: string; value: string; onChange: (v: string) => void }) {
   return (
     <View style={{ flex: 1 }}>
-      <Mono color={C.ash} style={{ fontSize: 10, marginBottom: 4 }}>{label}</Mono>
+      <Mono color={C.ash} style={{ fontSize: fs.nano, marginBottom: 4 }}>{label}</Mono>
       <TextInput
         value={value}
         onChangeText={onChange}
         keyboardType="numeric"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }}
+        style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }}
       />
     </View>
   );

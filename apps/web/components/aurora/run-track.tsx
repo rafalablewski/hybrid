@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pacePerKm } from "@hybrid/core";
+import { fs, space, pacePerKm } from "@hybrid/core";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -67,8 +67,8 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 6px" }}>Run tracking</h1>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginBottom: 16 }}>Track a run — time it, log the distance, save it to your history.</p>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>Run tracking</h1>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>Track a run — time it, log the distance, save it to your history.</p>
 
       {/* Map placeholder */}
       <div style={{ ...card, padding: 0, overflow: "hidden", marginBottom: 16 }}>
@@ -79,8 +79,8 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
             <circle cx="380" cy="30" r="6" fill={C("amber")} />
           </svg>
           <div style={{ position: "relative", textAlign: "center", padding: "0 24px" }}>
-            <div style={{ fontWeight: 800, fontSize: 16 }}>📍 Live route map</div>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 6, lineHeight: 1.5, color: C("ash") }}>
+            <div style={{ fontWeight: 800, fontSize: fs.subtitle }}>📍 Live route map</div>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 6, lineHeight: 1.5, color: C("ash") }}>
               GPS route tracking goes live in the native app build (the map needs on-device location). Timing &amp; distance below work everywhere.
             </p>
           </div>
@@ -89,36 +89,36 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
 
       {/* Live stats */}
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.md }}>
           <Stat label="Time" value={mmss(elapsed)} color={C("chalk")} />
           <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={C("blue")} />
           <Stat label="Pace /km" value={pace ?? "—"} color={C("lime")} />
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-          <button onClick={toggle} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, background: running ? C("amber") : C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 26px", cursor: "pointer" }}>
+        <div style={{ display: "flex", gap: space.ms, marginTop: 16, flexWrap: "wrap" }}>
+          <button onClick={toggle} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: running ? C("amber") : C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 26px", cursor: "pointer" }}>
             {running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}
           </button>
-          <button onClick={reset} disabled={elapsed === 0} style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), background: "transparent", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "12px 20px", cursor: elapsed === 0 ? "default" : "pointer", opacity: elapsed === 0 ? 0.5 : 1 }}>
+          <button onClick={reset} disabled={elapsed === 0} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), background: "transparent", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "12px 20px", cursor: elapsed === 0 ? "default" : "pointer", opacity: elapsed === 0 ? 0.5 : 1 }}>
             Reset
           </button>
         </div>
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), marginBottom: 6 }}>Distance (km)</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 6 }}>Distance (km)</div>
         <input
           value={distance}
           onChange={(e) => setDistance(e.target.value)}
           placeholder="e.g. 5.0"
           inputMode="decimal"
-          style={{ fontFamily: "var(--font-mono)", fontSize: 16, width: "100%", maxWidth: 200, padding: "12px 14px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, width: "100%", maxWidth: 200, padding: "12px 14px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }}
         />
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</div>
       </div>
 
-      {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginBottom: 10, color: msg.ok ? C("lime") : C("amber") }}>{msg.text}</div>}
+      {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("amber") }}>{msg.text}</div>}
 
-      <button onClick={save} disabled={saving} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+      <button onClick={save} disabled={saving} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
         {saving ? "Saving…" : "Save run →"}
       </button>
     </div>
@@ -128,8 +128,8 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
-      <div style={{ fontWeight: 800, fontSize: 26, color, marginTop: 4 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+      <div style={{ fontWeight: 800, fontSize: fs.display, color, marginTop: 4 }}>{value}</div>
     </div>
   );
 }

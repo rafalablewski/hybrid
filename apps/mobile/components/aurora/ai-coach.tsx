@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { askAiCoach, type CoachNote } from "../../lib/api";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
@@ -33,7 +33,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
 
   const chip = (label: string, color: string) => (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, color) }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{label}</Text>
     </View>
   );
 
@@ -41,13 +41,13 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
   const body = (
     <>
       {busy ? (
-        <View style={{ marginTop: embedded ? 10 : 18, flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ marginTop: embedded ? 10 : 18, flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <ActivityIndicator color={C.violet} />
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Reading your training…</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Reading your training…</Text>
         </View>
       ) : note?.text ? (
         <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+          <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 10, flexWrap: "wrap" }}>
             {note.source ? chip(note.source === "ai" ? "Claude" : "Engine", note.source === "ai" ? C.lime : C.ash) : null}
             {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.blue) : null}
             {note.hpi != null ? chip(`HPI ${note.hpi}`, C.violet) : null}
@@ -70,13 +70,13 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <AHeading style={{ fontSize: 26 }}>AI coach</AHeading>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
+        <AHeading style={{ fontSize: fs.display }}>AI coach</AHeading>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← back</Text>
       </View>
 
       <ACard style={{ marginTop: 14 }}>
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>Today&apos;s coaching note</Text>
-        <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
           Claude reads your real readiness, fatigue, velocity and goal and writes you a personalized note —
           what to push and what to hold back.
         </Text>

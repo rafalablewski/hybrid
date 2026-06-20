@@ -5,7 +5,7 @@ import {
   fetchTalent, saveTalentProfile, searchTalent, reportProfile,
   type TalentProfile, type TalentReport, type TalentResult,
 } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraTalent from "../components/aurora/talent";
@@ -71,14 +71,14 @@ function ClassicTalent() {
         <Mono color={C.chalk} style={{ lineHeight: 18 }}>
           Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real talent from early maturity. Opt in to be discoverable.
         </Mono>
-        <Mono color={C.ash} style={{ marginTop: 6, fontSize: 11 }}>Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}</Mono>
+        <Mono color={C.ash} style={{ marginTop: 6, fontSize: fs.micro }}>Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}</Mono>
       </Card>
 
       {/* profile */}
       <Card style={{ marginTop: 14 }}>
         <Kicker color={C.lime}>Your profile</Kicker>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-          <View style={{ flexDirection: "row", gap: 6 }}>
+          <View style={{ flexDirection: "row", gap: space.xs }}>
             {SPORTS.map((s) => (
               <Pressable key={s} onPress={() => setForm({ ...form, sport: s })} style={pill(C, form.sport === s)}>
                 <Text style={pillTxt(C, form.sport === s)}>{s}</Text>
@@ -86,28 +86,28 @@ function ClassicTalent() {
             ))}
           </View>
         </ScrollView>
-        <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", gap: space.xs, marginTop: 10 }}>
           {(["M", "F"] as const).map((sx) => (
             <Pressable key={sx} onPress={() => setForm({ ...form, sex: sx })} style={pill(C, form.sex === sx)}>
               <Text style={pillTxt(C, form.sex === sx)}>{sx === "M" ? "Male" : "Female"}</Text>
             </Pressable>
           ))}
         </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: 10 }}>
           <Field C={C} label="Age" value={form.age} onChange={(v) => setForm({ ...form, age: v })} />
           <Field C={C} label="Rel. strength (×BW)" value={form.relStrength} onChange={(v) => setForm({ ...form, relStrength: v })} />
           <Field C={C} label="VO₂ proxy" value={form.vo2} onChange={(v) => setForm({ ...form, vo2: v })} />
           <Field C={C} label="Durability" value={form.durability} onChange={(v) => setForm({ ...form, durability: v })} />
         </View>
-        <Pressable onPress={() => setForm({ ...form, visibility: form.visibility === "discoverable" ? "private" : "discoverable" })} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+        <Pressable onPress={() => setForm({ ...form, visibility: form.visibility === "discoverable" ? "private" : "discoverable" })} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 12 }}>
           <View style={{ width: 18, height: 18, borderRadius: 4, borderWidth: 1, borderColor: form.visibility === "discoverable" ? C.lime : C.line, backgroundColor: form.visibility === "discoverable" ? C.lime : "transparent" }} />
-          <Mono color={form.visibility === "discoverable" ? txt(C, C.lime) : C.ash} style={{ fontSize: 12 }}>Discoverable by clubs & federations</Mono>
+          <Mono color={form.visibility === "discoverable" ? txt(C, C.lime) : C.ash} style={{ fontSize: fs.caption }}>Discoverable by clubs & federations</Mono>
         </Pressable>
         {profile?.visibility === "discoverable" && profile?.moderationStatus === "pending" && (
-          <Mono color={C.amber} style={{ marginTop: 8, fontSize: 12 }}>⏳ Pending review — appears in discovery once approved.</Mono>
+          <Mono color={C.amber} style={{ marginTop: 8, fontSize: fs.caption }}>⏳ Pending review — appears in discovery once approved.</Mono>
         )}
         {profile?.moderationStatus === "rejected" && (
-          <Mono color={C.ash} style={{ marginTop: 8, fontSize: 12 }}>Not approved for discovery. Edit and re-save to request another review.</Mono>
+          <Mono color={C.ash} style={{ marginTop: 8, fontSize: fs.caption }}>Not approved for discovery. Edit and re-save to request another review.</Mono>
         )}
         <View style={{ marginTop: 14 }}><Button label={saving ? "Saving…" : "Save profile"} onPress={save} disabled={saving} /></View>
       </Card>
@@ -119,15 +119,15 @@ function ClassicTalent() {
           <Mono color={C.chalk} style={{ marginTop: 8 }}>Save your profile to see percentiles.</Mono>
         ) : (
           <>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 10, marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10, marginBottom: 12 }}>
               <Chip color={pctColor(report.overall, C)}>overall {report.overall}th</Chip>
               <Chip color={pctColor(report.potential, C)}>potential {report.potential}th</Chip>
             </View>
             {report.benchmarks.map((b) => (
               <View key={b.metric} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Mono color={C.chalk} style={{ fontSize: 12 }}>{METRIC_LABEL[b.metric as BenchmarkMetric] ?? b.metric}</Mono>
-                  <Mono color={C.ash} style={{ fontSize: 11 }}>{b.value} · cohort {b.cohortMean}</Mono>
+                  <Mono color={C.chalk} style={{ fontSize: fs.caption }}>{METRIC_LABEL[b.metric as BenchmarkMetric] ?? b.metric}</Mono>
+                  <Mono color={C.ash} style={{ fontSize: fs.micro }}>{b.value} · cohort {b.cohortMean}</Mono>
                 </View>
                 <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink2, marginTop: 4, overflow: "hidden" }}>
                   <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${b.potentialPercentile}%`, backgroundColor: `${C.violet}55` }} />
@@ -143,7 +143,7 @@ function ClassicTalent() {
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 14 }}>
         <Kicker color={C.lime}>Discover talent</Kicker>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-          <View style={{ flexDirection: "row", gap: 6 }}>
+          <View style={{ flexDirection: "row", gap: space.xs }}>
             {BENCHMARK_METRICS.map((m) => (
               <Pressable key={m} onPress={() => setQ({ ...q, metric: m })} style={pill(C, q.metric === m)}>
                 <Text style={pillTxt(C, q.metric === m)}>{METRIC_LABEL[m]}</Text>
@@ -151,7 +151,7 @@ function ClassicTalent() {
             ))}
           </View>
         </ScrollView>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 10, alignItems: "flex-end" }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10, alignItems: "flex-end" }}>
           <Field C={C} label="Min percentile" value={q.minPct} onChange={(v) => setQ({ ...q, minPct: v })} />
           <Pressable onPress={() => setQ({ ...q, byPotential: !q.byPotential })} style={[pill(C, q.byPotential), { alignSelf: "flex-end" }]}>
             <Text style={pillTxt(C, q.byPotential)}>by potential</Text>
@@ -164,11 +164,11 @@ function ClassicTalent() {
           ) : (
             results.map((r) => (
               <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
-                <Mono color={C.chalk} style={{ flex: 1, fontSize: 13 }}>{r.name} · {r.sport} · {r.sex}{r.age}</Mono>
-                <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                <Mono color={C.chalk} style={{ flex: 1, fontSize: fs.body }}>{r.name} · {r.sport} · {r.sex}{r.age}</Mono>
+                <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                   <Chip color={pctColor(r.percentile, C)}>{r.percentile}th</Chip>
                   {r.potential > r.percentile && <Chip color={C.violet}>{r.potential}th</Chip>}
-                  <Pressable onPress={() => flag(r.id)}><Text style={{ color: C.ash, fontSize: 15 }}>⚑</Text></Pressable>
+                  <Pressable onPress={() => flag(r.id)}><Text style={{ color: C.ash, fontSize: fs.note }}>⚑</Text></Pressable>
                 </View>
               </View>
             ))
@@ -181,14 +181,14 @@ function ClassicTalent() {
 }
 
 const pill = (C: Palette, on: boolean) => ({ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent" } as const);
-const pillTxt = (C: Palette, on: boolean) => ({ fontFamily: F.semi, fontSize: 12, color: on ? txt(C, C.lime) : C.ash } as const);
+const pillTxt = (C: Palette, on: boolean) => ({ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash } as const);
 
 function Field({ C, label, value, onChange }: { C: Palette; label: string; value: string; onChange: (v: string) => void }) {
   return (
     <View style={{ width: "47%", flexGrow: 1 }}>
-      <Mono color={C.ash} style={{ fontSize: 10, marginBottom: 4 }}>{label}</Mono>
+      <Mono color={C.ash} style={{ fontSize: fs.nano, marginBottom: 4 }}>{label}</Mono>
       <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }} />
+        style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }} />
     </View>
   );
 }

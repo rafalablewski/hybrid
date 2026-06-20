@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
+import { fs, space,
   trainingHeatmap,
   computeAchievements,
   lifetimePrCount,
@@ -157,8 +157,8 @@ export default function AuroraProfile({
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22 } as const;
   const sectionHead = (title: string, action?: string) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 2px 13px" }}>
-      <div style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-.01em" }}>{title}</div>
-      {action && <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>{action}</div>}
+      <div style={{ fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
+      {action && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{action}</div>}
     </div>
   );
 
@@ -184,7 +184,7 @@ export default function AuroraProfile({
             style={{
               position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: "50%",
               background: C("lime"), color: C("ink"), display: "grid", placeItems: "center",
-              fontSize: 13, border: `3px solid ${C("ink")}`, cursor: "pointer",
+              fontSize: fs.body, border: `3px solid ${C("ink")}`, cursor: "pointer",
             }}
           >
             ✎
@@ -194,7 +194,7 @@ export default function AuroraProfile({
           {name}
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "3px 9px", letterSpacing: ".08em" }}>{tier}</span>
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 8, letterSpacing: ".02em" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8, letterSpacing: ".02em" }}>
           HYBRID ID · {email || "—"}
         </div>
         <div style={{ fontSize: 12.5, color: C("chalk"), marginTop: 8, opacity: 0.85, textTransform: "capitalize" }}>
@@ -217,8 +217,8 @@ export default function AuroraProfile({
       </div>
 
       {/* ACTIONS */}
-      <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-        <button onClick={go("settings", "/settings")} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: 13, background: C("lime"), border: `1px solid ${C("lime")}`, color: C("ink"), cursor: "pointer" }}>Edit profile</button>
+      <div style={{ display: "flex", gap: space.ms, marginTop: 14 }}>
+        <button onClick={go("settings", "/settings")} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: fs.body, background: C("lime"), border: `1px solid ${C("lime")}`, color: C("ink"), cursor: "pointer" }}>Edit profile</button>
         <ShareCard name={name} hpi={hasData ? state.hpi.score : null} band={state.hpi.band} streak={weekStreak} prs={prCount} memberSince={memberSince} tier={tier} />
       </div>
 
@@ -231,7 +231,7 @@ export default function AuroraProfile({
         {/* soft lime corner sheen */}
         <span style={{ position: "absolute", top: -60, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-          <div style={{ fontWeight: 900, fontSize: 13, letterSpacing: ".04em" }}>HYBRID<span style={{ color: C("lime") }}>.</span> · MEMBERSHIP</div>
+          <div style={{ fontWeight: 900, fontSize: fs.body, letterSpacing: ".04em" }}>HYBRID<span style={{ color: C("lime") }}>.</span> · MEMBERSHIP</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "4px 9px", letterSpacing: ".1em" }}>{tier} · {role === "coach" ? "COACH" : "MEMBER"}</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 30, position: "relative" }}>
@@ -250,7 +250,7 @@ export default function AuroraProfile({
         </span>
         {/* 12-bar trace */}
         <Trace series={hpiTrace} />
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), marginTop: 9 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
           {hasData ? (
             <>
               <span style={{ color: C("lime-t") }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> vs last 30 days · strength {state.hpi.components.strength} · engine {state.hpi.components.endurance} · recovery {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
@@ -291,7 +291,7 @@ export default function AuroraProfile({
 
       {/* ACHIEVEMENTS — squared badges */}
       {sectionHead("Achievements", `${achievements.filter((a) => a.earned).length} earned →`)}
-      <div style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none" }}>
+      <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none" }}>
         {achievements.map((a) => (
           <div key={a.id} style={{ flex: "none", width: 76, textAlign: "center" }}>
             <div
@@ -308,7 +308,7 @@ export default function AuroraProfile({
             >
               {a.earned ? a.icon : "🔒"}
             </div>
-            <div style={{ fontSize: 10, color: C("ash"), marginTop: 8, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
+            <div style={{ fontSize: fs.nano, color: C("ash"), marginTop: 8, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
           </div>
         ))}
       </div>
@@ -319,24 +319,24 @@ export default function AuroraProfile({
         prs.map(([lift, e1rm]) => (
           <div key={lift} style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 14px", marginBottom: 9 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <span style={{ fontSize: 16 }}>🏆</span>
+              <span style={{ fontSize: fs.subtitle }}>🏆</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{lift}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{lift}</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>e1RM</div>
               </div>
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 15, color: C("lime-t") }}>{fmtWeight(e1rm, units)}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: C("lime-t") }}>{fmtWeight(e1rm, units)}</div>
           </div>
         ))
       ) : (
-        <div style={{ ...card, padding: 16, fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>
+        <div style={{ ...card, padding: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
           Log strength sets and your best lifts land here.
         </div>
       )}
 
       {/* MODULE TILES — your athlete */}
       {sectionHead("Your athlete", "Customize")}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.ms }}>
         <Tile icon="∿" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : "no data yet"} />
         <Tile icon="⚖" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, units) : "Log a weigh-in"} onClick={go("checkin", "/checkin")} />
         <Tile icon="⌚" k="Devices" sm={bio ? "Recovery · synced" : "Connect a device"} onClick={go("connections", "/connections")} />
@@ -362,7 +362,7 @@ function IdMeta({ label, value, lime }: { label: string; value: string; lime?: b
   return (
     <div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: lime ? C("lime-t") : C("chalk"), marginTop: 4 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: lime ? C("lime-t") : C("chalk"), marginTop: 4 }}>{value}</div>
     </div>
   );
 }
@@ -407,11 +407,11 @@ function Tile({ icon, k, big, suffix, sm, onClick }: { icon: string; k: string; 
         cursor: onClick ? "pointer" : "default", color: C("chalk"), fontFamily: "var(--font-display)",
       }}
     >
-      <span style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(243,244,239,.06)", border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontSize: 15 }}>{icon}</span>
+      <span style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(243,244,239,.06)", border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontSize: fs.note }}>{icon}</span>
       <span style={{ display: "block" }}>
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
         {big ? (
-          <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.02em" }}>{big}{suffix && <span style={{ fontSize: 12, color: C("ash") }}>{suffix}</span>}</span>
+          <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.02em" }}>{big}{suffix && <span style={{ fontSize: fs.caption, color: C("ash") }}>{suffix}</span>}</span>
         ) : (
           <span style={{ fontWeight: 700, fontSize: 13.5, marginTop: 2, display: "block" }}>{sm}</span>
         )}
@@ -442,7 +442,7 @@ function ShareCard({ name, hpi, band, streak: wk, prs, memberSince, tier }: { na
     }
   };
   return (
-    <button onClick={share} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: 13, background: C("ink2"), border: `1px solid ${C("line")}`, color: C("chalk"), cursor: "pointer" }}>
+    <button onClick={share} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: fs.body, background: C("ink2"), border: `1px solid ${C("line")}`, color: C("chalk"), cursor: "pointer" }}>
       {done ? "Copied ✓" : "Share card"}
     </button>
   );

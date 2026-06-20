@@ -2,7 +2,7 @@ import { View, Text, Switch } from "react-native";
 import { REST_SECONDS_CHOICES, type LoggerPrefs } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
@@ -34,7 +34,7 @@ export default function AuroraLoggerSettings() {
   // A labelled group of segmented pills (units / rest / increment / start view).
   const Group = <T extends string>({ title, options, value, onPick }: { title: string; options: { id: T; label: string }[]; value: T; onPick: (v: T) => void }) => (
     <ACard style={{ marginTop: 14 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 12 }}>{title}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 12 }}>{title}</Text>
       <ASegment options={options} value={value} onPick={onPick} />
     </ACard>
   );
@@ -52,8 +52,8 @@ export default function AuroraLoggerSettings() {
             style={{ flexDirection: "row", alignItems: "center", paddingVertical: 13, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{t(r.titleKey)}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, marginTop: 2, lineHeight: 16 }}>{t(r.descKey)}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 16 }}>{t(r.descKey)}</Text>
             </View>
             <Switch
               value={prefs[r.key]}

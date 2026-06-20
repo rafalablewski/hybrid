@@ -9,7 +9,7 @@ import {
   type NutritionGoal,
 } from "@hybrid/core";
 import { fetchSignals, createSignal, getAssignedDiet, type CoreSignal } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraNutrition from "../components/aurora/nutrition";
@@ -78,18 +78,18 @@ function ClassicNutrition() {
     <Screen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Nutrition · today</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime) }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>← back</Text>
       </View>
 
       {/* goal */}
-      <View style={{ flexDirection: "row", gap: 6, marginTop: 10, marginBottom: 4 }}>
+      <View style={{ flexDirection: "row", gap: space.xs, marginTop: 10, marginBottom: 4 }}>
         {GOALS.map((g) => (
           <Pressable
             key={g.id}
             onPress={() => setGoal(g.id)}
             style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}1a` : "transparent" }}
           >
-            <Text style={{ fontFamily: F.semi, fontSize: 12, color: goal === g.id ? txt(C, C.lime) : C.ash }}>{g.label}</Text>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: goal === g.id ? txt(C, C.lime) : C.ash }}>{g.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -102,8 +102,8 @@ function ClassicNutrition() {
             {([["Energy", coachDiet.diet.kcal, " kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
               ([label, val, unit]) => (val != null ? (
                 <View key={label}>
-                  <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
-                  <Mono color={C.ash} style={{ fontSize: 10 }}>{label}{unit === " kcal" ? " · kcal" : ""}</Mono>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{val}{unit === "g" ? "g" : ""}</Text>
+                  <Mono color={C.ash} style={{ fontSize: fs.nano }}>{label}{unit === " kcal" ? " · kcal" : ""}</Mono>
                 </View>
               ) : null),
             )}
@@ -117,13 +117,13 @@ function ClassicNutrition() {
         <Kicker color={C.lime}>Today vs adaptive target</Kicker>
         {personalized ? (
           <>
-            <View style={{ marginTop: 10, gap: 10 }}>
+            <View style={{ marginTop: 10, gap: space.ms }}>
               <Bar label="Energy" cur={today.kcal} target={targets.kcal} unit="kcal" color={C.lime} />
               <Bar label="Protein" cur={today.protein} target={targets.protein} unit="g" color={C.violet} />
               <Bar label="Carbs" cur={today.carbs} target={targets.carbs} unit="g" color={C.blue} />
               <Bar label="Fat" cur={today.fat} target={targets.fat} unit="g" color={C.amber} />
             </View>
-            <Mono style={{ marginTop: 12, fontSize: 11, lineHeight: 17 }}>
+            <Mono style={{ marginTop: 12, fontSize: fs.micro, lineHeight: 17 }}>
               Maintenance ≈ {maint.kcal} kcal · {targets.basis}
             </Mono>
           </>
@@ -134,7 +134,7 @@ function ClassicNutrition() {
               check-in) and log a few days of intake, and we&apos;ll estimate your maintenance and set
               goal-aware macros.
             </Mono>
-            <View style={{ flexDirection: "row", gap: 16, marginTop: 12 }}>
+            <View style={{ flexDirection: "row", gap: space.lg, marginTop: 12 }}>
               <Today2 label="Today" value={`${Math.round(today.kcal)} kcal`} />
               <Today2 label="Protein" value={`${Math.round(today.protein)}g`} />
               <Today2 label="Carbs" value={`${Math.round(today.carbs)}g`} />
@@ -147,7 +147,7 @@ function ClassicNutrition() {
       {/* quick add */}
       <Card>
         <Kicker color={C.violet}>Add to today</Kicker>
-        <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", gap: space.xs, marginTop: 10 }}>
           <Cell value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} ph="kcal" />
           <Cell value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} ph="protein" />
           <Cell value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} ph="carbs" />
@@ -156,7 +156,7 @@ function ClassicNutrition() {
         <View style={{ marginTop: 12 }}>
           <Button label={saving ? "Adding…" : "Add"} onPress={add} disabled={saving} />
         </View>
-        <Mono style={{ marginTop: 8, fontSize: 11 }}>
+        <Mono style={{ marginTop: 8, fontSize: fs.micro }}>
           Manual macros (food search + barcode is a separate, blocked layer — see Capabilities).
         </Mono>
       </Card>
@@ -189,8 +189,8 @@ function Bar({ label, cur, target, unit, color }: { label: string; cur: number; 
   return (
     <View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-        <Mono color={C.chalk} style={{ fontSize: 12 }}>{label}</Mono>
-        <Mono style={{ fontSize: 12 }}>{Math.round(cur)} / {target} {unit}</Mono>
+        <Mono color={C.chalk} style={{ fontSize: fs.caption }}>{label}</Mono>
+        <Mono style={{ fontSize: fs.caption }}>{Math.round(cur)} / {target} {unit}</Mono>
       </View>
       <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink2, overflow: "hidden" }}>
         <View style={{ width: `${pct * 100}%`, height: 8, backgroundColor: over ? C.red : color }} />
@@ -204,7 +204,7 @@ function Today2({ label, value }: { label: string; value: string }) {
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{value}</Text>
-      <Mono style={{ fontSize: 10 }}>{label}</Mono>
+      <Mono style={{ fontSize: fs.nano }}>{label}</Mono>
     </View>
   );
 }
@@ -218,7 +218,7 @@ function Cell({ value, onChange, ph }: { value: string; onChange: (v: string) =>
       placeholder={ph}
       placeholderTextColor={C.ash}
       keyboardType="numeric"
-      style={{ flex: 1, fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8 }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8 }}
     />
   );
 }

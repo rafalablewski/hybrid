@@ -3,7 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo } from "@hybrid/core";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
@@ -39,7 +39,7 @@ export const uid = () =>
 
 const input = {
   ...mono,
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   background: INK2,
   color: CHALK,
   border: `1px solid ${LINE}`,
@@ -53,7 +53,7 @@ const input = {
 export function blockBtn(color: string) {
   return {
     ...cond,
-    fontSize: 12,
+    fontSize: fs.caption,
     fontWeight: 700,
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
@@ -68,7 +68,7 @@ export function blockBtn(color: string) {
 function iconBtn(color: string) {
   return {
     ...cond,
-    fontSize: 13,
+    fontSize: fs.body,
     fontWeight: 700,
     color: txt(color),
     background: "transparent",
@@ -220,7 +220,7 @@ export default function WorkoutBlocks({
     <>
       {blocks.length === 0 && (
         <Card style={{ textAlign: "center", padding: 32, marginBottom: 12 }}>
-          <Mono s={{ fontSize: 13 }}>{emptyHint}</Mono>
+          <Mono s={{ fontSize: fs.body }}>{emptyHint}</Mono>
         </Card>
       )}
 
@@ -242,7 +242,7 @@ export default function WorkoutBlocks({
           style={{ opacity: dragUid === b.uid ? 0.5 : 1 }}
         >
         <Card style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: space.sm, alignItems: "center", marginBottom: 10 }}>
             {reorder && (
               <span
                 // Grip handle — press and drag the card to reorder (or use ↑/↓).
@@ -250,16 +250,16 @@ export default function WorkoutBlocks({
                 onDragStart={() => setDragUid(b.uid)}
                 onDragEnd={() => setDragUid(null)}
                 title="Drag to reorder"
-                style={{ ...mono, fontSize: 15, color: txt(ASH), cursor: "grab", userSelect: "none", lineHeight: 1, padding: "0 2px" }}
+                style={{ ...mono, fontSize: fs.note, color: txt(ASH), cursor: "grab", userSelect: "none", lineHeight: 1, padding: "0 2px" }}
               >
                 ⠿
               </span>
             )}
-            <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : b.kind === "cardio" ? BLUE : VIOLET}>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : b.kind === "cardio" ? BLUE : VIOLET}>
               {b.kind}
             </Mono>
             {ssLabels[idx] && (
-              <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
+              <span style={{ ...mono, fontSize: fs.micro, fontWeight: 700, color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
                 ⛓ {ssLabels[idx]}
               </span>
             )}
@@ -304,20 +304,20 @@ export default function WorkoutBlocks({
             <>
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
               <div style={{ minWidth: detailed ? 360 : 240 }}>
-              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: 6, marginBottom: 4, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: space.xs, marginBottom: 4, alignItems: "center" }}>
                 <span />
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>load ({units})</Mono>
-                <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>reps</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>load ({units})</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>reps</Mono>
                 {detailed && (
                   <>
                     <button
                       onClick={() => setRpeHelp((v) => !v)}
                       title="What is RPE?"
-                      style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+                      style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
                     >
                       {rirMode ? "rir" : "rpe"} ⓘ
                     </button>
-                    <Mono s={{ fontSize: 10, textTransform: "uppercase" }}>m/s</Mono>
+                    <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>m/s</Mono>
                   </>
                 )}
                 <span />
@@ -326,7 +326,7 @@ export default function WorkoutBlocks({
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: 6, marginBottom: 6, alignItems: "center" }}
+                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: space.xs, marginBottom: 6, alignItems: "center" }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -364,7 +364,7 @@ export default function WorkoutBlocks({
                       onClick={() => moveSet(b.uid, i, -1)}
                       disabled={i === 0}
                       title="Move set up"
-                      style={{ ...mono, fontSize: 10, lineHeight: 1, color: txt(i === 0 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === 0 ? "default" : "pointer", padding: "2px 0" }}
+                      style={{ ...mono, fontSize: fs.nano, lineHeight: 1, color: txt(i === 0 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === 0 ? "default" : "pointer", padding: "2px 0" }}
                     >
                       ↑
                     </button>
@@ -372,7 +372,7 @@ export default function WorkoutBlocks({
                       onClick={() => moveSet(b.uid, i, 1)}
                       disabled={i === b.sets.length - 1}
                       title="Move set down"
-                      style={{ ...mono, fontSize: 10, lineHeight: 1, color: txt(i === b.sets.length - 1 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === b.sets.length - 1 ? "default" : "pointer", padding: "2px 0" }}
+                      style={{ ...mono, fontSize: fs.nano, lineHeight: 1, color: txt(i === b.sets.length - 1 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === b.sets.length - 1 ? "default" : "pointer", padding: "2px 0" }}
                     >
                       ↓
                     </button>
@@ -384,7 +384,7 @@ export default function WorkoutBlocks({
               ))}
               </div>
               </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap" }}>
                 <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
                   + set
                 </button>
@@ -406,7 +406,7 @@ export default function WorkoutBlocks({
                 if (!top) return null;
                 const pl = platesPerSide(top, units);
                 return (
-                  <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={ASH}>
+                  <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
                     {pl.perSide.length ? `Per side @ ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${units})`}
                   </Mono>
                 );
@@ -414,9 +414,9 @@ export default function WorkoutBlocks({
             </>
           ) : b.kind === "cardio" ? (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xs }}>
                 {["dist (km)", "minutes"].map((h) => (
-                  <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
+                  <Mono key={h} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
                     {h}
                   </Mono>
                 ))}
@@ -424,16 +424,16 @@ export default function WorkoutBlocks({
                 <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
               </div>
               {pacePerKm(b) && (
-                <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={BLUE}>
+                <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={BLUE}>
                   pace {pacePerKm(b)}
                 </Mono>
               )}
             </>
           ) : (
             <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 6, minWidth: 360 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: space.xs, minWidth: 360 }}>
               {["format", "work (s)", "rest (s)", "rounds", "minutes"].map((h) => (
-                <Mono key={h} s={{ fontSize: 10, textTransform: "uppercase" }}>
+                <Mono key={h} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
                   {h}
                 </Mono>
               ))}
@@ -457,7 +457,7 @@ export default function WorkoutBlocks({
 
       {rpeHelp && <RpeHelp onClose={() => setRpeHelp(false)} />}
 
-      <div style={{ display: "flex", gap: 8, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
         <button onClick={addStrength} style={blockBtn(LIME)}>
           + Strength
         </button>
@@ -480,21 +480,21 @@ function RpeHelp({ onClose }: { onClose: () => void }) {
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}`, marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           RPE — how hard did that feel?
         </Mono>
         <button onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
       </div>
-      <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
       <div style={{ display: "grid", gridTemplateColumns: "44px 64px 1fr", gap: "4px 10px", alignItems: "baseline" }}>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>RPE</Mono>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>reps left</Mono>
-        <Mono s={{ fontSize: 10, textTransform: "uppercase" }} c={ASH}>feels like</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>RPE</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>reps left</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>feels like</Mono>
         {RPE_SCALE.map((step) => (
           <div key={step.rpe} style={{ display: "contents" }}>
-            <Mono s={{ fontSize: 13, fontWeight: 700 }} c={LIME}>{step.rpe}</Mono>
-            <Mono s={{ fontSize: 13 }} c={CHALK}>{step.rir}</Mono>
-            <Mono s={{ fontSize: 13 }} c={CHALK}>{step.meaning}</Mono>
+            <Mono s={{ fontSize: fs.body, fontWeight: 700 }} c={LIME}>{step.rpe}</Mono>
+            <Mono s={{ fontSize: fs.body }} c={CHALK}>{step.rir}</Mono>
+            <Mono s={{ fontSize: fs.body }} c={CHALK}>{step.meaning}</Mono>
           </div>
         ))}
       </div>

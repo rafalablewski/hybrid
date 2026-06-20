@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import { INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Select } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, mono, txt, Mono, Card, Select } from "@/lib/ui";
 
 // Local mirror of the stored program shape (see apps/web/lib/coach-program.ts).
 type Item = { name: string; sr: string; rpe?: string };
@@ -65,28 +65,28 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
 
     return (
       <Card>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} style={{ ...inp, flex: 1, fontSize: 15 }} />
+        <div style={{ display: "flex", gap: space.sm, alignItems: "center", marginBottom: 12 }}>
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} style={{ ...inp, flex: 1, fontSize: fs.note }} />
           <button onClick={save} style={btn(LIME)}>Save</button>
           <button onClick={() => setDraft(null)} style={btn(ASH)}>Close</button>
         </div>
-        <Mono s={{ fontSize: 11, display: "block", marginBottom: 10 }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 10 }} c={ASH}>
           {draft.weeks.length} week{draft.weeks.length === 1 ? "" : "s"} · {sessionsOf(draft.weeks)} session{sessionsOf(draft.weeks) === 1 ? "" : "s"}
         </Mono>
         {draft.weeks.map((w, wi) => (
           <div key={wi} style={{ border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12, marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Week {wi + 1}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Week {wi + 1}</Mono>
               <button onClick={() => rmWeek(wi)} style={linkBtn}>remove week</button>
             </div>
             {w.days.map((d, di) => (
               <div key={di} style={{ borderTop: di ? `1px solid ${LINE}` : "none", paddingTop: di ? 8 : 0, marginTop: di ? 8 : 0 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
                   <input value={d.day} onChange={(e) => editDay(wi, di, e.target.value)} placeholder="Day name" style={{ ...inp, flex: 1 }} />
                   <button onClick={() => rmDay(wi, di)} style={linkBtn}>remove</button>
                 </div>
                 {d.items.map((it, ii) => (
-                  <div key={ii} style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+                  <div key={ii} style={{ display: "flex", gap: space.xs, marginTop: 6, alignItems: "center" }}>
                     <input value={it.name} onChange={(e) => editItem(wi, di, ii, { name: e.target.value })} placeholder="Exercise" style={{ ...inp, flex: 1 }} />
                     <input value={it.sr} onChange={(e) => editItem(wi, di, ii, { sr: e.target.value })} placeholder="5 × 5" style={{ ...inp, width: 90 }} />
                     <input value={it.rpe ?? ""} onChange={(e) => editItem(wi, di, ii, { rpe: e.target.value })} placeholder="RPE" style={{ ...inp, width: 64 }} />
@@ -100,7 +100,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
           </div>
         ))}
         <button onClick={addWeek} style={btn(VIOLET)}>+ week</button>
-        {msg && <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={LIME}>{msg}</Mono>}
+        {msg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={LIME}>{msg}</Mono>}
       </Card>
     );
   }
@@ -110,22 +110,22 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
     <>
       {unavailable && (
         <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
-          <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block" }} c={CHALK}>
+          <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block" }} c={CHALK}>
             Programs aren&apos;t persisted yet — run <span style={{ color: txt(AMBER) }}>reference/sql-coach-programs.sql</span> in Supabase to enable them.
           </Mono>
         </Card>
       )}
       <Card>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>New program</Mono>
-        <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>New program</Mono>
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
           Build a multi-week program once, then assign it to a client or a whole group — it lands as scheduled sessions in their account.
         </Mono>
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. 8-Week Strength Base" style={{ ...inp, flex: 1, fontSize: 14 }} />
+        <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
+          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. 8-Week Strength Base" style={{ ...inp, flex: 1, fontSize: fs.bodyLg }} />
           <button onClick={create} style={btn(newName.trim() ? LIME : ASH)}>Create</button>
         </div>
       </Card>
-      {msg && <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={LIME}>{msg}</Mono>}
+      {msg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4 }} c={LIME}>{msg}</Mono>}
       {programs.map((p) => (
         <ProgramRow key={p.id} program={p} clients={clients} groups={groups} onEdit={() => setDraft(p)} onDelete={() => del(p.id)} onAssigned={(t) => setMsg(t)} />
       ))}
@@ -158,17 +158,17 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ ...disp, fontWeight: 700, fontSize: 15 }}>{program.name}</div>
-          <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>{program.weeks.length} wk · {sessions} session{sessions === 1 ? "" : "s"}</Mono>
+          <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{program.name}</div>
+          <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>{program.weeks.length} wk · {sessions} session{sessions === 1 ? "" : "s"}</Mono>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: space.sm }}>
           <button onClick={onEdit} style={btn(VIOLET)}>Edit</button>
           <button onClick={onDelete} style={btn(ASH)}>Delete</button>
         </div>
       </div>
       {sessions > 0 && (
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <Select value={target} onChange={(e) => setTarget(e.target.value)} style={{ fontSize: 14, flex: 1, minWidth: 160 }}>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <Select value={target} onChange={(e) => setTarget(e.target.value)} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 160 }}>
             <option value="">Assign to…</option>
             {clients.length > 0 && <optgroup label="Clients">{clients.map((c) => <option key={c.linkId} value={`link:${c.linkId}`}>{c.name}</option>)}</optgroup>}
             {groups.length > 0 && <optgroup label="Groups">{groups.map((g) => <option key={g.id} value={`group:${g.id}`}>{g.name} ({g.clientIds.length})</option>)}</optgroup>}
@@ -181,8 +181,8 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
   );
 }
 
-const inp: CSSProperties = { ...mono, fontSize: 13, padding: "8px 10px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" };
-const linkBtn: CSSProperties = { ...mono, fontSize: 11, color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer" };
+const inp: CSSProperties = { ...mono, fontSize: fs.body, padding: "8px 10px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" };
+const linkBtn: CSSProperties = { ...mono, fontSize: fs.micro, color: txt(ASH), background: "none", border: "none", padding: 0, cursor: "pointer" };
 function btn(color: string): CSSProperties {
-  return { ...cond, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: color, border: "none", borderRadius: 10, padding: "8px 13px", cursor: "pointer" };
+  return { ...cond, fontSize: fs.caption, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: color, border: "none", borderRadius: 10, padding: "8px 13px", cursor: "pointer" };
 }

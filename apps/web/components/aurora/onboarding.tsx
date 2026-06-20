@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
+import { fs, space,
   recommendPlan,
   ONBOARDING_GOAL_GROUPS,
   type OnboardingGoal,
@@ -70,8 +70,8 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
   const back = () => idx > 0 && setIdx((i) => i - 1);
   const canNext = step === "persona" ? !!persona : step === "goal" ? !!goal : true;
 
-  const pill = (active: boolean) => ({ borderRadius: 999, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer", border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? C("lime") : "transparent", color: active ? C("ink") : C("ash") });
-  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: 10, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? "rgba(196,240,53,.08)" : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
+  const pill = (active: boolean) => ({ borderRadius: 999, padding: "10px 18px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? C("lime") : "transparent", color: active ? C("ink") : C("ash") });
+  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? "rgba(196,240,53,.08)" : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", fontFamily: "var(--font-display)" }}>
@@ -85,7 +85,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
             {[{ id: "casual" as const, t: "Just track my training", s: "Log fast, review at home, share your wins." }, { id: "athlete" as const, t: "Train for a goal", s: "Plans, sport S&C, velocity & performance." }].map((o) => (
               <button key={o.id} onClick={() => setClientPersona(o.id)} style={choice(persona === o.id)}>
                 {persona === o.id && <AuroraIcon name="check" size={22} color={C("lime")} />}
-                <span><b style={{ fontSize: 15, color: persona === o.id ? C("lime") : C("chalk") }}>{o.t}</b><br /><span style={{ fontSize: 12, color: C("ash") }}>{o.s}</span></span>
+                <span><b style={{ fontSize: fs.note, color: persona === o.id ? C("lime") : C("chalk") }}>{o.t}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.s}</span></span>
               </button>
             ))}
           </Step>
@@ -94,11 +94,11 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
           <Step title="What is your main goal?" sub="We'll shape your first plan around it.">
             {ONBOARDING_GOAL_GROUPS.map((g) => (
               <div key={g.category}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
                 {g.goals.map((gl) => (
                   <button key={gl.id} onClick={() => setGoal(gl.id)} style={{ ...choice(goal === gl.id), marginBottom: 8 }}>
                     {goal === gl.id && <AuroraIcon name="check" size={20} color={C("lime")} />}
-                    <span><b style={{ fontSize: 14, color: goal === gl.id ? C("lime") : C("chalk") }}>{gl.label}</b><br /><span style={{ fontSize: 12, color: C("ash") }}>{gl.blurb}</span></span>
+                    <span><b style={{ fontSize: fs.bodyLg, color: goal === gl.id ? C("lime") : C("chalk") }}>{gl.label}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{gl.blurb}</span></span>
                   </button>
                 ))}
               </div>
@@ -113,20 +113,20 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
             {plan ? (
               <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{plan.planName}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks</div>
-                <div style={{ fontSize: 14, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks</div>
+                <div style={{ fontSize: fs.bodyLg, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>
               </div>
-            ) : <div style={{ color: C("ash"), fontSize: 14 }}>Plans for this goal are coming soon — jump in now and enroll once they land.</div>}
+            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>Plans for this goal are coming soon — jump in now and enroll once they land.</div>}
           </Step>
         )}
-        {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("red"), marginTop: 12 }}>{error}</div>}
+        {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
       </div>
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24 }}>
+      <div style={{ display: "flex", gap: space.md, alignItems: "center", marginTop: 24 }}>
         <button onClick={back} disabled={idx === 0} style={{ width: 60, height: 52, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.4 : 1, display: "grid", placeItems: "center" }}>
           <AuroraIcon name="back" size={20} />
         </button>
-        <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: 16, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
+        <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
           {step === "plan" ? (enrolling ? "Setting up…" : plan ? "Start this plan" : "Continue") : "Next"}
         </button>
       </div>
@@ -138,9 +138,9 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
   const C = (v: string) => `var(--color-${v})`;
   return (
     <div>
-      <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0, letterSpacing: "-.01em" }}>{title}</h1>
-      {sub ? <p style={{ color: C("ash"), fontSize: 14, marginTop: 8 }}>{sub}</p> : null}
-      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.01em" }}>{title}</h1>
+      {sub ? <p style={{ color: C("ash"), fontSize: fs.bodyLg, marginTop: 8 }}>{sub}</p> : null}
+      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: space.ms }}>{children}</div>
     </div>
   );
 }
@@ -148,10 +148,10 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
 function Seg<T extends string>({ options, value, onPick }: { options: { id: T; label: string }[]; value: T; onPick: (v: T) => void }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
-    <div style={{ display: "flex", gap: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
+    <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
       {options.map((o) => {
         const on = value === o.id;
-        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: 1, padding: "11px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
+        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: 1, padding: "11px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
       })}
     </div>
   );

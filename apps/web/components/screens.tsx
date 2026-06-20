@@ -14,7 +14,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import {
+import { fs, space,
   INK2,
   LINE,
   LIME,
@@ -85,8 +85,8 @@ export function AthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[]
   if (sessions.length === 0)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No analytics yet</div>
-        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>No analytics yet</div>
+        <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
           Log a few sessions and your strength trend, volume, PRs and readiness chart out here — all from your real training.
         </Mono>
       </Card>
@@ -112,7 +112,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
   const best = prs[0];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: space.lg }}>
       <Stat label="Sessions" value={sessions.length} c={LIME} />
       <Stat label="Total volume" value={fmtTonnage(vol, units)} />
       <Stat
@@ -127,8 +127,8 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={series}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-              <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} domain={["auto", "auto"]} />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+              <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} />
               <Tooltip contentStyle={tip} />
               <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
             </LineChart>
@@ -140,8 +140,8 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={volSeries}>
             <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-            <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-            <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+            <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+            <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
             <Tooltip contentStyle={tip} />
             <Bar dataKey="vol" fill={BLUE} radius={[4, 4, 0, 0]} />
           </BarChart>
@@ -159,7 +159,7 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
                     key={h}
                     style={{
                       ...mono,
-                      fontSize: 11,
+                      fontSize: fs.micro,
                       color: txt(ASH),
                       textTransform: "uppercase",
                       textAlign: "left",
@@ -175,13 +175,13 @@ function RealAthlete({ sessions }: { sessions: LoggedSession[] }) {
             <tbody>
               {prs.map((p) => (
                 <tr key={p.lift}>
-                  <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     {p.lift}
                   </td>
-                  <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <td style={{ ...mono, fontSize: fs.bodyLg, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     {fmtWeight(p.e1rm, units)}
                   </td>
-                  <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <td style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
                     {fmtDate(p.when)}
                   </td>
                 </tr>
@@ -201,8 +201,8 @@ export function CoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) {
   if (roster.length === 0)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No clients yet</div>
-        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>No clients yet</div>
+        <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
           Invite athletes from the <b style={{ color: txt(LIME) }}>Coach</b> tab. Once they accept and train, your roster analytics appear here.
         </Mono>
       </Card>
@@ -220,7 +220,7 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
   const totalVol = roster.reduce((s, c) => s + c.volume, 0);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: space.lg }}>
       <Stat label="Clients" value={roster.length} c={VIOLET} />
       <Stat label="Avg adherence" value={avgAdh + "%"} c={LIME} />
       <Stat label="Avg readiness" value={avgRead ?? "—"} c={BLUE} />
@@ -230,8 +230,8 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
         <ResponsiveContainer width="100%" height={Math.max(120, roster.length * 44)}>
           <BarChart data={roster} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-            <XAxis type="number" domain={[0, 100]} stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-            <YAxis type="category" dataKey="name" stroke={ASH} width={90} style={{ ...mono, fontSize: 10 }} />
+            <XAxis type="number" domain={[0, 100]} stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+            <YAxis type="category" dataKey="name" stroke={ASH} width={90} style={{ ...mono, fontSize: fs.nano }} />
             <Tooltip contentStyle={tip} />
             <Bar dataKey="adherence" fill={LIME} radius={[0, 4, 4, 0]} />
           </BarChart>
@@ -244,7 +244,7 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
           <thead>
             <tr>
               {["Athlete", "Readiness", "Adherence", "Sessions", "Last"].map((h) => (
-                <th key={h} style={{ ...mono, fontSize: 11, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                <th key={h} style={{ ...mono, fontSize: fs.micro, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                   {h}
                 </th>
               ))}
@@ -253,13 +253,13 @@ function RealCoach({ roster }: { roster: RosterRow[] }) {
           <tbody>
             {roster.map((c) => (
               <tr key={c.linkId}>
-                <td style={{ ...disp, fontWeight: 600, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.name}</td>
-                <td style={{ ...mono, fontSize: 14, padding: "12px 0", borderBottom: `1px solid ${LINE}`, color: txt(c.readiness == null ? ASH : c.readiness > 70 ? LIME : c.readiness > 50 ? AMBER : RED) }}>
+                <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.name}</td>
+                <td style={{ ...mono, fontSize: fs.bodyLg, padding: "12px 0", borderBottom: `1px solid ${LINE}`, color: txt(c.readiness == null ? ASH : c.readiness > 70 ? LIME : c.readiness > 50 ? AMBER : RED) }}>
                   {c.readiness ?? "—"}
                 </td>
-                <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.adherence}%</td>
-                <td style={{ ...mono, fontSize: 14, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.sessions}</td>
-                <td style={{ ...mono, fontSize: 13, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.lastSession ? fmtDate(c.lastSession) : "—"}</td>
+                <td style={{ ...mono, fontSize: fs.bodyLg, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.adherence}%</td>
+                <td style={{ ...mono, fontSize: fs.bodyLg, color: CHALK, padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.sessions}</td>
+                <td style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>{c.lastSession ? fmtDate(c.lastSession) : "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -285,18 +285,18 @@ export function OperatorAnalytics() {
   if (err)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
-        <Mono s={{ fontSize: 14 }}>Platform analytics are admin-only and computed live from the database.</Mono>
+        <Mono s={{ fontSize: fs.bodyLg }}>Platform analytics are admin-only and computed live from the database.</Mono>
       </Card>
     );
   if (!stats)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
-        <Mono s={{ fontSize: 14 }}>Loading…</Mono>
+        <Mono s={{ fontSize: fs.bodyLg }}>Loading…</Mono>
       </Card>
     );
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: space.lg }}>
       <Stat label="Total users" value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} c={LIME} />
       <Stat label="Active (30d)" value={stats.mau.toLocaleString()} sub="trained in 30d" c={LIME} />
       <Stat label="Sessions logged" value={stats.sessions.toLocaleString()} c={CHALK} />
@@ -307,8 +307,8 @@ export function OperatorAnalytics() {
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={stats.planPopularity}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="goal" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-              <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} allowDecimals={false} />
+              <XAxis dataKey="goal" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+              <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} allowDecimals={false} />
               <Tooltip contentStyle={tip} />
               <Bar dataKey="n" fill={LIME} radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -318,11 +318,11 @@ export function OperatorAnalytics() {
 
       {stats.langSplit.length > 0 && (
         <ChartFrame span={2} title="Language split" kicker="Users by language" c={BLUE}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 4 }}>
             {stats.langSplit.map((l) => (
               <div key={l.lang} style={{ display: "flex", justifyContent: "space-between" }}>
-                <Mono s={{ fontSize: 13 }} c={CHALK}>{l.lang}</Mono>
-                <Mono s={{ fontSize: 12 }}>{l.n}</Mono>
+                <Mono s={{ fontSize: fs.body }} c={CHALK}>{l.lang}</Mono>
+                <Mono s={{ fontSize: fs.caption }}>{l.n}</Mono>
               </div>
             ))}
           </div>
@@ -331,7 +331,7 @@ export function OperatorAnalytics() {
 
       {stats.totalUsers === 0 && (
         <Card span={4} style={{ textAlign: "center" }}>
-          <Mono s={{ fontSize: 13 }}>No users yet.</Mono>
+          <Mono s={{ fontSize: fs.body }}>No users yet.</Mono>
         </Card>
       )}
     </div>
@@ -364,8 +364,8 @@ export function PeriodizeScreen({
   if (!enrolled)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No active plan</div>
-        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>No active plan</div>
+        <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
           Enroll in a plan from the <b style={{ color: txt(LIME) }}>Plans</b> tab — your periodized
           macrocycle (phases, load &amp; recovery weeks) shows up here.
         </Mono>
@@ -383,7 +383,7 @@ export function PeriodizeScreen({
         <ReconciledWeek macro={macro} currentWeek={week} sessions={sessions} bio={bio ?? undefined} style={{ marginBottom: 16 }} />
       )}
       <Card style={{ marginBottom: 16 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           {macro.goalOrSport}{macro.model ? ` · ${macro.model}` : enrolled ? " · enrolled" : ""}
         </Mono>
         <div style={{ ...disp, fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>
@@ -399,11 +399,11 @@ export function PeriodizeScreen({
             />
           ))}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: space.ms, marginTop: 12 }}>
           {macro.blocks.map((b) => (
-            <div key={b.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div key={b.key} style={{ display: "flex", alignItems: "center", gap: space.xs }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: b.color }} />
-              <Mono s={{ fontSize: 11 }} c={b.key === current.key ? CHALK : ASH}>
+              <Mono s={{ fontSize: fs.micro }} c={b.key === current.key ? CHALK : ASH}>
                 {b.label}
               </Mono>
             </div>
@@ -411,17 +411,17 @@ export function PeriodizeScreen({
         </div>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: space.lg }}>
         {macro.blocks.map((b) => (
           <Card key={b.key} style={{ borderLeft: `3px solid ${b.color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 18, color: txt(b.color) }}>{b.label}</div>
-              <Mono s={{ fontSize: 12 }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: txt(b.color) }}>{b.label}</div>
+              <Mono s={{ fontSize: fs.caption }}>
                 wk {b.startWeek}–{b.endWeek}
               </Mono>
             </div>
-            <Mono s={{ fontSize: 12, display: "block", margin: "6px 0 12px" }}>{b.focus}</Mono>
-            <div style={{ display: "flex", gap: 6 }}>
+            <Mono s={{ fontSize: fs.caption, display: "block", margin: "6px 0 12px" }}>{b.focus}</Mono>
+            <div style={{ display: "flex", gap: space.xs }}>
               {b.micros.map((m) => (
                 <div
                   key={m.week}
@@ -435,7 +435,7 @@ export function PeriodizeScreen({
                     border: `1px solid ${m.week === week ? LIME : LINE}`,
                   }}
                 >
-                  <Mono s={{ fontSize: 10, display: "block" }} c={m.kind === "recovery" ? ASH : CHALK}>
+                  <Mono s={{ fontSize: fs.nano, display: "block" }} c={m.kind === "recovery" ? ASH : CHALK}>
                     W{m.week}
                   </Mono>
                   <div
@@ -536,7 +536,7 @@ export function HistoryScreen({
     <div style={{ display: "flex", justifyContent: "flex-end" }}>
       <button
         onClick={toggleArchived}
-        style={{ ...mono, fontSize: 12, color: txt(showArchived ? AMBER : ASH), background: "none", border: `1px solid ${showArchived ? AMBER : LINE}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+        style={{ ...mono, fontSize: fs.caption, color: txt(showArchived ? AMBER : ASH), background: "none", border: `1px solid ${showArchived ? AMBER : LINE}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
       >
         {showArchived ? "← Back to history" : "Archived ▸"}
       </button>
@@ -545,11 +545,11 @@ export function HistoryScreen({
 
   if (sessions.length === 0 && !showArchived)
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
         {archivedToggle}
         <Card style={{ textAlign: "center", padding: 60 }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No sessions yet</div>
-          <Mono s={{ fontSize: 14, display: "block", marginTop: 10 }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>No sessions yet</div>
+          <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 10 }}>
             Log your first workout from the <b style={{ color: txt(LIME) }}>Log session</b> tab — it&apos;ll
             appear here and feed your dashboard.
           </Mono>
@@ -563,24 +563,24 @@ export function HistoryScreen({
   // ARCHIVED view — read-only cards with a Restore + permanent Delete action.
   if (showArchived)
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
         {archivedToggle}
         {archived.length === 0 ? (
           <Card style={{ textAlign: "center", padding: 40 }}>
-            <Mono s={{ fontSize: 14 }}>No archived workouts.</Mono>
+            <Mono s={{ fontSize: fs.bodyLg }}>No archived workouts.</Mono>
           </Card>
         ) : (
           archived.map((s) => (
             <Card key={s.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
-                <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
+                <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{s.title}</div>
+                <Mono s={{ fontSize: fs.caption }}>{fmtDate(s.startedAt)}</Mono>
               </div>
-              <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: space.sm, margin: "8px 0 12px", flexWrap: "wrap" }}>
                 <Chip c={BLUE}>{fmtTonnage(sessionVolume(s.blocks), units)}</Chip>
                 <Chip c={ASH}>{s.blocks.length} blocks</Chip>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: space.sm }}>
                 <button onClick={() => setArchivedFlag(s.id, false)} disabled={busy === s.id} style={rowBtn(LIME, busy === s.id)}>
                   ↺ Restore
                 </button>
@@ -595,7 +595,7 @@ export function HistoryScreen({
     );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
       {archivedToggle}
       {sessions.map((s) => {
         const prCount = prsForSession(sessions, s.id).length;
@@ -603,10 +603,10 @@ export function HistoryScreen({
           <Card key={s.id}>
             <div onClick={() => setOpenId(s.id)} style={{ cursor: "pointer" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>{s.title}</div>
-                <Mono s={{ fontSize: 12 }}>{fmtDate(s.startedAt)}</Mono>
+                <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{s.title}</div>
+                <Mono s={{ fontSize: fs.caption }}>{fmtDate(s.startedAt)}</Mono>
               </div>
-              <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: space.sm, margin: "8px 0 12px", flexWrap: "wrap" }}>
                 <Chip c={BLUE}>{fmtTonnage(sessionVolume(s.blocks), units)}</Chip>
                 <Chip c={ASH}>{s.blocks.length} blocks</Chip>
                 {typeof s.readiness === "number" && <Chip c={LIME}>readiness {s.readiness}</Chip>}
@@ -617,18 +617,18 @@ export function HistoryScreen({
                   key={i}
                   style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${LINE}` }}
                 >
-                  <Mono s={{ fontSize: 13 }} c={CHALK}>
+                  <Mono s={{ fontSize: fs.body }} c={CHALK}>
                     {b.name}
                   </Mono>
-                  <Mono s={{ fontSize: 13 }}>{blockSummary(b)}</Mono>
+                  <Mono s={{ fontSize: fs.body }}>{blockSummary(b)}</Mono>
                 </div>
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${LINE}` }}>
-              <Mono s={{ fontSize: 12, cursor: "pointer" }} c={ASH} >
+              <Mono s={{ fontSize: fs.caption, cursor: "pointer" }} c={ASH} >
                 <span onClick={() => setOpenId(s.id)}>Open the full breakdown →</span>
               </Mono>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: space.sm }}>
                 <button onClick={() => setArchivedFlag(s.id, true)} disabled={busy === s.id} style={rowBtn(AMBER, busy === s.id)}>
                   Archive
                 </button>
@@ -648,7 +648,7 @@ export function HistoryScreen({
 function rowBtn(color: string, disabled: boolean) {
   return {
     ...mono,
-    fontSize: 12,
+    fontSize: fs.caption,
     color: txt(color),
     background: `${color}14`,
     border: `1px solid ${color}55`,
@@ -717,23 +717,23 @@ export function SessionDetail({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>
       <button
         onClick={onBack}
-        style={{ ...mono, fontSize: 13, color: txt(ASH), background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
+        style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
       >
         ← History
       </button>
 
       <div>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 26 }}>{session.title}</div>
-        <Mono s={{ fontSize: 13, display: "block", marginTop: 4 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.display }}>{session.title}</div>
+        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }}>
           {fmtDate(session.startedAt)}
           {typeof session.readiness === "number" ? ` · readiness ${session.readiness}` : ""}
         </Mono>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.lg }}>
         <Stat label="Minutes" value={minutes != null ? minutes : "—"} />
         <Stat label="Sets" value={sets} />
         <Stat label="Volume" value={fmtTonnage(sessionVolume(session.blocks), units)} c={LIME} />
@@ -741,12 +741,12 @@ export function SessionDetail({
 
       {prs.length > 0 && (
         <Card style={{ borderColor: LIME }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
             🏆 {prs.length} new personal record{prs.length > 1 ? "s" : ""}
           </Mono>
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: space.xs }}>
             {prs.map((p) => (
-              <Mono key={p.lift} s={{ fontSize: 13 }} c={CHALK}>
+              <Mono key={p.lift} s={{ fontSize: fs.body }} c={CHALK}>
                 {prLine(p)}
               </Mono>
             ))}
@@ -756,12 +756,12 @@ export function SessionDetail({
 
       {cardioPrs.length > 0 && (
         <Card style={{ borderColor: BLUE }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
             🏃 {cardioPrs.length} new cardio record{cardioPrs.length > 1 ? "s" : ""}
           </Mono>
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: space.xs }}>
             {cardioPrs.map((p) => (
-              <Mono key={`${p.move}-${p.kind}`} s={{ fontSize: 13 }} c={CHALK}>
+              <Mono key={`${p.move}-${p.kind}`} s={{ fontSize: fs.body }} c={CHALK}>
                 {cardioPrLine(p)}
               </Mono>
             ))}
@@ -769,15 +769,15 @@ export function SessionDetail({
         </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: !isMobile && series.length > 1 ? "repeat(2, 1fr)" : "1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: !isMobile && series.length > 1 ? "repeat(2, 1fr)" : "1fr", gap: space.lg }}>
         {muscles.length > 0 && (
           <ChartFrame title="Muscle focus" kicker="Tonnage by muscle">
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
               {muscles.map((m) => (
                 <div key={m.muscle}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <Mono s={{ fontSize: 13 }} c={CHALK}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
-                    <Mono s={{ fontSize: 12 }}>{fmtWeight(m.volume, units)}</Mono>
+                    <Mono s={{ fontSize: fs.body }} c={CHALK}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
+                    <Mono s={{ fontSize: fs.caption }}>{fmtWeight(m.volume, units)}</Mono>
                   </div>
                   <div style={{ height: 8, borderRadius: 4, background: INK2, overflow: "hidden" }}>
                     <div style={{ width: `${Math.max(6, (m.volume / muscleMax) * 100)}%`, height: 8, borderRadius: 4, background: LIME }} />
@@ -793,8 +793,8 @@ export function SessionDetail({
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={series}>
                 <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
-                <YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} domain={["auto", "auto"]} />
+                <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+                <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} />
                 <Tooltip contentStyle={tip} />
                 <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
@@ -808,10 +808,10 @@ export function SessionDetail({
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={paceData}>
               <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} />
+              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
               <YAxis
                 stroke={ASH}
-                style={{ ...mono, fontSize: 11 }}
+                style={{ ...mono, fontSize: fs.micro }}
                 reversed
                 domain={["auto", "auto"]}
                 tickFormatter={(v: number) => paceClock(v)}
@@ -825,16 +825,16 @@ export function SessionDetail({
       )}
 
       {/* Per-exercise breakdown */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
         {session.blocks.map((b, i) => (
           <Card key={i}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle }}>
                 {prSet.has(b.name) ? "🏆 " : ""}
                 {onOpenExercise && b.kind !== "conditioning" ? (
                   <button
                     onClick={() => onOpenExercise(b.name)}
-                    style={{ ...disp, fontWeight: 700, fontSize: 16, color: txt(LIME), background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                    style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, color: txt(LIME), background: "none", border: "none", padding: 0, cursor: "pointer" }}
                     title="Open this exercise's dashboard"
                   >
                     {b.name} ›
@@ -842,10 +842,10 @@ export function SessionDetail({
                 ) : (
                   b.name
                 )}
-                {ssLabels[i] && <span style={{ ...mono, fontSize: 11, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
+                {ssLabels[i] && <span style={{ ...mono, fontSize: fs.micro, color: txt(LIME), marginLeft: 8 }}>⛓ {ssLabels[i]}</span>}
               </div>
               {b.kind === "strength" && blockBestE1rm(b) > 0 && (
-                <Mono s={{ fontSize: 13 }} c={LIME}>{fmtWeight(blockBestE1rm(b), units)} e1RM</Mono>
+                <Mono s={{ fontSize: fs.body }} c={LIME}>{fmtWeight(blockBestE1rm(b), units)} e1RM</Mono>
               )}
             </div>
             {b.kind === "strength" ? (
@@ -855,17 +855,17 @@ export function SessionDetail({
                   const sAccent = sType === "warmup" ? AMBER : sType === "cooldown" ? BLUE : sType === "drop" ? LIME : ASH;
                   const sTag = sType === "warmup" ? " · warm-up" : sType === "cooldown" ? " · cool-down" : sType === "drop" ? " · drop" : "";
                   return (
-                  <div key={j} style={{ display: "flex", gap: 16, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
-                    <Mono s={{ fontSize: 13, width: 22 }} c={sAccent}>{setTypeBadge(st, j)}</Mono>
-                    <Mono s={{ fontSize: 13, flex: 1 }} c={CHALK}>{st.load ? `${displayLoad(st.load, units)} ${units}` : "–"} × {st.reps || "–"}{sTag}</Mono>
-                    {st.rpe ? <Mono s={{ fontSize: 13 }}>RPE {st.rpe}</Mono> : null}
-                    {st.vel ? <Mono s={{ fontSize: 13 }} c={BLUE}>{st.vel} m/s</Mono> : null}
+                  <div key={j} style={{ display: "flex", gap: space.lg, padding: "4px 0", borderTop: j ? `1px solid ${LINE}` : undefined }}>
+                    <Mono s={{ fontSize: fs.body, width: 22 }} c={sAccent}>{setTypeBadge(st, j)}</Mono>
+                    <Mono s={{ fontSize: fs.body, flex: 1 }} c={CHALK}>{st.load ? `${displayLoad(st.load, units)} ${units}` : "–"} × {st.reps || "–"}{sTag}</Mono>
+                    {st.rpe ? <Mono s={{ fontSize: fs.body }}>RPE {st.rpe}</Mono> : null}
+                    {st.vel ? <Mono s={{ fontSize: fs.body }} c={BLUE}>{st.vel} m/s</Mono> : null}
                   </div>
                   );
                 })}
               </div>
             ) : (
-              <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>{blockSummary(b)}</Mono>
+              <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }}>{blockSummary(b)}</Mono>
             )}
           </Card>
         ))}

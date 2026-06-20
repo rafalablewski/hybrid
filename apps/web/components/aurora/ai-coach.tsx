@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { fs } from "@hybrid/core";
+
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -38,7 +40,7 @@ export default function AuroraAskCoach() {
         disabled={busy}
         style={{
           fontFamily: "var(--font-display)",
-          fontSize: 13,
+          fontSize: fs.body,
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: ".04em",
@@ -64,7 +66,7 @@ export default function AuroraAskCoach() {
                 borderRadius: 999,
                 padding: "3px 12px",
                 fontFamily: "var(--font-mono)",
-                fontSize: 11,
+                fontSize: fs.micro,
               }}
             >
               {source === "ai" ? "Claude" : "Engine"}

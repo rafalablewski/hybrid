@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../lib/api";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import { fs, Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraCoachApply from "../components/aurora/coach-apply";
@@ -58,10 +58,10 @@ function ClassicCoachApply() {
   return (
     <Screen>
       <Pressable onPress={() => router.back()} hitSlop={10}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 10 }}>Become a coach</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 10 }}>Become a coach</Text>
       <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
         Coaching others is verification-gated. Tell us who you are — certifications, experience,
         who you train — and an admin reviews it. Approval unlocks the roster, squad monitor and
@@ -109,7 +109,7 @@ function ClassicCoachApply() {
                 multiline
                 numberOfLines={5}
                 textAlignVertical="top"
-                style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 120 }}
+                style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 120 }}
               />
               {!!error && <Mono color={C.red} style={{ marginTop: 10 }}>{error}</Mono>}
               <Pressable
@@ -117,7 +117,7 @@ function ClassicCoachApply() {
                 disabled={!canSubmit}
                 style={{ backgroundColor: canSubmit ? C.violet : `${C.violet}55`, borderRadius: 12, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
               >
-                {busy ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>Submit application</Text>}
+                {busy ? <ActivityIndicator color={C.ink} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>Submit application</Text>}
               </Pressable>
             </Card>
           )}

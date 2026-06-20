@@ -12,7 +12,7 @@ import { useSession } from "../lib/session";
 // preferences, whether the session is immediate or arrives after email confirm.
 const PENDING_ONBOARDING = "hybrid.pendingOnboarding";
 import { useLang } from "../lib/i18n";
-import { F, Button } from "../lib/ui";
+import { fs, F, Button } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraLogin from "../components/aurora/login";
@@ -92,7 +92,7 @@ function ClassicLogin() {
           {brand.name}
           <Text style={{ color: txt(C, C.lime) }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), letterSpacing: 3, marginTop: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), letterSpacing: 3, marginTop: 6 }}>
           STRENGTH · CONDITIONING
         </Text>
       </View>
@@ -104,7 +104,7 @@ function ClassicLogin() {
       <Input value={password} onChange={setPassword} placeholder="password" secure />
 
       {!!error && (
-        <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.red), marginBottom: 10 }}>{error}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginBottom: 10 }}>{error}</Text>
       )}
 
       <Button
@@ -120,18 +120,18 @@ function ClassicLogin() {
         }}
         style={{ alignItems: "center", marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
           {mode === "signin" ? "Need an account? " : "Have an account? "}
           <Text style={{ color: txt(C, C.lime) }}>{mode === "signin" ? "Create one" : "Sign in"}</Text>
         </Text>
       </Pressable>
 
       <Pressable onPress={() => router.push("/workout?source=empty")} style={{ alignItems: "center", marginTop: 22 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← {t("login.guest")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("login.guest")}</Text>
       </Pressable>
 
       {!live && (
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, textAlign: "center", marginTop: 20 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textAlign: "center", marginTop: 20 }}>
           Set EXPO_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.
         </Text>
       )}
@@ -164,7 +164,7 @@ function Input({
       autoCapitalize="none"
       style={{
         fontFamily: F.mono,
-        fontSize: 15,
+        fontSize: fs.note,
         color: C.chalk,
         backgroundColor: C.ink2,
         borderWidth: 1,

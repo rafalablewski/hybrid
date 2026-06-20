@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LIME, AMBER, CHALK, ASH, disp, mono } from "@/lib/ui";
+import { fs, space, LIME, AMBER, CHALK, ASH, disp, mono } from "@/lib/ui";
 
 type Announcement = {
   id: string;
@@ -48,7 +48,7 @@ export default function AnnouncementBanner() {
   if (visible.length === 0) return null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginBottom: 20 }}>
       {visible.map((a) => {
         const accent = ACCENT[a.level];
         return (
@@ -57,26 +57,26 @@ export default function AnnouncementBanner() {
             style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: 12,
+              gap: space.md,
               padding: "12px 16px",
               borderRadius: 12,
               background: `${accent}12`,
               border: `1px solid ${accent}40`,
             }}
           >
-            <span style={{ color: accent, fontSize: 16, lineHeight: 1.4 }}>
+            <span style={{ color: accent, fontSize: fs.subtitle, lineHeight: 1.4 }}>
               {a.level === "warning" ? "▲" : "✦"}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 15, color: CHALK }}>{a.title}</div>
-              <div style={{ ...mono, fontSize: 13, lineHeight: 1.5, color: ASH, marginTop: 3, whiteSpace: "pre-wrap" }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.note, color: CHALK }}>{a.title}</div>
+              <div style={{ ...mono, fontSize: fs.body, lineHeight: 1.5, color: ASH, marginTop: 3, whiteSpace: "pre-wrap" }}>
                 {a.body}
               </div>
             </div>
             <button
               onClick={() => dismiss(a.id)}
               aria-label="Dismiss"
-              style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 2, flexShrink: 0 }}
+              style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: fs.title, lineHeight: 1, padding: 2, flexShrink: 0 }}
             >
               ×
             </button>

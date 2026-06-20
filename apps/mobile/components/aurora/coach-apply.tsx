@@ -5,7 +5,7 @@ import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 const STATUS_COPY: Record<CoachApplication["status"], string> = {
@@ -57,11 +57,11 @@ export default function AuroraCoachApply() {
   return (
     <AuroraScreen>
       <Pressable onPress={() => router.back()} hitSlop={10}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <AHeading style={{ fontSize: 26, marginTop: 12 }}>Become a coach</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
+      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>Become a coach</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
         Coaching others is verification-gated. Tell us who you are — certifications, experience,
         who you train — and an admin reviews it. Approval unlocks the roster, squad monitor and
         athlete assignment.
@@ -69,8 +69,8 @@ export default function AuroraCoachApply() {
 
       {isCoach ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Already verified</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Already verified</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
             You already have coach access — open the Coach tab to manage your athletes.
           </Text>
         </ACard>
@@ -82,10 +82,10 @@ export default function AuroraCoachApply() {
         <>
           {existing && (
             <ACard style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
                 Application · {existing.status}
               </Text>
-              <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{STATUS_COPY[existing.status]}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{STATUS_COPY[existing.status]}</Text>
             </ACard>
           )}
 
@@ -93,7 +93,7 @@ export default function AuroraCoachApply() {
               applicants and for re-applying after a denial. */}
           {existing?.status !== "pending" && (
             <ACard style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Your background</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Your background</Text>
               <TextInput
                 value={credentials}
                 onChangeText={setCredentials}
@@ -102,21 +102,21 @@ export default function AuroraCoachApply() {
                 multiline
                 numberOfLines={5}
                 textAlignVertical="top"
-                style={{ fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 120 }}
+                style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 120 }}
               />
-              {!!error && <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
+              {!!error && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}
                 style={{ backgroundColor: canSubmit ? C.violet : `${C.violet}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
               >
-                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>Submit application</Text>}
+                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>Submit application</Text>}
               </Pressable>
             </ACard>
           )}
 
           {sent && existing?.status === "pending" && (
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.lime), marginTop: 12, textAlign: "center" }}>Application submitted — thanks!</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 12, textAlign: "center" }}>Application submitted — thanks!</Text>
           )}
         </>
       )}

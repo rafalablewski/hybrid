@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { parseForcePlateCsv, type ForcePlateImport } from "@hybrid/core";
 import { fetchSignals, importSignal, type CoreSignal } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraForcePlate from "../components/aurora/forceplate";
@@ -70,20 +70,20 @@ function ClassicForcePlate() {
           placeholderTextColor={C.ash}
           multiline
           autoCapitalize="none"
-          style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 120, textAlignVertical: "top" }}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 12, minHeight: 120, textAlignVertical: "top" }}
         />
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>
           <Pressable onPress={parse} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 11, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>Parse</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>Parse</Text>
           </Pressable>
           <Pressable onPress={doImport} disabled={!parsed || parsed.signals.length === 0 || importing} style={{ flex: 1, backgroundColor: parsed && parsed.signals.length > 0 ? C.lime : C.line, borderRadius: 10, paddingVertical: 11, alignItems: "center", opacity: importing ? 0.6 : 1 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 13, color: C.ink }}>{importing ? "Importing…" : "Import"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.ink }}>{importing ? "Importing…" : "Import"}</Text>
           </Pressable>
         </View>
 
         {parsed && (
           <View style={{ marginTop: 12 }}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
               <Chip color={C.lime}>{parsed.signals.length} signals · {parsed.rows} rows</Chip>
               {parsed.recognized.length > 0 && <Chip color={C.blue}>recognized: {parsed.recognized.join(", ")}</Chip>}
               {parsed.ignored.length > 0 && <Chip color={C.ash}>skipped: {parsed.ignored.join(", ")}</Chip>}
@@ -96,13 +96,13 @@ function ClassicForcePlate() {
       {jumps.length > 0 && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 14 }}>
           <Kicker color={C.lime}>Jump height</Kicker>
-          <Mono color={C.ash} style={{ fontSize: 11, marginTop: 2 }}>neuromuscular readiness · a drop flags fatigue</Mono>
-          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, height: 90, marginTop: 12 }}>
+          <Mono color={C.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>neuromuscular readiness · a drop flags fatigue</Mono>
+          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.xxs, height: 90, marginTop: 12 }}>
             {jumps.slice(-20).map((j, i) => (
               <View key={i} style={{ flex: 1, height: Math.max(3, (j.value / maxJ) * 84), backgroundColor: i === Math.min(jumps.length, 20) - 1 ? C.lime : `${C.lime}66`, borderRadius: 2 }} />
             ))}
           </View>
-          <Mono color={C.ash} style={{ fontSize: 10, marginTop: 6 }}>latest {Math.round(jumps[jumps.length - 1]!.value * 10) / 10} cm</Mono>
+          <Mono color={C.ash} style={{ fontSize: fs.nano, marginTop: 6 }}>latest {Math.round(jumps[jumps.length - 1]!.value * 10) / 10} cm</Mono>
         </Card>
       )}
       <View style={{ height: 16 }} />

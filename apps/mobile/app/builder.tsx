@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { MOVEMENTS, inferBlockKind } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../lib/use-routine-builder";
-import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraBuilder from "../components/aurora/builder";
@@ -33,7 +33,7 @@ function ClassicBuilder() {
     setQuery("");
   };
 
-  const fieldStyle = { fontFamily: F.mono, fontSize: 14, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 9 } as const;
+  const fieldStyle = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 9 } as const;
 
   return (
     <Screen>
@@ -45,7 +45,7 @@ function ClassicBuilder() {
         onChangeText={b.setName}
         placeholder="Routine name"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 14 }}
+        style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 14 }}
       />
 
       {b.items.map((x) => (
@@ -62,30 +62,30 @@ function ClassicBuilder() {
             placeholderTextColor={C.ash}
             autoFocus
             onSubmitEditing={() => query.trim() && add(query)}
-            style={[fieldStyle, { marginTop: 10, fontSize: 15, paddingVertical: 11 }]}
+            style={[fieldStyle, { marginTop: 10, fontSize: fs.note, paddingVertical: 11 }]}
           />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
             {matches.map((n) => {
               const c = kindColor(inferBlockKind(n) as BuilderKind, C);
               return (
                 <Pressable key={n} onPress={() => add(n, inferBlockKind(n) as BuilderKind)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 13, color: txt(C, c) }}>{n}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, c) }}>{n}</Text>
                 </Pressable>
               );
             })}
           </View>
           {q.length > 0 && !exact && (
             <Pressable onPress={() => add(query)} style={{ marginTop: 14, borderRadius: 10, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>+ “{query.trim()}”</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{query.trim()}”</Text>
             </Pressable>
           )}
           <Pressable onPress={() => { setPicker(false); setQuery(""); }} style={{ paddingTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center" }}>Close</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>Close</Text>
           </Pressable>
         </Card>
       ) : (
         <Pressable onPress={() => setPicker(true)} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 4 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>+ Add exercise</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>+ Add exercise</Text>
         </Pressable>
       )}
 
@@ -101,11 +101,11 @@ function ClassicBuilder() {
           {b.routines.map((r, i) => (
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{r.name}</Text>
-                <Mono style={{ fontSize: 11, marginTop: 2 }}>{r.blocks.length} blocks · tap to edit</Mono>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
+                <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{r.blocks.length} blocks · tap to edit</Mono>
               </Pressable>
               <Pressable onPress={() => b.remove(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>✕</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
               </Pressable>
             </View>
           ))}
@@ -134,19 +134,19 @@ function ItemCard({
   const c = kindColor(x.kind, C);
   return (
     <Card style={{ borderLeftWidth: 3, borderLeftColor: c }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, c) }}>{x.kind.toUpperCase()}</Text>
-        <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.chalk }} numberOfLines={1}>{x.name}</Text>
-        <Pressable onPress={onRemove} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 15, color: C.ash }}>✕</Text></Pressable>
+        <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }} numberOfLines={1}>{x.name}</Text>
+        <Pressable onPress={onRemove} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>✕</Text></Pressable>
       </View>
       {x.kind === "strength" ? (
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12, alignItems: "flex-end" }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12, alignItems: "flex-end" }}>
           <View>
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>SETS</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Pressable onPress={() => onBump(-1)} style={{ width: 32, height: 36, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.ash, fontSize: 16 }}>−</Text></Pressable>
-              <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, minWidth: 18, textAlign: "center" }}>{x.sets}</Text>
-              <Pressable onPress={() => onBump(1)} style={{ width: 32, height: 36, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: txt(C, C.lime), fontSize: 16 }}>+</Text></Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+              <Pressable onPress={() => onBump(-1)} style={{ width: 32, height: 36, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.ash, fontSize: fs.subtitle }}>−</Text></Pressable>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, minWidth: 18, textAlign: "center" }}>{x.sets}</Text>
+              <Pressable onPress={() => onBump(1)} style={{ width: 32, height: 36, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: txt(C, C.lime), fontSize: fs.subtitle }}>+</Text></Pressable>
             </View>
           </View>
           <View style={{ flex: 1 }}>
@@ -159,7 +159,7 @@ function ItemCard({
           </View>
         </View>
       ) : x.kind === "cardio" ? (
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>KM</Text>
             <TextInput value={x.distance} onChangeText={(v) => onPatch({ distance: v })} keyboardType="numeric" placeholder="5" placeholderTextColor={C.ash} style={fieldStyle} />

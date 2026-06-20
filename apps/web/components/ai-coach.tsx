@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LINE, LIME, VIOLET, ASH, CHALK, cond, Mono, Chip, txt } from "@/lib/ui";
+import { fs, LINE, LIME, VIOLET, ASH, CHALK, cond, Mono, Chip, txt } from "@/lib/ui";
 
 // Calls the server-side AI coach (/api/ai-coach). Shows the generated note and
 // whether it came from the LLM or the engine fallback.
@@ -37,7 +37,7 @@ export default function AskCoach() {
         disabled={busy}
         style={{
           ...cond,
-          fontSize: 12,
+          fontSize: fs.caption,
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: ".04em",
@@ -58,7 +58,7 @@ export default function AskCoach() {
           {source && (
             <Chip c={source === "ai" ? LIME : ASH}>{source === "ai" ? "Claude" : "Engine"}</Chip>
           )}
-          <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
             {text}
           </Mono>
         </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { buildActivityFeed, relativeTime, type ActivityAccent, type ActivityAssignment } from "@hybrid/core";
+import { fs, space, buildActivityFeed, relativeTime, type ActivityAccent, type ActivityAssignment } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
@@ -50,34 +50,34 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
   return (
     <div style={outer}>
       <div style={{ width: "100%", maxWidth: 460 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
           {!embedded && (
             <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
-              {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: 20 }}>←</span>}
+              {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
           <h1 style={{ fontWeight: 900, fontSize: 24, margin: 0 }}>Notifications</h1>
           {feed.length > 0 && (
-            <span style={{ marginLeft: "auto", background: C("lime"), color: C("ink"), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: 10 }}>{feed.length}</span>
+            <span style={{ marginLeft: "auto", background: C("lime"), color: C("ink"), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{feed.length}</span>
           )}
         </div>
 
         {feed.length === 0 ? (
-          <div style={{ marginTop: 22, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: 20, color: C("ash"), fontSize: 14, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 22, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: 20, color: C("ash"), fontSize: fs.bodyLg, lineHeight: 1.5 }}>
             Nothing yet. Log a workout or get a session from your coach and your activity shows up here.
           </div>
         ) : (
           <div style={{ marginTop: 18 }}>
             {feed.map((it) => (
-              <div key={it.id} style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
+              <div key={it.id} style={{ display: "flex", gap: space.md, alignItems: "center", marginBottom: 14 }}>
                 <div style={{ width: 46, height: 46, borderRadius: r.field, background: `color-mix(in srgb, ${accent(it.accent)} 14%, transparent)`, display: "grid", placeItems: "center" }}>
                   <AuroraIcon name={it.icon} size={22} color={accent(it.accent)} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{it.title}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>{it.detail}</div>
+                  <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{it.title}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{it.detail}</div>
                 </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>{relativeTime(it.at)}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{relativeTime(it.at)}</div>
               </div>
             ))}
           </div>

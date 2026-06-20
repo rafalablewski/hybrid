@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -81,50 +81,50 @@ export default function AuroraProgress() {
 
   return (
     <AuroraScreen refreshing={status === "loading"} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: 26 }}>Progress photos</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>Progress photos</AHeading>
       </View>
 
       {status === "no-auth" && (
         <ACard style={{ marginTop: 18 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, lineHeight: 20 }}>Sign in to capture your transformation timeline — photos are private to your account.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>Sign in to capture your transformation timeline — photos are private to your account.</Text>
         </ACard>
       )}
       {status === "no-bucket" && (
         <ACard style={{ marginTop: 18 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: txt(C, C.red), lineHeight: 20 }}>The progress storage bucket isn&apos;t set up yet.</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, lineHeight: 18, marginTop: 6 }}>Run reference/sql-progress-photos.sql in Supabase, then pull to refresh.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: txt(C, C.red), lineHeight: 20 }}>The progress storage bucket isn&apos;t set up yet.</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 18, marginTop: 6 }}>Run reference/sql-progress-photos.sql in Supabase, then pull to refresh.</Text>
         </ACard>
       )}
 
       {status === "ready" && (
         <>
           <ACard style={{ marginTop: 18 }}>
-            <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, lineHeight: 20, marginBottom: 14 }}>Same pose, same light, every couple of weeks. Private to you.</Text>
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20, marginBottom: 14 }}>Same pose, same light, every couple of weeks. Private to you.</Text>
+            <View style={{ flexDirection: "row", gap: space.ms }}>
               <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 7, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", justifyContent: "center", opacity: busy ? 0.5 : 1 }}>
                 <AuroraIcon name="add" size={18} color={C.onAccent} />
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.onAccent }}>{busy ? "Uploading…" : "Take photo"}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? "Uploading…" : "Take photo"}</Text>
               </Pressable>
               <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>From library</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>From library</Text>
               </Pressable>
             </View>
           </ACard>
 
           {photos.length === 0 ? (
-            <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, marginTop: 16 }}>No photos yet — add your first to start the timeline.</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 16 }}>No photos yet — add your first to start the timeline.</Text>
           ) : (
             <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 4 }}>
               {photos.map((p) => (
                 <View key={p.path} style={{ width: "48.5%", marginTop: 12, borderRadius: RADIUS.card, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
                   <Image source={{ uri: p.url }} style={{ width: "100%", aspectRatio: 3 / 4 }} resizeMode="cover" />
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{p.date}</Text>
-                    <Text onPress={() => remove(p.path)} style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>delete</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.date}</Text>
+                    <Text onPress={() => remove(p.path)} style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.red) }}>delete</Text>
                   </View>
                 </View>
               ))}

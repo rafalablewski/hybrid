@@ -17,7 +17,7 @@ import { readSportSelection } from "@/lib/sport-store";
 import Onboarding from "./onboarding";
 import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
-import {
+import { fs, space,
   LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, roleHex,
   disp, cond, mono, Mono, Card, txt,
 } from "@/lib/ui";
@@ -90,8 +90,8 @@ function CockpitBody({
 
   return (
     <div style={{ maxWidth: 760 }}>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, marginBottom: 4 }}>Athlete cockpit</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16 }}>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>Athlete cockpit</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>
         Goal → season → today → performance → sport → technique → endurance, in one place.
       </Mono>
 
@@ -99,14 +99,14 @@ function CockpitBody({
         <Section kicker="Goal & season" color={VIOLET} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))} openLabel={macro ? "Periodize →" : "Set up a plan →"}>
           {macro ? (
             <>
-              <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{macro.goalOrSport}</div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={ASH}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>{macro.goalOrSport}</div>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4 }} c={ASH}>
                 {phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}
                 {macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}
               </Mono>
             </>
           ) : (
-            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>No season yet — enroll a goal and your periodized plan drives the weeks.</Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>No season yet — enroll a goal and your periodized plan drives the weeks.</Mono>
           )}
 
           {/* SET UP / CHANGE PLAN — the onboarding funnel, folded in (no longer a
@@ -114,15 +114,15 @@ function CockpitBody({
               the macro and returns to Today via onEnrolled. */}
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Set up / change plan</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Set up / change plan</Mono>
               <button
                 onClick={() => setSetupOpen((v) => !v)}
-                style={{ ...mono, fontSize: 12, color: txt(AMBER), background: "none", border: "none", cursor: "pointer" }}
+                style={{ ...mono, fontSize: fs.caption, color: txt(AMBER), background: "none", border: "none", cursor: "pointer" }}
               >
                 {setupOpen ? "Close setup ✕" : "Open setup →"}
               </button>
             </div>
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 4 }} c={ASH}>4 questions → a plan you&apos;ll finish.</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4 }} c={ASH}>4 questions → a plan you&apos;ll finish.</Mono>
             {setupOpen && (
               <div style={{ marginTop: 14 }}>
                 <Onboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} />
@@ -132,41 +132,41 @@ function CockpitBody({
         </Section>
 
         <Section kicker={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color={LIME} onOpen={() => setScreen("log")} openLabel="Log session →">
-          <div style={{ ...disp, fontWeight: 800, fontSize: 18 }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>
             {hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}
           </div>
-          {hasData && <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 4 }} c={ASH}>{rx.why}</Mono>}
+          {hasData && <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 4 }} c={ASH}>{rx.why}</Mono>}
         </Section>
 
         <Section kicker="Performance · Athlete Twin" color={BLUE} onOpen={() => setScreen("performance")} openLabel="Performance →">
           {hasData ? (
             <>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: space.md }}>
                 <span style={{ ...disp, fontWeight: 800, fontSize: 34, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
-                <Mono s={{ fontSize: 12 }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
+                <Mono s={{ fontSize: fs.caption }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Mono>
                 <div style={{ display: "flex", gap: 14, marginLeft: "auto" }}>
-                  <Mono s={{ fontSize: 12 }} c={LIME}>STR {state.hpi.components.strength}</Mono>
-                  <Mono s={{ fontSize: 12 }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
-                  <Mono s={{ fontSize: 12 }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
+                  <Mono s={{ fontSize: fs.caption }} c={LIME}>STR {state.hpi.components.strength}</Mono>
+                  <Mono s={{ fontSize: fs.caption }} c={BLUE}>END {state.hpi.components.endurance}</Mono>
+                  <Mono s={{ fontSize: fs.caption }} c={VIOLET}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Mono>
                 </div>
               </div>
-              {state.drivers[0] && <Mono s={{ fontSize: 12, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>{state.drivers[0].detail}</Mono>}
+              {state.drivers[0] && <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>{state.drivers[0].detail}</Mono>}
             </>
           ) : (
-            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>Your HPI, readiness and tissue load build from real training — log a session.</Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>Your HPI, readiness and tissue load build from real training — log a session.</Mono>
           )}
         </Section>
 
         <Section kicker="Sport S&C" color={AMBER} onOpen={() => setScreen("sport")} openLabel="Sport →">
           {sport ? (
-            <div style={{ ...disp, fontWeight: 700, fontSize: 16 }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div>
+            <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div>
           ) : (
-            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>Pick your sport — the engine ranks the strength &amp; conditioning that transfers.</Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>Pick your sport — the engine ranks the strength &amp; conditioning that transfers.</Mono>
           )}
         </Section>
 
         <Section kicker="Velocity & technique" color={BLUE} onOpen={() => setScreen("velocity")} openLabel="Velocity →">
-          <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>
             Bar speed → a velocity-estimated 1RM and autoregulated load. Force-plate &amp; video analysis feed the same Twin.
           </Mono>
         </Section>
@@ -179,7 +179,7 @@ function CockpitBody({
               <Stat label="min" value={totals.minutes.toLocaleString()} />
             </div>
           ) : (
-            <Mono s={{ fontSize: 13, lineHeight: 1.6 }} c={CHALK}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</Mono>
           )}
         </Section>
       </div>
@@ -203,8 +203,8 @@ function Section({
   return (
     <Card style={{ borderLeft: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={color}>{kicker}</Mono>
-        <button onClick={onOpen} style={{ ...mono, fontSize: 12, color: txt(color), background: "none", border: "none", cursor: "pointer" }}>{openLabel}</button>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={color}>{kicker}</Mono>
+        <button onClick={onOpen} style={{ ...mono, fontSize: fs.caption, color: txt(color), background: "none", border: "none", cursor: "pointer" }}>{openLabel}</button>
       </div>
       {children}
     </Card>
@@ -214,8 +214,8 @@ function Section({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
+      <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>{value}</div>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
     </div>
   );
 }
@@ -238,32 +238,32 @@ const TEASE: { kicker: string; color: string; blurb: string }[] = [
 function CockpitTeaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   return (
     <div style={{ maxWidth: 760 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Athlete cockpit · Full</Mono>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: 26, margin: "4px 0 2px" }}>Unlock your command center 🔒</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 16, lineHeight: 1.6 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Athlete cockpit · Full</Mono>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, margin: "4px 0 2px" }}>Unlock your command center 🔒</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16, lineHeight: 1.6 }} c={CHALK}>
         Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen.
         It&apos;s part of <b style={{ color: txt(LIME) }}>Full</b>. Keep logging on the free plan; upgrade whenever you want the depth.
       </Mono>
 
-      <div style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "grid", gap: space.ms }}>
         {TEASE.map((s) => (
-          <Card key={s.kicker} style={{ borderLeft: `3px solid ${s.color}`, opacity: 0.7, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <Card key={s.kicker} style={{ borderLeft: `3px solid ${s.color}`, opacity: 0.7, display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
             <div>
-              <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={s.color}>{s.kicker}</Mono>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>{s.blurb}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={s.color}>{s.kicker}</Mono>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>{s.blurb}</Mono>
             </div>
-            <span style={{ fontSize: 16 }} aria-hidden>🔒</span>
+            <span style={{ fontSize: fs.subtitle }} aria-hidden>🔒</span>
           </Card>
         ))}
       </div>
 
       <button
         onClick={onUnlock}
-        style={{ ...cond, fontWeight: 800, fontSize: 15, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 12, padding: "14px 28px", marginTop: 18, cursor: "pointer" }}
+        style={{ ...cond, fontWeight: 800, fontSize: fs.note, textTransform: "uppercase", letterSpacing: ".04em", color: ON_ACCENT, background: LIME, border: "none", borderRadius: 12, padding: "14px 28px", marginTop: 18, cursor: "pointer" }}
       >
         {paid ? "Switch to Full →" : "Upgrade to Full →"}
       </button>
-      <Mono s={{ fontSize: 11, display: "block", marginTop: 10 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>
         {paid ? "You're already paid — switch your mode to Full to unlock everything." : "Full unlocks the Cockpit, plans, analytics, sport, velocity and more."}
       </Mono>
     </div>

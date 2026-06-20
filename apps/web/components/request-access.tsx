@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { NAV_ITEMS, navVisibleTo, sanitizePersonaAccess } from "@hybrid/core";
 import { usePersona } from "@/lib/persona";
 import { useFlags } from "@/lib/use-flags";
-import { LINE, LIME, ASH, CHALK, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, ASH, CHALK, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
 const GRANTABLE = NAV_ITEMS.filter((i) => i.minPersona && i.minPersona !== "casual");
 
@@ -45,22 +45,22 @@ export default function RequestAccess() {
 
   return (
     <Card style={{ marginBottom: 16 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Request a feature</Mono>
-      <Mono s={{ fontSize: 13, display: "block", marginTop: 6, marginBottom: 12 }} c={CHALK}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Request a feature</Mono>
+      <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, marginBottom: 12 }} c={CHALK}>
         Want a tool you don&apos;t see? Ask an admin to unlock it for your account.
       </Mono>
-      <div style={{ display: "grid", gap: 6 }}>
+      <div style={{ display: "grid", gap: space.xs }}>
         {hidden.map((item) => {
           const pending = status[item.id] === "pending";
           return (
-            <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
-              <Mono s={{ fontSize: 13 }} c={CHALK}>{item.icon} {item.label}</Mono>
+            <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
+              <Mono s={{ fontSize: fs.body }} c={CHALK}>{item.icon} {item.label}</Mono>
               {pending ? (
-                <Mono s={{ fontSize: 12 }} c={ASH}>Requested · pending</Mono>
+                <Mono s={{ fontSize: fs.caption }} c={ASH}>Requested · pending</Mono>
               ) : (
                 <button
                   onClick={() => request(item.id)}
-                  style={{ ...mono, fontSize: 12, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 9, padding: "6px 14px", cursor: "pointer" }}
+                  style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 9, padding: "6px 14px", cursor: "pointer" }}
                 >
                   Request
                 </button>

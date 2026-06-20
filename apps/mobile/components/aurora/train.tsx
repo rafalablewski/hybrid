@@ -11,7 +11,7 @@ import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
@@ -45,20 +45,20 @@ export default function AuroraTrain() {
   return (
     <AuroraScreen>
       <AHeading style={{ fontSize: 28 }}>{t("train.title")}</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("train.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("train.intro")}</Text>
 
       {draft && (
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.amber) }}>{t("train.resume")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.amber) }}>{t("train.resume")}</Text>
             <Pressable onPress={discard} hitSlop={8}>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{t("train.discard")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("train.discard")}</Text>
             </Pressable>
           </View>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 2 }}>{draft.exercises.length} {t("workout.exercises")} · {t("train.inProgress")}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{draft.exercises.length} {t("workout.exercises")} · {t("train.inProgress")}</Text>
           <Pressable onPress={() => start("empty")} style={{ backgroundColor: C.amber, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>▶  {t("train.resume")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>▶  {t("train.resume")}</Text>
           </Pressable>
         </ACard>
       )}
@@ -69,20 +69,20 @@ export default function AuroraTrain() {
         style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, paddingVertical: 28, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.ink }}>▶  {draft ? t("train.startFresh") : t("train.startWorkout")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>{t("train.emptySub")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ink, opacity: 0.7, marginTop: 4 }}>{t("train.emptySub")}</Text>
       </Pressable>
 
       {/* AI-prescribed start */}
       <Pressable onPress={() => start("ai")}>
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.violet) }}>{t("train.start")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{sessions.length > 0 ? `${t("train.aiReadiness")} ${rx.readiness}/100` : "AI coach"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>{t("train.start")}</Text>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 8 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>
             {sessions.length > 0 ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Smart starter session"}
           </Text>
-          <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
             {sessions.length > 0 ? rx.why : "Log a few sessions and the coach prescribes from your real readiness, fatigue and velocity. For now this is a balanced starter you can edit."}
           </Text>
         </ACard>
@@ -93,11 +93,11 @@ export default function AuroraTrain() {
         <Pressable onPress={() => start("last")}>
           <ACard style={{ marginTop: 16 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("train.repeatLast")}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.blue) }}>{t("train.start")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("train.repeatLast")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.blue) }}>{t("train.start")}</Text>
             </View>
-            <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 8 }}>{last.title}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 4 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{last.title}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
               {last.blocks.map((b) => b.name).slice(0, 3).join(" · ")}
             </Text>
           </ACard>
@@ -107,7 +107,7 @@ export default function AuroraTrain() {
       {/* Routines */}
       {routines.length > 0 && (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("train.routines")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("train.routines")}</Text>
           {routines.map((r, i) => (
             <Pressable
               key={r.id}
@@ -115,10 +115,10 @@ export default function AuroraTrain() {
               style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: i ? 10 : 8, paddingTop: i ? 10 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
             >
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{r.name}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.map((b) => b.name).slice(0, 3).join(" · ")}</Text>
               </View>
-              <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>{t("train.start")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.start")}</Text>
             </Pressable>
           ))}
         </ACard>
@@ -126,10 +126,10 @@ export default function AuroraTrain() {
 
       {/* Build a reusable routine */}
       <Pressable onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>＋ Build a routine</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ Build a routine</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("train.finishedNote")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
   );
 }

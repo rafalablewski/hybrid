@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { longevityReport } from "@hybrid/core";
+import { fs, space, longevityReport } from "@hybrid/core";
 import { AuroraIcon } from "./icons";
 
 type ApiSignal = { kind: string; value: number; ts: string };
@@ -37,24 +37,24 @@ export default function AuroraLongevity() {
     ["age", "Age", "yr"], ["restingHr", "Resting HR", "bpm"], ["hrv", "HRV", "ms"], ["vo2", "VO₂", "ml/kg/min"], ["sleepH", "Sleep", "h"],
   ];
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
-  const input = { fontFamily: "var(--font-mono)", fontSize: 14, padding: "12px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, width: "100%", boxSizing: "border-box" as const };
-  const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11 }}>{label}</span>;
+  const input = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "12px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, width: "100%", boxSizing: "border-box" as const };
+  const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Longevity</h1>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Longevity</h1>
         <AuroraIcon name="heart" size={24} color={C("blue")} />
       </div>
-      <p style={{ fontSize: 14, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>The recovery signals that drive readiness also predict healthspan. Estimate biological age vs chronological. Heuristic v0 — not a diagnostic.</p>
+      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>The recovery signals that drive readiness also predict healthspan. Estimate biological age vs chronological. Heuristic v0 — not a diagnostic.</p>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Your markers</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>prefilled from your latest signals when available</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 10, marginTop: 12 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Your markers</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>prefilled from your latest signals when available</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: space.ms, marginTop: 12 }}>
           {fields.map(([k, label, unit]) => (
             <label key={k}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>{label} ({unit})</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>{label} ({unit})</span>
               <input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} inputMode="decimal" placeholder="—" style={input} />
             </label>
           ))}
@@ -63,13 +63,13 @@ export default function AuroraLongevity() {
 
       {!hasMarkers ? (
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Biological age</div>
-          <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 10 }}>Enter at least one recovery marker (resting HR, HRV, VO₂ or sleep) — or connect a wearable — and your biological-age estimate appears here. Nothing is pre-filled.</p>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Biological age</div>
+          <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, marginTop: 10 }}>Enter at least one recovery marker (resting HR, HRV, VO₂ or sleep) — or connect a wearable — and your biological-age estimate appears here. Nothing is pre-filled.</p>
         </div>
       ) : (
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Biological age</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, margin: "6px 0", flexWrap: "wrap" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Biological age</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.md, margin: "6px 0", flexWrap: "wrap" }}>
             <div style={{ fontWeight: 900, fontSize: 48, color: deltaColor }}>{report.bioAge}</div>
             {chip(deltaColor, `${report.delta <= 0 ? "" : "+"}${report.delta} yr vs age`)}
             {chip(C("violet"), `healthspan ${report.healthspanScore}`)}
@@ -77,13 +77,13 @@ export default function AuroraLongevity() {
           <div style={{ marginTop: 8 }}>
             {report.contributions.map((c) => (
               <div key={c.marker} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: `1px solid ${C("line")}` }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>{c.marker} <span style={{ color: C("ash") }}>· {c.note}</span></span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: c.deltaYears <= 0 ? C("lime") : C("amber") }}>{c.deltaYears <= 0 ? "" : "+"}{c.deltaYears} yr</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{c.marker} <span style={{ color: C("ash") }}>· {c.note}</span></span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: c.deltaYears <= 0 ? C("lime") : C("amber") }}>{c.deltaYears <= 0 ? "" : "+"}{c.deltaYears} yr</span>
               </div>
             ))}
           </div>
-          {report.flags.length > 0 && <div style={{ marginTop: 8 }}>{report.flags.map((fl) => <div key={fl} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("amber") }}>⚠ {fl}</div>)}</div>}
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), marginTop: 10 }}>model {report.modelVersion}</div>
+          {report.flags.length > 0 && <div style={{ marginTop: 8 }}>{report.flags.map((fl) => <div key={fl} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>⚠ {fl}</div>)}</div>}
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 10 }}>model {report.modelVersion}</div>
         </div>
       )}
     </div>

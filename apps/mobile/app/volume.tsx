@@ -14,7 +14,7 @@ import {
 import { fetchSessions } from "../lib/api";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraVolume from "../components/aurora/volume";
@@ -87,7 +87,7 @@ function ClassicVolume() {
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>{t("nav.volume")}</Kicker>
         <Pressable onPress={() => setEditing((v) => !v)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: editing || customized ? C.lime : C.line, backgroundColor: editing || customized ? `${C.lime}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? "Done" : customized ? "Landmarks ✎" : "Edit"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? "Done" : customized ? "Landmarks ✎" : "Edit"}</Text>
         </Pressable>
       </View>
       <H1>Volume landmarks</H1>
@@ -102,7 +102,7 @@ function ClassicVolume() {
             <Kicker color={C.lime}>Your landmarks · weekly sets</Kicker>
             {customized && (
               <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}>
-                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>Reset</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Reset</Text>
               </Pressable>
             )}
           </View>
@@ -114,19 +114,19 @@ function ClassicVolume() {
           </View>
           {ALL_MUSCLES.map((m) => (
             <View key={m} style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
-              <Mono color={C.chalk} style={{ width: 96, fontSize: 11 }}>{MUSCLE_LABEL[m] ?? m}</Mono>
+              <Mono color={C.chalk} style={{ width: 96, fontSize: fs.micro }}>{MUSCLE_LABEL[m] ?? m}</Mono>
               {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k) => (
                 <TextInput
                   key={k}
                   defaultValue={String(lm[m][k])}
                   onEndEditing={(e) => editField(m, k, e.nativeEvent.text)}
                   keyboardType="number-pad"
-                  style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }}
+                  style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }}
                 />
               ))}
             </View>
           ))}
-          <Mono style={{ fontSize: 11, marginTop: 10, lineHeight: 16 }}>
+          <Mono style={{ fontSize: fs.micro, marginTop: 10, lineHeight: 16 }}>
             Tune to your own recovery. Values clamp to a sane order; blank a field to restore its default.
           </Mono>
         </Card>
@@ -144,13 +144,13 @@ function ClassicVolume() {
       {trained && advice.length > 0 && (
         <Card style={{ marginTop: 14 }}>
           <Kicker color={C.lime}>This week — adjust volume</Kicker>
-          <View style={{ marginTop: 10, gap: 8 }}>
+          <View style={{ marginTop: 10, gap: space.sm }}>
             {advice.map((s) => (
-              <View key={s.muscle} style={{ flexDirection: "row", gap: 8 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "700", color: s.action === "reduce" ? C.red : C.amber, width: 110 }}>
+              <View key={s.muscle} style={{ flexDirection: "row", gap: space.sm }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: s.action === "reduce" ? C.red : C.amber, width: 110 }}>
                   {s.action === "reduce" ? "↓" : "↑"} {MUSCLE_LABEL[s.muscle] ?? s.muscle}
                 </Text>
-                <Mono style={{ flex: 1, fontSize: 12, lineHeight: 17 }}>{adviceLine(s)}</Mono>
+                <Mono style={{ flex: 1, fontSize: fs.caption, lineHeight: 17 }}>{adviceLine(s)}</Mono>
               </View>
             ))}
           </View>
@@ -160,7 +160,7 @@ function ClassicVolume() {
       {trained && (
         <Card style={{ marginTop: 14 }}>
           <Kicker color={C.blue}>By muscle · sets this week</Kicker>
-          <View style={{ marginTop: 14, gap: 16 }}>
+          <View style={{ marginTop: 14, gap: space.lg }}>
             {rows.map((r) => (
               <LandmarkBar key={r.muscle} s={r} zone={ZONE[r.zone]} />
             ))}
@@ -178,8 +178,8 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
   return (
     <View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-        <Mono color={C.chalk} style={{ fontSize: 13 }}>{MUSCLE_LABEL[s.muscle] ?? s.muscle}</Mono>
-        <Mono style={{ fontSize: 12 }}>
+        <Mono color={C.chalk} style={{ fontSize: fs.body }}>{MUSCLE_LABEL[s.muscle] ?? s.muscle}</Mono>
+        <Mono style={{ fontSize: fs.caption }}>
           <Text style={{ color: zone.c, fontFamily: F.mono, fontWeight: "700" }}>{s.sets} sets</Text>
           <Text style={{ color: C.ash }}> · {zone.label}</Text>
         </Mono>
@@ -193,7 +193,7 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
         <View style={{ position: "absolute", left: pct(s.landmark.mev), top: -2, bottom: -2, width: 2, backgroundColor: C.amber }} />
         <View style={{ position: "absolute", left: pct(s.landmark.mrv), top: -2, bottom: -2, width: 2, backgroundColor: C.red }} />
       </View>
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 5 }}>
+      <View style={{ flexDirection: "row", gap: space.md, marginTop: 5 }}>
         <Tick c={C.amber} label={`MEV ${s.landmark.mev}`} />
         <Tick c={C.lime} label={`MAV ${s.landmark.mavLow}–${s.landmark.mavHigh}`} />
         <Tick c={C.red} label={`MRV ${s.landmark.mrv}`} />
@@ -204,7 +204,7 @@ function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string
 
 function Tick({ c, label }: { c: string; label: string }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.xxs }}>
       <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
       <Mono style={{ fontSize: 9, letterSpacing: 0.5 }}>{label}</Mono>
     </View>

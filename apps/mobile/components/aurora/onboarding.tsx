@@ -12,7 +12,7 @@ import {
 import { enrollPlan } from "../../lib/api";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APill, ASegment, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -85,7 +85,7 @@ export default function AuroraOnboarding() {
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top", "bottom"]}>
       <View style={{ flex: 1, padding: 24 }}>
         {/* progress segments */}
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           {STEPS.map((s, i) => (
             <View
               key={s}
@@ -94,7 +94,7 @@ export default function AuroraOnboarding() {
           ))}
         </View>
         <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: palette.ash }}>skip</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>skip</Text>
         </Pressable>
 
         <ScrollView style={{ marginTop: 14 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
@@ -113,7 +113,7 @@ export default function AuroraOnboarding() {
             <Step title="What is your main goal?" sub="We'll shape your first plan around it.">
               {ONBOARDING_GOAL_GROUPS.map((group) => (
                 <View key={group.category} style={{ marginTop: 4 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: palette.ash, marginTop: 12, marginBottom: 6 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: palette.ash, marginTop: 12, marginBottom: 6 }}>
                     {group.category}
                   </Text>
                   {group.goals.map((g) => (
@@ -147,10 +147,10 @@ export default function AuroraOnboarding() {
               {plan ? (
                 <View style={{ backgroundColor: palette.ink2, borderColor: palette.line, borderWidth: 1, borderRadius: RADIUS.card, padding: 20 }}>
                   <Text style={{ fontFamily: F.black, fontSize: 22, color: palette.chalk }}>{plan.planName}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: palette.ash, marginTop: 4 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash, marginTop: 4 }}>
                     {plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks
                   </Text>
-                  <Text style={{ fontFamily: F.reg, fontSize: 14, color: palette.chalk, marginTop: 12, lineHeight: 20 }}>{plan.why}</Text>
+                  <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, marginTop: 12, lineHeight: 20 }}>{plan.why}</Text>
                 </View>
               ) : (
                 <ASub>Plans for this goal are coming soon — jump in now and enroll once they land.</ASub>
@@ -160,7 +160,7 @@ export default function AuroraOnboarding() {
         </ScrollView>
 
         {/* Back / Next */}
-        <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+        <View style={{ flexDirection: "row", gap: space.md, alignItems: "center" }}>
           <Pressable
             onPress={back}
             style={{ width: 64, height: 56, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}
@@ -182,9 +182,9 @@ export default function AuroraOnboarding() {
 function Step({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
     <View>
-      <AHeading style={{ fontSize: 26 }}>{title}</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>{title}</AHeading>
       {!!sub && <ASub style={{ marginTop: 8 }}>{sub}</ASub>}
-      <View style={{ marginTop: 20, gap: 10 }}>{children}</View>
+      <View style={{ marginTop: 20, gap: space.ms }}>{children}</View>
     </View>
   );
 }
@@ -197,7 +197,7 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
       style={{
         flexDirection: "row",
         alignItems: "center",
-        gap: 12,
+        gap: space.md,
         borderWidth: 1,
         borderColor: active ? palette.lime : palette.line,
         backgroundColor: active ? `${palette.lime}14` : palette.ink2,
@@ -207,8 +207,8 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
     >
       {active && <AuroraIcon name="check" size={22} color={txt(palette, palette.lime)} />}
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: active ? txt(palette, palette.lime) : palette.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.reg, fontSize: 12, color: palette.ash, marginTop: 3, lineHeight: 17 }}>{sub}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: active ? txt(palette, palette.lime) : palette.chalk }}>{title}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: 3, lineHeight: 17 }}>{sub}</Text>
       </View>
     </Pressable>
   );

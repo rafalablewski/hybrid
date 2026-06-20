@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { optimizeForEvent } from "@hybrid/core";
 import { fetchEvents, createEvent, type EventRow } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraCompetition from "../components/aurora/competition";
@@ -59,22 +59,22 @@ function ClassicCompetition() {
           onChangeText={setName}
           placeholder="Event name"
           placeholderTextColor={C.ash}
-          style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
+          style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-          <View style={{ flexDirection: "row", gap: 6 }}>
+          <View style={{ flexDirection: "row", gap: space.xs }}>
             {SPORTS.map((s) => (
               <Pressable key={s} onPress={() => setSport(s)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: sport === s ? C.lime : C.line, backgroundColor: sport === s ? `${C.lime}1a` : "transparent" }}>
-                <Text style={{ fontFamily: F.semi, fontSize: 12, color: sport === s ? txt(C, C.lime) : C.ash }}>{s}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: sport === s ? txt(C, C.lime) : C.ash }}>{s}</Text>
               </Pressable>
             ))}
           </View>
         </ScrollView>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 10, alignItems: "flex-end" }}>
+        <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10, alignItems: "flex-end" }}>
           <View style={{ flex: 1 }}>
-            <Mono color={C.ash} style={{ fontSize: 10, marginBottom: 4 }}>Date (YYYY-MM-DD)</Mono>
+            <Mono color={C.ash} style={{ fontSize: fs.nano, marginBottom: 4 }}>Date (YYYY-MM-DD)</Mono>
             <TextInput value={date} onChangeText={setDate} placeholder="2026-09-01" placeholderTextColor={C.ash} autoCapitalize="none"
-              style={{ fontFamily: F.mono, fontSize: 15, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }} />
+              style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12 }} />
           </View>
           <View style={{ width: 110 }}><Button label={busy ? "…" : "Add"} onPress={add} disabled={busy} /></View>
         </View>
@@ -83,11 +83,11 @@ function ClassicCompetition() {
       {/* event tabs */}
       {events.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 14 }}>
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flexDirection: "row", gap: space.sm }}>
             {events.map((e) => (
               <Pressable key={e.id} onPress={() => setSelected(e.id)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: selected === e.id ? C.violet : C.line, backgroundColor: selected === e.id ? `${C.violet}1a` : "transparent" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: selected === e.id ? txt(C, C.violet) : C.chalk }}>{e.name}</Text>
-                <Mono color={C.ash} style={{ fontSize: 10 }}>{fmt(e.date)}</Mono>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: selected === e.id ? txt(C, C.violet) : C.chalk }}>{e.name}</Text>
+                <Mono color={C.ash} style={{ fontSize: fs.nano }}>{fmt(e.date)}</Mono>
               </Pressable>
             ))}
           </View>
@@ -111,7 +111,7 @@ function ClassicCompetition() {
 
           <Card style={{ marginTop: 14 }}>
             <Kicker>Form projection</Kicker>
-            <Mono color={C.ash} style={{ fontSize: 11, marginTop: 2 }}>fitness − fatigue → form, peaking toward the event.</Mono>
+            <Mono color={C.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>fitness − fatigue → form, peaking toward the event.</Mono>
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: 96, marginTop: 12 }}>
               {plan.series.map((p) => {
                 const h = Math.max(2, ((p.form - minF) / (maxF - minF || 1)) * 90);
@@ -119,7 +119,7 @@ function ClassicCompetition() {
                 return <View key={p.week} style={{ flex: 1, height: h, backgroundColor: isPeak ? C.lime : `${C.blue}99`, borderRadius: 2 }} />;
               })}
             </View>
-            <Mono color={C.ash} style={{ fontSize: 10, marginTop: 6 }}>wk 1 → event (peak week in lime)</Mono>
+            <Mono color={C.ash} style={{ fontSize: fs.nano, marginTop: 6 }}>wk 1 → event (peak week in lime)</Mono>
           </Card>
         </>
       )}

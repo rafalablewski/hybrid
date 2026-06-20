@@ -11,7 +11,7 @@ import {
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useClientPersonaChoice, setClientPersona } from "../lib/persona";
-import { Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraOnboarding from "../components/aurora/onboarding";
@@ -76,16 +76,16 @@ function ClassicOnboarding() {
     <Screen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Set up your plan</Kicker>
-        <Text onPress={() => router.replace("/(tabs)")} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>skip</Text>
+        <Text onPress={() => router.replace("/(tabs)")} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>skip</Text>
       </View>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 4, marginBottom: 4 }}>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginTop: 4, marginBottom: 4 }}>
         Let&apos;s build your first plan
       </Text>
       <Mono style={{ lineHeight: 19 }}>Tell us how you train — we&apos;ll shape the app around you.</Mono>
 
       <Card style={{ marginTop: 14, borderLeftWidth: 3, borderLeftColor: C.lime }}>
         <Kicker color={C.lime}>How do you want to use HYBRID?</Kicker>
-        <View style={{ gap: 8, marginTop: 10 }}>
+        <View style={{ gap: space.sm, marginTop: 10 }}>
           {([
             { id: "casual" as const, title: "Just track my training", sub: "Log fast, review at home, share your wins. The clean, simple app — free." },
             { id: "athlete" as const, title: "Train for a goal — give me the data", sub: "Plans, sport S&C, velocity, performance & technique. The full toolkit — a paid upgrade." },
@@ -97,13 +97,13 @@ function ClassicOnboarding() {
                 onPress={() => setClientPersona(o.id)}
                 style={{ borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? `${C.lime}14` : "transparent", borderRadius: 12, padding: 12 }}
               >
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: active ? txt(C, C.lime) : C.chalk }}>{o.title}</Text>
-                <Mono style={{ marginTop: 2, fontSize: 11, lineHeight: 16 }}>{o.sub}</Mono>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: active ? txt(C, C.lime) : C.chalk }}>{o.title}</Text>
+                <Mono style={{ marginTop: 2, fontSize: fs.micro, lineHeight: 16 }}>{o.sub}</Mono>
               </Pressable>
             );
           })}
         </View>
-        <Mono color={C.ash} style={{ marginTop: 10, fontSize: 10, lineHeight: 14 }}>
+        <Mono color={C.ash} style={{ marginTop: 10, fontSize: fs.nano, lineHeight: 14 }}>
           You can switch anytime in More.
         </Mono>
       </Card>
@@ -112,16 +112,16 @@ function ClassicOnboarding() {
         <Kicker color={C.lime}>1 · Your main goal</Kicker>
         {ONBOARDING_GOAL_GROUPS.map((group) => (
           <View key={group.category} style={{ marginTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
-            <View style={{ marginTop: 6, gap: 8 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
+            <View style={{ marginTop: 6, gap: space.sm }}>
               {group.goals.map((g) => (
                 <Pressable
                   key={g.id}
                   onPress={() => setGoal(g.id)}
                   style={{ borderWidth: 1, borderColor: goal === g.id ? C.lime : C.line, backgroundColor: goal === g.id ? `${C.lime}14` : "transparent", borderRadius: 12, padding: 12 }}
                 >
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: goal === g.id ? txt(C, C.lime) : C.chalk }}>{g.label}</Text>
-                  <Mono style={{ marginTop: 2, fontSize: 11 }}>{g.blurb}</Mono>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: goal === g.id ? txt(C, C.lime) : C.chalk }}>{g.label}</Text>
+                  <Mono style={{ marginTop: 2, fontSize: fs.micro }}>{g.blurb}</Mono>
                 </Pressable>
               ))}
             </View>
@@ -151,7 +151,7 @@ function ClassicOnboarding() {
       {plan && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
           <Kicker color={C.violet}>Your plan</Kicker>
-          <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 6 }}>{plan.planName}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 6 }}>{plan.planName}</Text>
           <Mono color={C.ash} style={{ marginTop: 2 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks</Mono>
           <Mono color={C.chalk} style={{ marginTop: 8, lineHeight: 19 }}>{plan.why}</Mono>
           <View style={{ marginTop: 14 }}>
@@ -178,14 +178,14 @@ function ClassicOnboarding() {
 function Row({ options, value, onPick }: { options: { id: string; label: string }[]; value: string; onPick: (v: string) => void }) {
   const C = useTheme().palette;
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
       {options.map((o) => (
         <Pressable
           key={o.id}
           onPress={() => onPick(o.id)}
           style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: value === o.id ? C.lime : C.line, backgroundColor: value === o.id ? `${C.lime}1a` : "transparent" }}
         >
-          <Text style={{ fontFamily: F.semi, fontSize: 13, color: value === o.id ? txt(C, C.lime) : C.ash }}>{o.label}</Text>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: value === o.id ? txt(C, C.lime) : C.ash }}>{o.label}</Text>
         </Pressable>
       ))}
     </View>

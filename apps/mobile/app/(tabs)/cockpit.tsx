@@ -18,7 +18,7 @@ import {
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
-import { Screen, Card, Kicker, Mono, H1, Button, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Button, F } from "../../lib/ui";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraCockpit from "../../components/aurora/cockpit";
@@ -115,7 +115,7 @@ function CockpitFull() {
       >
         {macro ? (
           <>
-            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{macro.goalOrSport}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{macro.goalOrSport}</Text>
             <Mono color={C.ash} style={{ marginTop: 4 }}>
               {phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}
               {macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}
@@ -131,10 +131,10 @@ function CockpitFull() {
           style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
-            <Mono color={C.ash} style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish.</Mono>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
+            <Mono color={C.ash} style={{ marginTop: 2, fontSize: fs.micro }}>4 questions → a plan you&apos;ll finish.</Mono>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.amber) }}>Open setup →</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>Open setup →</Text>
         </Pressable>
       </Section>
 
@@ -146,7 +146,7 @@ function CockpitFull() {
         onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}
         openLabel={hasData ? "Start session →" : "Start your first →"}
       >
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
           {hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}
         </Text>
         {hasData && <Mono color={C.ash} style={{ marginTop: 4, lineHeight: 18 }}>{rx.why}</Mono>}
@@ -156,9 +156,9 @@ function CockpitFull() {
       <Section C={C} kicker="Performance · Athlete Twin" color={C.blue} onOpen={() => router.push("/performance")} openLabel="Performance →">
         {hasData ? (
           <>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
               <Text style={{ fontFamily: F.black, fontSize: 32, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
             </View>
             <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
               <Mono color={C.lime}>STR {state.hpi.components.strength}</Mono>
@@ -181,7 +181,7 @@ function CockpitFull() {
         openLabel="Sport →"
       >
         {sport ? (
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
         ) : (
           <Mono color={C.chalk} style={{ lineHeight: 19 }}>Pick your sport — the engine ranks the strength & conditioning that transfers.</Mono>
         )}
@@ -203,7 +203,7 @@ function CockpitFull() {
         openLabel="Running →"
       >
         {totals.efforts > 0 ? (
-          <View style={{ flexDirection: "row", gap: 16 }}>
+          <View style={{ flexDirection: "row", gap: space.lg }}>
             <Stat C={C} label="efforts" value={`${totals.efforts}`} />
             <Stat C={C} label="km" value={totals.distanceKm.toLocaleString()} />
             <Stat C={C} label="min" value={totals.minutes.toLocaleString()} />
@@ -239,7 +239,7 @@ function Section({
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <Kicker color={color}>{kicker}</Kicker>
         <Pressable onPress={onOpen}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, color) }}>{openLabel}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, color) }}>{openLabel}</Text>
         </Pressable>
       </View>
       {children}
@@ -250,8 +250,8 @@ function Section({
 function Stat({ C, label, value }: { C: ReturnType<typeof useTheme>["palette"]; label: string; value: string }) {
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{value}</Text>
-      <Mono color={C.ash} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>{label}</Mono>
+      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{value}</Text>
+      <Mono color={C.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1 }}>{label}</Mono>
     </View>
   );
 }
@@ -288,7 +288,7 @@ function CockpitTeaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void
             <Kicker color={s.color(C)}>{s.kicker}</Kicker>
             <Mono color={C.chalk} style={{ marginTop: 4, lineHeight: 18 }}>{s.blurb}</Mono>
           </View>
-          <Text style={{ fontSize: 16 }}>🔒</Text>
+          <Text style={{ fontSize: fs.subtitle }}>🔒</Text>
         </Card>
       ))}
 

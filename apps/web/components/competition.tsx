@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, tip, Mono, Card, Chip, Select } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, tip, Mono, Card, Chip, Select } from "@/lib/ui";
 import { optimizeForEvent } from "@hybrid/core";
 
 type Event = { id: string; name: string; sport: string; date: string };
@@ -48,15 +48,15 @@ export default function Competition() {
   const plan = useMemo(() => (event ? optimizeForEvent(event.sport, event.date) : null), [event]);
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: space.lg }}>
       <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
-        <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
           Competition · peaking optimizer
         </Mono>
-        <Mono s={{ fontSize: 13, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
+        <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
           Set a target date and the plan back-solves so your best day lands on the event — finals, not heats.
         </Mono>
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Event name" style={input} />
           <Select value={sport} onChange={(e) => setSport(e.target.value)}>
             {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -64,7 +64,7 @@ export default function Competition() {
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={input} />
           <button onClick={create} style={btn}>Add event</button>
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           {events.map((e) => (
             <button key={e.id} onClick={() => setSelected(e.id)} style={chip(e.id === selected)}>
               {e.name} · {new Date(e.date).toLocaleDateString()}
@@ -76,10 +76,10 @@ export default function Competition() {
       {event && plan && (
         <>
           <Card>
-            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: space.sm }}>
               <div>
                 <div style={{ ...disp, fontWeight: 900, fontSize: 22, color: CHALK }}>{event.name}</div>
-                <Mono s={{ fontSize: 12 }}>{event.sport} · {new Date(event.date).toLocaleDateString()} · {plan.weeksToEvent} weeks out</Mono>
+                <Mono s={{ fontSize: fs.caption }}>{event.sport} · {new Date(event.date).toLocaleDateString()} · {plan.weeksToEvent} weeks out</Mono>
               </div>
               <Chip c={plan.landsPeak ? LIME : AMBER}>
                 {plan.landsPeak ? "peak lands on event ✓" : `peak at week ${plan.peakWeek} — adjust taper`}
@@ -90,20 +90,20 @@ export default function Competition() {
                 <div key={b.key} title={`${b.label} · ${b.weeks} wk`} style={{ flex: b.weeks, background: b.color }} />
               ))}
             </div>
-            <Mono s={{ fontSize: 11 }} c={ASH}>{plan.macro.blocks.map((b) => b.label).join(" → ")}</Mono>
+            <Mono s={{ fontSize: fs.micro }} c={ASH}>{plan.macro.blocks.map((b) => b.label).join(" → ")}</Mono>
           </Card>
 
           <Card>
-            <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Fitness · fatigue · form projection</Mono>
-            <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>form (freshness) peaks as the taper sheds fatigue faster than fitness</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Fitness · fatigue · form projection</Mono>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>form (freshness) peaks as the taper sheds fatigue faster than fitness</Mono>
             <div style={{ height: 260, marginTop: 12 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={plan.series}>
                   <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                  <XAxis dataKey="week" stroke={ASH} style={mono} tick={{ fontSize: 10 }} />
-                  <YAxis stroke={ASH} style={mono} tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="week" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
+                  <YAxis stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                   <Tooltip contentStyle={tip} />
-                  <ReferenceLine x={plan.series[plan.series.length - 1]?.week} stroke={AMBER} strokeDasharray="4 4" label={{ value: "event", fill: AMBER, fontSize: 10 }} />
+                  <ReferenceLine x={plan.series[plan.series.length - 1]?.week} stroke={AMBER} strokeDasharray="4 4" label={{ value: "event", fill: AMBER, fontSize: fs.nano }} />
                   <Line type="monotone" dataKey="fitness" stroke={LIME} strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="fatigue" stroke={RED} strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="form" stroke={BLUE} strokeWidth={2} dot={false} />
@@ -117,8 +117,8 @@ export default function Competition() {
   );
 }
 
-const input: React.CSSProperties = { ...mono, fontSize: 13, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}` };
-const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: 13, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "8px 14px", cursor: "pointer" };
+const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "8px 10px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}` };
+const btn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "8px 14px", cursor: "pointer" };
 function chip(active: boolean): React.CSSProperties {
-  return { ...mono, fontSize: 12, padding: "7px 12px", borderRadius: 8, cursor: "pointer", background: active ? `${AMBER}1a` : "transparent", color: active ? AMBER : ASH, border: `1px solid ${active ? AMBER : LINE}` };
+  return { ...mono, fontSize: fs.caption, padding: "7px 12px", borderRadius: 8, cursor: "pointer", background: active ? `${AMBER}1a` : "transparent", color: active ? AMBER : ASH, border: `1px solid ${active ? AMBER : LINE}` };
 }

@@ -18,7 +18,7 @@ import {
 import { fetchSessions } from "../lib/api";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraTrends from "../components/aurora/trends";
@@ -120,7 +120,7 @@ function ClassicTrends() {
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Kicker color={C.blue}>Muscle breakdown · this week</Kicker>
               <Pressable onPress={() => router.push("/volume")}>
-                <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>Volume detail →</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.lime }}>Volume detail →</Text>
               </Pressable>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
@@ -128,9 +128,9 @@ function ClassicTrends() {
                 const c = m.zone === "overreaching" ? C.red : m.zone === "under" ? C.amber : m.zone === "peak" ? C.blue : C.lime;
                 const on = m.muscle === focusMuscle;
                 return (
-                  <Pressable key={m.muscle} onPress={() => setSelMuscle(m.muscle)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: on ? c : `${c}55`, backgroundColor: `${c}${on ? "2e" : "14"}`, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
-                    <Mono color={C.chalk} style={{ fontSize: 12 }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "700", color: c }}>{m.sets}</Text>
+                  <Pressable key={m.muscle} onPress={() => setSelMuscle(m.muscle)} style={{ flexDirection: "row", alignItems: "center", gap: space.xs, borderWidth: 1, borderColor: on ? c : `${c}55`, backgroundColor: `${c}${on ? "2e" : "14"}`, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
+                    <Mono color={C.chalk} style={{ fontSize: fs.caption }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: c }}>{m.sets}</Text>
                   </Pressable>
                 );
               })}
@@ -144,7 +144,7 @@ function ClassicTrends() {
               })}
             </View>
             {advice.length > 0 && (
-              <Mono style={{ fontSize: 12, marginTop: 10, lineHeight: 17 }}>
+              <Mono style={{ fontSize: fs.caption, marginTop: 10, lineHeight: 17 }}>
                 {advice.filter((a) => a.action === "add").length > 0 && `Add: ${advice.filter((a) => a.action === "add").map((a) => MUSCLE_LABEL[a.muscle]).join(", ")}. `}
                 {advice.filter((a) => a.action === "reduce").length > 0 && `Ease off: ${advice.filter((a) => a.action === "reduce").map((a) => MUSCLE_LABEL[a.muscle]).join(", ")}.`}
               </Mono>
@@ -154,12 +154,12 @@ function ClassicTrends() {
           {/* Exercise analytics table */}
           <Card style={{ marginTop: 14 }}>
             <Kicker color={C.lime}>Exercise analytics</Kicker>
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
+            <View style={{ flexDirection: "row", gap: space.xs, marginTop: 10 }}>
               {PERIODS.map((p) => {
                 const on = period === p.id;
                 return (
                   <Pressable key={p.id} onPress={() => setPeriod(p.id)} style={{ flex: 1, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1a` : "transparent", alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 11, color: on ? C.lime : C.ash }}>{p.label}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.lime : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
               })}
@@ -176,12 +176,12 @@ function ClassicTrends() {
               const tr = TREND[r.trend];
               return (
                 <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercises", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
-                  <Mono color={C.lime} style={{ flex: 2, fontSize: 13 }}>{r.name}</Mono>
-                  <Mono style={{ flex: 1, textAlign: "center", fontSize: 13 }}>{r.sessions}×</Mono>
-                  <Mono color={r.kind === "strength" ? C.chalk : C.ash} style={{ flex: 1, textAlign: "center", fontSize: 13 }}>
+                  <Mono color={C.lime} style={{ flex: 2, fontSize: fs.body }}>{r.name}</Mono>
+                  <Mono style={{ flex: 1, textAlign: "center", fontSize: fs.body }}>{r.sessions}×</Mono>
+                  <Mono color={r.kind === "strength" ? C.chalk : C.ash} style={{ flex: 1, textAlign: "center", fontSize: fs.body }}>
                     {r.kind === "strength" ? fmtWeight(r.bestE1rm, units) : `${r.volume}km`}
                   </Mono>
-                  <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 13, color: tr.c }}>{tr.g}</Text>
+                  <Text style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: tr.c }}>{tr.g}</Text>
                 </Pressable>
               );
             })}

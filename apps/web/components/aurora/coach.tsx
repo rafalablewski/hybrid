@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
-import {
+import { fs, space,
   sessionVolume,
   weeklyRecap,
   buildMacrocycle,
@@ -18,7 +18,7 @@ const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, marginBottom: 12 } as const;
 const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: "var(--font-mono)",
-  fontSize: 14,
+  fontSize: fs.bodyLg,
   padding: "11px 14px",
   borderRadius: 14,
   background: C("ink"),
@@ -105,10 +105,10 @@ export default function AuroraCoach() {
             <div key={l.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{personName(l.coach)}</div>
-                  <Mono s={{ fontSize: 12 }}>wants to coach you</Mono>
+                  <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
+                  <Mono s={{ fontSize: fs.caption }}>wants to coach you</Mono>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: space.sm }}>
                   <Btn label="Accept" color={C("lime")} onClick={() => act(l.id, "accept")} />
                   <Btn label="Decline" color={C("ash")} onClick={() => act(l.id, "end")} />
                 </div>
@@ -126,7 +126,7 @@ export default function AuroraCoach() {
           coaches.map((l) => (
             <div key={l.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{personName(l.coach)}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
                 <Btn label="End" color={C("ash")} onClick={() => act(l.id, "end")} />
               </div>
             </div>
@@ -137,8 +137,8 @@ export default function AuroraCoach() {
       {/* coaching: invite + roster */}
       <Section title="Coaching" color={C("violet")}>
         <div style={card}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Invite an athlete</Mono>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Invite an athlete</Mono>
+          <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -149,7 +149,7 @@ export default function AuroraCoach() {
             <Btn label="Invite" color={C("lime")} onClick={invite} />
           </div>
           {msg && (
-            <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("amber")}>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("amber")}>
               {msg.text}
             </Mono>
           )}
@@ -162,10 +162,10 @@ export default function AuroraCoach() {
           <div key={l.id} onClick={() => setOpenLink(l)} style={{ ...card, cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{personName(l.client)}</div>
-                <Mono s={{ fontSize: 12 }}>{l.client?.email}</Mono>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client)}</div>
+                <Mono s={{ fontSize: fs.caption }}>{l.client?.email}</Mono>
               </div>
-              <Mono s={{ fontSize: 12 }} c={C("lime")}>open →</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={C("lime")}>open →</Mono>
             </div>
           </div>
         ))}
@@ -174,7 +174,7 @@ export default function AuroraCoach() {
           <div key={l.id} style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{personName(l.client)}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client)}</div>
                 <Chip c={C("amber")}>Pending</Chip>
               </div>
               <Btn label="Cancel" color={C("ash")} onClick={() => act(l.id, "end")} />
@@ -335,16 +335,16 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
-        <Mono s={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em" }} c={C("ash")}>← Roster</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={C("ash")}>← Roster</Mono>
       </button>
-      <h2 style={{ fontWeight: 900, fontSize: 26, marginBottom: 4 }}>{personName(link.client)}</h2>
-      <Mono s={{ fontSize: 13, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
+      <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client)}</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
 
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
         {tags.map((t) => (
-          <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("blue"), background: `color-mix(in srgb, ${C("blue")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 33%, transparent)`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("blue"), background: `color-mix(in srgb, ${C("blue")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 33%, transparent)`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
             {t}
-            <button aria-label={`Remove tag ${t}`} onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: C("blue"), cursor: "pointer", padding: 0, fontSize: 13, lineHeight: 1 }}>×</button>
+            <button aria-label={`Remove tag ${t}`} onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: C("blue"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
           </span>
         ))}
         <input
@@ -353,7 +353,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           onKeyDown={(e) => { if (e.key === "Enter") addTag(); }}
           placeholder="+ tag"
           aria-label="Add tag"
-          style={fieldStyle({ fontSize: 12, width: 90, padding: "6px 10px", borderRadius: 999, background: C("ink2") })}
+          style={fieldStyle({ fontSize: fs.caption, width: 90, padding: "6px 10px", borderRadius: 999, background: C("ink2") })}
         />
       </div>
 
@@ -372,9 +372,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             style={fieldStyle({ width: "100%", resize: "vertical", background: C("ink2"), boxSizing: "border-box" })}
           />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: space.xs, cursor: "pointer" }}>
               <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-              <Mono s={{ fontSize: 12 }} c={isPrivate ? C("amber") : C("ash")}>Private (client never sees)</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={isPrivate ? C("amber") : C("ash")}>Private (client never sees)</Mono>
             </label>
             <Btn label="Add note" color={C("lime")} onClick={addNote} />
           </div>
@@ -383,24 +383,24 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           <div key={n.id} style={{ ...card, }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               {n.private ? <Chip c={C("amber")}>Private</Chip> : <span />}
-              <Mono s={{ fontSize: 11 }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
+              <Mono s={{ fontSize: fs.micro }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
             </div>
-            <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{n.body}</Mono>
+            <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{n.body}</Mono>
           </div>
         ))}
       </Section>
 
       <Section title="Programming" color={C("lime")}>
         <div style={card}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
           {templates.length === 0 ? (
-            <Mono s={{ fontSize: 13, display: "block", marginTop: 8 }}>
+            <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }}>
               No templates yet — build one on the Builder screen, then assign it here.
             </Mono>
           ) : (
-            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
               <Select value={assignId} onChange={(e) => setAssignId(e.target.value)} aria-label="Choose a template"
-                style={{ fontSize: 14, flex: 1, minWidth: 180 }}>
+                style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 180 }}>
                 <option value="">Choose a template…</option>
                 {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </Select>
@@ -411,17 +411,17 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           )}
         </div>
         <div style={card}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Generate a periodized week</Mono>
-          <Mono s={{ fontSize: 12, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Generate a periodized week</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             {sessions.length === 0
               ? "Once this athlete logs sessions, generate a varied week dosed from their own numbers."
               : `A phase-arbitrated week, days/week from their cadence (~${trainingDaysPerWeek(sessions)}/wk), loads from their logs.`}
           </Mono>
-          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} aria-label="Goal" style={{ fontSize: 14, flex: 1, minWidth: 150 }}>
+          <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} aria-label="Goal" style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 150 }}>
               {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
             </Select>
-            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} aria-label="Week" style={{ fontSize: 14, minWidth: 150 }}>
+            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} aria-label="Week" style={{ fontSize: fs.bodyLg, minWidth: 150 }}>
               {genMacro.blocks.flatMap((b) =>
                 b.micros.map((m) => (
                   <option key={m.week} value={m.week}>{`Wk ${m.week} · ${b.label}${m.kind === "recovery" ? " (deload)" : ""}`}</option>
@@ -430,14 +430,14 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             </Select>
             <Btn label={generating ? "Generating…" : "Generate & assign"} color={sessions.length > 0 && !generating ? C("violet") : C("ash")} onClick={generateWeek} />
           </div>
-          {genMsg && <Mono s={{ fontSize: 11, display: "block", marginTop: 8 }} c={C("lime")}>{genMsg}</Mono>}
+          {genMsg && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={C("lime")}>{genMsg}</Mono>}
         </div>
         {assignments.map((a) => (
           <div key={a.id} style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{a.name}</div>
-                <Mono s={{ fontSize: 12 }}>{new Date(a.date).toLocaleDateString()}</Mono>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
+                <Mono s={{ fontSize: fs.caption }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </div>
               <Chip c={a.status === "completed" ? C("lime") : a.status === "skipped" ? C("red") : C("amber")}>{a.status}</Chip>
             </div>
@@ -452,18 +452,18 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           checkins.map((c) => (
             <div key={c.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{new Date(c.weekOf).toLocaleDateString()}</div>
-                {c.adherencePct != null && <Mono s={{ fontSize: 12 }}>{c.adherencePct}% adherence</Mono>}
+                <div style={{ fontWeight: 600, fontSize: fs.note }}>{new Date(c.weekOf).toLocaleDateString()}</div>
+                {c.adherencePct != null && <Mono s={{ fontSize: fs.caption }}>{c.adherencePct}% adherence</Mono>}
               </div>
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 6 }}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }}>
                 energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}
                 {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
               </Mono>
-              {c.note && <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
+              {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
                 <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                  <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Your reply</Mono>
-                  <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Your reply</Mono>
+                  <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
                 </div>
               ) : replyFor === c.id ? (
                 <div style={{ marginTop: 10 }}>
@@ -475,7 +475,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                     rows={2}
                     style={fieldStyle({ width: "100%", resize: "vertical", background: C("ink2"), boxSizing: "border-box" })}
                   />
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: space.sm, marginTop: 8 }}>
                     <Btn label="Send reply" color={C("lime")} onClick={() => sendReply(c.id)} />
                     <Btn label="Cancel" color={C("ash")} onClick={() => { setReplyFor(null); setReplyText(""); }} />
                   </div>
@@ -499,10 +499,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           sessions.map((s) => (
             <div key={s.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{s.title}</div>
-                <Mono s={{ fontSize: 12 }}>{new Date(s.startedAt).toLocaleDateString()}</Mono>
+                <div style={{ fontWeight: 600, fontSize: fs.note }}>{s.title}</div>
+                <Mono s={{ fontSize: fs.caption }}>{new Date(s.startedAt).toLocaleDateString()}</Mono>
               </div>
-              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <div style={{ display: "flex", gap: space.sm, marginTop: 6 }}>
                 <Chip c={C("ash")}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
                 <Chip c={C("ash")}>{s.blocks.length} blocks</Chip>
                 {typeof s.readiness === "number" && <Chip c={C("lime")}>readiness {s.readiness}</Chip>}
@@ -541,13 +541,13 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
               <Metric label="PRs" value={`${r.prs.length}`} c={r.prs.length ? C("lime") : C("ash")} />
             </div>
             {hasPrev && (
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 12 }} c={r.volumeDelta >= 0 ? C("lime") : C("amber")}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={r.volumeDelta >= 0 ? C("lime") : C("amber")}>
                 {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} sessions · {r.volumeDelta >= 0 ? "+" : ""}
                 {r.volumeDelta.toLocaleString()} kg vs last week
               </Mono>
             )}
             {r.prs.length > 0 && (
-              <Mono s={{ fontSize: 12, display: "block", marginTop: 8 }} c={C("chalk")}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={C("chalk")}>
                 🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? " (first!)" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
               </Mono>
             )}
@@ -562,7 +562,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   return (
     <div>
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );
 }
@@ -570,7 +570,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 function Section({ title, color, children }: { title: string; color: string; children: ReactNode }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 8px" }} c={color}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 8px" }} c={color}>
         {title}
       </Mono>
       {children}
@@ -592,7 +592,7 @@ function Chip({ children, c = C("lime") }: { children: ReactNode; c?: string }) 
         borderRadius: 999,
         padding: "3px 12px",
         fontFamily: "var(--font-mono)",
-        fontSize: 11,
+        fontSize: fs.micro,
         whiteSpace: "nowrap",
         marginRight: 6,
         marginBottom: 4,
@@ -613,7 +613,7 @@ function Select({
       {...rest}
       style={{
         fontFamily: "var(--font-mono)",
-        fontSize: 13,
+        fontSize: fs.body,
         padding: "10px 14px",
         borderRadius: 14,
         background: C("ink"),
@@ -639,7 +639,7 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
       }}
       style={{
         fontFamily: "var(--font-display)",
-        fontSize: 13,
+        fontSize: fs.body,
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: ".04em",

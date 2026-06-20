@@ -12,7 +12,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, C, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, C, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraRunning from "../../components/aurora/running";
@@ -50,7 +50,7 @@ function ClassicRunning() {
       <Screen refreshing={refreshing} onRefresh={load}>
         <Kicker>{t("nav.running")}</Kicker>
         <Card style={{ marginTop: 8, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{t("running.emptyTitle")}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("running.emptyTitle")}</Text>
           <Mono style={{ marginTop: 8, textAlign: "center", lineHeight: 19 }}>{t("running.emptyBody")}</Mono>
         </Card>
       </Screen>
@@ -66,7 +66,7 @@ function ClassicRunning() {
       <Kicker>{t("nav.running")}</Kicker>
 
       {/* Totals */}
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>
         <Metric label={t("running.runs")} value={String(totals.efforts)} />
         <Metric label="KM" value={`${totals.distanceKm}`} color={C.blue} />
         <Metric label="H" value={`${Math.round(totals.minutes / 6) / 10}`} />
@@ -103,7 +103,7 @@ function ClassicRunning() {
             <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
           </View>
-          <Mono style={{ fontSize: 11, lineHeight: 16, marginTop: 10 }}>{t("running.paceNote")}</Mono>
+          <Mono style={{ fontSize: fs.micro, lineHeight: 16, marginTop: 10 }}>{t("running.paceNote")}</Mono>
         </Card>
       )}
 
@@ -112,10 +112,10 @@ function ClassicRunning() {
         <Card>
           <Kicker color={C.blue}>{t("session.paceTrend")} · {active}</Kicker>
           {paceMoves.length > 1 && (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
               {paceMoves.map((m) => (
                 <Pressable key={m} onPress={() => setMove(m)} style={pill(active === m, C.blue)}>
-                  <Text style={{ fontFamily: F.semi, fontSize: 12, color: active === m ? C.blue : C.ash }}>{m}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: active === m ? C.blue : C.ash }}>{m}</Text>
                 </Pressable>
               ))}
             </View>
@@ -185,9 +185,9 @@ function Metric({ label, value, color }: { label: string; value: string; color?:
 
 function Legend({ c, label }: { c: string; label: string }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs }}>
       <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: c }} />
-      <Mono style={{ fontSize: 12 }}>{label}</Mono>
+      <Mono style={{ fontSize: fs.caption }}>{label}</Mono>
     </View>
   );
 }

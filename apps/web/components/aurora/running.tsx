@@ -5,7 +5,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import {
   runTotals, runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries, paceClock, type LoggedSession,
 } from "@hybrid/core";
-import { LINE, LIME, ASH, BLUE, AMBER, RED, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LIME, ASH, BLUE, AMBER, RED, tip, mono } from "@/lib/ui";
 import { AuroraIcon } from "./icons";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -13,9 +13,9 @@ const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
 function Stat({ label, value, c }: { label: string; value: string | number; c?: string }) {
-  return <div style={card}><div style={{ fontWeight: 800, fontSize: 26, color: c ?? C("chalk") }}>{value}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4, color: C("ash") }}>{label}</div></div>;
+  return <div style={card}><div style={{ fontWeight: 800, fontSize: fs.display, color: c ?? C("chalk") }}>{value}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4, color: C("ash") }}>{label}</div></div>;
 }
-const head = (color: string, k: string) => <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(color), marginBottom: 10 }}>{k}</div>;
+const head = (color: string, k: string) => <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color), marginBottom: 10 }}>{k}</div>;
 
 /** AURORA Running (web) — full bespoke cardio analytics reusing the exact engine
  *  + recharts mileage/pace charts. */
@@ -31,8 +31,8 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
   if (totals.efforts === 0) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <h1 style={{ fontWeight: 900, fontSize: 26, margin: "0 0 16px" }}>Running</h1>
-        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: C("ash") }}>No cardio logged yet. Log a run or row (with distance + minutes) and your mileage, pace and easy/hard split show up here.</span></div>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>Running</h1>
+        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>No cardio logged yet. Log a run or row (with distance + minutes) and your mileage, pace and easy/hard split show up here.</span></div>
       </div>
     );
   }
@@ -44,9 +44,9 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
   const easyPct = hasEffort ? Math.round((split.easy / splitTotal) * 100) : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Running</h1>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Running</h1>
         <AuroraIcon name="navigation" size={24} color={C("blue")} />
       </div>
 
@@ -54,13 +54,13 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
         <Stat label="Runs" value={totals.efforts} /><Stat label="Distance" value={`${totals.distanceKm} km`} c={C("blue")} /><Stat label="Time" value={`${Math.round(totals.minutes / 6) / 10} h`} />{easyPct != null && <Stat label="Easy %" value={`${easyPct}%`} c={C("lime")} />}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
         <div style={card}>{head("blue", "Weekly mileage · last 8 wk")}
-          <ResponsiveContainer width="100%" height={200}><BarChart data={mileageData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} /><Tooltip contentStyle={tip} formatter={(v) => `${v} km`} /><Bar dataKey="km" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={200}><BarChart data={mileageData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><Tooltip contentStyle={tip} formatter={(v) => `${v} km`} /><Bar dataKey="km" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         {paceData.length > 1 && (
           <div style={card}>{head("blue", `${active} · pace · lower is faster`)}
-            <ResponsiveContainer width="100%" height={200}><LineChart data={paceData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: 11 }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: 11 }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={200}><LineChart data={paceData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
           </div>
         )}
       </div>
@@ -80,8 +80,8 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
       {paceMoves.length > 1 && (
         <div style={card}>
           {head("ash", "Pace chart move")}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {paceMoves.map((m) => { const on = active === m; return <button key={m} onClick={() => setMove(m)} style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "6px 14px", borderRadius: 999, cursor: "pointer", color: on ? C("ink") : C("ash"), background: on ? C("blue") : "transparent", border: `1px solid ${on ? C("blue") : C("line")}` }}>{m}</button>; })}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
+            {paceMoves.map((m) => { const on = active === m; return <button key={m} onClick={() => setMove(m)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "6px 14px", borderRadius: 999, cursor: "pointer", color: on ? C("ink") : C("ash"), background: on ? C("blue") : "transparent", border: `1px solid ${on ? C("blue") : C("line")}` }}>{m}</button>; })}
           </div>
         </div>
       )}
@@ -90,11 +90,11 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
         {head("blue", "By movement")}
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
           <div style={{ minWidth: 420 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-              {["move", "runs", "km", "longest", "best pace"].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: space.sm, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
+              {["move", "runs", "km", "longest", "best pace"].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
             </div>
             {stats.map((r) => (
-              <div key={r.move} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "8px 0", borderTop: `1px solid ${C("line")}`, fontFamily: "var(--font-mono)", fontSize: 13 }}>
+              <div key={r.move} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: space.sm, padding: "8px 0", borderTop: `1px solid ${C("line")}`, fontFamily: "var(--font-mono)", fontSize: fs.body }}>
                 <span style={{ color: C("chalk") }}>{r.move}</span><span style={{ color: C("ash") }}>{r.efforts}</span><span style={{ color: C("ash") }}>{r.distanceKm}</span><span style={{ color: C("ash") }}>{r.longestKm || "–"}</span>
                 <span style={{ color: r.bestPaceSecPerKm != null ? C("blue") : C("ash") }}>{r.bestPaceSecPerKm != null ? `${paceClock(r.bestPaceSecPerKm)} /km` : "–"}</span>
               </div>
@@ -107,5 +107,5 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
 }
 
 function Legend({ c, label }: { c: string; label: string }) {
-  return <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: c }} /><span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{label}</span></div>;
+  return <div style={{ display: "flex", alignItems: "center", gap: space.xs }}><span style={{ width: 10, height: 10, borderRadius: 3, background: c }} /><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{label}</span></div>;
 }

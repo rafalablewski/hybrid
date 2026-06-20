@@ -7,7 +7,7 @@ import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull } from "../../lib/iap";
 import { supabase } from "../../lib/supabase";
 import { useLang } from "../../lib/i18n";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
@@ -70,35 +70,35 @@ export default function AuroraUpgrade() {
   return (
     <AuroraScreen>
       <Pressable onPress={() => router.back()} hitSlop={10}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>← {t("common.back")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 12 }}>Full · the upgrade</Text>
-      <AHeading style={{ fontSize: 26, marginTop: 4 }}>Unlock HYBRID Full</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, marginTop: 8, lineHeight: 21 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 12 }}>Full · the upgrade</Text>
+      <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>Unlock HYBRID Full</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 21 }}>
         One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays
         exactly as it is; the depth simply switches on.
       </Text>
 
       <View style={{ alignSelf: "flex-start", marginTop: 12, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime) }}>12+ pro tools · one subscription</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>12+ pro tools · one subscription</Text>
       </View>
 
       {/* flagship — the Cockpit assembles everything */}
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>The hub — everything in one place</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 10 }}>◈ Athlete Cockpit</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 4, lineHeight: 18 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>The hub — everything in one place</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>◈ Athlete Cockpit</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: 18 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Text>
       </ACard>
 
       {BUNDLE.map((cat) => (
         <ACard key={cat.k} style={{ marginTop: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, cat.c(C)) }}>{cat.k}</Text>
-          <View style={{ marginTop: 12, gap: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, cat.c(C)) }}>{cat.k}</Text>
+          <View style={{ marginTop: 12, gap: space.sm }}>
             {cat.items.map((line) => (
-              <View key={line} style={{ flexDirection: "row", gap: 8 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, cat.c(C)) }}>✓</Text>
-                <Text style={{ flex: 1, fontFamily: F.semi, fontSize: 14, color: C.chalk }}>{line}</Text>
+              <View key={line} style={{ flexDirection: "row", gap: space.sm }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, cat.c(C)) }}>✓</Text>
+                <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{line}</Text>
               </View>
             ))}
           </View>
@@ -106,7 +106,7 @@ export default function AuroraUpgrade() {
       ))}
 
       {!!error && (
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: txt(C, C.red), marginTop: 16, lineHeight: 19 }}>{error}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 16, lineHeight: 19 }}>{error}</Text>
       )}
 
       <Pressable
@@ -124,19 +124,19 @@ export default function AuroraUpgrade() {
         {busy ? (
           <ActivityIndicator color={C.onAccent} />
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.onAccent }}>Subscribe</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>Subscribe</Text>
         )}
       </Pressable>
 
       {/* iOS completes the purchase through native In-App Purchase; web/Android
           use hosted Stripe Checkout. */}
-      <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 12, lineHeight: 18, textAlign: "center" }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 18, textAlign: "center" }}>
         On iOS the purchase completes securely through the App Store. Cancel anytime in your
         App Store subscriptions.
       </Text>
 
       <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: 18 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Maybe later</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Maybe later</Text>
       </Pressable>
     </AuroraScreen>
   );

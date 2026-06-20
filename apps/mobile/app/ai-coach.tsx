@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { askAiCoach, type CoachNote } from "../lib/api";
-import { Screen, Card, Kicker, Mono, Button, Chip, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Button, Chip, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraAiCoach from "../components/aurora/ai-coach";
@@ -36,7 +36,7 @@ function ClassicAiCoach() {
     <Screen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker color={C.violet}>AI coach</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← back</Text>
       </View>
 
       <Card style={{ marginTop: 10, borderLeftWidth: 3, borderLeftColor: C.violet }}>
@@ -47,20 +47,20 @@ function ClassicAiCoach() {
         </Mono>
 
         {busy ? (
-          <View style={{ marginTop: 18, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ marginTop: 18, flexDirection: "row", alignItems: "center", gap: space.ms }}>
             <ActivityIndicator color={C.violet} />
             <Mono color={C.ash}>Reading your training…</Mono>
           </View>
         ) : note?.text ? (
           <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+            <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 8 }}>
               {note.source ? (
                 <Chip color={note.source === "ai" ? C.lime : C.ash}>{note.source === "ai" ? "Claude" : "Engine"}</Chip>
               ) : null}
               {note.readiness != null ? <Chip color={C.blue}>readiness {note.readiness}/100</Chip> : null}
               {note.hpi != null ? <Chip color={C.violet}>HPI {note.hpi}</Chip> : null}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 24, color: txt(C, C.chalk) }}>{note.text}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, lineHeight: 24, color: txt(C, C.chalk) }}>{note.text}</Text>
           </View>
         ) : null}
 

@@ -6,7 +6,7 @@ import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } fr
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 const STORE_KEY = "hybrid.sport";
@@ -57,10 +57,10 @@ export default function AuroraSport() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: 26 }}>Sport</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("sport.intro")}</Text>
+      <AHeading style={{ fontSize: fs.display }}>Sport</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("sport.intro")}</Text>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
         {SPORT_NAMES.map((s) => {
           const on = s === sport;
           return (
@@ -70,7 +70,7 @@ export default function AuroraSport() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 6,
+                gap: space.xs,
                 paddingHorizontal: 14,
                 paddingVertical: 11,
                 borderRadius: RADIUS.pill,
@@ -79,14 +79,14 @@ export default function AuroraSport() {
                 backgroundColor: on ? `${C.lime}1f` : C.ink2,
               }}
             >
-              <Text style={{ fontSize: 15 }}>{SPORTS[s]!.icon}</Text>
-              <Text style={{ fontFamily: F.semi, fontSize: 13, color: on ? C.chalk : C.ash }}>{s}</Text>
+              <Text style={{ fontSize: fs.note }}>{SPORTS[s]!.icon}</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{s}</Text>
             </Pressable>
           );
         })}
       </View>
 
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+      <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 16 }}>
         {LEVELS.map((l, i) => {
           const on = i === levelIdx;
           return (
@@ -103,52 +103,52 @@ export default function AuroraSport() {
                 backgroundColor: on ? C.blue : C.ink2,
               }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: 12, color: on ? C.ink : C.ash }}>{l}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.ink : C.ash }}>{l}</Text>
             </Pressable>
           );
         })}
       </View>
 
       <ACard style={{ marginBottom: 12 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
           <Text style={{ fontSize: 28 }}>{meta.icon}</Text>
           <View>
-            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk }}>{sport}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, marginTop: 2 }}>{meta.family} · {LEVELS[levelIdx]}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{sport}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{meta.family} · {LEVELS[levelIdx]}</Text>
           </View>
         </View>
       </ACard>
 
       <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("sport.prescribed")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 3 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("sport.prescribed")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>
           {rx.personalized ? t("sport.loadsFromLogs") : t("sport.loadsLogPrompt")}
         </Text>
         {rx.blocks.map((b, i) => (
           <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 8 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.amber), marginTop: 2 }}>{b.demand}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.name}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.amber), marginTop: 2 }}>{b.demand}</Text>
             </View>
             <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
               <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime) }}>{b.scheme}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{b.scheme}</Text>
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Text>
             </View>
           </View>
         ))}
       </ACard>
 
       <ACard>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("sport.why")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("sport.why")}</Text>
         {rx.ranked.map((e) => (
           <View key={e.name} style={{ marginTop: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>{e.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{e.demand}</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{e.demand}</Text>
             </View>
-            <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.chalk, marginTop: 3, lineHeight: 19 }}>{e.why}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 3, lineHeight: 19 }}>{e.why}</Text>
           </View>
         ))}
       </ACard>

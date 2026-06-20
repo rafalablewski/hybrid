@@ -40,7 +40,7 @@ import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useDraft } from "../../lib/draft";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraHome from "../../components/aurora/home";
@@ -271,8 +271,8 @@ function ClassicHome() {
         onPress={() => router.push(`/workout?source=${draft ? "empty" : defaultStart}`)}
         style={{ backgroundColor: C.lime, borderRadius: 18, paddingVertical: 22, alignItems: "center", marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.ink }}>▶  {draft ? t("train.resume") : t("home.startWorkout")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.ink }}>▶  {draft ? t("train.resume") : t("home.startWorkout")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ink, opacity: 0.7, marginTop: 4 }}>
           {draft ? `${draft.exercises.length} ${t("workout.exercises")} · ${t("train.inProgress")}` : t("home.startWorkoutSub")}
         </Text>
       </Pressable>
@@ -284,10 +284,10 @@ function ClassicHome() {
           style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>4 questions → a plan you&apos;ll finish</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.violet) }}>✨ Set up your plan</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>4 questions → a plan you&apos;ll finish</Mono>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.violet) }}>→</Text>
         </Pressable>
       )}
 
@@ -299,10 +299,10 @@ function ClassicHome() {
           style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}12` }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>▤ Follow a plan — free</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>Browse the library &amp; enroll. Following is free.</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>▤ Follow a plan — free</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>Browse the library &amp; enroll. Following is free.</Mono>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.lime) }}>→</Text>
         </Pressable>
       )}
 
@@ -314,10 +314,10 @@ function ClassicHome() {
           style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}14` }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.lime) }}>→</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.lime) }}>→</Text>
         </Pressable>
       )}
 
@@ -325,16 +325,16 @@ function ClassicHome() {
       {invites.map((inv) => (
         <Card key={inv.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 16 }}>
           <Kicker color={C.violet}>Coach invite</Kicker>
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, marginTop: 6 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 6 }}>
             {(inv.coach?.name || inv.coach?.email?.split("@")[0] || "A coach")} wants to coach you
           </Text>
-          <Mono style={{ marginTop: 2, fontSize: 11, lineHeight: 16 }}>Accepting shares your training with them — end it anytime.</Mono>
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+          <Mono style={{ marginTop: 2, fontSize: fs.micro, lineHeight: 16 }}>Accepting shares your training with them — end it anytime.</Mono>
+          <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12 }}>
             <Pressable onPress={() => respondInvite(inv.id, "accept")} style={{ flex: 1, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime, borderRadius: 10, paddingVertical: 10, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.lime) }}>Accept</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>Accept</Text>
             </Pressable>
             <Pressable onPress={() => respondInvite(inv.id, "end")} style={{ paddingHorizontal: 16, paddingVertical: 10, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Decline</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Decline</Text>
             </Pressable>
           </View>
         </Card>
@@ -347,10 +347,10 @@ function ClassicHome() {
           style={{ marginTop: 16, backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.violet) }}>✦ Your athletes</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>roster · check-ins · assign workouts</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.violet) }}>✦ Your athletes</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>roster · check-ins · assign workouts</Mono>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.violet) }}>→</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.violet) }}>→</Text>
         </Pressable>
       )}
 
@@ -361,14 +361,14 @@ function ClassicHome() {
           {upcoming.map((a, i) => (
             <View key={a.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: i ? 10 : 8 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{a.name}</Text>
-                <Mono style={{ fontSize: 11 }}>{new Date(a.date).toLocaleDateString()}</Mono>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
+                <Mono style={{ fontSize: fs.micro }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </View>
               <Pressable onPress={() => router.push("/workout?source=empty")} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, marginRight: 8 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: 12, color: txt(C, C.lime) }}>Start</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>Start</Text>
               </Pressable>
               <Pressable onPress={() => markDone(a.id)}>
-                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>done</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>done</Text>
               </Pressable>
             </View>
           ))}
@@ -394,13 +394,13 @@ function ClassicHome() {
           {plan ? (
             <>
               <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 6 }}>{plan.planName}</Text>
-              <Mono color={C.violet} style={{ marginTop: 2, fontSize: 11 }}>
+              <Mono color={C.violet} style={{ marginTop: 2, fontSize: fs.micro }}>
                 {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{macroLine ? ` · ${macroLine}` : ""}
               </Mono>
               <View style={{ marginTop: 8 }}>
                 {plan.items.map((it, i) => (
                   <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk, flex: 1 }}>{it.name}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
                     <Mono color={C.chalk}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
                   </View>
                 ))}
@@ -408,16 +408,16 @@ function ClassicHome() {
               {!isAthlete && (
                 <Pressable
                   onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                  style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: `${C.violet}55`, backgroundColor: `${C.violet}14` }}
+                  style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: `${C.violet}55`, backgroundColor: `${C.violet}14` }}
                 >
                   <Mono color={C.chalk} style={{ flex: 1, fontSize: 11.5, lineHeight: 16 }}>✦ Following as written. Unlock Full to auto-adjust loads to your recovery.</Mono>
-                  <Text style={{ fontFamily: F.black, fontSize: 16, color: txt(C, C.violet) }}>→</Text>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>→</Text>
                 </Pressable>
               )}
             </>
           ) : (
             <>
-              {macroLine && <Mono color={C.violet} style={{ marginTop: 6, fontSize: 11 }}>{macroLine}</Mono>}
+              {macroLine && <Mono color={C.violet} style={{ marginTop: 6, fontSize: fs.micro }}>{macroLine}</Mono>}
               <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginVertical: 6 }}>
                 {hasPlan ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
               </Text>
@@ -457,7 +457,7 @@ function ClassicHome() {
       {(isAthlete || coached) && macro && seasonBlock && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
           <Kicker color={C.lime}>Training for · {macro.goalOrSport} · {seasonBlock.label} phase</Kicker>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, marginTop: 6 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 6 }}>
             Week {currentWeek} of {macro.totalWeeks} · {seasonBlock.focus.toLowerCase()}
           </Text>
           <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
@@ -478,7 +478,7 @@ function ClassicHome() {
               {reconciledView.phase.kind === "recovery" ? "deload" : "load"}
             </Chip>
           </View>
-          <View style={{ flexDirection: "row", gap: 16, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", gap: space.lg, marginTop: 10 }}>
             <Mono color={C.ash}>intensity {reconciledView.intensity}</Mono>
             <Mono color={C.ash}>load ×{reconciledView.loadFactor.toFixed(2)}</Mono>
             <Mono color={C.ash}>vol ×{reconciledView.volumeFactor.toFixed(2)}</Mono>
@@ -486,8 +486,8 @@ function ClassicHome() {
           {reconciledView.blocks.map((b, i) => (
             <View key={`${b.name}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.name}</Text>
-                <Mono color={b.source === "sport" ? C.amber : C.ash} style={{ fontSize: 11 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.name}</Text>
+                <Mono color={b.source === "sport" ? C.amber : C.ash} style={{ fontSize: fs.micro }}>
                   {b.source === "sport" ? `sport · ${b.demand ?? ""}` : b.kind === "conditioning" ? "conditioning" : "primary lift"}
                 </Mono>
               </View>
@@ -506,7 +506,7 @@ function ClassicHome() {
                 disabled={scheduling}
                 style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}
               >
-                <Text style={{ fontFamily: F.black, fontSize: 14, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>{scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}</Text>
               </Pressable>
               {scheduled && <Mono color={C.lime} style={{ marginTop: 8, textAlign: "center" }}>{scheduled}</Mono>}
             </>
@@ -515,34 +515,34 @@ function ClassicHome() {
       )}
 
       {/* quick links */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: 16 }}>
         <Pressable
           onPress={() => router.push("/nutrition")}
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Nutrition →</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>log macros · adaptive targets</Mono>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Nutrition →</Text>
+          <Mono style={{ marginTop: 2, fontSize: fs.micro }}>log macros · adaptive targets</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/checkin")}
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Check-in →</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>daily review · coach reply</Mono>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Check-in →</Text>
+          <Mono style={{ marginTop: 2, fontSize: fs.micro }}>daily review · coach reply</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/calendar")}
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Calendar →</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>month view · load</Mono>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Calendar →</Text>
+          <Mono style={{ marginTop: 2, fontSize: fs.micro }}>month view · load</Mono>
         </Pressable>
         <Pressable
           onPress={() => router.push("/progress")}
           style={{ width: "48%", flexGrow: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 }}
         >
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>Progress →</Text>
-          <Mono style={{ marginTop: 2, fontSize: 11 }}>photos · timeline</Mono>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Progress →</Text>
+          <Mono style={{ marginTop: 2, fontSize: fs.micro }}>photos · timeline</Mono>
         </Pressable>
       </View>
 
@@ -552,9 +552,9 @@ function ClassicHome() {
           <Kicker color={bandColor(acc.band)}>On track? · {bandLabel(acc.band)}</Kicker>
           <Chip color={bandColor(acc.band)}>{acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}</Chip>
         </View>
-        <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 8 }}>{acc.intervention.headline}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{acc.intervention.headline}</Text>
         <Mono color={C.chalk} style={{ marginTop: 4, lineHeight: 19 }}>{acc.intervention.message}</Mono>
-        <View style={{ flexDirection: "row", gap: 16, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", gap: space.lg, marginTop: 10 }}>
           <Mono color={C.ash}>habit strength {strength}/100</Mono>
           <Mono color={C.ash}>this week {acc.sessionsLast7}/3</Mono>
         </View>
@@ -569,7 +569,7 @@ function ClassicHome() {
               onPress={() => shareWorkout(recapRef, recapShareText(recap, t, units), t("recap.share"))}
               style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
             >
-              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{t("recap.share")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("recap.share")}</Text>
             </Pressable>
           ) : (
             <Mono style={{ marginTop: 10, textAlign: "center" }}>{t("recap.noneThisWeek")}</Mono>
@@ -581,13 +581,13 @@ function ClassicHome() {
       {isAthlete && (primaryLift && projection && !projection.insufficient && projGoal ? (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
           <Kicker color={C.violet}>Future self · {primaryLift}</Kicker>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 8 }}>
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk }}>{Math.round(projection.current)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 14, color: C.ash }}>→</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>→</Text>
             <Text style={{ fontFamily: F.black, fontSize: 28, color: txt(C, C.violet) }}>
               {Math.round(projection.series[projection.series.length - 1]!.value)}
             </Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>kg in 12 wks</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>kg in 12 wks</Text>
           </View>
           <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
             At your current pace (+{projection.ratePerWeek}kg/wk) you reach {goal}kg
@@ -612,9 +612,9 @@ function ClassicHome() {
       {isAthlete && sessions.length > 0 && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
           <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 6 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>
             <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band)) }}>{state.hpi.score}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
             <Mono color={C.lime}>STR {state.hpi.components.strength}</Mono>
@@ -623,16 +623,16 @@ function ClassicHome() {
           </View>
           {/* INJURY RISK · by tissue — absorbed from the retired web Dashboard. */}
           <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-            <Mono color={C.ash} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>Injury risk · by tissue</Mono>
+            <Mono color={C.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1 }}>Injury risk · by tissue</Mono>
             {risk.flagged.length === 0 ? (
               <Mono color={C.lime} style={{ marginTop: 6 }}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</Mono>
             ) : (
-              <View style={{ marginTop: 6, gap: 6 }}>
+              <View style={{ marginTop: 6, gap: space.xs }}>
                 {risk.flagged.map((tr) => (
-                  <View key={tr.tissue} style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+                  <View key={tr.tissue} style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
                     <Chip color={riskColor(tr.band, C)}>{tr.risk}</Chip>
-                    <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.chalk, textTransform: "capitalize" }}>{tr.tissue}</Text>
-                    <Mono color={C.ash} style={{ fontSize: 11 }}>{tr.drivers[0]?.label ?? ""}</Mono>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{tr.tissue}</Text>
+                    <Mono color={C.ash} style={{ fontSize: fs.micro }}>{tr.drivers[0]?.label ?? ""}</Mono>
                   </View>
                 ))}
               </View>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
+import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
-const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: 11, marginRight: 6 }}>{label}</span>;
+const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6 }}>{label}</span>;
 type EventRow = { id: string; name: string; sport: string; date: string };
 type AssignmentRow = { id: string; name: string; date: string; status: string };
 
@@ -42,54 +42,54 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   const selSessions = sessions.filter((s) => s.startedAt.slice(0, 10) === selected);
   const selEvents = eventsByDay[selected] ?? [];
   const selAssignments = assignmentsByDay[selected] ?? [];
-  const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, minWidth: 36, height: 36, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
+  const navBtn = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, minWidth: 36, height: 36, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink"), color: C("chalk"), cursor: "pointer", padding: "0 12px" } as const;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: 16, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: space.lg, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontWeight: 800, fontSize: 20 }}>{monthLabel}</div>
-          <div style={{ display: "flex", gap: 6 }}><button onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>Today</button><button onClick={() => go(1)} style={navBtn}>›</button></div>
+          <div style={{ fontWeight: 800, fontSize: fs.heading }}>{monthLabel}</div>
+          <div style={{ display: "flex", gap: space.xs }}><button onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>Today</button><button onClick={() => go(1)} style={navBtn}>›</button></div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
-          {WEEKDAYS.map((d) => <span key={d} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{d}</span>)}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs, marginBottom: 4 }}>
+          {WEEKDAYS.map((d) => <span key={d} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{d}</span>)}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs }}>
           {matrix.flat().map((cell) => {
             const day = byDay[cell.date]; const ev = eventsByDay[cell.date]; const asg = assignmentsByDay[cell.date];
             const inten = intensity(cell.date); const isToday = cell.date === today; const isSel = cell.date === selected;
             return (
               <button key={cell.date} onClick={() => setSelected(cell.date)} style={{ textAlign: "left", minHeight: 62, borderRadius: 14, padding: 6, cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: day ? `rgba(196,240,53,${0.08 + inten * 0.5})` : C("ink") }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: isToday ? C("lime") : C("chalk"), fontWeight: isToday ? 700 : 400 }}>{Number(cell.date.slice(8, 10))}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: isToday ? C("lime") : C("chalk"), fontWeight: isToday ? 700 : 400 }}>{Number(cell.date.slice(8, 10))}</span>
                   <span style={{ display: "flex", gap: 3 }}>{asg && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("violet") }} />}{ev && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("amber") }} />}</span>
                 </div>
-                {day && <div style={{ marginTop: 4 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: C("ink"), background: C("lime"), borderRadius: 6, padding: "1px 6px" }}>{day.count}×</span></div>}
+                {day && <div style={{ marginTop: 4 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: C("ink"), background: C("lime"), borderRadius: 6, padding: "1px 6px" }}>{day.count}×</span></div>}
               </button>
             );
           })}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 10, color: C("ash") }}>Cell shading = training load (sRPE) · <span style={{ color: C("violet") }}>●</span> assigned · <span style={{ color: C("amber") }}>●</span> event</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>Cell shading = training load (sRPE) · <span style={{ color: C("violet") }}>●</span> assigned · <span style={{ color: C("amber") }}>●</span> event</div>
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
-        {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), "Event")}<div style={{ fontWeight: 700, fontSize: 15, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{e.sport}</div></div>)}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
+        {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), "Event")}<div style={{ fontWeight: 700, fontSize: fs.note, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{e.sport}</div></div>)}
         {selAssignments.map((a) => (
           <div key={a.id} style={{ marginTop: 10 }}>{chip(C("violet"), "Assigned")}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>{a.name}</div>
-              {a.status === "completed" ? chip(C("lime"), "done") : <button onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>Mark done</button>}
+              <div style={{ fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
+              {a.status === "completed" ? chip(C("lime"), "done") : <button onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>Mark done</button>}
             </div>
           </div>
         ))}
         {selSessions.length === 0 && selEvents.length === 0 && selAssignments.length === 0 ? (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, marginTop: 12, color: C("ash") }}>Nothing logged this day.</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 12, color: C("ash") }}>Nothing logged this day.</div>
         ) : selSessions.map((s) => (
           <div key={s.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>{s.title}</div>
-            <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("blue"), `load ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} blocks`)}{typeof s.readiness === "number" && chip(C("lime"), `readiness ${s.readiness}`)}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 6, color: C("ash") }}>{s.blocks.map((b) => b.name).join(" · ")}</div>
+            <div style={{ fontWeight: 700, fontSize: fs.note }}>{s.title}</div>
+            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("blue"), `load ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} blocks`)}{typeof s.readiness === "number" && chip(C("lime"), `readiness ${s.readiness}`)}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 6, color: C("ash") }}>{s.blocks.map((b) => b.name).join(" · ")}</div>
           </div>
         ))}
       </div>

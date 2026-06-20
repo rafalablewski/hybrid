@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, roleHex, disp, mono, tip, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, roleHex, disp, mono, tip, Mono, Card, Chip } from "@/lib/ui";
 import {
   computePerformanceState,
   computeInjuryRisk,
@@ -61,7 +61,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
           );
         })}
       </svg>
-      <Mono s={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{label}</Mono>
     </div>
   );
 }
@@ -71,8 +71,8 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
   if (sessions.length === 0)
     return (
       <Card style={{ textAlign: "center", padding: 60 }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 20 }}>No training data yet</div>
-        <Mono s={{ fontSize: 14, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
+        <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>No training data yet</div>
+        <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
           Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk —
           appears here, computed from your real training.
         </Mono>
@@ -91,10 +91,10 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
   const byTissue = Object.fromEntries(risk.tissues.map((t) => [t.tissue, t])) as Record<string, TissueRisk>;
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
+    <div style={{ display: "grid", gap: space.lg }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <Card style={{ borderLeft: `3px solid ${hpiColor(state.hpi.band)}` }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Athlete Twin · HPI</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Athlete Twin · HPI</Mono>
           <div style={{ ...disp, fontWeight: 900, fontSize: 56, color: hpiColor(state.hpi.band), lineHeight: 1.1, margin: "6px 0" }}>
             {state.hpi.score}
           </div>
@@ -112,8 +112,8 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
             ).map(([l, v, c]) => (
               <div key={l} style={{ marginBottom: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Mono s={{ fontSize: 11 }}>{l}</Mono>
-                  <Mono s={{ fontSize: 11 }} c={c}>{v}</Mono>
+                  <Mono s={{ fontSize: fs.micro }}>{l}</Mono>
+                  <Mono s={{ fontSize: fs.micro }} c={c}>{v}</Mono>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: INK2, marginTop: 3, overflow: "hidden" }}>
                   <div style={{ width: `${v}%`, height: "100%", background: c }} />
@@ -121,17 +121,17 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
               </div>
             ))}
           </div>
-          <Mono s={{ fontSize: 12, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>{state.summary}</Mono>
+          <Mono s={{ fontSize: fs.caption, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>{state.summary}</Mono>
         </Card>
 
         <Card>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }}>Trajectory · last 14 days</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Trajectory · last 14 days</Mono>
           <div style={{ height: 240, marginTop: 12 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={traj}>
                 <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
+                <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <Tooltip contentStyle={tip} />
                 <Line type="monotone" dataKey="HPI" stroke={LIME} strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="Readiness" stroke={BLUE} strokeWidth={2} dot={false} />
@@ -143,11 +143,11 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <Mono s={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>Injury risk · tissue map</Mono>
-          <Mono s={{ fontSize: 10 }} c={ASH}>model {risk.modelVersion} · calibrated probability</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>Injury risk · tissue map</Mono>
+          <Mono s={{ fontSize: fs.nano }} c={ASH}>model {risk.modelVersion} · calibrated probability</Mono>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
-          <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: space.lg, justifyContent: "center" }}>
             <Figure regions={FRONT} label="anterior" byTissue={byTissue} />
             <Figure regions={BACK} label="posterior" byTissue={byTissue} />
           </div>
@@ -156,18 +156,18 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
               <thead>
                 <tr>
                   {["Tissue", "Risk", "P(injury)", "ACWR", "Top driver"].map((h) => (
-                    <th key={h} style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: ASH, textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${LINE}` }}>{h}</th>
+                    <th key={h} style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: ASH, textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${LINE}` }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {risk.tissues.map((t) => (
                   <tr key={t.tissue}>
-                    <td style={{ ...mono, fontSize: 13, padding: "8px", textTransform: "capitalize", color: CHALK, borderBottom: `1px solid ${LINE}` }}>{t.tissue}</td>
+                    <td style={{ ...mono, fontSize: fs.body, padding: "8px", textTransform: "capitalize", color: CHALK, borderBottom: `1px solid ${LINE}` }}>{t.tissue}</td>
                     <td style={{ padding: "8px", borderBottom: `1px solid ${LINE}` }}><Chip c={t.risk > 0 ? bandColor(t.band) : ASH}>{t.risk}</Chip></td>
-                    <td style={{ ...mono, fontSize: 12, padding: "8px", color: t.risk > 0 ? CHALK : ASH, borderBottom: `1px solid ${LINE}` }}>{(t.prob * 100).toFixed(1)}%</td>
-                    <td style={{ ...mono, fontSize: 12, padding: "8px", color: t.enoughHistory ? CHALK : ASH, borderBottom: `1px solid ${LINE}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
-                    <td style={{ ...mono, fontSize: 11, padding: "8px", color: ASH, borderBottom: `1px solid ${LINE}` }}>{t.drivers[0]?.label ?? "—"}</td>
+                    <td style={{ ...mono, fontSize: fs.caption, padding: "8px", color: t.risk > 0 ? CHALK : ASH, borderBottom: `1px solid ${LINE}` }}>{(t.prob * 100).toFixed(1)}%</td>
+                    <td style={{ ...mono, fontSize: fs.caption, padding: "8px", color: t.enoughHistory ? CHALK : ASH, borderBottom: `1px solid ${LINE}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
+                    <td style={{ ...mono, fontSize: fs.micro, padding: "8px", color: ASH, borderBottom: `1px solid ${LINE}` }}>{t.drivers[0]?.label ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

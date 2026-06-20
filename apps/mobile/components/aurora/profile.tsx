@@ -33,7 +33,7 @@ import { useSession } from "../../lib/session";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -144,7 +144,7 @@ export default function AuroraProfile() {
             accessibilityLabel="Edit profile"
             style={{ position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, borderWidth: 3, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}
           >
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>✎</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>✎</Text>
           </Pressable>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 15 }}>
@@ -153,7 +153,7 @@ export default function AuroraProfile() {
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.7 }}>{tier}</Text>
           </View>
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>
           HYBRID ID · {email ?? "guest@hybrid.app"}
         </Text>
         <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.chalk, opacity: 0.85, marginTop: 8 }}>
@@ -169,12 +169,12 @@ export default function AuroraProfile() {
       </View>
 
       {/* ACTIONS */}
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
         <Pressable onPress={() => router.push("/settings")} style={{ flex: 1, alignItems: "center", backgroundColor: C.lime, borderRadius: 14, paddingVertical: 13 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>Edit profile</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Edit profile</Text>
         </Pressable>
         <Pressable onPress={() => router.push("/statistics")} style={{ flex: 1, alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 13 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>Share card</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>Share card</Text>
         </Pressable>
       </View>
 
@@ -188,7 +188,7 @@ export default function AuroraProfile() {
         <View pointerEvents="none" style={{ position: "absolute", top: 30, left: -40, width: 260, height: 1, backgroundColor: C.lime, opacity: 0.06, transform: [{ rotate: "20deg" }] }} />
         <View pointerEvents="none" style={{ position: "absolute", top: 70, left: -40, width: 260, height: 1, backgroundColor: C.lime, opacity: 0.06, transform: [{ rotate: "20deg" }] }} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 13, color: C.chalk, letterSpacing: 0.3 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk, letterSpacing: 0.3 }}>
             HYBRID<Text style={{ color: C.lime }}>.</Text> · MEMBERSHIP
           </Text>
           <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 }}>
@@ -225,7 +225,7 @@ export default function AuroraProfile() {
             ));
           })()}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 9 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9 }}>
           <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> vs first read · strength {hpi.components.strength} · engine {hpi.components.endurance} · recovery {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
         </Text>
       </View>
@@ -263,7 +263,7 @@ export default function AuroraProfile() {
 
       {/* ACHIEVEMENTS — squared badge tiles */}
       <SectionHeader C={C} title="Achievements" action={`${achievements.filter((a) => a.earned).length} earned`} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.ms }}>
         {achievements.map((a) => (
           <View key={a.id} style={{ width: 76, alignItems: "center" }}>
             <View
@@ -284,7 +284,7 @@ export default function AuroraProfile() {
             >
               <Text style={{ fontSize: 27 }}>{a.earned ? a.icon : "🔒"}</Text>
             </View>
-            <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: 10, color: C.ash, marginTop: 8, maxWidth: 76, textAlign: "center" }}>{a.label}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.nano, color: C.ash, marginTop: 8, maxWidth: 76, textAlign: "center" }}>{a.label}</Text>
           </View>
         ))}
       </ScrollView>
@@ -295,24 +295,24 @@ export default function AuroraProfile() {
         topPrs.map(([lift, e1rm]) => (
           <View key={lift} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
-              <Text style={{ fontSize: 16 }}>🏆</Text>
+              <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{lift}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>e1RM</Text>
               </View>
             </View>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(e1rm, prefs.units)}</Text>
           </View>
         ))
       ) : (
         <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, lineHeight: 17 }}>Log a strength session and your top lifts appear here, ranked by estimated 1RM.</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>Log a strength session and your top lifts appear here, ranked by estimated 1RM.</Text>
         </View>
       )}
 
       {/* MODULE TILES — Readiness · Body · Devices · Coach */}
       <SectionHeader C={C} title="Your athlete" action="" />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms }}>
         <Tile C={C} icon="∿" k="Readiness" big={`${state.readiness.score}`} unit="%" />
         {bodyKg != null && <Tile C={C} icon="⚖" k="Body" sm={fmtWeight(bodyKg, prefs.units)} />}
         {device && <Tile C={C} icon="⌚" k="Devices" sm={`${device.label} · ${device.status}`} />}
@@ -382,7 +382,7 @@ function IdMeta({ C, label, value, accent }: { C: P; label: string; value: strin
   return (
     <View>
       <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 12, color: accent ? txt(C, C.lime) : C.chalk, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: accent ? txt(C, C.lime) : C.chalk, marginTop: 4 }}>{value}</Text>
     </View>
   );
 }
@@ -390,8 +390,8 @@ function IdMeta({ C, label, value, accent }: { C: P; label: string; value: strin
 function SectionHeader({ C, title, action }: { C: P; title: string; action: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 13, marginHorizontal: 2 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
-      {!!action && <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{action}</Text>}
+      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
+      {!!action && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{action}</Text>}
     </View>
   );
 }
@@ -401,13 +401,13 @@ function Tile({ C, icon, k, big, unit, sm }: { C: P; icon: string; k: string; bi
   return (
     <View style={tileStyle}>
       <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${C.chalk}0f`, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize: 15, color: C.chalk }}>{icon}</Text>
+        <Text style={{ fontSize: fs.note, color: C.chalk }}>{icon}</Text>
       </View>
       <View>
         <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{k}</Text>
         {big != null ? (
           <Text style={{ fontFamily: F.black, fontSize: 23, color: C.chalk, letterSpacing: -0.4, marginTop: 2 }}>
-            {big}{unit ? <Text style={{ fontSize: 12, color: C.ash }}>{unit}</Text> : null}
+            {big}{unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}>{unit}</Text> : null}
           </Text>
         ) : (
           <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.chalk, marginTop: 2 }}>{sm}</Text>

@@ -8,7 +8,7 @@ import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/
 import { useNavAccess } from "../../lib/access";
 import { fetchMyAccessRequests, requestAccess, WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
+import { fs, space, Screen, Kicker, Mono, H1, C, F } from "../../lib/ui";
 import { AuroraScreen } from "../../components/aurora/kit";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -24,11 +24,11 @@ const navIcon = (id: string): AuroraIconName => AURORA_NAV_ICONS[id] ?? "info";
  *  gone); the only accent in the hub is the single Unlock-Full card. */
 function Tile({ icon, label, onPress, palette }: { icon: AuroraIconName; label: string; onPress: () => void; palette: Palette }) {
   return (
-    <Pressable onPress={onPress} style={{ width: "25%", alignItems: "center", paddingVertical: 8, gap: 8 }}>
+    <Pressable onPress={onPress} style={{ width: "25%", alignItems: "center", paddingVertical: 8, gap: space.sm }}>
       <View style={{ width: 58, height: 58, borderRadius: 18, backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
         <AuroraIcon name={icon} size={24} color={palette.chalk} />
       </View>
-      <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: 11, color: palette.chalk, textAlign: "center" }}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.micro, color: palette.chalk, textAlign: "center" }}>{label}</Text>
     </Pressable>
   );
 }
@@ -164,12 +164,12 @@ export default function More() {
           <AuroraIcon name="settings" size={20} color={C.chalk} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>{t("settings.title")}</Text>
-          <Mono style={{ marginTop: 3, fontSize: 11 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("settings.title")}</Text>
+          <Mono style={{ marginTop: 3, fontSize: fs.micro }}>
             {[role.toUpperCase(), entitlement === "paid" ? "FULL · PAID" : "FREE"].join(" · ")} — {t("settings.sub")}
           </Mono>
         </View>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.ash }}>→</Text>
       </Pressable>
 
       {/* ADMIN CONSOLE — operators only. Parity with the web sidebar's pinned
@@ -184,10 +184,10 @@ export default function More() {
             <AuroraIcon name="verified" size={20} color={C.amber} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>Admin console</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>users · moderation · agents · CMS · governance</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>Admin console</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>users · moderation · agents · CMS · governance</Mono>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: txt(C, C.amber) }}>→</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.amber) }}>→</Text>
         </Pressable>
       )}
 
@@ -197,7 +197,7 @@ export default function More() {
       {role === "client" && (
         <View style={{ marginTop: 16 }}>
           <Kicker>Mode</Kicker>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
             {([
               { id: "casual" as const, label: "Simple", sub: "track · share", paid: false },
               { id: "athlete" as const, label: "Full", sub: "plans · stats", paid: true },
@@ -212,17 +212,17 @@ export default function More() {
                   onPress={() => (locked ? router.push("/upgrade") : setClientPersona(m.id))}
                   style={{ flex: 1, backgroundColor: active ? `${C.lime}1a` : C.card, borderWidth: 1, borderColor: active ? C.lime : C.line, borderRadius: 12, padding: 12 }}
                 >
-                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: active ? txt(C, C.lime) : C.chalk }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: active ? txt(C, C.lime) : C.chalk }}>
                     {m.label}{locked ? " 🔒" : ""}
                   </Text>
-                  <Mono style={{ marginTop: 2, fontSize: 10 }}>{locked ? "paid upgrade" : m.sub}</Mono>
+                  <Mono style={{ marginTop: 2, fontSize: fs.nano }}>{locked ? "paid upgrade" : m.sub}</Mono>
                 </Pressable>
               );
             })}
           </View>
           {/* Coach is verification-gated now — apply, an admin reviews. */}
           <Pressable onPress={() => router.push("/coach-apply")} style={{ marginTop: 10 }}>
-            <Mono color={C.violet} style={{ fontSize: 11 }}>Coach others? Apply to become a verified coach →</Mono>
+            <Mono color={C.violet} style={{ fontSize: fs.micro }}>Coach others? Apply to become a verified coach →</Mono>
           </Pressable>
         </View>
       )}
@@ -237,11 +237,11 @@ export default function More() {
           {/* Premium 'membership card' sheen — RN has no gradient, so a soft
               low-opacity lime disc in the corner gives the glow. */}
           <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.lime}24` }} />
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 2, color: txt(C, C.lime) }}>UPGRADE</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.lime) }}>UPGRADE</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>Unlock Full</Text>
-          <Mono style={{ marginTop: 5, fontSize: 11, maxWidth: 230 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
+          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
           <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.onAccent }}>Go Full →</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Go Full →</Text>
           </View>
         </Pressable>
       )}
@@ -256,10 +256,10 @@ export default function More() {
             <AuroraIcon name="user-circle" size={20} color={C.chalk} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>Athlete cockpit</Text>
-            <Mono style={{ marginTop: 2, fontSize: 11 }}>goal · season · performance · sport · velocity</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>Athlete cockpit</Text>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>goal · season · performance · sport · velocity</Mono>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash }}>→</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.ash }}>→</Text>
         </Pressable>
       )}
 
@@ -278,13 +278,13 @@ export default function More() {
       {webOnly.length > 0 && (
         <View style={{ marginTop: 22 }}>
           <Kicker>More in the web app</Kicker>
-          <Mono style={{ marginTop: 4, fontSize: 11 }}>
+          <Mono style={{ marginTop: 4, fontSize: fs.micro }}>
             You have access to these — they live in the HYBRID web app for now.
           </Mono>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
             {webOnly.map((item) => (
-              <View key={item.id} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{item.icon} {item.label}</Text>
+              <View key={item.id} style={{ flexDirection: "row", alignItems: "center", gap: space.xs, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{item.icon} {item.label}</Text>
               </View>
             ))}
           </View>
@@ -292,7 +292,7 @@ export default function More() {
             onPress={() => Linking.openURL(WEB_APP_URL).catch(() => {})}
             style={{ marginTop: 12, backgroundColor: `${C.blue}1f`, borderWidth: 1, borderColor: C.blue, borderRadius: 12, paddingVertical: 12, alignItems: "center" }}
           >
-            <Text style={{ fontFamily: F.bold, fontSize: 14, color: txt(C, C.blue) }}>Open the web app →</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.blue) }}>Open the web app →</Text>
           </Pressable>
         </View>
       )}
@@ -301,18 +301,18 @@ export default function More() {
       {hidden.length > 0 && (
         <View style={{ marginTop: 22 }}>
           <Kicker>Request a feature</Kicker>
-          <Mono style={{ marginTop: 4, fontSize: 11 }}>Want a tool you don&apos;t see? Ask an admin to unlock it.</Mono>
-          <View style={{ marginTop: 10, gap: 8 }}>
+          <Mono style={{ marginTop: 4, fontSize: fs.micro }}>Want a tool you don&apos;t see? Ask an admin to unlock it.</Mono>
+          <View style={{ marginTop: 10, gap: space.sm }}>
             {hidden.map((item) => {
               const pending = reqStatus[item.id] === "pending";
               return (
                 <View key={item.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 12 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{item.icon} {item.label}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{item.icon} {item.label}</Text>
                   {pending ? (
-                    <Mono style={{ fontSize: 11 }} color={C.ash}>requested · pending</Mono>
+                    <Mono style={{ fontSize: fs.micro }} color={C.ash}>requested · pending</Mono>
                   ) : (
                     <Pressable onPress={() => askAccess(item.id)} style={{ backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime, borderRadius: 9, paddingHorizontal: 14, paddingVertical: 6 }}>
-                      <Text style={{ fontFamily: F.bold, fontSize: 12, color: txt(C, C.lime) }}>Request</Text>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime) }}>Request</Text>
                     </Pressable>
                   )}
                 </View>
@@ -323,7 +323,7 @@ export default function More() {
       )}
 
       <Pressable onPress={signOut} style={{ marginTop: 24, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>{t("common.signout")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("common.signout")}</Text>
       </Pressable>
     </>
   );

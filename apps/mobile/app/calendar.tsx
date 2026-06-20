@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../lib/api";
-import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraCalendar from "../components/aurora/calendar";
@@ -20,7 +20,7 @@ function ClassicCalendar() {
   const C = useTheme().palette;
   // themed inside the component so the month-nav buttons follow light/dark
   const nav = { width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center" as const, justifyContent: "center" as const };
-  const navTxt = { fontFamily: F.black, fontSize: 18, color: C.chalk };
+  const navTxt = { fontFamily: F.black, fontSize: fs.title, color: C.chalk };
   const router = useRouter();
   const now = new Date();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -51,13 +51,13 @@ function ClassicCalendar() {
     <Screen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Calendar</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← back</Text>
       </View>
 
       <Card style={{ marginTop: 10 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{label}</Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{label}</Text>
+          <View style={{ flexDirection: "row", gap: space.sm }}>
             <Pressable onPress={() => go(-1)} style={nav}><Text style={navTxt}>‹</Text></Pressable>
             <Pressable onPress={() => go(1)} style={nav}><Text style={navTxt}>›</Text></Pressable>
           </View>
@@ -65,7 +65,7 @@ function ClassicCalendar() {
 
         <View style={{ flexDirection: "row" }}>
           {WEEKDAYS.map((d, i) => (
-            <Text key={i} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 10, color: C.ash }}>{d}</Text>
+            <Text key={i} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{d}</Text>
           ))}
         </View>
 
@@ -85,7 +85,7 @@ function ClassicCalendar() {
                     borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line,
                     backgroundColor: day ? `rgba(196,240,53,${0.1 + inten * 0.5})` : C.ink2 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, color: isToday ? C.lime : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? C.lime : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
                   {day ? <Text style={{ fontFamily: F.bold, fontSize: 9, color: "#0c0d0c", backgroundColor: C.lime, borderRadius: 3, paddingHorizontal: 3, marginTop: 1, overflow: "hidden" }}>{day.count}</Text> : null}
                 </Pressable>
               );
@@ -102,8 +102,8 @@ function ClassicCalendar() {
       ) : (
         selSessions.map((s) => (
           <Card key={s.id}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{s.title}</Text>
-            <Mono style={{ marginTop: 4, fontSize: 12 }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} blocks</Mono>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+            <Mono style={{ marginTop: 4, fontSize: fs.caption }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} blocks</Mono>
           </Card>
         ))
       )}

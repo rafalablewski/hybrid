@@ -3,7 +3,7 @@ import { View, Text, Pressable, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-import { Screen, Card, Kicker, Mono, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraProgress from "../components/aurora/progress";
@@ -96,7 +96,7 @@ function ClassicProgress() {
     <Screen refreshing={status === "loading"} onRefresh={load}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>Progress photos</Kicker>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>← back</Text>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← back</Text>
       </View>
 
       {status === "no-auth" && (
@@ -116,12 +116,12 @@ function ClassicProgress() {
         <>
           <Card style={{ marginTop: 10 }}>
             <Mono style={{ lineHeight: 20, marginBottom: 12 }}>Same pose, same light, every couple of weeks. Private to you.</Mono>
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: space.ms }}>
               <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-                <Text style={{ fontFamily: F.black, fontSize: 15, color: "#0c0d0c" }}>{busy ? "Uploading…" : "Take photo"}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.note, color: "#0c0d0c" }}>{busy ? "Uploading…" : "Take photo"}</Text>
               </Pressable>
               <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 12, paddingVertical: 13, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>From library</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>From library</Text>
               </Pressable>
             </View>
           </Card>
@@ -134,8 +134,8 @@ function ClassicProgress() {
                 <View key={p.path} style={{ width: "48.5%", marginTop: 12, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
                   <Image source={{ uri: p.url }} style={{ width: "100%", aspectRatio: 3 / 4 }} resizeMode="cover" />
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 8 }}>
-                    <Mono style={{ fontSize: 12 }}>{p.date}</Mono>
-                    <Text onPress={() => remove(p.path)} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>delete</Text>
+                    <Mono style={{ fontSize: fs.caption }}>{p.date}</Mono>
+                    <Text onPress={() => remove(p.path)} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>delete</Text>
                   </View>
                 </View>
               ))}

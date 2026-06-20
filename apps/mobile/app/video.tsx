@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { readinessRole } from "@hybrid/core";
 import { fetchVideoAnalyses, type VideoAnalysis } from "../lib/api";
-import { Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, F } from "../lib/ui";
 import { useTheme, txt, roleColor } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraVideo from "../components/aurora/video";
@@ -53,12 +53,12 @@ function ClassicVideo() {
             <Card key={a.id} style={{ marginTop: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{a.movement}</Text>
-                  <Mono color={C.ash} style={{ fontSize: 10, marginTop: 2 }}>{new Date(a.createdAt).toLocaleDateString()}</Mono>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{a.movement}</Text>
+                  <Mono color={C.ash} style={{ fontSize: fs.nano, marginTop: 2 }}>{new Date(a.createdAt).toLocaleDateString()}</Mono>
                 </View>
                 <Text style={{ fontFamily: F.black, fontSize: 34, color: txt(C, scoreColor(m.techniqueScore, C)) }}>{m.techniqueScore}</Text>
               </View>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
                 <Chip color={C.chalk}>{m.reps} reps</Chip>
                 {m.minKneeAngle != null && <Chip color={C.blue}>depth {Math.round(m.minKneeAngle)}°</Chip>}
                 {m.kneeAsymmetryPct != null && <Chip color={m.kneeAsymmetryPct > 10 ? C.amber : C.lime}>L/R {Math.round(m.kneeAsymmetryPct)}%</Chip>}

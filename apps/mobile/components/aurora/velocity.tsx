@@ -8,7 +8,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -44,16 +44,16 @@ export default function AuroraVelocity() {
     .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel)).slice(-6).reverse(), [sessions, active]);
 
   const header = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
       <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
         <AuroraIcon name="back" size={20} color={C.chalk} />
       </Pressable>
-      <AHeading style={{ fontSize: 26 }}>Velocity</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>Velocity</AHeading>
     </View>
   );
   const chip = (color: string, label: string) => (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, color) }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text>
     </View>
   );
 
@@ -62,8 +62,8 @@ export default function AuroraVelocity() {
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {header}
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>No bar speed yet</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>Add a velocity (m/s) to a strength set in the live workout — across a few loads — and your load–velocity profile, 1RM and zones build here from your real lifts.</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>No bar speed yet</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>Add a velocity (m/s) to a strength set in the live workout — across a few loads — and your load–velocity profile, 1RM and zones build here from your real lifts.</Text>
         </ACard>
       </AuroraScreen>
     );
@@ -77,72 +77,72 @@ export default function AuroraVelocity() {
           const on = active === l;
           return (
             <Pressable key={l} onPress={() => setLift(l)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
-              <Text style={{ fontFamily: F.semi, fontSize: 12, color: on ? C.onAccent : C.ash }}>{l}</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? C.onAccent : C.ash }}>{l}</Text>
             </Pressable>
           );
         })}
       </View>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Estimated 1RM · from velocity</Text>
-        <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: 18, color: C.ash }}> kg</Text></Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{resolved ? `MVT ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} loads` : "Need ≥2 loads with velocity to resolve a 1RM."}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Estimated 1RM · from velocity</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text></Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{resolved ? `MVT ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} loads` : "Need ≥2 loads with velocity to resolve a 1RM."}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Load–velocity profile · {active}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Load–velocity profile · {active}</Text>
         <View style={{ marginTop: 10 }}><Plot points={points} profile={profile} /></View>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 8 }}><Text style={{ color: txt(C, C.lime) }}>●</Text> measured · <Text style={{ color: txt(C, C.violet) }}>—</Text> fit → 1RM at MVT</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}><Text style={{ color: txt(C, C.lime) }}>●</Text> measured · <Text style={{ color: txt(C, C.violet) }}>—</Text> fit → 1RM at MVT</Text>
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI load · target a bar speed</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>AI load · target a bar speed</Text>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 12 }}>
           <Stepper label="−" onPress={() => setTargetVel((v) => Math.max(0.2, +(v - 0.05).toFixed(2)))} />
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{targetVel.toFixed(2)} m/s</Text>
           <Stepper label="+" onPress={() => setTargetVel((v) => Math.min(1.3, +(v + 0.05).toFixed(2)))} />
         </View>
         {rec ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.violet) }}>{rec.load} <Text style={{ fontSize: 14, color: C.ash }}>kg</Text></Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
+            <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.violet) }}>{rec.load} <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>kg</Text></Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</Text>
             {chip(zoneColor(rec.zone.id, C), rec.zone.label)}
           </View>
-        ) : <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>Build a profile first to get a recommendation.</Text>}
+        ) : <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Build a profile first to get a recommendation.</Text>}
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Velocity zones · training quality</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Velocity zones · training quality</Text>
         <View style={{ marginTop: 8 }}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (
-            <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
+            <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: zoneColor(z.id, C) }} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: 13, color: C.chalk }}>{z.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{z.focus}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{z.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{z.focus}</Text>
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.chalk }}>{z.max === Infinity ? `≥${z.min}` : `${z.min}–${z.max}`} m/s</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{z.max === Infinity ? `≥${z.min}` : `${z.min}–${z.max}`} m/s</Text>
             </View>
           ))}
         </View>
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Recent sets · bar speed</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Recent sets · bar speed</Text>
         <View style={{ marginTop: 8 }}>
-          {recentSets.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}>No velocity-tagged sets for {active} yet.</Text> : recentSets.map((r, i) => {
+          {recentSets.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>No velocity-tagged sets for {active} yet.</Text> : recentSets.map((r, i) => {
             const z = velocityZone(r.vel);
             return (
-              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, width: 64 }}>{r.load} kg</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash, width: 36 }}>{r.reps}×</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk, width: 52 }}>{r.vel.toFixed(2)}</Text>
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, width: 64 }}>{r.load} kg</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, width: 36 }}>{r.reps}×</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, width: 52 }}>{r.vel.toFixed(2)}</Text>
                 {chip(zoneColor(z.id, C), z.label)}
               </View>
             );
           })}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 10, lineHeight: 15 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15 }}>
           Per-rep trajectory &amp; bar path need the bar sensor / camera capture (see Capabilities).
         </Text>
       </ACard>

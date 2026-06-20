@@ -7,12 +7,12 @@ import { useNavAccess } from "../../lib/access";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 import { CommandMenu, GlassTabBarBackground } from "../../components/liquid-glass";
 import { AuroraIcon } from "../../components/aurora/icons";
 
 const glyphIcon = (glyph: string) => ({ color }: { color: ColorValue }) =>
-  <Text style={{ color, fontSize: 16 }}>{glyph}</Text>;
+  <Text style={{ color, fontSize: fs.subtitle }}>{glyph}</Text>;
 const auroraTabIcon = (name: AuroraIconName) => ({ color }: { color: ColorValue }) =>
   <AuroraIcon name={name} size={23} color={color} />;
 // Aurora swaps the bar's glyphs for the uploaded line-icon set.
@@ -45,7 +45,7 @@ export default function TabsLayout() {
           tabBarStyle: { backgroundColor: "transparent", borderTopColor: palette.line },
           tabBarActiveTintColor: palette.lime,
           tabBarInactiveTintColor: palette.ash,
-          tabBarLabelStyle: { fontFamily: F.mono, fontSize: 10 },
+          tabBarLabelStyle: { fontFamily: F.mono, fontSize: fs.nano },
         }}
       >
         {/* The funnel: see today → train → review. Everything else lives under More.

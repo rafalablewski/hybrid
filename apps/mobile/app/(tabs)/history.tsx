@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, type LoggedSession } from "@hybrid/core";
 import { fetchSessions, archiveSession, deleteSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { Screen, Card, Kicker, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraHistory from "../../components/aurora/history";
@@ -76,14 +76,14 @@ function ClassicHistory() {
           onPress={() => { setLoading(true); setShowArchived((v) => !v); }}
           style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: showArchived ? C.blue : C.line, backgroundColor: showArchived ? `${C.blue}1a` : "transparent" }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: showArchived ? C.blue : C.ash }}>Archived</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? C.blue : C.ash }}>Archived</Text>
         </Pressable>
       </View>
       {loading ? (
         <Loading />
       ) : sessions.length === 0 ? (
         <Card style={{ marginTop: 10, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk }}>{showArchived ? "No archived workouts" : t("history.none")}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? "No archived workouts" : t("history.none")}</Text>
           <Mono style={{ marginTop: 8, textAlign: "center" }}>
             {showArchived ? "Workouts you archive show up here." : "Log a workout — it appears here and on the web."}
           </Mono>
@@ -99,7 +99,7 @@ function ClassicHistory() {
                     <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
                     <Mono>{fmt(s.startedAt)}</Mono>
                   </View>
-                  <View style={{ flexDirection: "row", gap: 8, marginVertical: 8 }}>
+                  <View style={{ flexDirection: "row", gap: space.sm, marginVertical: 8 }}>
                     <Chip color={C.blue}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
                     <Chip color={C.ash}>{s.blocks.length} blocks</Chip>
                     {prCount > 0 && <Chip color={C.lime}>🏆 {prCount} PR</Chip>}
@@ -110,16 +110,16 @@ function ClassicHistory() {
                       <Mono>{blockSummary(b)}</Mono>
                     </View>
                   ))}
-                  <Mono color={C.ash} style={{ marginTop: 8, fontSize: 11 }}>{t("history.tapDetail")}</Mono>
+                  <Mono color={C.ash} style={{ marginTop: 8, fontSize: fs.micro }}>{t("history.tapDetail")}</Mono>
                 </Pressable>
-                <View style={{ flexDirection: "row", gap: 8, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
                   {showArchived ? (
                     <Pressable
                       onPress={() => onArchive(s.id, false)}
                       disabled={busy === s.id}
                       style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}1a`, opacity: busy === s.id ? 0.5 : 1 }}
                     >
-                      <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.lime }}>Restore</Text>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.lime }}>Restore</Text>
                     </Pressable>
                   ) : (
                     <Pressable
@@ -127,7 +127,7 @@ function ClassicHistory() {
                       disabled={busy === s.id}
                       style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: C.line, opacity: busy === s.id ? 0.5 : 1 }}
                     >
-                      <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash }}>Archive</Text>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>Archive</Text>
                     </Pressable>
                   )}
                   <Pressable
@@ -135,7 +135,7 @@ function ClassicHistory() {
                     disabled={busy === s.id}
                     style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: `${C.red}55`, backgroundColor: `${C.red}14`, opacity: busy === s.id ? 0.5 : 1 }}
                   >
-                    <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.red }}>Delete</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.red }}>Delete</Text>
                   </Pressable>
                 </View>
               </Card>

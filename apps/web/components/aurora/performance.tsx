@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { LINE, ASH, LIME, BLUE, tip, mono, roleHex } from "@/lib/ui";
+import { fs, space, LINE, ASH, LIME, BLUE, tip, mono, roleHex } from "@/lib/ui";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog,
   ROLE_COLOR, hpiRole, riskRole,
@@ -41,7 +41,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
           return <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={5} fill={fill} stroke={stroke} strokeWidth={1}><title>{r.tissue}: {t ? `${t.risk}/100 (${t.band})` : "—"}</title></rect>;
         })}
       </svg>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
     </div>
   );
 }
@@ -55,8 +55,8 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
-          <div style={{ fontWeight: 800, fontSize: 20 }}>No training data yet</div>
-          <p style={{ fontSize: 14, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</p>
+          <div style={{ fontWeight: 800, fontSize: fs.heading }}>No training data yet</div>
+          <p style={{ fontSize: fs.bodyLg, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</p>
         </div>
       </div>
     );
@@ -68,36 +68,36 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
   const risk = computeInjuryRisk(log, theBio);
   const traj = performanceTrajectory(log, 14).map((p) => ({ day: p.daysAgo === 0 ? "today" : `-${p.daysAgo}d`, HPI: p.hpi, Readiness: p.readiness }));
   const byTissue = Object.fromEntries(risk.tissues.map((t) => [t.tissue, t])) as Record<string, TissueRisk>;
-  const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", marginRight: 6, fontFamily: "var(--font-mono)", fontSize: 11, whiteSpace: "nowrap" }}>{label}</span>;
+  const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", marginRight: 6, fontFamily: "var(--font-mono)", fontSize: fs.micro, whiteSpace: "nowrap" }}>{label}</span>;
 
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: 16 }}>
-      <h1 style={{ fontWeight: 900, fontSize: 26, margin: 0 }}>Performance</h1>
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: space.lg }}>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Performance</h1>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Athlete Twin · HPI</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Athlete Twin · HPI</div>
           <div style={{ fontWeight: 900, fontSize: 56, color: C(hpiVar(state.hpi.band)), lineHeight: 1.1, margin: "6px 0" }}>{state.hpi.score}</div>
           <div style={{ marginBottom: 6 }}>{chip(C(hpiVar(state.hpi.band)), state.hpi.band)}{chip(C("amber"), `limiter · ${state.hpi.limiter}`)}</div>
           <div style={{ marginTop: 14 }}>
             {([["Strength", state.hpi.components.strength, "lime"], ["Endurance", state.hpi.components.endurance, "blue"], ["Recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), "violet"]] as const).map(([l, v, c]) => (
               <div key={l} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11 }}><span style={{ color: C("ash") }}>{l}</span><span style={{ color: C(c) }}>{v}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.micro }}><span style={{ color: C("ash") }}>{l}</span><span style={{ color: C(c) }}>{v}</span></div>
                 <div style={{ height: 6, borderRadius: 3, background: C("ink"), marginTop: 3, overflow: "hidden" }}><div style={{ width: `${v}%`, height: "100%", background: C(c) }} /></div>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12, lineHeight: 1.5, marginTop: 8 }}>{state.summary}</p>
+          <p style={{ fontSize: fs.caption, lineHeight: 1.5, marginTop: 8 }}>{state.summary}</p>
         </div>
 
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>Trajectory · last 14 days</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>Trajectory · last 14 days</div>
           <div style={{ height: 240, marginTop: 12 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={traj}>
                 <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
+                <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <Tooltip contentStyle={tip} />
                 <Line type="monotone" dataKey="HPI" stroke={LIME} strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="Readiness" stroke={BLUE} strokeWidth={2} dot={false} />
@@ -109,11 +109,11 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
 
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>Injury risk · tissue map</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>model {risk.modelVersion} · calibrated probability</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>Injury risk · tissue map</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>model {risk.modelVersion} · calibrated probability</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
-          <div style={{ display: "flex", gap: 16, justifyContent: isMobile ? "center" : "flex-start" }}>
+          <div style={{ display: "flex", gap: space.lg, justifyContent: isMobile ? "center" : "flex-start" }}>
             <Figure regions={FRONT} label="anterior" byTissue={byTissue} />
             <Figure regions={BACK} label="posterior" byTissue={byTissue} />
           </div>
@@ -121,17 +121,17 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
             <table style={{ width: "100%", minWidth: 420, borderCollapse: "collapse" }}>
               <thead>
                 <tr>{["Tissue", "Risk", "P(injury)", "ACWR", "Top driver"].map((h) => (
-                  <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", color: C("ash"), textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${C("line")}` }}>{h}</th>
+                  <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash"), textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${C("line")}` }}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
                 {risk.tissues.map((t) => (
                   <tr key={t.tissue}>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: 13, padding: 8, textTransform: "capitalize", borderBottom: `1px solid ${C("line")}` }}>{cap(t.tissue)}</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, padding: 8, textTransform: "capitalize", borderBottom: `1px solid ${C("line")}` }}>{cap(t.tissue)}</td>
                     <td style={{ padding: 8, borderBottom: `1px solid ${C("line")}` }}>{chip(t.risk > 0 ? C(ROLE_COLOR[riskRole(t.band)]) : C("ash"), String(t.risk))}</td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: 8, color: t.risk > 0 ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{(t.prob * 100).toFixed(1)}%</td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: 8, color: t.enoughHistory ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: 11, padding: 8, color: C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.drivers[0]?.label ?? "—"}</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: t.risk > 0 ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{(t.prob * 100).toFixed(1)}%</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: t.enoughHistory ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.enoughHistory ? t.acwr.toFixed(2) : "—"}</td>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, padding: 8, color: C("ash"), borderBottom: `1px solid ${C("line")}` }}>{t.drivers[0]?.label ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
