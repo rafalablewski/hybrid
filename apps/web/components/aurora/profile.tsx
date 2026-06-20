@@ -54,6 +54,24 @@ export default function AuroraProfile({
   const coached = useHasActiveCoach();
   const units = prefs.units;
 
+  // Body: the latest logged bodyweight (most recent check-in with a weigh-in),
+  // mirroring the mobile profile — the shell's `bio` is recovery-only.
+  const [bodyKg, setBodyKg] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/checkins")
+      .then((r) => (r.ok ? r.json() : { checkins: [] }))
+      .then((d: { checkins?: { weekOf: string; bodyMassKg: number | null }[] }) => {
+        if (!alive) return;
+        const latest = (d.checkins ?? [])
+          .filter((c) => typeof c.bodyMassKg === "number")
+          .sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0];
+        setBodyKg(latest?.bodyMassKg ?? null);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const name = session?.name ?? "Athlete";
   const email = session?.email ?? "";
   const paid = entitlement === "paid";
@@ -316,7 +334,7 @@ export default function AuroraProfile({
       {sectionHead("Your athlete", "Customize")}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <Tile icon="∿" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : "no data yet"} />
-        <Tile icon="⚖" k="Body" sm={bodyLabel(bio)} onClick={go("connections", "/connections")} />
+        <Tile icon="⚖" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, units) : "Log a weigh-in"} onClick={go("checkin", "/checkin")} />
         <Tile icon="⌚" k="Devices" sm={bio ? "Recovery · synced" : "Connect a device"} onClick={go("connections", "/connections")} />
         <Tile icon="👥" k="Coach" sm={coached ? "Coach · active" : "Find a coach"} onClick={go("coach", "/coach")} />
       </div>
@@ -334,14 +352,6 @@ function heatBg(level: HeatCell["level"]): string {
     case 4: return "var(--color-lime)";
     default: return "#1b1e18";
   }
-}
-
-function bodyLabel(bio?: Biometrics): string {
-  // The shell's bio carries recovery signals (HRV / RHR / sleep), not bodyweight;
-  // surface the freshest recovery reading we do have, else nudge to connect.
-  if (bio?.hrv && Number.isFinite(bio.hrv.today)) return `HRV ${Math.round(bio.hrv.today)} ${bio.hrv.unit}`;
-  if (bio?.sleep && Number.isFinite(bio.sleep.today)) return `Sleep ${bio.sleep.today.toFixed(1)} ${bio.sleep.unit}`;
-  return "Not tracked";
 }
 
 function IdMeta({ label, value, lime }: { label: string; value: string; lime?: boolean }) {
