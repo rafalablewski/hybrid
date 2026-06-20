@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -30,6 +30,8 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { Screen, Card, Kicker, Mono, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useTemplate } from "../../lib/template";
+import { AuroraScreen } from "../../components/aurora/kit";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -44,28 +46,30 @@ export default function SessionDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const cardRef = useRef<View>(null);
   const [all, setAll] = useState<LoggedSession[] | null>(null);
+  // Aurora wraps the review in the airy AuroraScreen (blob field + nav
+  // clearance); classic keeps the glass Screen. Same content either way — the
+  // shared Card/Mono primitives already round up on Aurora.
+  const aurora = useTemplate().template === "aurora";
+  const wrap = (node: ReactNode) =>
+    aurora ? <AuroraScreen>{node}</AuroraScreen> : <Screen>{node}</Screen>;
 
   useEffect(() => {
     fetchSessions().then(setAll);
   }, []);
 
   if (all === null) {
-    return (
-      <Screen>
-        <Loading />
-      </Screen>
-    );
+    return wrap(<Loading />);
   }
 
   const session = all.find((s) => s.id === id);
   if (!session) {
-    return (
-      <Screen>
+    return wrap(
+      <>
         <Back router={router} t={t} />
         <Card style={{ marginTop: 12, alignItems: "center", paddingVertical: 28 }}>
           <Mono>{t("session.notFound")}</Mono>
         </Card>
-      </Screen>
+      </>,
     );
   }
 
@@ -100,8 +104,8 @@ export default function SessionDetail() {
     .filter(Boolean)
     .join("\n");
 
-  return (
-    <Screen>
+  return wrap(
+    <>
       <Back router={router} t={t} />
 
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 10 }}>{session.title}</Text>
@@ -117,7 +121,7 @@ export default function SessionDetail() {
       </View>
 
       {prs.length > 0 && (
-        <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 16 }}>
+        <View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 16 }}>
           <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.lime) }}>🏆 {prs.length} {t("summary.newPrs")}</Text>
           {prs.slice(0, 6).map((p) => (
             <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{prLine(p, t, units)}</Text>
@@ -126,7 +130,7 @@ export default function SessionDetail() {
       )}
 
       {cardioPrs.length > 0 && (
-        <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 16 }}>
+        <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 16 }}>
           <Text style={{ fontFamily: F.black, fontSize: 15, color: txt(C, C.blue) }}>🏃 {cardioPrs.length} {t("summary.newCardioPrs")}</Text>
           {cardioPrs.slice(0, 6).map((p) => (
             <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk, marginTop: 6 }}>{cardioPrLineDetail(p, t)}</Text>
@@ -204,13 +208,13 @@ export default function SessionDetail() {
           </View>
           <Pressable
             onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
-            style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
+            style={{ backgroundColor: C.lime, borderRadius: aurora ? 999 : 14, paddingVertical: 15, alignItems: "center", marginTop: 14 }}
           >
             <Text style={{ fontFamily: F.black, fontSize: 15, color: C.ink }}>{t("summary.share")}</Text>
           </Pressable>
         </>
       )}
-    </Screen>
+    </>,
   );
 }
 
