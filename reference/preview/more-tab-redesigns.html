@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · "More" tab — 10 redesign mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* HYBRID brand tokens — packages/core/src/brand.ts. Same Archivo + JetBrains Mono. */
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --r-card:24px; --r-field:16px; --r-pill:999px;
+    /* accent-as-text (darkened lime so it reads on dark per lib/theme txt()) */
+    --lime-t:#d6f56a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070807;color:var(--chalk);font-family:var(--disp);padding:40px 18px 90px;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+
+  .head{max-width:1320px;margin:0 auto 30px;text-align:center}
+  .head .mono{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--lime)}
+  .head h1{font-size:32px;font-weight:900;letter-spacing:-.02em;margin-top:10px}
+  .head p{color:var(--ash);font-size:14px;margin-top:10px;line-height:1.6;max-width:760px;margin-left:auto;margin-right:auto}
+  .head .fix{display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+  .head .fix span{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--ash)}
+  .head .fix span b{color:var(--lime-t);font-weight:700}
+
+  .grid{max-width:1600px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px 34px;justify-content:center;align-items:flex-start}
+  .pw{display:flex;flex-direction:column;align-items:center;gap:14px;width:312px}
+  .pl{text-align:center}
+  .pl .n{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--lime);text-transform:uppercase}
+  .pl .t{font-weight:800;font-size:17px;margin-top:3px;letter-spacing:-.01em}
+  .pl .d{color:var(--ash);font-size:12px;margin-top:5px;line-height:1.5}
+
+  .phone{width:312px;height:712px;border-radius:46px;background:var(--ink);border:1px solid var(--line);
+    box-shadow:0 36px 90px -30px rgba(0,0,0,.85), inset 0 0 0 6px #000;position:relative;overflow:hidden}
+  .phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:22px;border-radius:14px;background:#000;z-index:40}
+
+  .field{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  .blob{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(14px);opacity:.10}
+  .blob.v{background:var(--violet);top:-110px;left:-90px}
+  .blob.l{background:var(--lime);bottom:-120px;right:-90px}
+
+  .screen{position:absolute;inset:0;padding:46px 18px 86px;display:flex;flex-direction:column;z-index:10;overflow:hidden}
+  .scroll{overflow:hidden;flex:1}
+
+  /* shared text */
+  .kick{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--ash)}
+  .h1{font-weight:900;letter-spacing:-.025em;font-size:27px;line-height:1.05;margin-top:6px}
+  .intro{color:var(--ash);font-size:12px;margin-top:7px;line-height:1.5}
+  .sub{color:var(--ash);font-size:11px;line-height:1.45}
+  .mono{font-family:var(--mono)}
+  .chev{color:var(--ash);font-weight:800}
+
+  /* nav */
+  .nav{position:absolute;left:16px;right:16px;bottom:16px;height:62px;border-radius:var(--r-pill);
+    background:rgba(20,22,20,.94);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:30;
+    backdrop-filter:blur(8px)}
+  .nav .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--ash);font-size:17px}
+  .nav .ic.on{background:var(--chalk);color:var(--ink)}
+
+  /* generic surfaces */
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-card)}
+  .glyph{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:16px;flex:none}
+  .glyph.soft{background:rgba(243,244,239,.06);border:1px solid var(--line);color:var(--chalk)}
+  .row{display:flex;align-items:center;gap:13px}
+
+  /* settings hero */
+  .setrow{display:flex;align-items:center;gap:13px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-card);padding:15px}
+  .avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(140deg,#2a2d2a,#161816);border:1px solid var(--line);display:grid;place-items:center;font-weight:900;color:var(--lime-t);font-size:18px;flex:none}
+
+  /* mode toggle */
+  .mode{display:flex;gap:8px}
+  .mode .m{flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:12px 13px}
+  .mode .m.on{border-color:var(--lime);background:rgba(196,240,53,.08)}
+  .mode .m .t{font-weight:700;font-size:14px}
+  .mode .m.on .t{color:var(--lime-t)}
+  .mode .m .s{color:var(--ash);font-size:10px;margin-top:3px;font-family:var(--mono)}
+
+  /* list rows (monochrome) */
+  .list{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+  .li{display:flex;align-items:center;gap:13px;padding:13px 15px;border-top:1px solid var(--line)}
+  .li:first-child{border-top:0}
+  .li .t{font-weight:600;font-size:14px;color:var(--chalk)}
+  .li .s{color:var(--ash);font-size:10.5px;margin-top:2px;font-family:var(--mono)}
+  .li .gv{margin-left:auto;color:var(--ash);font-weight:800;font-size:15px}
+
+  /* tiles grid */
+  .tiles{display:flex;flex-wrap:wrap;gap:9px}
+  .tile{width:calc(50% - 4.5px);background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:13px}
+  .tile .t{font-weight:700;font-size:13.5px;color:var(--chalk);margin-top:9px}
+  .tile .s{color:var(--ash);font-size:10px;margin-top:2px;font-family:var(--mono)}
+
+  /* springboard icon grid */
+  .board{display:flex;flex-wrap:wrap;gap:8px 0}
+  .app{width:25%;text-align:center;padding:8px 2px}
+  .app .ig{width:50px;height:50px;border-radius:16px;margin:0 auto;display:grid;place-items:center;font-size:20px;background:var(--ink2);border:1px solid var(--line);color:var(--chalk)}
+  .app .l{font-size:10px;color:var(--ash);margin-top:6px;font-weight:600}
+
+  /* section label */
+  .seclab{display:flex;align-items:center;justify-content:space-between;margin:16px 2px 9px}
+  .seclab .k{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ash)}
+  .seclab .c{font-family:var(--mono);font-size:10px;color:var(--ash)}
+
+  /* search */
+  .search{display:flex;align-items:center;gap:10px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-pill);padding:12px 16px;color:var(--ash);font-size:13px}
+
+  /* segmented */
+  .seg{display:flex;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px;gap:3px}
+  .seg div{flex:1;text-align:center;padding:9px 0;border-radius:var(--r-pill);font-size:11.5px;font-weight:700;color:var(--ash)}
+  .seg div.on{background:var(--lime);color:var(--ink)}
+
+  /* ---- UNLOCK FULL treatments (the part being redesigned) ---- */
+  /* A: full-width lime pill banner */
+  .uf-pill{display:flex;align-items:center;gap:13px;background:var(--lime);color:var(--ink);border-radius:var(--r-pill);padding:15px 20px}
+  .uf-pill .t{font-weight:800;font-size:15px}
+  .uf-pill .s{font-size:10.5px;font-weight:600;opacity:.72;margin-top:1px}
+  .uf-pill .go{margin-left:auto;font-weight:900;font-size:18px}
+
+  /* B: membership card (premium dark with lime ring + sheen) */
+  .uf-mem{position:relative;border-radius:22px;padding:18px;overflow:hidden;
+    background:linear-gradient(135deg,#1b1d18,#101210);border:1px solid rgba(196,240,53,.5)}
+  .uf-mem::after{content:"";position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)}
+  .uf-mem .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--lime-t);text-transform:uppercase}
+  .uf-mem .t{font-weight:900;font-size:21px;letter-spacing:-.02em;margin-top:8px}
+  .uf-mem .s{color:var(--ash);font-size:11px;margin-top:5px;line-height:1.5;max-width:200px}
+  .uf-mem .cta{margin-top:14px;display:inline-flex;align-items:center;gap:8px;background:var(--lime);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:800;font-size:13px}
+
+  /* C: hairline outline banner (quiet) */
+  .uf-out{display:flex;align-items:center;gap:13px;border:1px solid rgba(196,240,53,.45);border-radius:18px;padding:15px;background:rgba(196,240,53,.05)}
+  .uf-out .star{width:34px;height:34px;border-radius:10px;background:rgba(196,240,53,.14);display:grid;place-items:center;color:var(--lime-t);font-size:16px;flex:none}
+  .uf-out .t{font-weight:800;font-size:14px;color:var(--chalk)}
+  .uf-out .s{color:var(--ash);font-size:10.5px;margin-top:2px}
+  .uf-out .go{margin-left:auto;color:var(--lime-t);font-weight:900}
+
+  /* D: feature-list upsell card */
+  .uf-feat{border:1px solid var(--line);border-radius:22px;padding:17px;background:var(--ink2)}
+  .uf-feat .t{font-weight:900;font-size:17px;letter-spacing:-.01em}
+  .uf-feat .ul{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .uf-feat .ul div{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--chalk)}
+  .uf-feat .ul div i{color:var(--lime-t);font-style:normal;font-weight:900}
+  .uf-feat .btn{margin-top:14px;background:var(--lime);color:var(--ink);border-radius:999px;text-align:center;padding:13px;font-weight:800;font-size:14px}
+
+  /* E: stat membership w/ price chip */
+  .uf-price{position:relative;border-radius:22px;padding:18px;background:linear-gradient(160deg,#15170f,#101210);border:1px solid var(--line)}
+  .uf-price .top{display:flex;align-items:center;justify-content:space-between}
+  .uf-price .chip{font-family:var(--mono);font-size:10px;border:1px solid rgba(196,240,53,.5);color:var(--lime-t);border-radius:999px;padding:5px 11px}
+  .uf-price .t{font-weight:900;font-size:19px;margin-top:12px}
+  .uf-price .s{color:var(--ash);font-size:11px;margin-top:5px}
+  .uf-price .btn{margin-top:14px;background:var(--lime);color:var(--ink);border-radius:999px;text-align:center;padding:12px;font-weight:800;font-size:13.5px}
+
+  .scrollfade{position:absolute;left:0;right:0;bottom:78px;height:60px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="mono">HYBRID · MOBILE</div>
+  <h1>“More” tab — 10 redesign mockups</h1>
+  <p>Ten directions for the bottom-nav <b>More</b> hub, all built on the HYBRID / Aurora tokens (Archivo · JetBrains Mono · ink surfaces · lime accent) and the rounded Figma look. Pick one to implement.</p>
+  <div class="fix">
+    <span>Fix #1 — <b>one text colour</b> (chalk), no rainbow labels</span>
+    <span>Fix #2 — <b>reshaped “Unlock Full”</b> (a different treatment per mock)</span>
+  </div>
+</div>
+
+<div class="grid">
+
+<!-- ════════════════ 01 · MONO LIST ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">Everything else</div>
+      <div class="intro">Tools, plans, analysis &amp; settings.</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <!-- Unlock Full = full-width lime pill banner (treatment A) -->
+        <div class="uf-pill">
+          <div>
+            <div class="t">✦ Unlock Full</div>
+            <div class="s">Plans · analytics · Twin · Cockpit</div>
+          </div>
+          <div class="go">→</div>
+        </div>
+
+        <div class="seclab"><span class="k">Tools</span></div>
+        <div class="list">
+          <div class="li"><div class="glyph soft">▣</div><div><div class="t">Statistics</div><div class="s">week · month · year</div></div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">◷</div><div><div class="t">Interval timer</div><div class="s">work / rest rounds</div></div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">◔</div><div><div class="t">Notifications</div><div class="s">activity · coach</div></div><div class="gv">›</div></div>
+        </div>
+
+        <div class="seclab"><span class="k">Analyze</span></div>
+        <div class="list">
+          <div class="li"><div class="glyph soft">◈</div><div><div class="t">Performance</div><div class="s">HPI · twin · risk</div></div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">∿</div><div><div class="t">Trends</div><div class="s">volume · muscle</div></div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">≡</div><div><div class="t">Volume</div><div class="s">MEV–MRV</div></div><div class="gv">›</div></div>
+        </div>
+
+        <div class="seclab"><span class="k">Account</span></div>
+        <div class="list">
+          <div class="li"><div class="glyph soft">⚙</div><div><div class="t">Settings</div><div class="s">CLIENT · FREE</div></div><div class="gv">›</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">01</div><div class="t">Mono list</div><div class="d">iOS-grouped rows, one text colour, glyph badges. Quiet &amp; scannable.</div></div>
+</div>
+
+<!-- ════════════════ 02 · SPRINGBOARD ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">Your toolkit</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <!-- Unlock Full = membership card (treatment B) -->
+        <div class="uf-mem">
+          <div class="cap">UPGRADE</div>
+          <div class="t">Unlock Full</div>
+          <div class="s">Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</div>
+          <div class="cta">Go Full →</div>
+        </div>
+
+        <div class="seclab"><span class="k">Plan</span></div>
+        <div class="board">
+          <div class="app"><div class="ig">◳</div><div class="l">Builder</div></div>
+          <div class="app"><div class="ig">▤</div><div class="l">Plans</div></div>
+          <div class="app"><div class="ig">◵</div><div class="l">Periodize</div></div>
+          <div class="app"><div class="ig">▲</div><div class="l">Compete</div></div>
+        </div>
+        <div class="seclab"><span class="k">Analyze</span></div>
+        <div class="board">
+          <div class="app"><div class="ig">◈</div><div class="l">Perform</div></div>
+          <div class="app"><div class="ig">∿</div><div class="l">Trends</div></div>
+          <div class="app"><div class="ig">≡</div><div class="l">Volume</div></div>
+          <div class="app"><div class="ig">⇡</div><div class="l">Velocity</div></div>
+        </div>
+        <div class="seclab"><span class="k">Routines</span></div>
+        <div class="board">
+          <div class="app"><div class="ig">◍</div><div class="l">Nutrition</div></div>
+          <div class="app"><div class="ig">✓</div><div class="l">Check-in</div></div>
+          <div class="app"><div class="ig">∞</div><div class="l">Longevity</div></div>
+          <div class="app"><div class="ig">⚙</div><div class="l">Settings</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">02</div><div class="t">Springboard grid</div><div class="d">iOS home-screen icon grid. Dense, glanceable, monochrome glyphs.</div></div>
+</div>
+
+<!-- ════════════════ 03 · INSET CARDS ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">More</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <!-- Settings hero pinned top -->
+        <div class="setrow">
+          <div class="avatar">YL</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:15px">Settings</div><div class="sub mono" style="margin-top:3px">CLIENT · FREE — account &amp; app</div></div>
+          <div class="chev">›</div>
+        </div>
+
+        <!-- mode toggle, neutral -->
+        <div class="seclab"><span class="k">Mode</span></div>
+        <div class="mode">
+          <div class="m on"><div class="t">Simple</div><div class="s">track · share</div></div>
+          <div class="m"><div class="t">Full 🔒</div><div class="s">paid upgrade</div></div>
+        </div>
+
+        <!-- Unlock Full = quiet hairline banner (treatment C) -->
+        <div style="margin-top:14px" class="uf-out">
+          <div class="star">✦</div>
+          <div><div class="t">Unlock Full</div><div class="s">Plans, analytics &amp; 12+ tools</div></div>
+          <div class="go">→</div>
+        </div>
+
+        <div class="seclab"><span class="k">Tools</span></div>
+        <div class="list">
+          <div class="li"><div class="t">Statistics</div><div class="gv">›</div></div>
+          <div class="li"><div class="t">Interval timer</div><div class="gv">›</div></div>
+          <div class="li"><div class="t">Notifications</div><div class="gv">›</div></div>
+        </div>
+        <div class="seclab"><span class="k">Plan</span></div>
+        <div class="list">
+          <div class="li"><div class="t">Builder</div><div class="gv">›</div></div>
+          <div class="li"><div class="t">Plan library</div><div class="gv">›</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">03</div><div class="t">Inset grouped</div><div class="d">Settings-app feel. Profile hero, neutral mode toggle, text-only rows.</div></div>
+</div>
+
+<!-- ════════════════ 04 · SEARCH-FIRST ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">Find anything</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <div class="search">⌕&nbsp;&nbsp;Search tools, plans, settings…</div>
+
+        <!-- Unlock Full = feature-list card (treatment D) -->
+        <div class="uf-feat" style="margin-top:14px">
+          <div class="t">Unlock Full</div>
+          <div class="ul">
+            <div><i>✓</i> Plans &amp; periodization</div>
+            <div><i>✓</i> Analytics &amp; your Digital Twin</div>
+            <div><i>✓</i> The Cockpit &amp; 12+ tools</div>
+          </div>
+          <div class="btn">Upgrade</div>
+        </div>
+
+        <div class="seclab"><span class="k">Recent</span></div>
+        <div class="tiles">
+          <div class="tile"><div class="glyph soft">▣</div><div class="t">Statistics</div><div class="s">week · month</div></div>
+          <div class="tile"><div class="glyph soft">◍</div><div class="t">Nutrition</div><div class="s">macros</div></div>
+        </div>
+        <div class="seclab"><span class="k">Jump to</span></div>
+        <div class="list">
+          <div class="li"><div class="glyph soft">◳</div><div class="t">Builder</div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">◈</div><div class="t">Performance</div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">⚙</div><div class="t">Settings</div><div class="gv">›</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">04</div><div class="t">Search-first</div><div class="d">Search bar + recents. Best as the hub grows past ~25 destinations.</div></div>
+</div>
+
+<!-- ════════════════ 05 · HERO + QUICK ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+
+      <div class="scroll" style="margin-top:10px">
+        <!-- profile hero -->
+        <div class="card" style="padding:18px;text-align:center">
+          <div class="avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto">YL</div>
+          <div style="font-weight:900;font-size:20px;margin-top:11px;letter-spacing:-.01em">Youssef Labidi</div>
+          <div class="sub mono" style="margin-top:4px">CLIENT · FREE PLAN</div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <div style="flex:1;background:rgba(243,244,239,.06);border:1px solid var(--line);border-radius:999px;padding:9px;font-weight:700;font-size:12px">⚙ Settings</div>
+            <div style="flex:1;background:rgba(243,244,239,.06);border:1px solid var(--line);border-radius:999px;padding:9px;font-weight:700;font-size:12px">◔ Alerts</div>
+          </div>
+        </div>
+
+        <!-- Unlock Full = price membership (treatment E) -->
+        <div class="uf-price" style="margin-top:14px">
+          <div class="top">
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--lime-t)">UNLOCK FULL</div>
+            <div class="chip">Free trial</div>
+          </div>
+          <div class="t">Everything, unlocked.</div>
+          <div class="s">Plans, analytics, your Twin &amp; the Cockpit.</div>
+          <div class="btn">Start free trial</div>
+        </div>
+
+        <div class="seclab"><span class="k">Quick access</span></div>
+        <div class="tiles">
+          <div class="tile"><div class="glyph soft">◳</div><div class="t">Builder</div></div>
+          <div class="tile"><div class="glyph soft">▤</div><div class="t">Plans</div></div>
+          <div class="tile"><div class="glyph soft">▣</div><div class="t">Statistics</div></div>
+          <div class="tile"><div class="glyph soft">◷</div><div class="t">Timer</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">05</div><div class="t">Profile hero</div><div class="d">Account-led, like the Figma Settings screen. Upgrade as a trial card.</div></div>
+</div>
+
+<!-- ════════════════ 06 · COMPACT TILES + DOT ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">All tools</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <!-- Unlock Full = full-width lime pill (treatment A) -->
+        <div class="uf-pill">
+          <div><div class="t">✦ Unlock Full</div><div class="s">Plans · analytics · 12+ tools</div></div>
+          <div class="go">→</div>
+        </div>
+
+        <div class="seclab"><span class="k">Plan</span><span class="c">8</span></div>
+        <div class="tiles">
+          <div class="tile"><div class="row"><span style="width:7px;height:7px;border-radius:4px;background:var(--lime)"></span><div class="t" style="margin:0">Builder</div></div><div class="s">compose a routine</div></div>
+          <div class="tile"><div class="row"><span style="width:7px;height:7px;border-radius:4px;background:var(--lime)"></span><div class="t" style="margin:0">Plans</div></div><div class="s">browse &amp; enroll</div></div>
+          <div class="tile"><div class="row"><span style="width:7px;height:7px;border-radius:4px;background:var(--violet)"></span><div class="t" style="margin:0">Periodize</div></div><div class="s">season · phases</div></div>
+          <div class="tile"><div class="row"><span style="width:7px;height:7px;border-radius:4px;background:var(--amber)"></span><div class="t" style="margin:0">Compete</div></div><div class="s">peak on the day</div></div>
+        </div>
+        <div class="seclab"><span class="k">Analyze</span><span class="c">10</span></div>
+        <div class="tiles">
+          <div class="tile"><div class="row"><span style="width:7px;height:7px;border-radius:4px;background:var(--blue)"></span><div class="t" style="margin:0">Performance</div></div><div class="s">HPI · twin</div></div>
+          <div class="tile"><div class="row"><span style="width:7px;height:7px;border-radius:4px;background:var(--lime)"></span><div class="t" style="margin:0">Trends</div></div><div class="s">volume · muscle</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">06</div><div class="t">Tiles + colour dot</div><div class="d">Labels stay chalk; the category colour survives as a tiny dot only.</div></div>
+</div>
+
+<!-- ════════════════ 07 · MEMBERSHIP FOCUS ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">More</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <!-- Big hero membership card (treatment B, enlarged) -->
+        <div class="uf-mem" style="padding:22px">
+          <div class="cap">HYBRID · FULL</div>
+          <div class="t" style="font-size:25px">Unlock everything</div>
+          <div class="s" style="max-width:220px">Plans, analytics, your Digital Twin, the Cockpit &amp; 12+ pro tools — one membership.</div>
+          <div style="display:flex;gap:9px;margin-top:16px;position:relative">
+            <div class="cta" style="margin:0">Go Full →</div>
+            <div style="align-self:center;font-family:var(--mono);font-size:10px;color:var(--ash)">7-day free trial</div>
+          </div>
+        </div>
+
+        <div class="seclab"><span class="k">Tools</span></div>
+        <div class="list">
+          <div class="li"><div class="glyph soft">▣</div><div class="t">Statistics</div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">◷</div><div class="t">Interval timer</div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">◳</div><div class="t">Builder</div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">⚙</div><div class="t">Settings</div><div class="gv">›</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">07</div><div class="t">Membership hero</div><div class="d">Upgrade is the star — a premium card up top, the rest a quiet list.</div></div>
+</div>
+
+<!-- ════════════════ 08 · SEGMENTED HUB ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">Browse</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <div class="seg">
+          <div class="on">Plan</div><div>Analyze</div><div>Routines</div><div>Tools</div>
+        </div>
+
+        <div class="tiles" style="margin-top:14px">
+          <div class="tile"><div class="glyph soft">◳</div><div class="t">Builder</div><div class="s">compose a routine</div></div>
+          <div class="tile"><div class="glyph soft">▤</div><div class="t">Plans</div><div class="s">browse &amp; enroll</div></div>
+          <div class="tile"><div class="glyph soft">◵</div><div class="t">Periodize</div><div class="s">season · phases</div></div>
+          <div class="tile"><div class="glyph soft">▲</div><div class="t">Compete</div><div class="s">peak on the day</div></div>
+          <div class="tile"><div class="glyph soft">◎</div><div class="t">Sport S&amp;C</div><div class="s">sport-specific</div></div>
+          <div class="tile"><div class="glyph soft">◷</div><div class="t">Run-track</div><div class="s">time · pace</div></div>
+        </div>
+
+        <!-- Unlock Full = quiet hairline banner (treatment C) pinned below -->
+        <div class="uf-out" style="margin-top:16px">
+          <div class="star">✦</div>
+          <div><div class="t">Unlock Full</div><div class="s">Plans, analytics &amp; 12+ tools</div></div>
+          <div class="go">→</div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">08</div><div class="t">Segmented hub</div><div class="d">A pill switcher filters the grid — no long scroll. Aurora ASegment.</div></div>
+</div>
+
+<!-- ════════════════ 09 · EDITORIAL ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1" style="font-size:30px">Do more.</div>
+      <div class="intro">Everything beyond Today, in one place.</div>
+
+      <div class="scroll" style="margin-top:18px">
+        <!-- Unlock Full = feature-list card (treatment D, minimal) -->
+        <div class="uf-feat" style="background:transparent;border-color:rgba(196,240,53,.4)">
+          <div class="t">Unlock Full</div>
+          <div class="sub" style="margin-top:6px">Plans, analytics, your Twin &amp; the Cockpit.</div>
+          <div class="btn">Upgrade →</div>
+        </div>
+
+        <div style="font-weight:900;font-size:18px;margin:20px 2px 4px;letter-spacing:-.01em">Plan</div>
+        <div style="border-top:1px solid var(--line)">
+          <div class="li" style="padding:14px 2px"><div><div class="t">Builder</div><div class="s">compose a routine</div></div><div class="gv">→</div></div>
+          <div class="li" style="padding:14px 2px"><div><div class="t">Plan library</div><div class="s">browse &amp; enroll</div></div><div class="gv">→</div></div>
+        </div>
+        <div style="font-weight:900;font-size:18px;margin:18px 2px 4px;letter-spacing:-.01em">Analyze</div>
+        <div style="border-top:1px solid var(--line)">
+          <div class="li" style="padding:14px 2px"><div><div class="t">Performance</div><div class="s">HPI · twin · risk</div></div><div class="gv">→</div></div>
+          <div class="li" style="padding:14px 2px"><div><div class="t">Trends</div><div class="s">volume · muscle</div></div><div class="gv">→</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">09</div><div class="t">Editorial</div><div class="d">Big type, hairline dividers, lots of air. Magazine-style, text-led.</div></div>
+</div>
+
+<!-- ════════════════ 10 · DASHBOARD TILES ════════════════ -->
+<div class="pw">
+  <div class="phone">
+    <div class="field"><div class="blob v"></div><div class="blob l"></div></div>
+    <div class="screen">
+      <div class="kick">MORE</div>
+      <div class="h1">Overview</div>
+
+      <div class="scroll" style="margin-top:14px">
+        <!-- Unlock Full = price membership (treatment E) -->
+        <div class="uf-price">
+          <div class="top">
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--lime-t)">UNLOCK FULL</div>
+            <div class="chip">★ Pro</div>
+          </div>
+          <div class="t">Unlock plans &amp; analytics</div>
+          <div class="btn">Upgrade</div>
+        </div>
+
+        <div class="seclab"><span class="k">At a glance</span></div>
+        <div class="tiles">
+          <div class="tile">
+            <div class="s">STATISTICS</div>
+            <div style="font-weight:900;font-size:22px;margin-top:4px">102<span style="font-size:11px;color:var(--ash)"> cal</span></div>
+            <div style="display:flex;gap:2px;align-items:flex-end;height:20px;margin-top:8px">
+              <i style="flex:1;height:40%;background:#3a3d36;border-radius:2px"></i><i style="flex:1;height:65%;background:#3a3d36;border-radius:2px"></i><i style="flex:1;height:50%;background:#3a3d36;border-radius:2px"></i><i style="flex:1;height:80%;background:#3a3d36;border-radius:2px"></i><i style="flex:1;height:100%;background:var(--lime);border-radius:2px"></i>
+            </div>
+          </div>
+          <div class="tile">
+            <div class="s">NUTRITION</div>
+            <div style="font-weight:900;font-size:22px;margin-top:4px">1.8<span style="font-size:11px;color:var(--ash)"> /2.2k</span></div>
+            <div style="height:5px;background:#3a3d36;border-radius:3px;margin-top:11px;overflow:hidden"><div style="width:80%;height:100%;background:var(--lime)"></div></div>
+          </div>
+        </div>
+        <div class="seclab"><span class="k">All tools</span></div>
+        <div class="list">
+          <div class="li"><div class="glyph soft">◳</div><div class="t">Builder</div><div class="gv">›</div></div>
+          <div class="li"><div class="glyph soft">⚙</div><div class="t">Settings</div><div class="gv">›</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrollfade"></div>
+    <div class="nav">
+      <div class="ic">▦</div><div class="ic">▤</div><div class="ic">＋</div><div class="ic">◔</div><div class="ic on">•••</div>
+    </div>
+  </div>
+  <div class="pl"><div class="n">10</div><div class="t">Dashboard tiles</div><div class="d">Live mini-stats &amp; sparklines on key tiles. Reuses Aurora Spark/Ring.</div></div>
+</div>
+
+</div>
+</body>
+</html>
