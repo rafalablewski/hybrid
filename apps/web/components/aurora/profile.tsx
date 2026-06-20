@@ -108,8 +108,12 @@ export default function AuroraProfile({
   // Member-since year — the earliest session, or this year for a fresh account.
   const memberSince = useMemo(() => {
     if (sessions.length === 0) return new Date().getFullYear();
-    const earliest = sessions.reduce((min, s) => Math.min(min, Date.parse(s.startedAt)), Infinity);
-    return new Date(earliest).getFullYear();
+    // Guard against a missing/invalid startedAt (Date.parse → NaN would poison Math.min).
+    const earliest = sessions.reduce((min, s) => {
+      const t = Date.parse(s.startedAt);
+      return Number.isNaN(t) ? min : Math.min(min, t);
+    }, Infinity);
+    return earliest === Infinity ? new Date().getFullYear() : new Date(earliest).getFullYear();
   }, [sessions]);
 
   // Athlete ID — a stable, anonymous hash of the email (no PII leaked).

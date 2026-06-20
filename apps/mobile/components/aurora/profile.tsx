@@ -64,16 +64,16 @@ export default function AuroraProfile() {
 
   const load = useCallback(() => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchSignals(), fetchConnections(), fetchCheckins(), getCoachLinks()])
+    // allSettled, not all: these endpoints are independent, so a single failing
+    // one (e.g. connections/coach offline) shouldn't blank the whole profile.
+    Promise.allSettled([fetchSessions(), fetchSignals(), fetchConnections(), fetchCheckins(), getCoachLinks()])
       .then(([s, sig, conn, cks, links]) => {
-        setSessions(s);
-        setSignals(sig);
-        setConnections(conn.connections);
-        setCheckins(cks);
-        const active = (links.asClient ?? []).find((l) => l.status === "ACTIVE") ?? null;
-        setCoach(active);
+        if (s.status === "fulfilled") setSessions(s.value);
+        if (sig.status === "fulfilled") setSignals(sig.value);
+        if (conn.status === "fulfilled") setConnections(conn.value.connections);
+        if (cks.status === "fulfilled") setCheckins(cks.value);
+        if (links.status === "fulfilled") setCoach((links.value.asClient ?? []).find((l) => l.status === "ACTIVE") ?? null);
       })
-      .catch((err) => console.error("Failed to load profile data:", err))
       .finally(() => setRefreshing(false));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -122,7 +122,7 @@ export default function AuroraProfile() {
   const coachName = coach?.coach?.name ?? (coach?.coach?.email ? coach.coach.email.split("@")[0]! : null);
 
   const initials = useMemo(() => {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return "·";
     return (parts[0]![0]! + (parts[1]?.[0] ?? "")).toUpperCase();
   }, [name]);

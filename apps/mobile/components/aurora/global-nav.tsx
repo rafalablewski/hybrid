@@ -70,7 +70,10 @@ export default function AuroraGlobalNav() {
   const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.16)";
   const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.12)";
   const trainFocused = activeSeg === TRAIN.seg;
-  const SideItem = ({ tab }: { tab: Side }) => {
+  // A render HELPER, not a nested component: defining a component inside render
+  // makes React remount the whole subtree each render. A plain function that
+  // returns JSX renders inline with no remount penalty.
+  const renderSideItem = (tab: Side) => {
     const focused = activeSeg === tab.seg;
     return (
       <Pressable
@@ -126,10 +129,10 @@ export default function AuroraGlobalNav() {
         <BlurView intensity={28} tint={scheme} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
         <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {LEFT.map((tab) => <SideItem key={tab.id} tab={tab} />)}
+        {LEFT.map(renderSideItem)}
         {/* centre gap — the raised Train FAB overlays this slot */}
         <View style={{ width: 64 }} />
-        {RIGHT.map((tab) => <SideItem key={tab.id} tab={tab} />)}
+        {RIGHT.map(renderSideItem)}
       </View>
 
       {/* ELEVATED TRAIN FAB — a larger lime circle raised above the bar, with a
