@@ -100,6 +100,15 @@ body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:10
 .tile .big2{font-weight:900;font-size:23px;letter-spacing:-.02em}
 .tile .sm{font-weight:700;font-size:13.5px;margin-top:2px}
 
+/* ACTIVITY GRID — a year of training as a heatmap (timeline option A) */
+.actgrid{border:1px solid var(--line);border-radius:22px;background:linear-gradient(180deg,#121410,#0d0f0c);padding:16px}
+.actgrid .months{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--ash);letter-spacing:.08em;margin-bottom:8px;padding:0 2px}
+#hgrid{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;height:132px}
+.hc{border-radius:2.5px;background:#1b1e18}
+.hc.l1{background:rgba(196,240,53,.28)}.hc.l2{background:rgba(196,240,53,.5)}.hc.l3{background:rgba(196,240,53,.74)}.hc.l4{background:var(--lime)}
+.actgrid .legend{display:flex;align-items:center;gap:5px;margin-top:11px;font-family:var(--mono);font-size:8px;color:var(--ash)}
+.actgrid .legend i{width:10px;height:10px;border-radius:2.5px;display:inline-block}
+.actgrid .legend i.l0{background:#1b1e18}.actgrid .legend i.l1{background:rgba(196,240,53,.28)}.actgrid .legend i.l2{background:rgba(196,240,53,.5)}.actgrid .legend i.l3{background:rgba(196,240,53,.74)}.actgrid .legend i.l4{background:var(--lime)}
 .scrollfade{position:absolute;left:0;right:0;bottom:86px;height:46px;background:linear-gradient(transparent,var(--ink));z-index:20;pointer-events:none}
 
 .nav{position:absolute;left:14px;right:14px;bottom:16px;height:64px;border-radius:999px;background:rgba(20,22,20,.92);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:40}
@@ -169,6 +178,14 @@ body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:10
       <div class="delta"><b>▲ +4</b> vs last 30 days · strength 86 · engine 78 · recovery 81</div>
     </div>
 
+    <!-- Training activity (timeline A) — year heatmap -->
+    <div class="sh"><div class="t">Training</div><div class="a">248 sessions →</div></div>
+    <div class="actgrid">
+      <div class="months"><span>JAN</span><span>APR</span><span>JUL</span><span>OCT</span><span>NOW</span></div>
+      <div id="hgrid"></div>
+      <div class="legend"><span style="color:var(--lime-t)">16-week streak</span><span style="flex:1"></span>Less <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> More</div>
+    </div>
+
     <!-- Achievements (07) — squared badges -->
     <div class="sh"><div class="t">Achievements</div><div class="a">See all →</div></div>
     <div class="ach">
@@ -226,4 +243,9 @@ body{background:#070807;color:var(--chalk);font-family:var(--disp);min-height:10
   <div class="t">Apple ID / Tesla account style</div>
   <div class="d">Re-cut header: centered avatar with an edit badge (no story ring), an Apple-ID identifier instead of a social @handle, a Tesla hairline spec strip instead of follower counts, and achievements as squared badges. Lower feed unchanged — ID card (01), huge HPI (02), PRs (07), module tiles (10).</div>
 </div>
-</div></body></html>
+</div>
+<script>
+(function(){var g=document.getElementById('hgrid');if(!g)return;var s=23;function r(){s=(s*9301+49297)%233280;return s/233280;}
+for(var i=0;i<7*17;i++){var v=r(),c=0;if(v>.5)c=1;if(v>.68)c=2;if(v>.83)c=3;if(v>.93)c=4;var d=document.createElement('i');d.className='hc l'+c;g.appendChild(d);}})();
+</script>
+</body></html>
