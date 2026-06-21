@@ -30,7 +30,11 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   const { session } = useSession();
   const guest = !session;
   const suggested = suggestedSports(sessions);
-  const [sport, setSport] = useState(suggested[0] ?? "Running");
+  // Until the athlete picks, track the top suggestion — which only resolves once
+  // `sessions` has loaded (empty on first mount), so a computed state default
+  // would freeze on "Running".
+  const [picked, setPicked] = useState<string | null>(null);
+  const sport = picked ?? suggested[0] ?? "Running";
   const [showAll, setShowAll] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [distance, setDistance] = useState(""); // in the sport's unit
@@ -38,7 +42,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   const [msg, setMsg] = useState("");
   // Chips: the suggested shortlist, plus the current pick if it's off-list.
   const chips = suggested.includes(sport) ? suggested : [sport, ...suggested];
-  const pickChip = (name: string) => { setSport(name); setShowAll(false); setMsg(""); };
+  const pickChip = (name: string) => { setPicked(name); setShowAll(false); setMsg(""); };
 
   const tracksDist = sportTracksDistance(sport);
   const km = parseSportDistance(distance, sport);
@@ -149,7 +153,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         {tracksDist && (
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>
-              {sportDistanceUnit(sport) === "m" ? "DIST (M)" : "DIST (KM)"}
+              {sportDistanceUnit(sport) === "m" ? t("workout.distM") : t("workout.dist")}
             </Text>
             <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(sport) === "m" ? "400" : "8"} placeholderTextColor={C.ash} style={field} />
           </View>

@@ -54,9 +54,7 @@ import {
   paceSeries,
   headlineRunMove,
   paceClock,
-  formatSportDistance,
-  formatSportPace,
-  sportPacePerMeters,
+  formatCardioPr,
   cardioPrsForSession,
   type CardioPrHit,
   type LoggedSession,
@@ -711,16 +709,8 @@ export function SessionDetail({
   const prLine = (p: { lift: string; e1rm: number; previous: number | null }) =>
     p.previous == null ? `${p.lift} ${fmtWeight(p.e1rm, units)} (first!)` : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
   // Distance + pace render in the sport's natural unit (metres for swimming /
-  // rowing, km otherwise) — driven by the move name; storage stays km.
-  const cardioPrLine = (p: CardioPrHit) => {
-    if (p.kind === "distance")
-      return p.previous == null
-        ? `${p.move} ${formatSportDistance(p.value, p.move)} (first!)`
-        : `${p.move} ${formatSportDistance(p.value, p.move)} (+${formatSportDistance(p.value - p.previous, p.move)})`;
-    const per = sportPacePerMeters(p.move) / 1000;
-    const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
-    return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
-  };
+  // rowing, km otherwise) — one shared core formatter, see formatCardioPr.
+  const cardioPrLine = (p: CardioPrHit) => formatCardioPr(p, "first!");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg }}>

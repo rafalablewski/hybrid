@@ -19,9 +19,7 @@ import {
   type WeightUnit,
   paceSeries,
   paceClock,
-  formatSportDistance,
-  formatSportPace,
-  sportPacePerMeters,
+  formatCardioPr,
   cardioPrsForSession,
   type LoggedSession,
   type PrHit,
@@ -226,17 +224,10 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
     ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
     : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
 
-// Distance + pace render in the sport's natural unit (metres for swimming /
-// rowing, km otherwise) — driven by the move name; storage stays km.
-const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
-  if (p.kind === "distance")
-    return p.previous == null
-      ? `${p.move} ${formatSportDistance(p.value, p.move)} (${t("summary.firstTime")})`
-      : `${p.move} ${formatSportDistance(p.value, p.move)} (+${formatSportDistance(p.value - p.previous, p.move)})`;
-  const per = sportPacePerMeters(p.move) / 1000;
-  const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
-  return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
-};
+// Renders in the sport's natural unit (metres for swimming/rowing, km
+// otherwise) — one shared core formatter, see formatCardioPr.
+const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) =>
+  formatCardioPr(p, t("summary.firstTime"));
 
 function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: string) => string }) {
   const C = useTheme().palette;

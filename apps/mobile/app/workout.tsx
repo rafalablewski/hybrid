@@ -20,16 +20,12 @@ import {
   inferBlockKind,
   migrateBlocks,
   olympicSportsByCategory,
-  olympicSport,
-  sportTracksDistance,
+  timedSportOnly,
   sportDistanceUnit,
   displaySportDistance,
   parseSportDistance,
-  formatSportDistance,
-  formatSportPace,
-  sportPacePerMeters,
+  formatCardioPr,
   cardioPace,
-  paceClock,
   blockSummary,
   lastStrengthByLift,
   supersetLabels,
@@ -140,11 +136,6 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-// A cardio activity shows duration only (no distance/pace) when its name is a
-// KNOWN Olympic sport that doesn't track distance (tennis, judo, …). Generic or
-// custom cardio (Run, Bike, a typed-in name) keeps the distance + minutes grid.
-const timedSportOnly = (name: string) => !!olympicSport(name) && !sportTracksDistance(name);
-
 type Summ = {
   title: string;
   blocks: SessionBlock[];
@@ -160,17 +151,10 @@ type Summ = {
   cardioPrs: CardioPrHit[];
 };
 
-/** A localized one-liner for a cardio PR (distance furthest / pace fastest).
- *  Distance + pace render in the sport's natural unit (metres for swimming /
- *  rowing, km otherwise); storage stays km. */
+/** A localized one-liner for a cardio PR (distance furthest / pace fastest) —
+ *  delegates to the shared core formatter (renders in the sport's natural unit). */
 export function cardioPrLine(p: CardioPrHit, t: (k: string) => string): string {
-  if (p.kind === "distance")
-    return p.previous == null
-      ? `${p.move} ${formatSportDistance(p.value, p.move)} (${t("summary.firstTime")})`
-      : `${p.move} ${formatSportDistance(p.value, p.move)} (+${formatSportDistance(p.value - p.previous, p.move)})`;
-  const per = sportPacePerMeters(p.move) / 1000;
-  const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
-  return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
+  return formatCardioPr(p, t("summary.firstTime"));
 }
 
 const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; blocks: unknown[] }): LoggedSession => ({
@@ -435,7 +419,24 @@ export default function Workout() {
   // Drop reorder (hold the grip handle and drag): move from one index to another.
   const moveExerciseTo = (from: number, to: number) => setExercises((xs) => moveItemTo(xs, from, to));
   const rename = (u: string, name: string) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, name } : x)));
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        if (x.kind === "cardio" && x.distance.trim()) {
+          // A timed sport (tennis, judo, …) hides the distance field — drop the
+          // value so it can't be saved as a phantom distance/pace.
+          if (timedSportOnly(name)) return { ...x, name, distance: "" };
+          // Otherwise the distance string is held in the OLD sport's unit; if the
+          // new sport uses a different unit, re-express it so the real-world
+          // distance (km) is preserved instead of changing 1000× on save.
+          if (sportDistanceUnit(x.name) !== sportDistanceUnit(name)) {
+            const km = parseSportDistance(x.distance, x.name);
+            return { ...x, name, distance: km != null ? displaySportDistance(km, name) : x.distance };
+          }
+        }
+        return { ...x, name };
+      }),
+    );
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),

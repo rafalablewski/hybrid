@@ -2,12 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, olympicSport, sportTracksDistance, sportDistanceUnit, displaySportDistance, parseSportDistance } from "@hybrid/core";
-
-// A cardio block shows duration only (no distance/pace) when its name is a
-// KNOWN Olympic sport that doesn't track distance (tennis, judo, …). Generic or
-// custom cardio (Run, Bike, a typed-in name) keeps the distance + minutes grid.
-const timedSportOnly = (name: string) => !!olympicSport(name) && !sportTracksDistance(name);
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
@@ -157,7 +152,22 @@ export default function WorkoutBlocks({
     setSportPicker(false);
   };
   const removeBlock = (u: string) => setBlocks((bs) => bs.filter((b) => b.uid !== u));
-  const rename = (u: string, name: string) => patch(u, (b) => ({ ...b, name }) as EditableBlock);
+  const rename = (u: string, name: string) => {
+    // Drop the distance text buffer so the field reflows from the stored km in
+    // the new sport's unit (the block keeps km; only the typed buffer was in the
+    // old unit) — otherwise a rename across an m↔km sport shows a stale value.
+    setCondDrafts((d) => {
+      if (!(`${u}:distance` in d)) return d;
+      const next = { ...d };
+      delete next[`${u}:distance`];
+      return next;
+    });
+    // A timed sport hides the distance field — clear any prior distance so it
+    // can't be saved as a phantom distance/pace on, say, a renamed Tennis block.
+    patch(u, (b) =>
+      (b.kind === "cardio" && timedSportOnly(name) ? { ...b, name, distance: undefined } : { ...b, name }) as EditableBlock,
+    );
+  };
 
   const move = (u: string, dir: -1 | 1) =>
     setBlocks((bs) => moveItem(bs, bs.findIndex((b) => b.uid === u), dir));

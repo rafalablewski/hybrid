@@ -182,6 +182,17 @@ export function sportTracksDistance(name: string): boolean {
   return olympicSport(name)?.metrics.includes("distance") ?? false;
 }
 
+/**
+ * True when a cardio activity should show DURATION ONLY (no distance/pace) — its
+ * name is a KNOWN Olympic sport that doesn't track distance (tennis, judo, …).
+ * Generic/custom cardio (a typed-in "Run", "Bike") is unknown to the catalog, so
+ * this is false and the distance + minutes grid stays. Shared by both clients'
+ * editors so web and mobile can't drift on which sports hide the field.
+ */
+export function timedSportOnly(name: string): boolean {
+  return !!olympicSport(name) && !sportTracksDistance(name);
+}
+
 /** The sports grouped by category, for a scannable picker. */
 export function olympicSportsByCategory(): { category: SportCategory; sports: OlympicSport[] }[] {
   return SPORT_CATEGORIES.map((category) => ({

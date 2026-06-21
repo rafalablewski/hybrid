@@ -10,8 +10,9 @@ import {
   parseSportDistance,
   formatSportDistance,
   suggestedSports,
+  timedSportOnly,
 } from "./olympic-sports";
-import { cardioPace, type LoggedSession } from "./engines/session";
+import { cardioPace, formatCardioPr, type LoggedSession } from "./engines/session";
 
 describe("olympic-sports catalog", () => {
   it("keys the catalog by name with every sport carrying duration", () => {
@@ -38,6 +39,20 @@ describe("olympic-sports catalog", () => {
 
     // Swimming — minutes and/or distance.
     expect(sportTracksDistance("Swimming")).toBe(true);
+  });
+
+  it("timedSportOnly flags only KNOWN sports that don't track distance", () => {
+    expect(timedSportOnly("Tennis")).toBe(true); // known + no distance
+    expect(timedSportOnly("Running")).toBe(false); // known + distance
+    expect(timedSportOnly("Run")).toBe(false); // unknown/custom cardio keeps distance
+  });
+
+  it("formats a cardio PR in the move's unit (shared by web + both mobile lines)", () => {
+    // Distance PR — metres for swimming, with the gain in the same unit.
+    expect(formatCardioPr({ kind: "distance", move: "Swimming", value: 1.5, previous: 1.2 }, "first!")).toBe("Swimming 1500 m (+300 m)");
+    expect(formatCardioPr({ kind: "distance", move: "Running", value: 10, previous: null }, "first!")).toBe("Running 10 km (first!)");
+    // Pace PR — value/previous are sec/km; swimming shows /100m and a scaled delta.
+    expect(formatCardioPr({ kind: "pace", move: "Swimming", value: 1200, previous: 1300 }, "first!")).toBe("Swimming 2:00 /100m (−0:10)");
   });
 
   it("pace always implies distance", () => {

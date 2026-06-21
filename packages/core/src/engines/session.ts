@@ -250,6 +250,26 @@ export function formatSportPace(secPerKm: number, name?: string): string {
   return `${paceClock(secPerKm * (per / 1000))} ${label}`;
 }
 
+/**
+ * One-line summary of a cardio PR (distance furthest / pace fastest), rendered in
+ * the move's natural unit (metres for swimming/rowing, km otherwise). `firstLabel`
+ * is the caller-localized "first time" tag. One source of truth for the web + both
+ * mobile PR lines so the distance/pace + delta math can't drift between them.
+ * `value`/`previous` are km for a distance PR and seconds-per-km for a pace PR.
+ */
+export function formatCardioPr(
+  p: { kind: "distance" | "pace"; move: string; value: number; previous: number | null },
+  firstLabel: string,
+): string {
+  if (p.kind === "distance")
+    return p.previous == null
+      ? `${p.move} ${formatSportDistance(p.value, p.move)} (${firstLabel})`
+      : `${p.move} ${formatSportDistance(p.value, p.move)} (+${formatSportDistance(p.value - p.previous, p.move)})`;
+  const per = sportPacePerMeters(p.move) / 1000;
+  const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
+  return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
+}
+
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */
 export function paceClock(secPerKm: number): string {
   // Round to whole seconds FIRST, then split — otherwise rounding the seconds

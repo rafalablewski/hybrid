@@ -13,6 +13,7 @@ import {
   type SessionBlock,
 } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, ON_ACCENT, disp, cond, mono, Mono, Card } from "@/lib/ui";
+import { useLang } from "@/lib/i18n";
 
 const field = {
   ...mono,
@@ -35,8 +36,13 @@ const field = {
  * unit (metres for swimming/rowing); storage stays km. No wearable needed.
  */
 export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void }) {
+  const { t } = useLang();
   const suggested = suggestedSports(sessions);
-  const [sport, setSport] = useState(suggested[0] ?? "Running");
+  // Until the athlete picks, track the top suggestion — which only resolves once
+  // `sessions` has loaded (the prop is empty on first mount), so storing a
+  // computed default in state would freeze it on "Running".
+  const [picked, setPicked] = useState<string | null>(null);
+  const sport = picked ?? suggested[0] ?? "Running";
   const [showAll, setShowAll] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [distance, setDistance] = useState(""); // in the sport's unit
@@ -46,7 +52,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   // sport chosen from "More" still shows selected).
   const chips = suggested.includes(sport) ? suggested : [sport, ...suggested];
 
-  const pickChip = (name: string) => { setSport(name); setShowAll(false); setMsg(""); };
+  const pickChip = (name: string) => { setPicked(name); setShowAll(false); setMsg(""); };
 
   const tracksDist = sportTracksDistance(sport);
   const km = parseSportDistance(distance, sport);
@@ -55,7 +61,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   const save = async () => {
     const mins = parseFloat(minutes);
     if (!Number.isFinite(mins) && km == null) {
-      setMsg("Add a time or distance.");
+      setMsg(t("w.home.quickSport.needValue"));
       return;
     }
     setSaving(true);
@@ -74,22 +80,22 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         body: JSON.stringify({ title: sport, startedAt: now, completedAt: now, blocks: [block] }),
       });
       if (res.status === 401) {
-        setMsg("Sign in to save sessions.");
+        setMsg(t("w.home.quickSport.signIn"));
         setSaving(false);
         return;
       }
       if (!res.ok) {
-        setMsg(`Couldn't save (HTTP ${res.status}).`);
+        setMsg(`${t("w.home.quickSport.saveError")} (HTTP ${res.status}).`);
         setSaving(false);
         return;
       }
       setMinutes("");
       setDistance("");
-      setMsg(`✓ Logged ${sport}`);
+      setMsg(`✓ ${t("w.home.quickSport.logged")} ${sport}`);
       setSaving(false);
       onSaved?.();
     } catch {
-      setMsg("Network error — try again.");
+      setMsg(t("w.home.quickSport.netError"));
       setSaving(false);
     }
   };
@@ -97,10 +103,10 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   return (
     <Card style={{ borderLeft: `3px solid ${BLUE}` }}>
       <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-        Log a sport session
+        {t("w.home.quickSport.title")}
       </Mono>
       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
-        Back from training? Log it here — no gear needed.
+        {t("w.home.quickSport.sub")}
       </Mono>
       {/* Suggested sports — one tap; "More" reveals the full catalog. */}
       <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginTop: 12 }}>
@@ -122,7 +128,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           onClick={() => setShowAll((v) => !v)}
           style={{ ...cond, fontSize: fs.caption, fontWeight: 700, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH }}
         >
-          {showAll ? "Less ▴" : "More ▾"}
+          {showAll ? `${t("w.home.quickSport.less")} ▴` : `${t("w.home.quickSport.more")} ▾`}
         </button>
       </div>
 
@@ -147,13 +153,13 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         {tracksDist && (
           <div style={{ flex: "0 1 96px" }}>
             <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>
-              dist ({sportDistanceUnit(sport)})
+              {t("w.home.quickSport.dist")} ({sportDistanceUnit(sport)})
             </Mono>
             <input value={distance} onChange={(e) => setDistance(e.target.value)} placeholder={sportDistanceUnit(sport) === "m" ? "400" : "8"} inputMode="decimal" style={{ ...field, width: "100%" }} />
           </div>
         )}
         <div style={{ flex: "0 1 84px" }}>
-          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>minutes</Mono>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>{t("w.home.quickSport.minutes")}</Mono>
           <input value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="45" inputMode="decimal" style={{ ...field, width: "100%" }} />
         </div>
         <button
@@ -161,12 +167,12 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           disabled={saving}
           style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "11px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1 }}
         >
-          {saving ? "Saving…" : "Log →"}
+          {saving ? t("w.home.quickSport.saving") : t("w.home.quickSport.log")}
         </button>
       </div>
       {(pace || msg) && (
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.startsWith("✓") ? LIME : pace ? BLUE : ASH}>
-          {msg || `pace ${pace}`}
+          {msg || `${t("w.home.quickSport.pace")} ${pace}`}
         </Mono>
       )}
     </Card>
