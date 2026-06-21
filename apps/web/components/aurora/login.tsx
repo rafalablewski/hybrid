@@ -218,7 +218,7 @@ function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { 
       {children}
       {trailing && (
         onTrailingClick ? (
-          <button type="button" onClick={onTrailingClick} aria-label={t("w.account.login.toggle-password")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
+          <button type="button" onClick={onTrailingClick} aria-label={t("w.account.login.toggle-pw")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
             <AuroraIcon name={trailing} size={20} color={trailingActive ? LIME : ASH} />
           </button>
         ) : (

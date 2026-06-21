@@ -20,6 +20,7 @@ export * from "./economics";
 export * from "./security";
 export * from "./mfa";
 export * from "./i18n";
+export * from "./athlete-id";
 export * from "./flags";
 export * from "./biometrics";
 export * from "./connectors";

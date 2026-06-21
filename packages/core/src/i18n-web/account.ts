@@ -185,7 +185,7 @@ export const web_account = {
     "w.account.login.login-now": "Login Now",
     "w.account.login.register-now": "Register Now",
     "w.account.login.back": "back",
-    "w.account.login.toggle-password": "Toggle password visibility",
+    "w.account.login.toggle-pw": "Toggle password visibility",
 
     // --- account-settings (account-settings.tsx) ---
     "w.account.settings.sec-general": "General",
@@ -461,7 +461,7 @@ export const web_account = {
     "w.account.login.login-now": "Zaloguj się",
     "w.account.login.register-now": "Zarejestruj się",
     "w.account.login.back": "wstecz",
-    "w.account.login.toggle-password": "Przełącz widoczność hasła",
+    "w.account.login.toggle-pw": "Przełącz widoczność hasła",
 
     // --- account-settings ---
     "w.account.settings.sec-general": "Ogólne",
@@ -737,7 +737,7 @@ export const web_account = {
     "w.account.login.login-now": "Jetzt anmelden",
     "w.account.login.register-now": "Jetzt registrieren",
     "w.account.login.back": "zurück",
-    "w.account.login.toggle-password": "Passwortsichtbarkeit umschalten",
+    "w.account.login.toggle-pw": "Passwortsichtbarkeit umschalten",
 
     // --- account-settings ---
     "w.account.settings.sec-general": "Allgemein",
