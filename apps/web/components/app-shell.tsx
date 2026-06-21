@@ -762,7 +762,11 @@ export default function AppShell() {
             />
           ))}
 
-        {screen === "sport" && (aurora ? <AuroraSport /> : <SportScreen />)}
+        {screen === "sport" && (
+          aurora
+            ? <AuroraSport onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
+            : <SportScreen onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
+        )}
 
         {screen === "runtrack" && (aurora ? <AuroraRunTrack onSaved={refresh} /> : <RunTrack onSaved={refresh} />)}
 

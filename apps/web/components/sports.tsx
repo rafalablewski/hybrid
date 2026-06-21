@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
+import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type SessionBlock } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, cond, mono, Mono, Card, Chip } from "@/lib/ui";
@@ -11,7 +11,7 @@ import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, 
 // at that sport. Same engine the mobile app uses. The athlete's sport, level
 // and performance markers are remembered, so the tab reflects THEM — not a
 // default demo selection.
-export default function SportScreen() {
+export default function SportScreen({ onLogSession }: { onLogSession?: (blocks: SessionBlock[]) => void }) {
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
   const [markers, setMarkers] = useState<Record<string, string>>({});
@@ -134,6 +134,28 @@ export default function SportScreen() {
             }}
           />
         </div>
+        {/* Log the sport itself by hand — opens the logger pre-loaded with this
+            sport as an activity (no wearable needed). */}
+        {onLogSession && (
+          <button
+            onClick={() => onLogSession([{ kind: "cardio", name: sport }])}
+            style={{
+              ...disp,
+              fontWeight: 800,
+              fontSize: fs.note,
+              marginTop: 14,
+              width: "100%",
+              background: BLUE,
+              color: ON_ACCENT,
+              border: "none",
+              borderRadius: 10,
+              padding: "12px 18px",
+              cursor: "pointer",
+            }}
+          >
+            + Log a {sport} session →
+          </button>
+        )}
       </Card>
 
       {/* prescribed session — loads driven by the athlete's logged lifts */}

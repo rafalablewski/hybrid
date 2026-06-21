@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
@@ -20,6 +20,7 @@ export default function Sport() {
 function ClassicSport() {
   const C = useTheme().palette;
   const { t } = useLang();
+  const router = useRouter();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -115,6 +116,15 @@ function ClassicSport() {
           );
         })}
       </View>
+
+      {/* Log the sport itself by hand — opens the logger seeded with this sport
+          as an activity (no wearable needed). */}
+      <Pressable
+        onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
+        style={{ backgroundColor: C.blue, borderRadius: 12, paddingVertical: 13, alignItems: "center", marginBottom: 16 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>＋ {t("sport.logSession").replace("{sport}", sport)}</Text>
+      </Pressable>
 
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
         <Kicker color={C.lime}>{t("sport.prescribed")}</Kicker>

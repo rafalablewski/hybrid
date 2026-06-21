@@ -1,5 +1,6 @@
 import type { TrainingLog, EnergySystem } from "./types";
 import { MOVEMENTS } from "./movements";
+import { sportPacePerMeters, formatSportDistance } from "../olympic-sports";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -231,6 +232,24 @@ export function pacePerKm(b: { distance?: number; minutes?: number }): string | 
   return `${paceClock((b.minutes * 60) / b.distance)} /km`;
 }
 
+/**
+ * Sport-aware pace for a cardio/sport activity — per km for running/cycling, or
+ * per the sport's split for metre sports (e.g. "1:30 /100m" for swimming, "2:00
+ * /500m" for rowing). Reads the block NAME to pick the unit; falls back to /km
+ * for plain cardio. Distance is always stored in km, so the math is single-unit.
+ */
+export function cardioPace(b: { name?: string; distance?: number; minutes?: number }): string | null {
+  if (!b.distance || b.distance <= 0 || !b.minutes || b.minutes <= 0) return null;
+  return formatSportPace((b.minutes * 60) / b.distance, b.name);
+}
+
+/** Format a seconds-per-km rate as the sport's labelled pace (e.g. "5:42 /km", "1:30 /100m"). */
+export function formatSportPace(secPerKm: number, name?: string): string {
+  const per = name ? sportPacePerMeters(name) : 1000;
+  const label = per === 1000 ? "/km" : `/${per}m`;
+  return `${paceClock(secPerKm * (per / 1000))} ${label}`;
+}
+
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */
 export function paceClock(secPerKm: number): string {
   // Round to whole seconds FIRST, then split — otherwise rounding the seconds
@@ -272,9 +291,11 @@ export function headlineRunMove(blocks: SessionBlock[]): string | undefined {
  */
 export function cardioSummary(b: CardioBlock, opts: { rpe?: boolean } = {}): string {
   const parts: (string | null | undefined)[] = [];
-  if (b.distance) parts.push(`${b.distance} km`);
+  // Distance + pace render in the sport's natural unit (metres for swimming /
+  // rowing, km otherwise) — driven by the block name; storage stays km.
+  if (b.distance) parts.push(formatSportDistance(b.distance, b.name));
   if (b.minutes) parts.push(`${b.minutes} min`);
-  const pace = pacePerKm(b);
+  const pace = cardioPace(b);
   if (pace) parts.push(pace);
   if (opts.rpe && b.rpe) parts.push(`RPE ${b.rpe}`);
   return parts.filter(Boolean).join(" · ") || "cardio";

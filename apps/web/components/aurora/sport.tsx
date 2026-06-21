@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
+import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type SessionBlock } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
@@ -11,7 +11,7 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 
 /** AURORA Sport (web) — sport + level picker driving the shared
  *  prescribeForSport engine; working loads tuned to the athlete's logged lifts. */
-export default function AuroraSport() {
+export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: SessionBlock[]) => void }) {
   const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
@@ -132,6 +132,28 @@ export default function AuroraSport() {
             }}
           />
         </div>
+        {/* Log the sport itself by hand — opens the logger pre-loaded with this
+            sport as an activity (no wearable needed). */}
+        {onLogSession && (
+          <button
+            onClick={() => onLogSession([{ kind: "cardio", name: sport }])}
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: fs.note,
+              marginTop: 16,
+              width: "100%",
+              background: C("blue"),
+              color: C("ink"),
+              border: "none",
+              borderRadius: 999,
+              padding: "13px 18px",
+              cursor: "pointer",
+            }}
+          >
+            + {t("w.train.sport.logSession").replace("{sport}", sport)} →
+          </button>
+        )}
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>

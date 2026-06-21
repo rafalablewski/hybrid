@@ -41,6 +41,18 @@ export interface OlympicSport {
   category: SportCategory;
   /** Which parameters this sport actually tracks (always includes "duration"). */
   metrics: SportMetric[];
+  /**
+   * The unit the sport's distance is naturally entered/shown in. Defaults to
+   * "km" (running, road cycling, …). Pool/ergometer sports use "m" (swimming,
+   * rowing). Storage is ALWAYS km — this only drives display + input, so the
+   * shared pace/PR/recap math never sees a mixed unit.
+   */
+  distanceUnit?: "km" | "m";
+  /**
+   * Pace split, in METRES, for "m" sports (e.g. 100 → "/100m" for swimming,
+   * 500 → "/500m" for rowing). Ignored for "km" sports (always "/km").
+   */
+  pacePer?: number;
 }
 
 // Shorthand metric sets — most sports are timed only; endurance sports add
@@ -61,13 +73,13 @@ const CATALOG: OlympicSport[] = [
   { name: "Track & Field", icon: "🏟️", category: "Athletics", metrics: TIME },
 
   // ---- Aquatics ----
-  { name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED },
+  { name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100 },
   { name: "Open Water Swimming", icon: "🌊", category: "Aquatics", metrics: PACED },
   { name: "Diving", icon: "🤿", category: "Aquatics", metrics: TIME },
   { name: "Artistic Swimming", icon: "🩰", category: "Aquatics", metrics: TIME },
   { name: "Water Polo", icon: "🤽", category: "Aquatics", metrics: TIME },
-  { name: "Rowing", icon: "🚣", category: "Aquatics", metrics: PACED },
-  { name: "Canoe Sprint", icon: "🛶", category: "Aquatics", metrics: PACED },
+  { name: "Rowing", icon: "🚣", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500 },
+  { name: "Canoe Sprint", icon: "🛶", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500 },
   { name: "Canoe Slalom", icon: "🛶", category: "Aquatics", metrics: TIME },
   { name: "Sailing", icon: "⛵", category: "Aquatics", metrics: TIME },
   { name: "Surfing", icon: "🏄", category: "Aquatics", metrics: TIME },
@@ -176,4 +188,40 @@ export function olympicSportsByCategory(): { category: SportCategory; sports: Ol
     category,
     sports: CATALOG.filter((s) => s.category === category),
   }));
+}
+
+// ---- Distance / pace units --------------------------------------------------
+// Storage is ALWAYS kilometres so the shared pace/PR/recap math is single-unit.
+// These helpers convert ONLY for per-effort DISPLAY + input, in the sport's
+// natural unit (metres for pool/ergo sports, km for the rest).
+
+/** The unit a sport's distance is shown/entered in ("km" unless flagged "m"). */
+export function sportDistanceUnit(name: string): "km" | "m" {
+  return olympicSport(name)?.distanceUnit ?? "km";
+}
+
+/** The pace split in METRES — 1000 (per km) for km sports, else the sport's pacePer (default 100). */
+export function sportPacePerMeters(name: string): number {
+  const s = olympicSport(name);
+  if (s?.distanceUnit === "m") return s.pacePer ?? 100;
+  return 1000;
+}
+
+/** Stored km → the value shown in the sport's distance unit (e.g. 0.4 → "400" for swimming). */
+export function displaySportDistance(km: number | undefined | null, name: string): string {
+  if (km == null || !Number.isFinite(km)) return "";
+  return sportDistanceUnit(name) === "m" ? String(Math.round(km * 1000)) : String(km);
+}
+
+/** A typed distance value (in the sport's unit) → stored km, or undefined if blank/NaN. */
+export function parseSportDistance(value: string, name: string): number | undefined {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return undefined;
+  return sportDistanceUnit(name) === "m" ? n / 1000 : n;
+}
+
+/** Stored km → a labelled distance string in the sport's unit (e.g. "400 m" / "8 km"). */
+export function formatSportDistance(km: number | undefined | null, name: string): string {
+  const v = displaySportDistance(km, name);
+  return v ? `${v} ${sportDistanceUnit(name)}` : "";
 }

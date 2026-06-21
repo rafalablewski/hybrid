@@ -22,7 +22,13 @@ import {
   olympicSportsByCategory,
   olympicSport,
   sportTracksDistance,
-  pacePerKm,
+  sportDistanceUnit,
+  displaySportDistance,
+  parseSportDistance,
+  formatSportDistance,
+  formatSportPace,
+  sportPacePerMeters,
+  cardioPace,
   paceClock,
   blockSummary,
   lastStrengthByLift,
@@ -98,7 +104,7 @@ type WSet = { uid: string; reps: string; load: string; rpe: string; done: boolea
 const DEFAULT_REST = 90;
 // Sources that are always a deliberate fresh start (so we can show the get-ready
 // count-in from the first frame). An empty source may instead resume a draft.
-const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan"]);
+const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan", "sport"]);
 // One-time "how logging works" coach tip — shown until the athlete completes
 // their first-ever set or dismisses it.
 const TIP_KEY = "hybrid.workoutTipSeen";
@@ -154,14 +160,17 @@ type Summ = {
   cardioPrs: CardioPrHit[];
 };
 
-/** A localized one-liner for a cardio PR (distance furthest / pace fastest). */
+/** A localized one-liner for a cardio PR (distance furthest / pace fastest).
+ *  Distance + pace render in the sport's natural unit (metres for swimming /
+ *  rowing, km otherwise); storage stays km. */
 export function cardioPrLine(p: CardioPrHit, t: (k: string) => string): string {
   if (p.kind === "distance")
     return p.previous == null
-      ? `${p.move} ${p.value} km (${t("summary.firstTime")})`
-      : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
-  const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
-  return `${p.move} ${paceClock(p.value)} /km${delta}`;
+      ? `${p.move} ${formatSportDistance(p.value, p.move)} (${t("summary.firstTime")})`
+      : `${p.move} ${formatSportDistance(p.value, p.move)} (+${formatSportDistance(p.value - p.previous, p.move)})`;
+  const per = sportPacePerMeters(p.move) / 1000;
+  const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
+  return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
 }
 
 const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; blocks: unknown[] }): LoggedSession => ({
@@ -180,7 +189,7 @@ export default function Workout() {
   const { session } = useSession();
   const guest = !session;
   const prefs = useLoggerPrefs();
-  const { source, templateId } = useLocalSearchParams<{ source?: string; templateId?: string }>();
+  const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
 
   const [title, setTitle] = useState("Workout");
   const [exercises, setExercises] = useState<WExercise[]>([]);
@@ -373,6 +382,12 @@ export default function Workout() {
           setTitle(`${today.planName} · ${today.day}`);
           setExercises(blocksToExercises(planDayToBlocks(today.items)));
         }
+      } else if (source === "sport" && sport) {
+        // Manual sport session from the Sport tab — seed a cardio activity
+        // named after the sport (no wearable needed).
+        await clearDraft();
+        setTitle(sport);
+        setExercises([newExercise(sport, "cardio")]);
       } else if (source === "new") {
         // Deliberate fresh start — drop any interrupted draft.
         await clearDraft();
@@ -394,7 +409,7 @@ export default function Workout() {
       }
       setRestored(true);
     })();
-  }, [source, guest, templateId]);
+  }, [source, guest, templateId, sport]);
 
   // Persist the in-progress draft as it changes (debounced) so it survives a
   // crash / kill. Only after the initial restore, so we never clobber a draft.
@@ -595,12 +610,14 @@ export default function Workout() {
     for (const x of exercises) {
       if (x.kind === "cardio") {
         const minutes = parseFloat(x.minutes);
-        const distance = parseFloat(x.distance);
-        if (!Number.isFinite(minutes) && !Number.isFinite(distance)) continue;
+        // The editor holds distance in the sport's unit (metres for swimming /
+        // rowing); convert to the stored km here so the math stays single-unit.
+        const distance = parseSportDistance(x.distance, x.name);
+        if (!Number.isFinite(minutes) && distance == null) continue;
         blocks.push({
           kind: "cardio",
           name: x.name,
-          ...(Number.isFinite(distance) ? { distance } : {}),
+          ...(distance != null ? { distance } : {}),
           ...(Number.isFinite(minutes) ? { minutes } : {}),
         });
       } else if (x.kind === "conditioning") {
@@ -964,7 +981,9 @@ export default function Workout() {
                 <View style={{ flexDirection: "row", gap: space.sm }}>
                   {!timedSportOnly(x.name) && (
                     <View style={{ flex: 1 }}>
-                      <ColHead>{t("workout.dist")}</ColHead>
+                      {/* Distance is entered in the sport's unit (metres for
+                          swimming/rowing, km otherwise); stored as km. */}
+                      <ColHead>{sportDistanceUnit(x.name) === "m" ? t("workout.distM") : t("workout.dist")}</ColHead>
                       <Cell value={x.distance ?? ""} onChange={(v) => condField(x.uid, "distance", v)} />
                     </View>
                   )}
@@ -974,7 +993,7 @@ export default function Workout() {
                   </View>
                 </View>
                 {(() => {
-                  const pace = pacePerKm({ distance: parseFloat(x.distance), minutes: parseFloat(x.minutes) });
+                  const pace = cardioPace({ name: x.name, distance: parseSportDistance(x.distance, x.name), minutes: parseFloat(x.minutes) });
                   return pace ? (
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue), marginTop: 8 }}>{t("workout.pace")} {pace}</Text>
                   ) : null;
@@ -1431,7 +1450,8 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
           sets: [emptySet()],
           minutes: b.minutes != null ? String(b.minutes) : "",
           rpe: b.rpe != null ? String(b.rpe) : "",
-          distance: b.kind === "cardio" && b.distance != null ? String(b.distance) : "",
+          // Stored km → the sport's display unit (metres for swimming/rowing).
+          distance: b.kind === "cardio" && b.distance != null ? displaySportDistance(b.distance, b.name) : "",
         },
   );
 }

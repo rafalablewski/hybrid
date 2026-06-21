@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, olympicSport, sportTracksDistance } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, olympicSport, sportTracksDistance, sportDistanceUnit, displaySportDistance, parseSportDistance } from "@hybrid/core";
 
 // A cardio block shows duration only (no distance/pace) when its name is a
 // KNOWN Olympic sport that doesn't track distance (tennis, judo, …). Generic or
@@ -128,6 +128,15 @@ export default function WorkoutBlocks({
   const [condDrafts, setCondDrafts] = useState<Record<string, string>>({});
   const condVal = (u: string, key: string, n: number | undefined) =>
     condDrafts[`${u}:${key}`] ?? (n == null ? "" : String(n));
+  // The distance field shows/accepts the sport's unit (metres for swimming/
+  // rowing, km otherwise) while the block stores km — so pace/PR/recap math
+  // stays single-unit. The raw text buffer survives a mid-typed decimal.
+  const distVal = (b: EditableBlock) =>
+    condDrafts[`${b.uid}:distance`] ?? (b.kind === "cardio" ? displaySportDistance(b.distance, b.name) : "");
+  const setDist = (u: string, name: string, val: string) => {
+    setCondDrafts((d) => ({ ...d, [`${u}:distance`]: val }));
+    patch(u, (b) => (b.kind === "cardio" ? ({ ...b, distance: parseSportDistance(val, name) } as EditableBlock) : b));
+  };
 
   const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
     setBlocks((bs) => bs.map((b) => (b.uid === u ? fn(b) : b)));
@@ -439,18 +448,20 @@ export default function WorkoutBlocks({
                 </div>
               ) : (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xs }}>
-                {[t("w.train.blocks.distKm"), t("w.train.blocks.minutes")].map((h) => (
+                {/* Distance reads/writes in the sport's natural unit (metres for
+                    swimming/rowing, km otherwise); storage stays km. */}
+                {[sportDistanceUnit(b.name) === "m" ? t("w.train.blocks.distM") : t("w.train.blocks.distKm"), t("w.train.blocks.minutes")].map((h) => (
                   <Mono key={h} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
                     {h}
                   </Mono>
                 ))}
-                <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
+                <input value={distVal(b)} onChange={(e) => setDist(b.uid, b.name, e.target.value)} placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} style={input} />
                 <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
               </div>
               )}
-              {pacePerKm(b) && (
+              {cardioPace(b) && (
                 <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={BLUE}>
-                  {t("w.train.blocks.pace")} {pacePerKm(b)}
+                  {t("w.train.blocks.pace")} {cardioPace(b)}
                 </Mono>
               )}
             </>

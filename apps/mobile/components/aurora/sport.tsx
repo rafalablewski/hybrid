@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
@@ -16,6 +16,7 @@ const STORE_KEY = "hybrid.sport";
 export default function AuroraSport() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const router = useRouter();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -118,6 +119,15 @@ export default function AuroraSport() {
           </View>
         </View>
       </ACard>
+
+      {/* Log the sport itself by hand — opens the logger seeded with this sport
+          as an activity (no wearable needed). */}
+      <Pressable
+        onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
+        style={{ backgroundColor: C.blue, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>＋ {t("sport.logSession").replace("{sport}", sport)}</Text>
+      </Pressable>
 
       <ACard style={{ marginBottom: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("sport.prescribed")}</Text>

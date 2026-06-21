@@ -19,6 +19,9 @@ import {
   type WeightUnit,
   paceSeries,
   paceClock,
+  formatSportDistance,
+  formatSportPace,
+  sportPacePerMeters,
   cardioPrsForSession,
   type LoggedSession,
   type PrHit,
@@ -223,13 +226,16 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
     ? `${p.lift} ${fmtWeight(p.e1rm, units)} (${t("summary.firstTime")})`
     : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
 
+// Distance + pace render in the sport's natural unit (metres for swimming /
+// rowing, km otherwise) — driven by the move name; storage stays km.
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) => {
   if (p.kind === "distance")
     return p.previous == null
-      ? `${p.move} ${p.value} km (${t("summary.firstTime")})`
-      : `${p.move} ${p.value} km (+${Math.round((p.value - p.previous) * 10) / 10})`;
-  const delta = p.previous != null ? ` (−${paceClock(p.previous - p.value)})` : "";
-  return `${p.move} ${paceClock(p.value)} /km${delta}`;
+      ? `${p.move} ${formatSportDistance(p.value, p.move)} (${t("summary.firstTime")})`
+      : `${p.move} ${formatSportDistance(p.value, p.move)} (+${formatSportDistance(p.value - p.previous, p.move)})`;
+  const per = sportPacePerMeters(p.move) / 1000;
+  const delta = p.previous != null ? ` (−${paceClock((p.previous - p.value) * per)})` : "";
+  return `${p.move} ${formatSportPace(p.value, p.move)}${delta}`;
 };
 
 function Back({ router, t }: { router: ReturnType<typeof useRouter>; t: (k: string) => string }) {

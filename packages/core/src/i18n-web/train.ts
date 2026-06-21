@@ -33,6 +33,7 @@ export const web_train = {
     // sport.tsx
     "w.train.sport.title": "Sport",
     "w.train.sport.intro": "Pick your sport — we prescribe the strength & conditioning that transfers to it.",
+    "w.train.sport.logSession": "Log a {sport} session",
     "w.train.sport.todaysSC": "Today's prescribed S&C",
     "w.train.sport.personalized": "Working loads computed from your logged lifts.",
     "w.train.sport.notPersonalized": "Log these lifts and the loads tune to your own numbers.",
@@ -212,6 +213,7 @@ export const web_train = {
     "w.train.blocks.perSide": "Per side @",
     "w.train.blocks.barOnly": "Bar only",
     "w.train.blocks.distKm": "dist (km)",
+    "w.train.blocks.distM": "dist (m)",
     "w.train.blocks.minutes": "minutes",
     "w.train.blocks.pace": "pace",
     "w.train.blocks.format": "format",
@@ -276,6 +278,7 @@ export const web_train = {
     // sport.tsx
     "w.train.sport.title": "Sport",
     "w.train.sport.intro": "Wybierz swój sport — przepiszemy trening siły i kondycji, który się na niego przekłada.",
+    "w.train.sport.logSession": "Zapisz sesję: {sport}",
     "w.train.sport.todaysSC": "Dzisiejsza zalecana siła i kondycja",
     "w.train.sport.personalized": "Obciążenia robocze obliczone z Twoich zapisanych podejść.",
     "w.train.sport.notPersonalized": "Zapisz te podejścia, a obciążenia dopasują się do Twoich liczb.",
@@ -455,6 +458,7 @@ export const web_train = {
     "w.train.blocks.perSide": "Na stronę @",
     "w.train.blocks.barOnly": "Tylko gryf",
     "w.train.blocks.distKm": "dyst. (km)",
+    "w.train.blocks.distM": "dyst. (m)",
     "w.train.blocks.minutes": "minuty",
     "w.train.blocks.pace": "tempo",
     "w.train.blocks.format": "format",
@@ -519,6 +523,7 @@ export const web_train = {
     // sport.tsx
     "w.train.sport.title": "Sport",
     "w.train.sport.intro": "Wähle deinen Sport — wir verschreiben das Kraft- & Konditionstraining, das sich darauf überträgt.",
+    "w.train.sport.logSession": "{sport}-Einheit erfassen",
     "w.train.sport.todaysSC": "Heutiges empfohlenes Kraft & Kondition",
     "w.train.sport.personalized": "Arbeitslasten aus deinen protokollierten Lifts berechnet.",
     "w.train.sport.notPersonalized": "Protokolliere diese Lifts und die Lasten passen sich deinen Zahlen an.",
@@ -698,6 +703,7 @@ export const web_train = {
     "w.train.blocks.perSide": "Pro Seite @",
     "w.train.blocks.barOnly": "Nur Stange",
     "w.train.blocks.distKm": "Dist. (km)",
+    "w.train.blocks.distM": "Dist. (m)",
     "w.train.blocks.minutes": "Minuten",
     "w.train.blocks.pace": "Tempo",
     "w.train.blocks.format": "Format",
