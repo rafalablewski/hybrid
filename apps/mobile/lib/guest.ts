@@ -63,12 +63,15 @@ export async function flushGuestSessions(): Promise<number> {
   if (flushing) return 0;
   flushing = true;
   try {
-    const synced = await doFlush();
-    // Mark that this account came in via guest mode with real workouts — the
-    // first-run tutorial uses this to step aside and let the just-saved workout
-    // land first (consumed + cleared by the home screen).
-    if (synced > 0) await AsyncStorage.setItem(CAME_FROM_GUEST_KEY, "1").catch(() => {});
-    return synced;
+    // Mark guest origin BEFORE the upload, the moment we see queued workouts —
+    // so the first-run tutorial reliably steps aside even if the upload is slow
+    // or offline. Gated on the queue EXISTING (not on a successful sync), so a
+    // failed/slow upload can neither race the home screen nor suppress it.
+    // Consumed (one-shot) + cleared by the home screen.
+    if ((await listGuestSessions()).length > 0) {
+      await AsyncStorage.setItem(CAME_FROM_GUEST_KEY, "1").catch(() => {});
+    }
+    return await doFlush();
   } finally {
     flushing = false;
   }

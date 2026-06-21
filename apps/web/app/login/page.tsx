@@ -46,7 +46,10 @@ function ClassicLoginPage() {
   // the mobile login: defer the redirect until `session` is populated.
   const [navTo, setNavTo] = useState<string | null>(null);
   useEffect(() => {
-    if (navTo && session) router.push(navTo);
+    if (navTo && session) {
+      setNavTo(null); // fire exactly once — later session re-emits won't re-push
+      router.push(navTo);
+    }
   }, [navTo, session, router]);
 
   // After a password sign-in, ask Supabase whether the session must step up to

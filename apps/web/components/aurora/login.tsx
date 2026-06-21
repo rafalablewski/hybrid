@@ -43,7 +43,10 @@ export default function AuroraLogin() {
   // SessionProvider listener and bounces back to /login on the first attempt).
   const [navTo, setNavTo] = useState<string | null>(null);
   useEffect(() => {
-    if (navTo && session) router.push(navTo);
+    if (navTo && session) {
+      setNavTo(null); // fire exactly once — later session re-emits won't re-push
+      router.push(navTo);
+    }
   }, [navTo, session, router]);
 
   const maybeStepUp = async (supabase: ReturnType<typeof createClient>): Promise<boolean> => {

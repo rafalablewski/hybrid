@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, ON_ACCENT, disp, Mono, txt } from "@/lib/ui";
 
 // ============================================================
@@ -27,6 +27,10 @@ function measure(target?: string): Rect | null {
   if (!el) return null;
   const r = el.getBoundingClientRect();
   if (r.width === 0 && r.height === 0) return null;
+  // Off-screen (e.g. the sidebar translated out as a closed drawer on
+  // mobile-web) still reports a non-zero rect — treat it as absent so the
+  // tooltip falls back to a centred card instead of pointing off-screen.
+  if (r.right <= 0 || r.bottom <= 0 || r.left >= window.innerWidth || r.top >= window.innerHeight) return null;
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
@@ -37,12 +41,14 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
 
   // Re-measure the current target on step change, scroll and resize so the
   // spotlight tracks the live element.
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sync = useCallback(() => {
     const el = step?.target ? document.querySelector<HTMLElement>(`[data-tour="${step.target}"]`) : null;
     el?.scrollIntoView({ block: "center", behavior: "smooth" });
-    // measure after the smooth scroll settles
+    // measure now and again after the smooth scroll settles
     requestAnimationFrame(() => setRect(measure(step?.target)));
-    setTimeout(() => setRect(measure(step?.target)), 320);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => setRect(measure(step?.target)), 320);
   }, [step?.target]);
 
   useEffect(() => {
@@ -52,6 +58,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
     return () => {
       window.removeEventListener("resize", sync);
       window.removeEventListener("scroll", sync, true);
+      if (settleTimer.current) clearTimeout(settleTimer.current); // no setRect after unmount
     };
   }, [sync]);
 

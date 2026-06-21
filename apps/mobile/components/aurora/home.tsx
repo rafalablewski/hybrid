@@ -44,7 +44,7 @@ import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
-import { CAME_FROM_GUEST_KEY, guestSessionCount } from "../../lib/guest";
+import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
@@ -210,9 +210,12 @@ export default function AuroraHome() {
       try {
         if (await AsyncStorage.getItem("hybrid.tourSeen")) return;
         if (!(await AsyncStorage.getItem("hybrid.pendingTour"))) return;
-        const cameFromGuest = await AsyncStorage.getItem(CAME_FROM_GUEST_KEY);
-        if (cameFromGuest || (await guestSessionCount()) > 0) {
-          // Let the saved workout land first; defer the tutorial one open.
+        // Guest-first: a one-shot marker (set at sign-in flush) means a guest
+        // workout is landing — let it show first; defer the tutorial one open
+        // and clear the marker so it shows next time. Keyed off the marker, NOT
+        // a live session count, so a lingering failed upload can't suppress the
+        // tutorial forever.
+        if (await AsyncStorage.getItem(CAME_FROM_GUEST_KEY)) {
           await AsyncStorage.removeItem(CAME_FROM_GUEST_KEY).catch(() => {});
           return;
         }
