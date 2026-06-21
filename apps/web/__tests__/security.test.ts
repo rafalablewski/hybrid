@@ -32,7 +32,10 @@ const read = (f: string) => readFileSync(f, "utf8");
 // silent open door.
 //   - anon-sessions: a guest logs a workout BEFORE creating an account, so an
 //     admin sees real pre-signup usage. Non-PII (opaque deviceId + blocks).
-const PUBLIC_ROUTES = [join("api", "anon-sessions")];
+//   - email/unsubscribe: a marketing-email recipient who may not have an account
+//     opts out via a one-click link; the credential is an HMAC token over their
+//     email (verifyUnsubscribeToken), so no session is possible by design.
+const PUBLIC_ROUTES = [join("api", "anon-sessions"), join("api", "email", "unsubscribe")];
 const isPublic = (f: string) => PUBLIC_ROUTES.some((p) => f.includes(p));
 
 describe("authentication: every API route authenticates", () => {

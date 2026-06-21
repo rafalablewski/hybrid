@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/guard";
 import { verifyUnsubscribeToken, suppress } from "@/lib/email";
 
 // One-click unsubscribe — PUBLIC (no auth; the HMAC token is the credential).
@@ -24,13 +25,21 @@ function page(message: string, ok: boolean): Response {
   return new Response(html, { status: ok ? 200 : 400, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
+// Public route (HMAC token is the credential) — rate-limited so the allow-list
+// can't become a silent open door (a token still can't be brute-forced cheaply).
+const limit = { key: "email-unsubscribe", limit: 30, windowMs: 60_000 };
+
 export async function GET(request: Request) {
+  const limited = rateLimit(request, limit);
+  if (limited) return limited;
   const url = new URL(request.url);
   const { ok, message } = await handle(url.searchParams.get("e") ?? "", url.searchParams.get("t") ?? "");
   return page(message, ok);
 }
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, limit);
+  if (limited) return limited;
   const url = new URL(request.url);
   const { ok, message } = await handle(url.searchParams.get("e") ?? "", url.searchParams.get("t") ?? "");
   return NextResponse.json({ ok, message }, { status: ok ? 200 : 400 });
