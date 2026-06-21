@@ -17,6 +17,7 @@ import {
   type LoggedSession,
   type Achievement,
   type HeatCell,
+  type AuroraIconName,
 } from "@hybrid/core";
 import {
   fetchSessions,
@@ -153,9 +154,14 @@ export default function AuroraProfile() {
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.7 }}>{tier}</Text>
           </View>
         </View>
+        {/* ONE identity line — the Hybrid ID. (The membership card no longer
+            repeats an "Athlete ID"; the email stays as quiet account contact.) */}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>
-          HYBRID ID · {email ?? "guest@hybrid.app"}
+          HYBRID ID · {athleteId(email ?? name ?? "guest")}
         </Text>
+        {!!email && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, opacity: 0.8, marginTop: 4 }}>{email}</Text>
+        )}
         <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.chalk, opacity: 0.85, marginTop: 8 }}>
           {role === "coach" ? "Coach" : "Hybrid Athlete"} · member since {createdYear}
         </Text>
@@ -197,7 +203,7 @@ export default function AuroraProfile() {
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 30 }}>
           <IdMeta C={C} label="Member since" value={`${createdYear}`} />
-          <IdMeta C={C} label="Athlete ID" value={athleteId(email ?? name)} />
+          <IdMeta C={C} label="Sessions" value={`${sessions.length}`} />
           <IdMeta C={C} label="Index" value={`${hpi.score}`} accent />
         </View>
       </View>
@@ -312,11 +318,13 @@ export default function AuroraProfile() {
 
       {/* MODULE TILES — Readiness · Body · Devices · Coach */}
       <SectionHeader C={C} title="Your athlete" action="" />
+      {/* All four tiles always render (empty states for the unset ones) so the
+          grid stays even — equal cards, text in the same place — matching web. */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms }}>
-        <Tile C={C} icon="∿" k="Readiness" big={`${state.readiness.score}`} unit="%" />
-        {bodyKg != null && <Tile C={C} icon="⚖" k="Body" sm={fmtWeight(bodyKg, prefs.units)} />}
-        {device && <Tile C={C} icon="⌚" k="Devices" sm={`${device.label} · ${device.status}`} />}
-        {coachName && <Tile C={C} icon="👥" k="Coach" sm={`${coachName} · active`} />}
+        <Tile C={C} icon="heart" k="Readiness" big={`${state.readiness.score}`} unit="%" />
+        <Tile C={C} icon="user-square" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, prefs.units) : "Log a weigh-in"} onPress={() => router.push("/checkin")} />
+        <Tile C={C} icon="swap" k="Devices" sm={device ? `${device.label} · ${device.status}` : "Connect a device"} onPress={() => router.push("/connections")} />
+        <Tile C={C} icon="user" k="Coach" sm={coachName ? `${coachName} · active` : "Find a coach"} onPress={() => router.push("/coach")} />
       </View>
 
       <View style={{ height: 8 }} />
@@ -396,23 +404,28 @@ function SectionHeader({ C, title, action }: { C: P; title: string; action: stri
   );
 }
 
-function Tile({ C, icon, k, big, unit, sm }: { C: P; icon: string; k: string; big?: string; unit?: string; sm?: string }) {
-  const tileStyle: ViewStyle = { width: "47.6%", flexGrow: 1, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 15, backgroundColor: C.ink2, minHeight: 96, justifyContent: "space-between" };
+function Tile({ C, icon, k, big, unit, sm, onPress }: { C: P; icon: AuroraIconName; k: string; big?: string; unit?: string; sm?: string; onPress?: () => void }) {
+  const tileStyle: ViewStyle = { width: "47.6%", flexGrow: 1, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 15, backgroundColor: C.ink2, minHeight: 104, justifyContent: "space-between" };
   return (
-    <View style={tileStyle}>
+    <Pressable style={tileStyle} onPress={onPress} disabled={!onPress}>
+      {/* glyph from the Aurora kit (icons1/2/3) — never an emoji */}
       <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${C.chalk}0f`, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize: fs.note, color: C.chalk }}>{icon}</Text>
+        <AuroraIcon name={icon} size={17} color={C.chalk} />
       </View>
+      {/* fixed-height value row keeps the label + value on the SAME baseline in
+          every tile, so the big number and the text tiles line up exactly. */}
       <View>
         <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{k}</Text>
-        {big != null ? (
-          <Text style={{ fontFamily: F.black, fontSize: 23, color: C.chalk, letterSpacing: -0.4, marginTop: 2 }}>
-            {big}{unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}>{unit}</Text> : null}
-          </Text>
-        ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.chalk, marginTop: 2 }}>{sm}</Text>
-        )}
+        <View style={{ minHeight: 26, marginTop: 3, justifyContent: "flex-end" }}>
+          {big != null ? (
+            <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, letterSpacing: -0.4 }}>
+              {big}{unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}>{unit}</Text> : null}
+            </Text>
+          ) : (
+            <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.chalk }}>{sm}</Text>
+          )}
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
