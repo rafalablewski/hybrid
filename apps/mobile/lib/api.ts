@@ -387,6 +387,52 @@ export async function enrollPlan(goal: string, planId?: string): Promise<boolean
   }
 }
 
+// ---- onboarding (admin-editable questionnaire, shared with web) ----
+
+/** Whether the signed-in user has finished/skipped onboarding (server source of
+ *  truth). null when not onboarded or the call fails. Drives the entry gate. */
+export async function fetchOnboardedAt(): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/me`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { onboardedAt?: string | null };
+    return d.onboardedAt ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The admin-editable onboarding question set the client renders. Falls back to
+ *  null (the caller then uses the @hybrid/core built-in defaults). */
+export async function fetchOnboardingQuestions(): Promise<unknown[] | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/onboarding/questions`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { questions?: unknown[] };
+    return d.questions ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Finish onboarding: save the answer map + mark onboarded, enrolling the chosen
+ *  plan in the same call. Mirrors the web POST /api/onboarding. */
+export async function submitOnboarding(
+  answers: Record<string, unknown>,
+  plan?: { goalLabel: string; planId: string } | null,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/onboarding`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ answers, ...(plan ? { goal: plan.goalLabel, planId: plan.planId } : {}) }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 type MacroRow = { id: string; goal: string; planId?: string | null; blocks: MacroBlock[]; startedAt: string };
 
 // The athlete's active (latest) enrolled macrocycle reconstructed into the

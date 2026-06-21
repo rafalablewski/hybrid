@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
 import { AuroraIcon } from "./icons";
-
-// Mirrors app/login.tsx: a brand-new account owes onboarding on next entry.
-const PENDING_ONBOARDING = "hybrid.pendingOnboarding";
 
 /** AURORA login/register — the rounded auth form from the Figma kit, on the
  *  same Supabase auth flow as the classic login screen. */
@@ -51,27 +47,22 @@ export default function AuroraLogin() {
         options: { data: { name: name.trim() || email.split("@")[0], role: "client" } },
       });
       if (error) return fail(error.message);
-      await AsyncStorage.setItem(PENDING_ONBOARDING, "1").catch(() => {});
       if (!data.session) {
         setError("Account created. Confirm via email, then sign in.");
         setMode("signin");
         setBusy(false);
         return;
       }
-      await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      setNavTo("/onboarding");
+      // Route through "/" — the entry gate sends a not-yet-onboarded client into
+      // the questionnaire (server-side `onboardedAt`), no fragile flag needed.
+      setNavTo("/");
       return;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return fail(error.message);
-    const pending = await AsyncStorage.getItem(PENDING_ONBOARDING).catch(() => null);
-    if (pending) {
-      await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      setNavTo("/onboarding");
-      return;
-    }
-    setNavTo("/(tabs)");
+    // The entry gate decides onboarding vs the app from server-side state.
+    setNavTo("/");
   };
 
   const isSignup = mode === "signup";

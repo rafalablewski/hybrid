@@ -20,6 +20,9 @@ export type Session = {
   role: Role;
   entitlement: Entitlement;
   provider: "apple" | "google" | "email" | "demo";
+  /** When the user finished (or skipped) onboarding; null until they have. The
+   *  clients gate the questionnaire on this. Only meaningful in live auth. */
+  onboardedAt?: string | null;
 };
 
 type SessionContext = {
@@ -73,6 +76,7 @@ async function resolveSession(user: User): Promise<Session> {
         email?: string;
         role?: Role;
         entitlement?: Entitlement;
+        onboardedAt?: string | null;
       };
       return {
         name: me.name
@@ -82,6 +86,7 @@ async function resolveSession(user: User): Promise<Session> {
         role: me.role ? ((me.role as string).toLowerCase() as Role) : fallback.role,
         entitlement: me.entitlement ?? fallback.entitlement,
         provider: fallback.provider,
+        onboardedAt: me.onboardedAt ?? null,
       };
     }
   } catch {
