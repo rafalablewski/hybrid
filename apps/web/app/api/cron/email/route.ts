@@ -13,8 +13,9 @@ const MAX_CAMPAIGNS = 3;
 const MAX_STEPS = 200;
 const MAX_NEW_INACTIVE = 200;
 
-// Allow the worker a long window (Vercel respects this on supporting plans).
-export const maxDuration = 300;
+// Give the worker headroom (60s is the safe ceiling across Vercel plans, incl.
+// Hobby; per-run work is bounded by the MAX_* caps above).
+export const maxDuration = 60;
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;

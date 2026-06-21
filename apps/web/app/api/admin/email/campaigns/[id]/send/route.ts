@@ -4,8 +4,9 @@ import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { sendCampaign, emailConfigured, audienceSize } from "@/lib/email";
 
-// Allow a long-running send (Vercel respects this on plans that support it).
-export const maxDuration = 300;
+// Give the inline send headroom (60s is the safe ceiling across Vercel plans,
+// incl. Hobby; larger audiences are queued to the cron worker below anyway).
+export const maxDuration = 60;
 
 // A campaign whose audience is larger than this isn't sent inline (it would risk
 // the serverless request timeout); it's handed to the background cron worker by
