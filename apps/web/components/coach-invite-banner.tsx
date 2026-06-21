@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, LIME, ASH, CHALK, VIOLET, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LIME, ASH, CHALK, BLUE, VIOLET, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
-type Invite = { id: string; status: string; coach?: { name: string | null; email: string } };
+type Invite = { id: string; status: string; coach?: { name: string | null; email: string; coachVerified?: boolean } };
 
 const coachName = (c?: Invite["coach"]) => c?.name || c?.email?.split("@")[0] || "A coach";
 
@@ -52,7 +52,9 @@ export default function CoachInviteBanner() {
             <div>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Coach invite</Mono>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 4 }}>
-                {coachName(inv.coach)} wants to coach you
+                {coachName(inv.coach)}
+                {inv.coach?.coachVerified && <span title="Verified coach" style={{ color: txt(BLUE), marginLeft: 5 }}>✓</span>}
+                {" "}wants to coach you
               </div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>
                 Accepting shares your training with them — you can end it anytime.

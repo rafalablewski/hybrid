@@ -33,12 +33,16 @@ const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
 // coach's one-click week generator.
 const GEN_GOALS = ["Hybrid", "Powerlifting", "Bodybuilding", "Running", "Cycling", "Hyrox", "Triathlon"];
 
-type Person = { id: string; name: string | null; email: string };
+type Person = { id: string; name: string | null; email: string; coachVerified?: boolean };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
 type CoachLink = { id: string; status: Status; client?: Person; coach?: Person };
 type Links = { asCoach: CoachLink[]; asClient: CoachLink[] };
 
 const personName = (p: Person | undefined, t: (k: string) => string) => p?.name || p?.email?.split("@")[0] || t("w.teams.coach.athleteFallback");
+
+// Verified-coach tick — shown next to a coach's name once an admin has vetted them.
+const VerifiedTick = ({ p }: { p?: Person }) =>
+  p?.coachVerified ? <span title="Verified coach" style={{ color: C("blue"), marginLeft: 5 }}>✓</span> : null;
 
 /** AURORA Coach (web) — same /api/coach/* flows as the classic CoachScreen, in
  *  the rounded Aurora style. */
@@ -107,7 +111,7 @@ export default function AuroraCoach() {
             <div key={l.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach, t)}</div>
+                  <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach, t)}<VerifiedTick p={l.coach} /></div>
                   <Mono s={{ fontSize: fs.caption }}>{t("w.teams.coach.wantsToCoach")}</Mono>
                 </div>
                 <div style={{ display: "flex", gap: space.sm }}>
@@ -128,7 +132,7 @@ export default function AuroraCoach() {
           coaches.map((l) => (
             <div key={l.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach, t)}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach, t)}<VerifiedTick p={l.coach} /></div>
                 <Btn label={t("w.teams.coach.end")} color={C("ash")} onClick={() => act(l.id, "end")} />
               </div>
             </div>

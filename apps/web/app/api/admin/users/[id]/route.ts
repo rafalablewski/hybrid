@@ -4,6 +4,8 @@ import { evaluateRoleChange, isValidLanguage, normalizeRole, NAV_ITEMS } from "@
 import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { setEntitlement } from "@/lib/billing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Permanently delete a user account and ALL of its data. Admin-only, irreversible.
 // An admin can't delete themselves, and can't delete the last remaining admin
@@ -72,6 +74,29 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   await wipe("coachLinks", () =>
     prisma.coachLink.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
   );
+  // Coach-authored artefacts + nutrition the user owns or is the subject of.
+  await wipe("coachGroups", () => prisma.coachGroup.deleteMany({ where: { coachId: id } }));
+  await wipe("coachPrograms", () => prisma.coachProgram.deleteMany({ where: { coachId: id } }));
+  await wipe("coachInvites", () =>
+    prisma.coachInvite.deleteMany({ where: { OR: [{ coachId: id }, { claimedById: id }] } }),
+  );
+  await wipe("coachDiets", () =>
+    prisma.coachDiet.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
+  );
+  // Pending requests / applications tied to the account.
+  await wipe("accessRequests", () => prisma.accessRequest.deleteMany({ where: { userId: id } }));
+  await wipe("coachApplication", () => prisma.coachApplication.deleteMany({ where: { userId: id } }));
+  // Email footprint — enrollments, the deliverability ledger, and their email's
+  // suppression entry (a full wipe of the person's records).
+  if (target.email) {
+    await wipe("emailEnrollments", () => prisma.emailEnrollment.deleteMany({ where: { userId: id } }));
+    await wipe("emailMessages", () =>
+      prisma.emailMessage.deleteMany({ where: { OR: [{ userId: id }, { email: target.email.toLowerCase() }] } }),
+    );
+    await wipe("emailSuppression", () =>
+      prisma.emailSuppression.deleteMany({ where: { email: target.email.toLowerCase() } }),
+    );
+  }
   await wipe("featureGrant", () => prisma.featureGrant.deleteMany({ where: { userId: id } }));
 
   // The User row is the PRIMARY action — never swallow its failure (that would
@@ -93,17 +118,35 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     );
   }
 
+  // Finally, remove the Supabase auth user so the login can't be reused and no
+  // orphaned auth identity lingers. Best-effort (degrades to a no-op without the
+  // service-role key); the DB wipe is the authoritative part.
+  let authDeleted: "deleted" | "skipped" | "failed" = "skipped";
+  if (target.authId) {
+    const admin = createAdminClient();
+    if (admin) {
+      try {
+        const { error } = await admin.auth.admin.deleteUser(target.authId);
+        authDeleted = error ? "failed" : "deleted";
+        if (error) console.error("[admin user delete] auth user delete failed:", error);
+      } catch (err) {
+        authDeleted = "failed";
+        console.error("[admin user delete] auth user delete threw:", err);
+      }
+    }
+  }
+
   await audit({
     actor: gate.admin,
     action: "user.delete",
     targetType: "user",
     targetId: id,
     summary: `Deleted ${target.email}`,
-    metadata: { email: target.email, role: target.role, skipped },
+    metadata: { email: target.email, role: target.role, skipped, authDeleted },
     req: request,
   });
 
-  return NextResponse.json({ ok: true, skipped });
+  return NextResponse.json({ ok: true, skipped, authDeleted });
 }
 
 // One user's management record. Counts + memberships + recent-activity summary —
@@ -121,6 +164,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       name: true,
       role: true,
       language: true,
+      entitlement: true,
+      coachVerified: true,
+      subscriptionStatus: true,
+      stripeCustomerId: true,
       createdAt: true,
       authId: true,
       memberships: { select: { role: true, org: { select: { id: true, name: true } } } },
@@ -172,6 +219,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     name: user.name,
     role: user.role,
     language: user.language,
+    entitlement: user.entitlement,
+    coachVerified: user.coachVerified,
+    subscriptionStatus: user.subscriptionStatus,
+    hasStripe: Boolean(user.stripeCustomerId),
     featureGrants,
     createdAt: user.createdAt,
     linkedAuth: Boolean(user.authId),
@@ -200,14 +251,36 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
 
-  const parsed = await readJsonLimited<{ role?: string; language?: string; name?: string | null; featureGrants?: unknown }>(request, 8 * 1024);
+  const parsed = await readJsonLimited<{
+    role?: string;
+    language?: string;
+    name?: string | null;
+    featureGrants?: unknown;
+    entitlement?: string;
+    coachVerified?: boolean;
+  }>(request, 8 * 1024);
   if (parsed.error) return parsed.error;
   const body = parsed.data;
 
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const data: { role?: Role; language?: string; name?: string | null } = {};
+  const data: { role?: Role; language?: string; name?: string | null; coachVerified?: boolean } = {};
+
+  // Plan (entitlement) — free | paid. Applied via setEntitlement AFTER the main
+  // transaction so it also mirrors into the Supabase auth metadata (both clients
+  // read the plan from their session). Handled separately from `data`.
+  let nextEntitlement: "free" | "paid" | undefined;
+  if (body.entitlement !== undefined) {
+    const e = String(body.entitlement).toLowerCase();
+    if (e !== "free" && e !== "paid")
+      return NextResponse.json({ error: "entitlement must be 'free' or 'paid'" }, { status: 400 });
+    nextEntitlement = e;
+  }
+
+  // Verified-coach tick. Only meaningful for coaches, but we let an admin set it
+  // independently (e.g. pre-verify before promotion); the UI surfaces it on COACHes.
+  if (body.coachVerified !== undefined) data.coachVerified = Boolean(body.coachVerified);
 
   // Per-user feature grants — validated here, persisted to the (soft-guarded)
   // FeatureGrant table below, separately from the User row.
@@ -245,7 +318,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (body.name !== undefined) data.name = body.name ? String(body.name).slice(0, 120) : null;
 
-  if (Object.keys(data).length === 0 && grants === undefined)
+  if (Object.keys(data).length === 0 && grants === undefined && nextEntitlement === undefined)
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
   // Apply the role/name/language change and the grant change together, so a
@@ -266,6 +339,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       : NextResponse.json({ error: "Update failed." }, { status: 500 });
   }
 
+  // Plan change goes through setEntitlement (DB + auth metadata mirror). Done
+  // after the transaction so a metadata-mirror hiccup never rolls back the row.
+  if (nextEntitlement !== undefined && nextEntitlement !== target.entitlement) {
+    // setEntitlement mirrors to auth metadata AND fires the `upgraded` lifecycle
+    // automation when moving to paid.
+    await setEntitlement({ userId: id, authId: target.authId, entitlement: nextEntitlement });
+  }
+
   await audit({
     actor: gate.admin,
     action: "user.update",
@@ -273,8 +354,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     targetId: id,
     summary: `Updated ${target.email}`,
     metadata: {
-      before: { role: target.role, language: target.language, name: target.name, ...(grants !== undefined ? { featureGrants: beforeGrants } : {}) },
-      after: { role: updated.role, language: updated.language, name: updated.name, ...(grants !== undefined ? { featureGrants: grants } : {}) },
+      before: { role: target.role, language: target.language, name: target.name, entitlement: target.entitlement, coachVerified: target.coachVerified, ...(grants !== undefined ? { featureGrants: beforeGrants } : {}) },
+      after: { role: updated.role, language: updated.language, name: updated.name, entitlement: nextEntitlement ?? target.entitlement, coachVerified: updated.coachVerified, ...(grants !== undefined ? { featureGrants: grants } : {}) },
     },
     req: request,
   });
@@ -285,6 +366,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     name: updated.name,
     role: updated.role,
     language: updated.language,
+    entitlement: nextEntitlement ?? updated.entitlement,
+    coachVerified: updated.coachVerified,
     ...(grants !== undefined ? { featureGrants: grants } : {}),
   });
 }
