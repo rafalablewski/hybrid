@@ -26,6 +26,7 @@ import {
 } from "@hybrid/core";
 import ReconciledWeek from "./reconciled-week";
 import AskCoach from "./ai-coach";
+import QuickSportLog from "./quick-sport";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { useIsMobile } from "@/lib/use-media-query";
 import { readIntake, type Intake } from "@/lib/intake";
@@ -59,6 +60,7 @@ export default function Today({
   planId,
   onStart,
   onNavigate,
+  onSaved,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -68,6 +70,8 @@ export default function Today({
   onStart: (planBlocks?: SessionBlock[]) => void;
   /** In-shell navigation (keeps the sidebar) — used by the free plan nudges. */
   onNavigate?: (screen: string) => void;
+  /** Refresh sessions after the quick sport-log widget saves one. */
+  onSaved?: () => void;
 }) {
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Performance State). Switchable from Settings.
@@ -240,6 +244,11 @@ export default function Today({
             <button onClick={() => onNavigate?.("upgrade")} style={{ ...cta(VIOLET), marginTop: 12 }}>✦ Unlock Full →</button>
           )}
         </Card>
+      </div>
+
+      {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
+      <div style={{ gridColumn: "span 2" }}>
+        <QuickSportLog onSaved={onSaved} />
       </div>
 
       {/* BROWSE PLANS — casual users can now follow a pre-built plan for free;

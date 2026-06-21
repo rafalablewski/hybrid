@@ -45,6 +45,7 @@ import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
+import QuickSportLog from "../quick-sport";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -416,6 +417,9 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.lime) }}>→</Text>
           </Pressable>
         )}
+
+        {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
+        <QuickSportLog onSaved={load} />
 
         {/* SEASON — phase timeline (athlete, or coached read-only) */}
         {(isAthlete || coached) && macro && phase && (

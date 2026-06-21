@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
-import { MOVEMENTS, inferBlockKind } from "@hybrid/core";
+import { MOVEMENTS, inferBlockKind, olympicSportsByCategory, sportDistanceUnit } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../../lib/use-routine-builder";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
@@ -73,6 +73,23 @@ export default function AuroraBuilder() {
               );
             })}
           </View>
+          {/* Sports — add a sport session as a cardio activity. */}
+          {olympicSportsByCategory()
+            .map((g) => ({ category: g.category, sports: g.sports.filter((s) => !q || s.name.toLowerCase().includes(q)) }))
+            .filter((g) => g.sports.length > 0)
+            .map((g) => (
+              <View key={g.category} style={{ marginTop: 10 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{g.category}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+                  {g.sports.map((s) => (
+                    <Pressable key={s.name} onPress={() => add(s.name, "cardio")} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${C.blue}55`, backgroundColor: `${C.blue}1f` }}>
+                      <Text style={{ fontSize: fs.body }}>{s.icon}</Text>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.blue) }}>{s.name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ))}
           {q.length > 0 && !exact && (
             <Pressable onPress={() => add(query)} style={{ marginTop: 14, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{query.trim()}”</Text>
@@ -163,8 +180,8 @@ function ItemCard({
       ) : x.kind === "cardio" ? (
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>KM</Text>
-            <TextInput value={x.distance} onChangeText={(v) => onPatch({ distance: v })} keyboardType="numeric" placeholder="5" placeholderTextColor={C.ash} style={fieldStyle} />
+            <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>{sportDistanceUnit(x.name) === "m" ? "M" : "KM"}</Text>
+            <TextInput value={x.distance} onChangeText={(v) => onPatch({ distance: v })} keyboardType="numeric" placeholder={sportDistanceUnit(x.name) === "m" ? "400" : "5"} placeholderTextColor={C.ash} style={fieldStyle} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>MIN</Text>

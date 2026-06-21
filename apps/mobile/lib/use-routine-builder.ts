@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { inferBlockKind, type SessionBlock } from "@hybrid/core";
+import { inferBlockKind, displaySportDistance, parseSportDistance, type SessionBlock } from "@hybrid/core";
 import { fetchRoutines, createRoutine, deleteRoutine, type Routine } from "./api";
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -50,7 +50,9 @@ const itemsFromBlocks = (blocks: SessionBlock[]): BuilderItem[] =>
           reps: "8",
           load: "",
           minutes: b.minutes != null ? String(b.minutes) : "",
-          distance: b.kind === "cardio" && b.distance != null ? String(b.distance) : "",
+          // Distance shows in the sport's natural unit (metres for swimming/
+          // rowing, km otherwise); storage stays km.
+          distance: b.kind === "cardio" && b.distance != null ? displaySportDistance(b.distance, b.name) : "",
         },
   );
 
@@ -62,12 +64,13 @@ const buildBlocks = (items: BuilderItem[]): SessionBlock[] => {
       const set = { load: x.load.trim(), reps: x.reps.trim() || "8" };
       blocks.push({ kind: "strength", name: x.name, sets: Array.from({ length: n }, () => ({ ...set })) });
     } else if (x.kind === "cardio") {
-      const distance = parseFloat(x.distance);
+      // The editor holds distance in the sport's unit; store as km.
+      const distance = parseSportDistance(x.distance, x.name);
       const minutes = parseFloat(x.minutes);
       blocks.push({
         kind: "cardio",
         name: x.name,
-        ...(Number.isFinite(distance) ? { distance } : {}),
+        ...(distance != null ? { distance } : {}),
         ...(Number.isFinite(minutes) ? { minutes } : {}),
       });
     } else {

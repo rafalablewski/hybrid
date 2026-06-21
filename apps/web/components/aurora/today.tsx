@@ -31,6 +31,7 @@ import { useLang } from "@/lib/i18n";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { readIntake, type Intake } from "@/lib/intake";
 import ReconciledWeek from "../reconciled-week";
+import QuickSportLog from "../quick-sport";
 import { AuroraIcon } from "./icons";
 import AuroraAskCoach from "./ai-coach";
 
@@ -73,6 +74,7 @@ export default function AuroraToday({
   planId,
   onStart,
   onNavigate,
+  onSaved,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -82,6 +84,8 @@ export default function AuroraToday({
   onStart: (planBlocks?: SessionBlock[]) => void;
   /** In-shell navigation (keeps the sidebar); falls back to a route push. */
   onNavigate?: (screen: string) => void;
+  /** Refresh sessions after the quick sport-log widget saves one. */
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const { t } = useLang();
@@ -241,6 +245,11 @@ export default function AuroraToday({
         {[0, 1].map((i) => (
           <span key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, background: activeCard === i ? C("lime") : C("line"), transition: "width .2s" }} />
         ))}
+      </div>
+
+      {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
+      <div style={{ marginTop: 18 }}>
+        <QuickSportLog onSaved={onSaved} />
       </div>
 
       {/* BROWSE PLANS — free users can follow a pre-built plan; nudge to the library */}

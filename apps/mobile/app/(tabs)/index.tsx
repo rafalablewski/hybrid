@@ -44,6 +44,7 @@ import { fs, space, Screen, Card, Kicker, Mono, H1, Chip, Button, C, F } from ".
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import AuroraHome from "../../components/aurora/home";
+import QuickSportLog from "../../components/quick-sport";
 
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
 // semantic.ts) — meaning lives in core, not duplicated thresholds per screen.
@@ -276,6 +277,9 @@ function ClassicHome() {
           {draft ? `${draft.exercises.length} ${t("workout.exercises")} · ${t("train.inProgress")}` : t("home.startWorkoutSub")}
         </Text>
       </Pressable>
+
+      {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
+      <QuickSportLog onSaved={load} />
 
       {/* personalize — athletes program toward a plan; casual users skip it */}
       {isAthlete && (
