@@ -119,7 +119,8 @@ export default function AuroraLogin() {
         setBusy(false);
         return;
       }
-      try { localStorage.setItem("hybrid.pendingOnboarding", "1"); } catch { /* ignore */ }
+      // The app-shell routes a not-yet-onboarded client into the questionnaire
+      // (gated on server-side `onboardedAt`) — no client-side flag needed.
       if (data.session) {
         setNavTo("/app");
         return;

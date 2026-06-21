@@ -14,6 +14,7 @@ import AdminUsers from "./users";
 import AdminDirectory from "./directory";
 import AdminModeration from "./moderation";
 import AdminAnnouncements from "./announcements";
+import AdminOnboarding from "./onboarding";
 import AdminExercises from "./exercises";
 import AdminMedia from "./media";
 import AdminTranslations from "./translations";
@@ -31,7 +32,7 @@ import AdminEmail from "./email";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "announcements" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "guidance";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
@@ -43,6 +44,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: Aurora
   { id: "hq", label: "Agent HQ", icon: "◳", auroraIcon: "navigation", group: "AI" },
   { id: "agents", label: "AI agents", icon: "🤖", auroraIcon: "user-square", group: "AI" },
   { id: "announcements", label: "Announcements", icon: "📣", auroraIcon: "bell", group: "Content" },
+  { id: "onboarding", label: "Onboarding", icon: "🧭", auroraIcon: "navigation", group: "Content" },
   { id: "exercises", label: "Exercise library", icon: "🏋", auroraIcon: "list-check", group: "Content" },
   { id: "media", label: "Media library", icon: "🖼", auroraIcon: "copy", group: "Content" },
   { id: "translations", label: "Localization", icon: "🌐", auroraIcon: "share", group: "Content" },
@@ -317,6 +319,7 @@ export default function AdminPanel() {
         {section === "hq" && <AgentHQ />}
         {section === "agents" && <AdminAgents />}
         {section === "announcements" && <AdminAnnouncements />}
+        {section === "onboarding" && <AdminOnboarding />}
         {section === "exercises" && <AdminExercises />}
         {section === "media" && <AdminMedia />}
         {section === "translations" && <AdminTranslations />}

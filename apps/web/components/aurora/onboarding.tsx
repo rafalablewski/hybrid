@@ -1,126 +1,82 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { fs, space,
-  recommendPlan,
   ONBOARDING_GOAL_GROUPS,
-  type OnboardingGoal,
-  type Experience,
-  type Equipment,
+  type OnboardingQuestion,
 } from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
-import { useLang } from "@/lib/i18n";
+import { useOnboarding, submitOnboarding, type AnswerValue } from "@/lib/use-onboarding";
 import { AuroraIcon } from "./icons";
 
-const buildExp = (t: (k: string) => string): { id: Experience; label: string }[] => [
-  { id: "beginner", label: t("w.account.onboarding.exp-beginner") },
-  { id: "intermediate", label: t("w.account.onboarding.exp-intermediate") },
-  { id: "advanced", label: t("w.account.onboarding.exp-advanced") },
-];
-const buildEquip = (t: (k: string) => string): { id: Equipment; label: string }[] => [
-  { id: "full", label: t("w.account.onboarding.equip-full") },
-  { id: "home", label: t("w.account.onboarding.equip-home") },
-  { id: "minimal", label: t("w.account.onboarding.equip-minimal") },
-];
-const DAYS = [2, 3, 4, 5, 6];
-const STEPS = ["persona", "goal", "experience", "days", "equipment", "plan"] as const;
-type Step = (typeof STEPS)[number];
-
-/** AURORA onboarding (web) — the stepped wizard parity of the mobile flow,
- *  reusing recommendPlan + the same /api/macrocycles enroll. */
+/** AURORA onboarding (web) — the stepped wizard parity of the mobile flow, now
+ *  driven by the admin-editable question set: one question per step, then the
+ *  recommended plan. Engine answers feed recommendFromAnswers; the rest are saved. */
 export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => void }) {
-  const { t } = useLang();
-  const persona = useClientPersonaChoice();
-  const EXP = buildExp(t);
-  const EQUIP = buildEquip(t);
+  const { questions, answers, setAnswer, plan, loading } = useOnboarding();
+  const personaChoice = useClientPersonaChoice();
   const [idx, setIdx] = useState(0);
-  const [goal, setGoal] = useState<OnboardingGoal | null>(null);
-  const [experience, setExperience] = useState<Experience>("beginner");
-  const [days, setDays] = useState(3);
-  const [equipment, setEquipment] = useState<Equipment>("full");
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
   const C = (v: string) => `var(--color-${v})`;
 
-  const step: Step = STEPS[idx]!;
-  const plan = useMemo(() => (goal ? recommendPlan({ goal, experience, daysPerWeek: days, equipment }) : null), [goal, experience, days, equipment]);
-
-  const persistIntake = () => {
-    try {
-      localStorage.setItem("hybrid.daysPerWeek", String(days));
-      localStorage.setItem("hybrid.experience", experience);
-      localStorage.setItem("hybrid.equipment", equipment);
-    } catch { /* ignore */ }
-  };
+  // The wizard steps = each question, then a final "plan" review step.
+  const total = questions.length + 1;
+  const onPlanStep = idx >= questions.length;
+  const q = onPlanStep ? null : questions[idx]!;
 
   const finish = async () => {
     setEnrolling(true);
     setError("");
     try {
-      if (plan) {
-        const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: plan.goalLabel, planId: plan.planId }) });
-        if (res.status === 401) { setError(t("w.account.onboarding.signin-to-save")); setEnrolling(false); return; }
-        if (!res.ok) { setError(`${t("w.account.onboarding.enroll-failed")} (HTTP ${res.status}).`); setEnrolling(false); return; }
-      }
-      persistIntake();
+      const { ok, status } = await submitOnboarding(questions, answers, plan);
+      if (status === 401) { setError("Sign in to save your plan (demo mode doesn't persist)."); setEnrolling(false); return; }
+      if (!ok) { setError(`Couldn't enroll (HTTP ${status}).`); setEnrolling(false); return; }
       onEnrolled();
     } catch {
-      setError(t("w.account.onboarding.network-error"));
+      setError("Network error — try again.");
       setEnrolling(false);
     }
   };
 
-  const next = () => (idx < STEPS.length - 1 ? setIdx((i) => i + 1) : finish());
+  const next = () => (idx < total - 1 ? setIdx((i) => i + 1) : finish());
   const back = () => idx > 0 && setIdx((i) => i - 1);
-  const canNext = step === "persona" ? !!persona : step === "goal" ? !!goal : true;
 
-  const pill = (active: boolean) => ({ borderRadius: 999, padding: "10px 18px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? C("lime") : "transparent", color: active ? C("ink") : C("ash") });
-  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? "rgba(196,240,53,.08)" : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
+  // Can advance? Required questions must be answered (persona/goal too).
+  const answered = (qq: OnboardingQuestion): boolean => {
+    if (qq.kind === "persona") return !!(answers[qq.key] ?? personaChoice);
+    const v = answers[qq.key];
+    if (!qq.required) return true;
+    return v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0);
+  };
+  const canNext = onPlanStep ? true : answered(q!);
+
+  if (loading && questions.length === 0) {
+    return <div style={{ maxWidth: 520, margin: "0 auto", color: C("ash"), fontFamily: "var(--font-mono)" }}>Loading…</div>;
+  }
 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", fontFamily: "var(--font-display)" }}>
       <div style={{ display: "flex", gap: 7 }}>
-        {STEPS.map((s, i) => <span key={s} style={{ flex: 1, height: 5, borderRadius: 3, background: i <= idx ? C("lime") : C("line") }} />)}
+        {Array.from({ length: total }).map((_, i) => (
+          <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i <= idx ? C("lime") : C("line") }} />
+        ))}
       </div>
 
       <div style={{ marginTop: 22 }}>
-        {step === "persona" && (
-          <Step title={t("w.account.onboarding.persona-title")} sub={t("w.account.onboarding.persona-sub")}>
-            {[{ id: "casual" as const, t: t("w.account.onboarding.persona-casual-t"), s: t("w.account.onboarding.persona-casual-s") }, { id: "athlete" as const, t: t("w.account.onboarding.persona-athlete-t"), s: t("w.account.onboarding.persona-athlete-s") }].map((o) => (
-              <button key={o.id} onClick={() => setClientPersona(o.id)} style={choice(persona === o.id)}>
-                {persona === o.id && <AuroraIcon name="check" size={22} color={C("lime")} />}
-                <span><b style={{ fontSize: fs.note, color: persona === o.id ? C("lime") : C("chalk") }}>{o.t}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.s}</span></span>
-              </button>
-            ))}
+        {q ? (
+          <Step title={q.title} sub={q.subtitle}>
+            <QuestionBody q={q} answers={answers} setAnswer={setAnswer} personaChoice={personaChoice} C={C} />
           </Step>
-        )}
-        {step === "goal" && (
-          <Step title={t("w.account.onboarding.goal-title")} sub={t("w.account.onboarding.goal-sub")}>
-            {ONBOARDING_GOAL_GROUPS.map((g) => (
-              <div key={g.category}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
-                {g.goals.map((gl) => (
-                  <button key={gl.id} onClick={() => setGoal(gl.id)} style={{ ...choice(goal === gl.id), marginBottom: 8 }}>
-                    {goal === gl.id && <AuroraIcon name="check" size={20} color={C("lime")} />}
-                    <span><b style={{ fontSize: fs.bodyLg, color: goal === gl.id ? C("lime") : C("chalk") }}>{gl.label}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{gl.blurb}</span></span>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </Step>
-        )}
-        {step === "experience" && <Step title={t("w.account.onboarding.exp-title")} sub={t("w.account.onboarding.exp-sub")}><Seg options={EXP} value={experience} onPick={setExperience} /></Step>}
-        {step === "days" && <Step title={t("w.account.onboarding.days-title")} sub={t("w.account.onboarding.days-sub")}><Seg options={DAYS.map((d) => ({ id: String(d), label: `${d}×` }))} value={String(days)} onPick={(v) => setDays(Number(v))} /></Step>}
-        {step === "equipment" && <Step title={t("w.account.onboarding.equip-title")} sub={t("w.account.onboarding.equip-sub")}><Seg options={EQUIP} value={equipment} onPick={setEquipment} /></Step>}
-        {step === "plan" && (
-          <Step title={t("w.account.onboarding.plan-title")} sub={plan ? "" : t("w.account.onboarding.plan-sub")}>
+        ) : (
+          <Step title="Your plan" sub={plan ? "" : "Pick a goal to see a recommendation."}>
             {plan ? (
               <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{plan.planName}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/{t("w.account.onboarding.per-week")} · {plan.weeks} {t("w.account.onboarding.weeks")}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} weeks</div>
                 <div style={{ fontSize: fs.bodyLg, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>
               </div>
-            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>{t("w.account.onboarding.no-plan")}</div>}
+            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>Plans for this goal are coming soon — jump in now and enroll once they land.</div>}
           </Step>
         )}
         {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
@@ -131,11 +87,94 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
           <AuroraIcon name="back" size={20} />
         </button>
         <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
-          {step === "plan" ? (enrolling ? t("w.account.onboarding.setting-up") : plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
+          {onPlanStep ? (enrolling ? "Setting up…" : plan ? "Start this plan" : "Continue") : "Next"}
         </button>
       </div>
     </div>
   );
+}
+
+function QuestionBody({
+  q, answers, setAnswer, personaChoice, C,
+}: {
+  q: OnboardingQuestion;
+  answers: Record<string, AnswerValue | null | undefined>;
+  setAnswer: (key: string, value: AnswerValue) => void;
+  personaChoice: "casual" | "athlete" | null;
+  C: (v: string) => string;
+}) {
+  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? "rgba(196,240,53,.08)" : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
+
+  if (q.kind === "persona") {
+    const selected = (answers[q.key] as string) ?? personaChoice;
+    return (
+      <>
+        {(q.choices ?? []).map((o) => (
+          <button key={o.value} onClick={() => { setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} style={choice(selected === o.value)}>
+            {selected === o.value && <AuroraIcon name="check" size={22} color={C("lime")} />}
+            <span><b style={{ fontSize: fs.note, color: selected === o.value ? C("lime") : C("chalk") }}>{o.label}</b>{o.blurb && <><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.blurb}</span></>}</span>
+          </button>
+        ))}
+      </>
+    );
+  }
+
+  if (q.kind === "goal") {
+    const selected = answers[q.key] as string | undefined;
+    return (
+      <>
+        {ONBOARDING_GOAL_GROUPS.map((g) => (
+          <div key={g.category}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
+            {g.goals.map((gl) => (
+              <button key={gl.id} onClick={() => setAnswer(q.key, gl.id)} style={{ ...choice(selected === gl.id), marginBottom: 8 }}>
+                {selected === gl.id && <AuroraIcon name="check" size={20} color={C("lime")} />}
+                <span><b style={{ fontSize: fs.bodyLg, color: selected === gl.id ? C("lime") : C("chalk") }}>{gl.label}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{gl.blurb}</span></span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  if (q.kind === "number") {
+    const min = q.min ?? 1, max = q.max ?? 7, step = q.step ?? 1;
+    const value = Number(answers[q.key] ?? q.defaultValue ?? min);
+    const opts: number[] = [];
+    for (let v = min; v <= max; v += step) opts.push(v);
+    return <Seg options={opts.map((d) => ({ id: String(d), label: `${d}×` }))} value={String(value)} onPick={(v) => setAnswer(q.key, Number(v))} C={C} />;
+  }
+
+  if (q.kind === "text") {
+    const value = (answers[q.key] as string) ?? "";
+    return (
+      <input value={value} onChange={(e) => setAnswer(q.key, e.target.value)}
+        style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, width: "100%", padding: "13px 14px", borderRadius: 14, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }} />
+    );
+  }
+
+  // single / multi
+  const multi = q.kind === "multi";
+  const current = answers[q.key];
+  const selectedSet = new Set<string>(multi ? (Array.isArray(current) ? current.map(String) : current != null && current !== "" ? [String(current)] : []) : current != null ? [String(current)] : []);
+  if (multi) {
+    return (
+      <>
+        {(q.choices ?? []).map((o) => {
+          const on = selectedSet.has(o.value);
+          const toggle = () => { const arr = new Set(selectedSet); if (arr.has(o.value)) arr.delete(o.value); else arr.add(o.value); setAnswer(q.key, [...arr]); };
+          return (
+            <button key={o.value} onClick={toggle} style={choice(on)}>
+              {on && <AuroraIcon name="check" size={20} color={C("lime")} />}
+              <span><b style={{ fontSize: fs.note, color: on ? C("lime") : C("chalk") }}>{o.label}</b>{o.blurb && <><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.blurb}</span></>}</span>
+            </button>
+          );
+        })}
+      </>
+    );
+  }
+  return <Seg options={(q.choices ?? []).map((o) => ({ id: o.value, label: o.label }))} value={String(current ?? "")} onPick={(v) => setAnswer(q.key, v)} C={C} />;
 }
 
 function Step({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
@@ -149,13 +188,12 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
   );
 }
 
-function Seg<T extends string>({ options, value, onPick }: { options: { id: T; label: string }[]; value: T; onPick: (v: T) => void }) {
-  const C = (v: string) => `var(--color-${v})`;
+function Seg({ options, value, onPick, C }: { options: { id: string; label: string }[]; value: string; onPick: (v: string) => void; C: (v: string) => string }) {
   return (
-    <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
       {options.map((o) => {
         const on = value === o.id;
-        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: 1, padding: "11px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
+        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: "1 0 auto", padding: "11px 16px", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
       })}
     </div>
   );

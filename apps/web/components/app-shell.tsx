@@ -218,25 +218,41 @@ export default function AppShell() {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
 
-  // Pick the LANDING screen once, in priority order: a brand-new registrant
-  // (flag set at signup) → onboarding to set persona/goal/prefs; otherwise a
+  // Pick the LANDING screen once, in priority order: a client who hasn't
+  // onboarded → the questionnaire (persona/goal/prefs → enroll); otherwise a
   // coach persona (role OR self-serve opt-in) lands on their Coach screen
-  // (roster + invite); a client/admin keeps the default Today.
+  // (roster + invite); everyone else keeps the default Today.
+  //
+  // Onboarding now gates on the server-side `onboardedAt` (from /api/me) rather
+  // than a fragile localStorage flag set only at signup — so it reliably appears
+  // once and survives the email-confirm round-trip and device changes. A local
+  // "done" flag is the same-device fallback before sql-onboarding.sql is applied.
   const landed = useRef(false);
   useEffect(() => {
     if (!ready || !session || landed.current) return;
     landed.current = true;
+    let localDone = false;
     try {
-      if (localStorage.getItem("hybrid.pendingOnboarding")) {
-        localStorage.removeItem("hybrid.pendingOnboarding");
-        setScreen("onboarding");
-        return;
-      }
+      localStorage.removeItem("hybrid.pendingOnboarding"); // retire the old flag
+      localDone = localStorage.getItem("hybrid.onboarded") === "1";
     } catch {
       /* ignore */
     }
+    if (session.role === "client" && !session.onboardedAt && !localDone) {
+      setScreen("onboarding");
+      return;
+    }
     if (persona === "coach") setScreen("coach");
   }, [ready, session, persona]);
+
+  // Mark onboarding finished (same-device fallback flag) + advance to Today,
+  // then kick off the one-time first-run tutorial (#2).
+  const finishOnboarding = () => {
+    try { localStorage.setItem("hybrid.onboarded", "1"); } catch { /* ignore */ }
+    refreshMacro();
+    setScreen("today");
+    startTourIfUnseen();
+  };
 
   if (!ready || !session) return null;
 
@@ -685,8 +701,8 @@ export default function AppShell() {
 
         {screen === "onboarding" && (
           aurora
-            ? <AuroraOnboarding onEnrolled={() => { refreshMacro(); setScreen("today"); startTourIfUnseen(); }} />
-            : <Onboarding onEnrolled={() => { refreshMacro(); setScreen("today"); startTourIfUnseen(); }} />
+            ? <AuroraOnboarding onEnrolled={finishOnboarding} />
+            : <Onboarding onEnrolled={finishOnboarding} />
         )}
 
         {screen === "performance" && (aurora ? <AuroraPerformance sessions={sessions} bio={bio} /> : <Performance sessions={sessions} bio={bio} />)}

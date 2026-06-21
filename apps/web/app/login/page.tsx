@@ -148,10 +148,9 @@ function ClassicLoginPage() {
         setBusy(false);
         return;
       }
-      // Fresh registration → land them in onboarding (consumed in the app shell)
-      // to set their persona + goal + preferences, whether the session is
-      // immediate or arrives after email confirm + sign in.
-      try { localStorage.setItem("hybrid.pendingOnboarding", "1"); } catch { /* ignore */ }
+      // Fresh registration → /app, where the app-shell routes a not-yet-onboarded
+      // client into the questionnaire (gated on server-side `onboardedAt`, so it
+      // lands whether the session is immediate or arrives after email confirm).
       if (data.session) {
         setNavTo("/app");
         return;
