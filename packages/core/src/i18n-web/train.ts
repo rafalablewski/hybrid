@@ -320,7 +320,7 @@ export const web_train = {
     "w.train.runTrack.startRun": "▶ Rozpocznij bieg",
     "w.train.runTrack.reset": "Resetuj",
     "w.train.runTrack.distanceKm": "Dystans (km)",
-    "w.train.runTrack.distancePh": "np. 5.0",
+    "w.train.runTrack.distancePh": "np. 5,0",
     "w.train.runTrack.gpsNote": "W natywnej wersji GPS uzupełnia to automatycznie podczas biegu.",
     "w.train.runTrack.saving": "Zapisywanie…",
     "w.train.runTrack.saveRun": "Zapisz bieg →",
@@ -333,7 +333,7 @@ export const web_train = {
 
     // running.tsx
     "w.train.running.title": "Bieganie",
-    "w.train.running.empty": "Brak zapisanego cardio. Zapisz bieg lub wioślarz (z dystansem + minutami), a Twoje przebiegi, tempo i podział łatwy/ciężki pojawią się tutaj.",
+    "w.train.running.empty": "Brak zapisanego cardio. Zapisz bieg lub wiosłowanie (z dystansem + minutami), a Twoje przebiegi, tempo i podział łatwy/ciężki pojawią się tutaj.",
     "w.train.running.runs": "Biegi",
     "w.train.running.distance": "Dystans",
     "w.train.running.time": "Czas",
@@ -480,8 +480,8 @@ export const web_train = {
     "w.train.sport.title": "Sport",
     "w.train.sport.intro": "Wähle deinen Sport — wir verschreiben das Kraft- & Konditionstraining, das sich darauf überträgt.",
     "w.train.sport.todaysSC": "Heutiges empfohlenes Kraft & Kondition",
-    "w.train.sport.personalized": "Arbeitslasten aus deinen protokollierten Hebungen berechnet.",
-    "w.train.sport.notPersonalized": "Protokolliere diese Hebungen und die Lasten passen sich deinen Zahlen an.",
+    "w.train.sport.personalized": "Arbeitslasten aus deinen protokollierten Lifts berechnet.",
+    "w.train.sport.notPersonalized": "Protokolliere diese Lifts und die Lasten passen sich deinen Zahlen an.",
     "w.train.sport.bodyweightTempo": "Körpergewicht / Tempo",
     "w.train.sport.exercisePool": "Übungspool · warum es sich überträgt",
 
@@ -543,7 +543,7 @@ export const web_train = {
     "w.train.runTrack.startRun": "▶ Lauf starten",
     "w.train.runTrack.reset": "Zurücksetzen",
     "w.train.runTrack.distanceKm": "Distanz (km)",
-    "w.train.runTrack.distancePh": "z. B. 5.0",
+    "w.train.runTrack.distancePh": "z. B. 5,0",
     "w.train.runTrack.gpsNote": "In der nativen Version füllt GPS dies automatisch während des Laufs aus.",
     "w.train.runTrack.saving": "Speichern…",
     "w.train.runTrack.saveRun": "Lauf speichern →",
@@ -556,7 +556,7 @@ export const web_train = {
 
     // running.tsx
     "w.train.running.title": "Laufen",
-    "w.train.running.empty": "Noch kein Cardio protokolliert. Protokolliere einen Lauf oder Rudern (mit Distanz + Minuten) und deine Laufleistung, Tempo und Leicht/Hart-Aufteilung erscheinen hier.",
+    "w.train.running.empty": "Noch kein Cardio protokolliert. Protokolliere einen Lauf oder eine Ruder-Einheit (mit Distanz + Minuten) und deine Laufleistung, Tempo und Leicht/Hart-Aufteilung erscheinen hier.",
     "w.train.running.runs": "Läufe",
     "w.train.running.distance": "Distanz",
     "w.train.running.time": "Zeit",
