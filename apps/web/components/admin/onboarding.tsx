@@ -47,14 +47,15 @@ export default function AdminOnboarding() {
   }, []);
   useEffect(load, [load]);
 
-  async function save(body: Record<string, unknown>) {
+  async function save(body: Record<string, unknown>, closeEditor = true) {
     setBusy(true); setErr(null);
     try {
       const res = await fetch("/api/admin/onboarding-questions", {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error ?? "save failed"); }
-      setEditing(null); setAdding(false); load();
+      if (closeEditor) { setEditing(null); setAdding(false); }
+      load();
     } catch (e) { setErr(e instanceof Error ? e.message : "Couldn't save."); }
     setBusy(false);
   }
@@ -90,7 +91,8 @@ export default function AdminOnboarding() {
   }
 
   function toggleEnabled(q: OnboardingQuestion) {
-    save({ key: q.key, title: q.title, subtitle: q.subtitle, kind: q.kind, choices: q.choices, min: q.min, max: q.max, step: q.step, defaultValue: q.defaultValue, required: q.required, enabled: !q.enabled, order: q.order });
+    // A quick toggle on one row must not discard an open editor on another row.
+    save({ key: q.key, title: q.title, subtitle: q.subtitle, kind: q.kind, choices: q.choices, min: q.min, max: q.max, step: q.step, defaultValue: q.defaultValue, required: q.required, enabled: !q.enabled, order: q.order }, false);
   }
 
   return (

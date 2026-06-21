@@ -170,7 +170,7 @@ function QuestionCard({
   // single / multi
   const multi = q.kind === "multi";
   const current = answers[q.key];
-  const selectedSet = new Set(multi ? ((current as string[]) ?? []) : current != null ? [String(current)] : []);
+  const selectedSet = new Set<string>(multi ? (Array.isArray(current) ? current.map(String) : current != null && current !== "" ? [String(current)] : []) : current != null ? [String(current)] : []);
   const toggle = (v: string) => {
     if (!multi) { setAnswer(q.key, v); return; }
     const arr = new Set(selectedSet);
