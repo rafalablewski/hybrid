@@ -74,7 +74,7 @@ export default function AdminAuditLog() {
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
+        <table className="adm-tbl" style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["When", "Actor", "Action", "Target", ""].map((h, i) => (
@@ -93,19 +93,19 @@ export default function AdminAuditLog() {
                   onMouseEnter={(ev) => (ev.currentTarget.style.background = INK2)}
                   onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
                 >
-                  <td style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "11px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
+                  <td data-label="When" style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "11px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
                     {new Date(e.createdAt).toISOString().slice(0, 19).replace("T", " ")}
                   </td>
-                  <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
+                  <td data-label="Actor" style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: fs.body }} c={CHALK}>{e.actorEmail}</Mono>
                   </td>
-                  <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
+                  <td data-label="Action" style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
                     <Chip c={AMBER}>{e.action}</Chip>
                   </td>
-                  <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
+                  <td data-label="Target" style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: fs.body }} c={ASH}>{e.summary || (e.targetType ? `${e.targetType}:${e.targetId?.slice(0, 8)}` : "—")}</Mono>
                   </td>
-                  <td style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}`, color: txt(ASH) }}>{open === e.id ? "▾" : "▸"}</td>
+                  <td data-label="" style={{ padding: "11px 16px", borderBottom: `1px solid ${LINE}`, color: txt(ASH) }}>{open === e.id ? "▾" : "▸"}</td>
                 </tr>
                 {open === e.id && (
                   <tr>

@@ -30,11 +30,11 @@ const ROLE_PERMISSIONS = [
 /** Read-only RBAC reference: the three roles + the data-access permission matrix.
  *  Access is enforced server-side by RELATIONSHIP, not the role label alone. */
 function RoleModel() {
-  const cell = (v: string) => {
+  const cell = (v: string, label: string) => {
     const yes = v === "full" || v === "yes" || v === "yes (+private)";
     const no = v === "no";
     return (
-      <td style={{ ...mono, fontSize: fs.body, textAlign: "center", padding: "11px 6px", borderBottom: `1px solid ${LINE}`, color: txt(no ? ASH : yes ? LIME : AMBER) }}>
+      <td data-label={label} style={{ ...mono, fontSize: fs.body, textAlign: "center", padding: "11px 6px", borderBottom: `1px solid ${LINE}`, color: txt(no ? ASH : yes ? LIME : AMBER) }}>
         {no ? "—" : v}
       </td>
     );
@@ -58,7 +58,7 @@ function RoleModel() {
           Permission matrix
         </Mono>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-        <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse" }}>
+        <table className="adm-tbl" style={{ width: "100%", minWidth: 520, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
@@ -71,10 +71,10 @@ function RoleModel() {
           <tbody>
             {ROLE_PERMISSIONS.map((p) => (
               <tr key={p.cap}>
-                <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "11px 6px", borderBottom: `1px solid ${LINE}` }}>{p.cap}</td>
-                {cell(p.client)}
-                {cell(p.coach)}
-                {cell(p.admin)}
+                <td data-label="Capability" style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "11px 6px", borderBottom: `1px solid ${LINE}` }}>{p.cap}</td>
+                {cell(p.client, "Client")}
+                {cell(p.coach, "Coach")}
+                {cell(p.admin, "Admin")}
               </tr>
             ))}
           </tbody>

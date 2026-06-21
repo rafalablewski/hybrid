@@ -107,7 +107,7 @@ export default function AdminUsers() {
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
+        <table className="adm-tbl" style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["User", "Role", "Lang", "Sessions", "Joined", ""].map((h, i) => (
@@ -138,23 +138,23 @@ export default function AdminUsers() {
                 onMouseEnter={(e) => (e.currentTarget.style.background = INK2)}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
-                <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="User" style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{u.name || "—"}</div>
                   <Mono s={{ fontSize: fs.caption }} c={ASH}>{u.email}</Mono>
                 </td>
-                <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Role" style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <Chip c={roleColor[u.role] ?? CHALK}>{u.role}</Chip>
                 </td>
-                <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Lang" style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <Mono s={{ fontSize: fs.body }} c={CHALK}>{u.language.toUpperCase()}</Mono>
                 </td>
-                <td style={{ ...mono, fontSize: fs.bodyLg, color: CHALK, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Sessions" style={{ ...mono, fontSize: fs.bodyLg, color: CHALK, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   {u.sessions}
                 </td>
-                <td style={{ ...mono, fontSize: fs.body, color: ASH, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Joined" style={{ ...mono, fontSize: fs.body, color: ASH, padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   {fmt(u.createdAt)}
                 </td>
-                <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}`, color: ASH }}>→</td>
+                <td data-label="" style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}`, color: ASH }}>→</td>
               </tr>
             ))}
             {data && data.users.length === 0 && (

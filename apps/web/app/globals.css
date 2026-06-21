@@ -162,6 +162,32 @@ body {
 }
 [data-template="aurora"] .cmd-hub { border-radius: 34px; }
 
+/* Admin data tables → stacked cards on phones (≤640px). Each row becomes a
+   bordered card and every cell turns into a label/value line (the label comes
+   from the cell's data-label), so the wide operator tables stop forcing a
+   horizontal scroll on a phone. Tablets keep the existing overflow-x scroll. */
+@media (max-width: 640px) {
+  .adm-tbl { min-width: 0 !important; }
+  .adm-tbl thead { display: none; }
+  .adm-tbl tr { display: block; border: 1px solid var(--color-line); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+  .adm-tbl td {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    width: auto !important; text-align: right !important;
+    padding: 9px 13px !important;
+    border: none !important; border-bottom: 1px solid var(--color-line) !important;
+  }
+  .adm-tbl tr td:last-child { border-bottom: none !important; }
+  .adm-tbl td::before {
+    content: attr(data-label); flex: 0 0 auto; text-align: left;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--color-ash);
+  }
+  .adm-tbl td[data-label=""]::before,
+  .adm-tbl td[colspan]::before { content: none; }
+  /* full-row cells (empty states, expand-to-detail rows) stay block + left */
+  .adm-tbl td[colspan] { display: block; width: 100% !important; text-align: left !important; }
+}
+
 /* ---- core component ---- */
 .liquid-glass {
   --lg-blur: 18px;
