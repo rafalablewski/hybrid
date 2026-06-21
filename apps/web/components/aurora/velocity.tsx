@@ -8,6 +8,7 @@ import {
 } from "@hybrid/core";
 import { fs, space, LINE, LIME, ASH, VIOLET, tip, mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const zoneVar = (id: string) => (id === "absolute-strength" ? "red" : id === "strength-speed" ? "amber" : id === "speed-strength" ? "lime" : id === "accelerative" ? "blue" : "violet");
@@ -17,6 +18,7 @@ const chip = (color: string, label: string) => <span style={{ background: `color
 /** AURORA Velocity (web) — full bespoke VBT screen reusing the exact engine +
  *  the recharts load-velocity profile. */
 export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[] }) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
   const noData = lifts.length === 0;
@@ -38,10 +40,10 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
   if (noData) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>Velocity</h1>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.vel.title")}</h1>
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.heading }}>No bar speed logged yet</div>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, maxWidth: 480, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>Add a velocity (m/s) to a strength set in the Log session tab — across a few loads — and your load–velocity profile, estimated 1RM, zones and the autoregulated load recommender build here.</p>
+          <div style={{ fontWeight: 800, fontSize: fs.heading }}>{t("w.analyze.vel.emptyTitle")}</div>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, maxWidth: 480, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>{t("w.analyze.vel.emptyBody")}</p>
         </div>
       </div>
     );
@@ -49,19 +51,19 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 14px" }}>Velocity</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 14px" }}>{t("w.analyze.vel.title")}</h1>
       <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginBottom: 16, alignItems: "center" }}>
         {lifts.map((l) => <button key={l} onClick={() => setLift(l)} style={{ fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: 700, padding: "6px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active === l ? C("lime") : C("line")}`, background: active === l ? C("lime") : "transparent", color: active === l ? C("ink") : C("ash") }}>{l}</button>)}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: space.lg }}>
         <div style={card}>
-          {head("lime", "Estimated 1RM · from velocity")}
+          {head("lime", t("w.analyze.vel.est1rm"))}
           <div style={{ fontWeight: 800, fontSize: 44, lineHeight: 1.05, margin: "8px 0 2px" }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<span style={{ fontSize: fs.heading, color: C("ash") }}> kg</span></div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{resolved ? `Line crosses MVT ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} loads` : "Need ≥2 loads with velocity to resolve a 1RM."}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{resolved ? `${t("w.analyze.vel.lineCrossesPre")} ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</div>
         </div>
         <div style={card}>
-          {head("violet", "AI load · target a bar speed")}
+          {head("violet", t("w.analyze.vel.aiLoad"))}
           <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "12px 0" }}>
             <input type="range" min={0.2} max={1.3} step={0.01} value={targetVel} onChange={(e) => setTargetVel(Number(e.target.value))} style={{ flex: 1, accentColor: VIOLET }} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, fontWeight: 700 }}>{targetVel.toFixed(2)} m/s</span>
@@ -72,12 +74,12 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</span>
               {chip(C(zoneVar(rec.zone.id)), rec.zone.label)}
             </div>
-          ) : <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>Build a profile first to get a recommendation.</span>}
+          ) : <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.analyze.vel.buildProfile")}</span>}
         </div>
       </div>
 
       <div style={{ ...card, marginTop: 16 }}>
-        {head("lime", `Load–velocity profile · ${active}`)}
+        {head("lime", `${t("w.analyze.vel.profile")} · ${active}`)}
         <div style={{ marginTop: 10 }}>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart margin={{ top: 8, right: 12, bottom: 8, left: -8 }}>
@@ -90,13 +92,13 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
               <Scatter data={points} dataKey="velocity" fill={LIME} line={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> measured · <span style={{ color: C("violet") }}>—</span> fit → 1RM at MVT</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} · <span style={{ color: C("violet") }}>—</span> {t("w.analyze.vel.fit")}</div>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg, marginTop: 16 }}>
         <div style={card}>
-          {head("blue", "Velocity zones · training quality")}
+          {head("blue", t("w.analyze.vel.zones"))}
           <div style={{ marginTop: 8 }}>
             {VELOCITY_ZONES.slice().reverse().map((z) => (
               <div key={z.id} style={{ display: "flex", alignItems: "center", gap: space.ms, padding: "7px 0", borderBottom: `1px solid ${C("line")}` }}>
@@ -108,7 +110,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
           </div>
         </div>
         <div style={card}>
-          {head("lime", "Recent sets · bar speed")}
+          {head("lime", t("w.analyze.vel.recentSets"))}
           <div style={{ marginTop: 8 }}><RecentSets sessions={sessions} lift={active} /></div>
         </div>
       </div>
@@ -117,15 +119,16 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
 }
 
 function RecentSets({ sessions, lift }: { sessions: LoggedSession[]; lift: string }) {
+  const { t } = useLang();
   const rows = sessions
     .flatMap((s) => s.blocks.filter((b): b is Extract<typeof b, { kind: "strength" }> => b.kind === "strength" && b.name === lift).flatMap((b) => b.sets))
     .map((set) => ({ load: parseFloat(set.load), reps: parseInt(set.reps, 10) || 0, vel: parseFloat(set.vel ?? "") }))
     .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel)).slice(-6).reverse();
-  if (rows.length === 0) return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>No velocity-tagged sets logged for {lift} yet.</span>;
+  if (rows.length === 0) return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.analyze.vel.noVelSetsPre")} {lift} {t("w.analyze.vel.noVelSetsTail")}</span>;
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr 1.4fr", gap: space.xs, marginBottom: 6 }}>
-        {["load", "reps", "m/s", "zone"].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
+        {([["w.analyze.vel.colLoad", "load"], ["w.analyze.vel.colReps", "reps"], ["w.analyze.vel.colMs", "ms"], ["w.analyze.vel.colZone", "zone"]] as const).map(([k, key]) => <span key={key} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash") }}>{t(k)}</span>)}
       </div>
       {rows.map((r, i) => { const z = velocityZone(r.vel); return (
         <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr 1.4fr", gap: space.xs, padding: "6px 0", borderTop: `1px solid ${C("line")}`, alignItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.body }}>

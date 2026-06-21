@@ -102,26 +102,26 @@ export default function AuroraNutrition() {
       {personalized ? (
         <>
           <div style={{ ...card, marginTop: 16 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Calories</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.recovery.nutrition.calories")}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: space.sm, marginTop: 6 }}>
               <span style={{ fontWeight: 900, fontSize: 40 }}>{Math.round(today.kcal)}</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>/ {targets.kcal}</span>
             </div>
             <Bar cur={today.kcal} target={targets.kcal} color={C("lime")} />
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10 }}>
-              Maintenance ≈ {maint.kcal} kcal · {targets.basis}{maint.weightChangeKg != null ? ` · weight trend ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+              {t("w.recovery.nutrition.maintenance")} ≈ {maint.kcal} kcal · {targets.basis}{maint.weightChangeKg != null ? ` · ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
             </div>
           </div>
-          <MacroRow label="Protein" cur={today.protein} target={targets.protein} color={C("blue")} />
-          <MacroRow label="Carbs" cur={today.carbs} target={targets.carbs} color={C("amber")} />
-          <MacroRow label="Fat" cur={today.fat} target={targets.fat} color={C("violet")} />
+          <MacroRow label="w.recovery.nutrition.protein" cur={today.protein} target={targets.protein} color={C("blue")} />
+          <MacroRow label="w.recovery.nutrition.carbs" cur={today.carbs} target={targets.carbs} color={C("amber")} />
+          <MacroRow label="w.recovery.nutrition.fat" cur={today.fat} target={targets.fat} color={C("violet")} />
         </>
       ) : (
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Today vs adaptive target</div>
-          <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, marginTop: 10 }}>Your targets adapt to you — add a weigh-in (in a weekly check-in) and log a few days of intake, and we&apos;ll estimate your maintenance and set goal-aware macros.</p>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.recovery.nutrition.todayVsTarget")}</div>
+          <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, marginTop: 10 }}>{t("w.recovery.nutrition.adaptBody")}</p>
           <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap" }}>
-            {[["Logged today", `${Math.round(today.kcal)} kcal`], ["Protein", `${Math.round(today.protein)}g`], ["Carbs", `${Math.round(today.carbs)}g`], ["Fat", `${Math.round(today.fat)}g`]].map(([l, v]) => (
+            {[[t("w.recovery.nutrition.loggedToday"), `${Math.round(today.kcal)} kcal`], [t("w.recovery.nutrition.protein"), `${Math.round(today.protein)}g`], [t("w.recovery.nutrition.carbs"), `${Math.round(today.carbs)}g`], [t("w.recovery.nutrition.fat"), `${Math.round(today.fat)}g`]].map(([l, v]) => (
               <div key={l}><div style={{ fontWeight: 900, fontSize: 17 }}>{v}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{l}</div></div>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function AuroraNutrition() {
       {weight.points.length > 0 && (
         <div style={{ ...card, marginTop: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b style={{ fontSize: fs.subtitle }}>Bodyweight trend</b>
+            <b style={{ fontSize: fs.subtitle }}>{t("w.recovery.nutrition.bodyweightTrend")}</b>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: weight.ratePerWeek <= 0 ? C("lime") : C("amber") }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</span>
           </div>
           <div style={{ marginTop: 12 }}>
@@ -140,7 +140,7 @@ export default function AuroraNutrition() {
                 <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} tickFormatter={(d: string) => d.slice(5)} />
                 <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
-                <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? "trend" : "raw"]} />
+                <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? t("w.recovery.nutrition.trend") : t("w.recovery.nutrition.raw")]} />
                 <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="smoothed" stroke={LIME} strokeWidth={2.5} dot={false} isAnimationActive={false} />
               </LineChart>
@@ -152,28 +152,28 @@ export default function AuroraNutrition() {
       <div style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
           <AuroraIcon name="add" size={20} color={C("violet")} />
-          <b style={{ fontSize: fs.note }}>Add to today</b>
+          <b style={{ fontSize: fs.note }}>{t("w.recovery.nutrition.addToToday")}</b>
         </div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           <input value={f.kcal} onChange={(e) => setF((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
-          <input value={f.protein} onChange={(e) => setF((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder="protein" style={numField} />
-          <input value={f.carbs} onChange={(e) => setF((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder="carbs" style={numField} />
-          <input value={f.fat} onChange={(e) => setF((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder="fat" style={numField} />
+          <input value={f.protein} onChange={(e) => setF((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.proteinPh")} style={numField} />
+          <input value={f.carbs} onChange={(e) => setF((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.carbsPh")} style={numField} />
+          <input value={f.fat} onChange={(e) => setF((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
         </div>
         {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
         <button onClick={add} disabled={saving} style={{ width: "100%", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
-          {saving ? "Adding…" : "Add"}
+          {saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")}
         </button>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10, lineHeight: 1.5 }}>
-          Food search + barcode is a separate, blocked layer (needs a food-DB partner) — see Capabilities.
+          {t("w.recovery.nutrition.foodSearchNote")}
         </div>
       </div>
 
       <div style={{ ...card, marginTop: 16, padding: 18 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Recent days</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.recovery.nutrition.recentDays")}</div>
         <div style={{ marginTop: 10 }}>
           {recent.length === 0 ? (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>Nothing logged yet — add today&apos;s macros above.</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.recovery.nutrition.recentEmpty")}</div>
           ) : recent.map((d, i) => (
             <div key={d.date} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: space.sm, padding: "8px 0", borderTop: i ? `1px solid ${C("line")}` : "none", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
               <span>{d.date.slice(5)}</span><span>{Math.round(d.kcal)} kcal</span>
@@ -197,11 +197,12 @@ function Bar({ cur, target, color }: { cur: number; target: number; color: strin
 }
 
 function MacroRow({ label, cur, target, color }: { label: string; cur: number; target: number; color: string }) {
+  const { t } = useLang();
   const C = (v: string) => `var(--color-${v})`;
   return (
     <div style={{ display: "flex", alignItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, marginTop: 12 }}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{label}</div>
+        <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{t(label)}</div>
         <Bar cur={cur} target={target} color={color} />
       </div>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: 14 }}>{Math.round(cur)}/{target}g</span>

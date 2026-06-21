@@ -6,6 +6,7 @@ import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 
@@ -14,15 +15,17 @@ import type { AuroraIconName } from "@hybrid/core";
  * Reuses the SAME Supabase flow (OAuth · email · MFA step-up · demo roles) as
  * the classic login so there is no auth/2FA regression; only the layout differs.
  */
-const ROLE_INFO: { id: Role; label: string; accent: string }[] = [
-  { id: "client", label: "Client", accent: LIME },
-  { id: "coach", label: "Coach", accent: VIOLET },
-  { id: "admin", label: "Admin", accent: AMBER },
+const buildRoleInfo = (t: (k: string) => string): { id: Role; label: string; accent: string }[] => [
+  { id: "client", label: t("w.account.login.role-client"), accent: LIME },
+  { id: "coach", label: t("w.account.login.role-coach"), accent: VIOLET },
+  { id: "admin", label: t("w.account.login.role-admin"), accent: AMBER },
 ];
 
 export default function AuroraLogin() {
   const router = useRouter();
+  const { t } = useLang();
   const { login } = useSession();
+  const ROLE_INFO = buildRoleInfo(t);
   const live = isSupabaseConfigured();
   const [role, setRole] = useState<Role>("admin");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -55,7 +58,7 @@ export default function AuroraLogin() {
 
   const verifyMfa = async () => {
     if (!mfaStep || !isValidTotpCode(mfaCode)) {
-      setError("Enter the 6-digit code from your authenticator.");
+      setError(t("w.account.login.mfa-error"));
       return;
     }
     setBusy(true);
@@ -111,7 +114,7 @@ export default function AuroraLogin() {
         router.push("/app");
         return;
       }
-      setNotice("Account created. Check your email to confirm, then sign in.");
+      setNotice(t("w.account.login.signup-notice"));
       setMode("signin");
       setBusy(false);
       return;
@@ -139,22 +142,22 @@ export default function AuroraLogin() {
 
         {mfaStep ? (
           <>
-            <h1 style={{ ...disp, fontWeight: 900, fontSize: 30, letterSpacing: "-.02em", margin: "0 0 8px", lineHeight: 1.1 }}>Verify it&apos;s you</h1>
-            <Mono s={{ fontSize: fs.bodyLg, display: "block", marginBottom: 20 }} c={ASH}>Enter the 6-digit code from your authenticator app.</Mono>
+            <h1 style={{ ...disp, fontWeight: 900, fontSize: 30, letterSpacing: "-.02em", margin: "0 0 8px", lineHeight: 1.1 }}>{t("w.account.login.verify-title")}</h1>
+            <Mono s={{ fontSize: fs.bodyLg, display: "block", marginBottom: 20 }} c={ASH}>{t("w.account.login.verify-sub")}</Mono>
             <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus placeholder="000000" style={{ ...roundField, fontSize: 22, letterSpacing: ".3em", textAlign: "center" }} />
             {error && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}
-            <button disabled={busy || !isValidTotpCode(mfaCode)} onClick={verifyMfa} style={{ ...lightPill, opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1 }}>{busy ? "…" : "Verify"}</button>
-            <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={linkBtn}><Mono s={{ fontSize: fs.body }} c={ASH}>← cancel</Mono></button>
+            <button disabled={busy || !isValidTotpCode(mfaCode)} onClick={verifyMfa} style={{ ...lightPill, opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1 }}>{busy ? "…" : t("w.account.login.verify")}</button>
+            <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={linkBtn}><Mono s={{ fontSize: fs.body }} c={ASH}>← {t("w.account.login.cancel")}</Mono></button>
           </>
         ) : (
           <>
             <h1 style={{ ...disp, fontWeight: 900, fontSize: 32, letterSpacing: "-.02em", margin: "0 0 26px", lineHeight: 1.1 }}>
-              {isSignup ? "Hello! Register to get started" : "Welcome back! Glad to see you, Again!"}
+              {isSignup ? t("w.account.login.signup-title") : t("w.account.login.signin-title")}
             </h1>
 
             {!live && (
               <>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }}>Sign in as (demo)</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }}>{t("w.account.login.demo-label")}</Mono>
                 <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
                   {ROLE_INFO.map((r) => {
                     const on = role === r.id;
@@ -167,12 +170,12 @@ export default function AuroraLogin() {
             )}
 
             {live && isSignup && (
-              <Field icon="user"><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Username" style={bareInput} /></Field>
+              <Field icon="user"><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.account.login.username-ph")} style={bareInput} /></Field>
             )}
-            <Field icon="mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" style={bareInput} /></Field>
+            <Field icon="mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("w.account.login.email-ph")} style={bareInput} /></Field>
             {live && (
               <Field icon="lock" trailing="eye" onTrailingClick={() => setShowPassword((v) => !v)} trailingActive={showPassword}>
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" style={bareInput} />
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("w.account.login.password-ph")} style={bareInput} />
               </Field>
             )}
 
@@ -180,10 +183,10 @@ export default function AuroraLogin() {
             {notice && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={LIME}>{notice}</Mono>}
 
             <button disabled={busy} onClick={() => (live ? emailSubmit() : demoEnter("email"))} style={{ ...lightPill, opacity: busy ? 0.6 : 1 }}>
-              {busy ? "…" : isSignup ? "Register" : "Login"}
+              {busy ? "…" : isSignup ? t("w.account.login.register") : t("w.account.login.login")}
             </button>
 
-            <div style={{ textAlign: "center", margin: "16px 0" }}><Mono s={{ fontSize: fs.body }}>or continue with</Mono></div>
+            <div style={{ textAlign: "center", margin: "16px 0" }}><Mono s={{ fontSize: fs.body }}>{t("w.account.login.or-continue")}</Mono></div>
             <div style={{ display: "flex", gap: space.ms }}>
               {(["apple", "google"] as const).map((p) => (
                 <button key={p} disabled={busy} onClick={() => (live ? oauth(p) : demoEnter(p))} style={{ ...softPill, flex: 1, textTransform: "capitalize" }}>{p}</button>
@@ -193,13 +196,13 @@ export default function AuroraLogin() {
             {live && (
               <button onClick={() => { setMode((m) => (m === "signin" ? "signup" : "signin")); setError(""); setNotice(""); }} style={linkBtn}>
                 <Mono s={{ fontSize: fs.bodyLg }} c={ASH}>
-                  {isSignup ? "Already have an account? " : "Don't have an account? "}
-                  <span style={{ color: txt(LIME), fontWeight: 700 }}>{isSignup ? "Login Now" : "Register Now"}</span>
+                  {isSignup ? t("w.account.login.have-account") : t("w.account.login.no-account")}
+                  <span style={{ color: txt(LIME), fontWeight: 700 }}>{isSignup ? t("w.account.login.login-now") : t("w.account.login.register-now")}</span>
                 </Mono>
               </button>
             )}
 
-            <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← back</Mono></button>
+            <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
           </>
         )}
       </div>
@@ -208,13 +211,14 @@ export default function AuroraLogin() {
 }
 
 function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { icon: AuroraIconName; trailing?: AuroraIconName; onTrailingClick?: () => void; trailingActive?: boolean; children: React.ReactNode }) {
+  const { t } = useLang();
   return (
     <div style={{ display: "flex", alignItems: "center", gap: space.md, padding: "0 16px", borderRadius: 16, background: INK2, border: `1px solid ${LINE}`, marginBottom: 13 }}>
       <AuroraIcon name={icon} size={20} color={ASH} />
       {children}
       {trailing && (
         onTrailingClick ? (
-          <button type="button" onClick={onTrailingClick} aria-label="Toggle password visibility" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
+          <button type="button" onClick={onTrailingClick} aria-label={t("w.account.login.toggle-password")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
             <AuroraIcon name={trailing} size={20} color={trailingActive ? LIME : ASH} />
           </button>
         ) : (

@@ -10,6 +10,7 @@ import {
 import RtpPanel from "../rtp-panel";
 import { AuroraIcon } from "./icons";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
 const SVG_INK2 = colors.ink2;
 const C = (v: string) => `var(--color-${v})`;
@@ -49,14 +50,15 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 /** AURORA Performance (web) — full bespoke Athlete Twin (HPI, trajectory chart,
  *  tissue body-map + injury table, RtP panel), reusing the exact engines. */
 export default function AuroraPerformance({ sessions = [], bio }: { sessions?: LoggedSession[]; bio?: Biometrics | null }) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
   if (sessions.length === 0) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.heading }}>No training data yet</div>
-          <p style={{ fontSize: fs.bodyLg, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</p>
+          <div style={{ fontWeight: 800, fontSize: fs.heading }}>{t("w.analyze.perf.emptyTitle")}</div>
+          <p style={{ fontSize: fs.bodyLg, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>{t("w.analyze.perf.emptyBody")}</p>
         </div>
       </div>
     );
@@ -66,23 +68,23 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
   const theBio = bio ?? undefined;
   const state = computePerformanceState(log, theBio);
   const risk = computeInjuryRisk(log, theBio);
-  const traj = performanceTrajectory(log, 14).map((p) => ({ day: p.daysAgo === 0 ? "today" : `-${p.daysAgo}d`, HPI: p.hpi, Readiness: p.readiness }));
+  const traj = performanceTrajectory(log, 14).map((p) => ({ day: p.daysAgo === 0 ? t("w.analyze.perf.today") : `-${p.daysAgo}d`, HPI: p.hpi, Readiness: p.readiness }));
   const byTissue = Object.fromEntries(risk.tissues.map((t) => [t.tissue, t])) as Record<string, TissueRisk>;
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", marginRight: 6, fontFamily: "var(--font-mono)", fontSize: fs.micro, whiteSpace: "nowrap" }}>{label}</span>;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: space.lg }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Performance</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.perf.title")}</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Athlete Twin · HPI</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.perf.twinHpi")}</div>
           <div style={{ fontWeight: 900, fontSize: 56, color: C(hpiVar(state.hpi.band)), lineHeight: 1.1, margin: "6px 0" }}>{state.hpi.score}</div>
-          <div style={{ marginBottom: 6 }}>{chip(C(hpiVar(state.hpi.band)), state.hpi.band)}{chip(C("amber"), `limiter · ${state.hpi.limiter}`)}</div>
+          <div style={{ marginBottom: 6 }}>{chip(C(hpiVar(state.hpi.band)), state.hpi.band)}{chip(C("amber"), `${t("w.analyze.perf.limiter")} · ${state.hpi.limiter}`)}</div>
           <div style={{ marginTop: 14 }}>
-            {([["Strength", state.hpi.components.strength, "lime"], ["Endurance", state.hpi.components.endurance, "blue"], ["Recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), "violet"]] as const).map(([l, v, c]) => (
+            {([["w.analyze.perf.strength", state.hpi.components.strength, "lime"], ["w.analyze.perf.endurance", state.hpi.components.endurance, "blue"], ["w.analyze.perf.recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), "violet"]] as const).map(([l, v, c]) => (
               <div key={l} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.micro }}><span style={{ color: C("ash") }}>{l}</span><span style={{ color: C(c) }}>{v}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.micro }}><span style={{ color: C("ash") }}>{t(l)}</span><span style={{ color: C(c) }}>{v}</span></div>
                 <div style={{ height: 6, borderRadius: 3, background: C("ink"), marginTop: 3, overflow: "hidden" }}><div style={{ width: `${v}%`, height: "100%", background: C(c) }} /></div>
               </div>
             ))}
@@ -91,7 +93,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
         </div>
 
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>Trajectory · last 14 days</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.perf.trajectory")}</div>
           <div style={{ height: 240, marginTop: 12 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={traj}>
@@ -109,19 +111,19 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
 
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>Injury risk · tissue map</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>model {risk.modelVersion} · calibrated probability</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>{t("w.analyze.perf.injuryRisk")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.perf.model")} {risk.modelVersion} · {t("w.analyze.perf.calibrated")}</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
           <div style={{ display: "flex", gap: space.lg, justifyContent: isMobile ? "center" : "flex-start" }}>
-            <Figure regions={FRONT} label="anterior" byTissue={byTissue} />
-            <Figure regions={BACK} label="posterior" byTissue={byTissue} />
+            <Figure regions={FRONT} label={t("w.analyze.perf.anterior")} byTissue={byTissue} />
+            <Figure regions={BACK} label={t("w.analyze.perf.posterior")} byTissue={byTissue} />
           </div>
           <div style={{ overflowX: "auto", maxWidth: "100%", minWidth: 0 }}>
             <table style={{ width: "100%", minWidth: 420, borderCollapse: "collapse" }}>
               <thead>
-                <tr>{["Tissue", "Risk", "P(injury)", "ACWR", "Top driver"].map((h) => (
-                  <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash"), textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${C("line")}` }}>{h}</th>
+                <tr>{["w.analyze.perf.colTissue", "w.analyze.perf.colRisk", "w.analyze.perf.colProb", "w.analyze.perf.colAcwr", "w.analyze.perf.colDriver"].map((h) => (
+                  <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash"), textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${C("line")}` }}>{t(h)}</th>
                 ))}</tr>
               </thead>
               <tbody>

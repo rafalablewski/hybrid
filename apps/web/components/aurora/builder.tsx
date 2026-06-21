@@ -6,6 +6,7 @@ import { fs, space } from "@hybrid/core";
 import type { SessionBlock } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -16,7 +17,8 @@ type Template = { id: string; name: string; description: string | null; blocks: 
 /** AURORA Builder (web) — workout template editor + library, reusing the exact
  *  WorkoutBlocks editor and /api/templates persistence. */
 export default function AuroraBuilder() {
-  const [name, setName] = useState("New workout");
+  const { t: tr } = useLang();
+  const [name, setName] = useState(() => tr("w.train.builder.newWorkout"));
   const [description, setDescription] = useState("");
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -44,13 +46,13 @@ export default function AuroraBuilder() {
     try {
       const res = await fetch("/api/templates", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || "Workout", description, blocks: blocks.map(({ uid: _u, ...b }) => b) }),
+        body: JSON.stringify({ name: name.trim() || tr("w.train.builder.defaultWorkout"), description, blocks: blocks.map(({ uid: _u, ...b }) => b) }),
       });
-      if (res.status === 401) { setMsg({ text: "Sign in to save templates.", ok: false }); setSaving(false); return; }
-      if (!res.ok) { setMsg({ text: `Couldn't save (HTTP ${res.status}). The WorkoutTemplate table may need creating — run reference/sql-workout-builder.sql.`, ok: false }); setSaving(false); return; }
-      setMsg({ text: "Template saved.", ok: true });
+      if (res.status === 401) { setMsg({ text: tr("w.train.builder.signInSave"), ok: false }); setSaving(false); return; }
+      if (!res.ok) { setMsg({ text: `${tr("w.train.builder.saveErrorPrefix")}${res.status}${tr("w.train.builder.saveErrorSuffix")}`, ok: false }); setSaving(false); return; }
+      setMsg({ text: tr("w.train.builder.templateSaved"), ok: true });
       await load();
-    } catch { setMsg({ text: "Network error.", ok: false }); }
+    } catch { setMsg({ text: tr("w.train.builder.networkError"), ok: false }); }
     setSaving(false);
   };
 
@@ -59,37 +61,37 @@ export default function AuroraBuilder() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: space.lg, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workout name"
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("w.train.builder.workoutNamePh")}
           style={{ ...input, fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, width: "100%", marginBottom: 8 }} />
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)"
+        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr("w.train.builder.descriptionPh")}
           style={{ ...input, width: "100%", marginBottom: 14 }} />
 
         <WorkoutBlocks
           blocks={blocks}
           setBlocks={setBlocks}
-          emptyHint="Empty workout — add blocks below, or load a template."
+          emptyHint={tr("w.train.builder.emptyHint")}
           reorder
         />
 
         {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
         <button onClick={save} disabled={saving || blocks.length === 0}
           style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
-          {saving ? "Saving…" : "Save as template →"}
+          {saving ? tr("w.train.builder.saving") : tr("w.train.builder.saveAsTemplate")}
         </button>
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>Template library</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>{tr("w.train.builder.templateLibrary")}</div>
         {templates.length === 0 ? (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 10, color: C("ash") }}>No templates yet. Build one and save it.</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 10, color: C("ash") }}>{tr("w.train.builder.noTemplates")}</div>
         ) : (
           templates.map((t) => (
             <div key={t.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
               <div style={{ fontWeight: 700, fontSize: fs.note }}>{t.name}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t.blocks.length} blocks{t.description ? ` · ${t.description}` : ""}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t.blocks.length} {tr("w.train.builder.blocks")}{t.description ? ` · ${t.description}` : ""}</div>
               <div style={{ display: "flex", gap: space.sm, marginTop: 8 }}>
-                <button onClick={() => loadTemplate(t)} style={smallBtn("lime")}>Load</button>
-                <button onClick={() => del(t.id)} style={smallBtn("ash")}>Delete</button>
+                <button onClick={() => loadTemplate(t)} style={smallBtn("lime")}>{tr("w.train.builder.load")}</button>
+                <button onClick={() => del(t.id)} style={smallBtn("ash")}>{tr("w.train.builder.delete")}</button>
               </div>
             </div>
           ))

@@ -8,17 +8,20 @@ import {
 } from "@hybrid/core";
 import { fs, space, LINE, LIME, ASH, BLUE, tip, mono } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useLang } from "@/lib/i18n";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const C = (v: string) => `var(--color-${v})`;
 const TREND_GLYPH: Record<TrendDir, { g: string; c: string }> = { up: { g: "▲", c: "lime" }, down: { g: "▼", c: "amber" }, flat: { g: "→", c: "ash" } };
-const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
-const PERIODS: { id: ExercisePeriod; label: string }[] = [{ id: "8w", label: "8 wk" }, { id: "6m", label: "6 mo" }, { id: "1y", label: "1 yr" }, { id: "all", label: "All" }];
+const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.trends.muscleQuads", glutes: "w.analyze.trends.muscleGlutes", posterior: "w.analyze.trends.musclePosterior", back: "w.analyze.trends.muscleBack", chest: "w.analyze.trends.muscleChest", shoulders: "w.analyze.trends.muscleShoulders", triceps: "w.analyze.trends.muscleTriceps" };
+const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
 /** AURORA Trends (web) — full bespoke analytics hub reusing the exact engines +
  *  recharts volume/tonnage/muscle bars. */
 export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void; onOpenVolume?: () => void }) {
+  const { t } = useLang();
+  const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const [period, setPeriod] = useState<ExercisePeriod>("all");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
   const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
@@ -41,62 +44,62 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
   if (!trained) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>Trends</h1>
-        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>No strength training logged yet. Log some lifts and your volume trends, muscle breakdown and per-exercise analytics show up here.</span></div>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.trends.title")}</h1>
+        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.trends.empty")}</span></div>
       </div>
     );
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Trends</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.trends.title")}</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
-        <div style={card}>{frameHead("lime", "Weekly working sets · last 8 wk")}
-          <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} sets`} /><Bar dataKey="sets" fill={LIME} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
+        <div style={card}>{frameHead("lime", t("w.analyze.trends.weeklySets"))}
+          <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={LIME} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
-        <div style={card}>{frameHead("blue", `Weekly tonnage · ${units === "kg" ? "tonnes" : "k lb"}`)}
+        <div style={card}>{frameHead("blue", `${t("w.analyze.trends.weeklyTonnage")} · ${units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}`)}
           <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${units === "kg" ? "t" : "k lb"}`} /><Bar dataKey="t" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
       </div>
 
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Muscle breakdown · this week</span>
-          {onOpenVolume && <button onClick={onOpenVolume} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), background: "none", border: "none", cursor: "pointer" }}>Volume detail →</button>}
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.trends.muscleBreakdown")}</span>
+          {onOpenVolume && <button onClick={onOpenVolume} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), background: "none", border: "none", cursor: "pointer" }}>{t("w.analyze.trends.volumeDetail")}</button>}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 12 }}>
           {muscles.map((m) => { const c = C(muscleZone(m.zone)); const on = m.muscle === focusMuscle; return (
             <button key={m.muscle} onClick={() => setSelMuscle(m.muscle)} style={{ display: "flex", alignItems: "center", gap: space.xs, border: `1px solid ${on ? c : `color-mix(in srgb, ${c} 40%, transparent)`}`, background: `color-mix(in srgb, ${c} ${on ? 18 : 8}%, transparent)`, borderRadius: 999, padding: "6px 12px", cursor: "pointer" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk") }}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk") }}>{ml(m.muscle)}</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 800, color: c }}>{m.sets}</span>
             </button>
           ); })}
         </div>
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, color: C("ash") }}>{MUSCLE_LABEL[focusMuscle] ?? focusMuscle} · weekly sets · 8 wk</div>
-          <ResponsiveContainer width="100%" height={120}><BarChart data={muscleWeeks.map((s, i) => ({ w: fmtWeek(weeks[i]?.weekStart ?? ""), sets: s }))}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.nano }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.nano }} width={26} allowDecimals={false} /><Tooltip contentStyle={tip} formatter={(v) => `${v} sets`} /><Bar dataKey="sets" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, color: C("ash") }}>{ml(focusMuscle)} · {t("w.analyze.trends.weeklySets8w")}</div>
+          <ResponsiveContainer width="100%" height={120}><BarChart data={muscleWeeks.map((s, i) => ({ w: fmtWeek(weeks[i]?.weekStart ?? ""), sets: s }))}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.nano }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.nano }} width={26} allowDecimals={false} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         {advice.length > 0 && (
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10 }}>
-            {advice.filter((a) => a.action === "add").length > 0 && `Add volume: ${advice.filter((a) => a.action === "add").map((a) => MUSCLE_LABEL[a.muscle]).join(", ")}. `}
-            {advice.filter((a) => a.action === "reduce").length > 0 && `Ease off: ${advice.filter((a) => a.action === "reduce").map((a) => MUSCLE_LABEL[a.muscle]).join(", ")}.`}
+            {advice.filter((a) => a.action === "add").length > 0 && `${t("w.analyze.trends.addVolume")} ${advice.filter((a) => a.action === "add").map((a) => ml(a.muscle)).join(", ")}. `}
+            {advice.filter((a) => a.action === "reduce").length > 0 && `${t("w.analyze.trends.easeOff")} ${advice.filter((a) => a.action === "reduce").map((a) => ml(a.muscle)).join(", ")}.`}
           </div>
         )}
       </div>
 
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.ms }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Exercise analytics</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.analyze.trends.exerciseAnalytics")}</span>
           <div style={{ display: "flex", gap: space.xxs }}>
-            {PERIODS.map((p) => <button key={p.id} onClick={() => setPeriod(p.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "4px 12px", borderRadius: 999, cursor: "pointer", color: period === p.id ? C("ink") : C("ash"), background: period === p.id ? C("lime") : "transparent", border: `1px solid ${period === p.id ? C("lime") : C("line")}` }}>{p.label}</button>)}
+            {PERIODS.map((p) => <button key={p.id} onClick={() => setPeriod(p.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "4px 12px", borderRadius: 999, cursor: "pointer", color: period === p.id ? C("ink") : C("ash"), background: period === p.id ? C("lime") : "transparent", border: `1px solid ${period === p.id ? C("lime") : C("line")}` }}>{t(p.key)}</button>)}
           </div>
         </div>
         <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
           <div style={{ minWidth: 420 }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-              {([["exercise", "name"], ["freq", "sessions"], ["best e1RM", "bestE1rm"], ["volume", "volume"], ["trend", null]] as const).map(([h, k]) => (
-                <button key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{h}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
+              {([["w.analyze.trends.colExercise", "name"], ["w.analyze.trends.colFreq", "sessions"], ["w.analyze.trends.colBestE1rm", "bestE1rm"], ["w.analyze.trends.colVolume", "volume"], ["w.analyze.trends.colTrend", null]] as const).map(([h, k]) => (
+                <button key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{t(h)}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
               ))}
             </div>
             {sortedTable.map((r) => { const tr = TREND_GLYPH[r.trend]; return (

@@ -51,11 +51,13 @@ const buildBundle = (t: (k: string) => string): { kicker: string; color: string;
 ];
 
 export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void }) {
+  const { t } = useLang();
   const { entitlement } = useSession();
   const isMobile = useIsMobile();
   const paid = entitlement === "paid";
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const BUNDLE = buildBundle(t);
 
   useEffect(() => { track(FUNNEL.upgradePageView, { client: "web" }); }, []);
 
@@ -67,10 +69,10 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
     try {
       const res = await fetch("/api/billing/checkout", { method: "POST" });
       const j = (await res.json().catch(() => ({}))) as { url?: string; configured?: boolean };
-      if (res.status === 503 || j.configured === false) { setMsg("Billing isn’t configured on this deployment yet."); setBusy(false); return; }
+      if (res.status === 503 || j.configured === false) { setMsg(t("w.account.upgrade.billing-unconfigured")); setBusy(false); return; }
       if (res.ok && j.url) { window.location.href = j.url; return; }
-      setMsg(`Couldn’t start checkout (HTTP ${res.status}).`); setBusy(false);
-    } catch { setMsg("Network error — try again."); setBusy(false); }
+      setMsg(`${t("w.account.upgrade.checkout-failed")} (HTTP ${res.status}).`); setBusy(false);
+    } catch { setMsg(t("w.account.upgrade.network-error")); setBusy(false); }
   };
 
   const CTA = (
@@ -92,26 +94,25 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
         opacity: busy ? 0.6 : 1,
       }}
     >
-      {busy ? "Starting…" : paid ? "Switch to Full →" : "Upgrade to Full →"}
+      {busy ? t("w.account.upgrade.starting") : paid ? `${t("w.account.upgrade.switch-full")} →` : `${t("w.account.upgrade.upgrade-full")} →`}
     </button>
   );
 
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>Full · the upgrade</div>
-      <h2 style={{ fontWeight: 900, fontSize: 30, margin: "5px 0 0" }}>Unlock HYBRID Full</h2>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>{t("w.account.upgrade.kicker")}</div>
+      <h2 style={{ fontWeight: 900, fontSize: 30, margin: "5px 0 0" }}>{t("w.account.upgrade.headline")}</h2>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.7, marginTop: 10, maxWidth: 660, color: C("chalk") }}>
-        One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays exactly as it is;
-        the depth simply switches on.
+        {t("w.account.upgrade.intro")}
       </div>
 
       {/* hero */}
       <div style={{ marginTop: 18, padding: 22, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 13%, transparent), color-mix(in srgb, ${C("violet")} 10%, transparent))` }}>
         <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, color: C("lime"), border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "3px 12px", fontWeight: 700 }}>
-          12+ pro tools · one subscription
+          {t("w.account.upgrade.hero-badge")}
         </span>
         <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 14, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>One subscription · cancel anytime · pricing shown at checkout</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.upgrade.hero-sub")}</span>
         </div>
         <div style={{ marginTop: 14 }}>{CTA}</div>
         {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("amber") }}>{msg}</div>}
@@ -119,12 +120,12 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
 
       {/* flagship — the Cockpit (assembles everything) */}
       <div style={{ ...card, marginTop: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>The hub — everything in one place</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.account.upgrade.hub-kicker")}</div>
         <div style={{ display: "flex", gap: space.ms, alignItems: "flex-start", marginTop: 10 }}>
           <span style={{ fontSize: fs.subtitle, width: 20, textAlign: "center" }}>◈</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>Athlete Cockpit</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</div>
+            <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{t("w.account.upgrade.cockpit")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>{t("w.account.upgrade.cockpit-ds")}</div>
           </div>
         </div>
       </div>
@@ -150,8 +151,8 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
       <div style={{ marginTop: 18 }}>{CTA}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>
         {paid
-          ? "You’re already paid — this just flips you to Full, no charge."
-          : "Cancel anytime. Your logged training is always yours, on the free plan too."}
+          ? t("w.account.upgrade.footer-paid")
+          : t("w.account.upgrade.footer-free")}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { fs, space,
   kgToUnit, fmtTonnage, fmtWeight, type LoggedSession,
 } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useLang } from "@/lib/i18n";
 import type { RosterRow } from "@/lib/use-roster";
 
 /**
@@ -64,9 +65,10 @@ const axis = { stroke: colors.ash, style: { ...mono, fontSize: fs.micro } } as c
 
 /* ---------- CLIENT ---------- */
 export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSession[] }) {
+  const { t } = useLang();
   const units = useLoggerPrefs().units;
   if (sessions.length === 0)
-    return <AEmpty title="No analytics yet" body="Log a few sessions and your strength trend, volume, PRs and readiness chart out here — all from your real training." />;
+    return <AEmpty title={t("w.home.analytics.noAnalytics")} body={t("w.home.analytics.noAnalyticsBody")} />;
 
   const vol = totalVolume(sessions);
   const prs = bestE1rmByLift(sessions).slice(0, 6);
@@ -78,13 +80,13 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
 
   return (
     <div style={grid}>
-      <AStat label="Sessions" value={sessions.length} accent="lime" />
-      <AStat label="Total volume" value={fmtTonnage(vol, units)} />
-      <AStat label={best ? `${best.lift} e1RM` : "Best e1RM"} value={best ? fmtWeight(best.e1rm, units) : "—"} accent="lime" />
-      <AStat label="Last readiness" value={lastReadiness ?? "—"} accent="blue" />
+      <AStat label={t("w.home.analytics.sessions")} value={sessions.length} accent="lime" />
+      <AStat label={t("w.home.analytics.totalVolume")} value={fmtTonnage(vol, units)} />
+      <AStat label={best ? `${best.lift} e1RM` : t("w.home.analytics.bestE1rm")} value={best ? fmtWeight(best.e1rm, units) : "—"} accent="lime" />
+      <AStat label={t("w.home.analytics.lastReadiness")} value={lastReadiness ?? "—"} accent="blue" />
 
       {series.length > 0 && (
-        <AFrame title={`${topLift} · e1RM`} kicker="From your logs" span={2}>
+        <AFrame title={`${topLift} · e1RM`} kicker={t("w.home.analytics.fromLogs")} span={2}>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={series}>
               <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />
@@ -96,7 +98,7 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
         </AFrame>
       )}
 
-      <AFrame title="Volume per session" kicker="Tonnage" accent="blue" span={series.length > 0 ? 2 : 4}>
+      <AFrame title={t("w.home.analytics.volPerSession")} kicker={t("w.home.analytics.tonnage")} accent="blue" span={series.length > 0 ? 2 : 4}>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={volSeries}>
             <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />
@@ -108,8 +110,8 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
       </AFrame>
 
       {prs.length > 0 && (
-        <AFrame title="Personal records" kicker="Best e1RM per lift" span={4}>
-          <Table head={["Lift", "Best e1RM", "When"]} rows={prs.map((p) => [p.lift, fmtWeight(p.e1rm, units), fmtDate(p.when)])} />
+        <AFrame title={t("w.home.analytics.personalRecords")} kicker={t("w.home.analytics.bestE1rmPerLift")} span={4}>
+          <Table head={[t("w.home.analytics.col.lift"), t("w.home.analytics.col.bestE1rm"), t("w.home.analytics.col.when")]} rows={prs.map((p) => [p.lift, fmtWeight(p.e1rm, units), fmtDate(p.when)])} />
         </AFrame>
       )}
     </div>
@@ -118,8 +120,9 @@ export function AuroraAthleteAnalytics({ sessions = [] }: { sessions?: LoggedSes
 
 /* ---------- COACH ---------- */
 export function AuroraCoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) {
+  const { t } = useLang();
   if (roster.length === 0)
-    return <AEmpty title="No clients yet" body="Invite athletes from the Coach tab. Once they accept and train, your roster analytics appear here." />;
+    return <AEmpty title={t("w.home.analytics.noClients")} body={t("w.home.analytics.noClientsBody")} />;
 
   const avgAdh = Math.round(roster.reduce((s, c) => s + c.adherence, 0) / roster.length);
   const reads = roster.filter((c) => typeof c.readiness === "number");
@@ -129,12 +132,12 @@ export function AuroraCoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) 
 
   return (
     <div style={grid}>
-      <AStat label="Clients" value={roster.length} accent="violet" />
-      <AStat label="Avg adherence" value={`${avgAdh}%`} accent="lime" />
-      <AStat label="Avg readiness" value={avgRead ?? "—"} accent="blue" />
-      <AStat label="Roster volume" value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
+      <AStat label={t("w.home.analytics.clients")} value={roster.length} accent="violet" />
+      <AStat label={t("w.home.analytics.avgAdherence")} value={`${avgAdh}%`} accent="lime" />
+      <AStat label={t("w.home.analytics.avgReadiness")} value={avgRead ?? "—"} accent="blue" />
+      <AStat label={t("w.home.analytics.rosterVolume")} value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
 
-      <AFrame title="Adherence by client" kicker="Last 7 days" span={4}>
+      <AFrame title={t("w.home.analytics.adherenceByClient")} kicker={t("w.home.analytics.last7days")} span={4}>
         <ResponsiveContainer width="100%" height={Math.max(120, roster.length * 44)}>
           <BarChart data={roster} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />
@@ -146,9 +149,9 @@ export function AuroraCoachAnalytics({ roster = [] }: { roster?: RosterRow[] }) 
         </ResponsiveContainer>
       </AFrame>
 
-      <AFrame title="Client roster" kicker="Your consented athletes" accent="violet" span={4}>
+      <AFrame title={t("w.home.analytics.clientRoster")} kicker={t("w.home.analytics.consentedAthletes")} accent="violet" span={4}>
         <Table
-          head={["Athlete", "Readiness", "Adherence", "Sessions", "Last"]}
+          head={[t("w.home.analytics.col.athlete"), t("w.home.analytics.col.readiness"), t("w.home.analytics.col.adherence"), t("w.home.analytics.col.sessions"), t("w.home.analytics.col.last")]}
           rows={roster.map((c) => [
             c.name,
             <span key="r" style={{ color: readColor(c.readiness) }}>{c.readiness ?? "—"}</span>,
@@ -169,6 +172,7 @@ type AdminStats = {
 };
 
 export function AuroraOperatorAnalytics() {
+  const { t } = useLang();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
@@ -180,18 +184,18 @@ export function AuroraOperatorAnalytics() {
     return () => controller.abort();
   }, []);
 
-  if (err) return <AEmpty title="Admin only" body="Platform analytics are admin-only and computed live from the database." />;
-  if (!stats) return <AEmpty title="Loading…" body="Crunching platform aggregates." />;
+  if (err) return <AEmpty title={t("w.home.analytics.adminOnly")} body={t("w.home.analytics.adminOnlyBody")} />;
+  if (!stats) return <AEmpty title={t("w.home.analytics.loading")} body={t("w.home.analytics.loadingBody")} />;
 
   return (
     <div style={grid}>
-      <AStat label="Total users" value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent="lime" />
-      <AStat label="Active (30d)" value={stats.mau.toLocaleString()} sub="trained in 30d" accent="lime" />
-      <AStat label="Sessions logged" value={stats.sessions.toLocaleString()} />
-      <AStat label="Coaches" value={stats.coaches.toLocaleString()} accent="violet" />
+      <AStat label={t("w.home.analytics.totalUsers")} value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent="lime" />
+      <AStat label={t("w.home.analytics.active30d")} value={stats.mau.toLocaleString()} sub={t("w.home.analytics.trainedIn30d")} accent="lime" />
+      <AStat label={t("w.home.analytics.sessionsLogged")} value={stats.sessions.toLocaleString()} />
+      <AStat label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent="violet" />
 
       {stats.planPopularity.length > 0 && (
-        <AFrame title="Plans enrolled" kicker="By goal" span={2}>
+        <AFrame title={t("w.home.analytics.plansEnrolled")} kicker={t("w.home.analytics.byGoal")} span={2}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={stats.planPopularity}>
               <CartesianGrid stroke={colors.line} strokeDasharray="3 3" />
@@ -204,7 +208,7 @@ export function AuroraOperatorAnalytics() {
       )}
 
       {stats.langSplit.length > 0 && (
-        <AFrame title="Language split" kicker="Users by language" accent="blue" span={2}>
+        <AFrame title={t("w.home.analytics.languageSplit")} kicker={t("w.home.analytics.usersByLanguage")} accent="blue" span={2}>
           <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 4 }}>
             {(() => {
               const max = Math.max(...stats.langSplit.map((x) => x.n)) || 1;
@@ -226,7 +230,7 @@ export function AuroraOperatorAnalytics() {
 
       {stats.totalUsers === 0 && (
         <div style={{ ...card, gridColumn: "span 4", textAlign: "center" }}>
-          <span style={{ ...mono, fontSize: fs.body, color: C("ash") }}>No users yet.</span>
+          <span style={{ ...mono, fontSize: fs.body, color: C("ash") }}>{t("w.home.analytics.noUsers")}</span>
         </div>
       )}
     </div>

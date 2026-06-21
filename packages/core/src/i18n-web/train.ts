@@ -41,6 +41,9 @@ export const web_train = {
 
     // periodize.tsx
     "w.train.periodize.noActivePlan": "No active plan",
+    "w.train.periodize.enrollBefore": "Enroll in a plan from the",
+    "w.train.periodize.plansTab": "Plans",
+    "w.train.periodize.enrollAfter": "tab — your periodized macrocycle (phases, load & recovery weeks) shows up here.",
     "w.train.periodize.enrolledLabel": "enrolled",
     "w.train.periodize.macroNow": "-week macrocycle · now in",
     "w.train.periodize.wk": "wk",
@@ -54,6 +57,7 @@ export const web_train = {
     "w.train.comp.eventName": "Event name",
     "w.train.comp.addEvent": "Add event",
     "w.train.comp.weeksOut": "weeks out",
+    "w.train.comp.wk": "wk",
     "w.train.comp.peakLands": "peak lands on event ✓",
     "w.train.comp.peakAtWeek": "peak at week",
     "w.train.comp.adjustTaper": "— adjust taper",
@@ -260,6 +264,9 @@ export const web_train = {
 
     // periodize.tsx
     "w.train.periodize.noActivePlan": "Brak aktywnego planu",
+    "w.train.periodize.enrollBefore": "Zapisz się na plan z zakładki",
+    "w.train.periodize.plansTab": "Plany",
+    "w.train.periodize.enrollAfter": "— Twój zaperiodyzowany makrocykl (fazy, tygodnie obciążenia i regeneracji) pojawi się tutaj.",
     "w.train.periodize.enrolledLabel": "zapisano",
     "w.train.periodize.macroNow": "-tygodniowy makrocykl · teraz w",
     "w.train.periodize.wk": "tyg.",
@@ -273,6 +280,7 @@ export const web_train = {
     "w.train.comp.eventName": "Nazwa wydarzenia",
     "w.train.comp.addEvent": "Dodaj wydarzenie",
     "w.train.comp.weeksOut": "tygodni do startu",
+    "w.train.comp.wk": "tyg.",
     "w.train.comp.peakLands": "szczyt wypada na zawodach ✓",
     "w.train.comp.peakAtWeek": "szczyt w tygodniu",
     "w.train.comp.adjustTaper": "— skoryguj tapering",
@@ -479,6 +487,9 @@ export const web_train = {
 
     // periodize.tsx
     "w.train.periodize.noActivePlan": "Kein aktiver Plan",
+    "w.train.periodize.enrollBefore": "Schreibe dich für einen Plan im Tab",
+    "w.train.periodize.plansTab": "Pläne",
+    "w.train.periodize.enrollAfter": "ein — dein periodisierter Makrozyklus (Phasen, Belastungs- & Erholungswochen) erscheint hier.",
     "w.train.periodize.enrolledLabel": "eingeschrieben",
     "w.train.periodize.macroNow": "-Wochen-Makrozyklus · jetzt in",
     "w.train.periodize.wk": "Wo.",
@@ -492,6 +503,7 @@ export const web_train = {
     "w.train.comp.eventName": "Veranstaltungsname",
     "w.train.comp.addEvent": "Veranstaltung hinzufügen",
     "w.train.comp.weeksOut": "Wochen bis zum Start",
+    "w.train.comp.wk": "Wo.",
     "w.train.comp.peakLands": "Höchstform fällt auf Wettkampf ✓",
     "w.train.comp.peakAtWeek": "Höchstform in Woche",
     "w.train.comp.adjustTaper": "— Tapering anpassen",

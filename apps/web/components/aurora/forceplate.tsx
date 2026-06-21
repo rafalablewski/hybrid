@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { parseForcePlateCsv, type Signal } from "@hybrid/core";
 import { fs, space, LINE, LIME, ASH, tip } from "@/lib/ui";
+import { useLang } from "@/lib/i18n";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const C = (v: string) => `var(--color-${v})`;
@@ -13,6 +14,7 @@ const chip = (color: string, label: string) => <span style={{ background: `color
 /** AURORA Force plate (web) — CSV import into the Signal ontology + jump-height
  *  trend, reusing the exact parseForcePlateCsv + /api/signals flow. */
 export default function AuroraForcePlate() {
+  const { t } = useLang();
   const [csv, setCsv] = useState("");
   const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
@@ -38,46 +40,46 @@ export default function AuroraForcePlate() {
     let ok = 0;
     for (const s of parsed.signals) {
       const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: "forceplate", ts: s.ts }) });
-      if (res.status === 401) { setMsg({ text: "Sign in to import.", ok: false }); setImporting(false); return; }
+      if (res.status === 401) { setMsg({ text: t("w.analyze.fp.signInImport"), ok: false }); setImporting(false); return; }
       if (res.ok) ok++;
     }
-    setMsg({ text: `Imported ${ok} signal${ok === 1 ? "" : "s"} into your Twin.`, ok: true });
+    setMsg({ text: `${t("w.analyze.fp.importedPre")} ${ok} ${ok === 1 ? t("w.analyze.fp.signal") : t("w.analyze.fp.signals")} ${t("w.analyze.fp.importedTail")}`, ok: true });
     setCsv(""); setImporting(false); load();
   };
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>Force plate</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.fp.title")}</h1>
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>Import force-plate / jump CSV</div>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, margin: "8px 0 12px", color: C("ash") }}>Drop a Hawkin / ForceDecks-style export. Recognized columns: jump height, asymmetry, body mass. Wide or long shapes both work; unknown columns are skipped, never guessed.</p>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.fp.importTitle")}</div>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, margin: "8px 0 12px", color: C("ash") }}>{t("w.analyze.fp.importBody")}</p>
         <div style={{ display: "flex", gap: space.sm, marginBottom: 8 }}>
           <label style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
-            Choose file<input type="file" accept=".csv,text/csv,text/plain" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+            {t("w.analyze.fp.chooseFile")}<input type="file" accept=".csv,text/csv,text/plain" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
           </label>
         </div>
-        <textarea value={csv} onChange={(e) => setCsv(e.target.value)} placeholder="…or paste CSV here" rows={6}
+        <textarea value={csv} onChange={(e) => setCsv(e.target.value)} placeholder={t("w.analyze.fp.pasteCsv")} rows={6}
           style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", resize: "vertical" }} />
         {parsed && (
           <div style={{ marginTop: 10 }}>
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 8 }}>
-              {chip(C("lime"), `${parsed.imported} signals from ${parsed.rows} rows`)}
+              {chip(C("lime"), `${parsed.imported} ${t("w.analyze.fp.signalsFromPre")} ${parsed.rows} ${t("w.analyze.fp.rows")}`)}
               {parsed.recognized.map((r) => <span key={r}>{chip(C("blue"), r)}</span>)}
-              {parsed.ignored.map((r) => <span key={r}>{chip(C("ash"), `skipped: ${r}`)}</span>)}
+              {parsed.ignored.map((r) => <span key={r}>{chip(C("ash"), `${t("w.analyze.fp.skipped")} ${r}`)}</span>)}
             </div>
             {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 6, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
-            <button onClick={doImport} disabled={importing || parsed.imported === 0} style={{ fontWeight: 700, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 24px", cursor: importing || !parsed.imported ? "default" : "pointer", opacity: importing || !parsed.imported ? 0.5 : 1 }}>{importing ? "Importing…" : `Import ${parsed.imported} signals →`}</button>
+            <button onClick={doImport} disabled={importing || parsed.imported === 0} style={{ fontWeight: 700, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 24px", cursor: importing || !parsed.imported ? "default" : "pointer", opacity: importing || !parsed.imported ? 0.5 : 1 }}>{importing ? t("w.analyze.fp.importing") : `${t("w.analyze.fp.importPre")} ${parsed.imported} ${t("w.analyze.fp.importTail")}`}</button>
           </div>
         )}
       </div>
 
       {jumps.length > 0 && (
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime"), marginBottom: 10 }}>Jump height · neuromuscular readiness</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime"), marginBottom: 10 }}>{t("w.analyze.fp.jumpTitle")}</div>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={jumps} margin={{ left: -10, right: 8 }}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} /><YAxis unit="cm" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 2", "dataMax + 2"]} /><Tooltip contentStyle={tip} formatter={(v) => [`${v} cm`, "jump height"]} /><Line type="monotone" dataKey="jh" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} /></LineChart>
+            <LineChart data={jumps} margin={{ left: -10, right: 8 }}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} /><YAxis unit="cm" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 2", "dataMax + 2"]} /><Tooltip contentStyle={tip} formatter={(v) => [`${v} cm`, t("w.analyze.fp.jumpLabel")]} /><Line type="monotone" dataKey="jh" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} /></LineChart>
           </ResponsiveContainer>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}>A drop vs your baseline flags neuromuscular fatigue — this jump signal also feeds the Twin&apos;s injury risk.</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}>{t("w.analyze.fp.jumpNote")}</div>
         </div>
       )}
     </div>

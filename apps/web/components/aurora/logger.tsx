@@ -19,6 +19,7 @@ import { fs, space,
 } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { useLang } from "@/lib/i18n";
 
 type FinishData = {
   title: string;
@@ -49,7 +50,8 @@ export default function AuroraLogger({
   onSaved: () => void;
   initialBlocks?: SessionBlock[];
 }) {
-  const [title, setTitle] = useState("Workout");
+  const { t } = useLang();
+  const [title, setTitle] = useState(() => t("w.train.logger.workout"));
   const [blocks, setBlocks] = useState<EditableBlock[]>(
     () => initialBlocks?.map((b) => ({ uid: uid(), ...b }) as EditableBlock) ?? [],
   );
@@ -80,17 +82,17 @@ export default function AuroraLogger({
       const res = await fetch("/api/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: title.trim() || "Routine", blocks: blocks.map(({ uid: _u, ...b }) => b) }),
+        body: JSON.stringify({ name: title.trim() || t("w.train.logger.defaultRoutine"), blocks: blocks.map(({ uid: _u, ...b }) => b) }),
       });
       if (!res.ok) {
-        setRoutineMsg(res.status === 401 ? "Sign in to save routines." : "Couldn't save routine.");
+        setRoutineMsg(res.status === 401 ? t("w.train.logger.signInRoutines") : t("w.train.logger.saveRoutineErr"));
         return;
       }
       const d = (await res.json()) as { template: Routine };
       setRoutines((rs) => [d.template, ...rs]);
-      setRoutineMsg("★ Saved to your routines");
+      setRoutineMsg(t("w.train.logger.savedRoutine"));
     } catch {
-      setRoutineMsg("Network error — try again.");
+      setRoutineMsg(t("w.train.logger.networkError"));
     }
   };
 
@@ -125,7 +127,7 @@ export default function AuroraLogger({
         };
       }),
     );
-    setTitle("AI Prescribed");
+    setTitle(t("w.train.logger.aiPrescribed"));
   };
 
   const save = async () => {
@@ -145,12 +147,12 @@ export default function AuroraLogger({
         body: JSON.stringify(payload),
       });
       if (res.status === 401) {
-        setError("Sign in to save sessions (demo mode doesn't persist).");
+        setError(t("w.train.logger.signInSessions"));
         setSaving(false);
         return;
       }
       if (!res.ok) {
-        setError(`Couldn't save (HTTP ${res.status}).`);
+        setError(`${t("w.train.logger.saveErrorPrefix")}${res.status}${t("w.train.logger.saveErrorSuffix")}`);
         setSaving(false);
         return;
       }
@@ -174,7 +176,7 @@ export default function AuroraLogger({
         firstEver: sessions.length === 0,
       });
     } catch {
-      setError("Network error — try again.");
+      setError(t("w.train.logger.networkError"));
       setSaving(false);
     }
   };
@@ -186,22 +188,22 @@ export default function AuroraLogger({
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
-            AI Coach{sessions.length > 0 ? ` · readiness ${rx.readiness}/100` : ""}
+            {t("w.train.logger.aiCoach")}{sessions.length > 0 ? ` · ${t("w.train.logger.readiness")} ${rx.readiness}/100` : ""}
           </div>
           <button onClick={loadPrescribed} style={pill("violet")}>
-            {sessions.length > 0 ? "Use prescribed →" : "Start a session →"}
+            {sessions.length > 0 ? t("w.train.logger.usePrescribed") : t("w.train.logger.startSession")}
           </button>
         </div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>
           {sessions.length > 0
             ? rx.why
-            : "Log a few sessions and the coach reads your real readiness, fatigue and velocity to prescribe the day. For now, tap above for a balanced starter you can edit."}
+            : t("w.train.logger.coachIntro")}
         </p>
       </div>
 
       {routines.length > 0 && (
         <div style={{ ...card, marginBottom: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your routines</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.train.logger.yourRoutines")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
             {routines.map((r) => (
               <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" · ")}>
@@ -216,15 +218,15 @@ export default function AuroraLogger({
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
           style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
-          title="Toggle the RPE + velocity columns"
+          title={t("w.train.logger.toggleRpeVel")}
         >
-          {prefs.detailed ? "Detailed ▾" : "Simple ▸"}
+          {prefs.detailed ? t("w.train.logger.detailed") : t("w.train.logger.simple")}
         </button>
         {prefs.detailed && (
           <button
             onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
             style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
-            title="Log effort as RPE or RIR (reps in reserve)"
+            title={t("w.train.logger.logEffortAs")}
           >
             {prefs.rpeAsRir ? "RIR" : "RPE"}
           </button>
@@ -234,14 +236,14 @@ export default function AuroraLogger({
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Session title"
+        placeholder={t("w.train.logger.sessionTitlePh")}
         style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", outline: "none", boxSizing: "border-box", width: "100%", marginBottom: 14 }}
       />
 
       <WorkoutBlocks
         blocks={blocks}
         setBlocks={setBlocks}
-        emptyHint="Empty session — add blocks below, or pull today's prescription."
+        emptyHint={t("w.train.logger.emptyHint")}
         reorder
         detailed={prefs.detailed}
         rirMode={prefs.rpeAsRir}
@@ -272,15 +274,15 @@ export default function AuroraLogger({
             opacity: saving || blocks.length === 0 ? 0.5 : 1,
           }}
         >
-          {saving ? "Saving…" : "Save session →"}
+          {saving ? t("w.train.logger.saving") : t("w.train.logger.saveSession")}
         </button>
         <button
           onClick={saveAsRoutine}
           disabled={blocks.length === 0}
           style={{ ...pill("lime"), padding: "13px 22px", opacity: blocks.length === 0 ? 0.5 : 1, cursor: blocks.length === 0 ? "default" : "pointer" }}
-          title="Save this workout as a reusable routine"
+          title={t("w.train.logger.saveRoutineTitle")}
         >
-          ★ Save as routine
+          {t("w.train.logger.saveAsRoutine")}
         </button>
         {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
       </div>
@@ -293,6 +295,7 @@ export default function AuroraLogger({
  *  a short navigator.vibrate where the device supports it (the web analog of the
  *  native success haptic). */
 function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; onDone: () => void }) {
+  const { t } = useLang();
   const { title, sets, volume, prs, cardioPrs, firstEver } = data;
   const milestone = firstEver || prs.length > 0 || cardioPrs.length > 0;
   useEffect(() => {
@@ -302,20 +305,20 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
   }, [milestone]);
   const prLine = (p: PrHit) =>
     p.previous == null
-      ? `${p.lift} ${fmtWeight(p.e1rm, units)} (first time)`
+      ? `${p.lift} ${fmtWeight(p.e1rm, units)} ${t("w.train.logger.firstTime")}`
       : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
-  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — faster pace`);
+  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div className="win-pop" style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
         <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
-        <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? "First one done." : "Session complete."}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 6 }}>{sets} sets · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
+        <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? t("w.train.logger.firstDone") : t("w.train.logger.sessionComplete")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 6 }}>{sets} {t("w.train.logger.sets")} · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
       </div>
 
       {prs.length > 0 && (
         <div className="win-pop" style={{ ...card, borderColor: C("lime"), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("lime") }}>🏆 {prs.length} new PR{prs.length > 1 ? "s" : ""}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("lime") }}>🏆 {prs.length} {prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}</div>
           {prs.slice(0, 5).map((p) => (
             <div key={p.lift} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6 }}>{prLine(p)}</div>
           ))}
@@ -324,7 +327,7 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
 
       {cardioPrs.length > 0 && (
         <div className="win-pop" style={{ ...card, borderColor: C("blue"), background: "color-mix(in srgb, var(--color-blue) 8%, transparent)", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("blue") }}>🏃 {cardioPrs.length} cardio PR{cardioPrs.length > 1 ? "s" : ""}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("blue") }}>🏃 {cardioPrs.length} {cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}</div>
           {cardioPrs.slice(0, 5).map((p) => (
             <div key={`${p.move}-${p.kind}`} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6 }}>{cardioLine(p)}</div>
           ))}
@@ -332,7 +335,7 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
       )}
 
       <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 6 }}>
-        Done →
+        {t("w.train.logger.done")}
       </button>
     </div>
   );

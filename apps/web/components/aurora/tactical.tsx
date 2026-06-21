@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fs, space, deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
 type State = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
 
@@ -19,6 +20,7 @@ const statusColor: Record<DutyStatus, string> = {
  *  unitReadiness engines: Deployment Readiness Index + unit go/no-go, in the
  *  rounded Aurora style. */
 export default function AuroraTactical() {
+  const { t } = useLang();
   const isMobile = useIsMobile();
   const [state, setState] = useState<State | null>(null);
   const [load, setLoad] = useState("78");
@@ -37,7 +39,7 @@ export default function AuroraTactical() {
     : null;
 
   // illustrative squad: you + synthetic teammates, to show the unit rollup
-  const squad: UnitMember[] = dr ? [{ name: "You", dri: dr.dri, status: dr.status }] : [];
+  const squad: UnitMember[] = dr ? [{ name: t("w.teams.tactical.you"), dri: dr.dri, status: dr.status }] : [];
   const unit = squad.length ? unitReadiness(squad) : null;
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -48,16 +50,15 @@ export default function AuroraTactical() {
   return (
     <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ ...card, }}>
-        <div style={kicker("amber")}>Tactical / SOF · deployment readiness</div>
+        <div style={kicker("amber")}>{t("w.teams.tactical.headerKicker")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
-          Not &ldquo;are you fit?&rdquo; but &ldquo;are you deployable?&rdquo; — the same Twin signals (HPI, injury risk)
-          fused with occupational capacity into a Deployment Readiness Index and a unit go/no-go.
+          {t("w.teams.tactical.headerBody")}
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <div style={{ ...card, }}>
-          <div style={kicker("blue")}>Deployment readiness</div>
+          <div style={kicker("blue")}>{t("w.teams.tactical.deploymentReadiness")}</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 54, color: dr ? C(statusColor[dr.status]) : C("ash"), lineHeight: 1.1, margin: "6px 0" }}>
             {dr ? dr.dri : "—"}
           </div>
@@ -68,17 +69,17 @@ export default function AuroraTactical() {
             </div>
           )}
           {hasData ? (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} · injury risk {state!.injuryRisk}/100</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>HPI {state!.hpi} · {t("w.teams.tactical.injuryRisk")} {state!.injuryRisk}/100</div>
           ) : (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>Log training to compute your Deployment Readiness Index from your Twin.</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>{t("w.teams.tactical.logToCompute")}</div>
           )}
           <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
             <label style={{ flex: 1 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Load carriage</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>{t("w.teams.tactical.loadCarriage")}</span>
               <input value={load} onChange={(e) => setLoad(e.target.value)} inputMode="numeric" style={input} />
             </label>
             <label style={{ flex: 1 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>Work capacity</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4, color: C("ash") }}>{t("w.teams.tactical.workCapacity")}</span>
               <input value={work} onChange={(e) => setWork(e.target.value)} inputMode="numeric" style={input} />
             </label>
           </div>
@@ -86,21 +87,21 @@ export default function AuroraTactical() {
 
         <div style={{ ...card, }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <div style={kicker("ash")}>Unit readiness</div>
-            {unit && chip(unit.go ? "lime" : "red", `${unit.go ? "MISSION GO" : "NO-GO"} · ${unit.pctReady}% deployable`)}
+            <div style={kicker("ash")}>{t("w.teams.tactical.unitReadiness")}</div>
+            {unit && chip(unit.go ? "lime" : "red", `${unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} · ${unit.pctReady}% ${t("w.teams.tactical.deployable")}`)}
           </div>
           <div style={{ marginTop: 12 }}>
             {unit?.members.map((m) => (
               <div key={m.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: m.name === "You" ? C("lime") : C("chalk") }}>{m.name}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: m.name === t("w.teams.tactical.you") ? C("lime") : C("chalk") }}>{m.name}</span>
                 <div style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>DRI {m.dri}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.teams.tactical.dri")} {m.dri}</span>
                   {chip(statusColor[m.status], m.status.replace("-", " "))}
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 10, color: C("ash") }}>Unit roll-up shows your own readiness · connect a real unit through the Org Graph.</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 10, color: C("ash") }}>{t("w.teams.tactical.rollupNote")}</div>
         </div>
       </div>
     </div>

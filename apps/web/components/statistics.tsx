@@ -6,11 +6,12 @@ import { fs, space, sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/
 import { useSessions } from "@/lib/use-sessions";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
+import { useLang } from "@/lib/i18n";
 
-const RANGES: { id: StatRange; label: string }[] = [
-  { id: "week", label: "Week" },
-  { id: "month", label: "Month" },
-  { id: "year", label: "Year" },
+const RANGES: { id: StatRange; key: string }[] = [
+  { id: "week", key: "w.analyze.stats.week" },
+  { id: "month", key: "w.analyze.stats.month" },
+  { id: "year", key: "w.analyze.stats.year" },
 ];
 
 /** Statistics (web) — web parity of the mobile screen, same @hybrid/core stats
@@ -19,6 +20,7 @@ const RANGES: { id: StatRange; label: string }[] = [
  *  drops the full-screen chrome + back button; standalone (/statistics, e.g.
  *  from the landing) keeps them. Radii soften under Aurora. */
 export default function StatisticsScreen({ embedded = false }: { embedded?: boolean }) {
+  const { t } = useLang();
   const router = useRouter();
   const aurora = useTemplate().template === "aurora";
   const r = { card: aurora ? 24 : 12, chart: aurora ? 28 : 14, field: aurora ? 14 : 10, pill: aurora ? 999 : 10 };
@@ -39,14 +41,14 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
             {!embedded && (
-              <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <button onClick={() => router.push("/app")} aria-label={t("w.analyze.stats.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
                 {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
               </button>
             )}
-            <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, lineHeight: 1.1 }}>Your<br />Statistics</h1>
+            <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, lineHeight: 1.1 }} dangerouslySetInnerHTML={{ __html: t("w.analyze.stats.title") }} />
           </div>
           <div style={{ textAlign: "right", marginTop: 6 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>Weekly volume</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.stats.weeklyVolume")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: space.xs, justifyContent: "flex-end", marginTop: 2 }}>
               <AuroraIcon name="arrow-up" size={16} color={C("lime")} />
               <span style={{ fontWeight: 900, fontSize: fs.title }}>{Math.round(recap.volume)} kg</span>
@@ -58,15 +60,15 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
           {RANGES.map((rg) => {
             const on = range === rg.id;
             return (
-              <button key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{rg.label}</button>
+              <button key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(rg.key)}</button>
             );
           })}
         </div>
 
         <div style={{ marginTop: 18, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.chart, padding: "18px 18px 26px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b style={{ fontSize: fs.subtitle }}>Sessions</b>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{buckets.total} in {range}</span>
+            <b style={{ fontSize: fs.subtitle }}>{t("w.analyze.stats.sessions")}</b>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{buckets.total} {t("w.analyze.stats.inRange")} {range}</span>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 130, marginTop: 16, gap: 7 }}>
             {buckets.buckets.map((b, i) => (
@@ -79,13 +81,13 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
         </div>
 
         <div style={{ display: "flex", gap: space.md, marginTop: 16 }}>
-          <Mini icon="verified" label="Active days" value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} radius={r.card} />
-          <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("violet")} radius={r.card} />
-          <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("amber")} radius={r.card} />
+          <Mini icon="verified" label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} radius={r.card} />
+          <Mini icon="navigation" label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("violet")} radius={r.card} />
+          <Mini icon="play" label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("amber")} radius={r.card} />
         </div>
 
         {!hasData && (
-          <p style={{ fontSize: fs.body, color: C("ash"), textAlign: "center", marginTop: 18, lineHeight: 1.5 }}>Log a few workouts and your real training stats fill in here.</p>
+          <p style={{ fontSize: fs.body, color: C("ash"), textAlign: "center", marginTop: 18, lineHeight: 1.5 }}>{t("w.analyze.stats.empty")}</p>
         )}
       </div>
     </div>

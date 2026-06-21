@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fs, space, pacePerKm } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -11,6 +12,7 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, 
  *  (live GPS needs the native build); the stopwatch + manual distance → pace
  *  are real and save a cardio session via /api/sessions. */
 export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
+  const { t } = useLang();
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [distance, setDistance] = useState("");
@@ -38,7 +40,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
   const pace = Number.isFinite(km) && km > 0 && minutes > 0 ? pacePerKm({ distance: km, minutes }) : null;
 
   const save = async () => {
-    if (elapsed < 1 && !(Number.isFinite(km) && km > 0)) { setMsg({ text: "Start the timer or enter a distance first.", ok: false }); return; }
+    if (elapsed < 1 && !(Number.isFinite(km) && km > 0)) { setMsg({ text: t("w.train.runTrack.startFirst"), ok: false }); return; }
     setSaving(true);
     setMsg(null);
     const now = new Date();
@@ -54,21 +56,21 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: "Run", startedAt: now.toISOString(), completedAt: now.toISOString(), blocks: [block] }),
       });
-      if (res.status === 401) { setMsg({ text: "Sign in to save your run.", ok: false }); setSaving(false); return; }
-      if (!res.ok) { setMsg({ text: `Couldn't save (HTTP ${res.status}).`, ok: false }); setSaving(false); return; }
-      setMsg({ text: "✓ Run saved to your history.", ok: true });
+      if (res.status === 401) { setMsg({ text: t("w.train.runTrack.signInSave"), ok: false }); setSaving(false); return; }
+      if (!res.ok) { setMsg({ text: `${t("w.train.runTrack.saveErrorPrefix")}${res.status}${t("w.train.runTrack.saveErrorSuffix")}`, ok: false }); setSaving(false); return; }
+      setMsg({ text: t("w.train.runTrack.saved"), ok: true });
       reset();
       onSaved?.();
     } catch {
-      setMsg({ text: "Network error — try again.", ok: false });
+      setMsg({ text: t("w.train.runTrack.networkError"), ok: false });
     }
     setSaving(false);
   };
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>Run tracking</h1>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>Track a run — time it, log the distance, save it to your history.</p>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>{t("w.train.runTrack.title")}</h1>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>{t("w.train.runTrack.intro")}</p>
 
       {/* Map placeholder */}
       <div style={{ ...card, padding: 0, overflow: "hidden", marginBottom: 16 }}>
@@ -79,9 +81,9 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
             <circle cx="380" cy="30" r="6" fill={C("amber")} />
           </svg>
           <div style={{ position: "relative", textAlign: "center", padding: "0 24px" }}>
-            <div style={{ fontWeight: 800, fontSize: fs.subtitle }}>📍 Live route map</div>
+            <div style={{ fontWeight: 800, fontSize: fs.subtitle }}>{t("w.train.runTrack.liveRouteMap")}</div>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 6, lineHeight: 1.5, color: C("ash") }}>
-              GPS route tracking goes live in the native app build (the map needs on-device location). Timing &amp; distance below work everywhere.
+              {t("w.train.runTrack.mapNote")}
             </p>
           </div>
         </div>
@@ -90,36 +92,36 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
       {/* Live stats */}
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.md }}>
-          <Stat label="Time" value={mmss(elapsed)} color={C("chalk")} />
-          <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={C("blue")} />
-          <Stat label="Pace /km" value={pace ?? "—"} color={C("lime")} />
+          <Stat label={t("w.train.runTrack.time")} value={mmss(elapsed)} color={C("chalk")} />
+          <Stat label={t("w.train.runTrack.distance")} value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={C("blue")} />
+          <Stat label={t("w.train.runTrack.pacePerKm")} value={pace ?? "—"} color={C("lime")} />
         </div>
         <div style={{ display: "flex", gap: space.ms, marginTop: 16, flexWrap: "wrap" }}>
           <button onClick={toggle} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: running ? C("amber") : C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 26px", cursor: "pointer" }}>
-            {running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}
+            {running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}
           </button>
           <button onClick={reset} disabled={elapsed === 0} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), background: "transparent", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "12px 20px", cursor: elapsed === 0 ? "default" : "pointer", opacity: elapsed === 0 ? 0.5 : 1 }}>
-            Reset
+            {t("w.train.runTrack.reset")}
           </button>
         </div>
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 6 }}>Distance (km)</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 6 }}>{t("w.train.runTrack.distanceKm")}</div>
         <input
           value={distance}
           onChange={(e) => setDistance(e.target.value)}
-          placeholder="e.g. 5.0"
+          placeholder={t("w.train.runTrack.distancePh")}
           inputMode="decimal"
           style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, width: "100%", maxWidth: 200, padding: "12px 14px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }}
         />
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>{t("w.train.runTrack.gpsNote")}</div>
       </div>
 
       {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("amber") }}>{msg.text}</div>}
 
       <button onClick={save} disabled={saving} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
-        {saving ? "Saving…" : "Save run →"}
+        {saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")}
       </button>
     </div>
   );

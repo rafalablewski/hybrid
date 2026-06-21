@@ -16,13 +16,13 @@ import { useIsMobile } from "@/lib/use-media-query";
 
 type CoachStatus = "pending" | "approved" | "denied";
 type Section = "general" | "notifications" | "privacy" | "security" | "coaching" | "data";
-const SECTIONS: { id: Section; label: string }[] = [
-  { id: "general", label: "General" },
-  { id: "notifications", label: "Notifications" },
-  { id: "privacy", label: "Privacy" },
-  { id: "security", label: "Security" },
-  { id: "coaching", label: "Coaching & access" },
-  { id: "data", label: "Data" },
+const buildSections = (t: (k: string) => string): { id: Section; label: string }[] => [
+  { id: "general", label: t("w.account.settings.sec-general") },
+  { id: "notifications", label: t("w.account.settings.sec-notifications") },
+  { id: "privacy", label: t("w.account.settings.sec-privacy") },
+  { id: "security", label: t("w.account.settings.sec-security") },
+  { id: "coaching", label: t("w.account.settings.sec-coaching") },
+  { id: "data", label: t("w.account.settings.sec-data") },
 ];
 
 // Notification + privacy rows/defaults are shared in @hybrid/core so web +
@@ -53,7 +53,8 @@ export default function AccountSettings() {
   const rCard = aurora ? 16 : 12;
   const editInput = { ...mono, fontSize: fs.bodyLg, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "9px 12px", outline: "none" } as const;
   const editBtn = (c: string) => ({ ...mono, fontSize: fs.body, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
-  const { lang, setLang } = useLang();
+  const { lang, setLang, t } = useLang();
+  const SECTIONS = buildSections(t);
   const prefs = useLoggerPrefs();
   const [section, setSection] = useState<Section>("general");
   const [confirm, setConfirm] = useState("");
@@ -71,22 +72,22 @@ export default function AccountSettings() {
   const [profileBusy, setProfileBusy] = useState(false);
 
   const runAuth = async (label: string, setMsg: (m: string | null) => void, op: () => Promise<{ error: { message: string } | null }>) => {
-    if (!authOn) { setMsg("Sign in with a real account to edit your profile."); return; }
+    if (!authOn) { setMsg(t("w.account.settings.auth-needed")); return; }
     setProfileBusy(true);
     setMsg(null);
     try {
       const { error } = await op();
       setMsg(error ? error.message : label);
     } catch {
-      setMsg("Network error — try again.");
+      setMsg(t("w.account.settings.network-error"));
     }
     setProfileBusy(false);
   };
-  const saveName = () => runAuth("✓ Name saved.", setProfileMsg, async () => createClient().auth.updateUser({ data: { name: name.trim() } }));
+  const saveName = () => runAuth(`✓ ${t("w.account.settings.name-saved")}`, setProfileMsg, async () => createClient().auth.updateUser({ data: { name: name.trim() } }));
   const changeEmail = () =>
-    runAuth("✓ Check your inbox to confirm the new email.", setProfileMsg, async () => createClient().auth.updateUser({ email: newEmail.trim() }));
+    runAuth(`✓ ${t("w.account.settings.email-check-inbox")}`, setProfileMsg, async () => createClient().auth.updateUser({ email: newEmail.trim() }));
   const changePassword = () =>
-    runAuth("✓ Password updated.", setPasswordMsg, async () => createClient().auth.updateUser({ password: newPw }));
+    runAuth(`✓ ${t("w.account.settings.password-updated")}`, setPasswordMsg, async () => createClient().auth.updateUser({ password: newPw }));
   const signOutEverywhere = async () => {
     if (authOn) await createClient().auth.signOut({ scope: "global" }).catch(() => {});
     void logout();
@@ -145,9 +146,9 @@ export default function AccountSettings() {
         window.location.href = j.url;
         return;
       }
-      setBillingMsg("Couldn’t start checkout — try again.");
+      setBillingMsg(t("w.account.settings.checkout-failed"));
     } catch {
-      setBillingMsg("Network error — try again.");
+      setBillingMsg(t("w.account.settings.network-error"));
     }
     setBillingBusy(false);
   };
@@ -169,9 +170,9 @@ export default function AccountSettings() {
         return;
       }
       const e = j as { error?: string };
-      setBillingMsg(e.error ?? "Couldn’t open the billing portal — try again.");
+      setBillingMsg(e.error ?? t("w.account.settings.portal-failed"));
     } catch {
-      setBillingMsg("Network error — try again.");
+      setBillingMsg(t("w.account.settings.network-error"));
     }
     setBillingBusy(false);
   };
@@ -214,7 +215,7 @@ export default function AccountSettings() {
       if (res.status === 503) { setCoachUnavailable(true); setCoachBusy(false); return; }
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
-        setCoachMsg(j.error ?? `Failed (HTTP ${res.status})`);
+        setCoachMsg(j.error ?? `${t("w.account.settings.failed")} (HTTP ${res.status})`);
         setCoachBusy(false);
         return;
       }
@@ -222,7 +223,7 @@ export default function AccountSettings() {
       setCoachStatus(j.application?.status ?? "pending");
       setCredentials("");
     } catch {
-      setCoachMsg("Network error — try again.");
+      setCoachMsg(t("w.account.settings.network-error"));
     }
     setCoachBusy(false);
   };
@@ -241,22 +242,22 @@ export default function AccountSettings() {
       });
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
-        setMsg(j.error ?? `Failed (HTTP ${res.status})`);
+        setMsg(j.error ?? `${t("w.account.settings.failed")} (HTTP ${res.status})`);
         setBusy(false);
         return;
       }
       // Wiped — drop all client state by reloading into the now-empty account.
       window.location.assign("/app");
     } catch {
-      setMsg("Network error — try again.");
+      setMsg(t("w.account.settings.network-error"));
       setBusy(false);
     }
   };
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>Settings</h2>
-      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>Account, preferences, security &amp; data.</Mono>
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{t("w.account.settings.title")}</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>{t("w.account.settings.subtitle")}</Mono>
 
       {/* Section nav — a professional, tabbed account area. */}
       <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 20, borderBottom: `1px solid ${LINE}`, paddingBottom: 12 }}>
@@ -276,41 +277,41 @@ export default function AccountSettings() {
         <>
           {/* Account identity */}
           <Card style={{ marginBottom: 16 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Account</Mono>
-            <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, marginTop: 8 }}>{session?.name || session?.email || "Your account"}</div>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>{t("w.account.settings.account")}</Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, marginTop: 8 }}>{session?.name || session?.email || t("w.account.settings.your-account")}</div>
             <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }} c={CHALK}>{session?.email}</Mono>
             <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
               <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}55`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
-              <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? "Full · paid" : "Free"}</span>
-              {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>via {session.provider}</span>}
+              <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
+              {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{t("w.account.settings.via")} {session.provider}</span>}
             </div>
             <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer", marginTop: 14, padding: 0 }}>
-              Sign out
+              {t("w.account.settings.sign-out")}
             </button>
           </Card>
 
           {/* Edit profile — name / email (own Supabase auth) */}
           <Card style={{ marginBottom: 16 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Edit profile</Mono>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12, marginBottom: 6 }} c={ASH}>Display name</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>{t("w.account.settings.edit-profile")}</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12, marginBottom: 6 }} c={ASH}>{t("w.account.settings.display-name")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={{ ...editInput, flex: 1 }} />
-              <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>Save</button>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.account.settings.your-name-ph")} style={{ ...editInput, flex: 1 }} />
+              <button onClick={saveName} disabled={profileBusy} style={editBtn(LIME)}>{t("w.account.settings.save")}</button>
             </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Change email</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>{t("w.account.settings.change-email")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder={session?.email ?? "new@email.com"} type="email" style={{ ...editInput, flex: 1 }} />
-              <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>Update</button>
+              <button onClick={changeEmail} disabled={profileBusy || !newEmail.trim()} style={editBtn(ASH)}>{t("w.account.settings.update")}</button>
             </div>
             {profileMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={profileMsg.startsWith("✓") ? LIME : ASH}>{profileMsg}</Mono>}
-            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>Profile editing needs a real signed-in account.</Mono>}
+            {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </Card>
 
           {/* Preferences — appearance, language, workout logger */}
           <Card style={{ marginBottom: 16 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Preferences</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>{t("w.account.settings.preferences")}</Mono>
 
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>Appearance</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 14, marginBottom: 6 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {(["dark", "light"] as const).map((m) => (
                 <button
@@ -318,12 +319,12 @@ export default function AccountSettings() {
                   onClick={() => setTheme(m)}
                   style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}
                 >
-                  {m}
+                  {m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")}
                 </button>
               ))}
             </div>
 
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Template</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.template")}</Mono>
             <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
               {TEMPLATES.map((tpl) => (
                 <button
@@ -337,7 +338,7 @@ export default function AccountSettings() {
               ))}
             </div>
 
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Language</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.language")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {LANGS.map((l) => (
                 <button
@@ -350,15 +351,15 @@ export default function AccountSettings() {
               ))}
             </div>
 
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Workout logger</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.workout-logger")}</Mono>
             <button
               onClick={() => setLoggerPref("detailed", !prefs.detailed)}
               style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}` }}
             >
-              {prefs.detailed ? "Detailed (RPE + velocity)" : "Simple (load × reps)"}
+              {prefs.detailed ? t("w.account.settings.logger-detailed") : t("w.account.settings.logger-simple")}
             </button>
 
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Units</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.units")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {(["kg", "lb"] as const).map((u) => (
                 <button
@@ -371,24 +372,24 @@ export default function AccountSettings() {
               ))}
             </div>
 
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>Volume counting</Mono>
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.volume-counting")}</Mono>
             <button
               onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)}
               style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}
             >
-              {prefs.countWarmupsInVolume ? "Warm-ups count toward volume" : "Warm-ups excluded from volume"}
+              {prefs.countWarmupsInVolume ? t("w.account.settings.warmups-count") : t("w.account.settings.warmups-excluded")}
             </button>
             <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-              Controls whether warm-up &amp; cool-down sets count in the Volume landmarks, Trends and per-exercise volume. Off by default (RP-style). PRs &amp; e1RM always exclude warm-ups.
+              {t("w.account.settings.volume-counting-help")}
             </Mono>
             <button
               onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)}
               style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}
             >
-              {prefs.fractionalVolume ? "Secondary muscles = 0.5 sets" : "Every muscle = 1 set"}
+              {prefs.fractionalVolume ? t("w.account.settings.fractional-on") : t("w.account.settings.fractional-off")}
             </button>
             <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-              Fractional volume counts a lift&apos;s secondary muscles as half a set (primary = the first muscle it trains).
+              {t("w.account.settings.fractional-help")}
             </Mono>
           </Card>
 
@@ -397,9 +398,9 @@ export default function AccountSettings() {
           from their role; a client applies to coach below. */}
       {isClient && (
         <Card style={{ marginBottom: 16 }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Mode</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>{t("w.account.settings.mode")}</Mono>
           <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6 }} c={CHALK}>
-            How much of the app you see. Switch anytime.
+            {t("w.account.settings.mode-desc")}
           </Mono>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.sm, marginTop: 12 }}>
             {/* Simple (casual) — always selectable, free. */}
@@ -407,8 +408,8 @@ export default function AccountSettings() {
               onClick={() => setClientPersona("casual")}
               style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `${LIME}14` : "transparent" }}
             >
-              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>Simple</div>
-              <Mono s={{ fontSize: fs.micro }}>track · review · share</Mono>
+              <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>{t("w.account.settings.simple")}</div>
+              <Mono s={{ fontSize: fs.micro }}>{t("w.account.settings.simple-tags")}</Mono>
             </button>
 
             {/* Full (athlete) — a PAID upgrade. Locked until entitled. */}
@@ -418,15 +419,15 @@ export default function AccountSettings() {
               style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `${LIME}14` : "transparent", opacity: paid ? 1 : 0.7 }}
             >
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "flex", alignItems: "center", gap: space.xs, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
-                Full
+                {t("w.account.settings.full")}
                 {!paid && (
                   <>
                     <span>🔒</span>
-                    <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(AMBER), background: `${AMBER}1a`, border: `1px solid ${AMBER}`, borderRadius: 6, padding: "1px 6px" }}>Paid</span>
+                    <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(AMBER), background: `${AMBER}1a`, border: `1px solid ${AMBER}`, borderRadius: 6, padding: "1px 6px" }}>{t("w.account.settings.paid")}</span>
                   </>
                 )}
               </div>
-              <Mono s={{ fontSize: fs.micro }}>plans · sport · deep stats</Mono>
+              <Mono s={{ fontSize: fs.micro }}>{t("w.account.settings.full-tags")}</Mono>
             </button>
           </div>
           {/* Billing actions — upgrade when free, manage when paid. */}
@@ -437,15 +438,15 @@ export default function AccountSettings() {
                 disabled={billingBusy}
                 style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
               >
-                {billingBusy ? "Starting…" : "Upgrade to Full"}
+                {billingBusy ? t("w.account.settings.starting") : t("w.account.settings.upgrade-full")}
               </button>
               {billingUnconfigured ? (
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
-                  Billing isn’t configured yet — coming soon.
+                  {t("w.account.settings.billing-unconfigured")}
                 </Mono>
               ) : (
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
-                  Unlocks plans, the sport engine &amp; deep stats.
+                  {t("w.account.settings.unlocks")}
                 </Mono>
               )}
               {billingMsg && (
@@ -459,11 +460,11 @@ export default function AccountSettings() {
                 disabled={billingBusy}
                 style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}
               >
-                {billingBusy ? "Opening…" : "Manage subscription"}
+                {billingBusy ? t("w.account.settings.opening") : t("w.account.settings.manage-subscription")}
               </button>
               {billingUnconfigured && (
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
-                  Billing isn’t configured yet — coming soon.
+                  {t("w.account.settings.billing-unconfigured")}
                 </Mono>
               )}
               {billingMsg && (
@@ -479,28 +480,28 @@ export default function AccountSettings() {
       {/* ---- NOTIFICATIONS ---- */}
       {section === "notifications" && (
         <Card>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Notifications</Mono>
-          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>{t("w.account.settings.notifications")}</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>{t("w.account.settings.notifications-desc")}</Mono>
           <div style={{ marginTop: 12 }}>
             {ACCOUNT_NOTIF_ROWS.map(({ key, title, desc }) => (
               <PrefRow key={key} title={title} desc={desc} on={!!notif[key]} onToggle={() => toggleNotif(key)} disabled={!authOn} />
             ))}
           </div>
-          {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+          {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.signin-to-change")}</Mono>}
         </Card>
       )}
 
       {/* ---- PRIVACY ---- */}
       {section === "privacy" && (
         <Card>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Privacy</Mono>
-          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>You control what you share. Saved to your account &amp; synced across devices.</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>{t("w.account.settings.privacy")}</Mono>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>{t("w.account.settings.privacy-desc")}</Mono>
           <div style={{ marginTop: 12 }}>
             {ACCOUNT_PRIVACY_ROWS.map(({ key, title, desc }) => (
               <PrefRow key={key} title={title} desc={desc} on={!!priv[key]} onToggle={() => togglePriv(key)} disabled={!authOn} />
             ))}
           </div>
-          {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>Sign in with a real account to change these.</Mono>}
+          {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.signin-to-change")}</Mono>}
         </Card>
       )}
 
@@ -511,24 +512,24 @@ export default function AccountSettings() {
           it in the admin queue, granting the COACH role on approval. */}
       {isClient && (
         <Card style={{ marginBottom: 16 }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Become a coach</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>{t("w.account.settings.become-coach")}</Mono>
           {coachUnavailable ? (
             <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={ASH}>
-              Coach applications aren&apos;t enabled yet.
+              {t("w.account.settings.coach-not-enabled")}
             </Mono>
           ) : coachStatus ? (
             <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>
-              Your application is <b style={{ color: txt(coachStatus === "approved" ? LIME : coachStatus === "denied" ? RED : AMBER) }}>{coachStatus}</b>.
+              {t("w.account.settings.application-is")} <b style={{ color: txt(coachStatus === "approved" ? LIME : coachStatus === "denied" ? RED : AMBER) }}>{coachStatus}</b>.
             </Mono>
           ) : (
             <>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>
-                Tell us about your coaching background — an admin reviews each application.
+                {t("w.account.settings.coach-intro")}
               </Mono>
               <textarea
                 value={credentials}
                 onChange={(e) => setCredentials(e.target.value)}
-                placeholder="Certifications, experience, who you coach…"
+                placeholder={t("w.account.settings.coach-credentials-ph")}
                 rows={3}
                 style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }}
               />
@@ -540,7 +541,7 @@ export default function AccountSettings() {
                 disabled={!credentials.trim() || coachBusy}
                 style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}
               >
-                {coachBusy ? "Applying…" : "Apply"}
+                {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
               </button>
             </>
           )}
@@ -556,25 +557,25 @@ export default function AccountSettings() {
         <>
           <MfaSettings />
           <Card style={{ marginTop: 16 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Change password</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>{t("w.account.settings.change-password")}</Mono>
             {session?.provider && session.provider !== "email" ? (
               <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
-                You sign in with {session.provider} — manage your password there.
+                {t("w.account.settings.signin-with")} {session.provider} {t("w.account.settings.manage-password-there")}
               </Mono>
             ) : (
               <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
-                <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="New password" type="password" style={{ ...editInput, flex: 1 }} />
-                <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>Update</button>
+                <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder={t("w.account.settings.new-password-ph")} type="password" style={{ ...editInput, flex: 1 }} />
+                <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
               </div>
             )}
             {passwordMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
           </Card>
           <Card style={{ marginTop: 16 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Active sessions</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>{t("w.account.settings.active-sessions")}</Mono>
             <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
-              Sign out of every device — revokes all other sessions and ends this one.
+              {t("w.account.settings.active-sessions-desc")}
             </Mono>
-            <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>Sign out everywhere</button>
+            <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>{t("w.account.settings.sign-out-everywhere")}</button>
           </Card>
         </>
       )}
@@ -583,26 +584,23 @@ export default function AccountSettings() {
       {section === "data" && (
       <>
       <Card style={{ marginBottom: 16 }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Export my data</Mono>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>{t("w.account.settings.export-data")}</Mono>
         <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
-          Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.
+          {t("w.account.settings.export-data-desc")}
         </Mono>
-        <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>Download my data (JSON)</button>
+        <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>{t("w.account.settings.download-data")}</button>
       </Card>
       <Card style={{ borderLeft: `3px solid ${RED}` }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={RED}>
-          Danger zone — reset account
+          {t("w.account.settings.danger-zone")}
         </Mono>
-        <div style={{ ...disp, fontWeight: 700, fontSize: fs.title, marginTop: 8 }}>Erase all my data</div>
+        <div style={{ ...disp, fontWeight: 700, fontSize: fs.title, marginTop: 8 }}>{t("w.account.settings.erase-all")}</div>
         <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 6 }} c={CHALK}>
-          Permanently deletes everything tied to your account — logged sessions, signals &amp;
-          biometrics, check-ins, plans &amp; macrocycles, templates &amp; assignments, connected
-          devices, coaching links, and progress photos. Your login stays; you&apos;ll land in a
-          fresh, empty account. <b style={{ color: txt(RED) }}>This cannot be undone.</b>
+          {t("w.account.settings.erase-warning")} <b style={{ color: txt(RED) }}>{t("w.account.settings.cannot-undo")}</b>
         </Mono>
 
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>
-          Type <b style={{ color: CHALK }}>RESET</b> to confirm
+          {t("w.account.settings.type")} <b style={{ color: CHALK }}>RESET</b> {t("w.account.settings.to-confirm")}
         </Mono>
         <input
           value={confirm}
@@ -645,13 +643,13 @@ export default function AccountSettings() {
               cursor: armed && !busy ? "pointer" : "not-allowed",
             }}
           >
-            {busy ? "Erasing…" : "Erase everything"}
+            {busy ? t("w.account.settings.erasing") : t("w.account.settings.erase-everything")}
           </button>
           <button
             onClick={() => void logout()}
             style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}
           >
-            Sign out instead
+            {t("w.account.settings.sign-out-instead")}
           </button>
         </div>
       </Card>

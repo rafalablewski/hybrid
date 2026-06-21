@@ -6,6 +6,7 @@ import { fs, space, buildActivityFeed, relativeTime, type ActivityAccent, type A
 import { useSessions } from "@/lib/use-sessions";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
+import { useLang } from "@/lib/i18n";
 
 type AssignmentRow = { id: string; name: string; date: string; status: string };
 
@@ -22,6 +23,7 @@ type AssignmentRow = { id: string; name: string; date: string; status: string };
  */
 export default function NotificationsScreen({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
+  const { t } = useLang();
   const aurora = useTemplate().template === "aurora";
   const r = { card: aurora ? 24 : 12, field: aurora ? 14 : 10 };
   const { sessions } = useSessions();
@@ -52,11 +54,11 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
       <div style={{ width: "100%", maxWidth: 460 }}>
         <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
           {!embedded && (
-            <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <button onClick={() => router.push("/app")} aria-label={t("w.account.notifications.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
               {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
-          <h1 style={{ fontWeight: 900, fontSize: 24, margin: 0 }}>Notifications</h1>
+          <h1 style={{ fontWeight: 900, fontSize: 24, margin: 0 }}>{t("w.account.notifications.title")}</h1>
           {feed.length > 0 && (
             <span style={{ marginLeft: "auto", background: C("lime"), color: C("ink"), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{feed.length}</span>
           )}
@@ -64,7 +66,7 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
 
         {feed.length === 0 ? (
           <div style={{ marginTop: 22, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: 20, color: C("ash"), fontSize: fs.bodyLg, lineHeight: 1.5 }}>
-            Nothing yet. Log a workout or get a session from your coach and your activity shows up here.
+            {t("w.account.notifications.empty")}
           </div>
         ) : (
           <div style={{ marginTop: 18 }}>
