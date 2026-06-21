@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Today screen — 10 redesign concepts</title>
+<style>
+  :root{--bg:#0c0d0c;--card:#161816;--line:#2a2d2a;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c4f035}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--chalk);font:400 16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:56px 32px 24px;max-width:1100px;margin:0 auto}
+  .kick{font:600 12px/1 ui-monospace,"JetBrains Mono",monospace;letter-spacing:.22em;text-transform:uppercase;color:var(--lime)}
+  h1{margin:14px 0 8px;font-size:40px;letter-spacing:-.02em;font-weight:800}
+  p.lead{margin:0;max-width:620px;color:var(--ash)}
+  .grid{max-width:1100px;margin:24px auto 80px;padding:0 32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  a.cell{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:transform .15s ease,border-color .15s ease}
+  a.cell:hover{transform:translateY(-3px);border-color:var(--lime)}
+  .thumb{aspect-ratio:393/560;width:100%;border:0;display:block;background:#000;pointer-events:none}
+  .frame{position:relative;overflow:hidden;background:#000}
+  .frame iframe{width:393px;height:852px;border:0;transform:scale(.72);transform-origin:top left;pointer-events:none}
+  .frwrap{height:404px;overflow:hidden}
+  .meta{padding:14px 16px 16px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .meta .no{font:600 12px/1 ui-monospace,"JetBrains Mono",monospace;color:var(--ash)}
+  .meta .nm{font-weight:700}
+  .meta .desc{display:block;color:var(--ash);font-size:13px;margin-top:3px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="kick">HYBRID · Today screen</div>
+    <h1>10 redesign concepts</h1>
+    <p class="lead">The same three cards — Season brief, the “Unlock Full” pitch, and the accountability strip — rendered in ten distinct design languages. Click any tile to open the full 1:1 mockup.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <script>
+    const items=[
+      ["01-apple.html","01","Apple HIG","Deference, SF type ramp, translucent materials, single systemBlue tint"],
+      ["02-tesla.html","02","Tesla","Graphite, condensed uppercase, sharp edges, one red signal for the CTA"],
+      ["03-lucid.html","03","Lucid Motors","Light pearl luxury, serif display, soft shadows, champagne gradients"],
+      ["04-uber.html","04","Uber","Bold black & white, heavy grotesque, chunky pill buttons, one functional green"],
+      ["05-minimal.html","05","Minimalistic","Monochrome, borderless, hairline rules — type does all the work"],
+      ["06-professional.html","06","Professional","Enterprise dashboard — disciplined grid, tabular numerals, one accent"],
+      ["07-modern.html","07","Modern","Tasteful glass on an aurora background, gradient accents, 2026 flagship"],
+      ["08-brutalist.html","08","Editorial Brutalist","Oversized Archivo Black, exposed grid, hard acid-lime blocks"],
+      ["09-swiss.html","09","Swiss Typographic","Strict grid, mathematical spacing, lime as a single functional mark"],
+      ["10-telemetry.html","10","Athletic Telemetry","Cockpit HUD — mono numerics, ticked meters, lime instrumentation"],
+    ];
+    const g=document.getElementById("grid");
+    for(const [file,no,nm,desc] of items){
+      g.insertAdjacentHTML("beforeend",`
+        <a class="cell" href="${file}">
+          <div class="frwrap"><div class="frame"><iframe src="${file}" scrolling="no" loading="lazy"></iframe></div></div>
+          <div class="meta"><div><span class="no">${no}</span> &nbsp;<span class="nm">${nm}</span><span class="desc">${desc}</span></div></div>
+        </a>`);
+    }
+  </script>
+</body>
+</html>

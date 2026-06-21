@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Editorial Brutalist concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ───────────────────────── EDITORIAL BRUTALIST ─────────────────────────
+     Raw exposed structure. Heavy Archivo Black headlines, tight & uppercase.
+     2px hairlines, visible grid, JetBrains Mono micro-labels with wide track.
+     Acid-lime as a hard solid block. No soft shadows — flat, high contrast. */
+  :root{
+    --bg:#0c0d0c;
+    --ink:#f4f5f0;
+    --lime:#c4f035;
+    --line:#f4f5f0;
+    --mut:#7c8073;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --sans:"Archivo",system-ui,sans-serif;
+    --black:"Archivo Black",var(--sans);
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  html,body{margin:0;height:100%}
+  body{
+    background:#070807;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 39px, rgba(244,245,240,.035) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, rgba(244,245,240,.035) 39px 40px);
+    font-family:var(--sans);
+    display:grid;place-items:center;min-height:100vh;padding:32px;color:var(--ink);
+  }
+  /* device */
+  .phone{
+    width:393px;height:852px;border-radius:54px;position:relative;overflow:hidden;
+    background:var(--bg);
+    box-shadow:0 0 0 11px #1c1c1e, 0 0 0 12px #2c2c2e, 0 0 0 13px var(--lime), 0 40px 90px -40px #000;
+  }
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:122px;height:34px;background:#000;border-radius:20px;z-index:3}
+  /* status bar */
+  .status{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 8px;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.5px}
+  .status .right{display:flex;gap:7px;align-items:center}
+  .glyph{width:18px;height:12px;display:inline-block}
+  /* masthead */
+  .mast{padding:8px 18px 12px;border-bottom:2px solid var(--line)}
+  .mast .ey{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--mut);display:flex;justify-content:space-between}
+  .mast h1{margin:4px 0 0;font-family:var(--black);font-size:52px;line-height:.84;letter-spacing:-1.5px;text-transform:uppercase}
+  .content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  /* cards = exposed slabs divided by hairlines */
+  .card{padding:16px 18px;border-bottom:2px solid var(--line);position:relative}
+  .card:last-child{border-bottom:0}
+  .row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--mut)}
+  .badge{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 8px;border:2px solid var(--line);color:var(--ink)}
+  .badge.lime{background:var(--lime);border-color:var(--lime);color:#0c0d0c}
+  h2{margin:10px 0 0;font-family:var(--black);font-size:30px;line-height:.9;letter-spacing:-1px;text-transform:uppercase}
+  .meta{margin-top:8px;font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:1px;color:var(--ink);text-transform:uppercase}
+  p.body{margin:12px 0 0;font-family:var(--sans);font-size:14px;line-height:1.45;color:#c3c6ba;font-weight:500;max-width:42ch}
+  /* progress = stark ruled bar */
+  .track{margin-top:12px;height:14px;border:2px solid var(--line);position:relative;background:transparent}
+  .fill{position:absolute;inset:0;width:7%;background:var(--lime)}
+  .track::after{content:"7%";position:absolute;right:6px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;color:var(--mut)}
+  /* button = solid lime hard block, black text */
+  .btn{margin-top:16px;width:100%;height:54px;border:2px solid var(--lime);background:var(--lime);color:#0c0d0c;
+    font-family:var(--black);font-size:16px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn.ghost .arr{color:var(--lime)}
+  .btn .arr{font-size:22px;line-height:1}
+  /* stats = big numerals in a ruled grid */
+  .stats{margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid var(--line)}
+  .stat{padding:12px 10px;border-right:2px solid var(--line)}
+  .stat:last-child{border-right:0}
+  .stat .n{font-family:var(--black);font-size:38px;line-height:.85;letter-spacing:-1.5px}
+  .stat .n.lime{color:var(--lime)}
+  .stat .l{margin-top:8px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut)}
+  /* tab bar */
+  .tabs{height:88px;padding:8px 18px 26px;display:flex;align-items:center;justify-content:space-between;border-top:2px solid var(--line);background:var(--bg)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--mut);font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  .tab.on{color:var(--lime)}
+  .tab svg{width:24px;height:24px}
+  .home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;background:var(--ink);z-index:4}
+  .cap{position:fixed;bottom:18px;left:0;right:0;text-align:center;color:#6b6f63;font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status">
+        <span>23:39</span>
+        <span class="right">
+          <svg class="glyph" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" fill="#f4f5f0"/><rect x="5" y="4" width="3" height="8" fill="#f4f5f0"/><rect x="10" y="2" width="3" height="10" fill="#f4f5f0"/><rect x="15" y="0" width="3" height="12" fill="#f4f5f0"/></svg>
+          <svg class="glyph" viewBox="0 0 18 12"><path d="M9 2.5c2.4 0 4.6.9 6.2 2.4l-1 1.1C12.9 4.7 11 4 9 4S5.1 4.7 3.8 6L2.8 4.9C4.4 3.4 6.6 2.5 9 2.5Zm0 3.4c1.5 0 2.9.6 3.9 1.5l-1 1.1C11.2 8.9 10.1 8.4 9 8.4s-2.2.5-2.9 1.1l-1-1.1C6.1 6.5 7.5 5.9 9 5.9Zm0 3.3c.8 0 1.5.3 2 .8L9 12l-2-2c.5-.5 1.2-.8 2-.8Z" fill="#f4f5f0"/></svg>
+          <svg viewBox="0 0 28 13" width="26" height="12"><rect x="1" y="1" width="22" height="11" rx="1" fill="none" stroke="#f4f5f0" stroke-width="1.4"/><rect x="24.5" y="4" width="2" height="5" fill="#f4f5f0"/><rect x="2.5" y="2.5" width="8.4" height="8" fill="#f4f5f0"/></svg>
+        </span>
+      </div>
+
+      <div class="mast">
+        <div class="ey"><span>WED 21 JUN</span><span>HYBRID</span></div>
+        <h1>Today</h1>
+      </div>
+
+      <div class="content">
+        <!-- Season -->
+        <section class="card">
+          <div class="row">
+            <span class="kicker">Your season / Bodybuilding</span>
+            <span class="badge lime">Full</span>
+          </div>
+          <h2>Hypertrophy<br>phase</h2>
+          <div class="meta">Week 1 of 14</div>
+          <div class="track"><div class="fill"></div></div>
+          <p class="body">You're following the plan as written. The full periodized season — adaptive phases, auto-progression and readiness modulation — is part of Full.</p>
+          <button class="btn">Unlock full periodization <span class="arr">→</span></button>
+        </section>
+
+        <!-- Sell Full -->
+        <section class="card">
+          <span class="kicker">Unlock with Full</span>
+          <h2>See your<br>performance<br>state</h2>
+          <p class="body">HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization, velocity tracking, analytics and the AI coach.</p>
+          <button class="btn ghost">Unlock Full <span class="arr">→</span></button>
+        </section>
+
+        <!-- Accountability -->
+        <section class="card">
+          <div class="row">
+            <span class="kicker">On track? / Getting started</span>
+            <span class="badge">No streak yet</span>
+          </div>
+          <h2>Start strong</h2>
+          <div class="stats">
+            <div class="stat"><div class="n">—</div><div class="l">Risk</div></div>
+            <div class="stat"><div class="n">—</div><div class="l">Habit strength</div></div>
+            <div class="stat"><div class="n lime">0</div><div class="l">This week</div></div>
+          </div>
+        </section>
+      </div>
+
+      <nav class="tabs">
+        <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Today</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Plan</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>Train</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3"/></svg>Tools</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>You</div>
+      </nav>
+      <div class="home"></div>
+    </div>
+  </div>
+  <div class="cap">08 · Editorial Brutalist — Archivo Black, exposed grid, hard lime block</div>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Tesla concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Saira+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────────────────────── Tesla concept ─────────────────────────
+     Stark, technical, automotive-UI restraint. Near-black graphite,
+     sharp 2-4px corners, thin precise hairlines, monochrome with ONE
+     signal color (Tesla red) reserved for the primary action only.
+     Wide-tracked uppercase micro-labels, engineering numerics. */
+  :root{
+    --bg:#0a0a0b;
+    --panel:#111113;
+    --panel2:#161618;
+    --line:rgba(255,255,255,.10);
+    --line2:rgba(255,255,255,.06);
+    --ink:#f3f3f4;
+    --ink2:#9a9aa0;
+    --ink3:#5c5c62;
+    --red:#e82127;
+    --font:"Inter",-apple-system,system-ui,sans-serif;
+    --head:"Saira Condensed","Inter",sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  html,body{margin:0;height:100%}
+  body{
+    background:#161617;
+    font-family:var(--font);
+    display:grid;place-items:center;min-height:100vh;padding:32px;color:var(--ink);
+  }
+  .phone{
+    width:393px;height:852px;border-radius:54px;position:relative;overflow:hidden;
+    background:var(--bg);
+    box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 50px 120px -30px rgba(0,0,0,.95), 0 0 0 11px #18181a, 0 0 0 12px #28282b;
+  }
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column}
+  .status{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 8px;font-size:14px;font-weight:600;letter-spacing:1px;font-variant-numeric:tabular-nums}
+  .status .right{display:flex;gap:7px;align-items:center}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:122px;height:34px;background:#000;border-radius:20px;z-index:3}
+  .glyph{width:18px;height:12px;display:inline-block}
+
+  /* header — engineering label + condensed wordmark */
+  .lnav{padding:10px 24px 6px;display:flex;align-items:flex-end;justify-content:space-between}
+  .lnav .ey{font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:2.5px;text-transform:uppercase}
+  .lnav h1{margin:3px 0 0;font-family:var(--head);font-size:36px;line-height:.92;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+  .lnav .vin{font-size:10px;font-weight:500;color:var(--ink3);letter-spacing:1.5px;text-align:right;font-variant-numeric:tabular-nums}
+
+  .content{flex:1;overflow:hidden;padding:14px 16px 0;display:flex;flex-direction:column;gap:12px}
+
+  .card{background:var(--panel);border:1px solid var(--line2);border-radius:3px;padding:18px 18px 20px;position:relative}
+  .card::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:2px;background:var(--line)}
+  .row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .kicker{font-size:10px;font-weight:600;color:var(--ink2);letter-spacing:2px;text-transform:uppercase}
+  .badge{font-size:9px;font-weight:600;padding:4px 9px;border:1px solid var(--line);border-radius:2px;color:var(--ink2);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap}
+  .badge.live{border-color:rgba(232,33,39,.5);color:var(--red)}
+  h2{margin:16px 0 0;font-family:var(--head);font-size:28px;font-weight:600;letter-spacing:.3px;line-height:.98;text-transform:uppercase}
+  .meta{margin-top:8px;font-size:11px;color:var(--ink2);font-weight:500;letter-spacing:1.5px;text-transform:uppercase;font-variant-numeric:tabular-nums}
+  p.body{margin:14px 0 0;font-size:13px;line-height:1.5;color:var(--ink2);font-weight:300;max-width:42ch}
+
+  /* progress — thin precise instrument */
+  .track{margin-top:18px;height:2px;background:rgba(255,255,255,.08);position:relative}
+  .fill{height:100%;width:7%;background:var(--ink)}
+  .scale{margin-top:7px;display:flex;justify-content:space-between;font-size:9px;color:var(--ink3);letter-spacing:1px;font-variant-numeric:tabular-nums}
+
+  /* buttons */
+  .btn{margin-top:20px;width:100%;height:48px;border:0;border-radius:2px;font-family:var(--font);
+    font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn.red{background:var(--red);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+
+  /* stats — instrument cluster */
+  .stats{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr}
+  .stat{padding:0 12px;position:relative}
+  .stat+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--line2)}
+  .stat .n{font-family:var(--head);font-size:30px;font-weight:600;letter-spacing:.5px;line-height:1;font-variant-numeric:tabular-nums}
+  .stat .n.dim{color:var(--ink3)}
+  .stat .l{margin-top:8px;font-size:9px;color:var(--ink2);font-weight:600;letter-spacing:1.2px;text-transform:uppercase}
+
+  /* tab bar */
+  .tabs{height:88px;padding:12px 24px 26px;display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel);border-top:1px solid var(--line2)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink3);font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+  .tab.on{color:var(--ink)}
+  .tab svg{width:24px;height:24px}
+  .home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:4px;border-radius:0;background:rgba(255,255,255,.4);z-index:4}
+  .cap{position:fixed;bottom:18px;left:0;right:0;text-align:center;color:#7a7a80;font:500 11px var(--font);letter-spacing:1.5px;text-transform:uppercase}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status">
+        <span>23:39</span>
+        <span class="right">
+          <svg class="glyph" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="0" fill="#fff"/><rect x="5" y="4" width="3" height="8" rx="0" fill="#fff"/><rect x="10" y="2" width="3" height="10" rx="0" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx="0" fill="#fff"/></svg>
+          <svg class="glyph" viewBox="0 0 18 12"><path d="M9 2.5c2.4 0 4.6.9 6.2 2.4l-1 1.1C12.9 4.7 11 4 9 4S5.1 4.7 3.8 6L2.8 4.9C4.4 3.4 6.6 2.5 9 2.5Zm0 3.4c1.5 0 2.9.6 3.9 1.5l-1 1.1C11.2 8.9 10.1 8.4 9 8.4s-2.2.5-2.9 1.1l-1-1.1C6.1 6.5 7.5 5.9 9 5.9Zm0 3.3c.8 0 1.5.3 2 .8L9 12l-2-2c.5-.5 1.2-.8 2-.8Z" fill="#fff"/></svg>
+          <svg viewBox="0 0 28 13" width="26" height="12"><rect x="1" y="1" width="22" height="11" rx="1" fill="none" stroke="rgba(255,255,255,.4)"/><rect x="24.5" y="4" width="2" height="5" rx="0" fill="rgba(255,255,255,.4)"/><rect x="2.5" y="2.5" width="8.4" height="8" rx="0" fill="#fff"/></svg>
+        </span>
+      </div>
+
+      <div class="lnav">
+        <div>
+          <div class="ey">Wed · 21 Jun</div>
+          <h1>Today</h1>
+        </div>
+        <div class="vin">SYS 100%<br>v14.0</div>
+      </div>
+
+      <div class="content">
+        <!-- Season -->
+        <section class="card">
+          <div class="row">
+            <span class="kicker">Your Season · Bodybuilding</span>
+            <span class="badge">Full</span>
+          </div>
+          <h2>Hypertrophy<br>Phase</h2>
+          <div class="meta">Week 01 of 14</div>
+          <div class="track"><div class="fill"></div></div>
+          <div class="scale"><span>00</span><span>SEASON PROGRESS · 7%</span><span>14</span></div>
+          <p class="body">You're following the plan as written. The full periodized season — adaptive phases, auto-progression and readiness modulation — is part of Full.</p>
+          <button class="btn red">Unlock full periodization →</button>
+        </section>
+
+        <!-- Sell Full -->
+        <section class="card">
+          <span class="kicker">Unlock with Full</span>
+          <h2>See Your<br>Performance State</h2>
+          <p class="body">HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization, velocity tracking, analytics and the AI coach.</p>
+          <button class="btn ghost">Unlock Full</button>
+        </section>
+
+        <!-- Accountability -->
+        <section class="card">
+          <div class="row">
+            <span class="kicker">On Track? · Getting Started</span>
+            <span class="badge">No streak yet</span>
+          </div>
+          <h2>Start Strong</h2>
+          <div class="stats">
+            <div class="stat"><div class="n dim">—</div><div class="l">Risk</div></div>
+            <div class="stat"><div class="n dim">—</div><div class="l">Habit strength</div></div>
+            <div class="stat"><div class="n">0</div><div class="l">This week</div></div>
+          </div>
+        </section>
+      </div>
+
+      <nav class="tabs">
+        <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Today</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Plan</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>Train</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3"/></svg>Tools</div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>You</div>
+      </nav>
+      <div class="home"></div>
+    </div>
+  </div>
+  <div class="cap">02 · Tesla — graphite, sharp edges, hairline instruments, one signal red for the primary action</div>
+</body>
+</html>
