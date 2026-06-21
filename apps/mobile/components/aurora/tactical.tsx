@@ -3,6 +3,7 @@ import { View, Text, TextInput } from "react-native";
 import { deploymentReadiness, unitReadiness, type UnitMember } from "@hybrid/core";
 import { fetchState, type StateSnapshot } from "../../lib/api";
 import { fs, space, F } from "../../lib/ui";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
@@ -26,6 +27,7 @@ const PEERS: UnitMember[] = [
  *  and a unit go/no-go roll-up, reusing deploymentReadiness + unitReadiness. */
 export default function AuroraTactical() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const [state, setState] = useState<StateSnapshot | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [loadCarriage, setLoadCarriage] = useState("78");
@@ -49,15 +51,15 @@ export default function AuroraTactical() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Deployment readiness</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.teams.tactical.deploymentReadiness")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>
-        Fuses the Performance State (HPI + injury availability) with occupational capacity into a duty status, plus a unit go/no-go.
+        {t("w.teams.tactical.headerBody")}
       </Text>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Your readiness</Text>
         {noData ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>Log training to compute your DRI from real readiness + injury risk.</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{t("w.teams.tactical.logToCompute")}</Text>
         ) : dr ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>

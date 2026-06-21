@@ -7,6 +7,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, type CoreSignal } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
@@ -21,6 +22,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  *  tissue injury risk) reusing the exact engines as the classic. */
 export default function AuroraPerformance() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
@@ -43,7 +45,7 @@ export default function AuroraPerformance() {
       <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
         <AuroraIcon name="back" size={20} color={C.chalk} />
       </Pressable>
-      <AHeading style={{ fontSize: fs.display }}>Performance</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.perf.title")}</AHeading>
     </View>
   );
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { askAiCoach, type CoachNote } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -16,6 +17,7 @@ import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
  *  used by the standalone /ai-coach route. */
 export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean }) {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [note, setNote] = useState<CoachNote | null>(null);
   const [busy, setBusy] = useState(false);
@@ -48,7 +50,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
       ) : note?.text ? (
         <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
           <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 10, flexWrap: "wrap" }}>
-            {note.source ? chip(note.source === "ai" ? "Claude" : "Engine", note.source === "ai" ? C.lime : C.ash) : null}
+            {note.source ? chip(note.source === "ai" ? "Claude" : t("w.home.aicoach.engine"), note.source === "ai" ? C.lime : C.ash) : null}
             {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.blue) : null}
             {note.hpi != null ? chip(`HPI ${note.hpi}`, C.violet) : null}
           </View>
@@ -59,7 +61,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
       ) : null}
 
       <View style={{ marginTop: embedded ? 12 : 16 }}>
-        <APill label={busy ? "Thinking…" : "Ask again →"} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 13 }} />
+        <APill label={busy ? t("w.home.aicoach.thinking") : "Ask again →"} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 13 }} />
       </View>
     </>
   );
@@ -70,8 +72,8 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <AHeading style={{ fontSize: fs.display }}>AI coach</AHeading>
-        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← back</Text>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.home.today.aiCoach")}</AHeading>
+        <Text onPress={() => router.back()} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("common.back")}</Text>
       </View>
 
       <ACard style={{ marginTop: 14 }}>

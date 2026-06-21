@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { longevityReport } from "@hybrid/core";
 import { fetchSignals, type CoreSignal } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
@@ -18,6 +19,7 @@ const num = (s: string) => {
  *  reusing the exact longevityReport engine + Signal prefill as the classic. */
 export default function AuroraLongevity() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [age, setAge] = useState("");
   const [restingHr, setRestingHr] = useState("");
@@ -54,29 +56,29 @@ export default function AuroraLongevity() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Longevity</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.longevity.title")}</AHeading>
         <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.blue)} /></View>
       </View>
-      <ASub style={{ marginTop: 10 }}>Estimates your biological age vs your real age from recovery markers. Heuristic v0 — not a diagnostic.</ASub>
+      <ASub style={{ marginTop: 10 }}>{t("w.recovery.longevity.intro")}</ASub>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Your markers</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.longevity.yourMarkers")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: 12 }}>
-          <Field C={C} label="Age (yrs)" value={age} onChange={setAge} />
-          <Field C={C} label="Resting HR" value={restingHr} onChange={setRestingHr} />
+          <Field C={C} label={`${t("w.recovery.longevity.fAge")} (yr)`} value={age} onChange={setAge} />
+          <Field C={C} label={`${t("w.recovery.longevity.fRestingHr")} (bpm)`} value={restingHr} onChange={setRestingHr} />
           <Field C={C} label="HRV (ms)" value={hrv} onChange={setHrv} />
-          <Field C={C} label="VO₂max" value={vo2} onChange={setVo2} />
-          <Field C={C} label="Sleep (h)" value={sleepH} onChange={setSleepH} />
+          <Field C={C} label="VO₂ (ml/kg/min)" value={vo2} onChange={setVo2} />
+          <Field C={C} label={`${t("w.recovery.longevity.fSleep")} (h)`} value={sleepH} onChange={setSleepH} />
         </View>
       </ACard>
 
       {report ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Biological age</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.recovery.longevity.bioAge")}</Text>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6, flexWrap: "wrap" }}>
             <Text style={{ fontFamily: F.black, fontSize: 48, color: C.chalk }}>{Math.round(report.bioAge)}</Text>
-            {chip(report.delta <= 0 ? C.lime : C.amber, `${report.delta <= 0 ? "" : "+"}${report.delta} vs ${report.age}`)}
-            {chip(C.violet, `healthspan ${report.healthspanScore}`)}
+            {chip(report.delta <= 0 ? C.lime : C.amber, `${report.delta <= 0 ? "" : "+"}${report.delta} ${t("w.recovery.longevity.yrVsAge")}`)}
+            {chip(C.violet, `${t("w.recovery.longevity.healthspan")} ${report.healthspanScore}`)}
           </View>
           {report.contributions.length > 0 && (
             <View style={{ marginTop: 12 }}>
@@ -89,11 +91,11 @@ export default function AuroraLongevity() {
             </View>
           )}
           {report.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 10, lineHeight: 18 }}>{report.flags.join(" · ")}</Text>}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>model {report.modelVersion}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>{t("w.recovery.longevity.model")} {report.modelVersion}</Text>
         </ACard>
       ) : (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>Enter your age and at least one recovery marker to see your biological age.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{t("w.recovery.longevity.bioAgeEmpty")}</Text>
         </ACard>
       )}
     </AuroraScreen>

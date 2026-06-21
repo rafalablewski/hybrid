@@ -7,17 +7,20 @@ import {
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
-const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
+const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 
 /** AURORA Volume landmarks — weekly working sets vs MEV/MAV/MRV with the
  *  per-muscle nudge + landmark editor, reusing the exact @hybrid/core engine. */
 export default function AuroraVolume() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
+  const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,14 +46,14 @@ export default function AuroraVolume() {
   };
 
   const ZONE: Record<VolumeZone, { label: string; c: string }> = {
-    under: { label: "below MEV", c: C.amber }, productive: { label: "productive", c: C.lime },
-    peak: { label: "near MRV", c: C.blue }, overreaching: { label: "over MRV", c: C.red },
+    under: { label: t("w.analyze.vol.zoneUnder"), c: C.amber }, productive: { label: t("w.analyze.vol.zoneProductive"), c: C.lime },
+    peak: { label: t("w.analyze.vol.zonePeak"), c: C.blue }, overreaching: { label: t("w.analyze.vol.zoneOver"), c: C.red },
   };
   const adviceLine = (s: MuscleVolumeStatus): string => {
-    if (s.action === "add") return `Add ~${Math.round(s.deltaSets)} set${Math.round(s.deltaSets) === 1 ? "" : "s"}/wk — below the minimum to grow${s.maintaining ? " (only maintaining)" : ""}.`;
-    if (s.action === "reduce") return `Over your recoverable ceiling — drop ~${Math.round(Math.abs(s.deltaSets))} set${Math.round(Math.abs(s.deltaSets)) === 1 ? "" : "s"}/wk or deload.`;
-    if (s.action === "progress") return `Productive — room for ~${s.deltaSets} more if recovery allows.`;
-    return "Top of your productive range — hold.";
+    if (s.action === "add") { const n = Math.round(s.deltaSets); return `${t("w.analyze.vol.adviceAddPre")}${n} ${n === 1 ? t("w.analyze.vol.adviceAddSet") : t("w.analyze.vol.adviceAddSets")}${t("w.analyze.vol.adviceAddTail")}${s.maintaining ? t("w.analyze.vol.adviceMaintaining") : ""}.`; }
+    if (s.action === "reduce") { const n = Math.round(Math.abs(s.deltaSets)); return `${t("w.analyze.vol.adviceReducePre")}${n} ${n === 1 ? t("w.analyze.vol.adviceAddSet") : t("w.analyze.vol.adviceAddSets")}${t("w.analyze.vol.adviceReduceTail")}`; }
+    if (s.action === "progress") return `${t("w.analyze.vol.adviceProgressPre")}${s.deltaSets}${t("w.analyze.vol.adviceProgressTail")}`;
+    return t("w.analyze.vol.adviceHold");
   };
 
   return (
@@ -59,18 +62,18 @@ export default function AuroraVolume() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Volume</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
         <Pressable onPress={() => setEditing((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing || customized ? C.lime : C.line, backgroundColor: editing || customized ? `${C.lime}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? "Done" : customized ? "Landmarks ✎" : "Edit"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing || customized ? txt(C, C.lime) : C.ash }}>{editing ? t("w.analyze.vol.done") : customized ? t("w.analyze.vol.landmarksEdit") : t("w.analyze.vol.editLandmarks")}</Text>
         </Pressable>
       </View>
-      <ASub style={{ marginTop: 10 }}>Weekly working sets per muscle vs MEV (grow) · MAV (productive) · MRV (ceiling). Warm-ups don&apos;t count. Last 7 days.</ASub>
+      <ASub style={{ marginTop: 10 }}>{t("w.analyze.vol.subtitle")}</ASub>
 
       {editing && (
         <ACard style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Your landmarks · weekly sets</Text>
-            {customized && <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Reset</Text></Pressable>}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vol.yourLandmarks")}</Text>
+            {customized && <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text></Pressable>}
           </View>
           <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 2 }}>
             <View style={{ width: 90 }} />
@@ -80,7 +83,7 @@ export default function AuroraVolume() {
           </View>
           {ALL_MUSCLES.map((m) => (
             <View key={m} style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
-              <Text style={{ width: 90, fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{MUSCLE_LABEL[m] ?? m}</Text>
+              <Text style={{ width: 90, fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{ml(m)}</Text>
               {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k) => (
                 <TextInput key={k} defaultValue={String(lm[m][k])} onEndEditing={(e) => editField(m, k, e.nativeEvent.text)} keyboardType="number-pad"
                   style={{ flex: 1, marginHorizontal: 2, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingVertical: 6 }} />
@@ -95,17 +98,17 @@ export default function AuroraVolume() {
 
       {!trained && (
         <ACard style={{ marginTop: 14, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>No working strength sets in the last 7 days. Log some lifts and your per-muscle volume — and where it sits against MEV/MAV/MRV — shows up here.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.vol.empty")}</Text>
         </ACard>
       )}
 
       {trained && advice.length > 0 && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>This week — adjust volume</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vol.adjust")}</Text>
           <View style={{ marginTop: 10, gap: 9 }}>
             {advice.map((s) => (
               <View key={s.muscle} style={{ flexDirection: "row", gap: space.sm }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: txt(C, s.action === "reduce" ? C.red : C.amber), width: 110 }}>{s.action === "reduce" ? "↓" : "↑"} {MUSCLE_LABEL[s.muscle] ?? s.muscle}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: txt(C, s.action === "reduce" ? C.red : C.amber), width: 110 }}>{s.action === "reduce" ? "↓" : "↑"} {ml(s.muscle)}</Text>
                 <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{adviceLine(s)}</Text>
               </View>
             ))}
@@ -115,7 +118,7 @@ export default function AuroraVolume() {
 
       {trained && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>By muscle · sets this week</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.vol.byMuscle")}</Text>
           <View style={{ marginTop: 14, gap: space.lg }}>
             {rows.map((r) => <LandmarkBar key={r.muscle} s={r} zone={ZONE[r.zone]} />)}
           </View>
@@ -127,14 +130,16 @@ export default function AuroraVolume() {
 
 function LandmarkBar({ s, zone }: { s: MuscleVolumeStatus; zone: { label: string; c: string } }) {
   const { palette: C } = useTheme();
+  const { t } = useLang();
+  const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const max = Math.max(s.landmark.mrv * 1.15, s.sets * 1.05, 1);
   const pct = (v: number): DimensionValue => `${Math.min(100, (v / max) * 100)}%` as DimensionValue;
   return (
     <View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{MUSCLE_LABEL[s.muscle] ?? s.muscle}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{ml(s.muscle)}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption }}>
-          <Text style={{ color: txt(C, zone.c), fontWeight: "700" }}>{s.sets} sets</Text>
+          <Text style={{ color: txt(C, zone.c), fontWeight: "700" }}>{s.sets} {t("w.analyze.vol.sets")}</Text>
           <Text style={{ color: C.ash }}> · {zone.label}</Text>
         </Text>
       </View>

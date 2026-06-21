@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { parseForcePlateCsv, type ForcePlateImport } from "@hybrid/core";
 import { fetchSignals, importSignal, type CoreSignal } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -12,6 +13,7 @@ import { AuroraIcon } from "./icons";
  *  jump-height trend, reusing the exact parseForcePlateCsv + import flow. */
 export default function AuroraForcePlate() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<ForcePlateImport | null>(null);
@@ -47,7 +49,7 @@ export default function AuroraForcePlate() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Force plate</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.fp.title")}</AHeading>
       </View>
 
       <ACard style={{ marginTop: 16 }}>
@@ -56,13 +58,13 @@ export default function AuroraForcePlate() {
           style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 12, marginTop: 12, minHeight: 120, textAlignVertical: "top" }} />
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12 }}>
           <APill label="Parse" variant="soft" onPress={parse} style={{ flex: 1 }} />
-          <APill label={importing ? "Importing…" : "Import"} onPress={doImport} disabled={!parsed || parsed.signals.length === 0 || importing} style={{ flex: 1 }} />
+          <APill label={importing ? t("w.analyze.fp.importing") : t("w.analyze.fp.importPre")} onPress={doImport} disabled={!parsed || parsed.signals.length === 0 || importing} style={{ flex: 1 }} />
         </View>
         {parsed && (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
-            {chip(C.lime, `${parsed.signals.length} signals · ${parsed.rows} rows`)}
+            {chip(C.lime, `${parsed.signals.length} ${t("w.analyze.fp.signals")} · ${parsed.rows} ${t("w.analyze.fp.rows")}`)}
             {parsed.recognized.length > 0 && chip(C.blue, `recognized: ${parsed.recognized.join(", ")}`)}
-            {parsed.ignored.length > 0 && chip(C.ash, `skipped: ${parsed.ignored.join(", ")}`)}
+            {parsed.ignored.length > 0 && chip(C.ash, `${t("w.analyze.fp.skipped")} ${parsed.ignored.join(", ")}`)}
           </View>
         )}
         {msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime), marginTop: 10 }}>{msg}</Text>}

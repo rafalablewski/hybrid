@@ -8,6 +8,7 @@ import { useNavAccess } from "../../lib/access";
 import { useSession } from "../../lib/session";
 import { useTemplate } from "../../lib/template";
 import { useTheme, txt } from "../../lib/theme";
+import { useLang } from "../../lib/i18n";
 import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
@@ -15,13 +16,14 @@ import { AuroraIcon } from "./icons";
 // elevated centre action (a raised lime FAB that punches up through the bar);
 // Cockpit is no longer on the bar (it stays reachable from the More hub). Side
 // glyphs are design-kit line icons only (no custom-drawn marks).
-type Side = { id: string; glyph: AuroraIconName; label: string; href: Href; seg: string };
+type Side = { id: string; glyph: AuroraIconName; labelKey?: string; label?: string; href: Href; seg: string };
 const LEFT: Side[] = [
-  { id: "today", glyph: "village", label: "Today", href: "/(tabs)", seg: "index" },
-  { id: "history", glyph: "copy", label: "History", href: "/(tabs)/history", seg: "history" },
+  { id: "today", glyph: "village", labelKey: "nav.today", href: "/(tabs)", seg: "index" },
+  { id: "history", glyph: "copy", labelKey: "nav.history", href: "/(tabs)/history", seg: "history" },
 ];
 const RIGHT: Side[] = [
-  { id: "more", glyph: "settings", label: "More", href: "/(tabs)/more", seg: "more" },
+  { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
+  // "You" has no nav.* key in core yet — see MISSING KEYS.
   { id: "you", glyph: "user-circle", label: "You", href: "/(tabs)/you", seg: "you" },
 ];
 const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
@@ -39,6 +41,7 @@ const HIDE_ON = new Set(["login", "welcome", "onboarding", "workout"]);
  */
 export default function AuroraGlobalNav() {
   const { palette: C, scheme } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const segments = useSegments() as string[];
   const insets = useSafeAreaInsets();
@@ -75,13 +78,14 @@ export default function AuroraGlobalNav() {
   // returns JSX renders inline with no remount penalty.
   const renderSideItem = (tab: Side) => {
     const focused = activeSeg === tab.seg;
+    const label = tab.labelKey ? t(tab.labelKey) : (tab.label ?? "");
     return (
       <Pressable
         key={tab.id}
         onPress={() => { if (!focused) router.navigate(tab.href); }}
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
-        accessibilityLabel={tab.label}
+        accessibilityLabel={label}
         hitSlop={6}
         style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 2 }}
       >
@@ -91,7 +95,7 @@ export default function AuroraGlobalNav() {
           <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
         </View>
         <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
-          {tab.label}
+          {label}
         </Text>
       </Pressable>
     );
@@ -143,7 +147,7 @@ export default function AuroraGlobalNav() {
           onPress={() => { if (!trainFocused) router.navigate(TRAIN.href); }}
           accessibilityRole="button"
           accessibilityState={{ selected: trainFocused }}
-          accessibilityLabel="Train"
+          accessibilityLabel={t("nav.train")}
           hitSlop={8}
           style={{ alignItems: "center", transform: [{ translateY: -22 }] }}
         >
@@ -174,7 +178,7 @@ export default function AuroraGlobalNav() {
               <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
             </View>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, color: txt(C, C.lime), marginTop: 3 }}>Train</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, color: txt(C, C.lime), marginTop: 3 }}>{t("nav.train")}</Text>
         </Pressable>
       </View>
       </View>

@@ -3,22 +3,24 @@ import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
-const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[] = [
-  { key: "energy", label: "Energy" },
-  { key: "sleep", label: "Sleep" },
-  { key: "soreness", label: "Soreness" },
-  { key: "mood", label: "Mood" },
+const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; labelKey: string }[] = [
+  { key: "energy", labelKey: "w.recovery.checkins.energy" },
+  { key: "sleep", labelKey: "w.recovery.checkins.sleep" },
+  { key: "soreness", labelKey: "w.recovery.checkins.soreness" },
+  { key: "mood", labelKey: "w.recovery.checkins.mood" },
 ];
 
 /** AURORA Check-in — the daily readiness log in the rounded Aurora style,
  *  reusing the exact same form, compliance + createCheckin flow as the classic. */
 export default function AuroraCheckin() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [history, setHistory] = useState<Checkin[]>([]);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -60,19 +62,19 @@ export default function AuroraCheckin() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Daily check-in</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.checkins.title")}</AHeading>
         <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.red)} /></View>
       </View>
 
       <ACard style={{ marginTop: 18 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Training volume · this week</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>
-          {compliance.completedThisWeek}/{compliance.target} sessions · {compliance.pct}% of plan · {compliance.status}
+          {compliance.completedThisWeek}/{compliance.target} {t("w.recovery.checkins.sessions")} · {compliance.pct}% {t("w.recovery.checkins.ofPlan")} · {compliance.status}
         </Text>
 
         {RATINGS.map((r) => (
           <View key={r.key} style={{ marginTop: 16 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{r.label}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t(r.labelKey)}</Text>
             <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
               {[1, 2, 3, 4, 5].map((n) => {
                 const sel = form[r.key] === n;
@@ -91,8 +93,8 @@ export default function AuroraCheckin() {
         ))}
 
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-          <NumField value={form.bodyMassKg} onChange={(v) => setForm((s) => ({ ...s, bodyMassKg: v }))} ph="Weight kg" />
-          <NumField value={form.adherencePct} onChange={(v) => setForm((s) => ({ ...s, adherencePct: v }))} ph="Adherence %" />
+          <NumField value={form.bodyMassKg} onChange={(v) => setForm((s) => ({ ...s, bodyMassKg: v }))} ph={t("w.recovery.checkins.weightKg")} />
+          <NumField value={form.adherencePct} onChange={(v) => setForm((s) => ({ ...s, adherencePct: v }))} ph={t("w.recovery.checkins.adherencePct")} />
         </View>
 
         <TextInput
@@ -111,14 +113,14 @@ export default function AuroraCheckin() {
         >
           {form.sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.violet)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>Share with coach</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.checkins.shareCoach")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>
               {paid ? "Send this check-in to your coach" : "Full plan — share check-ins with your coach"}
             </Text>
           </View>
         </Pressable>
 
-        <APill label={saving ? "Submitting…" : "Submit check-in"} onPress={submit} disabled={saving} style={{ marginTop: 14 }} />
+        <APill label={saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")} onPress={submit} disabled={saving} style={{ marginTop: 14 }} />
       </ACard>
 
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue), marginTop: 8, marginBottom: 10 }}>History</Text>
@@ -132,19 +134,19 @@ export default function AuroraCheckin() {
                 <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
                 {c.sharedWithCoach ? (
                   <View style={{ backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 2 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.violet), textTransform: "uppercase" }}>shared</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.violet), textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{c.adherencePct != null ? `${c.adherencePct}% adherence` : ""}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{c.adherencePct != null ? `${c.adherencePct}% ${t("w.recovery.checkins.adherence")}` : ""}</Text>
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
-              energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}{c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+              {t("w.recovery.checkins.energyLc")} {c.energy ?? "—"} · {t("w.recovery.checkins.sleepLc")} {c.sleep ?? "—"} · {t("w.recovery.checkins.sorenessLc")} {c.soreness ?? "—"} · {t("w.recovery.checkins.moodLc")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
             </Text>
             {c.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{c.note}</Text> : null}
             {c.coachReply ? (
               <View style={{ marginTop: 10, borderLeftWidth: 2, borderLeftColor: C.violet, paddingLeft: 10 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>Coach</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>{t("w.recovery.checkins.coach")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 4, lineHeight: 18 }}>{c.coachReply}</Text>
               </View>
             ) : null}

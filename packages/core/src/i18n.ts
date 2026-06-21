@@ -597,7 +597,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.squad": "Team-Monitor",
     "nav.dashboard": "Übersicht",
     "nav.cockpit": "Cockpit",
-    "nav.upgrade": "Unlock Full",
+    "nav.upgrade": "Full freischalten",
     "nav.performance": "Performance",
     "nav.competition": "Wettkampf",
     "nav.video": "Video",

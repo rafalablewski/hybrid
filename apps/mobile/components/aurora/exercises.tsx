@@ -6,14 +6,15 @@ import {
   type LoggedSession, type ExercisePeriod, type ExerciseStats, type WeightUnit,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
-const PERIODS: { id: ExercisePeriod; label: string }[] = [
-  { id: "8w", label: "8 wk" }, { id: "6m", label: "6 mo" }, { id: "1y", label: "1 yr" }, { id: "all", label: "All" },
+const PERIODS: { id: ExercisePeriod; key: string }[] = [
+  { id: "8w", key: "w.analyze.ex.period8w" }, { id: "6m", key: "w.analyze.ex.period6m" }, { id: "1y", key: "w.analyze.ex.period1y" }, { id: "all", key: "w.analyze.ex.periodAll" },
 ];
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
 
@@ -21,6 +22,7 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { m
  *  (exerciseHistory / exerciseDashboard). */
 export default function AuroraExercises() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const params = useLocalSearchParams<{ name?: string }>();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -45,18 +47,18 @@ export default function AuroraExercises() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Exercises</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.ex.title")}</AHeading>
       </View>
 
       {history.length === 0 ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>No exercises logged yet. Log a workout and every movement gets its own progress dashboard here.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.ex.empty")}</Text>
         </ACard>
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
             <AuroraIcon name="search" size={20} color={C.ash} />
-            <TextInput value={query} onChangeText={setQuery} placeholder="Search exercises…" placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 14 }} />
+            <TextInput value={query} onChangeText={setQuery} placeholder={t("w.analyze.ex.search")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 14 }} />
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
@@ -75,7 +77,7 @@ export default function AuroraExercises() {
               const on = period === p.id;
               return (
                 <Pressable key={p.id} onPress={() => setPeriod(p.id)} style={{ flex: 1, paddingVertical: 9, borderRadius: RADIUS.pill, backgroundColor: on ? C.lime : "transparent", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.onAccent : C.ash }}>{t(p.key)}</Text>
                 </Pressable>
               );
             })}
@@ -90,48 +92,49 @@ export default function AuroraExercises() {
 
 function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }) {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   if (stats.kind === "cardio") {
-    if (stats.efforts === 0) return <ACard style={{ marginTop: 14 }}><Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>No runs of this movement in this period.</Text></ACard>;
+    if (stats.efforts === 0) return <ACard style={{ marginTop: 14 }}><Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.analyze.ex.noRuns")}</Text></ACard>;
     return (
       <>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
-          <Metric label="RUNS" value={String(stats.efforts)} />
+          <Metric label={t("w.analyze.ex.runs")} value={String(stats.efforts)} />
           <Metric label="KM" value={String(stats.distanceKm)} color={C.blue} />
-          <Metric label="LONGEST" value={String(stats.longestKm)} />
-          <Metric label="BEST" value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} color={C.blue} />
+          <Metric label={t("w.analyze.ex.longest")} value={String(stats.longestKm)} />
+          <Metric label={t("w.analyze.ex.bestPace")} value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} color={C.blue} />
         </View>
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Pace · lower is faster</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.ex.paceTitle")}</Text>
           <TrendBars series={stats.pace.map((p) => p.secPerKm)} color={C.blue} lowerIsBetter unit="pace" />
         </ACard>
       </>
     );
   }
-  if (stats.workingSets === 0) return <ACard style={{ marginTop: 14 }}><Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>No working sets of this lift in this period.</Text></ACard>;
+  if (stats.workingSets === 0) return <ACard style={{ marginTop: 14 }}><Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.analyze.ex.noWorkingSets")}</Text></ACard>;
   return (
     <>
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
-        <Metric label="BEST e1RM" value={fmtWeight(stats.bestE1rm, units)} color={C.lime} />
-        <Metric label="SETS" value={String(stats.workingSets)} />
-        <Metric label="VOLUME" value={fmtTonnage(stats.volume, units)} />
-        <Metric label="SESSIONS" value={String(stats.sessions)} />
+        <Metric label={t("w.analyze.ex.bestE1rm")} value={fmtWeight(stats.bestE1rm, units)} color={C.lime} />
+        <Metric label={t("w.analyze.ex.workingSets")} value={String(stats.workingSets)} />
+        <Metric label={t("w.analyze.ex.volume")} value={fmtTonnage(stats.volume, units)} />
+        <Metric label={t("w.analyze.ex.sessions")} value={String(stats.sessions)} />
       </View>
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Estimated 1RM · warm-ups excluded</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.e1rmTitle")}</Text>
         <TrendBars series={stats.e1rm.map((p) => Math.round(kgToUnit(p.e1rm, units)))} color={C.lime} unit={units} />
       </ACard>
       {stats.bestSet && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Best set</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps}<Text style={{ color: C.ash }}> · e1RM {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</Text></Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{stats.totalReps} reps · heaviest {fmtWeight(stats.heaviestLoad, units)} · all-time best {fmtWeight(stats.bestE1rmAllTime, units)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(stats.bestSet.load, units)} × {stats.bestSet.reps}<Text style={{ color: C.ash }}> · {t("w.analyze.ex.e1rmLabel")} {fmtWeight(stats.bestSet.e1rm, units)} · {fmtDate(stats.bestSet.when)}</Text></Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{stats.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(stats.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(stats.bestE1rmAllTime, units)}</Text>
         </ACard>
       )}
       {stats.velocity && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Velocity profile</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.ex.velocityProfile")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.blue), marginTop: 6 }}>{fmtWeight(stats.velocity.e1rm, units)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>velocity-estimated 1RM · fit r² {stats.velocity.r2} · {stats.velocity.n} loads</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} · {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
         </ACard>
       )}
     </>

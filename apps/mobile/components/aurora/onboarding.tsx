@@ -7,6 +7,7 @@ import {
 } from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +18,7 @@ import { AuroraIcon } from "./icons";
  *  question set: one question per step, then the recommended plan. */
 export default function AuroraOnboarding() {
   const { palette } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const { questions, answers, setAnswer, plan, loading } = useOnboarding();
   const persona = useClientPersonaChoice();

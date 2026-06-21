@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { MOVEMENTS, inferBlockKind } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../../lib/use-routine-builder";
+import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -14,6 +15,7 @@ const kindColor = (k: BuilderKind, C: ReturnType<typeof useTheme>["palette"]) =>
  *  it's behaviourally identical to the classic variant + /api/templates. */
 export default function AuroraBuilder() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const b = useRoutineBuilder();
   const [picker, setPicker] = useState(false);
   const [query, setQuery] = useState("");
@@ -89,7 +91,7 @@ export default function AuroraBuilder() {
       {b.msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginTop: 14 }}>{b.msg.text}</Text>}
 
       <APill
-        label={b.saving ? "Saving…" : "Save routine →"}
+        label={b.saving ? t("w.train.builder.saving") : "Save routine →"}
         onPress={b.save}
         disabled={b.saving || b.items.length === 0}
         style={{ marginTop: 16 }}
@@ -97,12 +99,12 @@ export default function AuroraBuilder() {
 
       {b.routines.length > 0 && (
         <ACard style={{ marginTop: 20 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>Your routines</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{t("w.train.logger.yourRoutines")}</Text>
           {b.routines.map((r, i) => (
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} blocks · tap to edit</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} {t("w.train.builder.blocks")} · tap to edit</Text>
               </Pressable>
               <Pressable onPress={() => b.remove(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
