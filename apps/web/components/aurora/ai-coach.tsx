@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fs } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 
 const C = (v: string) => `var(--color-${v})`;
@@ -9,6 +10,7 @@ const C = (v: string) => `var(--color-${v})`;
 /** AURORA Ask-the-AI-coach (web) — same /api/ai-coach call + source badge as the
  *  classic, in the rounded Aurora style. */
 export default function AuroraAskCoach() {
+  const { t } = useLang();
   const [text, setText] = useState("");
   const [source, setSource] = useState<"ai" | "engine" | "">("");
   const [busy, setBusy] = useState(false);
@@ -22,11 +24,11 @@ export default function AuroraAskCoach() {
         setText(j.text ?? "");
         setSource(j.source ?? "");
       } else {
-        setText("Sign in to get a personalized coaching note.");
+        setText(t("w.home.aicoach.signIn"));
         setSource("");
       }
     } catch {
-      setText("Couldn't reach the coach — try again.");
+      setText(t("w.home.aicoach.couldntReach"));
       setSource("");
     } finally {
       setBusy(false);
@@ -53,7 +55,7 @@ export default function AuroraAskCoach() {
           opacity: busy ? 0.6 : 1,
         }}
       >
-        {busy ? "Thinking…" : "Ask the AI coach →"}
+        {busy ? t("w.home.aicoach.thinking") : t("w.home.aicoach.ask")}
       </button>
 
       {text && (
@@ -69,7 +71,7 @@ export default function AuroraAskCoach() {
                 fontSize: fs.micro,
               }}
             >
-              {source === "ai" ? "Claude" : "Engine"}
+              {source === "ai" ? "Claude" : t("w.home.aicoach.engine")}
             </span>
           )}
           {/* Coaching PROSE in the display sans (reads like a coach talking),

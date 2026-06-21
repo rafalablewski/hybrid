@@ -23,6 +23,7 @@ import { fs, space,
 import { useSession } from "@/lib/session";
 import { useHasActiveCoach } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -50,6 +51,7 @@ export default function AuroraProfile({
   onNavigate?: (screen: string) => void;
 }) {
   const router = useRouter();
+  const { t } = useLang();
   const { session, entitlement } = useSession();
   const prefs = useLoggerPrefs();
   const coached = useHasActiveCoach();
@@ -73,7 +75,7 @@ export default function AuroraProfile({
     return () => { alive = false; };
   }, []);
 
-  const name = session?.name ?? "Athlete";
+  const name = session?.name ?? t("w.account.profile.athlete-fallback");
   const email = session?.email ?? "";
   const paid = entitlement === "paid";
   const tier = paid ? "FULL" : "FREE";
@@ -181,7 +183,7 @@ export default function AuroraProfile({
           </div>
           <button
             onClick={go("settings", "/settings")}
-            aria-label="Edit profile"
+            aria-label={t("w.account.profile.edit")}
             style={{
               position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: "50%",
               background: C("lime"), color: C("ink"), display: "grid", placeItems: "center",
@@ -204,7 +206,7 @@ export default function AuroraProfile({
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, opacity: 0.8 }}>{email}</div>
         )}
         <div style={{ fontSize: 12.5, color: C("chalk"), marginTop: 8, opacity: 0.85, textTransform: "capitalize" }}>
-          {role === "coach" ? "Coach" : "Hybrid Athlete"} · member since {memberSince}
+          {role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")} · {t("w.account.profile.member-since")} {memberSince}
         </div>
       </div>
 
@@ -212,7 +214,7 @@ export default function AuroraProfile({
       <div style={{ display: "flex", border: `1px solid ${C("line")}`, borderRadius: 18, background: C("ink2"), marginTop: 20 }}>
         {[
           { n: hasData ? String(state.hpi.score) : "—", k: "HPI" },
-          { n: weekStreak > 0 ? `${weekStreak}w` : "—", k: "Streak" },
+          { n: weekStreak > 0 ? `${weekStreak}w` : "—", k: t("w.account.profile.spec-streak") },
           { n: prCount > 0 ? String(prCount) : "—", k: "PRs" },
         ].map((c, i) => (
           <div key={c.k} style={{ flex: 1, textAlign: "center", padding: "15px 0", borderRight: i < 2 ? `1px solid ${C("line")}` : "none" }}>
@@ -224,7 +226,7 @@ export default function AuroraProfile({
 
       {/* ACTIONS */}
       <div style={{ display: "flex", gap: space.ms, marginTop: 14 }}>
-        <button onClick={go("settings", "/settings")} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: fs.body, background: C("lime"), border: `1px solid ${C("lime")}`, color: C("ink"), cursor: "pointer" }}>Edit profile</button>
+        <button onClick={go("settings", "/settings")} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: fs.body, background: C("lime"), border: `1px solid ${C("lime")}`, color: C("ink"), cursor: "pointer" }}>{t("w.account.profile.edit")}</button>
         <ShareCard name={name} hpi={hasData ? state.hpi.score : null} band={state.hpi.band} streak={weekStreak} prs={prCount} memberSince={memberSince} tier={tier} />
       </div>
 
@@ -237,38 +239,38 @@ export default function AuroraProfile({
         {/* soft lime corner sheen */}
         <span style={{ position: "absolute", top: -60, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-          <div style={{ fontWeight: 900, fontSize: fs.body, letterSpacing: ".04em" }}>HYBRID<span style={{ color: C("lime") }}>.</span> · MEMBERSHIP</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "4px 9px", letterSpacing: ".1em" }}>{tier} · {role === "coach" ? "COACH" : "MEMBER"}</div>
+          <div style={{ fontWeight: 900, fontSize: fs.body, letterSpacing: ".04em" }}>HYBRID<span style={{ color: C("lime") }}>.</span> · {t("w.account.profile.membership")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "4px 9px", letterSpacing: ".1em" }}>{tier} · {role === "coach" ? t("w.account.profile.coach-upper") : t("w.account.profile.member-upper")}</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 30, position: "relative" }}>
-          <IdMeta label="Member since" value={String(memberSince)} />
-          <IdMeta label="Sessions" value={hasData ? String(sessions.length) : "—"} />
-          <IdMeta label="Index" value={hasData ? String(state.hpi.score) : "—"} lime />
+          <IdMeta label={t("w.account.profile.id-member-since")} value={String(memberSince)} />
+          <IdMeta label={t("w.account.profile.id-sessions")} value={hasData ? String(sessions.length) : "—"} />
+          <IdMeta label={t("w.account.profile.id-index")} value={hasData ? String(state.hpi.score) : "—"} lime />
         </div>
       </div>
 
       {/* HPI HERO */}
       <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg,#121410,#0d0f0c)" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>Hybrid Performance Index</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</div>
         <BigNumber value={hasData ? state.hpi.score : null} />
         <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: C("lime-t"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", marginTop: 8, textTransform: "uppercase" }}>
-          Band · {hasData ? state.hpi.band : "unrated"}
+          {t("w.account.profile.band")} · {hasData ? state.hpi.band : t("w.account.profile.unrated")}
         </span>
         {/* 12-bar trace */}
         <Trace series={hpiTrace} />
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
           {hasData ? (
             <>
-              <span style={{ color: C("lime-t") }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> vs last 30 days · strength {state.hpi.components.strength} · engine {state.hpi.components.endurance} · recovery {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
+              <span style={{ color: C("lime-t") }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
             </>
           ) : (
-            "Log a session — your index, trace and band build from real training."
+            t("w.account.profile.hpi-empty")
           )}
         </div>
       </div>
 
       {/* TRAINING — year heatmap */}
-      {sectionHead("Training", `${sessions.length} session${sessions.length === 1 ? "" : "s"} →`)}
+      {sectionHead(t("w.account.profile.training"), `${sessions.length} ${sessions.length === 1 ? t("w.account.profile.session") : t("w.account.profile.sessions")} →`)}
       <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, background: "linear-gradient(180deg,#121410,#0d0f0c)", padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash"), letterSpacing: ".08em", marginBottom: 8, padding: "0 2px" }}>
           {monthLabels.map((m, i) => <span key={i}>{m}</span>)}
@@ -285,18 +287,18 @@ export default function AuroraProfile({
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 11, fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash") }}>
-          <span style={{ color: C("lime-t") }}>{weekStreak > 0 ? `${weekStreak}-week streak` : dayStreak.current > 0 ? `${dayStreak.current}-day streak` : "no streak yet"}</span>
+          <span style={{ color: C("lime-t") }}>{weekStreak > 0 ? `${weekStreak}${t("w.account.profile.week-streak-suffix")}` : dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : t("w.account.profile.no-streak")}</span>
           <span style={{ flex: 1 }} />
-          Less
+          {t("w.account.profile.less")}
           {[0, 1, 2, 3, 4].map((l) => (
             <span key={l} style={{ width: 10, height: 10, borderRadius: 2.5, display: "inline-block", background: heatBg(l as HeatCell["level"]) }} />
           ))}
-          More
+          {t("w.account.profile.more")}
         </div>
       </div>
 
       {/* ACHIEVEMENTS — squared badges */}
-      {sectionHead("Achievements", `${achievements.filter((a) => a.earned).length} earned →`)}
+      {sectionHead(t("w.account.profile.achievements"), `${achievements.filter((a) => a.earned).length} ${t("w.account.profile.earned")} →`)}
       <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none" }}>
         {achievements.map((a) => (
           <div key={a.id} style={{ flex: "none", width: 76, textAlign: "center" }}>
@@ -320,7 +322,7 @@ export default function AuroraProfile({
       </div>
 
       {/* PERSONAL RECORDS */}
-      {sectionHead("Personal records", prs.length ? "See all →" : undefined)}
+      {sectionHead(t("w.account.profile.personal-records"), prs.length ? `${t("w.account.profile.see-all")} →` : undefined)}
       {prs.length ? (
         prs.map(([lift, e1rm]) => (
           <div key={lift} style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 14px", marginBottom: 9 }}>
@@ -336,17 +338,17 @@ export default function AuroraProfile({
         ))
       ) : (
         <div style={{ ...card, padding: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-          Log strength sets and your best lifts land here.
+          {t("w.account.profile.pr-empty")}
         </div>
       )}
 
       {/* MODULE TILES — your athlete */}
-      {sectionHead("Your athlete", "Customize")}
+      {sectionHead(t("w.account.profile.your-athlete"), t("w.account.profile.customize"))}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.ms }}>
-        <Tile icon="heart" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : "No data yet"} />
-        <Tile icon="user-square" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, units) : "Log a weigh-in"} onClick={go("checkin", "/checkin")} />
-        <Tile icon="swap" k="Devices" sm={bio ? "Recovery · synced" : "Connect a device"} onClick={go("connections", "/connections")} />
-        <Tile icon="user" k="Coach" sm={coached ? "Coach · active" : "Find a coach"} onClick={go("coach", "/coach")} />
+        <Tile icon="heart" k={t("w.account.profile.tile-readiness")} big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : t("w.account.profile.no-data")} />
+        <Tile icon="user-square" k={t("w.account.profile.tile-body")} sm={bodyKg != null ? fmtWeight(bodyKg, units) : t("w.account.profile.log-weigh-in")} onClick={go("checkin", "/checkin")} />
+        <Tile icon="swap" k={t("w.account.profile.tile-devices")} sm={bio ? t("w.account.profile.recovery-synced") : t("w.account.profile.connect-device")} onClick={go("connections", "/connections")} />
+        <Tile icon="user" k={t("w.account.profile.tile-coach")} sm={coached ? t("w.account.profile.coach-active") : t("w.account.profile.find-coach")} onClick={go("coach", "/coach")} />
       </div>
     </div>
   );
@@ -435,14 +437,15 @@ function Tile({ icon, k, big, suffix, sm, onClick }: { icon: AuroraIconName; k: 
 
 /** Share card — copies a one-line membership summary to the clipboard. */
 function ShareCard({ name, hpi, band, streak: wk, prs, memberSince, tier }: { name: string; hpi: number | null; band: string; streak: number; prs: number; memberSince: number; tier: string }) {
+  const { t } = useLang();
   const [done, setDone] = useState(false);
   useEffect(() => {
     if (!done) return;
-    const t = setTimeout(() => setDone(false), 1800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDone(false), 1800);
+    return () => clearTimeout(timer);
   }, [done]);
   const share = async () => {
-    const text = `HYBRID · ${name} (${tier})\nHPI ${hpi ?? "—"} · band ${band}\n${wk}-week streak · ${prs} PRs · member since ${memberSince}\napp.hybrid.app`;
+    const text = `HYBRID · ${name} (${tier})\nHPI ${hpi ?? "—"} · ${t("w.account.profile.share-band")} ${band}\n${wk}${t("w.account.profile.week-streak-suffix")} · ${prs} PRs · ${t("w.account.profile.member-since")} ${memberSince}\napp.hybrid.app`;
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: "HYBRID", text });
@@ -456,7 +459,7 @@ function ShareCard({ name, hpi, band, streak: wk, prs, memberSince, tier }: { na
   };
   return (
     <button onClick={share} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: fs.body, background: C("ink2"), border: `1px solid ${C("line")}`, color: C("chalk"), cursor: "pointer" }}>
-      {done ? "Copied ✓" : "Share card"}
+      {done ? t("w.account.profile.copied") : t("w.account.profile.share-card")}
     </button>
   );
 }

@@ -27,6 +27,7 @@ import { fs, space,
   type SessionBlock,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
+import { useLang } from "@/lib/i18n";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { readIntake, type Intake } from "@/lib/intake";
 import ReconciledWeek from "../reconciled-week";
@@ -42,8 +43,19 @@ const readyColor = (v: number) => roleColor(readinessRole(v));
 const hpiColor = (b: string) => roleColor(hpiRole(b));
 const riskColor = (b: string) => roleColor(riskRole(b));
 const bandColor = (b: string) => roleColor(accountabilityRole(b));
-const bandLabel = (b: string) => (b === "new" ? "getting started" : b);
-const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back", chest: "Chest", shoulders: "Shoulders", triceps: "Triceps" };
+const bandLabel = (b: string, t: (k: string) => string) => (b === "new" ? t("w.home.today.gettingStarted") : b);
+const muscleLabel = (m: string, t: (k: string) => string): string => {
+  const map: Record<string, string> = {
+    quads: t("w.home.today.muscle.quads"),
+    glutes: t("w.home.today.muscle.glutes"),
+    posterior: t("w.home.today.muscle.posterior"),
+    back: t("w.home.today.muscle.back"),
+    chest: t("w.home.today.muscle.chest"),
+    shoulders: t("w.home.today.muscle.shoulders"),
+    triceps: t("w.home.today.muscle.triceps"),
+  };
+  return map[m] ?? m;
+};
 
 /**
  * AURORA Today (web) — the rounded Aurora skin of the full classic Today
@@ -72,6 +84,7 @@ export default function AuroraToday({
   onNavigate?: (screen: string) => void;
 }) {
   const router = useRouter();
+  const { t } = useLang();
   const { session } = useSession();
   const name = session?.name ?? "Athlete";
   const isAthlete = usePersona() !== "casual";
@@ -116,11 +129,11 @@ export default function AuroraToday({
           PLAN (the reason you opened the app) is the hero, not your own name. */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ color: C("ash"), fontSize: fs.note }}>
-          Hi, <span style={{ fontWeight: 700, color: C("chalk") }}>{name.split(" ")[0]}</span>
+          {t("w.home.today.hi")} <span style={{ fontWeight: 700, color: C("chalk") }}>{name.split(" ")[0]}</span>
         </div>
         <div style={{ display: "flex", gap: space.ms }}>
-          <button onClick={() => (onNavigate ? onNavigate("exercises") : router.push("/exercises"))} style={iconBtn} aria-label="Search exercises"><AuroraIcon name="search" size={20} color={C("ash")} /></button>
-          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label="Notifications"><AuroraIcon name="bell" size={20} color={C("ash")} /></button>
+          <button onClick={() => (onNavigate ? onNavigate("exercises") : router.push("/exercises"))} style={iconBtn} aria-label={t("w.home.today.searchAria")}><AuroraIcon name="search" size={20} color={C("ash")} /></button>
+          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}><AuroraIcon name="bell" size={20} color={C("ash")} /></button>
         </div>
       </div>
 
@@ -136,7 +149,7 @@ export default function AuroraToday({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
               {/* Free: follow as written; the readiness-adaptive layer is Full. */}
-              Your plan today{!(isAthlete && (hasData || plan || phase)) && plan ? " · as written" : ""}
+              {t("w.home.today.yourPlan")}{!(isAthlete && (hasData || plan || phase)) && plan ? t("w.home.today.asWritten") : ""}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
               {/* Readiness as a glanceable dial, not "95/100" digits to parse. */}
