@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18 } as const;
@@ -11,6 +12,7 @@ const backLink = (onClick: () => void, label: string) => <button onClick={onClic
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the
  *  exact GOAL_TREE / planDetail + /api/macrocycles enroll. */
 export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void }) {
+  const { t } = useLang();
   const [goalId, setGoalId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
@@ -21,8 +23,8 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>Plans</h1>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>Start with your goal — we&apos;ll show the plans built for it.</p>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>{t("w.train.plans.title")}</h1>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>{t("w.train.plans.chooseGoal")}</p>
       {GOAL_GROUPS.map((group) => (
         <div key={group.category} style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10, color: C("ash") }}>{group.category}</div>
@@ -31,7 +33,7 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
               <div key={g.id} style={{ ...card, cursor: "pointer" }} onClick={() => setGoalId(g.id)}>
                 <div style={{ display: "flex", alignItems: "center", gap: space.ms }}><span style={{ fontSize: 22, color: g.color }}>{g.icon}</span><div style={{ fontWeight: 800, fontSize: fs.title }}>{g.name}</div></div>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>{g.blurb}</p>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: g.color }}>{g.plans.length} plans →</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: g.color }}>{g.plans.length} {t("w.train.plans.plansCount")}</div>
               </div>
             ))}
           </div>

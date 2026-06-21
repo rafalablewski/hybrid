@@ -7,16 +7,18 @@ import {
   type NutritionGoal, type Signal,
 } from "@hybrid/core";
 import { fs, space, LINE, LIME, ASH, tip, txt } from "@/lib/ui";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
-  { id: "lose", label: "Lose" }, { id: "maintain", label: "Maintain" }, { id: "gain", label: "Gain" },
+  { id: "lose", label: "w.recovery.nutrition.goalLose" }, { id: "maintain", label: "w.recovery.nutrition.goalMaintain" }, { id: "gain", label: "w.recovery.nutrition.goalGain" },
 ];
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
 /** AURORA Nutrition (web) — rounded macro tracker, same adaptive-targets engine
  *  + /api/signals logging + bodyweight trend as the classic. */
 export default function AuroraNutrition() {
+  const { t } = useLang();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -53,11 +55,11 @@ export default function AuroraNutrition() {
         if (!Number.isFinite(n) || n <= 0) continue;
         any = true;
         const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: n, unit, source: "manual" }) });
-        if (res.status === 401) { setError("Sign in to log nutrition (demo mode doesn't persist)."); setSaving(false); return; }
-        if (!res.ok) { setError(`Couldn't save ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
+        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
+        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
       }
       if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); }
-    } catch { setError("Network error — try again."); }
+    } catch { setError(t("w.recovery.nutrition.errNetwork")); }
     setSaving(false);
   };
 
@@ -67,28 +69,28 @@ export default function AuroraNutrition() {
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Nutrition</h1>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
         <AuroraIcon name="heart" size={22} color={C("lime")} />
       </div>
 
       <div style={{ display: "flex", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4, marginTop: 16 }}>
         {GOALS.map((g) => {
           const on = goal === g.id;
-          return <button key={g.id} onClick={() => setGoal(g.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{g.label}</button>;
+          return <button key={g.id} onClick={() => setGoal(g.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(g.label)}</button>;
         })}
       </div>
 
       {coachDiet?.diet && (
         <div style={{ ...card, marginTop: 16, }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
-            Assigned by {coachDiet.coachName ?? "your coach"} · read-only
+            {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} · {t("w.recovery.nutrition.readOnly")}
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 10, flexWrap: "wrap" }}>
-            {([["Energy", coachDiet.diet.kcal, "kcal"], ["Protein", coachDiet.diet.protein, "g"], ["Carbs", coachDiet.diet.carbs, "g"], ["Fat", coachDiet.diet.fat, "g"]] as const).map(
+            {([["w.recovery.nutrition.energy", coachDiet.diet.kcal, "kcal"], ["w.recovery.nutrition.protein", coachDiet.diet.protein, "g"], ["w.recovery.nutrition.carbs", coachDiet.diet.carbs, "g"], ["w.recovery.nutrition.fat", coachDiet.diet.fat, "g"]] as const).map(
               ([label, val, unit]) => (val != null ? (
                 <div key={label}>
                   <div style={{ fontWeight: 800, fontSize: fs.heading }}>{val}{unit === "g" ? "g" : ""}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{label}{unit === "kcal" ? " · kcal" : ""}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t(label)}{unit === "kcal" ? " · kcal" : ""}</div>
                 </div>
               ) : null),
             )}

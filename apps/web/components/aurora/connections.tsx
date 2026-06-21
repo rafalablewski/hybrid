@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
@@ -10,6 +11,7 @@ type Provider = { id: string; label: string; auth: string; provides: string[]; c
 /** AURORA Connections (web) — same /api/connections + /api/connect/:id flow as
  *  the classic, in the rounded Aurora style. */
 export default function AuroraConnections() {
+  const { t } = useLang();
   const [connections, setConnections] = useState<Conn[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,8 +41,8 @@ export default function AuroraConnections() {
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Connections</h1>
-      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>Every device writes into one Signal stream — the engines never learn a vendor exists. Connect a wearable and your readiness, HPI and injury risk update automatically.</p>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.account.connections.title")}</h1>
+      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{t("w.account.connections.intro")}</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 14, marginTop: 16 }}>
         {providers.map((p) => {
@@ -49,22 +51,22 @@ export default function AuroraConnections() {
             <div key={p.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={{ fontWeight: 800, fontSize: fs.title }}>{p.label}</div>
-                {c ? chip(c.status === "active" ? C("lime") : C("amber"), c.status) : p.configured ? chip(C("ash"), "not connected") : chip(C("amber"), "setup pending")}
+                {c ? chip(c.status === "active" ? C("lime") : C("amber"), c.status) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6 }}>{p.provides.join(" · ")}</div>
               <div style={{ marginTop: 14 }}>
                 {p.auth === "native" ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>Connect Apple Health from the mobile app.</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.native")}</span>
                 ) : p.auth === "team" ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>Provisioned by an admin (team feed).</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.team")}</span>
                 ) : !p.configured ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber") }}>Awaiting API credentials on this deployment.</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber") }}>{t("w.account.connections.awaiting-creds")}</span>
                 ) : c ? (
                   <button onClick={() => sync(p.id)} disabled={busy === p.id} style={pill(C("lime"), false)}>
-                    {busy === p.id ? "Syncing…" : c.lastSyncAt ? `Sync · last ${new Date(c.lastSyncAt).toLocaleDateString()}` : "Sync now"}
+                    {busy === p.id ? t("w.account.connections.syncing") : c.lastSyncAt ? `${t("w.account.connections.sync-last")} ${new Date(c.lastSyncAt).toLocaleDateString()}` : t("w.account.connections.sync-now")}
                   </button>
                 ) : (
-                  <a href={`/api/connect/${p.id}`} style={pill(C("lime"), true)}>Connect →</a>
+                  <a href={`/api/connect/${p.id}`} style={pill(C("lime"), true)}>{t("w.account.connections.connect")} →</a>
                 )}
               </div>
             </div>

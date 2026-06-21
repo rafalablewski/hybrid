@@ -13,6 +13,7 @@ import { fs, space,
 } from "@hybrid/core";
 import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, marginBottom: 12 } as const;
@@ -37,11 +38,12 @@ type Status = "PENDING" | "ACTIVE" | "ENDED";
 type CoachLink = { id: string; status: Status; client?: Person; coach?: Person };
 type Links = { asCoach: CoachLink[]; asClient: CoachLink[] };
 
-const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
+const personName = (p: Person | undefined, t: (k: string) => string) => p?.name || p?.email?.split("@")[0] || t("w.teams.coach.athleteFallback");
 
 /** AURORA Coach (web) — same /api/coach/* flows as the classic CoachScreen, in
  *  the rounded Aurora style. */
 export default function AuroraCoach() {
+  const { t } = useLang();
   const [data, setData] = useState<Links | null>(null);
   const [openLink, setOpenLink] = useState<CoachLink | null>(null);
   const [email, setEmail] = useState("");
@@ -70,11 +72,11 @@ export default function AuroraCoach() {
     });
     const j = await res.json().catch(() => ({}));
     if (res.ok) {
-      setMsg({ text: `Invite sent to ${email}.`, ok: true });
+      setMsg({ text: `${t("w.teams.coach.inviteSent")} ${email}.`, ok: true });
       setEmail("");
       load();
     } else {
-      setMsg({ text: j.error ?? "Couldn't send invite.", ok: false });
+      setMsg({ text: j.error ?? t("w.teams.coach.inviteFailed"), ok: false });
     }
   };
 
@@ -89,7 +91,7 @@ export default function AuroraCoach() {
 
   if (openLink) return <ClientDetail link={openLink} back={() => setOpenLink(null)} />;
 
-  if (!data) return <Mono>Loading…</Mono>;
+  if (!data) return <Mono>{t("w.teams.coach.loading")}</Mono>;
 
   const incoming = data.asClient.filter((l) => l.status === "PENDING");
   const coaches = data.asClient.filter((l) => l.status === "ACTIVE");
@@ -100,17 +102,17 @@ export default function AuroraCoach() {
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* incoming requests */}
       {incoming.length > 0 && (
-        <Section title="Coaching requests" color={C("violet")}>
+        <Section title={t("w.teams.coach.requestsTitle")} color={C("violet")}>
           {incoming.map((l) => (
             <div key={l.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
-                  <Mono s={{ fontSize: fs.caption }}>wants to coach you</Mono>
+                  <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach, t)}</div>
+                  <Mono s={{ fontSize: fs.caption }}>{t("w.teams.coach.wantsToCoach")}</Mono>
                 </div>
                 <div style={{ display: "flex", gap: space.sm }}>
-                  <Btn label="Accept" color={C("lime")} onClick={() => act(l.id, "accept")} />
-                  <Btn label="Decline" color={C("ash")} onClick={() => act(l.id, "end")} />
+                  <Btn label={t("w.teams.coach.accept")} color={C("lime")} onClick={() => act(l.id, "accept")} />
+                  <Btn label={t("w.teams.coach.decline")} color={C("ash")} onClick={() => act(l.id, "end")} />
                 </div>
               </div>
             </div>
@@ -119,15 +121,15 @@ export default function AuroraCoach() {
       )}
 
       {/* your coaches */}
-      <Section title="Your coach" color={C("lime")}>
+      <Section title={t("w.teams.coach.yourCoach")} color={C("lime")}>
         {coaches.length === 0 ? (
-          <Mono s={{ display: "block", marginBottom: 12 }}>No coach yet.</Mono>
+          <Mono s={{ display: "block", marginBottom: 12 }}>{t("w.teams.coach.noCoach")}</Mono>
         ) : (
           coaches.map((l) => (
             <div key={l.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
-                <Btn label="End" color={C("ash")} onClick={() => act(l.id, "end")} />
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.coach, t)}</div>
+                <Btn label={t("w.teams.coach.end")} color={C("ash")} onClick={() => act(l.id, "end")} />
               </div>
             </div>
           ))
@@ -135,18 +137,18 @@ export default function AuroraCoach() {
       </Section>
 
       {/* coaching: invite + roster */}
-      <Section title="Coaching" color={C("violet")}>
+      <Section title={t("w.teams.coach.coaching")} color={C("violet")}>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Invite an athlete</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.inviteAnAthlete")}</Mono>
           <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="athlete@email.com"
-              aria-label="Athlete email"
+              aria-label={t("w.teams.coach.athleteEmailLabel")}
               style={fieldStyle({ flex: 1 })}
             />
-            <Btn label="Invite" color={C("lime")} onClick={invite} />
+            <Btn label={t("w.teams.coach.invite")} color={C("lime")} onClick={invite} />
           </div>
           {msg && (
             <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("amber")}>
@@ -162,10 +164,10 @@ export default function AuroraCoach() {
           <div key={l.id} onClick={() => setOpenLink(l)} style={{ ...card, cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client)}</div>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client, t)}</div>
                 <Mono s={{ fontSize: fs.caption }}>{l.client?.email}</Mono>
               </div>
-              <Mono s={{ fontSize: fs.caption }} c={C("lime")}>open →</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={C("lime")}>{t("w.teams.coach.open")} →</Mono>
             </div>
           </div>
         ))}
@@ -174,10 +176,10 @@ export default function AuroraCoach() {
           <div key={l.id} style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client)}</div>
-                <Chip c={C("amber")}>Pending</Chip>
+                <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client, t)}</div>
+                <Chip c={C("amber")}>{t("w.teams.coach.pending")}</Chip>
               </div>
-              <Btn label="Cancel" color={C("ash")} onClick={() => act(l.id, "end")} />
+              <Btn label={t("w.teams.coach.cancel")} color={C("ash")} onClick={() => act(l.id, "end")} />
             </div>
           </div>
         ))}
@@ -196,6 +198,7 @@ type ClientCheckin = {
 };
 
 function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
+  const { t } = useLang();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [notes, setNotes] = useState<{ id: string; body: string; private: boolean; createdAt: string }[]>([]);
   const [checkins, setCheckins] = useState<ClientCheckin[]>([]);
@@ -276,7 +279,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goal: genGoal }),
       });
-      if (!enrolled.ok) { setGenMsg("Couldn't enroll the season — try again."); return; }
+      if (!enrolled.ok) { setGenMsg(t("w.teams.coach.enrollFailed")); return; }
       const days = trainingDaysPerWeek(sessions);
       const wk = Math.max(1, Math.min(genMacro.totalWeeks, genWeek));
       const week = buildTrainingWeek({
@@ -295,10 +298,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         ),
       );
       const ok = results.filter((r) => r.ok).length;
-      setGenMsg(ok ? `Enrolled ${genGoal} + assigned ${ok} sessions (wk ${wk}, ${days}/week).` : "Couldn't generate — try again.");
+      setGenMsg(ok ? `${t("w.teams.coach.enrolled")} ${genGoal} + ${t("w.teams.coach.assignedSessions").replace("{n}", String(ok))} (${t("w.teams.coach.wkAbbr")} ${wk}, ${days}/${t("w.teams.coach.weekAbbr")}).` : t("w.teams.coach.generateFailed"));
       load();
     } catch {
-      setGenMsg("Couldn't generate — try again.");
+      setGenMsg(t("w.teams.coach.generateFailed"));
     } finally {
       setGenerating(false);
     }
@@ -335,54 +338,54 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
-        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={C("ash")}>← Roster</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={C("ash")}>← {t("w.teams.coach.roster")}</Mono>
       </button>
-      <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client)}</h2>
+      <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client, t)}</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
 
       <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
-        {tags.map((t) => (
-          <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("blue"), background: `color-mix(in srgb, ${C("blue")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 33%, transparent)`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
-            {t}
-            <button aria-label={`Remove tag ${t}`} onClick={() => saveTags(tags.filter((x) => x !== t))} style={{ background: "none", border: "none", color: C("blue"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
+        {tags.map((tg) => (
+          <span key={tg} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("blue"), background: `color-mix(in srgb, ${C("blue")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 33%, transparent)`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
+            {tg}
+            <button aria-label={`${t("w.teams.coach.removeTag")} ${tg}`} onClick={() => saveTags(tags.filter((x) => x !== tg))} style={{ background: "none", border: "none", color: C("blue"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
           </span>
         ))}
         <input
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") addTag(); }}
-          placeholder="+ tag"
-          aria-label="Add tag"
+          placeholder={t("w.teams.coach.tagPlaceholder")}
+          aria-label={t("w.teams.coach.addTagLabel")}
           style={fieldStyle({ fontSize: fs.caption, width: 90, padding: "6px 10px", borderRadius: 999, background: C("ink2") })}
         />
       </div>
 
-      <Section title="Diet" color={C("lime")}>
+      <Section title={t("w.teams.coach.diet")} color={C("lime")}>
         <CoachDiet linkId={link.id} />
       </Section>
 
-      <Section title="Coaching notes" color={C("violet")}>
+      <Section title={t("w.teams.coach.coachingNotes")} color={C("violet")}>
         <div style={card}>
           <textarea
             value={noteBody}
             onChange={(e) => setNoteBody(e.target.value)}
-            placeholder="Add a note…"
-            aria-label="Add a note"
+            placeholder={t("w.teams.coach.addNotePlaceholder")}
+            aria-label={t("w.teams.coach.addNoteLabel")}
             rows={2}
             style={fieldStyle({ width: "100%", resize: "vertical", background: C("ink2"), boxSizing: "border-box" })}
           />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
             <label style={{ display: "flex", alignItems: "center", gap: space.xs, cursor: "pointer" }}>
               <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-              <Mono s={{ fontSize: fs.caption }} c={isPrivate ? C("amber") : C("ash")}>Private (client never sees)</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={isPrivate ? C("amber") : C("ash")}>{t("w.teams.coach.privateNote")}</Mono>
             </label>
-            <Btn label="Add note" color={C("lime")} onClick={addNote} />
+            <Btn label={t("w.teams.coach.addNote")} color={C("lime")} onClick={addNote} />
           </div>
         </div>
         {notes.map((n) => (
           <div key={n.id} style={{ ...card, }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              {n.private ? <Chip c={C("amber")}>Private</Chip> : <span />}
+              {n.private ? <Chip c={C("amber")}>{t("w.teams.coach.private")}</Chip> : <span />}
               <Mono s={{ fontSize: fs.micro }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
             </div>
             <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{n.body}</Mono>
@@ -390,45 +393,45 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         ))}
       </Section>
 
-      <Section title="Programming" color={C("lime")}>
+      <Section title={t("w.teams.coach.programming")} color={C("lime")}>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Assign a workout</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.assignWorkout")}</Mono>
           {templates.length === 0 ? (
             <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }}>
-              No templates yet — build one on the Builder screen, then assign it here.
+              {t("w.teams.coach.noTemplates")}
             </Mono>
           ) : (
             <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <Select value={assignId} onChange={(e) => setAssignId(e.target.value)} aria-label="Choose a template"
+              <Select value={assignId} onChange={(e) => setAssignId(e.target.value)} aria-label={t("w.teams.coach.chooseTemplateLabel")}
                 style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 180 }}>
-                <option value="">Choose a template…</option>
-                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                <option value="">{t("w.teams.coach.chooseTemplate")}</option>
+                {templates.map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
               </Select>
-              <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)} aria-label="Assign date"
+              <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)} aria-label={t("w.teams.coach.assignDateLabel")}
                 style={fieldStyle({ padding: "10px 12px" })} />
-              <Btn label="Assign" color={assignId ? C("lime") : C("ash")} onClick={assign} />
+              <Btn label={t("w.teams.coach.assign")} color={assignId ? C("lime") : C("ash")} onClick={assign} />
             </div>
           )}
         </div>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Generate a periodized week</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             {sessions.length === 0
-              ? "Once this athlete logs sessions, generate a varied week dosed from their own numbers."
-              : `A phase-arbitrated week, days/week from their cadence (~${trainingDaysPerWeek(sessions)}/wk), loads from their logs.`}
+              ? t("w.teams.coach.genEmptyHint")
+              : `${t("w.teams.coach.genHintPre")} (~${trainingDaysPerWeek(sessions)}/${t("w.teams.coach.wkAbbr")}), ${t("w.teams.coach.genHintPost")}`}
           </Mono>
           <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} aria-label="Goal" style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 150 }}>
+            <Select value={genGoal} onChange={(e) => { setGenGoal(e.target.value); setGenWeek(1); }} aria-label={t("w.teams.coach.goalLabel")} style={{ fontSize: fs.bodyLg, flex: 1, minWidth: 150 }}>
               {GEN_GOALS.map((g) => <option key={g} value={g}>{g}</option>)}
             </Select>
-            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} aria-label="Week" style={{ fontSize: fs.bodyLg, minWidth: 150 }}>
+            <Select value={String(Math.min(genWeek, genMacro.totalWeeks))} onChange={(e) => setGenWeek(Number(e.target.value))} aria-label={t("w.teams.coach.weekLabel")} style={{ fontSize: fs.bodyLg, minWidth: 150 }}>
               {genMacro.blocks.flatMap((b) =>
                 b.micros.map((m) => (
-                  <option key={m.week} value={m.week}>{`Wk ${m.week} · ${b.label}${m.kind === "recovery" ? " (deload)" : ""}`}</option>
+                  <option key={m.week} value={m.week}>{`${t("w.teams.coach.wkAbbr")} ${m.week} · ${b.label}${m.kind === "recovery" ? ` (${t("w.teams.coach.deload")})` : ""}`}</option>
                 )),
               )}
             </Select>
-            <Btn label={generating ? "Generating…" : "Generate & assign"} color={sessions.length > 0 && !generating ? C("violet") : C("ash")} onClick={generateWeek} />
+            <Btn label={generating ? t("w.teams.coach.generating") : t("w.teams.coach.generateAssign")} color={sessions.length > 0 && !generating ? C("violet") : C("ash")} onClick={generateWeek} />
           </div>
           {genMsg && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={C("lime")}>{genMsg}</Mono>}
         </div>

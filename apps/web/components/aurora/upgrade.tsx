@@ -6,6 +6,7 @@ import { useSession } from "@/lib/session";
 import { setClientPersona } from "@/lib/persona";
 import { track } from "@/lib/track";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -14,37 +15,37 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
  * AURORA HYBRID Full — the single upgrade surface, in the rounded Aurora style.
  * Same FUNNEL tracking, billing checkout + paid-flip behaviour as the classic.
  */
-const BUNDLE: { kicker: string; color: string; items: { ic: string; nm: string; ds: string }[] }[] = [
+const buildBundle = (t: (k: string) => string): { kicker: string; color: string; items: { ic: string; nm: string; ds: string }[] }[] => [
   {
-    kicker: "Train smarter", color: C("lime"), items: [
-      { ic: "▤", nm: "Adaptive plans", ds: "Auto-progression on top of the free plan library." },
-      { ic: "◰", nm: "Periodize", ds: "Your season — phases, deloads, peak." },
-      { ic: "⊕", nm: "Builder", ds: "Design your own templates." },
-      { ic: "▲", nm: "Competition", ds: "Peak on the day." },
+    kicker: t("w.account.upgrade.cat-train"), color: C("lime"), items: [
+      { ic: "▤", nm: t("w.account.upgrade.adaptive-plans"), ds: t("w.account.upgrade.adaptive-plans-ds") },
+      { ic: "◰", nm: t("w.account.upgrade.periodize"), ds: t("w.account.upgrade.periodize-ds") },
+      { ic: "⊕", nm: t("w.account.upgrade.builder"), ds: t("w.account.upgrade.builder-ds") },
+      { ic: "▲", nm: t("w.account.upgrade.competition"), ds: t("w.account.upgrade.competition-ds") },
     ],
   },
   {
-    kicker: "Your performance", color: C("blue"), items: [
-      { ic: "◈", nm: "Athlete Twin · HPI", ds: "Strength, endurance & recovery, fused into one index." },
-      { ic: "◇", nm: "Injury risk", ds: "Tissue-by-tissue, before it bites." },
-      { ic: "↗", nm: "Future self", ds: "Projected strength & goal ETA." },
-      { ic: "◷", nm: "Analytics", ds: "Deep dashboards from your logs." },
+    kicker: t("w.account.upgrade.cat-performance"), color: C("blue"), items: [
+      { ic: "◈", nm: t("w.account.upgrade.athlete-twin"), ds: t("w.account.upgrade.athlete-twin-ds") },
+      { ic: "◇", nm: t("w.account.upgrade.injury-risk"), ds: t("w.account.upgrade.injury-risk-ds") },
+      { ic: "↗", nm: t("w.account.upgrade.future-self"), ds: t("w.account.upgrade.future-self-ds") },
+      { ic: "◷", nm: t("w.account.upgrade.analytics"), ds: t("w.account.upgrade.analytics-ds") },
     ],
   },
   {
-    kicker: "Sport & technique", color: C("amber"), items: [
-      { ic: "◎", nm: "Sport S&C", ds: "The work that transfers, ranked." },
-      { ic: "⚡", nm: "Velocity (VBT)", ds: "Bar speed → estimated 1RM & load." },
-      { ic: "◇", nm: "Force plate", ds: "Jump & asymmetry analysis." },
-      { ic: "▷", nm: "Video", ds: "Technique & asymmetry capture." },
+    kicker: t("w.account.upgrade.cat-sport"), color: C("amber"), items: [
+      { ic: "◎", nm: t("w.account.upgrade.sport-sc"), ds: t("w.account.upgrade.sport-sc-ds") },
+      { ic: "⚡", nm: t("w.account.upgrade.velocity"), ds: t("w.account.upgrade.velocity-ds") },
+      { ic: "◇", nm: t("w.account.upgrade.force-plate"), ds: t("w.account.upgrade.force-plate-ds") },
+      { ic: "▷", nm: t("w.account.upgrade.video"), ds: t("w.account.upgrade.video-ds") },
     ],
   },
   {
-    kicker: "Endurance & body", color: C("violet"), items: [
-      { ic: "🏃", nm: "Running", ds: "Mileage, pace zones, easy/hard split." },
-      { ic: "▦", nm: "Volume", ds: "Sets per muscle · MEV–MRV." },
-      { ic: "≡", nm: "Exercises & Trends", ds: "Per-lift progress over time." },
-      { ic: "❤", nm: "Longevity", ds: "Biological age & healthspan." },
+    kicker: t("w.account.upgrade.cat-endurance"), color: C("violet"), items: [
+      { ic: "🏃", nm: t("w.account.upgrade.running"), ds: t("w.account.upgrade.running-ds") },
+      { ic: "▦", nm: t("w.account.upgrade.volume"), ds: t("w.account.upgrade.volume-ds") },
+      { ic: "≡", nm: t("w.account.upgrade.exercises-trends"), ds: t("w.account.upgrade.exercises-trends-ds") },
+      { ic: "❤", nm: t("w.account.upgrade.longevity"), ds: t("w.account.upgrade.longevity-ds") },
     ],
   },
 ];

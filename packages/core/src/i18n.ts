@@ -7,7 +7,18 @@ export type Lang = "en" | "pl" | "de";
 
 export const LANGS: Record<Lang, string> = { en: "English", pl: "Polski", de: "Deutsch" };
 
-export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
+// Per-domain web-screen string bundles, merged OVER the base dictionary below so
+// the web Aurora screens can be fully localized without bloating this file.
+import { web_home } from "./i18n-web/home";
+import { web_account } from "./i18n-web/account";
+import { web_train } from "./i18n-web/train";
+import { web_analyze } from "./i18n-web/analyze";
+import { web_teams } from "./i18n-web/teams";
+import { web_recovery } from "./i18n-web/recovery";
+
+const WEB_BUNDLES = [web_home, web_account, web_train, web_analyze, web_teams, web_recovery] as const;
+
+const BASE: Record<Lang, Record<string, string>> = {
   en: {
     "nav.today": "Today",
     "nav.notifications": "Notifications",
@@ -857,6 +868,15 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     "share.tracked": "Mit HYBRID getrackt.",
     "share.firstWorkout": "Mein erstes HYBRID-Workout 💪",
   },
+};
+
+/** The shipped dictionary: the base strings with every web-domain bundle merged
+ *  over them (later bundles win, but keys are domain-namespaced so they don't
+ *  overlap). This is the single source the app + admin manager read. */
+export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
+  en: Object.assign({}, BASE.en, ...WEB_BUNDLES.map((b) => b.en)),
+  pl: Object.assign({}, BASE.pl, ...WEB_BUNDLES.map((b) => b.pl)),
+  de: Object.assign({}, BASE.de, ...WEB_BUNDLES.map((b) => b.de)),
 };
 
 export function makeT(lang: Lang): (key: string) => string {
