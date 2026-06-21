@@ -46,6 +46,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const { id } = await params;
   const existing = await prisma.emailCampaign.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
+  // Preserve the historical record + avoid the cron worker updating a campaign
+  // that vanished mid-send.
+  if (existing.status === "sent" || existing.status === "sending")
+    return NextResponse.json({ error: "A sent or sending campaign can't be deleted." }, { status: 409 });
   await prisma.emailCampaign.delete({ where: { id } });
   await audit({
     actor: gate.admin,

@@ -30,7 +30,13 @@ type Campaign = {
   audienceSize: number;
 };
 
-type Step = { delayHours: number; subject: string; body: string };
+type Step = { delayHours: number; subject: string; body: string; _key?: string };
+
+// Stable client-side key so add/remove/reorder of steps doesn't reuse an index
+// key (which would mis-associate input state/focus with the wrong row).
+const newKey = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+const keyed = (steps: Step[]): Step[] => steps.map((s) => ({ ...s, _key: s._key ?? newKey() }));
 type Sequence = {
   id: string;
   name: string;
@@ -381,7 +387,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
 
         <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "14px 0 8px" }} c={CHALK}>Steps</Mono>
         {editing.steps.map((s, i) => (
-          <div key={i} style={{ border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: 12, marginBottom: 10 }}>
+          <div key={s._key ?? i} style={{ border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: 12, marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <Mono s={{ fontSize: fs.caption }} c={AMBER}>Step {i + 1}</Mono>
               {editing.steps.length > 1 && (
@@ -402,7 +408,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
             </label>
           </div>
         ))}
-        <button onClick={() => setEditing({ ...editing, steps: [...editing.steps, { delayHours: 24, subject: "", body: "" }] })} style={ghostBtn()}>+ Add step</button>
+        <button onClick={() => setEditing({ ...editing, steps: [...editing.steps, { delayHours: 24, subject: "", body: "", _key: newKey() }] })} style={ghostBtn()}>+ Add step</button>
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 0", cursor: "pointer" }}>
           <input type="checkbox" checked={editing.active} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} />
@@ -422,7 +428,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <Mono s={{ fontSize: fs.body }} c={ASH}>Automated lifecycle drips — welcome, win-back, upgrade nudges.</Mono>
-        <button onClick={() => { setErr(null); setEditing({ ...EMPTY_SEQUENCE, steps: [{ delayHours: 0, subject: "", body: "" }] }); }} style={primaryBtn(true)}>+ New sequence</button>
+        <button onClick={() => { setErr(null); setEditing({ ...EMPTY_SEQUENCE, steps: keyed([{ delayHours: 0, subject: "", body: "" }]) }); }} style={primaryBtn(true)}>+ New sequence</button>
       </div>
       {unavailable && <Card glass={false} style={{ marginBottom: 12, borderLeft: `3px solid ${AMBER}` }}><Mono c={AMBER}>Run reference/sql-email.sql to create the email tables.</Mono></Card>}
       {list?.length === 0 && !unavailable && <Mono c={ASH}>No sequences yet.</Mono>}
@@ -440,7 +446,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
             </div>
             <div style={{ display: "flex", gap: space.xs, flexShrink: 0 }}>
               <button onClick={() => toggleActive(s)} style={smallBtn(s.active ? AMBER : LIME)}>{s.active ? "Pause" : "Activate"}</button>
-              <button onClick={() => { setErr(null); setEditing(s); }} style={smallBtn(CHALK)}>Edit</button>
+              <button onClick={() => { setErr(null); setEditing({ ...s, steps: keyed(s.steps) }); }} style={smallBtn(CHALK)}>Edit</button>
               <button onClick={() => remove(s)} style={smallBtn(RED)}>Delete</button>
             </div>
           </div>

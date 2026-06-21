@@ -13,6 +13,9 @@ const MAX_CAMPAIGNS = 3;
 const MAX_STEPS = 200;
 const MAX_NEW_INACTIVE = 200;
 
+// Allow the worker a long window (Vercel respects this on supporting plans).
+export const maxDuration = 300;
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "cron not configured" }, { status: 503 });
@@ -57,6 +60,12 @@ export async function GET(request: Request) {
       take: MAX_STEPS,
       include: { sequence: { include: { steps: true } } },
     });
+    // Batch-fetch the recipients once (avoid an N+1 user lookup per enrollment).
+    const dueUsers = await prisma.user.findMany({
+      where: { id: { in: dueEnrollments.map((en) => en.userId) } },
+      select: { id: true, name: true, email: true },
+    });
+    const userById = new Map(dueUsers.map((u) => [u.id, u]));
     for (const en of dueEnrollments) {
       const seq = en.sequence;
       // A deactivated sequence pauses its enrollments (don't keep sending).
@@ -71,7 +80,7 @@ export async function GET(request: Request) {
         result.completed++;
         continue;
       }
-      const user = await prisma.user.findUnique({ where: { id: en.userId }, select: { name: true, email: true } });
+      const user = userById.get(en.userId);
       await sendEmail({
         to: en.email,
         subject: step.subject,
@@ -98,14 +107,26 @@ export async function GET(request: Request) {
 
   // --- 3. Enroll newly-dormant users into win-back sequences --------------
   try {
-    const hasInactiveSeq = await prisma.emailSequence.count({ where: { trigger: "inactive", active: true } });
-    if (hasInactiveSeq > 0) {
+    const inactiveSeqs = await prisma.emailSequence.findMany({
+      where: { trigger: "inactive", active: true },
+      select: { id: true },
+    });
+    if (inactiveSeqs.length > 0) {
+      // EXCLUDE users already enrolled in an inactive sequence — otherwise the
+      // bounded scan would re-fetch the same first N dormant users every run
+      // (the unique guard blocks the duplicate insert, but the cron would never
+      // progress to the rest), starving everyone past the first page.
+      const enrolled = await prisma.emailEnrollment.findMany({
+        where: { sequenceId: { in: inactiveSeqs.map((s) => s.id) } },
+        select: { userId: true },
+      });
       const cutoff = new Date(now.getTime() - INACTIVE_TRIGGER_DAYS * 86_400_000);
       // Users whose most recent session predates the cutoff (or who have none),
-      // who aren't already enrolled in an active inactive sequence. Bounded scan.
+      // not already enrolled. Bounded scan.
       const candidates = await prisma.user.findMany({
         where: {
           email: { not: "" },
+          id: { notIn: enrolled.map((e) => e.userId) },
           sessions: { none: { startedAt: { gte: cutoff } } },
           createdAt: { lte: cutoff },
         },
