@@ -45,7 +45,9 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
                 {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
               </button>
             )}
-            <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, lineHeight: 1.1 }} dangerouslySetInnerHTML={{ __html: t("w.analyze.stats.title") }} />
+            <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, lineHeight: 1.1 }}>
+              {t("w.analyze.stats.title").split("\n").flatMap((line, i) => (i === 0 ? [line] : [<br key={i} />, line]))}
+            </h1>
           </div>
           <div style={{ textAlign: "right", marginTop: 6 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.stats.weeklyVolume")}</div>
