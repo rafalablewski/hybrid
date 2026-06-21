@@ -159,25 +159,30 @@ export default function ReconciledWeek({
       glass={!aurora}
       style={{ borderLeft: `3px solid ${VIOLET}`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {/* Header — the kicker + load/deload chip only. The schedule action used to
+          live in this row, which squashed into a circle on narrow widths; it now
+          sits as a full-width pill below (matching the mobile layout). */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
           This week · {reconciled.phase.label} · week {reconciled.phase.week}
         </Mono>
-        <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
-          <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
-            {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
-          </Chip>
-          {readOnly ? (
-            <Chip c={VIOLET}>assigned by your coach · read-only</Chip>
-          ) : (
-            <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
-              {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
-            </button>
-          )}
-        </div>
+        <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
+          {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
+        </Chip>
       </div>
-      {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
-      <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
+      {readOnly ? (
+        <div style={{ marginTop: 12 }}>
+          <Chip c={VIOLET}>assigned by your coach · read-only</Chip>
+        </div>
+      ) : (
+        <>
+          <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
+            {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
+          </button>
+          {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
+        </>
+      )}
+      <div style={{ display: "flex", gap: 18, marginTop: 14 }}>
         <Metric label="Intensity" value={`${reconciled.intensity}`} c={CHALK} />
         <Metric label="Volume" value={`${reconciled.volume}`} c={CHALK} />
         <Metric label="Load ×" value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
@@ -221,6 +226,12 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 function cta(disabled: boolean, aurora = false) {
   return {
     ...cond,
+    // full-width single-line pill so the long label can never wrap into a circle
+    display: "block" as const,
+    width: "100%",
+    marginTop: 12,
+    textAlign: "center" as const,
+    whiteSpace: "nowrap" as const,
     fontSize: fs.body,
     fontWeight: 800,
     textTransform: "uppercase" as const,
@@ -229,7 +240,7 @@ function cta(disabled: boolean, aurora = false) {
     background: VIOLET,
     border: "none",
     borderRadius: aurora ? 999 : 10,
-    padding: aurora ? "10px 18px" : "9px 16px",
+    padding: aurora ? "11px 18px" : "10px 16px",
     cursor: disabled ? "default" : "pointer",
     opacity: disabled ? 0.6 : 1,
   };

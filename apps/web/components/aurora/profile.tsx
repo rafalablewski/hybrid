@@ -18,6 +18,7 @@ import { fs, space,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
+  type AuroraIconName,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { useHasActiveCoach } from "@/lib/persona";
@@ -194,9 +195,14 @@ export default function AuroraProfile({
           {name}
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "3px 9px", letterSpacing: ".08em" }}>{tier}</span>
         </div>
+        {/* ONE identity line — the Hybrid ID. (The membership card no longer
+            repeats an "Athlete ID"; the email stays as quiet account contact.) */}
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8, letterSpacing: ".02em" }}>
-          HYBRID ID · {email || "—"}
+          HYBRID ID · {athleteId}
         </div>
+        {email && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, opacity: 0.8 }}>{email}</div>
+        )}
         <div style={{ fontSize: 12.5, color: C("chalk"), marginTop: 8, opacity: 0.85, textTransform: "capitalize" }}>
           {role === "coach" ? "Coach" : "Hybrid Athlete"} · member since {memberSince}
         </div>
@@ -236,7 +242,7 @@ export default function AuroraProfile({
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 30, position: "relative" }}>
           <IdMeta label="Member since" value={String(memberSince)} />
-          <IdMeta label="Athlete ID" value={athleteId} />
+          <IdMeta label="Sessions" value={hasData ? String(sessions.length) : "—"} />
           <IdMeta label="Index" value={hasData ? String(state.hpi.score) : "—"} lime />
         </div>
       </div>
@@ -337,10 +343,10 @@ export default function AuroraProfile({
       {/* MODULE TILES — your athlete */}
       {sectionHead("Your athlete", "Customize")}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.ms }}>
-        <Tile icon="∿" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : "no data yet"} />
-        <Tile icon="⚖" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, units) : "Log a weigh-in"} onClick={go("checkin", "/checkin")} />
-        <Tile icon="⌚" k="Devices" sm={bio ? "Recovery · synced" : "Connect a device"} onClick={go("connections", "/connections")} />
-        <Tile icon="👥" k="Coach" sm={coached ? "Coach · active" : "Find a coach"} onClick={go("coach", "/coach")} />
+        <Tile icon="heart" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : "No data yet"} />
+        <Tile icon="user-square" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, units) : "Log a weigh-in"} onClick={go("checkin", "/checkin")} />
+        <Tile icon="swap" k="Devices" sm={bio ? "Recovery · synced" : "Connect a device"} onClick={go("connections", "/connections")} />
+        <Tile icon="user" k="Coach" sm={coached ? "Coach · active" : "Find a coach"} onClick={go("coach", "/coach")} />
       </div>
     </div>
   );
@@ -396,25 +402,32 @@ function Trace({ series }: { series: number[] }) {
   );
 }
 
-function Tile({ icon, k, big, suffix, sm, onClick }: { icon: string; k: string; big?: string; suffix?: string; sm?: string; onClick?: () => void }) {
+function Tile({ icon, k, big, suffix, sm, onClick }: { icon: AuroraIconName; k: string; big?: string; suffix?: string; sm?: string; onClick?: () => void }) {
   return (
     <button
       onClick={onClick}
       disabled={!onClick}
       style={{
-        border: `1px solid ${C("line")}`, borderRadius: 20, padding: 15, background: C("ink2"), minHeight: 96,
+        border: `1px solid ${C("line")}`, borderRadius: 20, padding: 15, background: C("ink2"), minHeight: 104,
         display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left",
         cursor: onClick ? "pointer" : "default", color: C("chalk"), fontFamily: "var(--font-display)",
       }}
     >
-      <span style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(243,244,239,.06)", border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontSize: fs.note }}>{icon}</span>
+      {/* glyph from the Aurora kit (icons1/2/3) — never an emoji */}
+      <span style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(243,244,239,.06)", border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", color: C("chalk") }}>
+        <AuroraIcon name={icon} size={17} strokeWidth={4} />
+      </span>
+      {/* fixed-height value row keeps the label + value on the SAME baseline in
+          every tile, so the big number and the text tiles line up exactly. */}
       <span style={{ display: "block" }}>
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
-        {big ? (
-          <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.02em" }}>{big}{suffix && <span style={{ fontSize: fs.caption, color: C("ash") }}>{suffix}</span>}</span>
-        ) : (
-          <span style={{ fontWeight: 700, fontSize: 13.5, marginTop: 2, display: "block" }}>{sm}</span>
-        )}
+        <span style={{ display: "flex", alignItems: "flex-end", minHeight: 26, marginTop: 3 }}>
+          {big ? (
+            <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1 }}>{big}{suffix && <span style={{ fontSize: fs.caption, color: C("ash") }}>{suffix}</span>}</span>
+          ) : (
+            <span style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.15 }}>{sm}</span>
+          )}
+        </span>
       </span>
     </button>
   );
