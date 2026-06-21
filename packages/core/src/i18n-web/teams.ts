@@ -209,6 +209,11 @@ export const web_teams = {
     "w.teams.org.injury": "injury",
     "w.teams.org.tissuesFlagged": "tissue(s) flagged · tissue-level detail is medical-tier",
     "w.teams.org.sessionsLogged": "sessions logged",
+    "w.teams.talent.kickerTalentGraph": "Talent graph",
+    "w.teams.talent.headingBenchmarksDiscovery": "Benchmarks & discovery",
+    "w.teams.talent.reportConfirmMsg": "Flag this profile for review?",
+    "w.teams.talent.reportConfirmBtn": "Report",
+    "w.teams.tactical.yourReadiness": "Your readiness",
   } as Record<string, string>,
   pl: {
     // coach.tsx
@@ -415,6 +420,11 @@ export const web_teams = {
     "w.teams.org.injury": "kontuzja",
     "w.teams.org.tissuesFlagged": "tkanka(-i) oznaczona(-e) · szczegóły na poziomie tkanki to poziom medyczny",
     "w.teams.org.sessionsLogged": "zalogowanych sesji",
+    "w.teams.talent.kickerTalentGraph": "Graf talentów",
+    "w.teams.talent.headingBenchmarksDiscovery": "Benchmarki i odkrywanie",
+    "w.teams.talent.reportConfirmMsg": "Oznaczyć ten profil do weryfikacji?",
+    "w.teams.talent.reportConfirmBtn": "Zgłoś",
+    "w.teams.tactical.yourReadiness": "Twoja gotowość",
   } as Record<string, string>,
   de: {
     // coach.tsx
@@ -621,5 +631,10 @@ export const web_teams = {
     "w.teams.org.injury": "Verletzung",
     "w.teams.org.tissuesFlagged": "Gewebe markiert · Details auf Gewebeebene sind medizinische Stufe",
     "w.teams.org.sessionsLogged": "geloggte Einheiten",
+    "w.teams.talent.kickerTalentGraph": "Talent-Graph",
+    "w.teams.talent.headingBenchmarksDiscovery": "Benchmarks & Entdeckung",
+    "w.teams.talent.reportConfirmMsg": "Dieses Profil zur Prüfung markieren?",
+    "w.teams.talent.reportConfirmBtn": "Melden",
+    "w.teams.tactical.yourReadiness": "Deine Bereitschaft",
   } as Record<string, string>,
 };
