@@ -22,7 +22,7 @@ const PEERS: UnitMember[] = [
   { name: "Alpha-4", dri: 44, status: "non-deployable" },
 ];
 
-/** AURORA Tactical — Deployment Readiness Index (Twin + occupational capacity)
+/** AURORA Tactical — Deployment Readiness Index (Performance State + occupational capacity)
  *  and a unit go/no-go roll-up, reusing deploymentReadiness + unitReadiness. */
 export default function AuroraTactical() {
   const { palette: C } = useTheme();
@@ -51,7 +51,7 @@ export default function AuroraTactical() {
     <AuroraScreen>
       <AHeading style={{ fontSize: fs.display }}>Deployment readiness</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>
-        Fuses the Twin (HPI + injury availability) with occupational capacity into a duty status, plus a unit go/no-go.
+        Fuses the Performance State (HPI + injury availability) with occupational capacity into a duty status, plus a unit go/no-go.
       </Text>
 
       <ACard style={{ marginTop: 16 }}>

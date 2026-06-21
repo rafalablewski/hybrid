@@ -43,7 +43,7 @@ export default function Tactical() {
           Tactical / SOF · deployment readiness
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
-          Not &ldquo;are you fit?&rdquo; but &ldquo;are you deployable?&rdquo; — the same Twin signals (HPI, injury risk)
+          Not &ldquo;are you fit?&rdquo; but &ldquo;are you deployable?&rdquo; — the same Performance State signals (HPI, injury risk)
           fused with occupational capacity into a Deployment Readiness Index and a unit go/no-go.
         </Mono>
       </Card>
@@ -63,7 +63,7 @@ export default function Tactical() {
           {hasData ? (
             <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>HPI {state!.hpi} · injury risk {state!.injuryRisk}/100</Mono>
           ) : (
-            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>Log training to compute your Deployment Readiness Index from your Twin.</Mono>
+            <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10 }} c={ASH}>Log training to compute your Deployment Readiness Index from your Performance State.</Mono>
           )}
           <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
             <label style={{ flex: 1 }}>

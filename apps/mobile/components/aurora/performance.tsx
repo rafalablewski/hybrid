@@ -17,7 +17,7 @@ const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
 const riskColor = (b: string, C: Palette) => roleColor(C, riskRole(b));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** AURORA Performance — the Athlete Twin (HPI cockpit, 14-day trajectory,
+/** AURORA Performance — the Performance State (HPI cockpit, 14-day trajectory,
  *  tissue injury risk) reusing the exact engines as the classic. */
 export default function AuroraPerformance() {
   const { palette: C } = useTheme();
@@ -52,7 +52,7 @@ export default function AuroraPerformance() {
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {header}
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>Log a session and your Performance State — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</Text>
         </ACard>
       </AuroraScreen>
     );
@@ -65,7 +65,7 @@ export default function AuroraPerformance() {
       {header}
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>HPI · Athlete Twin</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Performance State · HPI</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.md, marginTop: 4 }}>
           <Text style={{ fontFamily: F.black, fontSize: 52, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
           <View>

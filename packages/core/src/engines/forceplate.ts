@@ -3,7 +3,7 @@
  *
  * Vendors (Hawkin, VALD ForceDecks, etc.) export a CSV. This parser normalizes
  * it into the Signal ontology so jump height / asymmetry land in the same stream
- * the Twin + injury engine already read — no special integration, capture-
+ * the Performance State + injury engine already read — no special integration, capture-
  * agnostic. Supports a WIDE shape (a date column + metric columns) and a LONG
  * shape (date,metric,value[,unit]). Pure data + math; unknown columns are
  * skipped, not guessed.

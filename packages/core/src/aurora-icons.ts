@@ -166,6 +166,7 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   org: "globe",
   talent: "verified",
   tactical: "navigation",
+  profile: "user-circle",
   connections: "share",
   settings: "settings",
   upgrade: "offer",

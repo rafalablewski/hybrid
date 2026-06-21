@@ -47,7 +47,7 @@ export default function ForcePlate() {
       if (res.status === 401) { setMsg({ text: "Sign in to import.", ok: false }); setImporting(false); return; }
       if (res.ok) ok++;
     }
-    setMsg({ text: `Imported ${ok} signal${ok === 1 ? "" : "s"} into your Twin.`, ok: true });
+    setMsg({ text: `Imported ${ok} signal${ok === 1 ? "" : "s"} into your Performance State.`, ok: true });
     setCsv("");
     setImporting(false);
     load();
@@ -104,7 +104,7 @@ export default function ForcePlate() {
             </LineChart>
           </ResponsiveContainer>
           <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }}>
-            A drop vs your baseline flags neuromuscular fatigue — this jump signal also feeds the Twin&apos;s injury risk.
+            A drop vs your baseline flags neuromuscular fatigue — this jump signal also feeds the Performance State injury-risk engine.
           </Mono>
         </ChartFrame>
       )}

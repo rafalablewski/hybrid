@@ -21,6 +21,7 @@ const WEB_BUNDLES = [web_home, web_account, web_train, web_analyze, web_teams, w
 const BASE: Record<Lang, Record<string, string>> = {
   en: {
     "nav.today": "Today",
+    "nav.profile": "Profile",
     "nav.notifications": "Notifications",
     "nav.timer": "Interval timer",
     "nav.statistics": "Statistics",
@@ -304,6 +305,7 @@ const BASE: Record<Lang, Record<string, string>> = {
   },
   pl: {
     "nav.today": "Dziś",
+    "nav.profile": "Profil",
     "nav.notifications": "Powiadomienia",
     "nav.timer": "Minutnik interwałowy",
     "nav.statistics": "Statystyki",
@@ -587,6 +589,7 @@ const BASE: Record<Lang, Record<string, string>> = {
   },
   de: {
     "nav.today": "Heute",
+    "nav.profile": "Profil",
     "nav.notifications": "Benachrichtigungen",
     "nav.timer": "Intervall-Timer",
     "nav.statistics": "Statistik",

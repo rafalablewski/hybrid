@@ -27,7 +27,7 @@ const BUNDLE: { kicker: string; color: string; items: { ic: string; nm: string; 
   },
   {
     kicker: "Your performance", color: BLUE, items: [
-      { ic: "◈", nm: "Athlete Twin · HPI", ds: "Strength, endurance & recovery, fused into one index." },
+      { ic: "◈", nm: "Performance State · HPI", ds: "Strength, endurance & recovery, fused into one index." },
       { ic: "◇", nm: "Injury risk", ds: "Tissue-by-tissue, before it bites." },
       { ic: "↗", nm: "Future self", ds: "Projected strength & goal ETA." },
       { ic: "◷", nm: "Analytics", ds: "Deep dashboards from your logs." },
@@ -111,7 +111,7 @@ export default function Upgrade({ onUpgraded }: { onUpgraded?: () => void }) {
           <span style={{ fontSize: fs.subtitle, width: 20, textAlign: "center" }}>◈</span>
           <div>
             <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>Athlete Cockpit</div>
-            <Mono s={{ fontSize: fs.caption, lineHeight: 1.5 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Mono>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.5 }}>Goal, season, your Performance State, sport, velocity &amp; endurance — assembled into one command center.</Mono>
           </div>
         </div>
       </Card>

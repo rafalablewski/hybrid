@@ -5,7 +5,7 @@ import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, 
 
 // Manual readiness check-in. Writes HRV / resting HR / sleep to the Biometric
 // table AND the Signal ontology (the path wearable sync will feed); readiness +
-// the Athlete Twin recompute from it.
+// the Performance State recompute from it.
 const FIELDS = [
   { key: "hrv", signal: "hrv", label: "HRV", unit: "ms", ph: "62", color: LIME },
   { key: "restingHr", signal: "restingHr", label: "Resting HR", unit: "bpm", ph: "54", color: BLUE },

@@ -82,6 +82,7 @@ import AuroraTrends from "./aurora/trends";
 import TeamCompare from "./team-compare";
 import TeamMonitor from "./team-monitor";
 import Today from "./today";
+import Tour, { FIRST_RUN_TOUR } from "./tour";
 import AuroraToday from "./aurora/today";
 import AuroraProfile from "./aurora/profile";
 import AuroraPillNav from "./aurora/pill-nav";
@@ -176,9 +177,23 @@ export default function AppShell() {
     };
   }, [isMobile, drawerOpen]);
   // Prefer the Signal ontology when it has recovery data; fall back to the
-  // legacy biometrics path so historical readings still drive the Twin.
+  // legacy biometrics path so historical readings still drive the Performance State.
   const bio = bioFromSignals ?? bioFromBiometrics;
   const [screen, setScreen] = useState("today");
+  // First-run guided tour (#2): shown once, right after a fresh account finishes
+  // onboarding. (Web has no guest mode, so there's no guest-workout to save
+  // first — that ordering only applies on mobile.)
+  const [showTour, setShowTour] = useState(false);
+  const startTourIfUnseen = () => {
+    try {
+      if (localStorage.getItem("hybrid.tourSeen")) return;
+    } catch { /* ignore */ }
+    setShowTour(true);
+  };
+  const finishTour = () => {
+    setShowTour(false);
+    try { localStorage.setItem("hybrid.tourSeen", "1"); } catch { /* ignore */ }
+  };
   // Seed blocks for the logger when "Start" comes from an enrolled named plan
   // (the plan day prefills the session). Cleared on any manual nav so a normal
   // Log entry starts empty.
@@ -230,11 +245,13 @@ export default function AppShell() {
     if (persona === "coach") setScreen("coach");
   }, [ready, session, persona]);
 
-  // Mark onboarding finished (same-device fallback flag) + advance to Today.
+  // Mark onboarding finished (same-device fallback flag) + advance to Today,
+  // then kick off the one-time first-run tutorial (#2).
   const finishOnboarding = () => {
     try { localStorage.setItem("hybrid.onboarded", "1"); } catch { /* ignore */ }
     refreshMacro();
     setScreen("today");
+    startTourIfUnseen();
   };
 
   if (!ready || !session) return null;
@@ -337,6 +354,7 @@ export default function AppShell() {
                   return (
                     <button
                       key={id}
+                      data-tour={`nav-${id}`}
                       onClick={() => { setPendingBlocks(undefined); setScreen(id); setDrawerOpen(false); }}
                       title={railCollapsed ? label : undefined}
                       style={{
@@ -395,7 +413,7 @@ export default function AppShell() {
               {!railCollapsed && (
                 <span style={{ flex: 1 }}>
                   <span style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, display: "block" }}>Unlock Full</span>
-                  <Mono s={{ fontSize: 10.5, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
+                  <Mono s={{ fontSize: 10.5, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</Mono>
                 </span>
               )}
             </button>
@@ -715,7 +733,13 @@ export default function AppShell() {
 
         {screen === "teamcompare" && (aurora ? <AuroraTeamCompare /> : <TeamCompare />)}
 
-        {screen === "periodize" && (aurora ? <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} /> : <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />)}
+        {/* Periodization is a Full feature. Free (casual) users never have it in
+            nav and aren't redirected here after enrolling (they get the season
+            BRIEF on Today instead); if one still lands here, show the upgrade. */}
+        {screen === "periodize" && (
+          persona === "casual"
+            ? (aurora ? <AuroraUpgrade onUpgraded={() => setScreen("today")} /> : <Upgrade onUpgraded={() => setScreen("today")} />)
+            : (aurora ? <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} /> : <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />))}
 
         {screen === "competition" && (aurora ? <AuroraCompetition /> : <Competition />)}
 
@@ -724,14 +748,16 @@ export default function AppShell() {
             <AuroraPlans
               onEnrolled={() => {
                 refreshMacro();
-                setScreen("periodize");
+                // Free users land back on Today (their season brief lives there);
+                // only paid athletes go to the full Periodize screen. (#5)
+                setScreen(persona === "casual" ? "today" : "periodize");
               }}
             />
           ) : (
             <PlansScreen
               onEnrolled={() => {
                 refreshMacro();
-                setScreen("periodize");
+                setScreen(persona === "casual" ? "today" : "periodize");
               }}
             />
           ))}
@@ -796,6 +822,9 @@ export default function AppShell() {
       ) : (
         <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
       )}
+
+      {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
+      {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
     </div>
   );
 }

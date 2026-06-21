@@ -71,7 +71,7 @@ function ClassicTalent() {
         <Mono color={C.chalk} style={{ lineHeight: 18 }}>
           Benchmark against your age/sex/sport cohort. Maturation-adjusted projection separates real talent from early maturity. Opt in to be discoverable.
         </Mono>
-        <Mono color={C.ash} style={{ marginTop: 6, fontSize: fs.micro }}>Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}</Mono>
+        <Mono color={C.ash} style={{ marginTop: 6, fontSize: fs.micro }}>Live HPI from your Performance State: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}</Mono>
       </Card>
 
       {/* profile */}

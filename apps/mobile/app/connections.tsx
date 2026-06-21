@@ -39,7 +39,7 @@ function ClassicConnections() {
       <H1>Wearables & sensors</H1>
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue, marginTop: 14 }}>
         <Mono color={C.chalk} style={{ lineHeight: 18 }}>
-          Connect a wearable and its recovery data flows into your Athlete Twin. Each provider writes the same Signal shape.
+          Connect a wearable and its recovery data flows into your Performance State. Each provider writes the same Signal shape.
         </Mono>
       </Card>
 

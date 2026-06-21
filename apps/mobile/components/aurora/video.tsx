@@ -34,7 +34,7 @@ export default function AuroraVideo() {
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>Technique</AHeading>
       </View>
-      <ASub style={{ marginTop: 10 }}>Joint angles, rep counts, left/right asymmetry and a technique score from pose frames — feeding the Twin&apos;s injury risk. On-device capture lands here.</ASub>
+      <ASub style={{ marginTop: 10 }}>Joint angles, rep counts, left/right asymmetry and a technique score from pose frames — feeding the Performance State injury-risk engine. On-device capture lands here.</ASub>
 
       {analyses.length === 0 ? (
         <ACard style={{ marginTop: 16 }}>

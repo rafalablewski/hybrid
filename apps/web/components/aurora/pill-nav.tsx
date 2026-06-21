@@ -65,7 +65,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 <span style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--color-lime) 16%, transparent)", pointerEvents: "none" }} />
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".2em", color: C("lime") }}>UPGRADE</span>
                 <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>Unlock Full</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: C("lime"), color: C("ink"), borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>Go Full →</span>
               </button>
             )}

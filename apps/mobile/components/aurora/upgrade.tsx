@@ -15,7 +15,7 @@ import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 // value is clear (not "just one screen"). Grouped to stay scannable.
 const BUNDLE: { k: string; c: (C: ReturnType<typeof useTheme>["palette"]) => string; items: string[] }[] = [
   { k: "Train smarter", c: (C) => C.lime, items: ["Adaptive plans — auto-progression", "Periodize — your season", "Builder — your own templates", "Competition — peak on the day"] },
-  { k: "Your performance", c: (C) => C.blue, items: ["Athlete Twin · HPI", "Injury risk by tissue", "Future-self projections", "Analytics dashboards"] },
+  { k: "Your performance", c: (C) => C.blue, items: ["Performance State · HPI", "Injury risk by tissue", "Future-self projections", "Analytics dashboards"] },
   { k: "Sport & technique", c: (C) => C.amber, items: ["Sport S&C transfer", "Velocity (VBT)", "Force plate", "Technique video"] },
   { k: "Endurance & body", c: (C) => C.violet, items: ["Running — pace zones", "Volume · MEV–MRV", "Exercises & trends", "Longevity"] },
 ];
@@ -88,7 +88,7 @@ export default function AuroraUpgrade() {
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>The hub — everything in one place</Text>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>◈ Athlete Cockpit</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: 18 }}>Goal, season, your Twin, sport, velocity &amp; endurance — assembled into one command center.</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: 18 }}>Goal, season, your Performance State, sport, velocity &amp; endurance — assembled into one command center.</Text>
       </ACard>
 
       {BUNDLE.map((cat) => (

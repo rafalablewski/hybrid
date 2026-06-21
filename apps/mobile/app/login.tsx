@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { brand } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useSession } from "../lib/session";
@@ -49,6 +50,10 @@ function ClassicLogin() {
         options: { data: { name: name.trim() || email.split("@")[0], role: "client" } },
       });
       if (error) return fail(error.message);
+      // Fresh account → queue the first-run tutorial (shown on the home tab after
+      // onboarding; deferred if a guest workout still needs to land). Onboarding
+      // itself is now gated server-side (no client-side pendingOnboarding flag).
+      await AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
       if (!data.session) {
         setError("Account created. Confirm via email, then sign in.");
         setMode("signin");

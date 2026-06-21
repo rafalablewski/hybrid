@@ -23,7 +23,7 @@ const PEERS: UnitMember[] = [
   { name: "Alpha-4", dri: 44, status: "non-deployable" },
 ];
 
-/** Tactical — a Deployment Readiness Index (Twin + occupational capacity) and a
+/** Tactical — a Deployment Readiness Index (Performance State + occupational capacity) and a
  *  unit go/no-go roll-up. Mobile port. */
 export default function Tactical() {
   if (useTemplate().template === "aurora") return <AuroraTactical />;
@@ -58,7 +58,7 @@ function ClassicTactical() {
       <Kicker>Tactical</Kicker>
       <H1>Deployment readiness</H1>
       <Mono style={{ marginTop: 6, lineHeight: 18 }}>
-        Fuses the Twin (HPI + injury availability) with occupational capacity into a duty status, plus a unit go/no-go.
+        Fuses the Performance State (HPI + injury availability) with occupational capacity into a duty status, plus a unit go/no-go.
       </Mono>
 
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue, marginTop: 14 }}>

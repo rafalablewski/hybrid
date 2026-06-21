@@ -40,7 +40,7 @@ export function readinessRole(v: number): SemanticRole {
   return "danger";
 }
 
-/** Athlete-Twin HPI band → state role. */
+/** Performance-State HPI band → state role. */
 export function hpiRole(band: string): SemanticRole {
   if (band === "peak" || band === "primed") return "go";
   if (band === "moderate") return "info";

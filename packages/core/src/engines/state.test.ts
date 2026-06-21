@@ -8,7 +8,7 @@ import {
 } from "./index";
 import type { TrainingLog } from "./index";
 
-describe("computePerformanceState (Athlete Twin)", () => {
+describe("computePerformanceState", () => {
   it("materializes hpi + readiness + fatigue + ranked drivers + summary", () => {
     const s = computePerformanceState(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
     expect(s.hpi.score).toBeGreaterThanOrEqual(0);

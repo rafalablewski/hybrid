@@ -41,7 +41,7 @@ export async function athleteState(userId: string) {
   }));
 
   const log = toTrainingLog(sessions);
-  // Real signals only — never fabricate biometrics. No data → honest empty Twin.
+  // Real signals only — never fabricate biometrics. No data → honest empty Performance State.
   const bio = toBiometrics(signals) ?? undefined;
   const state = computePerformanceState(log, bio);
   const { coeffs } = await activeCalibration();

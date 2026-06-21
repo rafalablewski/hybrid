@@ -42,7 +42,7 @@ const ROLE_COLOR: Record<OrgRole, string> = {
 };
 
 /** AURORA Org Graph (web) — same /api/org flow, team hierarchy + role-scoped
- *  staff management and athlete twin, in the rounded Aurora style. */
+ *  staff management and Performance State, in the rounded Aurora style. */
 export default function AuroraOrg() {
   const { t } = useLang();
   const [orgs, setOrgs] = useState<Org[]>([]);

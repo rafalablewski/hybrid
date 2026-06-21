@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    // Engine fallback — already real and specific, now Twin-aware.
+    // Engine fallback — already real and specific, now Performance-State-aware.
     return NextResponse.json({
       source: "engine",
       text: state.summary + riskNote,

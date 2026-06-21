@@ -98,7 +98,7 @@ function Full() {
         {hasData && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
       </Section>
 
-      <Section C={C} title="Performance · Athlete Twin" color={C.blue} openLabel="Performance" onOpen={() => router.push("/performance")}>
+      <Section C={C} title="Performance State" color={C.blue} openLabel="Performance" onOpen={() => router.push("/performance")}>
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
@@ -174,7 +174,7 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
 const TEASE: { kicker: string; blurb: string; color: (C: Palette) => string }[] = [
   { kicker: "Goal & season", color: (C) => C.violet, blurb: "Your periodized macrocycle — phase, week and event countdown." },
   { kicker: "Today's route", color: (C) => C.lime, blurb: "A velocity-aware daily prescription tuned to your readiness." },
-  { kicker: "Performance · Athlete Twin", color: (C) => C.blue, blurb: "Your HPI, its pillars and limiter — your training's digital twin." },
+  { kicker: "Performance State", color: (C) => C.blue, blurb: "Your HPI, its pillars and limiter — the live model of your training." },
   { kicker: "Sport S&C", color: (C) => C.amber, blurb: "The strength & conditioning that transfers to your sport, ranked." },
   { kicker: "Velocity & technique", color: (C) => C.blue, blurb: "Bar-speed 1RM, autoregulated load, force-plate & video analysis." },
   { kicker: "Endurance", color: (C) => C.lime, blurb: "Mileage, pace zones and running PRs from your whole history." },
@@ -185,7 +185,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   return (
     <AuroraScreen>
       <AHeading style={{ fontSize: fs.display }}>Unlock your command center</AHeading>
-      <ASub style={{ marginTop: 8 }}>Goal, season, your performance Twin, sport S&C, velocity and endurance — assembled into one screen. It&apos;s part of Full. Keep logging free; upgrade whenever you want the depth.</ASub>
+      <ASub style={{ marginTop: 8 }}>Goal, season, your Performance State, sport S&C, velocity and endurance — assembled into one screen. It&apos;s part of Full. Keep logging free; upgrade whenever you want the depth.</ASub>
       {TEASE.map((s) => (
         <ACard key={s.kicker} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: s.color(C) }} />

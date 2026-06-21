@@ -43,6 +43,8 @@ import { APill, RADIUS, Ring, Spark } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
+import Tour, { FIRST_RUN_TOUR } from "../tour";
+import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
 type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
@@ -58,9 +60,9 @@ const MUSCLE_LABEL: Record<string, string> = { quads: "Quads", glutes: "Glutes",
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at
  * parity (no feature loss): a horizontally-swipeable Plan today + AI coach pair,
  * the season phase timeline, the reconciled "This week" plan (with schedule /
- * re-sync), accountability, the weekly recap, and the Athlete Twin + injury-risk
+ * re-sync), accountability, the weekly recap, and the Performance State + injury-risk
  * panel. Runs the SAME engines as the classic home; casual users get the lean
- * subset (no season/Twin), like classic.
+ * subset (no season/Performance State), like classic.
  */
 export default function AuroraHome() {
   const { palette: C } = useTheme();
@@ -134,7 +136,7 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
-  // 14-day HPI trajectory (oldest→today) for the Twin sparkline.
+  // 14-day HPI trajectory (oldest→today) for the Performance State sparkline.
   const hpiSeries = useMemo(
     () => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi),
     [log],
@@ -199,8 +201,37 @@ export default function AuroraHome() {
   const planReadiness = hasData || plan || phase;
   const startPrescribed = () => router.push("/workout?source=ai");
 
+  // First-run guided tutorial (#2): shown once after a fresh account onboards.
+  // Guest-first rule — if the user logged a guest workout before signing up,
+  // that workout lands first; the tutorial steps aside for one open, then shows.
+  const [showTour, setShowTour] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        if (await AsyncStorage.getItem("hybrid.tourSeen")) return;
+        if (!(await AsyncStorage.getItem("hybrid.pendingTour"))) return;
+        // Guest-first: a one-shot marker (set at sign-in flush) means a guest
+        // workout is landing — let it show first; defer the tutorial one open
+        // and clear the marker so it shows next time. Keyed off the marker, NOT
+        // a live session count, so a lingering failed upload can't suppress the
+        // tutorial forever.
+        if (await AsyncStorage.getItem(CAME_FROM_GUEST_KEY)) {
+          await AsyncStorage.removeItem(CAME_FROM_GUEST_KEY).catch(() => {});
+          return;
+        }
+        await AsyncStorage.removeItem("hybrid.pendingTour").catch(() => {});
+        setShowTour(true);
+      } catch { /* ignore */ }
+    })();
+  }, []);
+  const finishTour = () => {
+    setShowTour(false);
+    AsyncStorage.setItem("hybrid.tourSeen", "1").catch(() => {});
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
+      {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         <Animated.View style={enterStyle}>
         {/* Greeting + search/bell — the greeting is one quiet line so the PLAN
@@ -274,19 +305,31 @@ export default function AuroraHome() {
                   </Pressable>
                 )}
               </>
-            ) : (
+            ) : hasData || phase ? (
               <>
                 <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>
-                  {hasData || phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+                  {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
                 </Text>
                 {phase && (
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet), marginTop: 4 }}>
                     Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
                   </Text>
                 )}
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>{rx.why}</Text>
+              </>
+            ) : (
+              /* Brand-new and not enrolled — first-session chooser (#3):
+                 follow a plan (free), build your own (Full), or log a one-off. */
+              <>
+                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>How do you want to start?</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
-                  {hasData || phase ? rx.why : "Log a workout and your plan, readiness, Athlete Twin and trends all build from your real training — nothing here is pre-filled."}
+                  Nothing here is pre-filled — pick a path and your plan, readiness and trends build from your real training.
                 </Text>
+                <View style={{ marginTop: 12, gap: space.sm }}>
+                  <ChooserRow C={C} title="Follow a plan" sub="Browse the library and enrol — free." badge="Free" color={C.lime} onPress={() => router.push("/(tabs)/plans")} />
+                  <ChooserRow C={C} title="Build your own" sub="Compose a custom program. Part of Full." badge="✦ Full" color={C.violet} onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-build" }); router.push("/upgrade"); }} />
+                  <ChooserRow C={C} title="Log a one-time workout" sub="Just train and log it — no plan needed." badge="Free" color={C.lime} onPress={() => router.push("/workout?source=empty")} />
+                </View>
               </>
             )}
           </View>
@@ -375,6 +418,55 @@ export default function AuroraHome() {
                 <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === phase.block.key ? b.color : `${b.color}33` }} />
               ))}
             </View>
+          </View>
+        )}
+
+        {/* SEASON BRIEF (free) — periodization is Full, so an enrolled free user
+            gets only this read-only glimpse here (the one place they can see it),
+            with the full Periodize screen behind the upgrade. (#5 / #7) */}
+        {!isAthlete && macro && phase && (
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet), flex: 1 }}>
+                Your season · {macro.goalOrSport}
+              </Text>
+              <View style={{ backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✦ Full</Text>
+              </View>
+            </View>
+            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 8, marginBottom: 4 }}>
+              {phase.block.label} phase · week {currentWeek}/{macro.totalWeeks}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+              {macro.blocks.map((b) => (
+                <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === phase.block.key ? b.color : `${b.color}33` }} />
+              ))}
+            </View>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 17 }}>
+              You follow the plan as written. The full periodized season — adaptive phases, auto-progression and
+              readiness modulation — is part of Full.
+            </Text>
+            <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-season" }); router.push("/upgrade"); }} style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Unlock full periodization →</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* SELL FULL — what a free user unlocks: Performance State + the rest of
+            the intelligence layer. The Today upsell (#8). */}
+        {!isAthlete && (
+          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue), flex: 1 }}>Unlock with Full</Text>
+              <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-perfstate" }); router.push("/upgrade"); }} style={{ backgroundColor: C.blue, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>✦ Unlock Full →</Text>
+              </Pressable>
+            </View>
+            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>See your Performance State</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
+              HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization,
+              velocity tracking, analytics and the AI coach.
+            </Text>
           </View>
         )}
 
@@ -471,10 +563,10 @@ export default function AuroraHome() {
           </Pressable>
         )}
 
-        {/* PERFORMANCE STATE · ATHLETE TWIN + injury risk */}
+        {/* PERFORMANCE STATE + injury risk */}
         {isAthlete && hasData && (
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>Performance State · Athlete Twin</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>Performance State</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 6 }}>
               <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
@@ -518,5 +610,21 @@ function Metric({ label, value, color, C }: { label: string; value: string; colo
       <Text style={{ fontFamily: F.black, fontSize: 22, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
     </View>
+  );
+}
+
+// One row of the first-session chooser (#3): a tappable option with a title, a
+// one-line sub, and a Free/Full badge.
+function ChooserRow({ C, title, sub, badge, color, onPress }: { C: P; title: string; sub: string; badge: string; color: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: `${color}14` }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{title}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{sub}</Text>
+      </View>
+      <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{badge}</Text>
+      </View>
+    </Pressable>
   );
 }

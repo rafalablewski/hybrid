@@ -1,5 +1,5 @@
 /**
- * Performance-medicine / longevity vertical — healthspan from the Twin.
+ * Performance-medicine / longevity vertical — healthspan from the Performance State.
  *
  * The same recovery signals (resting HR, HRV, VO2, sleep) that drive readiness
  * also predict healthspan. This estimates a biological age vs chronological age

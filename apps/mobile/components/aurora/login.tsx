@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
@@ -47,6 +48,10 @@ export default function AuroraLogin() {
         options: { data: { name: name.trim() || email.split("@")[0], role: "client" } },
       });
       if (error) return fail(error.message);
+      // Fresh account → queue the first-run tutorial (shown on the home tab after
+      // onboarding; deferred if a guest workout still needs to land). Onboarding
+      // itself is now gated server-side (no client-side pendingOnboarding flag).
+      await AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
       if (!data.session) {
         setError("Account created. Confirm via email, then sign in.");
         setMode("signin");

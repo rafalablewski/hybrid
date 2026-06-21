@@ -3,9 +3,9 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { signalUnit, SIGNAL_KINDS, type SignalKind } from "@hybrid/core";
 
-// The Athlete Twin's universal time-series. Any source (manual, HealthKit,
+// The Performance State's universal time-series. Any source (manual, HealthKit,
 // WHOOP, Garmin, Catapult, nutrition…) writes one Signal shape here; the engines
-// read the stream via toBiometrics / the Twin. The accepted-kind allow-list is
+// read the stream via toBiometrics / the Performance State. The accepted-kind allow-list is
 // the single source of truth in @hybrid/core so it never drifts. Scoped to the
 // user; coaches read via the active-link RLS policy.
 const KINDS: SignalKind[] = SIGNAL_KINDS;
