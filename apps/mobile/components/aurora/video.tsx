@@ -36,11 +36,11 @@ export default function AuroraVideo() {
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vid.title")}</AHeading>
       </View>
-      <ASub style={{ marginTop: 10 }}>Joint angles, rep counts, left/right asymmetry and a technique score from pose frames — feeding the Performance State injury-risk engine. On-device capture lands here.</ASub>
+      <ASub style={{ marginTop: 10 }}>{t("w.analyze.vid.intro-mobile")}</ASub>
 
       {analyses.length === 0 ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{loaded ? "No analyses yet — record a clip from the phone to see your technique broken down here." : "Loading…"}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{loaded ? t("w.analyze.vid.empty-mobile") : t("w.analyze.vid.loading")}</Text>
         </ACard>
       ) : analyses.map((a) => {
         const m = a.metrics;
@@ -56,7 +56,7 @@ export default function AuroraVideo() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
               {chip(C.chalk, `${m.reps} ${t("w.analyze.vid.reps")}`)}
               {m.minKneeAngle != null && chip(C.blue, `${t("w.analyze.vid.depth")} ${Math.round(m.minKneeAngle)}°`)}
-              {m.kneeAsymmetryPct != null && chip(m.kneeAsymmetryPct > 10 ? C.amber : C.lime, `L/R ${Math.round(m.kneeAsymmetryPct)}%`)}
+              {m.kneeAsymmetryPct != null && chip(m.kneeAsymmetryPct > 10 ? C.amber : C.lime, `${t("w.analyze.vid.lr")} ${Math.round(m.kneeAsymmetryPct)}%`)}
             </View>
             {m.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{m.flags.join(" · ")}</Text>}
           </ACard>

@@ -45,7 +45,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
       {busy ? (
         <View style={{ marginTop: embedded ? 10 : 18, flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <ActivityIndicator color={C.violet} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Reading your training…</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.home.aicoach.reading")}</Text>
         </View>
       ) : note?.text ? (
         <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -61,7 +61,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
       ) : null}
 
       <View style={{ marginTop: embedded ? 12 : 16 }}>
-        <APill label={busy ? t("w.home.aicoach.thinking") : "Ask again →"} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 13 }} />
+        <APill label={busy ? t("w.home.aicoach.thinking") : t("w.home.aicoach.askAgain")} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 13 }} />
       </View>
     </>
   );
@@ -77,10 +77,9 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
       </View>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>Today&apos;s coaching note</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
-          Claude reads your real readiness, fatigue, velocity and goal and writes you a personalized note —
-          what to push and what to hold back.
+          {t("w.home.aicoach.intro")}
         </Text>
         {body}
       </ACard>

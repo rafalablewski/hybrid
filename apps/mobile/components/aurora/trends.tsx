@@ -60,7 +60,7 @@ export default function AuroraTrends() {
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>
       </View>
-      <ASub style={{ marginTop: 10 }}>Volume over time, muscle breakdown and per-exercise analytics — tap a lift for its full dashboard.</ASub>
+      <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
       {!trained ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
@@ -74,8 +74,8 @@ export default function AuroraTrends() {
               {weeks.map((w, i) => <View key={i} style={{ flex: 1, height: 6 + (w.sets / maxSets) * 64, borderRadius: 3, backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}66` }} />)}
             </View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>8 wk ago</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{`${weeks[weeks.length - 1]!.sets} sets · this wk`}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{t("w.analyze.trends.weeksAgo")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{`${weeks[weeks.length - 1]!.sets} ${t("w.analyze.trends.setsThisWk")}`}</Text>
             </View>
           </ACard>
 

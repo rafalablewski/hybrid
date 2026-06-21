@@ -62,7 +62,7 @@ export default function AuroraCompetition() {
         </ScrollView>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12, alignItems: "flex-end" }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 4 }}>Date (YYYY-MM-DD)</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 4 }}>{t("w.train.comp.dateLabel")}</Text>
             <TextInput value={date} onChangeText={setDate} placeholder="2026-09-01" placeholderTextColor={C.ash} autoCapitalize="none" style={fieldStyle} />
           </View>
           <View style={{ width: 120 }}><APill label={busy ? "…" : t("common.add")} onPress={add} disabled={busy} style={{ paddingVertical: 14 }} /></View>
@@ -91,7 +91,7 @@ export default function AuroraCompetition() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek}`}</Text>
               </View>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{plan.weeksToEvent} {t("w.train.comp.weeksOut")} · form at event {Math.round(plan.formAtEvent)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{plan.weeksToEvent} {t("w.train.comp.weeksOut")} · {t("w.train.comp.formAtEvent")} {Math.round(plan.formAtEvent)}</Text>
             <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden", marginTop: 12 }}>
               {plan.macro.blocks.map((b) => (
                 <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.color }} />
@@ -109,7 +109,7 @@ export default function AuroraCompetition() {
                 return <View key={p.week} style={{ flex: 1, height: h, backgroundColor: isPeak ? C.lime : `${C.blue}99`, borderRadius: 3 }} />;
               })}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6 }}>wk 1 → event (peak week in lime)</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6 }}>{t("w.train.comp.projectionCaption")}</Text>
           </ACard>
         </>
       )}

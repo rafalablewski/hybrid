@@ -96,7 +96,7 @@ export default function AuroraLogin() {
 
         {!isSignup && (
           <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.ash, textAlign: "right", marginBottom: 6 }}>
-            Forgot Password?
+            {t("w.account.login.forgot-password")}
           </Text>
         )}
 
@@ -130,7 +130,7 @@ export default function AuroraLogin() {
 
       {!live && (
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, textAlign: "center", marginTop: 18 }}>
-          Set EXPO_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.
+          {t("w.account.login.anon-key-hint")}
         </Text>
       )}
     </AuroraScreen>

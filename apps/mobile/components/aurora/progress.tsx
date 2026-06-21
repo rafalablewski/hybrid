@@ -53,32 +53,32 @@ export default function AuroraProgress() {
       const ext = (asset.mimeType?.split("/")[1] || asset.fileName?.split(".").pop() || "jpg").toLowerCase();
       const path = `${uid}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, arraybuffer, { contentType: asset.mimeType ?? "image/jpeg" });
-      if (error) { Alert.alert("Upload failed", error.message); setStatus("no-bucket"); }
+      if (error) { Alert.alert(t("w.recovery.progress.uploadFailed"), error.message); setStatus("no-bucket"); }
       else await load();
     } catch (e) {
-      Alert.alert("Upload failed", e instanceof Error ? e.message : "Try again.");
+      Alert.alert(t("w.recovery.progress.uploadFailed"), e instanceof Error ? e.message : "Try again.");
     }
     setBusy(false);
   };
 
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return Alert.alert("Permission needed", "Allow photo access to add progress photos.");
+    if (!perm.granted) return Alert.alert(t("w.recovery.progress.permissionNeeded"), t("w.recovery.progress.permissionPhoto"));
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
     if (!res.canceled && res.assets[0]) upload(res.assets[0]);
   };
 
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return Alert.alert("Permission needed", "Allow camera access to take progress photos.");
+    if (!perm.granted) return Alert.alert(t("w.recovery.progress.permissionNeeded"), t("w.recovery.progress.permissionCamera"));
     const res = await ImagePicker.launchCameraAsync({ quality: 0.8 });
     if (!res.canceled && res.assets[0]) upload(res.assets[0]);
   };
 
   const remove = (path: string) =>
-    Alert.alert("Delete photo?", "This can't be undone.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => { await supabase.storage.from(BUCKET).remove([path]); load(); } },
+    Alert.alert(t("w.recovery.progress.deletePhotoTitle"), t("w.recovery.progress.deletePhotoBody"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("workout.deleteSet"), style: "destructive", onPress: async () => { await supabase.storage.from(BUCKET).remove([path]); load(); } },
     ]);
 
   return (
@@ -108,10 +108,10 @@ export default function AuroraProgress() {
             <View style={{ flexDirection: "row", gap: space.ms }}>
               <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 7, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", justifyContent: "center", opacity: busy ? 0.5 : 1 }}>
                 <AuroraIcon name="add" size={18} color={C.onAccent} />
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? t("w.recovery.progress.uploading") : "Take photo"}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.takePhoto")}</Text>
               </Pressable>
               <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>From library</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.progress.fromLibrary")}</Text>
               </Pressable>
             </View>
           </ACard>

@@ -59,7 +59,7 @@ export default function AuroraOnboarding() {
           ))}
         </View>
         <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>skip</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>{t("w.account.onboarding.skip")}</Text>
         </Pressable>
 
         <ScrollView style={{ marginTop: 14 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>

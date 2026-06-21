@@ -60,7 +60,7 @@ export default function AuroraNutrition() {
     push("carbs", f.carbs, "g");
     push("fat", f.fat, "g");
     const results = await Promise.all(jobs);
-    if (results.includes(false)) Alert.alert(t("w.recovery.nutrition.errSave"), "Some entries didn't save — check your connection / sign-in, then try again.");
+    if (results.includes(false)) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
     else setF({ kcal: "", protein: "", carbs: "", fat: "" });
     setSaving(false);
     load();

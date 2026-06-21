@@ -334,14 +334,14 @@ export default function AuroraHome() {
               /* Brand-new and not enrolled — first-session chooser (#3):
                  follow a plan (free), build your own (Full), or log a one-off. */
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>How do you want to start?</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
-                  Nothing here is pre-filled — pick a path and your plan, readiness and trends build from your real training.
+                  {t("w.home.today.howStartSub")}
                 </Text>
                 <View style={{ marginTop: 12, gap: space.sm }}>
-                  <ChooserRow C={C} title="Follow a plan" sub="Browse the library and enrol — free." badge="Free" color={C.lime} onPress={() => router.push("/(tabs)/plans")} />
-                  <ChooserRow C={C} title="Build your own" sub="Compose a custom program. Part of Full." badge="✦ Full" color={C.violet} onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-build" }); router.push("/upgrade"); }} />
-                  <ChooserRow C={C} title="Log a one-time workout" sub="Just train and log it — no plan needed." badge="Free" color={C.lime} onPress={() => router.push("/workout?source=empty")} />
+                  <ChooserRow C={C} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/(tabs)/plans")} />
+                  <ChooserRow C={C} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFull")} color={C.violet} onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-build" }); router.push("/upgrade"); }} />
+                  <ChooserRow C={C} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/workout?source=empty")} />
                 </View>
               </>
             )}
@@ -378,24 +378,24 @@ export default function AuroraHome() {
         </View>
 
         {/* Start workout */}
-        <APill label={hasData ? "Start today's session" : t("welcome.start")} onPress={() => router.push("/workout?source=empty")} style={{ marginTop: 18 }} />
+        <APill label={hasData ? t("w.home.today.startTodaySession") : t("welcome.start")} onPress={() => router.push("/workout?source=empty")} style={{ marginTop: 18 }} />
 
         {/* Assigned by your coach */}
         {upcoming.length > 0 && (
           <View style={{ marginTop: 22 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>Assigned by your coach</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>{t("w.home.today.assignedByCoach")}</Text>
             {upcoming.map((a) => (
               <View key={a.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 16, marginBottom: 12 }}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>Assigned · {new Date(a.date).toLocaleDateString()}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.today.assigned")} · {new Date(a.date).toLocaleDateString()}</Text>
                 </View>
                 <View style={{ flexDirection: "row", gap: space.sm }}>
                   <Pressable onPress={() => markDone(a.id)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Done</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("common.done")}</Text>
                   </Pressable>
                   <Pressable onPress={() => router.push("/workout?source=empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>Start</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("common.start")}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -441,14 +441,14 @@ export default function AuroraHome() {
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet), flex: 1 }}>
-                Your season · {macro.goalOrSport}
+                {t("w.home.today.yourSeason")} {macro.goalOrSport}
               </Text>
               <View style={{ backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✦ Full</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>{t("w.home.today.badgeFull")}</Text>
               </View>
             </View>
             <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 8, marginBottom: 4 }}>
-              {phase.block.label} phase · week {currentWeek}/{macro.totalWeeks}
+              {phase.block.label} {t("w.home.today.phaseWeek")} {currentWeek}/{macro.totalWeeks}
             </Text>
             <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
               {macro.blocks.map((b) => (
@@ -456,11 +456,10 @@ export default function AuroraHome() {
               ))}
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 17 }}>
-              You follow the plan as written. The full periodized season — adaptive phases, auto-progression and
-              readiness modulation — is part of Full.
+              {t("w.home.today.seasonBriefBody")}
             </Text>
             <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-season" }); router.push("/upgrade"); }} style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Unlock full periodization →</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.home.today.unlockPeriodization")}</Text>
             </Pressable>
           </View>
         )}
@@ -470,15 +469,14 @@ export default function AuroraHome() {
         {!isAthlete && (
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue), flex: 1 }}>Unlock with Full</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue), flex: 1 }}>{t("w.home.today.unlockWithFull")}</Text>
               <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-perfstate" }); router.push("/upgrade"); }} style={{ backgroundColor: C.blue, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.home.today.unlockFullBtn")}</Text>
               </Pressable>
             </View>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>See your Performance State</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.home.today.seePerfState")}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
-              HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization,
-              velocity tracking, analytics and the AI coach.
+              {t("w.home.today.sellFullBody")}
             </Text>
           </View>
         )}

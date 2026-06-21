@@ -55,15 +55,15 @@ export default function AuroraTalent() {
   };
 
   const flag = (id: string) =>
-    Alert.alert(t("w.teams.talent.reportTitle"), "Flag this profile for review?", [
+    Alert.alert(t("w.teams.talent.reportTitle"), t("w.teams.talent.reportConfirmMsg"), [
       { text: t("common.cancel"), style: "cancel" },
-      { text: "Report", style: "destructive", onPress: () => reportProfile(id, "inappropriate") },
+      { text: t("w.teams.talent.reportConfirmBtn"), style: "destructive", onPress: () => reportProfile(id, "inappropriate") },
     ]);
 
   return (
     <AuroraScreen>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Talent graph</Text>
-      <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>Benchmarks &amp; discovery</AHeading>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.talent.kickerTalentGraph")}</Text>
+      <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>{t("w.teams.talent.headingBenchmarksDiscovery")}</AHeading>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>

@@ -33,9 +33,9 @@ export default function AuroraPeriodize() {
         <AHeading style={{ fontSize: fs.display }}>{t("w.train.periodize.noActivePlan")}</AHeading>
         <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
-            {loaded ? "Enroll in a plan and your periodized macrocycle — phases, load & recovery weeks — shows up here." : "Loading your season…"}
+            {loaded ? t("w.train.periodize.emptyBodyMobile") : t("w.train.periodize.loadingSeason")}
           </Text>
-          <APill label="Browse plans →" onPress={() => router.push("/(tabs)/plans")} style={{ marginTop: 16 }} />
+          <APill label={t("w.train.periodize.browsePlans")} onPress={() => router.push("/(tabs)/plans")} style={{ marginTop: 16 }} />
         </ACard>
       </AuroraScreen>
     );
@@ -46,8 +46,8 @@ export default function AuroraPeriodize() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{macro.goalOrSport}{macro.model ? ` · ${macro.model}` : ` · ${t("w.train.periodize.enrolledLabel")}`}</Text>
-      <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{macro.totalWeeks}-week season</AHeading>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 6 }}>Now in {current.label} · week {week}/{macro.totalWeeks}</Text>
+      <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{macro.totalWeeks}{t("w.train.periodize.weekSeason")}</AHeading>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 6 }}>{t("w.train.periodize.nowIn")} {current.label} · week {week}/{macro.totalWeeks}</Text>
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>

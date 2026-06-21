@@ -57,7 +57,7 @@ export default function AuroraTactical() {
       </Text>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Your readiness</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.teams.tactical.yourReadiness")}</Text>
         {noData ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{t("w.teams.tactical.logToCompute")}</Text>
         ) : dr ? (

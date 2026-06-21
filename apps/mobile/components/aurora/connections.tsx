@@ -45,7 +45,7 @@ export default function AuroraConnections() {
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>{t("w.account.connections.title")}</AHeading>
       </View>
-      <ASub style={{ marginTop: 10 }}>Connect a wearable and its recovery data flows into your Performance State. Each provider writes the same Signal shape.</ASub>
+      <ASub style={{ marginTop: 10 }}>{t("w.account.connections.intro-mobile")}</ASub>
 
       {providers.map((p) => {
         const conn = connections.find((c) => c.provider === p.id);
@@ -56,15 +56,15 @@ export default function AuroraConnections() {
               <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{p.label}</Text>
               {chip(statusColor(status, C), status)}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>provides: {p.provides.join(", ")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>{t("w.account.connections.provides")} {p.provides.join(", ")}</Text>
 
             <View style={{ marginTop: 14 }}>
               {p.auth === "native" ? (
-                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>Apple Health connects on-device — available once the native build is installed.</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.connections.native-mobile")}</Text>
               ) : p.auth === "team" ? (
-                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>Provisioned by an admin.</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.connections.team-mobile")}</Text>
               ) : !p.configured ? (
-                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: txt(C, C.amber) }}>Awaiting API credentials — coming soon.</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("w.account.connections.awaiting-creds-mobile")}</Text>
               ) : conn ? (
                 <Pressable onPress={() => sync(p.id)} disabled={syncing === p.id} style={{ backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", opacity: syncing === p.id ? 0.6 : 1 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>

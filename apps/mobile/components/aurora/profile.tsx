@@ -235,7 +235,7 @@ export default function AuroraProfile() {
           })()}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9 }}>
-          <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> vs first read · {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
+          <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> {t("w.account.profile.vs-first-read")} · {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
         </Text>
       </View>
 
@@ -259,7 +259,7 @@ export default function AuroraProfile() {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 11 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 8, color: lime }}>
-            {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}-week best` : t("w.account.profile.no-streak")}
+            {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
           </Text>
           <View style={{ flex: 1 }} />
           <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.less")}</Text>
@@ -299,7 +299,7 @@ export default function AuroraProfile() {
       </ScrollView>
 
       {/* PERSONAL RECORDS — top lifts by e1RM */}
-      <SectionHeader C={C} title={t("w.account.profile.personal-records")} action={hasData ? "by e1RM" : ""} />
+      <SectionHeader C={C} title={t("w.account.profile.personal-records")} action={hasData ? t("w.account.profile.by-e1rm") : ""} />
       {topPrs.length > 0 ? (
         topPrs.map(([lift, e1rm]) => (
           <View key={lift} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
@@ -315,7 +315,7 @@ export default function AuroraProfile() {
         ))
       ) : (
         <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>Log a strength session and your top lifts appear here, ranked by estimated 1RM.</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
         </View>
       )}
 
@@ -327,7 +327,7 @@ export default function AuroraProfile() {
         <Tile C={C} icon="heart" k={t("w.account.profile.tile-readiness")} big={hasData ? `${state.readiness.score}` : undefined} unit={hasData ? "%" : undefined} sm={hasData ? undefined : t("w.account.profile.no-data")} />
         <Tile C={C} icon="user-square" k={t("w.account.profile.tile-body")} sm={bodyKg != null ? fmtWeight(bodyKg, prefs.units) : t("w.account.profile.log-weigh-in")} onPress={() => router.push("/checkin")} />
         <Tile C={C} icon="swap" k={t("w.account.profile.tile-devices")} sm={device ? `${device.label} · ${device.status}` : t("w.account.profile.connect-device")} onPress={() => router.push("/connections")} />
-        <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · active` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
+        <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · ${t("w.account.profile.coach-active-suffix")}` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
       </View>
 
       <View style={{ height: 8 }} />

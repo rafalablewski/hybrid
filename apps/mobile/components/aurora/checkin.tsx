@@ -51,7 +51,7 @@ export default function AuroraCheckin() {
       sharedWithCoach: paid ? form.sharedWithCoach : false,
     });
     setSaving(false);
-    if (!ok) { Alert.alert("Couldn't submit", "Your check-in didn't save. Please try again."); return; }
+    if (!ok) { Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody")); return; }
     setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     load();
   };
@@ -67,7 +67,7 @@ export default function AuroraCheckin() {
       </View>
 
       <ACard style={{ marginTop: 18 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Training volume · this week</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.checkins.trainingVolumeWeek")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>
           {compliance.completedThisWeek}/{compliance.target} {t("w.recovery.checkins.sessions")} · {compliance.pct}% {t("w.recovery.checkins.ofPlan")} · {compliance.status}
         </Text>
@@ -100,7 +100,7 @@ export default function AuroraCheckin() {
         <TextInput
           value={form.note}
           onChangeText={(v) => setForm((s) => ({ ...s, note: v }))}
-          placeholder="How did the week go? Anything your coach should know…"
+          placeholder={t("w.recovery.checkins.notePlaceholderWeek")}
           placeholderTextColor={C.ash}
           multiline
           style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 80, textAlignVertical: "top" }}
@@ -115,7 +115,7 @@ export default function AuroraCheckin() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.checkins.shareCoach")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>
-              {paid ? "Send this check-in to your coach" : "Full plan — share check-ins with your coach"}
+              {paid ? t("w.recovery.checkins.shareCoachOnShort") : t("w.recovery.checkins.shareCoachOffShort")}
             </Text>
           </View>
         </Pressable>
@@ -123,9 +123,9 @@ export default function AuroraCheckin() {
         <APill label={saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")} onPress={submit} disabled={saving} style={{ marginTop: 14 }} />
       </ACard>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue), marginTop: 8, marginBottom: 10 }}>History</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue), marginTop: 8, marginBottom: 10 }}>{t("w.recovery.checkins.historyShort")}</Text>
       {history.length === 0 ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>No check-ins yet — submit your first above.</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.checkins.historyEmptyFirst")}</Text>
       ) : (
         history.map((c) => (
           <ACard key={c.id} style={{ marginBottom: 12 }}>

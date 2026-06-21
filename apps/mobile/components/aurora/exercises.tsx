@@ -99,7 +99,7 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       <>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
           <Metric label={t("w.analyze.ex.runs")} value={String(stats.efforts)} />
-          <Metric label="KM" value={String(stats.distanceKm)} color={C.blue} />
+          <Metric label={t("w.analyze.ex.km")} value={String(stats.distanceKm)} color={C.blue} />
           <Metric label={t("w.analyze.ex.longest")} value={String(stats.longestKm)} />
           <Metric label={t("w.analyze.ex.bestPace")} value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} color={C.blue} />
         </View>
@@ -143,7 +143,8 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
 
 function TrendBars({ series, color, lowerIsBetter = false, unit }: { series: number[]; color: string; lowerIsBetter?: boolean; unit: WeightUnit | "pace" }) {
   const { palette: C } = useTheme();
-  if (series.length < 2) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 12 }}>Log this a few times to see a trend.</Text>;
+  const { t } = useLang();
+  if (series.length < 2) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 12 }}>{t("w.analyze.ex.trendHint")}</Text>;
   const max = Math.max(...series), min = Math.min(...series), range = max - min || 1;
   const latest = series[series.length - 1]!, delta = latest - series[0]!;
   const fmt = (v: number) => (unit === "pace" ? `${paceClock(v)} /km` : `${v} ${unit}`);

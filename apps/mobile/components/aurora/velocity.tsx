@@ -88,7 +88,7 @@ export default function AuroraVelocity() {
       <ACard style={{ marginTop: 14 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.est1rm")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text></Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{resolved ? `MVT ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{resolved ? `${t("w.analyze.vel.mvtPrefix")} ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
@@ -145,7 +145,7 @@ export default function AuroraVelocity() {
           })}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15 }}>
-          Per-rep trajectory &amp; bar path need the bar sensor / camera capture (see Capabilities).
+          {t("w.analyze.vel.perRepNote")}
         </Text>
       </ACard>
     </AuroraScreen>

@@ -95,7 +95,7 @@ function Full() {
         </Pressable>
       </Section>
 
-      <Section C={C} title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} color={C.lime} openLabel={hasData ? "Start" : "Start first"} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
+      <Section C={C} title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} color={C.lime} openLabel={hasData ? t("common.start") : t("w.home.cockpit.startFirstSection")} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</Text>
         {hasData && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
       </Section>
