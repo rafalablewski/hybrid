@@ -32,11 +32,11 @@ export default function AuroraHistory() {
 
   const onArchive = async (id: string, archived: boolean) => {
     setBusy(id); const ok = await archiveSession(id, archived); setBusy(null);
-    if (ok) load(); else Alert.alert("Error", `Couldn't ${archived ? "archive" : "restore"} the workout.`);
+    if (ok) load(); else Alert.alert(t("common.error"), archived ? t("history.archiveError") : t("history.restoreError"));
   };
-  const onDelete = (s: LoggedSession) => Alert.alert("Delete workout?", `“${s.title}” will be permanently removed. This can't be undone.`, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Delete", style: "destructive", onPress: async () => { setBusy(s.id); const ok = await deleteSession(s.id); setBusy(null); if (ok) load(); else Alert.alert("Error", "Couldn't delete the workout."); } },
+  const onDelete = (s: LoggedSession) => Alert.alert(t("history.deleteWorkout"), `“${s.title}” ${t("history.deleteWorkoutBody")}`, [
+    { text: t("common.cancel"), style: "cancel" },
+    { text: t("common.delete"), style: "destructive", onPress: async () => { setBusy(s.id); const ok = await deleteSession(s.id); setBusy(null); if (ok) load(); else Alert.alert(t("common.error"), t("history.deleteError")); } },
   ]);
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
@@ -51,14 +51,14 @@ export default function AuroraHistory() {
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
         <Pressable onPress={() => { setLoading(true); setShowArchived((v) => !v); }} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.blue : C.line, backgroundColor: showArchived ? `${C.blue}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.blue) : C.ash }}>Archived</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.blue) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
 
       {loading ? <Loading /> : sessions.length === 0 ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? "No archived workouts" : t("history.none")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? "Workouts you archive show up here." : "Log a workout — it appears here and on the web."}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("history.noArchived") : t("history.none")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("history.archivedHint") : t("history.emptyHint")}</Text>
         </ACard>
       ) : (
         <View style={{ marginTop: 14 }}>
@@ -85,8 +85,8 @@ export default function AuroraHistory() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("history.tapDetail")}</Text>
                 </Pressable>
                 <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-                  {showArchived ? action("Restore", C.lime, () => onArchive(s.id, false), s.id, true) : action("Archive", C.line, () => onArchive(s.id, true), s.id)}
-                  {action("Delete", C.red, () => onDelete(s), s.id, true)}
+                  {showArchived ? action(t("common.restore"), C.lime, () => onArchive(s.id, false), s.id, true) : action(t("common.archive"), C.line, () => onArchive(s.id, true), s.id)}
+                  {action(t("common.delete"), C.red, () => onDelete(s), s.id, true)}
                 </View>
               </ACard>
             );

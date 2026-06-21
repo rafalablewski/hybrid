@@ -63,10 +63,10 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: C("ink"), border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
               >
                 <span style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--color-lime) 16%, transparent)", pointerEvents: "none" }} />
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".2em", color: C("lime") }}>UPGRADE</span>
-                <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>Unlock Full</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: C("lime"), color: C("ink"), borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>Go Full →</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".2em", color: C("lime") }}>{t("w.home.pillnav.upgradeKicker")}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: C("lime"), color: C("ink"), borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
               </button>
             )}
 
@@ -106,7 +106,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             <PillButton key={tab.id} icon={tab.icon} label={label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
-          <PillButton icon="settings" label="More" active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
+          <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
           <PillButton icon="user-circle" label={label("profile", "You")} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>
       </div>

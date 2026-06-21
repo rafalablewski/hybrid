@@ -72,81 +72,81 @@ export default function AuroraSettings() {
         {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
       </View>
 
-      <Section title="Profile">
-        <Field icon="user" label="Display name">
-          <AField value={acct.name} onChange={acct.setName} placeholder="Your name" />
-          <APill label="Save name" variant="soft" disabled={acct.busy} onPress={acct.saveName} />
+      <Section title={t("w.account.settings.edit-profile")}>
+        <Field icon="user" label={t("w.account.settings.display-name")}>
+          <AField value={acct.name} onChange={acct.setName} placeholder={t("w.account.settings.your-name-ph")} />
+          <APill label={t("w.account.settings.save-name")} variant="soft" disabled={acct.busy} onPress={acct.saveName} />
         </Field>
-        <Field icon="mail" label="Change email">
+        <Field icon="mail" label={t("w.account.settings.change-email")}>
           <AField value={acct.newEmail} onChange={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} keyboard="email-address" />
-          <APill label="Update email" variant="soft" disabled={acct.busy || !acct.newEmail.trim()} onPress={acct.changeEmail} />
+          <APill label={t("w.account.settings.update-email")} variant="soft" disabled={acct.busy || !acct.newEmail.trim()} onPress={acct.changeEmail} />
         </Field>
         {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: -2 }}>{acct.profileMsg}</Text>}
-        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>Profile editing needs a real signed-in account.</Text>}
+        {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.account.settings.profile-needs-account")}</Text>}
       </Section>
 
-      <Section title="Preferences">
-        <Field icon="settings" label="Appearance">
+      <Section title={t("w.account.settings.preferences")}>
+        <Field icon="settings" label={t("w.account.settings.appearance")}>
           <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
         </Field>
-        <Field icon="bell" label="Template">
+        <Field icon="bell" label={t("w.account.settings.template")}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: -4, marginBottom: 10, lineHeight: 16 }}>
-            Switch the whole app between the classic look and the new rounded design.
+            {t("w.account.settings.template-help")}
           </Text>
           <ASegment options={TEMPLATES.map((tp) => ({ id: tp.id, label: tp.label }))} value={template} onPick={setTemplate} />
           <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>
-            {TEMPLATES.find((tp) => tp.id === template)?.description}
+            {t(`w.account.settings.template-desc-${template}`)}
           </Text>
         </Field>
-        <Field icon="share" label="Language">
+        <Field icon="share" label={t("w.account.settings.language")}>
           <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         </Field>
       </Section>
 
-      <Section title="Workout">
+      <Section title={t("w.account.settings.workout-section")}>
         <ListItem icon="play" label={t("loggerPrefs.title")} sub={t("loggerPrefs.intro")} onPress={() => router.push("/logger-settings")} />
       </Section>
 
-      <Section title="Notifications">
+      <Section title={t("w.account.settings.notifications")}>
         <ACard style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 4 }}>What HYBRID may send you. Saved to your account &amp; synced across devices; honoured as each channel rolls out.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 4 }}>{t("w.account.settings.notifications-desc")}</Text>
           {ACCOUNT_NOTIF_ROWS.map((row) => (
-            <ToggleRow key={row.key} C={C} title={row.title} desc={row.desc} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
+            <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
           ))}
         </ACard>
       </Section>
 
-      <Section title="Privacy">
+      <Section title={t("w.account.settings.privacy")}>
         <ACard style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 4 }}>You control what you share. Saved to your account &amp; synced across devices.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 4 }}>{t("w.account.settings.privacy-desc")}</Text>
           {ACCOUNT_PRIVACY_ROWS.map((row) => (
-            <ToggleRow key={row.key} C={C} title={row.title} desc={row.desc} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
+            <ToggleRow key={row.key} C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
           ))}
         </ACard>
       </Section>
 
-      <Section title="Security">
-        <Field icon="lock" label="Change password">
+      <Section title={t("w.account.settings.sec-security")}>
+        <Field icon="lock" label={t("w.account.settings.change-password")}>
           {acct.provider && acct.provider !== "email" ? (
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>You sign in with {acct.provider} — manage your password there.</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
           ) : (
             <>
-              <AField value={acct.newPw} onChange={acct.setNewPw} placeholder="New password" secure icon="lock" />
-              <APill label="Update password" variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} />
+              <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
+              <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} />
               {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
             </>
           )}
         </Field>
-        <Field icon="logout" label="Active sessions">
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Sign out of every device — revokes all other sessions and ends this one.</Text>
-          <APill label="Sign out everywhere" variant="soft" onPress={acct.signOutEverywhere} />
+        <Field icon="logout" label={t("w.account.settings.active-sessions")}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
+          <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} />
         </Field>
       </Section>
 
-      <Section title="Data">
-        <Field icon="download" label="Export my data">
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>Download everything tied to your account — sessions, signals, check-ins, plans, templates, events and more — as one JSON file.</Text>
-          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label="Download my data (JSON)" variant="soft" onPress={acct.exportData} />}
+      <Section title={t("w.account.settings.sec-data")}>
+        <Field icon="download" label={t("w.account.settings.export-data")}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
+          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} />}
           {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
         </Field>
       </Section>

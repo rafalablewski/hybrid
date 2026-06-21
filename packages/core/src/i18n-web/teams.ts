@@ -214,6 +214,9 @@ export const web_teams = {
     "w.teams.talent.reportConfirmMsg": "Flag this profile for review?",
     "w.teams.talent.reportConfirmBtn": "Report",
     "w.teams.tactical.yourReadiness": "Your readiness",
+    "w.teams.coach.verifiedCoach": "Verified coach",
+    "w.teams.coach.clientGroups": "Client groups",
+    "w.teams.coach.programs": "Programs",
   } as Record<string, string>,
   pl: {
     // coach.tsx
@@ -425,6 +428,9 @@ export const web_teams = {
     "w.teams.talent.reportConfirmMsg": "Oznaczyć ten profil do weryfikacji?",
     "w.teams.talent.reportConfirmBtn": "Zgłoś",
     "w.teams.tactical.yourReadiness": "Twoja gotowość",
+    "w.teams.coach.verifiedCoach": "Zweryfikowany trener",
+    "w.teams.coach.clientGroups": "Grupy klientów",
+    "w.teams.coach.programs": "Programy",
   } as Record<string, string>,
   de: {
     // coach.tsx
@@ -636,5 +642,8 @@ export const web_teams = {
     "w.teams.talent.reportConfirmMsg": "Dieses Profil zur Prüfung markieren?",
     "w.teams.talent.reportConfirmBtn": "Melden",
     "w.teams.tactical.yourReadiness": "Deine Bereitschaft",
+    "w.teams.coach.verifiedCoach": "Verifizierter Coach",
+    "w.teams.coach.clientGroups": "Kundengruppen",
+    "w.teams.coach.programs": "Programme",
   } as Record<string, string>,
 };

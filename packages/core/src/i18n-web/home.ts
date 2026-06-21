@@ -210,6 +210,9 @@ export const web_home = {
     "w.home.aicoach.todaysNote": "Today's coaching note",
     "w.home.aicoach.intro": "Claude reads your real readiness, fatigue, velocity and goal and writes you a personalized note — what to push and what to hold back.",
     "w.home.cockpit.startFirstSection": "Start first",
+    "w.home.pillnav.upgradeKicker": "UPGRADE",
+    "w.home.pillnav.upgradeBlurb": "Plans, analytics, your Performance State, the Cockpit & 12+ tools.",
+    "w.home.pillnav.goFull": "Go Full →",
   } as Record<string, string>,
   pl: {
     // today
@@ -417,6 +420,9 @@ export const web_home = {
     "w.home.aicoach.todaysNote": "Dzisiejsza notatka trenerska",
     "w.home.aicoach.intro": "Claude odczytuje Twoją realną gotowość, zmęczenie, prędkość i cel i pisze spersonalizowaną notatkę — co przyspieszyć, a co przyhamować.",
     "w.home.cockpit.startFirstSection": "Zacznij pierwszą",
+    "w.home.pillnav.upgradeKicker": "ULEPSZ",
+    "w.home.pillnav.upgradeBlurb": "Plany, analityka, Twój Stan formy, Kokpit i 12+ narzędzi.",
+    "w.home.pillnav.goFull": "Przejdź na Full →",
   } as Record<string, string>,
   de: {
     // today
@@ -624,5 +630,8 @@ export const web_home = {
     "w.home.aicoach.todaysNote": "Heutige Coaching-Notiz",
     "w.home.aicoach.intro": "Claude liest deine echte Bereitschaft, Ermüdung, Geschwindigkeit und dein Ziel und schreibt dir eine personalisierte Notiz — was du forcieren und was du zurückhalten solltest.",
     "w.home.cockpit.startFirstSection": "Erste starten",
+    "w.home.pillnav.upgradeKicker": "UPGRADE",
+    "w.home.pillnav.upgradeBlurb": "Pläne, Analysen, dein Leistungszustand, das Cockpit & 12+ Tools.",
+    "w.home.pillnav.goFull": "Auf Full umsteigen →",
   } as Record<string, string>,
 };

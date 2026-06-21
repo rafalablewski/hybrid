@@ -73,7 +73,7 @@ export default function AuroraUpgrade() {
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 12 }}>Full · the upgrade</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 12 }}>{t("w.account.upgrade.kicker")}</Text>
       <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>Unlock HYBRID Full</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 21 }}>
         One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays
@@ -124,7 +124,7 @@ export default function AuroraUpgrade() {
         {busy ? (
           <ActivityIndicator color={C.onAccent} />
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>Subscribe</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.account.upgrade.subscribe")}</Text>
         )}
       </Pressable>
 
@@ -136,7 +136,7 @@ export default function AuroraUpgrade() {
       </Text>
 
       <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: 18 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Maybe later</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.account.upgrade.maybe-later")}</Text>
       </Pressable>
     </AuroraScreen>
   );

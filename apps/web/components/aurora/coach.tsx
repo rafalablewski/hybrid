@@ -41,8 +41,10 @@ type Links = { asCoach: CoachLink[]; asClient: CoachLink[] };
 const personName = (p: Person | undefined, t: (k: string) => string) => p?.name || p?.email?.split("@")[0] || t("w.teams.coach.athleteFallback");
 
 // Verified-coach tick — shown next to a coach's name once an admin has vetted them.
-const VerifiedTick = ({ p }: { p?: Person }) =>
-  p?.coachVerified ? <span title="Verified coach" style={{ color: C("blue"), marginLeft: 5 }}>✓</span> : null;
+const VerifiedTick = ({ p }: { p?: Person }) => {
+  const { t } = useLang();
+  return p?.coachVerified ? <span title={t("w.teams.coach.verifiedCoach")} style={{ color: C("blue"), marginLeft: 5 }}>✓</span> : null;
+};
 
 /** AURORA Coach (web) — same /api/coach/* flows as the classic CoachScreen, in
  *  the rounded Aurora style. */
