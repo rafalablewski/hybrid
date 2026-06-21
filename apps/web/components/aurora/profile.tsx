@@ -188,7 +188,7 @@ export default function AuroraProfile({
               fontSize: fs.body, border: `3px solid ${C("ink")}`, cursor: "pointer",
             }}
           >
-            ✎
+            <AuroraIcon name="settings" size={14} strokeWidth={4} color={C("ink")} />
           </button>
         </div>
         <div style={{ fontWeight: 900, fontSize: 25, letterSpacing: "-.025em", marginTop: 15, display: "flex", alignItems: "center", gap: 9 }}>

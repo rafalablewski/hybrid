@@ -451,8 +451,8 @@ export default function AuroraHome() {
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>Your week</Text>
               <View style={{ flexDirection: "row", gap: space.sm }}>
-                {recap.prs.length > 0 && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>🏆 {recap.prs.length} PR</Text></View>}
-                {recap.cardioPrs.length > 0 && <View style={{ backgroundColor: `${C.blue}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>🏃 {recap.cardioPrs.length} PR</Text></View>}
+                {recap.prs.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><AuroraIcon name="arrow-up" size={11} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{recap.prs.length} PR</Text></View>}
+                {recap.cardioPrs.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${C.blue}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><AuroraIcon name="location" size={11} color={txt(C, C.blue)} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>{recap.cardioPrs.length} PR</Text></View>}
               </View>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 22, marginTop: 12 }}>
