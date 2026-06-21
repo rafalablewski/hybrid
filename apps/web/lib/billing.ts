@@ -51,7 +51,7 @@ export async function setEntitlement(opts: {
   subscriptionStatus?: string | null;
   stripeCustomerId?: string | null;
 }): Promise<void> {
-  await prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: opts.userId },
     data: {
       entitlement: opts.entitlement,
@@ -60,8 +60,21 @@ export async function setEntitlement(opts: {
         : {}),
       ...(opts.stripeCustomerId ? { stripeCustomerId: opts.stripeCustomerId } : {}),
     },
+    select: { id: true, email: true, role: true },
   });
   await patchUserMetadata(opts.authId, { entitlement: opts.entitlement });
+
+  // Fire the `upgraded` lifecycle automation when an account becomes paid
+  // (idempotent — the unique enrollment guard means a repeated webhook is safe;
+  // no-ops until an active `upgraded` sequence exists). Best-effort.
+  if (opts.entitlement === "paid" && updated.email) {
+    try {
+      const { enrollInTrigger } = await import("@/lib/email");
+      await enrollInTrigger("upgraded", { id: updated.id, email: updated.email, role: updated.role, entitlement: "paid" });
+    } catch {
+      /* best-effort */
+    }
+  }
 }
 
 /** Find-or-create the Stripe customer for a user, persisting the id. */

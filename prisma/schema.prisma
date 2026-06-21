@@ -39,6 +39,12 @@ model User {
   language  String   @default("en")
   createdAt DateTime @default(now())
 
+  // A COACH whose credentials an admin has vetted — surfaced as a "verified"
+  // tick on the coach's profile wherever a client sees them. Set true when an
+  // admin approves a coach application (or toggles it on the user record);
+  // ignored for non-coaches.
+  coachVerified Boolean @default(false)
+
   // Billing — the paid "Full" entitlement. entitlement is mirrored into the
   // Supabase auth user_metadata so both clients read it from the session; these
   // columns are the server-side source of truth + the Stripe linkage.
@@ -849,4 +855,118 @@ model AdminAudit {
   @@index([actorId])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Email — transactional + marketing + lifecycle automation.
+//
+// One provider abstraction (Resend) sends everything; these tables are the
+// HYBRID-side record + the campaign/automation control plane. All mutations are
+// server-only (admin-gated + audited, or the cron worker). Every send lands a
+// row in EmailMessage so deliverability + history are auditable. See
+// reference/sql-email.sql. All queries are soft-guarded so the app runs before
+// the migration is applied (the feature just no-ops / reports "unavailable").
+// ---------------------------------------------------------------------------
+
+// A one-off broadcast to an audience segment (newsletter, product update,
+// announcement). Authored in the admin Email console, sent now or scheduled.
+model EmailCampaign {
+  id           String    @id @default(cuid())
+  subject      String
+  body         String // plain text / light markdown with {{merge}} tags
+  audience     String    @default("all") // all | free | paid | coaches | clients | admins
+  status       String    @default("draft") // draft | scheduled | sending | sent | failed
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  sentCount    Int       @default(0)
+  failedCount  Int       @default(0)
+  createdById  String?
+  createdEmail String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+  messages     EmailMessage[]
+
+  @@index([status, scheduledAt])
+}
+
+// An automated, multi-step lifecycle flow (welcome series, win-back inactive,
+// trial-ending nudge, coach-welcome). A user is ENROLLED when its trigger fires;
+// the cron worker advances each enrollment one step at a time, respecting the
+// per-step delay.
+model EmailSequence {
+  id        String   @id @default(cuid())
+  name      String
+  // signup | inactive | trial_ending | upgraded | coach_approved | manual
+  trigger   String   @default("signup")
+  audience  String   @default("all")
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  steps       EmailSequenceStep[]
+  enrollments EmailEnrollment[]
+
+  @@index([trigger, active])
+}
+
+// One email in a sequence, fired `delayHours` after the PREVIOUS step (or after
+// enrollment for the first step).
+model EmailSequenceStep {
+  id         String   @id @default(cuid())
+  sequence   EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sequenceId String
+  order      Int      @default(0)
+  delayHours Int      @default(0)
+  subject    String
+  body       String
+
+  @@index([sequenceId])
+}
+
+// A user's progress through a sequence. `nextSendAt` is when the cron should
+// send `currentStep`; advanced (or completed) after each send.
+model EmailEnrollment {
+  id          String    @id @default(cuid())
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sequenceId  String
+  userId      String
+  email       String
+  status      String    @default("active") // active | completed | cancelled
+  currentStep Int       @default(0)
+  nextSendAt  DateTime?
+  enrolledAt  DateTime  @default(now())
+
+  @@unique([sequenceId, userId])
+  @@index([status, nextSendAt])
+}
+
+// The deliverability ledger — one row per attempted send (campaign, sequence
+// step, or transactional). The single source of truth for "did we email them".
+model EmailMessage {
+  id         String    @id @default(cuid())
+  campaign   EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaignId String?
+  sequenceId String?
+  userId     String?
+  email      String
+  subject    String
+  kind       String    @default("campaign") // campaign | sequence | transactional | verification
+  status     String    @default("sent") // sent | failed | bounced
+  providerId String? // Resend message id
+  error      String?
+  openedAt   DateTime?
+  clickedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+  @@index([userId])
+  @@index([kind, createdAt])
+}
+
+// Unsubscribe / bounce / complaint list. Checked before EVERY marketing send so
+// a user who opted out is never contacted again (transactional mail bypasses it).
+model EmailSuppression {
+  email     String   @id
+  reason    String   @default("unsubscribe") // unsubscribe | bounce | complaint
+  createdAt DateTime @default(now())
 }

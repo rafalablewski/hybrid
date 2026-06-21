@@ -91,7 +91,7 @@ function ClassicCoach() {
               <Kicker color={C.violet}>{"\n"}{t("coach.requests")}</Kicker>
               {incoming.map((l) => (
                 <Card key={l.id} style={{ borderLeftWidth: 3, borderLeftColor: C.violet }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}{l.coach?.coachVerified ? <Text style={{ color: C.blue }}>{"  ✓"}</Text> : null}</Text>
                   <Mono style={{ marginBottom: 8 }}>{t("coach.wantsToCoach")}</Mono>
                   <View style={{ flexDirection: "row", gap: space.sm }}>
                     <Button label={t("common.accept")} color={C.lime} onPress={() => act(l.id, "accept")} />
@@ -111,7 +111,7 @@ function ClassicCoach() {
             coaches.map((l) => (
               <Card key={l.id}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}{l.coach?.coachVerified ? <Text style={{ color: C.blue }}>{"  ✓"}</Text> : null}</Text>
                   <Pressable onPress={() => act(l.id, "end")}>
                     <Mono>{t("common.end")}</Mono>
                   </Pressable>

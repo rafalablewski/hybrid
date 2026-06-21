@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     prisma.coachLink.findMany({
       where: { clientId: me.id },
       orderBy: { createdAt: "desc" },
-      include: { coach: { select: { id: true, name: true, email: true } } },
+      include: { coach: { select: { id: true, name: true, email: true, coachVerified: true } } },
     }),
   ]);
 

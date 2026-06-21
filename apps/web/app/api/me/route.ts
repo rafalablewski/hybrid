@@ -16,5 +16,8 @@ export async function GET(request: Request) {
     email: user.email,
     name: user.name,
     role: user.role.toLowerCase(),
+    entitlement: user.entitlement,
+    // Surfaced as the verified tick on a coach's profile wherever clients see them.
+    coachVerified: user.coachVerified,
   });
 }

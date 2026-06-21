@@ -21,12 +21,19 @@ import { useFlags } from "@/lib/use-flags";
 // coach's one-click week generator.
 const GEN_GOALS = ["Hybrid", "Powerlifting", "Bodybuilding", "Running", "Cycling", "Hyrox", "Triathlon"];
 
-type Person = { id: string; name: string | null; email: string };
+type Person = { id: string; name: string | null; email: string; coachVerified?: boolean };
 type Status = "PENDING" | "ACTIVE" | "ENDED";
 type CoachLink = { id: string; status: Status; client?: Person; coach?: Person };
 type Links = { asCoach: CoachLink[]; asClient: CoachLink[] };
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
+
+// The verified-coach tick — shown next to a coach's name wherever a client sees
+// them, once an admin has vetted their credentials.
+const VerifiedTick = ({ p }: { p?: Person }) =>
+  p?.coachVerified ? (
+    <span title="Verified coach" style={{ color: txt(BLUE), marginLeft: 5 }}>✓</span>
+  ) : null;
 
 export default function CoachScreen() {
   const [data, setData] = useState<Links | null>(null);
@@ -93,7 +100,7 @@ export default function CoachScreen() {
             <Card key={l.id} style={{ borderLeft: `3px solid ${VIOLET}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
+                  <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}<VerifiedTick p={l.coach} /></div>
                   <Mono s={{ fontSize: fs.caption }}>wants to coach you</Mono>
                 </div>
                 <div style={{ display: "flex", gap: space.sm }}>
@@ -114,7 +121,7 @@ export default function CoachScreen() {
           coaches.map((l) => (
             <Card key={l.id}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}</div>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{personName(l.coach)}<VerifiedTick p={l.coach} /></div>
                 <Btn label="End" color={ASH} onClick={() => act(l.id, "end")} />
               </div>
             </Card>

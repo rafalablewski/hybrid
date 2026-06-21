@@ -38,6 +38,25 @@ export async function getOrCreateDbUser(req?: Request) {
     },
   });
 
+  // Fire the `signup` lifecycle automation once, just after the row is first
+  // created. We can't get a "created" flag back from upsert, so we gate on a
+  // short window after createdAt; enrollInTrigger is idempotent (unique
+  // [sequenceId,userId]) so a couple of attempts in that window are harmless, and
+  // it no-ops entirely until email sequences exist. Never blocks the request.
+  if (dbUser.email && Date.now() - dbUser.createdAt.getTime() < 30_000) {
+    try {
+      const { enrollInTrigger } = await import("@/lib/email");
+      await enrollInTrigger("signup", {
+        id: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role,
+        entitlement: dbUser.entitlement,
+      });
+    } catch {
+      /* best-effort */
+    }
+  }
+
   return dbUser;
 }
 

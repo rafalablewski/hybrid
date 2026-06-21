@@ -654,7 +654,7 @@ export async function createSelfAssignments(items: ScheduledAssignment[], replac
 }
 
 // ---- coach layer ----
-export type Person = { id: string; name: string | null; email: string };
+export type Person = { id: string; name: string | null; email: string; coachVerified?: boolean };
 export type CoachLink = { id: string; status: "PENDING" | "ACTIVE" | "ENDED"; client?: Person; coach?: Person };
 export type Note = { id: string; body: string; private: boolean; createdAt: string };
 

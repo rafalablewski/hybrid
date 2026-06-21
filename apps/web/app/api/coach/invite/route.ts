@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { sendEmail, emailConfigured } from "@/lib/email";
 
 // Coach-led onboarding of a brand-new client. ONE CoachInvite backs all three
 // delivery methods (QR code, copyable link, and — later — email/SMS); the client
@@ -96,8 +97,26 @@ export async function POST(request: Request) {
     const token = randomBytes(18).toString("hex");
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000);
     const invite = await prisma.coachInvite.create({ data: { coachId: me.id, token, email, phone, expiresAt } });
+    const url = inviteUrl(request, token);
+
+    // If an email was supplied, deliver the invite link directly (now that the
+    // email system is built). Transactional (coach-initiated 1:1), best-effort —
+    // the coach still gets the link/QR back to share manually if it can't send.
+    let emailSent = false;
+    if (email && emailConfigured()) {
+      const coachName = me.name || me.email.split("@")[0];
+      const res = await sendEmail({
+        to: email,
+        subject: `${coachName} invited you to train on HYBRID`,
+        body: `${coachName} wants to coach you on HYBRID.\n\nAccept the invite and create your account here:\n\n${url}\n\nThis link expires in ${INVITE_TTL_DAYS} days.`,
+        kind: "transactional",
+        marketing: false,
+      });
+      emailSent = res.ok;
+    }
+
     return NextResponse.json(
-      { invite: { id: invite.id, token, email, phone, expiresAt }, url: inviteUrl(request, token) },
+      { invite: { id: invite.id, token, email, phone, expiresAt }, url, emailSent },
       { status: 201 },
     );
   } catch (e) {

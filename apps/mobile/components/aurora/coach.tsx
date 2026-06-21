@@ -93,7 +93,7 @@ export default function AuroraCoach() {
               {sectionLabel(t("coach.requests"), txt(C, C.violet))}
               {incoming.map((l) => (
                 <ACard key={l.id} style={{ marginBottom: 12 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{personName(l.coach)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{personName(l.coach)}{l.coach?.coachVerified ? <Text style={{ color: txt(C, C.blue) }}>{"  ✓"}</Text> : null}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 12 }}>{t("coach.wantsToCoach")}</Text>
                   <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
                     <APill label={t("common.accept")} variant="primary" onPress={() => act(l.id, "accept")} style={{ flex: 1, paddingVertical: 14 }} />
@@ -113,7 +113,7 @@ export default function AuroraCoach() {
             coaches.map((l) => (
               <ACard key={l.id} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{personName(l.coach)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{personName(l.coach)}{l.coach?.coachVerified ? <Text style={{ color: txt(C, C.blue) }}>{"  ✓"}</Text> : null}</Text>
                   <Pressable onPress={() => act(l.id, "end")}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("common.end")}</Text>
                   </Pressable>
