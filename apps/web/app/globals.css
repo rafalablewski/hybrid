@@ -151,8 +151,15 @@ body {
 [data-template="aurora"] .rounded-lg { border-radius: 18px; }
 [data-template="aurora"] .rounded-xl { border-radius: 22px; }
 [data-template="aurora"] .rounded-2xl { border-radius: 28px; }
-/* the frosted sidebar + command hub soften too */
-[data-template="aurora"] .lg-sidebar { border-radius: 0 28px 28px 0; }
+/* the frosted sidebar + command hub soften too — and the admin sidebar drops
+   the classic frosted glass for a solid Aurora surface (matching .liquid-glass
+   above), so the operator console reads as Aurora rather than the old theme. */
+[data-template="aurora"] .lg-sidebar {
+  border-radius: 0 28px 28px 0;
+  background: var(--color-ink2);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 [data-template="aurora"] .cmd-hub { border-radius: 34px; }
 
 /* ---- core component ---- */
