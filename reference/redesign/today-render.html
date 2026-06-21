@@ -88,12 +88,14 @@
   .am .v{font:800 22px/1 var(--font-display)} .am .v.dim{color:var(--ash)}
   .am .l{font:500 10px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:5px}
 
-  /* ════════ MINIMAL ZONE — ONLY the Season + Performance blocks ════════
-     Borderless, hairline-separated, sitting open on the ink canvas to read as
-     deliberately distinct from the Aurora cards around them. */
-  .mz{margin-top:18px;padding:2px 4px 0}
-  .msec{padding:0 0 24px}
-  .msec + .msec{padding-top:24px;border-top:1px solid var(--line)}
+  /* ════════ MINIMAL — ONLY the Season + Performance blocks ════════
+     Same Aurora card SHELL as every other card (so they sit in the same
+     rhythm and don't clash) — but a quiet, decluttered MINIMAL interior:
+     lighter kickers, thinner headings, ash body, restrained buttons, and
+     the professional progress meter. */
+  .msec{background:var(--ink2);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-top:18px}
+  .msec.season{border-left:3px solid var(--violet)}
+  .msec.perf{border-left:3px solid var(--blue)}
   .mtop{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
   .mkick{font:500 10px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
   .mkick.v{color:var(--violet)} .mkick.b{color:var(--blue)}
@@ -191,10 +193,9 @@
           <span class="qpace">pace 5:38 /km</span>
         </div>
 
-        <!-- ════ MINIMAL ZONE: Season + Performance only ════ -->
-        <div class="mz">
+        <!-- ════ MINIMAL interior, Aurora shell: Season + Performance only ════ -->
           <!-- SEASON (minimal + professional progress bar) -->
-          <section class="msec">
+          <section class="msec season">
             <div class="mtop">
               <span class="mkick v">Your season · Bodybuilding</span>
               <span class="mchip v">✦ Full</span>
@@ -214,13 +215,12 @@
           </section>
 
           <!-- PERFORMANCE STATE (minimal) -->
-          <section class="msec">
+          <section class="msec perf">
             <span class="mkick b">Unlock with Full</span>
             <h2 class="mh2 sm">See your Performance State</h2>
             <p class="mp">HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization, velocity tracking, analytics and the AI coach.</p>
             <button class="mobtn">✦ Unlock Full →</button>
           </section>
-        </div>
 
         <!-- ACCOUNTABILITY (Aurora) -->
         <div class="card" style="margin-top:18px">
