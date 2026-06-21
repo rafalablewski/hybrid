@@ -67,7 +67,7 @@ export default function AdminAnonSessions() {
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
+        <table className="adm-tbl" style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
           <thead>
             <tr>
               {["Workout", "Platform", "Device", "Started", ""].map((h, i) => (
@@ -83,23 +83,23 @@ export default function AdminAnonSessions() {
           <tbody>
             {sessions?.map((s) => (
               <tr key={s.id} onMouseEnter={(e) => (e.currentTarget.style.background = INK2)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Workout" style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{s.title}</div>
                   <Mono s={{ fontSize: fs.caption }} c={ASH}>
                     {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
                     {s.blocks.length ? ` · ${s.blocks.map((b) => b.name).filter(Boolean).slice(0, 4).join(", ")}` : ""}
                   </Mono>
                 </td>
-                <td style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Platform" style={{ padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   <Chip c={platformColor(s.platform)}>{s.platform ?? "—"}</Chip>
                 </td>
-                <td style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="Device" style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}` }}>
                   {trunc(s.deviceId)}
                 </td>
-                <td style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
+                <td data-label="Started" style={{ ...mono, fontSize: fs.body, color: txt(ASH), padding: "12px 16px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap" }}>
                   {fmt(s.startedAt)}
                 </td>
-                <td style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
+                <td data-label="" style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
                   <button
                     onClick={() => remove(s.id, s.title)}
                     disabled={busy === s.id}

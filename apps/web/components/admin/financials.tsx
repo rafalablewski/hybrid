@@ -681,12 +681,13 @@ function FixedOpexBreakdown() {
 }
 
 function PlanMatrix() {
-  const entCell = (v: EntitlementCell, key: string) => {
+  const entCell = (v: EntitlementCell, key: string, label: string) => {
     const none = v === false;
     const yes = v === true;
     return (
       <td
         key={key}
+        data-label={label}
         style={{
           ...mono,
           fontSize: fs.body,
@@ -706,7 +707,7 @@ function PlanMatrix() {
   return (
     <Card>
       <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+      <table className="adm-tbl" style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={{ ...mono, fontSize: fs.caption, color: txt(ASH), textTransform: "uppercase", textAlign: "left", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
@@ -733,11 +734,11 @@ function PlanMatrix() {
                   </tr>
                 )}
                 <tr>
-                  <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>{row.feature}</td>
-                  {entCell(row.free, `${i}-free`)}
-                  {entCell(row.pro, `${i}-pro`)}
-                  {entCell(row.coach, `${i}-coach`)}
-                  {entCell(row.org, `${i}-org`)}
+                  <td data-label="Feature" style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>{row.feature}</td>
+                  {entCell(row.free, `${i}-free`, "Free")}
+                  {entCell(row.pro, `${i}-pro`, "Pro")}
+                  {entCell(row.coach, `${i}-coach`, "Coach")}
+                  {entCell(row.org, `${i}-org`, "Org")}
                 </tr>
               </Fragment>
             );

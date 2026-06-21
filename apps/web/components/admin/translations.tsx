@@ -130,7 +130,7 @@ export default function AdminTranslations() {
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <table className="adm-tbl" style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", tableLayout: "fixed" }}>
           <thead>
             <tr>
               <th style={{ ...mono, fontSize: fs.micro, color: txt(ASH), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "10px 14px", borderBottom: `1px solid ${LINE}`, width: "22%" }}>Key</th>
@@ -144,7 +144,7 @@ export default function AdminTranslations() {
           <tbody>
             {capped.map((key) => (
               <tr key={key}>
-                <td style={{ ...mono, fontSize: fs.caption, color: CHALK, padding: "10px 14px", borderBottom: `1px solid ${LINE}`, wordBreak: "break-word", verticalAlign: "top" }}>
+                <td data-label="Key" style={{ ...mono, fontSize: fs.caption, color: CHALK, padding: "10px 14px", borderBottom: `1px solid ${LINE}`, wordBreak: "break-word", verticalAlign: "top" }}>
                   {key}
                 </td>
                 {LANG_LIST.map((lang) => {
@@ -154,7 +154,7 @@ export default function AdminTranslations() {
                   const overridden = isOverridden(lang, key);
                   const missing = !baselineString(lang, key) && !overridden;
                   return (
-                    <td key={lang} style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}`, verticalAlign: "top" }}>
+                    <td key={lang} data-label={LANGS[lang]} style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}`, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: space.xxs }}>
                         <textarea
                           value={val}

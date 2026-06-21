@@ -40,10 +40,10 @@ export default function AdminDirectory() {
           <Table head={["Organization", "Teams", "Members", "Created"]} align={["left", "right", "right", "right"]}>
             {orgs?.map((o) => (
               <tr key={o.id}>
-                <Td><span style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{o.name}</span></Td>
-                <Td right><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.teams}</Mono></Td>
-                <Td right><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.members}</Mono></Td>
-                <Td right><Mono s={{ fontSize: fs.body }} c={ASH}>{fmt(o.createdAt)}</Mono></Td>
+                <Td label="Organization"><span style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{o.name}</span></Td>
+                <Td label="Teams" right><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.teams}</Mono></Td>
+                <Td label="Members" right><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.members}</Mono></Td>
+                <Td label="Created" right><Mono s={{ fontSize: fs.body }} c={ASH}>{fmt(o.createdAt)}</Mono></Td>
               </tr>
             ))}
             <Empty data={orgs} cols={4} label="No organizations yet." />
@@ -63,11 +63,11 @@ export default function AdminDirectory() {
           <Table head={["Coach", "Client", "Status", "Notes", "Since"]} align={["left", "left", "left", "right", "right"]}>
             {links?.map((l) => (
               <tr key={l.id}>
-                <Td><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{l.coach}</Mono></Td>
-                <Td><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{l.client}</Mono></Td>
-                <Td><Chip c={statusColor[l.status] ?? CHALK}>{l.status}</Chip></Td>
-                <Td right><Mono s={{ fontSize: fs.bodyLg }} c={ASH}>{l.notes}</Mono></Td>
-                <Td right><Mono s={{ fontSize: fs.body }} c={ASH}>{fmt(l.createdAt)}</Mono></Td>
+                <Td label="Coach"><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{l.coach}</Mono></Td>
+                <Td label="Client"><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{l.client}</Mono></Td>
+                <Td label="Status"><Chip c={statusColor[l.status] ?? CHALK}>{l.status}</Chip></Td>
+                <Td label="Notes" right><Mono s={{ fontSize: fs.bodyLg }} c={ASH}>{l.notes}</Mono></Td>
+                <Td label="Since" right><Mono s={{ fontSize: fs.body }} c={ASH}>{fmt(l.createdAt)}</Mono></Td>
               </tr>
             ))}
             <Empty data={links} cols={5} label="No coaching links yet." />
@@ -90,7 +90,7 @@ function SectionTitle({ title, kicker, c }: { title: string; kicker: string; c: 
 function Table({ head, align, children }: { head: string[]; align: ("left" | "right")[]; children: React.ReactNode }) {
   return (
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
-    <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+    <table className="adm-tbl" style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
       <thead>
         <tr>
           {head.map((h, i) => (
@@ -106,8 +106,8 @@ function Table({ head, align, children }: { head: string[]; align: ("left" | "ri
   );
 }
 
-function Td({ children, right }: { children: React.ReactNode; right?: boolean }) {
-  return <td style={{ padding: "11px 16px", textAlign: right ? "right" : "left", borderBottom: `1px solid ${LINE}` }}>{children}</td>;
+function Td({ children, right, label }: { children: React.ReactNode; right?: boolean; label?: string }) {
+  return <td data-label={label ?? ""} style={{ padding: "11px 16px", textAlign: right ? "right" : "left", borderBottom: `1px solid ${LINE}` }}>{children}</td>;
 }
 
 function Empty({ data, cols, label }: { data: unknown[] | null; cols: number; label: string }) {
