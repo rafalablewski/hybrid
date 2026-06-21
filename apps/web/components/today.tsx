@@ -248,7 +248,7 @@ export default function Today({
 
       {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
       <div style={{ gridColumn: "span 2" }}>
-        <QuickSportLog onSaved={onSaved} />
+        <QuickSportLog sessions={sessions} onSaved={onSaved} />
       </div>
 
       {/* BROWSE PLANS — casual users can now follow a pre-built plan for free;

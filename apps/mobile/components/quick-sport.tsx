@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import {
-  OLYMPIC_SPORT_NAMES,
-  OLYMPIC_SPORTS,
+  olympicSport,
+  olympicSportsByCategory,
+  suggestedSports,
   sportTracksDistance,
   sportDistanceUnit,
   parseSportDistance,
   cardioPace,
+  type LoggedSession,
 } from "@hybrid/core";
 import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
@@ -22,16 +24,21 @@ import { useTheme, txt } from "../lib/theme";
  * leaves Home. Distance is entered in the sport's natural unit (metres for
  * swimming/rowing); storage stays km. No wearable needed.
  */
-export default function QuickSportLog({ onSaved }: { onSaved?: () => void }) {
+export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void }) {
   const C = useTheme().palette;
   const { t } = useLang();
   const { session } = useSession();
   const guest = !session;
-  const [sport, setSport] = useState("Running");
+  const suggested = suggestedSports(sessions);
+  const [sport, setSport] = useState(suggested[0] ?? "Running");
+  const [showAll, setShowAll] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [distance, setDistance] = useState(""); // in the sport's unit
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  // Chips: the suggested shortlist, plus the current pick if it's off-list.
+  const chips = suggested.includes(sport) ? suggested : [sport, ...suggested];
+  const pickChip = (name: string) => { setSport(name); setShowAll(false); setMsg(""); };
 
   const tracksDist = sportTracksDistance(sport);
   const km = parseSportDistance(distance, sport);
@@ -89,22 +96,54 @@ export default function QuickSportLog({ onSaved }: { onSaved?: () => void }) {
       </Text>
       <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{t("quickSport.sub")}</Mono>
 
-      {/* Sport chips — horizontally scrollable; defaults to Running. */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -2 }} contentContainerStyle={{ gap: space.sm, paddingHorizontal: 2 }}>
-        {OLYMPIC_SPORT_NAMES.map((name) => {
+      {/* Suggested sports — one tap; "More" reveals the full catalog. */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 12 }}>
+        {chips.map((name) => {
           const on = name === sport;
+          const meta = olympicSport(name);
           return (
             <Pressable
               key={name}
-              onPress={() => setSport(name)}
+              onPress={() => pickChip(name)}
               style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : C.ink2 }}
             >
-              <Text style={{ fontSize: fs.body }}>{OLYMPIC_SPORTS[name]!.icon}</Text>
+              {!!meta && <Text style={{ fontSize: fs.body }}>{meta.icon}</Text>}
               <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: on ? txt(C, C.blue) : C.ash }}>{name}</Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+        <Pressable
+          onPress={() => setShowAll((v) => !v)}
+          style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: C.line }}
+        >
+          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>{showAll ? `${t("quickSport.less")} ▴` : `${t("quickSport.more")} ▾`}</Text>
+        </Pressable>
+      </View>
+
+      {showAll && (
+        <ScrollView style={{ maxHeight: 220, marginTop: 10 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {olympicSportsByCategory().map((g) => (
+            <View key={g.category} style={{ marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{g.category}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+                {g.sports.map((s) => {
+                  const on = s.name === sport;
+                  return (
+                    <Pressable
+                      key={s.name}
+                      onPress={() => pickChip(s.name)}
+                      style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : C.ink2 }}
+                    >
+                      <Text style={{ fontSize: fs.body }}>{s.icon}</Text>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: on ? txt(C, C.blue) : C.ash }}>{s.name}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
       <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 12 }}>
         {tracksDist && (

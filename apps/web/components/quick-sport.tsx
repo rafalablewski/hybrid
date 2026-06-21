@@ -3,13 +3,16 @@
 import { useState } from "react";
 import {
   olympicSportsByCategory,
+  olympicSport,
+  suggestedSports,
   sportTracksDistance,
   sportDistanceUnit,
   parseSportDistance,
   cardioPace,
+  type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
-import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, ON_ACCENT, disp, cond, mono, Mono, Card } from "@/lib/ui";
 
 const field = {
   ...mono,
@@ -31,12 +34,19 @@ const field = {
  * never leaves the home screen. Distance reads/writes in the sport's natural
  * unit (metres for swimming/rowing); storage stays km. No wearable needed.
  */
-export default function QuickSportLog({ onSaved }: { onSaved?: () => void }) {
-  const [sport, setSport] = useState("Running");
+export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void }) {
+  const suggested = suggestedSports(sessions);
+  const [sport, setSport] = useState(suggested[0] ?? "Running");
+  const [showAll, setShowAll] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [distance, setDistance] = useState(""); // in the sport's unit
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  // Chips: the suggested shortlist, plus the current pick if it's off-list (so a
+  // sport chosen from "More" still shows selected).
+  const chips = suggested.includes(sport) ? suggested : [sport, ...suggested];
+
+  const pickChip = (name: string) => { setSport(name); setShowAll(false); setMsg(""); };
 
   const tracksDist = sportTracksDistance(sport);
   const km = parseSportDistance(distance, sport);
@@ -92,19 +102,48 @@ export default function QuickSportLog({ onSaved }: { onSaved?: () => void }) {
       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
         Back from training? Log it here — no gear needed.
       </Mono>
+      {/* Suggested sports — one tap; "More" reveals the full catalog. */}
+      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginTop: 12 }}>
+        {chips.map((name) => {
+          const on = name === sport;
+          const meta = olympicSport(name);
+          return (
+            <button
+              key={name}
+              onClick={() => pickChip(name)}
+              style={{ ...cond, fontSize: fs.caption, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? BLUE : LINE}`, background: on ? `${BLUE}22` : INK2, color: on ? CHALK : ASH }}
+            >
+              {meta && <span style={{ fontSize: fs.body }}>{meta.icon}</span>}
+              {name}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          style={{ ...cond, fontSize: fs.caption, fontWeight: 700, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: ASH }}
+        >
+          {showAll ? "Less ▴" : "More ▾"}
+        </button>
+      </div>
+
+      {showAll && (
+        <select
+          value={sport}
+          onChange={(e) => pickChip(e.target.value)}
+          autoFocus
+          style={{ ...field, width: "100%", cursor: "pointer", marginTop: 8 }}
+        >
+          {olympicSportsByCategory().map(({ category, sports }) => (
+            <optgroup key={category} label={category}>
+              {sports.map((s) => (
+                <option key={s.name} value={s.name}>{s.icon} {s.name}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      )}
+
       <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "flex-end", marginTop: 12 }}>
-        <div style={{ flex: "1 1 160px", minWidth: 0 }}>
-          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>Sport</Mono>
-          <select value={sport} onChange={(e) => setSport(e.target.value)} style={{ ...field, width: "100%", cursor: "pointer" }}>
-            {olympicSportsByCategory().map(({ category, sports }) => (
-              <optgroup key={category} label={category}>
-                {sports.map((s) => (
-                  <option key={s.name} value={s.name}>{s.icon} {s.name}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
         {tracksDist && (
           <div style={{ flex: "0 1 96px" }}>
             <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>

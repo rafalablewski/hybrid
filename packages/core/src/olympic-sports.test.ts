@@ -9,8 +9,9 @@ import {
   displaySportDistance,
   parseSportDistance,
   formatSportDistance,
+  suggestedSports,
 } from "./olympic-sports";
-import { cardioPace } from "./engines/session";
+import { cardioPace, type LoggedSession } from "./engines/session";
 
 describe("olympic-sports catalog", () => {
   it("keys the catalog by name with every sport carrying duration", () => {
@@ -74,6 +75,26 @@ describe("olympic-sports catalog", () => {
     expect(cardioPace({ name: "Running", distance: 10, minutes: 50 })).toBe("5:00 /km");
     // No distance → no pace.
     expect(cardioPace({ name: "Tennis", minutes: 60 })).toBeNull();
+  });
+
+  it("suggests recently-logged sports first, then tops up with defaults", () => {
+    const mk = (name: string, daysAgo: number): LoggedSession => ({
+      id: name + daysAgo,
+      title: name,
+      startedAt: new Date(Date.now() - daysAgo * 86_400_000).toISOString(),
+      completedAt: null,
+      blocks: [{ kind: "cardio", name }],
+      readiness: null,
+    });
+    // Newest (Tennis) first, then Swimming; unknown custom names are ignored.
+    const got = suggestedSports([mk("Swimming", 3), mk("Tennis", 1), mk("My Jog", 0)]);
+    expect(got[0]).toBe("Tennis");
+    expect(got[1]).toBe("Swimming");
+    expect(got).not.toContain("My Jog");
+    expect(got).toContain("Running"); // topped up with defaults
+    expect(got).toContain("Football");
+    // No history → pure defaults.
+    expect(suggestedSports([])[0]).toBe("Running");
   });
 
   it("groups every sport under exactly one category", () => {

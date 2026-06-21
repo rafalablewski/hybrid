@@ -419,7 +419,7 @@ export default function AuroraHome() {
         )}
 
         {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
-        <QuickSportLog onSaved={load} />
+        <QuickSportLog sessions={sessions} onSaved={load} />
 
         {/* SEASON — phase timeline (athlete, or coached read-only) */}
         {(isAthlete || coached) && macro && phase && (

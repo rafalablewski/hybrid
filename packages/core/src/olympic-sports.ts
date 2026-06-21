@@ -225,3 +225,30 @@ export function formatSportDistance(km: number | undefined | null, name: string)
   const v = displaySportDistance(km, name);
   return v ? `${v} ${sportDistanceUnit(name)}` : "";
 }
+
+// ---- Suggested sports (recent + defaults) -----------------------------------
+
+import type { LoggedSession } from "./engines/session";
+
+// Shown to a brand-new athlete (or to top up a short history) so the quick-log
+// widget always offers a few one-tap chips before "More…".
+const DEFAULT_SUGGESTED = ["Running", "Road Cycling", "Swimming", "Tennis", "Football"];
+
+/**
+ * The athlete's go-to sports for a quick-log shortlist — the Olympic sports they
+ * most recently logged (cardio activities, newest first, de-duped), topped up
+ * with sensible defaults so there are always chips to tap. Names not in the
+ * catalog (custom cardio like a generic "Run") are ignored here; the full picker
+ * still covers everything.
+ */
+export function suggestedSports(sessions: LoggedSession[], limit = 6): string[] {
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+  );
+  const out: string[] = [];
+  for (const s of sorted)
+    for (const b of s.blocks)
+      if (b.kind === "cardio" && olympicSport(b.name) && !out.includes(b.name)) out.push(b.name);
+  for (const d of DEFAULT_SUGGESTED) if (out.length < limit && !out.includes(d)) out.push(d);
+  return out.slice(0, limit);
+}

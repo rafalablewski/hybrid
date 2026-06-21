@@ -279,7 +279,7 @@ function ClassicHome() {
       </Pressable>
 
       {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
-      <QuickSportLog onSaved={load} />
+      <QuickSportLog sessions={sessions} onSaved={load} />
 
       {/* personalize — athletes program toward a plan; casual users skip it */}
       {isAthlete && (
