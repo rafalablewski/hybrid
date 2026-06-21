@@ -7,6 +7,7 @@ import {
 } from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +18,7 @@ import { AuroraIcon } from "./icons";
  *  question set: one question per step, then the recommended plan. */
 export default function AuroraOnboarding() {
   const { palette } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const { questions, answers, setAnswer, plan, loading } = useOnboarding();
   const persona = useClientPersonaChoice();
@@ -57,26 +59,26 @@ export default function AuroraOnboarding() {
           ))}
         </View>
         <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>skip</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>{t("w.account.onboarding.skip")}</Text>
         </Pressable>
 
         <ScrollView style={{ marginTop: 14 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
           {loading && questions.length === 0 ? (
-            <ASub>Loading…</ASub>
+            <ASub>{t("common.loading")}</ASub>
           ) : q ? (
             <Step title={q.title} sub={q.subtitle}>
               <QuestionBody q={q} answers={answers} setAnswer={setAnswer} personaChoice={persona} />
             </Step>
           ) : (
-            <Step title="Your plan" sub={plan ? undefined : "Pick a goal to see a recommendation."}>
+            <Step title={t("w.account.onboarding.plan-title")} sub={plan ? undefined : t("w.account.onboarding.plan-sub")}>
               {plan ? (
                 <View style={{ backgroundColor: palette.ink2, borderColor: palette.line, borderWidth: 1, borderRadius: RADIUS.card, padding: 20 }}>
                   <Text style={{ fontFamily: F.black, fontSize: 22, color: palette.chalk }}>{plan.planName}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash, marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash, marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/{t("w.account.onboarding.per-week")} · {plan.weeks} {t("w.account.onboarding.weeks")}</Text>
                   <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, marginTop: 12, lineHeight: 20 }}>{plan.why}</Text>
                 </View>
               ) : (
-                <ASub>Plans for this goal are coming soon — jump in now and enroll once they land.</ASub>
+                <ASub>{t("w.account.onboarding.no-plan")}</ASub>
               )}
             </Step>
           )}
@@ -87,7 +89,7 @@ export default function AuroraOnboarding() {
             <AuroraIcon name="back" size={20} color={palette.chalk} />
           </Pressable>
           <APill
-            label={onPlanStep ? (enrolling ? "Setting up…" : plan ? "Start this plan" : "Continue") : "Next"}
+            label={onPlanStep ? (enrolling ? t("w.account.onboarding.setting-up") : plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
             onPress={next}
             disabled={!canNext || enrolling}
             style={{ flex: 1 }}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { MOVEMENTS, inferBlockKind } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../../lib/use-routine-builder";
+import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -14,6 +15,7 @@ const kindColor = (k: BuilderKind, C: ReturnType<typeof useTheme>["palette"]) =>
  *  it's behaviourally identical to the classic variant + /api/templates. */
 export default function AuroraBuilder() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const b = useRoutineBuilder();
   const [picker, setPicker] = useState(false);
   const [query, setQuery] = useState("");
@@ -32,15 +34,15 @@ export default function AuroraBuilder() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Builder</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.train.builder.title")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>
-        Assemble a reusable routine — save it, then start it from Train.
+        {t("w.train.builder.intro")}
       </Text>
 
       <TextInput
         value={b.name}
         onChangeText={b.setName}
-        placeholder="Routine name"
+        placeholder={t("w.train.builder.routineNamePh")}
         placeholderTextColor={C.ash}
         style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 14 }}
       />
@@ -51,11 +53,11 @@ export default function AuroraBuilder() {
 
       {picker ? (
         <ACard style={{ marginTop: 4 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Pick an exercise</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.builder.pickExercise")}</Text>
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search or type a custom name"
+            placeholder={t("w.train.builder.searchCustomPh")}
             placeholderTextColor={C.ash}
             autoFocus
             onSubmitEditing={() => query.trim() && add(query)}
@@ -77,19 +79,19 @@ export default function AuroraBuilder() {
             </Pressable>
           )}
           <Pressable onPress={() => { setPicker(false); setQuery(""); }} style={{ paddingTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>Close</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>{t("w.train.builder.close")}</Text>
           </Pressable>
         </ACard>
       ) : (
         <Pressable onPress={() => setPicker(true)} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 4 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>+ Add exercise</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.train.builder.addExercise")}</Text>
         </Pressable>
       )}
 
       {b.msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginTop: 14 }}>{b.msg.text}</Text>}
 
       <APill
-        label={b.saving ? "Saving…" : "Save routine →"}
+        label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
         onPress={b.save}
         disabled={b.saving || b.items.length === 0}
         style={{ marginTop: 16 }}
@@ -97,12 +99,12 @@ export default function AuroraBuilder() {
 
       {b.routines.length > 0 && (
         <ACard style={{ marginTop: 20 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>Your routines</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{t("w.train.logger.yourRoutines")}</Text>
           {b.routines.map((r, i) => (
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} blocks · tap to edit</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} {t("w.train.builder.blocks")} · {t("w.train.builder.tapToEdit")}</Text>
               </Pressable>
               <Pressable onPress={() => b.remove(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>

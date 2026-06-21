@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { optimizeForEvent } from "@hybrid/core";
 import { fetchEvents, createEvent, type EventRow } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -14,6 +15,7 @@ const fmt = (d: string) => new Date(d).toLocaleDateString();
  *  peaks on the event day, reusing optimizeForEvent + the events API. */
 export default function AuroraCompetition() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -43,12 +45,12 @@ export default function AuroraCompetition() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Competition</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>Set an event and the optimizer back-solves your season so form peaks on it — finals, not heats.</Text>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.account.upgrade.competition")}</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.train.comp.intro")}</Text>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Add an event</Text>
-        <TextInput value={name} onChangeText={setName} placeholder="Event name" placeholderTextColor={C.ash} style={[fieldStyle, { marginTop: 10 }]} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.comp.addEvent")}</Text>
+        <TextInput value={name} onChangeText={setName} placeholder={t("w.train.comp.eventName")} placeholderTextColor={C.ash} style={[fieldStyle, { marginTop: 10 }]} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
           <View style={{ flexDirection: "row", gap: space.xs }}>
             {SPORTS.map((s) => (
@@ -60,10 +62,10 @@ export default function AuroraCompetition() {
         </ScrollView>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12, alignItems: "flex-end" }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 4 }}>Date (YYYY-MM-DD)</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 4 }}>{t("w.train.comp.dateLabel")}</Text>
             <TextInput value={date} onChangeText={setDate} placeholder="2026-09-01" placeholderTextColor={C.ash} autoCapitalize="none" style={fieldStyle} />
           </View>
-          <View style={{ width: 120 }}><APill label={busy ? "…" : "Add"} onPress={add} disabled={busy} style={{ paddingVertical: 14 }} /></View>
+          <View style={{ width: 120 }}><APill label={busy ? "…" : t("common.add")} onPress={add} disabled={busy} style={{ paddingVertical: 14 }} /></View>
         </View>
       </ACard>
 
@@ -86,10 +88,10 @@ export default function AuroraCompetition() {
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.amber) }}>{event.name} · {event.sport}</Text>
               <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? "peak lands ✓" : `peak wk ${plan.peakWeek}`}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek}`}</Text>
               </View>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{plan.weeksToEvent} weeks out · form at event {Math.round(plan.formAtEvent)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{plan.weeksToEvent} {t("w.train.comp.weeksOut")} · {t("w.train.comp.formAtEvent")} {Math.round(plan.formAtEvent)}</Text>
             <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden", marginTop: 12 }}>
               {plan.macro.blocks.map((b) => (
                 <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.color }} />
@@ -98,8 +100,8 @@ export default function AuroraCompetition() {
           </ACard>
 
           <ACard style={{ marginTop: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Form projection</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>fitness − fatigue → form, peaking toward the event.</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.train.comp.projection")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.train.comp.formNote")}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: 96, marginTop: 12 }}>
               {plan.series.map((p) => {
                 const h = Math.max(2, ((p.form - minF) / (maxF - minF || 1)) * 90);
@@ -107,7 +109,7 @@ export default function AuroraCompetition() {
                 return <View key={p.week} style={{ flex: 1, height: h, backgroundColor: isPeak ? C.lime : `${C.blue}99`, borderRadius: 3 }} />;
               })}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6 }}>wk 1 → event (peak week in lime)</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6 }}>{t("w.train.comp.projectionCaption")}</Text>
           </ACard>
         </>
       )}

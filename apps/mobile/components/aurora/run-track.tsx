@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { pacePerKm } from "@hybrid/core";
 import { createSession } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -15,6 +16,7 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, 
  *  manual distance → pace are real and save a cardio session via the API. */
 export default function AuroraRunTrack() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -43,7 +45,7 @@ export default function AuroraRunTrack() {
   const pace = Number.isFinite(km) && km > 0 && minutes > 0 ? pacePerKm({ distance: km, minutes }) : null;
 
   const save = async () => {
-    if (elapsed < 1 && !(Number.isFinite(km) && km > 0)) { setMsg({ text: "Start the timer or enter a distance first.", ok: false }); return; }
+    if (elapsed < 1 && !(Number.isFinite(km) && km > 0)) { setMsg({ text: t("w.train.runTrack.startFirst"), ok: false }); return; }
     setSaving(true);
     setMsg(null);
     const now = new Date();
@@ -59,14 +61,14 @@ export default function AuroraRunTrack() {
       }],
     });
     setSaving(false);
-    if (ok) { setMsg({ text: "✓ Run saved to your history.", ok: true }); reset(); }
-    else setMsg({ text: "Couldn't save — sign in and try again.", ok: false });
+    if (ok) { setMsg({ text: t("w.train.runTrack.saved"), ok: true }); reset(); }
+    else setMsg({ text: t("w.train.runTrack.signInSave"), ok: false });
   };
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Run tracking</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>Track a run — time it, log the distance, save it to your history.</Text>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.train.runTrack.title")}</AHeading>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("w.train.runTrack.intro")}</Text>
 
       {/* Map placeholder */}
       <ACard style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
@@ -74,9 +76,9 @@ export default function AuroraRunTrack() {
           <View style={{ position: "absolute", top: 24, left: 28, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime }} />
           <View style={{ position: "absolute", bottom: 28, right: 30, width: 12, height: 12, borderRadius: 6, backgroundColor: C.amber }} />
           <AuroraIcon name="location" size={30} color={C.ash} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>Live route map</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{t("w.train.runTrack.liveRouteMap")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: 17 }}>
-            GPS route tracking goes live in the native app build. Timing &amp; distance below work everywhere.
+            {t("w.train.runTrack.mapNote")}
           </Text>
         </View>
       </ACard>
@@ -84,39 +86,39 @@ export default function AuroraRunTrack() {
       {/* Live stats */}
       <ACard style={{ marginBottom: 12 }}>
         <View style={{ flexDirection: "row" }}>
-          <Stat label="Time" value={mmss(elapsed)} color={C.chalk} C={C} />
-          <Stat label="Distance" value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={txt(C, C.blue)} C={C} />
-          <Stat label="Pace /km" value={pace ?? "—"} color={txt(C, C.lime)} C={C} />
+          <Stat label={t("w.train.runTrack.time")} value={mmss(elapsed)} color={C.chalk} C={C} />
+          <Stat label={t("w.train.runTrack.distance")} value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={txt(C, C.blue)} C={C} />
+          <Stat label={t("w.train.runTrack.pacePerKm")} value={pace ?? "—"} color={txt(C, C.lime)} C={C} />
         </View>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
           <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{running ? "❚❚ Pause" : elapsed > 0 ? "▶ Resume" : "▶ Start run"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}</Text>
           </Pressable>
           <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Reset</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.reset")}</Text>
           </Pressable>
         </View>
       </ACard>
 
       <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 6 }}>Distance (km)</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 6 }}>{t("w.train.runTrack.distanceKm")}</Text>
         <TextInput
           value={distance}
           onChangeText={setDistance}
           keyboardType="numeric"
-          placeholder="e.g. 5.0"
+          placeholder={t("w.train.runTrack.distancePh")}
           placeholderTextColor={C.ash}
           style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 11 }}
         />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>In the native build, GPS fills this in automatically as you run.</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.train.runTrack.gpsNote")}</Text>
       </ACard>
 
       {msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginBottom: 8 }}>{msg.text}</Text>}
 
-      <APill label={saving ? "Saving…" : "Save run →"} onPress={save} disabled={saving} />
+      <APill label={saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")} onPress={save} disabled={saving} />
 
       <Pressable onPress={() => router.push("/(tabs)/running")} style={{ paddingVertical: 16, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>See your running analytics →</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.seeAnalytics")}</Text>
       </Pressable>
       <View style={{ height: 16 }} />
     </AuroraScreen>

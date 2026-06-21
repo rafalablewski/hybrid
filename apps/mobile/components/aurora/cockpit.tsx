@@ -7,6 +7,7 @@ import {
   velocityProfiles, hpiRole, SPORTS, LEVELS, type LoggedSession, type Macrocycle,
 } from "@hybrid/core";
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
@@ -31,6 +32,7 @@ export default function AuroraCockpit() {
 
 function Full() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [macro, setMacro] = useState<Macrocycle | null>(null);
@@ -67,17 +69,17 @@ function Full() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <AHeading style={{ fontSize: 28 }}>Your command center</AHeading>
-      <ASub style={{ marginTop: 8 }}>Goal → season → today → performance → technique, in one place.</ASub>
+      <AHeading style={{ fontSize: 28 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
+      <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.commandSub")}</ASub>
 
-      <Section C={C} title="Goal & season" color={C.violet} openLabel={macro ? "Periodize" : "Set up"} onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}>
+      <Section C={C} title={t("w.home.cockpit.goalSeason")} color={C.violet} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}>
         {macro ? (
           <>
             <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{macro.goalOrSport}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · ${t("w.home.cockpit.eventIn")} ${macro.eventInWeeks} ${t("w.home.cockpit.wk")}` : ""}</Text>
           </>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>No season yet — enroll a goal and your periodized plan drives the weeks.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.noSeason")}</Text>
         )}
         {/* SET UP / CHANGE PLAN — the onboarding funnel folded under Goal & season
             (the mobile analog of the web expander; parity with classic cockpit). */}
@@ -86,24 +88,24 @@ function Full() {
           style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>Set up / change plan</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>4 questions → a plan you&apos;ll finish.</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>{t("w.home.cockpit.setUpChange")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.cockpit.fourQuestions")}</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>Open setup →</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("w.home.cockpit.openSetup")}</Text>
         </Pressable>
       </Section>
 
-      <Section C={C} title={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color={C.lime} openLabel={hasData ? "Start" : "Start first"} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}</Text>
+      <Section C={C} title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} color={C.lime} openLabel={hasData ? t("common.start") : t("w.home.cockpit.startFirstSection")} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</Text>
         {hasData && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
       </Section>
 
-      <Section C={C} title="Performance State" color={C.blue} openLabel="Performance" onOpen={() => router.push("/performance")}>
+      <Section C={C} title={t("w.home.cockpit.perfTwin")} color={C.blue} openLabel={t("w.home.cockpit.performance")} onOpen={() => router.push("/performance")}>
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
               <Text style={{ fontFamily: F.black, fontSize: 32, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
             </View>
             <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
@@ -113,31 +115,31 @@ function Full() {
             {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
           </>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Your HPI, readiness and tissue load build from real training — log a session.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.twinEmpty")}</Text>
         )}
       </Section>
 
-      <Section C={C} title="Sport S&C" color={C.amber} openLabel="Sport" onOpen={() => router.push("/(tabs)/sport")}>
+      <Section C={C} title={t("w.home.cockpit.sportSC")} color={C.amber} openLabel={t("w.home.cockpit.sport")} onOpen={() => router.push("/(tabs)/sport")}>
         {sport ? (
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Pick your sport — the engine ranks the strength & conditioning that transfers.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.sportEmpty")}</Text>
         )}
       </Section>
 
-      <Section C={C} title="Velocity & technique" color={C.blue} openLabel="Velocity" onOpen={() => router.push("/(tabs)/velocity")}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Bar speed → a velocity-estimated 1RM and autoregulated load. Log m/s per set to light it up.</Text>
+      <Section C={C} title={t("w.home.cockpit.velocityTechnique")} color={C.blue} openLabel={t("w.home.cockpit.velocity")} onOpen={() => router.push("/(tabs)/velocity")}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.velocityBlurb")}</Text>
       </Section>
 
-      <Section C={C} title="Endurance" color={C.lime} openLabel="Running" onOpen={() => router.push("/(tabs)/running")}>
+      <Section C={C} title={t("w.home.cockpit.endurance")} color={C.lime} openLabel={t("w.home.cockpit.running")} onOpen={() => router.push("/(tabs)/running")}>
         {totals.efforts > 0 ? (
           <View style={{ flexDirection: "row", gap: 18 }}>
-            <Stat C={C} label="efforts" value={`${totals.efforts}`} />
-            <Stat C={C} label="km" value={totals.distanceKm.toLocaleString()} />
-            <Stat C={C} label="min" value={totals.minutes.toLocaleString()} />
+            <Stat C={C} label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} />
+            <Stat C={C} label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
+            <Stat C={C} label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
           </View>
         ) : (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.enduranceEmpty")}</Text>
         )}
       </Section>
     </AuroraScreen>
@@ -171,32 +173,33 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
   );
 }
 
-const TEASE: { kicker: string; blurb: string; color: (C: Palette) => string }[] = [
-  { kicker: "Goal & season", color: (C) => C.violet, blurb: "Your periodized macrocycle — phase, week and event countdown." },
-  { kicker: "Today's route", color: (C) => C.lime, blurb: "A velocity-aware daily prescription tuned to your readiness." },
-  { kicker: "Performance State", color: (C) => C.blue, blurb: "Your HPI, its pillars and limiter — the live model of your training." },
-  { kicker: "Sport S&C", color: (C) => C.amber, blurb: "The strength & conditioning that transfers to your sport, ranked." },
-  { kicker: "Velocity & technique", color: (C) => C.blue, blurb: "Bar-speed 1RM, autoregulated load, force-plate & video analysis." },
-  { kicker: "Endurance", color: (C) => C.lime, blurb: "Mileage, pace zones and running PRs from your whole history." },
+const TEASE: { key: string; color: (C: Palette) => string }[] = [
+  { key: "goalSeason", color: (C) => C.violet },
+  { key: "todayRoute", color: (C) => C.lime },
+  { key: "perfTwin", color: (C) => C.blue },
+  { key: "sportSC", color: (C) => C.amber },
+  { key: "velocity", color: (C) => C.blue },
+  { key: "endurance", color: (C) => C.lime },
 ];
 
 function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Unlock your command center</AHeading>
-      <ASub style={{ marginTop: 8 }}>Goal, season, your Performance State, sport S&C, velocity and endurance — assembled into one screen. It&apos;s part of Full. Keep logging free; upgrade whenever you want the depth.</ASub>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>
+      <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
-        <ACard key={s.kicker} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <ACard key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: s.color(C) }} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, s.color(C)) }}>{s.kicker}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: 17 }}>{s.blurb}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, s.color(C)) }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: 17 }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</Text>
           </View>
           <AuroraIcon name="lock" size={18} color={C.ash} />
         </ACard>
       ))}
-      <APill label={paid ? "Switch to Full" : "Upgrade to Full"} onPress={onUnlock} style={{ marginTop: 18 }} />
+      <APill label={paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")} onPress={onUnlock} style={{ marginTop: 18 }} />
     </AuroraScreen>
   );
 }

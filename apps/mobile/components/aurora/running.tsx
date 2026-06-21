@@ -134,7 +134,8 @@ export default function AuroraRunning() {
 
 function PaceBars({ series }: { series: number[] }) {
   const { palette: C } = useTheme();
-  if (series.length < 2) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 12 }}>Log this run a few times to see a pace trend.</Text>;
+  const { t } = useLang();
+  if (series.length < 2) return <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 12 }}>{t("running.paceTrendHint")}</Text>;
   const max = Math.max(...series), min = Math.min(...series), range = max - min || 1;
   const delta = series[series.length - 1]! - series[0]!;
   return (

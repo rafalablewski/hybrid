@@ -8,12 +8,6 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
-const STATUS_COPY: Record<CoachApplication["status"], string> = {
-  pending: "Your application is in review — an admin will verify it shortly.",
-  approved: "You're a verified coach. Your roster & squad tools are unlocked.",
-  denied: "This application wasn't approved. You can revise and re-apply below.",
-};
-
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */
 export default function AuroraCoachApply() {
@@ -47,7 +41,7 @@ export default function AuroraCoachApply() {
       setSent(true);
       setExisting({ id: "", status: "pending", credentials: credentials.trim(), createdAt: new Date().toISOString() });
     } else {
-      setError(res.error ?? "Couldn't submit — try again.");
+      setError(res.error ?? t("w.account.settings.coach-submit-error"));
     }
   };
 
@@ -60,18 +54,16 @@ export default function AuroraCoachApply() {
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>Become a coach</AHeading>
+      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("w.account.settings.become-coach")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
-        Coaching others is verification-gated. Tell us who you are — certifications, experience,
-        who you train — and an admin reviews it. Approval unlocks the roster, squad monitor and
-        athlete assignment.
+        {t("w.account.settings.coach-apply-intro")}
       </Text>
 
       {isCoach ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Already verified</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.account.settings.coach-already-verified")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
-            You already have coach access — open the Coach tab to manage your athletes.
+            {t("w.account.settings.coach-already-verified-body")}
           </Text>
         </ACard>
       ) : loading ? (
@@ -83,9 +75,9 @@ export default function AuroraCoachApply() {
           {existing && (
             <ACard style={{ marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
-                Application · {existing.status}
+                {t("w.account.settings.coach-app-label")} {t(`w.account.settings.coach-st-${existing.status}`)}
               </Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{STATUS_COPY[existing.status]}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{t(`w.account.settings.coach-status-${existing.status}`)}</Text>
             </ACard>
           )}
 
@@ -93,11 +85,11 @@ export default function AuroraCoachApply() {
               applicants and for re-applying after a denial. */}
           {existing?.status !== "pending" && (
             <ACard style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Your background</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.account.settings.coach-your-background")}</Text>
               <TextInput
                 value={credentials}
                 onChangeText={setCredentials}
-                placeholder="Certifications, years coaching, who you work with…"
+                placeholder={t("w.account.settings.coach-bg-ph")}
                 placeholderTextColor={C.ash}
                 multiline
                 numberOfLines={5}
@@ -110,13 +102,13 @@ export default function AuroraCoachApply() {
                 disabled={!canSubmit}
                 style={{ backgroundColor: canSubmit ? C.violet : `${C.violet}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
               >
-                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>Submit application</Text>}
+                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
               </Pressable>
             </ACard>
           )}
 
           {sent && existing?.status === "pending" && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 12, textAlign: "center" }}>Application submitted — thanks!</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 12, textAlign: "center" }}>{t("w.account.settings.coach-submitted")}</Text>
           )}
         </>
       )}

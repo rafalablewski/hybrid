@@ -7,6 +7,7 @@ import { fs, space,
 } from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useOnboarding, submitOnboarding, type AnswerValue } from "@/lib/use-onboarding";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
 /** AURORA onboarding (web) — the stepped wizard parity of the mobile flow, now
@@ -14,6 +15,7 @@ import { AuroraIcon } from "./icons";
  *  recommended plan. Engine answers feed recommendFromAnswers; the rest are saved. */
 export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => void }) {
   const { questions, answers, setAnswer, plan, loading } = useOnboarding();
+  const { t } = useLang();
   const personaChoice = useClientPersonaChoice();
   const [idx, setIdx] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
@@ -30,11 +32,11 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
     setError("");
     try {
       const { ok, status } = await submitOnboarding(questions, answers, plan);
-      if (status === 401) { setError("Sign in to save your plan (demo mode doesn't persist)."); setEnrolling(false); return; }
-      if (!ok) { setError(`Couldn't enroll (HTTP ${status}).`); setEnrolling(false); return; }
+      if (status === 401) { setError(t("w.account.onboarding.signin-to-save")); setEnrolling(false); return; }
+      if (!ok) { setError(`${t("w.account.onboarding.enroll-failed")} (HTTP ${status}).`); setEnrolling(false); return; }
       onEnrolled();
     } catch {
-      setError("Network error — try again.");
+      setError(t("w.account.onboarding.network-error"));
       setEnrolling(false);
     }
   };
@@ -52,7 +54,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
   const canNext = onPlanStep ? true : answered(q!);
 
   if (loading && questions.length === 0) {
-    return <div style={{ maxWidth: 520, margin: "0 auto", color: C("ash"), fontFamily: "var(--font-mono)" }}>Loading…</div>;
+    return <div style={{ maxWidth: 520, margin: "0 auto", color: C("ash"), fontFamily: "var(--font-mono)" }}>{t("common.loading")}</div>;
   }
 
   return (
@@ -69,14 +71,14 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
             <QuestionBody q={q} answers={answers} setAnswer={setAnswer} personaChoice={personaChoice} C={C} />
           </Step>
         ) : (
-          <Step title="Your plan" sub={plan ? "" : "Pick a goal to see a recommendation."}>
+          <Step title={t("w.account.onboarding.plan-title")} sub={plan ? "" : t("w.account.onboarding.plan-sub")}>
             {plan ? (
               <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{plan.planName}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} weeks</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} {t("w.account.onboarding.weeks")}</div>
                 <div style={{ fontSize: fs.bodyLg, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>
               </div>
-            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>Plans for this goal are coming soon — jump in now and enroll once they land.</div>}
+            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>{t("w.account.onboarding.no-plan")}</div>}
           </Step>
         )}
         {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
@@ -87,7 +89,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
           <AuroraIcon name="back" size={20} />
         </button>
         <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
-          {onPlanStep ? (enrolling ? "Setting up…" : plan ? "Start this plan" : "Continue") : "Next"}
+          {onPlanStep ? (enrolling ? t("w.account.onboarding.setting-up") : plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
         </button>
       </div>
     </div>

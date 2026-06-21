@@ -3,6 +3,7 @@ import { View, Text, TextInput } from "react-native";
 import { deploymentReadiness, unitReadiness, type UnitMember } from "@hybrid/core";
 import { fetchState, type StateSnapshot } from "../../lib/api";
 import { fs, space, F } from "../../lib/ui";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
@@ -26,6 +27,7 @@ const PEERS: UnitMember[] = [
  *  and a unit go/no-go roll-up, reusing deploymentReadiness + unitReadiness. */
 export default function AuroraTactical() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const [state, setState] = useState<StateSnapshot | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [loadCarriage, setLoadCarriage] = useState("78");
@@ -49,15 +51,15 @@ export default function AuroraTactical() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display }}>Deployment readiness</AHeading>
+      <AHeading style={{ fontSize: fs.display }}>{t("w.teams.tactical.deploymentReadiness")}</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>
-        Fuses the Performance State (HPI + injury availability) with occupational capacity into a duty status, plus a unit go/no-go.
+        {t("w.teams.tactical.headerBody")}
       </Text>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Your readiness</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.teams.tactical.yourReadiness")}</Text>
         {noData ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>Log training to compute your DRI from real readiness + injury risk.</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{t("w.teams.tactical.logToCompute")}</Text>
         ) : dr ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>
@@ -68,25 +70,25 @@ export default function AuroraTactical() {
             </View>
             <View style={{ flexDirection: "row", gap: 14, marginTop: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI {state!.hpi}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>injury risk {state!.injuryRisk}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.teams.tactical.injuryRisk")} {state!.injuryRisk}</Text>
             </View>
             {dr.limiters.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{dr.limiters.join(" · ")}</Text>}
             <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
-              <Field C={C} label="Load carriage" value={loadCarriage} onChange={setLoadCarriage} />
-              <Field C={C} label="Work capacity" value={workCapacity} onChange={setWorkCapacity} />
+              <Field C={C} label={t("w.teams.tactical.loadCarriage")} value={loadCarriage} onChange={setLoadCarriage} />
+              <Field C={C} label={t("w.teams.tactical.workCapacity")} value={workCapacity} onChange={setWorkCapacity} />
             </View>
           </>
         ) : (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8 }}>Loading…</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8 }}>{t("common.loading")}</Text>
         )}
       </ACard>
 
       {unit && (
         <ACard style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, unit.go ? C.lime : C.red) }}>Unit readiness</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, unit.go ? C.lime : C.red) }}>{t("w.teams.tactical.unitReadiness")}</Text>
             <View style={{ backgroundColor: `${unit.go ? C.lime : C.red}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, unit.go ? C.lime : C.red) }}>{unit.go ? "MISSION GO" : "NO-GO"} · {unit.pctReady}%</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, unit.go ? C.lime : C.red) }}>{unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} · {unit.pctReady}%</Text>
             </View>
           </View>
           <View style={{ marginTop: 10 }}>
@@ -102,7 +104,7 @@ export default function AuroraTactical() {
               </View>
             ))}
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>Your readiness alongside an illustrative unit (real units plug in via the Org graph).</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.teams.tactical.rollupNote")}</Text>
         </ACard>
       )}
       <View style={{ height: 16 }} />

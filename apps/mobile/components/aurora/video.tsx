@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { readinessRole } from "@hybrid/core";
 import { fetchVideoAnalyses, type VideoAnalysis } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
@@ -16,6 +17,7 @@ const scoreColor = (s: number, C: Palette) => roleColor(C, readinessRole(s));
  *  fetchVideoAnalyses feed. */
 export default function AuroraVideo() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [analyses, setAnalyses] = useState<VideoAnalysis[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -32,13 +34,13 @@ export default function AuroraVideo() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Technique</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vid.title")}</AHeading>
       </View>
-      <ASub style={{ marginTop: 10 }}>Joint angles, rep counts, left/right asymmetry and a technique score from pose frames — feeding the Performance State injury-risk engine. On-device capture lands here.</ASub>
+      <ASub style={{ marginTop: 10 }}>{t("w.analyze.vid.intro-mobile")}</ASub>
 
       {analyses.length === 0 ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{loaded ? "No analyses yet — record a clip from the phone to see your technique broken down here." : "Loading…"}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{loaded ? t("w.analyze.vid.empty-mobile") : t("w.analyze.vid.loading")}</Text>
         </ACard>
       ) : analyses.map((a) => {
         const m = a.metrics;
@@ -52,9 +54,9 @@ export default function AuroraVideo() {
               <Text style={{ fontFamily: F.black, fontSize: 34, color: txt(C, scoreColor(m.techniqueScore, C)) }}>{m.techniqueScore}</Text>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
-              {chip(C.chalk, `${m.reps} reps`)}
-              {m.minKneeAngle != null && chip(C.blue, `depth ${Math.round(m.minKneeAngle)}°`)}
-              {m.kneeAsymmetryPct != null && chip(m.kneeAsymmetryPct > 10 ? C.amber : C.lime, `L/R ${Math.round(m.kneeAsymmetryPct)}%`)}
+              {chip(C.chalk, `${m.reps} ${t("w.analyze.vid.reps")}`)}
+              {m.minKneeAngle != null && chip(C.blue, `${t("w.analyze.vid.depth")} ${Math.round(m.minKneeAngle)}°`)}
+              {m.kneeAsymmetryPct != null && chip(m.kneeAsymmetryPct > 10 ? C.amber : C.lime, `${t("w.analyze.vid.lr")} ${Math.round(m.kneeAsymmetryPct)}%`)}
             </View>
             {m.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{m.flags.join(" · ")}</Text>}
           </ACard>

@@ -3,6 +3,7 @@ import { View, Text, Pressable, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
@@ -16,6 +17,7 @@ type Status = "loading" | "ready" | "no-auth" | "no-bucket";
  *  the classic, in the rounded Aurora style. */
 export default function AuroraProgress() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -51,32 +53,32 @@ export default function AuroraProgress() {
       const ext = (asset.mimeType?.split("/")[1] || asset.fileName?.split(".").pop() || "jpg").toLowerCase();
       const path = `${uid}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, arraybuffer, { contentType: asset.mimeType ?? "image/jpeg" });
-      if (error) { Alert.alert("Upload failed", error.message); setStatus("no-bucket"); }
+      if (error) { Alert.alert(t("w.recovery.progress.uploadFailed"), error.message); setStatus("no-bucket"); }
       else await load();
     } catch (e) {
-      Alert.alert("Upload failed", e instanceof Error ? e.message : "Try again.");
+      Alert.alert(t("w.recovery.progress.uploadFailed"), e instanceof Error ? e.message : "Try again.");
     }
     setBusy(false);
   };
 
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return Alert.alert("Permission needed", "Allow photo access to add progress photos.");
+    if (!perm.granted) return Alert.alert(t("w.recovery.progress.permissionNeeded"), t("w.recovery.progress.permissionPhoto"));
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
     if (!res.canceled && res.assets[0]) upload(res.assets[0]);
   };
 
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return Alert.alert("Permission needed", "Allow camera access to take progress photos.");
+    if (!perm.granted) return Alert.alert(t("w.recovery.progress.permissionNeeded"), t("w.recovery.progress.permissionCamera"));
     const res = await ImagePicker.launchCameraAsync({ quality: 0.8 });
     if (!res.canceled && res.assets[0]) upload(res.assets[0]);
   };
 
   const remove = (path: string) =>
-    Alert.alert("Delete photo?", "This can't be undone.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => { await supabase.storage.from(BUCKET).remove([path]); load(); } },
+    Alert.alert(t("w.recovery.progress.deletePhotoTitle"), t("w.recovery.progress.deletePhotoBody"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("workout.deleteSet"), style: "destructive", onPress: async () => { await supabase.storage.from(BUCKET).remove([path]); load(); } },
     ]);
 
   return (
@@ -85,38 +87,37 @@ export default function AuroraProgress() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Progress photos</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.progress.title")}</AHeading>
       </View>
 
       {status === "no-auth" && (
         <ACard style={{ marginTop: 18 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>Sign in to capture your transformation timeline — photos are private to your account.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>{t("w.recovery.progress.noAuth")}</Text>
         </ACard>
       )}
       {status === "no-bucket" && (
         <ACard style={{ marginTop: 18 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: txt(C, C.red), lineHeight: 20 }}>The progress storage bucket isn&apos;t set up yet.</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 18, marginTop: 6 }}>Run reference/sql-progress-photos.sql in Supabase, then pull to refresh.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: txt(C, C.red), lineHeight: 20 }}>{`${t("w.recovery.progress.noBucketPre")} progress ${t("w.recovery.progress.noBucketMid")} reference/sql-progress-photos.sql ${t("w.recovery.progress.noBucketPost")}`}</Text>
         </ACard>
       )}
 
       {status === "ready" && (
         <>
           <ACard style={{ marginTop: 18 }}>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20, marginBottom: 14 }}>Same pose, same light, every couple of weeks. Private to you.</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20, marginBottom: 14 }}>{t("w.recovery.progress.intro")}</Text>
             <View style={{ flexDirection: "row", gap: space.ms }}>
               <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 7, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", justifyContent: "center", opacity: busy ? 0.5 : 1 }}>
                 <AuroraIcon name="add" size={18} color={C.onAccent} />
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? "Uploading…" : "Take photo"}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.takePhoto")}</Text>
               </Pressable>
               <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>From library</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.progress.fromLibrary")}</Text>
               </Pressable>
             </View>
           </ACard>
 
           {photos.length === 0 ? (
-            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 16 }}>No photos yet — add your first to start the timeline.</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 16 }}>{t("w.recovery.progress.empty")}</Text>
           ) : (
             <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 4 }}>
               {photos.map((p) => (
@@ -124,7 +125,7 @@ export default function AuroraProgress() {
                   <Image source={{ uri: p.url }} style={{ width: "100%", aspectRatio: 3 / 4 }} resizeMode="cover" />
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.date}</Text>
-                    <Text onPress={() => remove(p.path)} style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.red) }}>delete</Text>
+                    <Text onPress={() => remove(p.path)} style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.red) }}>{t("w.recovery.progress.delete")}</Text>
                   </View>
                 </View>
               ))}

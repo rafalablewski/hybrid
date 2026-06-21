@@ -32,6 +32,7 @@ import {
   type CoachLink,
 } from "../../lib/api";
 import { useSession } from "../../lib/session";
+import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, roleColor } from "../../lib/theme";
@@ -53,6 +54,7 @@ type P = ReturnType<typeof useTheme>["palette"];
  */
 export default function AuroraProfile() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const { name, email, role, entitlement, createdYear } = useIdentity();
   const prefs = useLoggerPrefs();
@@ -143,7 +145,7 @@ export default function AuroraProfile() {
           <Pressable
             onPress={() => router.push("/settings")}
             accessibilityRole="button"
-            accessibilityLabel="Edit profile"
+            accessibilityLabel={t("w.account.profile.edit")}
             style={{ position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, borderWidth: 3, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}
           >
             <AuroraIcon name="settings" size={15} color={C.onAccent} />
@@ -164,24 +166,24 @@ export default function AuroraProfile() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, opacity: 0.8, marginTop: 4 }}>{email}</Text>
         )}
         <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.chalk, opacity: 0.85, marginTop: 8 }}>
-          {role === "coach" ? "Coach" : "Hybrid Athlete"} · member since {createdYear}
+          {role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")} · {t("w.account.profile.member-since")} {createdYear}
         </Text>
       </View>
 
       {/* SPEC STRIP — hairline-divided HPI / Streak / PRs */}
       <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginTop: 20 }}>
         <SpecCol C={C} n={`${hpi.score}`} k="HPI" first />
-        <SpecCol C={C} n={`${weekStreakBest}w`} k="Streak" />
+        <SpecCol C={C} n={`${weekStreakBest}w`} k={t("w.account.profile.spec-streak")} />
         <SpecCol C={C} n={`${prCount}`} k="PRs" />
       </View>
 
       {/* ACTIONS */}
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
         <Pressable onPress={() => router.push("/settings")} style={{ flex: 1, alignItems: "center", backgroundColor: C.lime, borderRadius: 14, paddingVertical: 13 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Edit profile</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.account.profile.edit")}</Text>
         </Pressable>
         <Pressable onPress={() => router.push("/statistics")} style={{ flex: 1, alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 13 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>Share card</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.profile.share-card")}</Text>
         </Pressable>
       </View>
 
@@ -196,27 +198,27 @@ export default function AuroraProfile() {
         <View pointerEvents="none" style={{ position: "absolute", top: 70, left: -40, width: 260, height: 1, backgroundColor: C.lime, opacity: 0.06, transform: [{ rotate: "20deg" }] }} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk, letterSpacing: 0.3 }}>
-            HYBRID<Text style={{ color: C.lime }}>.</Text> · MEMBERSHIP
+            HYBRID<Text style={{ color: C.lime }}>.</Text> · {t("w.account.profile.membership")}
           </Text>
           <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.8 }}>{tier} · MEMBER</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.8 }}>{tier} · {role === "coach" ? t("w.account.profile.coach-upper") : t("w.account.profile.member-upper")}</Text>
           </View>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 30 }}>
-          <IdMeta C={C} label="Member since" value={`${createdYear}`} />
-          <IdMeta C={C} label="Sessions" value={`${sessions.length}`} />
-          <IdMeta C={C} label="Index" value={`${hpi.score}`} accent />
+          <IdMeta C={C} label={t("w.account.profile.id-member-since")} value={`${createdYear}`} />
+          <IdMeta C={C} label={t("w.account.profile.id-sessions")} value={`${sessions.length}`} />
+          <IdMeta C={C} label={t("w.account.profile.id-index")} value={`${hpi.score}`} accent />
         </View>
       </View>
 
       {/* HPI HERO */}
       <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>Hybrid Performance Index</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: 80, lineHeight: 80, letterSpacing: -3, color: C.chalk, marginTop: 10 }}>
           {hpiHead(hpi.score)}<Text style={{ color: C.lime }}>{hpiTail(hpi.score)}</Text>
         </Text>
         <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>Band · {hpi.band}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hpi.band}</Text>
         </View>
         {/* 12-bar HPI trace, latest highlighted lime */}
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 34, marginTop: 14 }}>
@@ -233,12 +235,12 @@ export default function AuroraProfile() {
           })()}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9 }}>
-          <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> vs first read · strength {hpi.components.strength} · engine {hpi.components.endurance} · recovery {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
+          <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> {t("w.account.profile.vs-first-read")} · {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
         </Text>
       </View>
 
       {/* TRAINING — 26-week heatmap */}
-      <SectionHeader C={C} title="Training" action={`${sessions.length} sessions`} />
+      <SectionHeader C={C} title={t("w.account.profile.training")} action={`${sessions.length} ${t("w.account.profile.sessions")}`} />
       <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, backgroundColor: C.ink2, padding: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2 }}>
           {monthLabels(heat).map((m, i) => (
@@ -257,19 +259,19 @@ export default function AuroraProfile() {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 11 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 8, color: lime }}>
-            {dayStreak.current > 0 ? `${dayStreak.current}-day streak` : weekStreakBest > 0 ? `${weekStreakBest}-week best` : "no streak yet"}
+            {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
           </Text>
           <View style={{ flex: 1 }} />
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>Less</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.less")}</Text>
           {[0, 1, 2, 3, 4].map((l) => (
             <View key={l} style={{ width: 10, height: 10, borderRadius: 2.5, backgroundColor: heatColor(l as HeatCell["level"], C) }} />
           ))}
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>More</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t("w.account.profile.more")}</Text>
         </View>
       </View>
 
       {/* ACHIEVEMENTS — squared badge tiles */}
-      <SectionHeader C={C} title="Achievements" action={`${achievements.filter((a) => a.earned).length} earned`} />
+      <SectionHeader C={C} title={t("w.account.profile.achievements")} action={`${achievements.filter((a) => a.earned).length} ${t("w.account.profile.earned")}`} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.ms }}>
         {achievements.map((a) => (
           <View key={a.id} style={{ width: 76, alignItems: "center" }}>
@@ -297,7 +299,7 @@ export default function AuroraProfile() {
       </ScrollView>
 
       {/* PERSONAL RECORDS — top lifts by e1RM */}
-      <SectionHeader C={C} title="Personal records" action={hasData ? "by e1RM" : ""} />
+      <SectionHeader C={C} title={t("w.account.profile.personal-records")} action={hasData ? t("w.account.profile.by-e1rm") : ""} />
       {topPrs.length > 0 ? (
         topPrs.map(([lift, e1rm]) => (
           <View key={lift} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
@@ -313,19 +315,19 @@ export default function AuroraProfile() {
         ))
       ) : (
         <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>Log a strength session and your top lifts appear here, ranked by estimated 1RM.</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
         </View>
       )}
 
       {/* MODULE TILES — Readiness · Body · Devices · Coach */}
-      <SectionHeader C={C} title="Your athlete" action="" />
+      <SectionHeader C={C} title={t("w.account.profile.your-athlete")} action="" />
       {/* All four tiles always render (empty states for the unset ones) so the
           grid stays even — equal cards, text in the same place — matching web. */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms }}>
-        <Tile C={C} icon="heart" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} unit={hasData ? "%" : undefined} sm={hasData ? undefined : "No data yet"} />
-        <Tile C={C} icon="user-square" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, prefs.units) : "Log a weigh-in"} onPress={() => router.push("/checkin")} />
-        <Tile C={C} icon="swap" k="Devices" sm={device ? `${device.label} · ${device.status}` : "Connect a device"} onPress={() => router.push("/connections")} />
-        <Tile C={C} icon="user" k="Coach" sm={coachName ? `${coachName} · active` : "Find a coach"} onPress={() => router.push("/coach")} />
+        <Tile C={C} icon="heart" k={t("w.account.profile.tile-readiness")} big={hasData ? `${state.readiness.score}` : undefined} unit={hasData ? "%" : undefined} sm={hasData ? undefined : t("w.account.profile.no-data")} />
+        <Tile C={C} icon="user-square" k={t("w.account.profile.tile-body")} sm={bodyKg != null ? fmtWeight(bodyKg, prefs.units) : t("w.account.profile.log-weigh-in")} onPress={() => router.push("/checkin")} />
+        <Tile C={C} icon="swap" k={t("w.account.profile.tile-devices")} sm={device ? `${device.label} · ${device.status}` : t("w.account.profile.connect-device")} onPress={() => router.push("/connections")} />
+        <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · ${t("w.account.profile.coach-active-suffix")}` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
       </View>
 
       <View style={{ height: 8 }} />

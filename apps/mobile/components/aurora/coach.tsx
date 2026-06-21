@@ -171,14 +171,14 @@ export default function AuroraCoach() {
 
           {groupsOn && (
             <>
-              <AHeading style={{ fontSize: fs.title, marginTop: 22 }}>Client groups</AHeading>
+              <AHeading style={{ fontSize: fs.title, marginTop: 22 }}>{t("w.teams.coach.clientGroups")}</AHeading>
               <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
             </>
           )}
 
           {programsOn && (
             <>
-              <AHeading style={{ fontSize: fs.title, marginTop: 22 }}>Programs</AHeading>
+              <AHeading style={{ fontSize: fs.title, marginTop: 22 }}>{t("w.teams.coach.programs")}</AHeading>
               <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
             </>
           )}
@@ -223,7 +223,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       <AHeading style={{ fontSize: fs.display }}>{personName(link.client)}</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 14 }}>{link.client?.email}</Text>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginBottom: 10 }}>Diet</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginBottom: 10 }}>{t("w.teams.coach.diet")}</Text>
       <CoachDiet linkId={link.id} />
 
       <View style={{ marginTop: 14 }} />
