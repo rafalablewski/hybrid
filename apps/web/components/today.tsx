@@ -70,7 +70,7 @@ export default function Today({
   onNavigate?: (screen: string) => void;
 }) {
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
-  // (This week, Future Self, Twin). Switchable from Settings.
+  // (This week, Future Self, Performance State). Switchable from Settings.
   const isAthlete = usePersona() !== "casual";
   const isMobile = useIsMobile();
   // A coached (free) client: not an athlete, but gets a READ-ONLY view of the
@@ -138,7 +138,7 @@ export default function Today({
         {/* card 1 — Your plan today */}
         {plan ? (
           /* Enrolled in a REAL named plan → its exact day drives the card. */
-          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+          <Card glass variant="vibrant" data-tour="today-plan" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 {/* Free users follow the plan as written; the adaptive readiness
@@ -161,8 +161,11 @@ export default function Today({
             </div>
             {!isAthlete && <UpgradeStrip onClick={() => onNavigate?.("upgrade")} />}
           </Card>
-        ) : sessions.length === 0 ? (
-          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+        ) : sessions.length === 0 && phase ? (
+          /* Enrolled (macro/phase) but no named-plan detail and nothing logged
+             yet — show the phase + today's cold-start session so enrolling
+             visibly "did something". */
+          <Card glass variant="vibrant" data-tour="today-plan" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today
@@ -170,23 +173,32 @@ export default function Today({
               <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
             </div>
             <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>
-              {phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+              {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
             </div>
-            {/* Enrolled but not yet logged: show the plan/phase + today's session
-                from session zero, so onboarding visibly "did something". */}
-            {phase ? (
-              <>
-                <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 4 }} c={VIOLET}>
-                  Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
-                </Mono>
-                <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
-              </>
-            ) : (
-              <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>
-                Log a workout and your plan, readiness, Athlete Twin and trends all build from your real
-                training — nothing here is pre-filled.
-              </Mono>
-            )}
+            <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 4 }} c={VIOLET}>
+              Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
+            </Mono>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>{rx.why}</Mono>
+          </Card>
+        ) : sessions.length === 0 ? (
+          /* Brand-new and not enrolled — let them choose how to start (#3):
+             follow a plan (free), build their own (Full), or log a one-off. */
+          <Card glass variant="vibrant" data-tour="today-plan" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+              Start your first session
+            </Mono>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>
+              How do you want to start?
+            </div>
+            <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginBottom: 14 }} c={CHALK}>
+              Nothing here is pre-filled — pick a path and your plan, readiness and trends build from your real
+              training.
+            </Mono>
+            <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
+              <FirstSessionOption title="Follow a plan" sub="Browse the library and enrol — free." badge="Free" badgeColor={LIME} onClick={() => onNavigate?.("plans")} />
+              <FirstSessionOption title="Build your own" sub="Compose a custom program. Part of Full." badge="✦ Full" badgeColor={VIOLET} onClick={() => onNavigate?.("upgrade")} />
+              <FirstSessionOption title="Log a one-time workout" sub="Just train and log it — no plan needed." badge="Free" badgeColor={LIME} onClick={() => onStart()} />
+            </div>
           </Card>
         ) : (
           <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
@@ -269,6 +281,52 @@ export default function Today({
               />
             ))}
           </div>
+        </Card>
+      )}
+
+      {/* SEASON BRIEF (free) — periodization is a Full feature, so a free user
+          who's enrolled gets only this read-only glimpse of their season here
+          (the one place they can see it), with the full Periodize screen behind
+          the upgrade. (#5 / #7) */}
+      {!isAthlete && macro && phase && (
+        <Card glass style={{ borderLeft: `3px solid ${VIOLET}`, gridColumn: "span 2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+              Your season · {macro.goalOrSport}
+            </Mono>
+            <Chip c={VIOLET}>✦ Full</Chip>
+          </div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: 20, margin: "8px 0 4px" }}>
+            {phase.block.label} phase · week {currentWeek}/{macro.totalWeeks}
+          </div>
+          <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+            {macro.blocks.map((b) => (
+              <div key={b.key} title={`${b.label} · ${b.weeks} wk`} style={{ flex: b.weeks, background: b.key === phase.block.key ? b.color : `${b.color}33` }} />
+            ))}
+          </div>
+          <Mono s={{ fontSize: fs.caption, lineHeight: 1.5, display: "block", marginTop: 12 }} c={ASH}>
+            You follow the plan as written. The full periodized season — adaptive phases, auto-progression and
+            readiness modulation — is part of Full.
+          </Mono>
+          <button onClick={() => onNavigate?.("upgrade")} style={{ ...cta(VIOLET), marginTop: 14 }}>Unlock full periodization →</button>
+        </Card>
+      )}
+
+      {/* SELL FULL — what a free user unlocks: the Performance State + the rest of
+          the intelligence layer. The Today upsell (#8). */}
+      {!isAthlete && (
+        <Card glass variant="vibrant" data-tour="today-upgrade" style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+              Unlock with Full
+            </Mono>
+            <button onClick={() => onNavigate?.("upgrade")} style={cta(BLUE)}>✦ Unlock Full →</button>
+          </div>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, margin: "8px 0 6px" }}>See your Performance State</div>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization,
+            velocity tracking, analytics and the AI coach.
+          </Mono>
         </Card>
       )}
 
@@ -378,11 +436,11 @@ export default function Today({
         </Card>
       ))}
 
-      {/* TWIN mini — athlete depth, once there's real training to compute it from */}
+      {/* PERFORMANCE STATE mini — athlete depth, once there's real training to compute it from */}
       {isAthlete && sessions.length > 0 && (
         <Card glass style={{ borderLeft: `3px solid ${BLUE}`, gridColumn: "span 2" }}>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-            Performance State · Athlete Twin
+            Performance State
           </Mono>
           <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 6, flexWrap: "wrap" }}>
             <span style={{ ...disp, fontWeight: 800, fontSize: 38, color: txt(hpiColor(state.hpi.band)) }}>{state.hpi.score}</span>
@@ -419,6 +477,30 @@ export default function Today({
 
 // Free plan card → the single, honest upsell: the plan you follow is free; what
 // Full adds is the adaptive layer (loads that auto-adjust to your recovery).
+// One row of the first-session chooser (#3): a tappable option with a title, a
+// one-line sub, and a Free/Full badge.
+function FirstSessionOption({ title, sub, badge, badgeColor, onClick }: { title: string; sub: string; badge: string; badgeColor: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+        gap: space.md, padding: "12px 14px", borderRadius: 12, cursor: "pointer", textAlign: "left",
+        border: `1px solid ${LINE}`, background: `${badgeColor}0f`, color: txt(CHALK),
+      }}
+    >
+      <span>
+        <span style={{ ...disp, fontWeight: 800, fontSize: fs.note, display: "block" }}>{title}</span>
+        <Mono s={{ fontSize: fs.caption, lineHeight: 1.4 }} c={ASH}>{sub}</Mono>
+      </span>
+      <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+        <Chip c={badgeColor}>{badge}</Chip>
+        <span style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: txt(badgeColor) }}>→</span>
+      </span>
+    </button>
+  );
+}
+
 function UpgradeStrip({ onClick }: { onClick: () => void }) {
   return (
     <button

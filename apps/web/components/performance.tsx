@@ -73,7 +73,7 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
       <Card style={{ textAlign: "center", padding: 60 }}>
         <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>No training data yet</div>
         <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6 }}>
-          Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury risk —
+          Log a session and your Performance State — HPI, readiness, fatigue and tissue-level injury risk —
           appears here, computed from your real training.
         </Mono>
       </Card>
@@ -94,7 +94,7 @@ export default function Performance({ sessions = [], bio }: { sessions?: LoggedS
     <div style={{ display: "grid", gap: space.lg }}>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <Card style={{ borderLeft: `3px solid ${hpiColor(state.hpi.band)}` }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Athlete Twin · HPI</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Performance State · HPI</Mono>
           <div style={{ ...disp, fontWeight: 900, fontSize: 56, color: hpiColor(state.hpi.band), lineHeight: 1.1, margin: "6px 0" }}>
             {state.hpi.score}
           </div>

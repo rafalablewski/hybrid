@@ -61,9 +61,9 @@ const muscleLabel = (m: string, t: (k: string) => string): string => {
  * AURORA Today (web) — the rounded Aurora skin of the full classic Today
  * cockpit, at parity (no feature loss): the horizontally-swipeable Plan today +
  * AI coach pair, the season phase timeline, the reconciled "This week" plan
- * (shared ReconciledWeek), accountability, the weekly recap, and the Athlete
- * Twin + injury-risk-by-tissue panel. Runs the SAME engines as the classic
- * screen; casual users get the lean subset (no season/Twin), like classic.
+ * (shared ReconciledWeek), accountability, the weekly recap, and the
+ * Performance State + injury-risk-by-tissue panel. Runs the SAME engines as the classic
+ * screen; casual users get the lean subset (no season/Performance State), like classic.
  */
 export default function AuroraToday({
   sessions,
@@ -100,7 +100,7 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
-  // 14-day HPI trajectory (oldest→today) for the Twin sparkline.
+  // 14-day HPI trajectory (oldest→today) for the Performance State sparkline.
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
@@ -145,7 +145,7 @@ export default function AuroraToday({
         style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", marginTop: 14, paddingBottom: 2 }}
       >
         {/* card 1 — Your plan today */}
-        <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", }}>
+        <div data-tour="today-plan" style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
               {/* Free: follow as written; the readiness-adaptive layer is Full. */}
@@ -186,18 +186,30 @@ export default function AuroraToday({
                 </button>
               )}
             </>
-          ) : (
+          ) : hasData || phase ? (
             <>
               <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
-                {hasData || phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.today.startFirst")}
+                {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
               </div>
               {phase && (
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("violet"), marginBottom: 4 }}>
                   {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
                 </div>
               )}
-              <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>
-                {hasData || phase ? rx.why : t("w.home.today.emptyWhy")}
+              <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
+            </>
+          ) : (
+            /* Brand-new and not enrolled — first-session chooser (#3): follow a
+               plan (free), build your own (Full), or log a one-off. */
+            <>
+              <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>How do you want to start?</div>
+              <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 12 }}>
+                Nothing here is pre-filled — pick a path and your plan, readiness and trends build from your real training.
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
+                <ChooserRow title="Follow a plan" sub="Browse the library and enrol — free." badge="Free" color={C("lime")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
+                <ChooserRow title="Build your own" sub="Compose a custom program. Part of Full." badge="✦ Full" color={C("violet")} onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} />
+                <ChooserRow title="Log a one-time workout" sub="Just train and log it — no plan needed." badge="Free" color={C("lime")} onClick={() => onStart()} />
               </div>
             </>
           )}
@@ -262,6 +274,51 @@ export default function AuroraToday({
         </div>
       )}
 
+      {/* SEASON BRIEF (free) — periodization is Full, so an enrolled free user
+          gets only this read-only glimpse here (the one place they can see it),
+          with the full Periodize screen behind the upgrade. (#5 / #7) */}
+      {!isAthlete && macro && phase && (
+        <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("violet")}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
+              Your season · {macro.goalOrSport}
+            </span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("violet"), background: `color-mix(in srgb, ${C("violet")} 16%, transparent)`, borderRadius: 999, padding: "3px 10px" }}>✦ Full</span>
+          </div>
+          <div style={{ fontWeight: 900, fontSize: fs.heading, margin: "8px 0 4px" }}>
+            {phase.block.label} phase · week {currentWeek}/{macro.totalWeeks}
+          </div>
+          <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+            {macro.blocks.map((b) => (
+              <div key={b.key} title={`${b.label} · ${b.weeks} wk`} style={{ flex: b.weeks, background: b.key === phase.block.key ? b.color : `${b.color}33` }} />
+            ))}
+          </div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, color: C("ash"), marginTop: 12 }}>
+            You follow the plan as written. The full periodized season — adaptive phases, auto-progression and
+            readiness modulation — is part of Full.
+          </div>
+          <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ marginTop: 14, background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 18px", fontWeight: 700, fontSize: fs.body, cursor: "pointer" }}>
+            Unlock full periodization →
+          </button>
+        </div>
+      )}
+
+      {/* SELL FULL — what a free user unlocks: the Performance State + the rest of
+          the intelligence layer. The Today upsell (#8). */}
+      {!isAthlete && (
+        <div data-tour="today-upgrade" style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("blue")}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>Unlock with Full</span>
+            <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ background: C("blue"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}>✦ Unlock Full →</button>
+          </div>
+          <div style={{ fontWeight: 800, fontSize: 22, margin: "8px 0 6px" }}>See your Performance State</div>
+          <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>
+            HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization,
+            velocity tracking, analytics and the AI coach.
+          </div>
+        </div>
+      )}
+
       {/* THIS WEEK — shared reconciled plan; coached clients see it read-only */}
       {(isAthlete || coached) && macro && (
         <div style={{ marginTop: 18 }}>
@@ -314,7 +371,7 @@ export default function AuroraToday({
         </button>
       )}
 
-      {/* PERFORMANCE STATE · ATHLETE TWIN + injury risk by tissue */}
+      {/* PERFORMANCE STATE + injury risk by tissue */}
       {isAthlete && hasData && (
         <div style={{ ...card, marginTop: 18, }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>{t("w.home.today.perfState")}</span>
@@ -350,6 +407,26 @@ export default function AuroraToday({
         </div>
       )}
     </div>
+  );
+}
+
+// One row of the first-session chooser (#3): a tappable option with a title, a
+// one-line sub, and a Free/Full badge.
+function ChooserRow({ title, sub, badge, color, onClick }: { title: string; sub: string; badge: string; color: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, padding: "12px 14px", borderRadius: 14, cursor: "pointer", textAlign: "left", border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${color} 8%, transparent)`, color: C("chalk") }}
+    >
+      <span>
+        <span style={{ fontWeight: 800, fontSize: fs.note, display: "block" }}>{title}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{sub}</span>
+      </span>
+      <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color, background: `color-mix(in srgb, ${color} 16%, transparent)`, borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap" }}>{badge}</span>
+        <span style={{ fontWeight: 800, fontSize: fs.title, color }}>→</span>
+      </span>
+    </button>
   );
 }
 

@@ -2,7 +2,7 @@
  * Tactical / SOF vertical — occupational readiness.
  *
  * Special-operations and tactical units don't ask "are you fit?" — they ask
- * "are you deployable?". This composes the same Twin signals (HPI, injury risk)
+ * "are you deployable?". This composes the same Performance State signals (HPI, injury risk)
  * with occupational capacities (load carriage, work capacity) into a Deployment
  * Readiness Index and a unit-level go/no-go. Pure; mission-critical, auditable.
  */
@@ -10,7 +10,7 @@
 export type DutyStatus = "ready" | "qualified" | "limited" | "non-deployable";
 
 export interface TacticalInputs {
-  /** Hybrid Performance Index from the Twin (0..100) */
+  /** Hybrid Performance Index from the Performance State (0..100) */
   hpi: number;
   /** overall injury risk from the injury engine (0..100) */
   injuryRisk: number;

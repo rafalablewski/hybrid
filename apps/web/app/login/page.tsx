@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
@@ -26,7 +26,7 @@ export default function LoginPage() {
 
 function ClassicLoginPage() {
   const router = useRouter();
-  const { login } = useSession();
+  const { login, session } = useSession();
   const live = isSupabaseConfigured();
   const [role, setRole] = useState<Role>("admin");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -39,6 +39,15 @@ function ClassicLoginPage() {
   // MFA step-up: set after a password sign-in when a second factor is required.
   const [mfaStep, setMfaStep] = useState<{ factorId: string; challengeId: string } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  // Navigate only once the session actually lands in context. Pushing to /app
+  // the instant signInWithPassword resolves races the SessionProvider's
+  // onAuthStateChange listener, so the app-shell guard sees no session yet and
+  // bounces back to /login — the "first login fails, second works" bug. Mirror
+  // the mobile login: defer the redirect until `session` is populated.
+  const [navTo, setNavTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (navTo && session) router.push(navTo);
+  }, [navTo, session, router]);
 
   // After a password sign-in, ask Supabase whether the session must step up to
   // aal2 (a verified factor exists). If so, challenge it and show the code
@@ -79,7 +88,7 @@ function ClassicLoginPage() {
       setBusy(false);
       return;
     }
-    router.push("/app");
+    setNavTo("/app");
   };
 
   // --- DEMO entry (no backend): set a local session and go ---
@@ -99,7 +108,7 @@ function ClassicLoginPage() {
       entitlement: "free",
       provider,
     });
-    router.push("/app");
+    setNavTo("/app");
   };
 
   // --- LIVE entry (Supabase) ---
@@ -141,7 +150,7 @@ function ClassicLoginPage() {
       // immediate or arrives after email confirm + sign in.
       try { localStorage.setItem("hybrid.pendingOnboarding", "1"); } catch { /* ignore */ }
       if (data.session) {
-        router.push("/app");
+        setNavTo("/app");
         return;
       }
       // Email confirmation is on — no session yet.
@@ -158,7 +167,7 @@ function ClassicLoginPage() {
       return;
     }
     if (await maybeStepUp(supabase)) return; // a TOTP code is now required
-    router.push("/app");
+    setNavTo("/app");
   };
 
   const provs = [

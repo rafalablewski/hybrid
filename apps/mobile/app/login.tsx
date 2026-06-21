@@ -57,6 +57,9 @@ function ClassicLogin() {
       // Fresh registration → onboarding (now or right after they confirm + sign
       // in). Any guest workouts have already flushed up on sign-in.
       await AsyncStorage.setItem(PENDING_ONBOARDING, "1").catch(() => {});
+      // Fresh account → also queue the first-run tutorial (shown on the home tab
+      // after onboarding; deferred if a guest workout still needs to land).
+      await AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
       if (!data.session) {
         setError("Account created. Confirm via email, then sign in.");
         setMode("signin");

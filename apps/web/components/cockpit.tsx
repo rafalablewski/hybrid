@@ -138,7 +138,7 @@ function CockpitBody({
           {hasData && <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 4 }} c={ASH}>{rx.why}</Mono>}
         </Section>
 
-        <Section kicker="Performance · Athlete Twin" color={BLUE} onOpen={() => setScreen("performance")} openLabel="Performance →">
+        <Section kicker="Performance State" color={BLUE} onOpen={() => setScreen("performance")} openLabel="Performance →">
           {hasData ? (
             <>
               <div style={{ display: "flex", alignItems: "baseline", gap: space.md }}>
@@ -167,7 +167,7 @@ function CockpitBody({
 
         <Section kicker="Velocity & technique" color={BLUE} onOpen={() => setScreen("velocity")} openLabel="Velocity →">
           <Mono s={{ fontSize: fs.body, lineHeight: 1.6 }} c={CHALK}>
-            Bar speed → a velocity-estimated 1RM and autoregulated load. Force-plate &amp; video analysis feed the same Twin.
+            Bar speed → a velocity-estimated 1RM and autoregulated load. Force-plate &amp; video analysis feed the same Performance State.
           </Mono>
         </Section>
 
@@ -224,7 +224,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 const TEASE: { kicker: string; color: string; blurb: string }[] = [
   { kicker: "Goal & season", color: VIOLET, blurb: "Your periodized macrocycle — phase, week and event countdown." },
   { kicker: "Today's route", color: LIME, blurb: "A velocity-aware daily prescription tuned to your readiness." },
-  { kicker: "Performance · Athlete Twin", color: BLUE, blurb: "Your HPI, its pillars and limiter — the digital twin of your training." },
+  { kicker: "Performance State", color: BLUE, blurb: "Your HPI, its pillars and limiter — the live model of your training." },
   { kicker: "Sport S&C", color: AMBER, blurb: "The strength & conditioning that transfers to your sport, ranked." },
   { kicker: "Velocity & technique", color: BLUE, blurb: "Bar-speed 1RM, autoregulated load, force-plate & video analysis." },
   { kicker: "Endurance", color: LIME, blurb: "Mileage, pace zones and running PRs from your whole history." },
@@ -241,7 +241,7 @@ function CockpitTeaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void
       <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>Athlete cockpit · Full</Mono>
       <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, margin: "4px 0 2px" }}>Unlock your command center 🔒</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16, lineHeight: 1.6 }} c={CHALK}>
-        Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen.
+        Goal, season, your Performance State, sport S&amp;C, velocity and endurance — assembled into one screen.
         It&apos;s part of <b style={{ color: txt(LIME) }}>Full</b>. Keep logging on the free plan; upgrade whenever you want the depth.
       </Mono>
 

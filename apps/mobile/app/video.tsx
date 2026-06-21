@@ -36,7 +36,7 @@ function ClassicVideo() {
       <H1>Technique analysis</H1>
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.violet, marginTop: 14 }}>
         <Mono color={C.chalk} style={{ lineHeight: 18 }}>
-          Joint angles, rep counts, left/right asymmetry and a technique score from pose frames — feeding the Twin&apos;s injury risk. On-device capture lands here.
+          Joint angles, rep counts, left/right asymmetry and a technique score from pose frames — feeding the Performance State injury-risk engine. On-device capture lands here.
         </Mono>
       </Card>
 

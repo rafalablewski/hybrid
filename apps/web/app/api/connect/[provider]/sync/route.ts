@@ -15,7 +15,7 @@ import { revealToken } from "@/lib/crypto";
 // Pull (or receive) provider data and write it into the Signal ontology.
 //   • WHOOP / Oura  — server fetches recent recovery using the stored token.
 //   • Apple Health  — the native client POSTs HealthKit samples in the body.
-// Provider differences end here: everything becomes Signal rows the Twin reads.
+// Provider differences end here: everything becomes Signal rows the Performance State reads.
 export async function POST(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

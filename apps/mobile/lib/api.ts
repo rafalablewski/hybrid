@@ -281,7 +281,7 @@ export async function askAiCoach(): Promise<CoachNote> {
   }
 }
 
-// ---- signals (Athlete Twin time-series: recovery, body mass, nutrition…) ----
+// ---- signals (Performance State time-series: recovery, body mass, nutrition…) ----
 export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
 export async function fetchSignals(): Promise<CoreSignal[]> {

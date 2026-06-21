@@ -136,7 +136,7 @@ function PlanDetailView({
       const res = await fetch("/api/macrocycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal: goal.name }),
+        body: JSON.stringify({ goal: goal.name, planId: plan.id }),
       });
       if (!res.ok) return setState("error");
       setState("done");

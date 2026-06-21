@@ -61,7 +61,7 @@ function ClassicForcePlate() {
       <H1>Import jump CSV</H1>
       <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue, marginTop: 14 }}>
         <Mono color={C.chalk} style={{ lineHeight: 18 }}>
-          Paste a Hawkin / ForceDecks-style CSV (wide: date + metric columns, or long: date,metric,value,unit). Jump height & asymmetry land in your Twin; unknown columns are skipped.
+          Paste a Hawkin / ForceDecks-style CSV (wide: date + metric columns, or long: date,metric,value,unit). Jump height & asymmetry land in your Performance State; unknown columns are skipped.
         </Mono>
         <TextInput
           value={text}

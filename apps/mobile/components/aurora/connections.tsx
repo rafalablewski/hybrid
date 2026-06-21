@@ -43,7 +43,7 @@ export default function AuroraConnections() {
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>Connections</AHeading>
       </View>
-      <ASub style={{ marginTop: 10 }}>Connect a wearable and its recovery data flows into your Athlete Twin. Each provider writes the same Signal shape.</ASub>
+      <ASub style={{ marginTop: 10 }}>Connect a wearable and its recovery data flows into your Performance State. Each provider writes the same Signal shape.</ASub>
 
       {providers.map((p) => {
         const conn = connections.find((c) => c.provider === p.id);

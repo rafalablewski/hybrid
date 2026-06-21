@@ -87,7 +87,7 @@ export default function AuroraProfile() {
   const hpi = state.hpi;
   const hpiColor = roleColor(C, hpiRole(hpi.band));
 
-  // 12-point HPI trace (oldest→today) — the same trajectory engine as the Twin.
+  // 12-point HPI trace (oldest→today) — the same trajectory engine as the Performance State.
   const hpiTrace = useMemo(() => {
     const series = [...performanceTrajectory(log, 12)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi);
     return series.length ? series : [hpi.score];

@@ -70,7 +70,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const enroll = async () => {
     setState("busy");
-    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
+    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
     catch { setState("error"); }
   };
   return (

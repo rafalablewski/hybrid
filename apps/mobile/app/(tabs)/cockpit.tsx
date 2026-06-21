@@ -152,8 +152,8 @@ function CockpitFull() {
         {hasData && <Mono color={C.ash} style={{ marginTop: 4, lineHeight: 18 }}>{rx.why}</Mono>}
       </Section>
 
-      {/* 3 · PERFORMANCE (Twin / HPI) */}
-      <Section C={C} kicker="Performance · Athlete Twin" color={C.blue} onOpen={() => router.push("/performance")} openLabel="Performance →">
+      {/* 3 · PERFORMANCE (Performance State / HPI) */}
+      <Section C={C} kicker="Performance State" color={C.blue} onOpen={() => router.push("/performance")} openLabel="Performance →">
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
@@ -260,7 +260,7 @@ function Stat({ C, label, value }: { C: ReturnType<typeof useTheme>["palette"]; 
 const TEASE: { kicker: string; blurb: string; color: (C: ReturnType<typeof useTheme>["palette"]) => string }[] = [
   { kicker: "Goal & season", color: (C) => C.violet, blurb: "Your periodized macrocycle — phase, week and event countdown." },
   { kicker: "Today's route", color: (C) => C.lime, blurb: "A velocity-aware daily prescription tuned to your readiness." },
-  { kicker: "Performance · Athlete Twin", color: (C) => C.blue, blurb: "Your HPI, its pillars and limiter — your training's digital twin." },
+  { kicker: "Performance State", color: (C) => C.blue, blurb: "Your HPI, its pillars and limiter — the live model of your training." },
   { kicker: "Sport S&C", color: (C) => C.amber, blurb: "The strength & conditioning that transfers to your sport, ranked." },
   { kicker: "Velocity & technique", color: (C) => C.blue, blurb: "Bar-speed 1RM, autoregulated load, force-plate & video analysis." },
   { kicker: "Endurance", color: (C) => C.lime, blurb: "Mileage, pace zones and running PRs from your whole history." },
@@ -278,7 +278,7 @@ function CockpitTeaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void
       <Kicker color={C.amber}>Athlete cockpit · Full</Kicker>
       <H1>Unlock your command center 🔒</H1>
       <Mono color={C.chalk} style={{ marginTop: 6, lineHeight: 19 }}>
-        Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen.
+        Goal, season, your Performance State, sport S&amp;C, velocity and endurance — assembled into one screen.
         It&apos;s part of Full. Keep logging free; upgrade whenever you want the depth.
       </Mono>
 

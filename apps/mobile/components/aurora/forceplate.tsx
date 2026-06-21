@@ -51,7 +51,7 @@ export default function AuroraForcePlate() {
       </View>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>Paste a Hawkin / ForceDecks-style CSV (wide: date + metric columns, or long: date,metric,value,unit). Jump height & asymmetry land in your Twin; unknown columns are skipped.</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>Paste a Hawkin / ForceDecks-style CSV (wide: date + metric columns, or long: date,metric,value,unit). Jump height & asymmetry land in your Performance State; unknown columns are skipped.</Text>
         <TextInput value={text} onChangeText={setText} placeholder={"date,metric,value,unit\n2026-06-01,Jump Height,42.1,cm"} placeholderTextColor={C.ash} multiline autoCapitalize="none"
           style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 12, marginTop: 12, minHeight: 120, textAlignVertical: "top" }} />
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12 }}>

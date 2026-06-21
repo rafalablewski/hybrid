@@ -93,7 +93,7 @@ export default function Talent() {
           talent from early physical maturity. Opt in to be discoverable — the talent market.
         </Mono>
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
-          Live HPI from your Twin: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}
+          Live HPI from your Performance State: {hpi ?? "—"}{report ? ` · model ${report.modelVersion}` : ""}
         </Mono>
       </Card>
 

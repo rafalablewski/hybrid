@@ -286,7 +286,7 @@ export default function Org() {
             <Card style={{ borderLeft: `3px solid ${hpiColor(athlete.hpi.band)}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-                  Athlete Twin · {athlete.name}
+                  Performance State · {athlete.name}
                 </Mono>
                 <span style={{ cursor: "pointer", color: txt(ASH), fontFamily: "monospace" }} onClick={() => setAthlete(null)}>✕</span>
               </div>

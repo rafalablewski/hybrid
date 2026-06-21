@@ -56,10 +56,10 @@ export const REVENUE_STREAMS: RevenueStream[] = [
     label: "Consumer Pro (B2C)",
     whoPays: "The individual athlete",
     howItWorks:
-      "Freemium: guest + basic logging are free forever; the intelligence (Athlete Twin, Future Self, AI coach, velocity-based training, adaptive nutrition, unlimited history) sits behind a personal Pro subscription. The free first workout (guest mode) is the top of the funnel.",
+      "Freemium: guest + basic logging are free forever; the intelligence (Performance State, Future Self, AI coach, velocity-based training, adaptive nutrition, unlimited history) sits behind a personal Pro subscription. The free first workout (guest mode) is the top of the funnel.",
     tiers: [
       { name: "Free", price: "$0", note: "Guest + basic logging, 30-day history." },
-      { name: "Pro (monthly)", price: "$12.99/mo", note: "Everything: Twin, AI coach, VBT, nutrition, unlimited history." },
+      { name: "Pro (monthly)", price: "$12.99/mo", note: "Everything: Performance State, AI coach, VBT, nutrition, unlimited history." },
       { name: "Pro (annual)", price: "$99/yr", note: "Same as Pro, ~36% off for paying yearly up front." },
     ],
   },
@@ -382,7 +382,7 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   { group: "Log & basics (free forever)", feature: "Export your own data (GDPR)", free: true, pro: true, coach: true, org: true },
 
   // Intelligence — the paid Pro layer
-  { group: "Intelligence (Pro)", feature: "Athlete Twin · HPI", free: false, pro: true, coach: true, org: true },
+  { group: "Intelligence (Pro)", feature: "Performance State · HPI", free: false, pro: true, coach: true, org: true },
   { group: "Intelligence (Pro)", feature: "Future Self projection & goal ETA", free: false, pro: true, coach: true, org: true },
   { group: "Intelligence (Pro)", feature: "AI coach (Claude)", free: false, pro: true, coach: true, org: true },
   { group: "Intelligence (Pro)", feature: "Tissue-level injury risk", free: false, pro: true, coach: true, org: "Medical-tier" },

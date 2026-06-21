@@ -77,7 +77,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
   const { t } = useLang();
   const d = planDetail(plan.id, plan);
   const [enrolled, setEnrolled] = useState<"idle" | "busy" | "done" | "error">("idle");
-  const enroll = async () => { setEnrolled("busy"); setEnrolled((await enrollPlan(goal.name)) ? "done" : "error"); };
+  const enroll = async () => { setEnrolled("busy"); setEnrolled((await enrollPlan(goal.name, plan.id)) ? "done" : "error"); };
   return (
     <AuroraScreen>
       <Back onPress={back} label={goal.name} />

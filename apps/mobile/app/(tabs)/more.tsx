@@ -43,7 +43,7 @@ const MOBILE_NAV_IDS = new Set([
   "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar", "builder",
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "settings", "onboarding",
-  "statistics", "timer", "notifications",
+  "statistics", "timer", "notifications", "profile",
 ]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
@@ -73,7 +73,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
   {
     titleKey: "more.analyze",
     links: [
-      { id: "performance", labelKey: "nav.performance", sub: "HPI · twin · injury risk", href: "/performance", color: C.blue },
+      { id: "performance", labelKey: "nav.performance", sub: "HPI · performance state · injury risk", href: "/performance", color: C.blue },
       { id: "trends", labelKey: "nav.trends", sub: "volume · muscle · exercises", href: "/trends", color: C.lime },
       { id: "volume", labelKey: "nav.volume", sub: "sets/muscle · MEV–MRV", href: "/volume", color: C.lime },
       { id: "exercises", labelKey: "nav.exercises", sub: "per-lift progress · trends", href: "/exercises", color: C.lime },
@@ -239,7 +239,7 @@ export default function More() {
           <View pointerEvents="none" style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, backgroundColor: `${C.lime}24` }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: txt(C, C.lime) }}>UPGRADE</Text>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, letterSpacing: -0.4 }}>Unlock Full</Text>
-          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools.</Mono>
+          <Mono style={{ marginTop: 5, fontSize: fs.micro, maxWidth: 230 }}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</Mono>
           <View style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Go Full →</Text>
           </View>

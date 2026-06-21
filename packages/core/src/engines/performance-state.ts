@@ -1,5 +1,5 @@
 /**
- * Athlete Twin — the fused Performance State.
+ * Performance State — the athlete's fused current state.
  *
  * One call materializes the athlete's current state from their training log and
  * recovery signals: HPI, readiness, fatigue, AND the attribution — the ranked

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
 import { useSession, type Role } from "@/lib/session";
@@ -24,7 +24,7 @@ const buildRoleInfo = (t: (k: string) => string): { id: Role; label: string; acc
 export default function AuroraLogin() {
   const router = useRouter();
   const { t } = useLang();
-  const { login } = useSession();
+  const { login, session } = useSession();
   const ROLE_INFO = buildRoleInfo(t);
   const live = isSupabaseConfigured();
   const [role, setRole] = useState<Role>("admin");
@@ -38,6 +38,13 @@ export default function AuroraLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [mfaStep, setMfaStep] = useState<{ factorId: string; challengeId: string } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  // Defer the redirect until the session actually lands in context (see the
+  // classic login for the full rationale — pushing immediately races the
+  // SessionProvider listener and bounces back to /login on the first attempt).
+  const [navTo, setNavTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (navTo && session) router.push(navTo);
+  }, [navTo, session, router]);
 
   const maybeStepUp = async (supabase: ReturnType<typeof createClient>): Promise<boolean> => {
     try {
@@ -70,7 +77,7 @@ export default function AuroraLogin() {
       setBusy(false);
       return;
     }
-    router.push("/app");
+    setNavTo("/app");
   };
 
   const demoEnter = (provider: "apple" | "google" | "email") => {
@@ -83,7 +90,7 @@ export default function AuroraLogin() {
             ? "Coach"
             : "Athlete";
     login({ name: base.charAt(0).toUpperCase() + base.slice(1), email: email.trim() || `${role}@hybrid.app`, role, entitlement: "free", provider });
-    router.push("/app");
+    setNavTo("/app");
   };
 
   const oauth = async (provider: "apple" | "google") => {
@@ -111,7 +118,7 @@ export default function AuroraLogin() {
       }
       try { localStorage.setItem("hybrid.pendingOnboarding", "1"); } catch { /* ignore */ }
       if (data.session) {
-        router.push("/app");
+        setNavTo("/app");
         return;
       }
       setNotice(t("w.account.login.signup-notice"));
@@ -126,7 +133,7 @@ export default function AuroraLogin() {
       return;
     }
     if (await maybeStepUp(supabase)) return;
-    router.push("/app");
+    setNavTo("/app");
   };
 
   const isSignup = mode === "signup";

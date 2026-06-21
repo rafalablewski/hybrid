@@ -27,7 +27,7 @@ export default function VideoScreen() {
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
           An on-device pose model turns a phone clip into keypoints; the engine scores technique
-          (depth, rep count, L/R asymmetry) and feeds asymmetry into the Twin&apos;s injury risk —
+          (depth, rep count, L/R asymmetry) and feeds asymmetry into the Performance State injury-risk engine —
           so a technique breakdown lines up with fatigue. Lab-grade biomechanics, phone-first.
         </Mono>
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 12 }} c={ASH}>

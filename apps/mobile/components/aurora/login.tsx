@@ -52,6 +52,9 @@ export default function AuroraLogin() {
       });
       if (error) return fail(error.message);
       await AsyncStorage.setItem(PENDING_ONBOARDING, "1").catch(() => {});
+      // Fresh account → also queue the first-run tutorial (shown on the home tab
+      // after onboarding; deferred if a guest workout still needs to land).
+      await AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
       if (!data.session) {
         setError("Account created. Confirm via email, then sign in.");
         setMode("signin");

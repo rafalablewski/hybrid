@@ -1,5 +1,5 @@
 /**
- * Signal ontology — the universal time-series record behind the Athlete Twin.
+ * Signal ontology — the universal time-series record behind the Performance State.
  *
  * Every measurement about an athlete (recovery, load, biomechanics, blood,
  * composition…) lands here as one shape, from any source. This generalizes the
@@ -44,7 +44,7 @@ export type SignalKind =
 /** Whether a higher reading is good ("high") or bad ("low") for the athlete. */
 export type SignalDirection = "high" | "low";
 
-/** One reading, from one device, at one moment. The atom of the Twin. */
+/** One reading, from one device, at one moment. The atom of the Performance State. */
 export interface Signal {
   athleteId: string;
   kind: SignalKind;
@@ -160,7 +160,7 @@ function metric(
 
 /**
  * Adapter: build the engines' existing `Biometrics` shape from raw recovery
- * signals. This is the bridge — the Twin stores everything as `Signal`, and the
+ * signals. This is the bridge — the Performance State stores everything as `Signal`, and the
  * readiness/prescription engines keep consuming `Biometrics` unchanged.
  * Returns undefined when none of HRV / resting HR / sleep are present.
  */

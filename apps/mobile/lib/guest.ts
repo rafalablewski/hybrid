@@ -63,11 +63,20 @@ export async function flushGuestSessions(): Promise<number> {
   if (flushing) return 0;
   flushing = true;
   try {
-    return await doFlush();
+    const synced = await doFlush();
+    // Mark that this account came in via guest mode with real workouts — the
+    // first-run tutorial uses this to step aside and let the just-saved workout
+    // land first (consumed + cleared by the home screen).
+    if (synced > 0) await AsyncStorage.setItem(CAME_FROM_GUEST_KEY, "1").catch(() => {});
+    return synced;
   } finally {
     flushing = false;
   }
 }
+
+/** Set when a guest's workouts flush up on sign-in; the home screen reads it to
+ *  defer the first-run tutorial one open (workout first), then clears it. */
+export const CAME_FROM_GUEST_KEY = "hybrid.cameFromGuest";
 
 async function doFlush(): Promise<number> {
   const list = await listGuestSessions();

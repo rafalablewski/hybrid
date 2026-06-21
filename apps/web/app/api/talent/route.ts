@@ -7,7 +7,7 @@ import { athleteState } from "@/lib/athlete-state";
 type Metrics = Partial<Record<BenchmarkMetric, number>>;
 
 // The signed-in athlete's talent profile + benchmarks. HPI is computed live
-// from their Twin and merged into the benchmark inputs.
+// from their Performance State and merged into the benchmark inputs.
 export async function GET(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 }
 
 // Create / update the profile. HPI is recomputed and stored so discovery search
-// can rank on it without recomputing every athlete's Twin.
+// can rank on it without recomputing every athlete's Performance State.
 export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

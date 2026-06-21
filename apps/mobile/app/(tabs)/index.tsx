@@ -64,7 +64,7 @@ function ClassicHome() {
   const { name } = useSession();
   // Shape the home to the persona: a casual user gets the lean logger + share
   // loop; an athlete/coach gets the full cockpit (plan, This week, Future Self,
-  // Twin). Switchable from More.
+  // Performance State). Switchable from More.
   const persona = usePersona();
   const isAthlete = persona !== "casual";
   // A coached (free) client: not an athlete, but gets a READ-ONLY view of the
@@ -315,7 +315,7 @@ function ClassicHome() {
         >
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
-            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>Plans, analytics, your Twin, the Cockpit &amp; 12+ tools</Mono>
+            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools</Mono>
           </View>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.lime) }}>→</Text>
         </Pressable>
@@ -422,7 +422,7 @@ function ClassicHome() {
                 {hasPlan ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
               </Text>
               <Mono color={C.chalk} style={{ lineHeight: 20 }}>
-                {hasPlan ? rx.why : "Log a workout and your route, readiness and Athlete Twin build from your real training — nothing here is pre-filled."}
+                {hasPlan ? rx.why : "Log a workout and your route, readiness and Performance State build from your real training — nothing here is pre-filled."}
               </Mono>
             </>
           )}
@@ -608,10 +608,10 @@ function ClassicHome() {
         </Card>
       ))}
 
-      {/* TWIN — athlete depth, once there's real training to compute it from */}
+      {/* PERFORMANCE STATE — athlete depth, once there's real training to compute it from */}
       {isAthlete && sessions.length > 0 && (
         <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
-          <Kicker color={C.blue}>Performance State · Athlete Twin</Kicker>
+          <Kicker color={C.blue}>Performance State</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>
             <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band)) }}>{state.hpi.score}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</Text>

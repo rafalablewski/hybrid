@@ -21,7 +21,7 @@ const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
 const riskColor = (b: string, C: Palette) => roleColor(C, riskRole(b));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** Performance — the Athlete Twin: HPI cockpit, 14-day trajectory, tissue-level
+/** Performance — the Performance State: HPI cockpit, 14-day trajectory, tissue-level
  *  injury risk. Mobile port of the web Performance screen. */
 export default function Performance() {
   if (useTemplate().template === "aurora") return <AuroraPerformance />;
@@ -51,11 +51,11 @@ function ClassicPerformance() {
   if (sessions.length === 0) {
     return (
       <Screen refreshing={refreshing} onRefresh={load}>
-        <Kicker>Performance · Athlete Twin</Kicker>
+        <Kicker>Performance State</Kicker>
         <H1>No training data yet</H1>
         <Card style={{ marginTop: 14 }}>
           <Mono color={C.chalk} style={{ lineHeight: 20 }}>
-            Log a session and your Athlete Twin — HPI, readiness, fatigue and tissue-level injury
+            Log a session and your Performance State — HPI, readiness, fatigue and tissue-level injury
             risk — appears here, computed from your real training.
           </Mono>
         </Card>
@@ -67,7 +67,7 @@ function ClassicPerformance() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={load}>
-      <Kicker>Performance · Athlete Twin</Kicker>
+      <Kicker>Performance State</Kicker>
       <H1>Your state</H1>
 
       {/* HPI cockpit */}
