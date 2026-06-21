@@ -117,12 +117,12 @@ export default function AuroraNutrition() {
         </>
       ) : (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Today vs adaptive target</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.todayVsTarget")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 10, lineHeight: 20 }}>
-            Your targets adapt to you — add a weigh-in (in a weekly check-in) and log a few days of intake, and we&apos;ll estimate your maintenance and set goal-aware macros.
+            {t("w.recovery.nutrition.adaptBody")}
           </Text>
           <View style={{ flexDirection: "row", gap: space.lg, marginTop: 14 }}>
-            {[["Today", `${Math.round(today.kcal)} kcal`], ["Protein", `${Math.round(today.protein)}g`], ["Carbs", `${Math.round(today.carbs)}g`], ["Fat", `${Math.round(today.fat)}g`]].map(([l, v]) => (
+            {[[t("w.recovery.nutrition.loggedToday"), `${Math.round(today.kcal)} kcal`], [t("w.recovery.nutrition.protein"), `${Math.round(today.protein)}g`], [t("w.recovery.nutrition.carbs"), `${Math.round(today.carbs)}g`], [t("w.recovery.nutrition.fat"), `${Math.round(today.fat)}g`]].map(([l, v]) => (
               <View key={l}><Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{v}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{l}</Text></View>
             ))}
           </View>
@@ -133,26 +133,26 @@ export default function AuroraNutrition() {
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <AuroraIcon name="add" size={20} color={txt(C, C.violet)} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Add to today</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.addToToday")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
           <Cell value={f.kcal} onChange={(v) => setF((s) => ({ ...s, kcal: v }))} ph="kcal" />
-          <Cell value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} ph="protein" />
-          <Cell value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} ph="carbs" />
-          <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph="fat" />
+          <Cell value={f.protein} onChange={(v) => setF((s) => ({ ...s, protein: v }))} ph={t("w.recovery.nutrition.proteinPh")} />
+          <Cell value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} ph={t("w.recovery.nutrition.carbsPh")} />
+          <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
         </View>
-        <APill label={saving ? "Adding…" : "Add"} onPress={add} disabled={saving} style={{ marginTop: 14 }} />
+        <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")} onPress={add} disabled={saving} style={{ marginTop: 14 }} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>
-          Manual macros (food search + barcode is a separate, blocked layer — see Capabilities).
+          {t("w.recovery.nutrition.foodSearchNote")}
         </Text>
       </ACard>
 
       {/* Recent */}
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Recent days</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.recovery.nutrition.recentDays")}</Text>
         <View style={{ marginTop: 8 }}>
           {recent.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Nothing logged yet.</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.recovery.nutrition.recentEmpty")}</Text>
           ) : recent.map((d, i) => (
             <View key={d.date} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{d.date.slice(5)}</Text>
@@ -177,12 +177,13 @@ function Bar({ cur, target, color }: { cur: number; target: number; color: strin
   );
 }
 
-function MacroRow({ label, cur, target, color }: { label: string; cur: number; target: number; color: string }) {
+function MacroRow({ labelKey, cur, target, color }: { labelKey: string; cur: number; target: number; color: string }) {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, marginTop: 12 }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(labelKey)}</Text>
         <Bar cur={cur} target={target} color={color} />
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: 14 }}>{Math.round(cur)}/{target}g</Text>

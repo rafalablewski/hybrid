@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { currentPhase, type Macrocycle } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -11,6 +12,7 @@ import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
  *  microcycles, reusing the exact currentPhase engine + macrocycle API. */
 export default function AuroraPeriodize() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [week, setWeek] = useState(1);

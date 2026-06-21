@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
@@ -15,6 +16,7 @@ const todayKey = () => new Date().toISOString().slice(0, 10);
  *  calendar engine (sessionsByDay / monthMatrix / loadIntensity). */
 export default function AuroraCalendar() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const now = new Date();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -41,7 +43,7 @@ export default function AuroraCalendar() {
         <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
-        <AHeading style={{ fontSize: fs.display }}>Calendar</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("nav.calendar")}</AHeading>
         <View style={{ marginLeft: "auto" }}><AuroraIcon name="calendar" size={24} color={txt(C, C.lime)} /></View>
       </View>
 
@@ -78,11 +80,11 @@ export default function AuroraCalendar() {
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
       {selSessions.length === 0 ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>Nothing logged this day.</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>{t("w.analyze.cal.nothing")}</Text>
       ) : selSessions.map((s) => (
         <ACard key={s.id} style={{ marginBottom: 12 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} blocks</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks).toLocaleString()} kg · {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
         </ACard>
       ))}
     </AuroraScreen>
