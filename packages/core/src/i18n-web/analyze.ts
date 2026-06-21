@@ -7,7 +7,7 @@ export const web_analyze = {
   en: {
     // statistics
     "w.analyze.stats.back": "Back",
-    "w.analyze.stats.title": "Your<br />Statistics",
+    "w.analyze.stats.title": "Your\nStatistics",
     "w.analyze.stats.weeklyVolume": "Weekly volume",
     "w.analyze.stats.week": "Week",
     "w.analyze.stats.month": "Month",
@@ -237,7 +237,7 @@ export const web_analyze = {
   pl: {
     // statistics
     "w.analyze.stats.back": "Wstecz",
-    "w.analyze.stats.title": "Twoje<br />statystyki",
+    "w.analyze.stats.title": "Twoje\nstatystyki",
     "w.analyze.stats.weeklyVolume": "Objętość tygodniowa",
     "w.analyze.stats.week": "Tydzień",
     "w.analyze.stats.month": "Miesiąc",
@@ -467,7 +467,7 @@ export const web_analyze = {
   de: {
     // statistics
     "w.analyze.stats.back": "Zurück",
-    "w.analyze.stats.title": "Deine<br />Statistiken",
+    "w.analyze.stats.title": "Deine\nStatistiken",
     "w.analyze.stats.weeklyVolume": "Wöchentliches Volumen",
     "w.analyze.stats.week": "Woche",
     "w.analyze.stats.month": "Monat",
