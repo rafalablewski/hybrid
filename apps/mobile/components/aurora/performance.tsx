@@ -54,7 +54,7 @@ export default function AuroraPerformance() {
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {header}
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>Log a session and your Performance State — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>{t("w.analyze.perf.emptyBody")}</Text>
         </ACard>
       </AuroraScreen>
     );
@@ -67,21 +67,21 @@ export default function AuroraPerformance() {
       {header}
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>Performance State · HPI</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.perf.twinHpi")}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.md, marginTop: 4 }}>
           <Text style={{ fontFamily: F.black, fontSize: 52, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
           <View>
             <View style={{ backgroundColor: `${hpiColor(state.hpi.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4, alignSelf: "flex-start" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.band}</Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>limiter · {state.hpi.limiter}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.perf.limiter")} · {state.hpi.limiter}</Text>
           </View>
         </View>
         <View style={{ marginTop: 14, gap: space.ms }}>
           {([
-            ["Strength", state.hpi.components.strength, C.lime] as const,
-            ["Endurance", state.hpi.components.endurance, C.blue] as const,
-            ["Recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), C.violet] as const,
+            [t("w.analyze.perf.strength"), state.hpi.components.strength, C.lime] as const,
+            [t("w.analyze.perf.endurance"), state.hpi.components.endurance, C.blue] as const,
+            [t("w.analyze.perf.recovery"), Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), C.violet] as const,
           ]).map(([l, v, col]) => (
             <View key={l}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -98,7 +98,7 @@ export default function AuroraPerformance() {
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Trajectory · last 14 days</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.perf.trajectory")}</Text>
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: maxBar + 6, marginTop: 12 }}>
           {traj.map((p) => (
             <View key={p.daysAgo} style={{ flex: 1, alignItems: "center", justifyContent: "flex-end" }}>
@@ -108,14 +108,14 @@ export default function AuroraPerformance() {
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>-13d</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>today · HPI {traj[traj.length - 1]?.hpi ?? "—"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.perf.today")} · HPI {traj[traj.length - 1]?.hpi ?? "—"}</Text>
         </View>
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>Injury risk · tissue</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>model {risk.modelVersion}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.analyze.perf.injuryRisk")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.perf.model")} {risk.modelVersion}</Text>
         </View>
         <View style={{ marginTop: 10 }}>
           {risk.tissues.map((t) => (

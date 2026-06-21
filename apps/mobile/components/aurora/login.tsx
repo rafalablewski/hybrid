@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
+import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
@@ -13,6 +14,7 @@ import { AuroraIcon } from "./icons";
  *  same Supabase auth flow as the classic login screen. */
 export default function AuroraLogin() {
   const { palette } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const { session } = useSession();
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
@@ -53,7 +55,7 @@ export default function AuroraLogin() {
       // itself is now gated server-side (no client-side pendingOnboarding flag).
       await AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
       if (!data.session) {
-        setError("Account created. Confirm via email, then sign in.");
+        setError(t("w.account.login.signup-notice"));
         setMode("signin");
         setBusy(false);
         return;
@@ -84,13 +86,13 @@ export default function AuroraLogin() {
 
       <AuroraMark size={56} />
       <AHeading style={{ marginTop: 22 }}>
-        {isSignup ? "Hello! Register to\nget started" : "Welcome back! Glad\nto see you, Again!"}
+        {isSignup ? t("w.account.login.signup-title") : t("w.account.login.signin-title")}
       </AHeading>
 
       <View style={{ marginTop: 26 }}>
-        {isSignup && <AField value={name} onChange={setName} placeholder="Username" icon="user" />}
-        <AField value={email} onChange={setEmail} placeholder="Enter your email" keyboard="email-address" icon="mail" />
-        <AField value={password} onChange={setPassword} placeholder="Enter your password" secure icon="lock" />
+        {isSignup && <AField value={name} onChange={setName} placeholder={t("w.account.login.username-ph")} icon="user" />}
+        <AField value={email} onChange={setEmail} placeholder={t("w.account.login.email-ph")} keyboard="email-address" icon="mail" />
+        <AField value={password} onChange={setPassword} placeholder={t("w.account.login.password-ph")} secure icon="lock" />
 
         {!isSignup && (
           <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.ash, textAlign: "right", marginBottom: 6 }}>
@@ -103,7 +105,7 @@ export default function AuroraLogin() {
         )}
 
         <APill
-          label={busy ? "…" : isSignup ? "Register" : "Login"}
+          label={busy ? "…" : isSignup ? t("w.account.login.register") : t("w.account.login.login")}
           variant="light"
           onPress={submit}
           disabled={busy || !live}
@@ -119,9 +121,9 @@ export default function AuroraLogin() {
         style={{ marginTop: 28, alignItems: "center" }}
       >
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.ash }}>
-          {isSignup ? "Already have an account? " : "Don't have an account? "}
+          {isSignup ? t("w.account.login.have-account") : t("w.account.login.no-account")}
           <Text style={{ fontFamily: F.bold, color: txt(palette, palette.lime) }}>
-            {isSignup ? "Login Now" : "Register Now"}
+            {isSignup ? t("w.account.login.login-now") : t("w.account.login.register-now")}
           </Text>
         </Text>
       </Pressable>

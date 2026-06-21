@@ -30,7 +30,7 @@ export default function AuroraPeriodize() {
   if (!macro) {
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        <AHeading style={{ fontSize: fs.display }}>No active plan</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.train.periodize.noActivePlan")}</AHeading>
         <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
             {loaded ? "Enroll in a plan and your periodized macrocycle — phases, load & recovery weeks — shows up here." : "Loading your season…"}
@@ -45,7 +45,7 @@ export default function AuroraPeriodize() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{macro.goalOrSport}{macro.model ? ` · ${macro.model}` : " · enrolled"}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{macro.goalOrSport}{macro.model ? ` · ${macro.model}` : ` · ${t("w.train.periodize.enrolledLabel")}`}</Text>
       <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{macro.totalWeeks}-week season</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 6 }}>Now in {current.label} · week {week}/{macro.totalWeeks}</Text>
 
@@ -69,7 +69,7 @@ export default function AuroraPeriodize() {
         <ACard key={b.key} style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, b.color) }}>{b.label}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>wk {b.startWeek}–{b.endWeek}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.train.periodize.wk")} {b.startWeek}–{b.endWeek}</Text>
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6, marginBottom: 12, lineHeight: 18 }}>{b.focus}</Text>
           <View style={{ flexDirection: "row", gap: space.xs }}>
