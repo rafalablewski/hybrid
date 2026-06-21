@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { sessionVolume, prsForSession, blockSummary, type LoggedSession } from "@hybrid/core";
+import { sessionVolume, prsForSession, blockSummary, type LoggedSession, type AuroraIconName } from "@hybrid/core";
 import { fetchSessions, archiveSession, deleteSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -39,7 +39,7 @@ export default function AuroraHistory() {
     { text: "Delete", style: "destructive", onPress: async () => { setBusy(s.id); const ok = await deleteSession(s.id); setBusy(null); if (ok) load(); else Alert.alert("Error", "Couldn't delete the workout."); } },
   ]);
 
-  const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
+  const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
   const action = (label: string, color: string, onPress: () => void, id: string, fill = false) => (
     <Pressable onPress={onPress} disabled={busy === id} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: color, backgroundColor: fill ? `${color}1a` : "transparent", opacity: busy === id ? 0.5 : 1 }}>
       <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, color) }}>{label}</Text>
@@ -74,7 +74,7 @@ export default function AuroraHistory() {
                   <View style={{ flexDirection: "row", gap: space.sm, marginVertical: 8 }}>
                     {chip(C.blue, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
                     {chip(C.ash, `${s.blocks.length} blocks`)}
-                    {prCount > 0 && chip(C.lime, `🏆 ${prCount} PR`)}
+                    {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
                   </View>
                   {s.blocks.map((b, i) => (
                     <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line }}>

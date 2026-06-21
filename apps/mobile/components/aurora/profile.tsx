@@ -145,7 +145,7 @@ export default function AuroraProfile() {
             accessibilityLabel="Edit profile"
             style={{ position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, borderWidth: 3, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}
           >
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>✎</Text>
+            <AuroraIcon name="settings" size={15} color={C.onAccent} />
           </Pressable>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 15 }}>
