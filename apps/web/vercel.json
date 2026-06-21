@@ -12,10 +12,6 @@
     {
       "path": "/api/cron/agent-monthly",
       "schedule": "0 9 1 * *"
-    },
-    {
-      "path": "/api/cron/email",
-      "schedule": "0 * * * *"
     }
   ]
 }
