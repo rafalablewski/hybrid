@@ -14,6 +14,7 @@ import {
   toBiometrics,
   fmtWeight,
   hpiRole,
+  athleteId,
   type LoggedSession,
   type Achievement,
   type HeatCell,
@@ -157,7 +158,7 @@ export default function AuroraProfile() {
         {/* ONE identity line — the Hybrid ID. (The membership card no longer
             repeats an "Athlete ID"; the email stays as quiet account contact.) */}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>
-          HYBRID ID · {athleteId(email ?? name ?? "guest")}
+          HYBRID ID · {athleteId(email || name || "")}
         </Text>
         {!!email && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, opacity: 0.8, marginTop: 4 }}>{email}</Text>
@@ -321,7 +322,7 @@ export default function AuroraProfile() {
       {/* All four tiles always render (empty states for the unset ones) so the
           grid stays even — equal cards, text in the same place — matching web. */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms }}>
-        <Tile C={C} icon="heart" k="Readiness" big={`${state.readiness.score}`} unit="%" />
+        <Tile C={C} icon="heart" k="Readiness" big={hasData ? `${state.readiness.score}` : undefined} unit={hasData ? "%" : undefined} sm={hasData ? undefined : "No data yet"} />
         <Tile C={C} icon="user-square" k="Body" sm={bodyKg != null ? fmtWeight(bodyKg, prefs.units) : "Log a weigh-in"} onPress={() => router.push("/checkin")} />
         <Tile C={C} icon="swap" k="Devices" sm={device ? `${device.label} · ${device.status}` : "Connect a device"} onPress={() => router.push("/connections")} />
         <Tile C={C} icon="user" k="Coach" sm={coachName ? `${coachName} · active` : "Find a coach"} onPress={() => router.push("/coach")} />
@@ -339,16 +340,6 @@ function useIdentity() {
   const createdAt = session?.user.created_at ?? null;
   const createdYear = createdAt ? new Date(createdAt).getFullYear() : new Date().getFullYear();
   return { name, email: acct.email, role, entitlement, createdYear };
-}
-
-// A stable, non-PII-looking athlete ID derived from the account identifier — so
-// the membership card reads like a real ID without exposing anything sensitive.
-function athleteId(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const hex = (h & 0xffff).toString(16).toUpperCase().padStart(4, "0");
-  const tail = ((h >>> 16) % 100).toString().padStart(2, "0");
-  return `0x${hex}·${tail}`;
 }
 
 // HPI head/tail split so the last digit renders lime (matches the mockup's "8|2").

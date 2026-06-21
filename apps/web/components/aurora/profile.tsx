@@ -13,6 +13,7 @@ import { fs, space,
   toTrainingLog,
   bestE1rmMap,
   fmtWeight,
+  athleteId as makeAthleteId,
   type Achievement,
   type HeatCell,
   type LoggedSession,
@@ -119,14 +120,10 @@ export default function AuroraProfile({
     return earliest === Infinity ? new Date().getFullYear() : new Date(earliest).getFullYear();
   }, [sessions]);
 
-  // Athlete ID — a stable, anonymous hash of the email (no PII leaked).
-  const athleteId = useMemo(() => {
-    let h = 0;
-    for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) >>> 0;
-    const hex = h.toString(16).toUpperCase().padStart(8, "0").slice(0, 4);
-    const chk = (h % 90) + 10;
-    return `0x${hex}·${chk}`;
-  }, [email]);
+  // Athlete ID — a stable, anonymous hash (shared with mobile via @hybrid/core
+  // so the same user sees the same ID). Seeded by email, else the raw account
+  // name, so email-less accounts still get a distinct, language-independent ID.
+  const athleteId = useMemo(() => makeAthleteId(email || (session?.name ?? "")), [email, session?.name]);
 
   const initials = useMemo(
     () => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "A",
