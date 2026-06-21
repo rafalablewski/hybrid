@@ -19,6 +19,9 @@ import {
   exerciseHistory,
   inferBlockKind,
   migrateBlocks,
+  olympicSportsByCategory,
+  olympicSport,
+  sportTracksDistance,
   pacePerKm,
   paceClock,
   blockSummary,
@@ -130,6 +133,11 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
 });
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+// A cardio activity shows duration only (no distance/pace) when its name is a
+// KNOWN Olympic sport that doesn't track distance (tennis, judo, …). Generic or
+// custom cardio (Run, Bike, a typed-in name) keeps the distance + minutes grid.
+const timedSportOnly = (name: string) => !!olympicSport(name) && !sportTracksDistance(name);
 
 type Summ = {
   title: string;
@@ -954,10 +962,12 @@ export default function Workout() {
             ) : x.kind === "cardio" ? (
               <>
                 <View style={{ flexDirection: "row", gap: space.sm }}>
-                  <View style={{ flex: 1 }}>
-                    <ColHead>{t("workout.dist")}</ColHead>
-                    <Cell value={x.distance ?? ""} onChange={(v) => condField(x.uid, "distance", v)} />
-                  </View>
+                  {!timedSportOnly(x.name) && (
+                    <View style={{ flex: 1 }}>
+                      <ColHead>{t("workout.dist")}</ColHead>
+                      <Cell value={x.distance ?? ""} onChange={(v) => condField(x.uid, "distance", v)} />
+                    </View>
+                  )}
                   <View style={{ flex: 1 }}>
                     <ColHead>MIN</ColHead>
                     <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
@@ -989,6 +999,11 @@ export default function Workout() {
           const recentNames = new Set(recent.map((r) => r.name));
           const recentShown = recent.filter((r) => match(r.name)).slice(0, 10);
           const libShown = Object.keys(MOVEMENTS).filter((n) => !recentNames.has(n) && match(n));
+          // Olympic sports for manual sport-session logging — grouped by category,
+          // filtered by the search box. Picked sports log as a cardio activity.
+          const sportGroups = olympicSportsByCategory()
+            .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
+            .filter((g) => g.sports.length > 0);
           const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
           const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
           const chip = (name: string, kind: WKind, key: string) => {
@@ -1031,6 +1046,29 @@ export default function Workout() {
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 8 }}>
                     {libShown.map((name) => chip(name, inferBlockKind(name), `l-${name}`))}
                   </View>
+                </>
+              )}
+
+              {sportGroups.length > 0 && (
+                <>
+                  <Kicker color={C.ash}>{t("workout.sports")}</Kicker>
+                  {sportGroups.map((g) => (
+                    <View key={g.category} style={{ marginTop: 8 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{g.category}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+                        {g.sports.map((s) => (
+                          <Pressable
+                            key={s.name}
+                            onPress={() => addExercise(s.name, "cardio")}
+                            style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.chip, borderWidth: 1, borderColor: `${C.blue}55`, backgroundColor: `${C.blue}1f` }}
+                          >
+                            <Text style={{ fontSize: fs.body }}>{s.icon}</Text>
+                            <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.blue) }}>{s.name}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
                 </>
               )}
 

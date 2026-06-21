@@ -2,7 +2,12 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, olympicSport, sportTracksDistance } from "@hybrid/core";
+
+// A cardio block shows duration only (no distance/pace) when its name is a
+// KNOWN Olympic sport that doesn't track distance (tennis, judo, …). Generic or
+// custom cardio (Run, Bike, a typed-in name) keeps the distance + minutes grid.
+const timedSportOnly = (name: string) => !!olympicSport(name) && !sportTracksDistance(name);
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
@@ -112,6 +117,9 @@ export default function WorkoutBlocks({
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
+  // The Olympic-sport quick-add picker (manual sport-session logging — no gear
+  // needed). Picking a sport adds a cardio block named after it.
+  const [sportPicker, setSportPicker] = useState(false);
   // The block currently being dragged by its grip handle (for drop reordering).
   const [dragUid, setDragUid] = useState<string | null>(null);
   // Raw text buffer for the conditioning number fields so a mid-typed decimal
@@ -133,6 +141,12 @@ export default function WorkoutBlocks({
     setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name: "Run" }]);
   const addConditioning = () =>
     setBlocks((bs) => [...bs, { uid: uid(), kind: "conditioning", name: "Row Intervals", format: "" }]);
+  // Manual sport session — logged as a cardio activity named after the sport, so
+  // pace, PRs, history and the training log read it with no special-casing.
+  const addSport = (name: string) => {
+    setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name }]);
+    setSportPicker(false);
+  };
   const removeBlock = (u: string) => setBlocks((bs) => bs.filter((b) => b.uid !== u));
   const rename = (u: string, name: string) => patch(u, (b) => ({ ...b, name }) as EditableBlock);
 
@@ -416,6 +430,14 @@ export default function WorkoutBlocks({
             </>
           ) : b.kind === "cardio" ? (
             <>
+              {/* Timed sports (tennis, judo, …) track duration only — hide the
+                  distance/pace fields. Endurance sports + plain cardio keep both. */}
+              {timedSportOnly(b.name) ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: space.xs }}>
+                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.minutes")}</Mono>
+                  <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="60" style={input} />
+                </div>
+              ) : (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xs }}>
                 {[t("w.train.blocks.distKm"), t("w.train.blocks.minutes")].map((h) => (
                   <Mono key={h} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
@@ -425,6 +447,7 @@ export default function WorkoutBlocks({
                 <input value={condVal(b.uid, "distance", b.distance)} onChange={(e) => setCondNum(b.uid, "distance", e.target.value)} placeholder="8" style={input} />
                 <input value={condVal(b.uid, "minutes", b.minutes)} onChange={(e) => setCondNum(b.uid, "minutes", e.target.value)} placeholder="50" style={input} />
               </div>
+              )}
               {pacePerKm(b) && (
                 <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={BLUE}>
                   {t("w.train.blocks.pace")} {pacePerKm(b)}
@@ -459,12 +482,46 @@ export default function WorkoutBlocks({
 
       {rpeHelp && <RpeHelp onClose={() => setRpeHelp(false)} />}
 
+      {/* Sport picker — log a sport session by hand (no wearable needed). */}
+      {sportPicker && (
+        <Card style={{ borderLeft: `3px solid ${BLUE}`, marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+              {t("w.train.blocks.pickSport")}
+            </Mono>
+            <button onClick={() => setSportPicker(false)} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+          </div>
+          {olympicSportsByCategory().map(({ category, sports }) => (
+            <div key={category} style={{ marginBottom: 10 }}>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }} c={ASH}>
+                {category}
+              </Mono>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
+                {sports.map((s) => (
+                  <button
+                    key={s.name}
+                    onClick={() => addSport(s.name)}
+                    style={{ ...cond, fontSize: fs.caption, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: 8, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}
+                  >
+                    <span style={{ fontSize: fs.body }}>{s.icon}</span>
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
       <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
         <button onClick={addStrength} style={blockBtn(LIME)}>
           {t("w.train.blocks.addStrength")}
         </button>
         <button onClick={addCardio} style={blockBtn(BLUE)}>
           {t("w.train.blocks.addCardio")}
+        </button>
+        <button onClick={() => setSportPicker((v) => !v)} style={blockBtn(BLUE)}>
+          {t("w.train.blocks.addSport")}
         </button>
         <button onClick={addConditioning} style={blockBtn(VIOLET)}>
           {t("w.train.blocks.addConditioning")}

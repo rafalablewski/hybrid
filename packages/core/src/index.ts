@@ -13,6 +13,7 @@ export * from "./plans";
 export * from "./plan-day";
 export * from "./onboarding";
 export * from "./sports";
+export * from "./olympic-sports";
 export * from "./capabilities";
 export * from "./rpe";
 export * from "./agents";
