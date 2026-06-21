@@ -50,11 +50,12 @@ export default function AuroraConnections() {
       {providers.map((p) => {
         const conn = connections.find((c) => c.provider === p.id);
         const status = conn?.status ?? t("w.account.connections.not-connected");
+        const statusLabel = conn?.status ? t(`w.account.connections.status-${conn.status}`) : status;
         return (
           <ACard key={p.id} style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{p.label}</Text>
-              {chip(statusColor(status, C), status)}
+              {chip(statusColor(status, C), statusLabel)}
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>{t("w.account.connections.provides")} {p.provides.join(", ")}</Text>
 

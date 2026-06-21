@@ -23,8 +23,7 @@ const LEFT: Side[] = [
 ];
 const RIGHT: Side[] = [
   { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
-  // "You" has no nav.* key in core yet — see MISSING KEYS.
-  { id: "you", glyph: "user-circle", label: "You", href: "/(tabs)/you", seg: "you" },
+  { id: "you", glyph: "user-circle", labelKey: "nav.you", href: "/(tabs)/you", seg: "you" },
 ];
 const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 

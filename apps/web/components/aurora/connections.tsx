@@ -51,7 +51,7 @@ export default function AuroraConnections() {
             <div key={p.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={{ fontWeight: 800, fontSize: fs.title }}>{p.label}</div>
-                {c ? chip(c.status === "active" ? C("lime") : C("amber"), c.status) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}
+                {c ? chip(c.status === "active" ? C("lime") : C("amber"), t(`w.account.connections.status-${c.status}`)) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6 }}>{p.provides.join(" · ")}</div>
               <div style={{ marginTop: 14 }}>

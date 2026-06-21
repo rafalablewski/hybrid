@@ -107,7 +107,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
           <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
-          <PillButton icon="user-circle" label={label("profile", "You")} active={activeId === "profile"} onClick={() => go("profile")} />
+          <PillButton icon="user-circle" label={label("profile", t("nav.you"))} active={activeId === "profile"} onClick={() => go("profile")} />
         </div>
       </div>
     </>

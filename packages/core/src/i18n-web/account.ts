@@ -67,6 +67,9 @@ export const web_account = {
     "w.account.connections.sync-last": "Sync · last",
     "w.account.connections.sync-now": "Sync now",
     "w.account.connections.connect": "Connect",
+    "w.account.connections.status-active": "active",
+    "w.account.connections.status-revoked": "revoked",
+    "w.account.connections.status-error": "error",
 
     // --- upgrade (aurora/upgrade.tsx) ---
     "w.account.upgrade.cat-train": "Train smarter",
@@ -394,6 +397,9 @@ export const web_account = {
     "w.account.connections.sync-last": "Synchronizacja · ostatnio",
     "w.account.connections.sync-now": "Synchronizuj teraz",
     "w.account.connections.connect": "Połącz",
+    "w.account.connections.status-active": "aktywne",
+    "w.account.connections.status-revoked": "odwołane",
+    "w.account.connections.status-error": "błąd",
 
     // --- upgrade ---
     "w.account.upgrade.cat-train": "Trenuj mądrzej",
@@ -721,6 +727,9 @@ export const web_account = {
     "w.account.connections.sync-last": "Sync · zuletzt",
     "w.account.connections.sync-now": "Jetzt synchronisieren",
     "w.account.connections.connect": "Verbinden",
+    "w.account.connections.status-active": "aktiv",
+    "w.account.connections.status-revoked": "widerrufen",
+    "w.account.connections.status-error": "Fehler",
 
     // --- upgrade ---
     "w.account.upgrade.cat-train": "Schlauer trainieren",
