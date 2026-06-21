@@ -448,24 +448,24 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         ))}
       </Section>
 
-      <Section title="Weekly check-ins" color={C("blue")}>
+      <Section title={t("w.teams.coach.weeklyCheckins")} color={C("blue")}>
         {checkins.length === 0 ? (
-          <Mono>No check-ins submitted yet.</Mono>
+          <Mono>{t("w.teams.coach.noCheckins")}</Mono>
         ) : (
           checkins.map((c) => (
             <div key={c.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div style={{ fontWeight: 600, fontSize: fs.note }}>{new Date(c.weekOf).toLocaleDateString()}</div>
-                {c.adherencePct != null && <Mono s={{ fontSize: fs.caption }}>{c.adherencePct}% adherence</Mono>}
+                {c.adherencePct != null && <Mono s={{ fontSize: fs.caption }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Mono>}
               </div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }}>
-                energy {c.energy ?? "—"} · sleep {c.sleep ?? "—"} · soreness {c.soreness ?? "—"} · mood {c.mood ?? "—"}
+                {t("w.teams.coach.energy")} {c.energy ?? "—"} · {t("w.teams.coach.sleep")} {c.sleep ?? "—"} · {t("w.teams.coach.soreness")} {c.soreness ?? "—"} · {t("w.teams.coach.mood")} {c.mood ?? "—"}
                 {c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
               </Mono>
               {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
                 <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>Your reply</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>{t("w.teams.coach.yourReply")}</Mono>
                   <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
                 </div>
               ) : replyFor === c.id ? (
@@ -473,19 +473,19 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Reply to your athlete…"
-                    aria-label="Reply to your athlete"
+                    placeholder={t("w.teams.coach.replyPlaceholder")}
+                    aria-label={t("w.teams.coach.replyLabel")}
                     rows={2}
                     style={fieldStyle({ width: "100%", resize: "vertical", background: C("ink2"), boxSizing: "border-box" })}
                   />
                   <div style={{ display: "flex", gap: space.sm, marginTop: 8 }}>
-                    <Btn label="Send reply" color={C("lime")} onClick={() => sendReply(c.id)} />
-                    <Btn label="Cancel" color={C("ash")} onClick={() => { setReplyFor(null); setReplyText(""); }} />
+                    <Btn label={t("w.teams.coach.sendReply")} color={C("lime")} onClick={() => sendReply(c.id)} />
+                    <Btn label={t("w.teams.coach.cancel")} color={C("ash")} onClick={() => { setReplyFor(null); setReplyText(""); }} />
                   </div>
                 </div>
               ) : (
                 <div style={{ marginTop: 10 }}>
-                  <Btn label="Reply" color={C("violet")} onClick={() => { setReplyFor(c.id); setReplyText(""); }} />
+                  <Btn label={t("w.teams.coach.reply")} color={C("violet")} onClick={() => { setReplyFor(c.id); setReplyText(""); }} />
                 </div>
               )}
             </div>
@@ -495,9 +495,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
       {sessions.length > 0 && <ClientWeek sessions={sessions} />}
 
-      <Section title="Recent sessions" color={C("lime")}>
+      <Section title={t("w.teams.coach.recentSessions")} color={C("lime")}>
         {sessions.length === 0 ? (
-          <Mono>No sessions logged yet.</Mono>
+          <Mono>{t("w.teams.coach.noSessions")}</Mono>
         ) : (
           sessions.map((s) => (
             <div key={s.id} style={card}>
@@ -507,8 +507,8 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               </div>
               <div style={{ display: "flex", gap: space.sm, marginTop: 6 }}>
                 <Chip c={C("ash")}>{sessionVolume(s.blocks).toLocaleString()} kg</Chip>
-                <Chip c={C("ash")}>{s.blocks.length} blocks</Chip>
-                {typeof s.readiness === "number" && <Chip c={C("lime")}>readiness {s.readiness}</Chip>}
+                <Chip c={C("ash")}>{s.blocks.length} {t("w.teams.coach.blocks")}</Chip>
+                {typeof s.readiness === "number" && <Chip c={C("lime")}>{t("w.teams.coach.readiness")} {s.readiness}</Chip>}
               </div>
             </div>
           ))
@@ -519,39 +519,40 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 }
 
 const MUSCLE_LABEL: Record<string, string> = {
-  quads: "Quads", glutes: "Glutes", posterior: "Posterior chain", back: "Back",
-  chest: "Chest", shoulders: "Shoulders", triceps: "Triceps",
+  quads: "w.teams.coach.muscle.quads", glutes: "w.teams.coach.muscle.glutes", posterior: "w.teams.coach.muscle.posterior", back: "w.teams.coach.muscle.back",
+  chest: "w.teams.coach.muscle.chest", shoulders: "w.teams.coach.muscle.shoulders", triceps: "w.teams.coach.muscle.triceps",
 };
 
 // Coach's at-a-glance read on the athlete's current week — same engine the
 // athlete sees on their own Today, so coach and client share one source of truth.
 function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
+  const { t } = useLang();
   const r = weeklyRecap(sessions);
   const hasPrev = r.prevSessions > 0 || r.prevVolume > 0;
   return (
-    <Section title="This week" color={C("lime")}>
+    <Section title={t("w.teams.coach.thisWeek")} color={C("lime")}>
       <div style={card}>
         {r.sessions === 0 ? (
-          <Mono>No sessions logged in the last 7 days.</Mono>
+          <Mono>{t("w.teams.coach.noSessions7d")}</Mono>
         ) : (
           <>
             <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
-              <Metric label="Sessions" value={`${r.sessions}`} c={C("chalk")} />
-              <Metric label="Volume" value={`${r.volume.toLocaleString()} kg`} c={C("lime")} />
-              <Metric label="Sets" value={`${r.sets}`} c={C("chalk")} />
-              <Metric label="Active days" value={`${r.activeDays}`} c={C("chalk")} />
-              {r.topMuscle && <Metric label="Top muscle" value={MUSCLE_LABEL[r.topMuscle.muscle] ?? r.topMuscle.muscle} c={C("blue")} />}
-              <Metric label="PRs" value={`${r.prs.length}`} c={r.prs.length ? C("lime") : C("ash")} />
+              <Metric label={t("w.teams.coach.metricSessions")} value={`${r.sessions}`} c={C("chalk")} />
+              <Metric label={t("w.teams.coach.metricVolume")} value={`${r.volume.toLocaleString()} kg`} c={C("lime")} />
+              <Metric label={t("w.teams.coach.metricSets")} value={`${r.sets}`} c={C("chalk")} />
+              <Metric label={t("w.teams.coach.metricActiveDays")} value={`${r.activeDays}`} c={C("chalk")} />
+              {r.topMuscle && <Metric label={t("w.teams.coach.metricTopMuscle")} value={MUSCLE_LABEL[r.topMuscle.muscle] ? t(MUSCLE_LABEL[r.topMuscle.muscle]!) : r.topMuscle.muscle} c={C("blue")} />}
+              <Metric label={t("w.teams.coach.metricPRs")} value={`${r.prs.length}`} c={r.prs.length ? C("lime") : C("ash")} />
             </div>
             {hasPrev && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={r.volumeDelta >= 0 ? C("lime") : C("amber")}>
-                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} sessions · {r.volumeDelta >= 0 ? "+" : ""}
-                {r.volumeDelta.toLocaleString()} kg vs last week
+                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("w.teams.coach.sessionsWord")} · {r.volumeDelta >= 0 ? "+" : ""}
+                {r.volumeDelta.toLocaleString()} {t("w.teams.coach.kgVsLastWeek")}
               </Mono>
             )}
             {r.prs.length > 0 && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={C("chalk")}>
-                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? " (first!)" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+                🏆 {r.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? ` (${t("w.teams.coach.first")})` : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
               </Mono>
             )}
           </>

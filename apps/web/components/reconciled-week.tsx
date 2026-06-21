@@ -20,6 +20,7 @@ import {
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
 import { useTemplate } from "@/lib/use-template";
+import { useLang } from "@/lib/i18n";
 import { fs, space, LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
 
 /**
@@ -49,6 +50,7 @@ export default function ReconciledWeek({
    *  (no readiness modulation) and hide the schedule / auto-resync controls. */
   readOnly?: boolean;
 }) {
+  const { t } = useLang();
   const aurora = useTemplate().template === "aurora";
   // Read-only (coached) view shows the plan as the coach authored it — no
   // biometric/readiness adjustment (that adaptive layer is the paid upgrade).
@@ -115,11 +117,11 @@ export default function ReconciledWeek({
       });
       setScheduled(
         res.ok
-          ? `${auto ? "Auto re-synced" : "Scheduled"} ${items.length} sessions off your latest logs — see the Calendar.`
-          : "Couldn't schedule — try again.",
+          ? `${auto ? t("w.home.recweek.autoResynced") : t("w.home.recweek.scheduled")} ${items.length} ${t("w.home.recweek.sessionsOffLogs")}`
+          : t("w.home.recweek.couldntSchedule"),
       );
     } catch {
-      setScheduled("Couldn't schedule — try again.");
+      setScheduled(t("w.home.recweek.couldntSchedule"));
     } finally {
       setScheduling(false);
     }
@@ -164,29 +166,29 @@ export default function ReconciledWeek({
           sits as a full-width pill below (matching the mobile layout). */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
-          This week · {reconciled.phase.label} · week {reconciled.phase.week}
+          {t("w.home.recweek.thisWeek")} {reconciled.phase.label} · {t("w.home.recweek.week")} {reconciled.phase.week}
         </Mono>
         <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
-          {reconciled.phase.kind === "recovery" ? "deload week" : "load week"}
+          {reconciled.phase.kind === "recovery" ? t("w.home.recweek.deload") : t("w.home.recweek.load")}
         </Chip>
       </div>
       {readOnly ? (
         <div style={{ marginTop: 12 }}>
-          <Chip c={VIOLET}>assigned by your coach · read-only</Chip>
+          <Chip c={VIOLET}>{t("w.home.recweek.assignedByCoach")}</Chip>
         </div>
       ) : (
         <>
           <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
-            {scheduling ? "Scheduling…" : `Schedule / re-sync week · ${daysPerWeek}d →`}
+            {scheduling ? t("w.home.recweek.scheduling") : `${t("w.home.recweek.scheduleResync")} ${daysPerWeek}d →`}
           </button>
           {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
         </>
       )}
       <div style={{ display: "flex", gap: 18, marginTop: 14 }}>
-        <Metric label="Intensity" value={`${reconciled.intensity}`} c={CHALK} />
-        <Metric label="Volume" value={`${reconciled.volume}`} c={CHALK} />
-        <Metric label="Load ×" value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
-        <Metric label="Volume ×" value={`${reconciled.volumeFactor.toFixed(2)}`} c={VIOLET} />
+        <Metric label={t("w.home.recweek.intensity")} value={`${reconciled.intensity}`} c={CHALK} />
+        <Metric label={t("w.home.recweek.volume")} value={`${reconciled.volume}`} c={CHALK} />
+        <Metric label={t("w.home.recweek.loadX")} value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
+        <Metric label={t("w.home.recweek.volumeX")} value={`${reconciled.volumeFactor.toFixed(2)}`} c={VIOLET} />
       </div>
       <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
         {reconciled.blocks.map((b, i) => (
@@ -197,7 +199,7 @@ export default function ReconciledWeek({
             <div>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{b.name}</div>
               <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em" }} c={b.source === "sport" ? AMBER : ASH}>
-                {b.source === "sport" ? `sport · ${b.demand ?? ""}` : b.kind === "conditioning" ? "conditioning" : "primary lift"}
+                {b.source === "sport" ? `${t("w.home.recweek.sport")} ${b.demand ?? ""}` : b.kind === "conditioning" ? t("w.home.recweek.conditioning") : t("w.home.recweek.primaryLift")}
               </Mono>
             </div>
             <Chip c={b.source === "sport" ? AMBER : LIME}>{b.scheme}</Chip>
@@ -207,7 +209,7 @@ export default function ReconciledWeek({
       <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 12 }} c={CHALK}>{reconciled.why}</Mono>
       {reconciled.dropped.length > 0 && (
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-          Dropped: {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" · ")}
+          {t("w.home.recweek.dropped")} {reconciled.dropped.map((d) => `${d.name} (${d.reason})`).join(" · ")}
         </Mono>
       )}
     </Card>

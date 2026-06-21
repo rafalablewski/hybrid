@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -11,6 +12,7 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 /** AURORA Sport (web) — sport + level picker driving the shared
  *  prescribeForSport engine; working loads tuned to the athlete's logged lifts. */
 export default function AuroraSport() {
+  const { t } = useLang();
   const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
   const [levelIdx, setLevelIdx] = useState(0);
   const [markers, setMarkers] = useState<Record<string, string>>({});
@@ -41,9 +43,9 @@ export default function AuroraSport() {
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>Sport</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>{t("w.train.sport.title")}</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>
-        Pick your sport — we prescribe the strength &amp; conditioning that transfers to it.
+        {t("w.train.sport.intro")}
       </p>
 
       <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 14 }}>
@@ -134,12 +136,12 @@ export default function AuroraSport() {
 
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
-          Today&apos;s prescribed S&amp;C
+          {t("w.train.sport.todaysSC")}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 3, color: C("ash") }}>
           {rx.personalized
-            ? "Working loads computed from your logged lifts."
-            : "Log these lifts and the loads tune to your own numbers."}
+            ? t("w.train.sport.personalized")
+            : t("w.train.sport.notPersonalized")}
         </div>
         <div style={{ marginTop: 12 }}>
           {rx.blocks.map((b, i) => (
@@ -154,7 +156,7 @@ export default function AuroraSport() {
               <div style={{ textAlign: "right" }}>
                 <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("lime"), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{b.scheme}</span>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 4, color: C("ash") }}>
-                  {b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}
+                  {b.loadBasis ?? (b.bodyweight ? t("w.train.sport.bodyweightTempo") : "")}
                 </div>
               </div>
             </div>
@@ -164,7 +166,7 @@ export default function AuroraSport() {
 
       <div style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
-          Exercise pool · why it transfers
+          {t("w.train.sport.exercisePool")}
         </div>
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.md }}>
           {rx.ranked.map((e) => (

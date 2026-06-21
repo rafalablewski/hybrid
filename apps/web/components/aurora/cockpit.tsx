@@ -10,6 +10,7 @@ import { readSportSelection } from "@/lib/sport-store";
 import AuroraOnboarding from "./onboarding";
 import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
@@ -28,6 +29,7 @@ export default function AuroraCockpit({
   setScreen: (id: string) => void;
   onEnrolled: () => void;
 }) {
+  const { t } = useLang();
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const persona = usePersona();
@@ -52,38 +54,38 @@ export default function AuroraCockpit({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>Your command center</h1>
-      <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 8 }}>Goal → season → today → performance → technique, in one place.</p>
+      <h1 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>{t("w.home.cockpit.commandCenter")}</h1>
+      <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 8 }}>{t("w.home.cockpit.commandSub")}</p>
 
       <div style={{ display: "grid", gap: 14, marginTop: 16 }}>
-        <Section title="Goal & season" color="violet" openLabel={macro ? "Periodize" : "Set up"} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))}>
+        <Section title={t("w.home.cockpit.goalSeason")} color="violet" openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))}>
           {macro ? (
             <>
               <div style={{ fontWeight: 800, fontSize: fs.heading }}>{macro.goalOrSport}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}week {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · event in ${macro.eventInWeeks} wk` : ""}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · ${t("w.home.cockpit.eventIn")} ${macro.eventInWeeks} ${t("w.home.cockpit.wk")}` : ""}</div>
             </>
-          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>No season yet — enroll a goal and your periodized plan drives the weeks.</div>}
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>Set up / change plan</span>
-              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber"), background: "none", border: "none", cursor: "pointer" }}>{setupOpen ? "Close ✕" : "Open setup →"}</button>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>{t("w.home.cockpit.setUpChange")}</span>
+              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber"), background: "none", border: "none", cursor: "pointer" }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>4 questions → a plan you&apos;ll finish.</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.home.cockpit.fourQuestions")}</div>
             {setupOpen && <div style={{ marginTop: 16 }}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
           </div>
         </Section>
 
-        <Section title={hasData ? `Today · readiness ${rx.readiness}/100` : "Today"} color="lime" openLabel="Log session" onOpen={() => setScreen("log")}>
-          <div style={{ fontWeight: 800, fontSize: fs.title }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Log a session to calibrate your route"}</div>
+        <Section title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} color="lime" openLabel={t("w.home.cockpit.logSession")} onOpen={() => setScreen("log")}>
+          <div style={{ fontWeight: 800, fontSize: fs.title }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</div>
           {hasData && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.6 }}>{rx.why}</div>}
         </Section>
 
-        <Section title="Performance · Athlete Twin" color="blue" openLabel="Performance" onOpen={() => setScreen("performance")}>
+        <Section title={t("w.home.cockpit.perfTwin")} color="blue" openLabel={t("w.home.cockpit.performance")} onOpen={() => setScreen("performance")}>
           {hasData ? (
             <>
               <div style={{ display: "flex", alignItems: "baseline", gap: space.md, flexWrap: "wrap" }}>
                 <span style={{ fontWeight: 800, fontSize: 34, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</span>
                 <span style={{ display: "flex", gap: 14, marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
                   <span style={{ color: C("lime") }}>STR {state.hpi.components.strength}</span>
                   <span style={{ color: C("blue") }}>END {state.hpi.components.endurance}</span>
@@ -92,23 +94,23 @@ export default function AuroraCockpit({
               </div>
               {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 6 }}>{state.drivers[0].detail}</div>}
             </>
-          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>Your HPI, readiness and tissue load build from real training — log a session.</div>}
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>}
         </Section>
 
-        <Section title="Sport S&C" color="amber" openLabel="Sport" onOpen={() => setScreen("sport")}>
-          {sport ? <div style={{ fontWeight: 700, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div> : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>Pick your sport — the engine ranks the strength &amp; conditioning that transfers.</div>}
+        <Section title={t("w.home.cockpit.sportSC")} color="amber" openLabel={t("w.home.cockpit.sport")} onOpen={() => setScreen("sport")}>
+          {sport ? <div style={{ fontWeight: 700, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div> : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>}
         </Section>
 
-        <Section title="Velocity & technique" color="blue" openLabel="Velocity" onOpen={() => setScreen("velocity")}>
-          <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>Bar speed → a velocity-estimated 1RM and autoregulated load. Force-plate &amp; video analysis feed the same Twin.</div>
+        <Section title={t("w.home.cockpit.velocityTechnique")} color="blue" openLabel={t("w.home.cockpit.velocity")} onOpen={() => setScreen("velocity")}>
+          <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.velocityBlurb")}</div>
         </Section>
 
-        <Section title="Endurance" color="lime" openLabel="Running" onOpen={() => setScreen("running")}>
+        <Section title={t("w.home.cockpit.endurance")} color="lime" openLabel={t("w.home.cockpit.running")} onOpen={() => setScreen("running")}>
           {totals.efforts > 0 ? (
             <div style={{ display: "flex", gap: 22 }}>
-              <Stat label="efforts" value={`${totals.efforts}`} /><Stat label="km" value={totals.distanceKm.toLocaleString()} /><Stat label="min" value={totals.minutes.toLocaleString()} />
+              <Stat label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} /><Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} /><Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
             </div>
-          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>Log a run (distance + minutes) and your mileage, pace zones and PRs appear.</div>}
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>}
         </Section>
       </div>
     </div>
@@ -139,34 +141,35 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-const TEASE: { kicker: string; color: string; blurb: string }[] = [
-  { kicker: "Goal & season", color: "violet", blurb: "Your periodized macrocycle — phase, week and event countdown." },
-  { kicker: "Today's route", color: "lime", blurb: "A velocity-aware daily prescription tuned to your readiness." },
-  { kicker: "Performance · Athlete Twin", color: "blue", blurb: "Your HPI, its pillars and limiter — the digital twin of your training." },
-  { kicker: "Sport S&C", color: "amber", blurb: "The strength & conditioning that transfers to your sport, ranked." },
-  { kicker: "Velocity & technique", color: "blue", blurb: "Bar-speed 1RM, autoregulated load, force-plate & video analysis." },
-  { kicker: "Endurance", color: "lime", blurb: "Mileage, pace zones and running PRs from your whole history." },
+const TEASE: { key: string; color: string }[] = [
+  { key: "goalSeason", color: "violet" },
+  { key: "todayRoute", color: "lime" },
+  { key: "perfTwin", color: "blue" },
+  { key: "sportSC", color: "amber" },
+  { key: "velocity", color: "blue" },
+  { key: "endurance", color: "lime" },
 ];
 
 function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
+  const { t } = useLang();
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>Unlock your command center</h1>
-      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>Goal, season, your performance Twin, sport S&amp;C, velocity and endurance — assembled into one screen. It&apos;s part of <b style={{ color: C("lime") }}>Full</b>.</p>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>{t("w.home.cockpit.teaseTitle")}</h1>
+      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: C("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
       <div style={{ display: "grid", gap: space.ms, marginTop: 14 }}>
         {TEASE.map((s) => (
-          <div key={s.kicker} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
+          <div key={s.key} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C(s.color) }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(s.color) }}>{s.kicker}</div>
-              <div style={{ fontSize: fs.caption, marginTop: 4, lineHeight: 1.5 }}>{s.blurb}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(s.color) }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</div>
+              <div style={{ fontSize: fs.caption, marginTop: 4, lineHeight: 1.5 }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</div>
             </div>
             <AuroraIcon name="lock" size={18} color={C("ash")} />
           </div>
         ))}
       </div>
       <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: C("ink"), background: C("lime"), border: "none", borderRadius: 999, padding: "15px 28px", marginTop: 18, cursor: "pointer" }}>
-        {paid ? "Switch to Full" : "Upgrade to Full"}
+        {paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")}
       </button>
     </div>
   );

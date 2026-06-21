@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fs, space, athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 type SquadRow = {
   linkId: string;
@@ -36,6 +37,7 @@ const fmtDate = (iso: string | null) =>
  *  engine: the morning squad screen with RAG readiness, ACWR and injury-risk
  *  flags, auto-segment + tag filters and sort, in the rounded Aurora style. */
 export default function AuroraTeamMonitor() {
+  const { t } = useLang();
   const [squad, setSquad] = useState<SquadRow[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,16 +60,14 @@ export default function AuroraTeamMonitor() {
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 4, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
-  if (loading) return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>Loading squad…</span>;
+  if (loading) return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.monitor.loadingSquad")}</span>;
 
   if (squad.length === 0)
     return (
       <div style={{ ...card, fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>No athletes to monitor yet</div>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>{t("w.teams.monitor.emptyTitle")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, color: C("ash") }}>
-          The squad monitor is the screen you open every morning: each athlete&apos;s readiness (RAG),
-          training-load ACWR, and injury-risk flag at a glance. It reads your <b>active roster</b>
-          {" "}(Coach screen → accepted clients) and computes from their real sessions + check-ins.
+          {t("w.teams.monitor.emptyBody")}
         </div>
       </div>
     );
@@ -100,37 +100,37 @@ export default function AuroraTeamMonitor() {
       {/* summary strip */}
       {summary && (
         <div style={{ display: "flex", gap: space.md, marginBottom: 16, flexWrap: "wrap" }}>
-          <SummaryCard label="Athletes" value={summary.athletes} c="chalk" />
-          <SummaryCard label="Low readiness" value={summary.redReadiness} c={summary.redReadiness ? "red" : "lime"} />
-          <SummaryCard label="ACWR flags" value={summary.acwrFlags} c={summary.acwrFlags ? "amber" : "lime"} />
-          <SummaryCard label="Injury flags" value={summary.injuryFlags} c={summary.injuryFlags ? "red" : "lime"} />
+          <SummaryCard label={t("w.teams.monitor.athletes")} value={summary.athletes} c="chalk" />
+          <SummaryCard label={t("w.teams.monitor.lowReadiness")} value={summary.redReadiness} c={summary.redReadiness ? "red" : "lime"} />
+          <SummaryCard label={t("w.teams.monitor.acwrFlags")} value={summary.acwrFlags} c={summary.acwrFlags ? "amber" : "lime"} />
+          <SummaryCard label={t("w.teams.monitor.injuryFlags")} value={summary.injuryFlags} c={summary.injuryFlags ? "red" : "lime"} />
         </div>
       )}
 
       {/* auto-segment filter */}
       <div style={{ display: "flex", gap: space.xs, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={kicker("ash")}>Segment</span>
+        <span style={kicker("ash")}>{t("w.teams.monitor.segment")}</span>
         {SEGS.map((s) => (
           <button key={s} onClick={() => setSeg(s)} style={pill(seg === s)}>
-            {s === "all" ? `All ${squad.length}` : `${SEGMENT_LABELS[s]} ${counts[s] ?? 0}`}
+            {s === "all" ? `${t("w.teams.monitor.all")} ${squad.length}` : `${SEGMENT_LABELS[s]} ${counts[s] ?? 0}`}
           </button>
         ))}
       </div>
 
       {allTags.length > 0 && (
         <div style={{ display: "flex", gap: space.xs, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={kicker("ash")}>Tag</span>
-          <button onClick={() => setTag("")} style={pill(tag === "")}>All</button>
-          {allTags.map((t) => (
-            <button key={t} onClick={() => setTag(t)} style={pill(tag === t)}>{t}</button>
+          <span style={kicker("ash")}>{t("w.teams.monitor.tag")}</span>
+          <button onClick={() => setTag("")} style={pill(tag === "")}>{t("w.teams.monitor.all")}</button>
+          {allTags.map((tg) => (
+            <button key={tg} onClick={() => setTag(tg)} style={pill(tag === tg)}>{tg}</button>
           ))}
         </div>
       )}
 
       <div style={{ display: "flex", gap: space.sm, marginBottom: 12, alignItems: "center" }}>
-        <span style={kicker("ash")}>Sort by</span>
+        <span style={kicker("ash")}>{t("w.teams.monitor.sortBy")}</span>
         {(["readiness", "acwr", "risk"] as const).map((k) => (
-          <button key={k} onClick={() => setSort(k)} style={pill(sort === k)}>{k}</button>
+          <button key={k} onClick={() => setSort(k)} style={pill(sort === k)}>{t(`w.teams.monitor.sort.${k}`)}</button>
         ))}
       </div>
 
@@ -138,14 +138,14 @@ export default function AuroraTeamMonitor() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
           <thead>
             <tr style={{ textAlign: "left", color: C("ash") }}>
-              <th style={th}>Athlete</th>
-              <th style={thC}>Segment</th>
-              <th style={thC}>Readiness</th>
+              <th style={th}>{t("w.teams.monitor.thAthlete")}</th>
+              <th style={thC}>{t("w.teams.monitor.thSegment")}</th>
+              <th style={thC}>{t("w.teams.monitor.thReadiness")}</th>
               <th style={thC}>ACWR</th>
-              <th style={thC}>Acute load</th>
-              <th style={thC}>Injury risk</th>
+              <th style={thC}>{t("w.teams.monitor.thAcuteLoad")}</th>
+              <th style={thC}>{t("w.teams.monitor.thInjuryRisk")}</th>
               <th style={thC}>HPI</th>
-              <th style={thR}>Last</th>
+              <th style={thR}>{t("w.teams.monitor.thLast")}</th>
             </tr>
           </thead>
           <tbody>
@@ -179,8 +179,7 @@ export default function AuroraTeamMonitor() {
       </div>
 
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, display: "block", marginTop: 10, color: C("ash") }}>
-        ACWR (acute:chronic workload, 7d vs 28d-weekly) is a guide, not a verdict — read it with acute load
-        and injury risk. Sweet-spot ≈ 0.8–1.3; caution 1.3–1.5; danger &gt;1.5; detraining &lt;0.8.
+        {t("w.teams.monitor.acwrNote")}
       </span>
     </div>
   );

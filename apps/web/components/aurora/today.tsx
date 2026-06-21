@@ -158,7 +158,7 @@ export default function AuroraToday({
                 onClick={() => onStart(plan ? planDayToBlocks(plan.items) : undefined)}
                 style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
               >
-                Start →
+                {t("w.home.today.start")}
               </button>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function AuroraToday({
             <>
               <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginBottom: 10 }}>
-                {plan.day} · day {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} wk ${currentWeek}/${macro!.totalWeeks}` : ""}
+                {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
                 {plan.items.map((it, i) => (
@@ -181,7 +181,7 @@ export default function AuroraToday({
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
                   style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: "9px 12px", borderRadius: 999, cursor: "pointer", textAlign: "left", border: `1px solid color-mix(in srgb, ${C("violet")} 55%, transparent)`, background: `color-mix(in srgb, ${C("violet")} 14%, transparent)`, color: C("chalk") }}
                 >
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>✦ Following as written. <span style={{ color: C("violet") }}>Unlock Full</span> to auto-adjust loads to your recovery.</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>{t("w.home.today.followingAsWritten1")}<span style={{ color: C("violet") }}>{t("w.home.today.unlockFull")}</span>{t("w.home.today.followingAsWritten2")}</span>
                   <span style={{ fontWeight: 800, fontSize: fs.note, color: C("violet") }}>→</span>
                 </button>
               )}
@@ -189,15 +189,15 @@ export default function AuroraToday({
           ) : (
             <>
               <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
-                {hasData || phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : "Start your first session"}
+                {hasData || phase ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.today.startFirst")}
               </div>
               {phase && (
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("violet"), marginBottom: 4 }}>
-                  Goal: {macro!.goalOrSport} · {phase.block.label} · wk {currentWeek}/{macro!.totalWeeks}
+                  {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
                 </div>
               )}
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>
-                {hasData || phase ? rx.why : "Log a workout and your plan, readiness, Athlete Twin and trends all build from your real training — nothing here is pre-filled."}
+                {hasData || phase ? rx.why : t("w.home.today.emptyWhy")}
               </div>
             </>
           )}
@@ -205,10 +205,10 @@ export default function AuroraToday({
 
         {/* card 2 — AI coach */}
         <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box", }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>AI coach</span>
-          <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>Ask your coach</div>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>{t("w.home.today.aiCoach")}</span>
+          <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.askCoach")}</div>
           <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 6 }}>
-            Claude reads your real readiness, fatigue and velocity and writes you a personalized note for the day — what to push, what to hold back.
+            {t("w.home.today.aiCoachBlurb")}
           </div>
           {/* Paid intelligence — casual sees the pitch + one upgrade tap. */}
           {isAthlete ? (
@@ -218,7 +218,7 @@ export default function AuroraToday({
               onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
               style={{ marginTop: 6, background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, fontSize: fs.body, cursor: "pointer" }}
             >
-              ✦ Unlock Full →
+              {t("w.home.today.unlockFullBtn")}
             </button>
           )}
         </div>
@@ -238,8 +238,8 @@ export default function AuroraToday({
           style={{ ...card, marginTop: 18, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, cursor: "pointer", textAlign: "left", color: C("chalk") }}
         >
           <span>
-            <span style={{ fontWeight: 800, fontSize: 17, display: "block" }}>▤ Follow a plan — free</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>Browse the library &amp; enroll. Following is free; periodizing &amp; auto-progression are Full.</span>
+            <span style={{ fontWeight: 800, fontSize: 17, display: "block" }}>{t("w.home.today.followPlanFree")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.home.today.followPlanBlurb")}</span>
           </span>
           <span style={{ fontWeight: 800, fontSize: fs.heading, color: C("lime") }}>→</span>
         </button>
@@ -249,10 +249,10 @@ export default function AuroraToday({
       {(isAthlete || coached) && macro && phase && (
         <div style={{ ...card, marginTop: 18, }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
-            Training for · {macro.goalOrSport} · {phase.block.label} phase
+            {t("w.home.today.trainingFor")} {macro.goalOrSport} · {phase.block.label} {t("w.home.today.phase")}
           </span>
           <div style={{ fontWeight: 900, fontSize: fs.heading, margin: "8px 0 4px" }}>
-            Week {currentWeek} of {macro.totalWeeks} · {phase.micro.kind} week · {phase.block.focus.toLowerCase()}
+            {t("w.home.today.week")} {currentWeek} {t("w.home.today.of")} {macro.totalWeeks} · {phase.micro.kind} {t("w.home.today.weekWord")} · {phase.block.focus.toLowerCase()}
           </div>
           <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
             {macro.blocks.map((b) => (
@@ -273,18 +273,18 @@ export default function AuroraToday({
       <div style={{ ...card, marginTop: 18, }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: bandColor(acc.band) }}>
-            On track? · {bandLabel(acc.band)}
+            {t("w.home.today.onTrack")} {bandLabel(acc.band, t)}
           </span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: bandColor(acc.band), borderRadius: 999, padding: "3px 10px" }}>
-            {acc.streak.current ? `${acc.streak.current}-day streak` : "no streak yet"}
+            {acc.streak.current ? `${acc.streak.current}${t("w.home.today.dayStreak")}` : t("w.home.today.noStreak")}
           </span>
         </div>
         <div style={{ fontWeight: 700, fontSize: fs.title, marginTop: 10 }}>{acc.intervention.headline}</div>
         <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginTop: 4 }}>{acc.intervention.message}</div>
         <div style={{ display: "flex", gap: 18, marginTop: 12 }}>
-          <Metric label="Risk" value={`${acc.risk}`} color={bandColor(acc.band)} />
-          <Metric label="Habit strength" value={`${strength}`} color={C("chalk")} />
-          <Metric label="This week" value={`${acc.sessionsLast7}/3`} color={C("chalk")} />
+          <Metric label={t("w.home.today.risk")} value={`${acc.risk}`} color={bandColor(acc.band)} />
+          <Metric label={t("w.home.today.habitStrength")} value={`${strength}`} color={C("chalk")} />
+          <Metric label={t("w.home.today.thisWeek")} value={`${acc.sessionsLast7}/3`} color={C("chalk")} />
         </div>
       </div>
 
@@ -292,23 +292,23 @@ export default function AuroraToday({
       {hasData && (
         <button onClick={() => (onNavigate ? onNavigate("statistics") : router.push("/statistics"))} style={{ ...card, marginTop: 18, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>Your week</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.home.today.yourWeek")}</span>
             <div style={{ display: "flex", gap: space.sm }}>
               {recap.prs.length > 0 && <span className="win-pop" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 10px" }}><AuroraIcon name="arrow-up" size={11} strokeWidth={4} color={C("ink")} />{recap.prs.length} PR</span>}
               {recap.cardioPrs.length > 0 && <span className="win-pop" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C("blue"), borderRadius: 999, padding: "3px 10px" }}><AuroraIcon name="location" size={11} strokeWidth={4} color={C("ink")} />{recap.cardioPrs.length} PR</span>}
             </div>
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>
-            <Metric label="Sessions" value={`${recap.sessions}`} color={C("chalk")} />
-            <Metric label="Volume" value={`${recap.volume.toLocaleString()} kg`} color={C("lime")} />
-            <Metric label="Sets" value={`${recap.sets}`} color={C("chalk")} />
-            {recap.distanceKm > 0 && <Metric label="Distance" value={`${recap.distanceKm} km`} color={C("blue")} />}
-            <Metric label="Active days" value={`${recap.activeDays}`} color={C("chalk")} />
-            {recap.topMuscle && <Metric label="Top muscle" value={MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle} color={C("blue")} />}
+            <Metric label={t("w.home.today.sessions")} value={`${recap.sessions}`} color={C("chalk")} />
+            <Metric label={t("w.home.today.volume")} value={`${recap.volume.toLocaleString()} kg`} color={C("lime")} />
+            <Metric label={t("w.home.today.sets")} value={`${recap.sets}`} color={C("chalk")} />
+            {recap.distanceKm > 0 && <Metric label={t("w.home.today.distance")} value={`${recap.distanceKm} km`} color={C("blue")} />}
+            <Metric label={t("w.home.today.activeDays")} value={`${recap.activeDays}`} color={C("chalk")} />
+            {recap.topMuscle && <Metric label={t("w.home.today.topMuscle")} value={muscleLabel(recap.topMuscle.muscle, t)} color={C("blue")} />}
           </div>
           {recap.prs.length > 0 && (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), marginTop: 8 }}>
-              {recap.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? " (first!)" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+              {recap.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? ` (${t("w.home.today.first")})` : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
             </div>
           )}
         </button>
@@ -317,11 +317,11 @@ export default function AuroraToday({
       {/* PERFORMANCE STATE · ATHLETE TWIN + injury risk by tissue */}
       {isAthlete && hasData && (
         <div style={{ ...card, marginTop: 18, }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>Performance State · Athlete Twin</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>{t("w.home.today.perfState")}</span>
           <div style={{ display: "flex", alignItems: "center", gap: space.md, marginTop: 6, flexWrap: "wrap" }}>
             <span style={{ fontWeight: 800, fontSize: 38, color: hpiColor(state.hpi.band) }}>{state.hpi.score}</span>
             <div>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · limiter {state.hpi.limiter}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.today.limiter")} {state.hpi.limiter}</span>
               {/* 14-day trend — direction at a glance, not just today's number. */}
               <div style={{ marginTop: 4, maxWidth: 180 }}><Spark series={hpiSeries} color={hpiColor(state.hpi.band)} /></div>
             </div>
@@ -332,9 +332,9 @@ export default function AuroraToday({
             </div>
           </div>
           <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>Injury risk · by tissue</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.today.injuryRisk")}</span>
             {risk.flagged.length === 0 ? (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 6 }}>No tissues flagged · overall {risk.overall}/100 ({risk.band})</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 6 }}>{t("w.home.today.noTissues")} {risk.overall}/100 ({risk.band})</div>
             ) : (
               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: space.xs }}>
                 {risk.flagged.map((t) => (

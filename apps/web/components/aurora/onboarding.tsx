@@ -9,17 +9,18 @@ import { fs, space,
   type Equipment,
 } from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
-const EXP: { id: Experience; label: string }[] = [
-  { id: "beginner", label: "Beginner" },
-  { id: "intermediate", label: "Intermediate" },
-  { id: "advanced", label: "Advanced" },
+const buildExp = (t: (k: string) => string): { id: Experience; label: string }[] => [
+  { id: "beginner", label: t("w.account.onboarding.exp-beginner") },
+  { id: "intermediate", label: t("w.account.onboarding.exp-intermediate") },
+  { id: "advanced", label: t("w.account.onboarding.exp-advanced") },
 ];
-const EQUIP: { id: Equipment; label: string }[] = [
-  { id: "full", label: "Full gym" },
-  { id: "home", label: "Home" },
-  { id: "minimal", label: "Minimal" },
+const buildEquip = (t: (k: string) => string): { id: Equipment; label: string }[] => [
+  { id: "full", label: t("w.account.onboarding.equip-full") },
+  { id: "home", label: t("w.account.onboarding.equip-home") },
+  { id: "minimal", label: t("w.account.onboarding.equip-minimal") },
 ];
 const DAYS = [2, 3, 4, 5, 6];
 const STEPS = ["persona", "goal", "experience", "days", "equipment", "plan"] as const;
@@ -28,7 +29,10 @@ type Step = (typeof STEPS)[number];
 /** AURORA onboarding (web) — the stepped wizard parity of the mobile flow,
  *  reusing recommendPlan + the same /api/macrocycles enroll. */
 export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => void }) {
+  const { t } = useLang();
   const persona = useClientPersonaChoice();
+  const EXP = buildExp(t);
+  const EQUIP = buildEquip(t);
   const [idx, setIdx] = useState(0);
   const [goal, setGoal] = useState<OnboardingGoal | null>(null);
   const [experience, setExperience] = useState<Experience>("beginner");
@@ -55,13 +59,13 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
     try {
       if (plan) {
         const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: plan.goalLabel, planId: plan.planId }) });
-        if (res.status === 401) { setError("Sign in to save your plan (demo mode doesn't persist)."); setEnrolling(false); return; }
-        if (!res.ok) { setError(`Couldn't enroll (HTTP ${res.status}).`); setEnrolling(false); return; }
+        if (res.status === 401) { setError(t("w.account.onboarding.signin-to-save")); setEnrolling(false); return; }
+        if (!res.ok) { setError(`${t("w.account.onboarding.enroll-failed")} (HTTP ${res.status}).`); setEnrolling(false); return; }
       }
       persistIntake();
       onEnrolled();
     } catch {
-      setError("Network error — try again.");
+      setError(t("w.account.onboarding.network-error"));
       setEnrolling(false);
     }
   };
@@ -81,8 +85,8 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
 
       <div style={{ marginTop: 22 }}>
         {step === "persona" && (
-          <Step title="How do you want to use HYBRID?" sub="You can switch anytime in Settings.">
-            {[{ id: "casual" as const, t: "Just track my training", s: "Log fast, review at home, share your wins." }, { id: "athlete" as const, t: "Train for a goal", s: "Plans, sport S&C, velocity & performance." }].map((o) => (
+          <Step title={t("w.account.onboarding.persona-title")} sub={t("w.account.onboarding.persona-sub")}>
+            {[{ id: "casual" as const, t: t("w.account.onboarding.persona-casual-t"), s: t("w.account.onboarding.persona-casual-s") }, { id: "athlete" as const, t: t("w.account.onboarding.persona-athlete-t"), s: t("w.account.onboarding.persona-athlete-s") }].map((o) => (
               <button key={o.id} onClick={() => setClientPersona(o.id)} style={choice(persona === o.id)}>
                 {persona === o.id && <AuroraIcon name="check" size={22} color={C("lime")} />}
                 <span><b style={{ fontSize: fs.note, color: persona === o.id ? C("lime") : C("chalk") }}>{o.t}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.s}</span></span>
@@ -91,7 +95,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
           </Step>
         )}
         {step === "goal" && (
-          <Step title="What is your main goal?" sub="We'll shape your first plan around it.">
+          <Step title={t("w.account.onboarding.goal-title")} sub={t("w.account.onboarding.goal-sub")}>
             {ONBOARDING_GOAL_GROUPS.map((g) => (
               <div key={g.category}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
@@ -105,18 +109,18 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
             ))}
           </Step>
         )}
-        {step === "experience" && <Step title="What's your experience?" sub="So we set the right starting load."><Seg options={EXP} value={experience} onPick={setExperience} /></Step>}
-        {step === "days" && <Step title="How many days a week?" sub="A plan you'll finish beats an ideal one."><Seg options={DAYS.map((d) => ({ id: String(d), label: `${d}×` }))} value={String(days)} onPick={(v) => setDays(Number(v))} /></Step>}
-        {step === "equipment" && <Step title="What equipment do you have?" sub="We'll only prescribe what you can do."><Seg options={EQUIP} value={equipment} onPick={setEquipment} /></Step>}
+        {step === "experience" && <Step title={t("w.account.onboarding.exp-title")} sub={t("w.account.onboarding.exp-sub")}><Seg options={EXP} value={experience} onPick={setExperience} /></Step>}
+        {step === "days" && <Step title={t("w.account.onboarding.days-title")} sub={t("w.account.onboarding.days-sub")}><Seg options={DAYS.map((d) => ({ id: String(d), label: `${d}×` }))} value={String(days)} onPick={(v) => setDays(Number(v))} /></Step>}
+        {step === "equipment" && <Step title={t("w.account.onboarding.equip-title")} sub={t("w.account.onboarding.equip-sub")}><Seg options={EQUIP} value={equipment} onPick={setEquipment} /></Step>}
         {step === "plan" && (
-          <Step title="Your plan" sub={plan ? "" : "Pick a goal to see a recommendation."}>
+          <Step title={t("w.account.onboarding.plan-title")} sub={plan ? "" : t("w.account.onboarding.plan-sub")}>
             {plan ? (
               <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{plan.planName}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/wk · {plan.weeks} wks</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{plan.goalLabel} · {plan.weeklyTarget}×/{t("w.account.onboarding.per-week")} · {plan.weeks} {t("w.account.onboarding.weeks")}</div>
                 <div style={{ fontSize: fs.bodyLg, color: C("chalk"), marginTop: 12, lineHeight: 1.5 }}>{plan.why}</div>
               </div>
-            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>Plans for this goal are coming soon — jump in now and enroll once they land.</div>}
+            ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>{t("w.account.onboarding.no-plan")}</div>}
           </Step>
         )}
         {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
@@ -127,7 +131,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
           <AuroraIcon name="back" size={20} />
         </button>
         <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
-          {step === "plan" ? (enrolling ? "Setting up…" : plan ? "Start this plan" : "Continue") : "Next"}
+          {step === "plan" ? (enrolling ? t("w.account.onboarding.setting-up") : plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
         </button>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { fs, space, buildIntervalPlan, intervalTotalSeconds, locateInterval, formatClock } from "@hybrid/core";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
+import { useLang } from "@/lib/i18n";
 
 /**
  * Interval timer (web) — the web parity of the mobile interval timer, running
@@ -18,6 +19,7 @@ import { useTemplate } from "@/lib/use-template";
  */
 export default function IntervalTimerScreen({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
+  const { t } = useLang();
   const aurora = useTemplate().template === "aurora";
   const r = { card: aurora ? 18 : 12, field: aurora ? 14 : 10, ring: aurora ? 28 : 14 };
   const [rounds, setRounds] = useState(3);
@@ -50,7 +52,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
   const reset = () => { setRunning(false); setElapsed(0); };
   const editable = elapsed === 0 && !running;
   const kindColor = kind === "work" ? "var(--color-lime)" : kind === "rest" ? "var(--color-blue)" : kind === "prep" ? "var(--color-amber)" : "var(--color-violet)";
-  const kindLabel = kind === "work" ? "Work" : kind === "rest" ? "Rest" : kind === "prep" ? "Get ready" : "Done";
+  const kindLabel = kind === "work" ? t("w.train.timer.work") : kind === "rest" ? t("w.train.timer.rest") : kind === "prep" ? t("w.train.timer.getReady") : t("w.train.timer.done");
   const progress = total > 0 ? elapsed / total : 0;
   const C = (v: string) => `var(--color-${v})`;
 
@@ -63,20 +65,20 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
           {!embedded && (
-            <button onClick={() => router.push("/app")} aria-label="Back" style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <button onClick={() => router.push("/app")} aria-label={t("w.train.timer.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
               {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
           <div style={{ flex: 1, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: "10px 14px", display: "flex", alignItems: "center", gap: space.ms }}>
             <AuroraIcon name="play" size={18} color={C("ash")} />
             <div>
-              <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>Interval session</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rounds} rounds · {workSec}s / {restSec}s</div>
+              <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{t("w.train.timer.intervalSession")}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rounds} {t("w.train.timer.rounds")} · {workSec}s / {restSec}s</div>
             </div>
           </div>
         </div>
 
-        <div style={{ textAlign: "center", fontWeight: 900, fontSize: 28, marginTop: 18 }}>{pos.done ? "Done!" : "Go!"}</div>
+        <div style={{ textAlign: "center", fontWeight: 900, fontSize: 28, marginTop: 18 }}>{pos.done ? t("w.train.timer.doneBang") : t("w.train.timer.go")}</div>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 10 }}>
           <div style={{ position: "relative", width: 240, height: 240, borderRadius: "50%", border: `12px solid ${C("line")}`, display: "grid", placeItems: "center" }}>
@@ -85,7 +87,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, textTransform: "uppercase", letterSpacing: 2, color: kindColor }}>{kindLabel}</div>
               <div style={{ fontWeight: 900, fontSize: 58 }}>{formatClock(pos.remaining)}</div>
               {!pos.done && phase && phase.round > 0 && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>Round {phase.round}/{phase.totalRounds}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.train.timer.round")} {phase.round}/{phase.totalRounds}</div>
               )}
             </div>
           </div>
@@ -104,10 +106,10 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
 
         {editable && (
           <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: space.md }}>
-            <Stepper label="Rounds" value={`${rounds}×`} onMinus={() => setRounds((v) => Math.max(1, v - 1))} onPlus={() => setRounds((v) => Math.min(20, v + 1))} />
-            <Stepper label="Work" value={`${workSec}s`} onMinus={() => setWorkSec((v) => Math.max(5, v - 5))} onPlus={() => setWorkSec((v) => Math.min(300, v + 5))} />
-            <Stepper label="Rest" value={`${restSec}s`} onMinus={() => setRestSec((v) => Math.max(0, v - 5))} onPlus={() => setRestSec((v) => Math.min(300, v + 5))} />
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", marginTop: 2 }}>Total {formatClock(total)} · 10s lead-in</div>
+            <Stepper label={t("w.train.timer.roundsLabel")} value={`${rounds}×`} onMinus={() => setRounds((v) => Math.max(1, v - 1))} onPlus={() => setRounds((v) => Math.min(20, v + 1))} />
+            <Stepper label={t("w.train.timer.workLabel")} value={`${workSec}s`} onMinus={() => setWorkSec((v) => Math.max(5, v - 5))} onPlus={() => setWorkSec((v) => Math.min(300, v + 5))} />
+            <Stepper label={t("w.train.timer.restLabel")} value={`${restSec}s`} onMinus={() => setRestSec((v) => Math.max(0, v - 5))} onPlus={() => setRestSec((v) => Math.min(300, v + 5))} />
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", marginTop: 2 }}>{t("w.train.timer.total")} {formatClock(total)} {t("w.train.timer.leadIn")}</div>
           </div>
         )}
       </div>

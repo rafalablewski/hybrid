@@ -7,6 +7,7 @@ import {
 } from "@hybrid/core";
 import { fs, space, LINE, LIME, ASH, BLUE, AMBER, RED, tip, mono } from "@/lib/ui";
 import { AuroraIcon } from "./icons";
+import { useLang } from "@/lib/i18n";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const C = (v: string) => `var(--color-${v})`;
@@ -20,6 +21,7 @@ const head = (color: string, k: string) => <div style={{ fontFamily: "var(--font
 /** AURORA Running (web) — full bespoke cardio analytics reusing the exact engine
  *  + recharts mileage/pace charts. */
 export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] }) {
+  const { t } = useLang();
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);
   const mileage = useMemo(() => weeklyMileage(sessions, 8), [sessions]);
@@ -31,8 +33,8 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
   if (totals.efforts === 0) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>Running</h1>
-        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>No cardio logged yet. Log a run or row (with distance + minutes) and your mileage, pace and easy/hard split show up here.</span></div>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.train.running.title")}</h1>
+        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.train.running.empty")}</span></div>
       </div>
     );
   }
@@ -46,20 +48,20 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Running</h1>
+        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.train.running.title")}</h1>
         <AuroraIcon name="navigation" size={24} color={C("blue")} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 14 }}>
-        <Stat label="Runs" value={totals.efforts} /><Stat label="Distance" value={`${totals.distanceKm} km`} c={C("blue")} /><Stat label="Time" value={`${Math.round(totals.minutes / 6) / 10} h`} />{easyPct != null && <Stat label="Easy %" value={`${easyPct}%`} c={C("lime")} />}
+        <Stat label={t("w.train.running.runs")} value={totals.efforts} /><Stat label={t("w.train.running.distance")} value={`${totals.distanceKm} km`} c={C("blue")} /><Stat label={t("w.train.running.time")} value={`${Math.round(totals.minutes / 6) / 10} h`} />{easyPct != null && <Stat label={t("w.train.running.easyPct")} value={`${easyPct}%`} c={C("lime")} />}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
-        <div style={card}>{head("blue", "Weekly mileage · last 8 wk")}
+        <div style={card}>{head("blue", t("w.train.running.weeklyMileage"))}
           <ResponsiveContainer width="100%" height={200}><BarChart data={mileageData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><Tooltip contentStyle={tip} formatter={(v) => `${v} km`} /><Bar dataKey="km" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         {paceData.length > 1 && (
-          <div style={card}>{head("blue", `${active} · pace · lower is faster`)}
+          <div style={card}>{head("blue", `${active} · ${t("w.train.running.paceLowerFaster")}`)}
             <ResponsiveContainer width="100%" height={200}><LineChart data={paceData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
           </div>
         )}
@@ -67,19 +69,19 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
 
       {hasEffort && (
         <div style={card}>
-          {head("lime", "Pace zones · minutes (from pace)")}
+          {head("lime", t("w.train.running.paceZones"))}
           <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", background: C("ink") }}>
             {([["easy", split.easy, C("lime")], ["moderate", split.moderate, C("amber")], ["hard", split.hard, C("red")]] as const).map(([k, v, c]) => v > 0 && <div key={k} style={{ width: `${(v / splitTotal) * 100}%`, background: c }} />)}
           </div>
           <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
-            <Legend c={C("lime")} label={`Easy · ${split.easy} min`} /><Legend c={C("amber")} label={`Steady · ${split.moderate} min`} /><Legend c={C("red")} label={`Hard · ${split.hard} min`} />
+            <Legend c={C("lime")} label={`${t("w.train.running.easy")} · ${split.easy} ${t("w.train.running.min")}`} /><Legend c={C("amber")} label={`${t("w.train.running.steady")} · ${split.moderate} ${t("w.train.running.min")}`} /><Legend c={C("red")} label={`${t("w.train.running.hard")} · ${split.hard} ${t("w.train.running.min")}`} />
           </div>
         </div>
       )}
 
       {paceMoves.length > 1 && (
         <div style={card}>
-          {head("ash", "Pace chart move")}
+          {head("ash", t("w.train.running.paceChartMove"))}
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {paceMoves.map((m) => { const on = active === m; return <button key={m} onClick={() => setMove(m)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "6px 14px", borderRadius: 999, cursor: "pointer", color: on ? C("ink") : C("ash"), background: on ? C("blue") : "transparent", border: `1px solid ${on ? C("blue") : C("line")}` }}>{m}</button>; })}
           </div>
@@ -87,11 +89,11 @@ export default function AuroraRunning({ sessions }: { sessions: LoggedSession[] 
       )}
 
       <div style={card}>
-        {head("blue", "By movement")}
+        {head("blue", t("w.train.running.byMovement"))}
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
           <div style={{ minWidth: 420 }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: space.sm, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-              {["move", "runs", "km", "longest", "best pace"].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
+              {[t("w.train.running.move"), t("w.train.running.runsCol"), t("w.train.running.km"), t("w.train.running.longest"), t("w.train.running.bestPace")].map((h) => <span key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash") }}>{h}</span>)}
             </div>
             {stats.map((r) => (
               <div key={r.move} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: space.sm, padding: "8px 0", borderTop: `1px solid ${C("line")}`, fontFamily: "var(--font-mono)", fontSize: fs.body }}>

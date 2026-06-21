@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fs, space } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 import {
   BarChart,
@@ -30,11 +31,11 @@ type CompareResponse = { lift: string | null; lifts: string[]; athletes: Athlete
 const C = (v: string) => `var(--color-${v})`;
 
 const METRICS = [
-  { key: "e1rm", label: "Best e1RM", unit: "kg", color: "lime" },
-  { key: "estVel1rm", label: "1RM (velocity)", unit: "kg", color: "violet" },
-  { key: "bestVel", label: "Best bar speed", unit: "m/s", color: "blue" },
-  { key: "volume", label: "Total volume", unit: "kg", color: "amber" },
-  { key: "reps", label: "Total reps", unit: "", color: "ash" },
+  { key: "e1rm", label: "w.teams.compare.metricE1rm", unit: "kg", color: "lime" },
+  { key: "estVel1rm", label: "w.teams.compare.metricVel1rm", unit: "kg", color: "violet" },
+  { key: "bestVel", label: "w.teams.compare.metricBarSpeed", unit: "m/s", color: "blue" },
+  { key: "volume", label: "w.teams.compare.metricVolume", unit: "kg", color: "amber" },
+  { key: "reps", label: "w.teams.compare.metricReps", unit: "", color: "ash" },
 ] as const;
 
 type MetricKey = (typeof METRICS)[number]["key"];
@@ -45,6 +46,7 @@ const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRad
  *  side by side on any lift across e1RM / velocity-1RM / bar speed / volume /
  *  reps, in the rounded Aurora style with themed recharts bars. */
 export default function AuroraTeamCompare() {
+  const { t } = useLang();
   const [data, setData] = useState<CompareResponse | null>(null);
   const [lift, setLift] = useState<string>("");
   const [metric, setMetric] = useState<MetricKey>("e1rm");
@@ -79,19 +81,16 @@ export default function AuroraTeamCompare() {
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
 
   if (loading)
-    return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>Loading roster…</span>;
+    return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.compare.loadingRoster")}</span>;
 
   if (athletes.length === 0)
     return (
       <div style={{ ...card, fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
-          No comparable athletes yet
+          {t("w.teams.compare.emptyTitle")}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, color: C("ash") }}>
-          Team Compare lines up your athletes side by side on any lift — best e1RM, the
-          velocity-based 1RM, bar speed, volume and reps. It reads your <b>active roster</b>
-          {" "}(Coach screen → accepted clients) and computes from their real logged sessions.
-          Invite and connect athletes, have them log strength work, and they&apos;ll appear here.
+          {t("w.teams.compare.emptyBody")}
         </div>
       </div>
     );
@@ -101,7 +100,7 @@ export default function AuroraTeamCompare() {
       {/* lift + metric selectors */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: space.lg, marginBottom: 16 }}>
         <div>
-          <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>Exercise</div>
+          <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>{t("w.teams.compare.exercise")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {lifts.map((l) => (
               <button key={l} onClick={() => setLift(l)} style={pill(lift === l, "lime")}>
@@ -111,11 +110,11 @@ export default function AuroraTeamCompare() {
           </div>
         </div>
         <div>
-          <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>Metric</div>
+          <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>{t("w.teams.compare.metric")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {METRICS.map((m) => (
               <button key={m.key} onClick={() => setMetric(m.key)} style={pill(metric === m.key, m.color)}>
-                {m.label}
+                {t(m.label)}
               </button>
             ))}
           </div>
@@ -124,8 +123,8 @@ export default function AuroraTeamCompare() {
 
       <div style={card}>
         <div style={{ marginBottom: 14 }}>
-          <div style={kicker(meta.color)}>team comparison</div>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginTop: 2 }}>{`${data?.lift ?? lift} · ${meta.label}`}</div>
+          <div style={kicker(meta.color)}>{t("w.teams.compare.teamComparison")}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginTop: 2 }}>{`${data?.lift ?? lift} · ${t(meta.label)}`}</div>
         </div>
         <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * 46)}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 16, right: 24 }}>
@@ -141,7 +140,7 @@ export default function AuroraTeamCompare() {
             <Tooltip
               contentStyle={tip}
               cursor={{ fill: `color-mix(in srgb, ${C(meta.color)} 8%, transparent)` }}
-              formatter={(v) => [`${v}${meta.unit ? " " + meta.unit : ""}`, meta.label]}
+              formatter={(v) => [`${v}${meta.unit ? " " + meta.unit : ""}`, t(meta.label)]}
             />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
               {chartData.map((_, i) => (
@@ -157,13 +156,13 @@ export default function AuroraTeamCompare() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
           <thead>
             <tr style={{ textAlign: "left", color: C("ash") }}>
-              <th style={th}>Athlete</th>
+              <th style={th}>{t("w.teams.compare.thAthlete")}</th>
               <th style={thR}>e1RM</th>
-              <th style={thR}>1RM (vel)</th>
-              <th style={thR}>Bar speed</th>
-              <th style={thR}>Volume</th>
-              <th style={thR}>Reps</th>
-              <th style={thR}>Sessions</th>
+              <th style={thR}>{t("w.teams.compare.thVel1rm")}</th>
+              <th style={thR}>{t("w.teams.compare.thBarSpeed")}</th>
+              <th style={thR}>{t("w.teams.compare.thVolume")}</th>
+              <th style={thR}>{t("w.teams.compare.thReps")}</th>
+              <th style={thR}>{t("w.teams.compare.thSessions")}</th>
             </tr>
           </thead>
           <tbody>

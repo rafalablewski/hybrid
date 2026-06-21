@@ -4,6 +4,7 @@ import { useState } from "react";
 import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, type LoggedSession } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { SessionDetail } from "../screens";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
@@ -15,6 +16,7 @@ const rowBtn = (color: string, disabled: boolean) => ({ fontFamily: "var(--font-
  *  badges), reusing the same /api/sessions actions; the full breakdown reuses
  *  the shared SessionDetail. */
 export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void; onChanged?: () => void }) {
+  const { t } = useLang();
   const [openId, setOpenId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [archived, setArchived] = useState<LoggedSession[]>([]);
@@ -28,15 +30,15 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
     setBusy(id);
     try {
       const res = await fetch(`/api/sessions/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ archived: value }) });
-      if (!res.ok) { alert(`Couldn't ${value ? "archive" : "restore"} the workout — try again.`); return; }
+      if (!res.ok) { alert(`${t("w.analyze.hist.couldntPre")} ${value ? t("w.analyze.hist.confirmArchive") : t("w.analyze.hist.confirmRestore")} ${t("w.analyze.hist.couldntTail")}`); return; }
       onChanged?.(); if (showArchived || value) await loadArchived();
-    } catch { alert("Network error — try again."); } finally { setBusy(null); }
+    } catch { alert(t("w.analyze.hist.networkError")); } finally { setBusy(null); }
   };
   const remove = async (id: string, title: string) => {
-    if (!window.confirm(`Permanently delete “${title}”? This can't be undone.`)) return;
+    if (!window.confirm(`${t("w.analyze.hist.confirmDeletePre")}${title}${t("w.analyze.hist.confirmDeleteTail")}`)) return;
     setBusy(id);
-    try { const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" }); if (!res.ok) { alert("Couldn't delete the workout — try again."); return; } onChanged?.(); if (showArchived) await loadArchived(); }
-    catch { alert("Network error — try again."); } finally { setBusy(null); }
+    try { const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" }); if (!res.ok) { alert(t("w.analyze.hist.couldntDelete")); return; } onChanged?.(); if (showArchived) await loadArchived(); }
+    catch { alert(t("w.analyze.hist.networkError")); } finally { setBusy(null); }
   };
   const toggleArchived = () => { const next = !showArchived; setShowArchived(next); if (next) void loadArchived(); };
 
@@ -45,8 +47,8 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
 
   const archivedToggle = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>History</h1>
-      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? C("amber") : C("ash"), background: "none", border: `1px solid ${showArchived ? C("amber") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>{showArchived ? "← Back to history" : "Archived ▸"}</button>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.hist.title")}</h1>
+      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? C("amber") : C("ash"), background: "none", border: `1px solid ${showArchived ? C("amber") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
     </div>
   );
 
@@ -56,8 +58,8 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
       {archivedToggle}
       {list.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 50 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.heading }}>{showArchived ? "No archived workouts" : "No sessions yet"}</div>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, color: C("ash") }}>{showArchived ? "Workouts you archive show up here." : "Log your first workout — it'll appear here and feed your dashboard."}</p>
+          <div style={{ fontWeight: 800, fontSize: fs.heading }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</div>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, color: C("ash") }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("w.analyze.hist.sessionsEmpty")}</p>
         </div>
       ) : list.map((s) => {
         const prCount = prsForSession(sessions, s.id).length;
@@ -70,9 +72,9 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
               </div>
               <div style={{ display: "flex", gap: space.sm, margin: "8px 0 12px", flexWrap: "wrap" }}>
                 {chip(C("blue"), fmtTonnage(sessionVolume(s.blocks), units))}
-                {chip(C("ash"), `${s.blocks.length} blocks`)}
-                {typeof s.readiness === "number" && chip(C("lime"), `readiness ${s.readiness}`)}
-                {prCount > 0 && chip(C("lime"), `🏆 ${prCount} PR`)}
+                {chip(C("ash"), `${s.blocks.length} ${t("w.analyze.hist.blocks")}`)}
+                {typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.hist.readiness")} ${s.readiness}`)}
+                {prCount > 0 && chip(C("lime"), `🏆 ${prCount} ${t("w.analyze.hist.pr")}`)}
               </div>
               {s.blocks.map((b, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C("line")}`, fontFamily: "var(--font-mono)", fontSize: fs.body }}>
@@ -81,10 +83,10 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C("line")}` }}>
-              {!showArchived ? <button onClick={() => setOpenId(s.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: "none", cursor: "pointer" }}>Open the full breakdown →</button> : <span />}
+              {!showArchived ? <button onClick={() => setOpenId(s.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: "none", cursor: "pointer" }}>{t("w.analyze.hist.openBreakdown")}</button> : <span />}
               <div style={{ display: "flex", gap: space.sm }}>
-                {showArchived ? <button onClick={() => setArchivedFlag(s.id, false)} disabled={busy === s.id} style={rowBtn(C("lime"), busy === s.id)}>↺ Restore</button> : <button onClick={() => setArchivedFlag(s.id, true)} disabled={busy === s.id} style={rowBtn(C("amber"), busy === s.id)}>Archive</button>}
-                <button onClick={() => remove(s.id, s.title)} disabled={busy === s.id} style={rowBtn(C("red"), busy === s.id)}>Delete</button>
+                {showArchived ? <button onClick={() => setArchivedFlag(s.id, false)} disabled={busy === s.id} style={rowBtn(C("lime"), busy === s.id)}>{t("w.analyze.hist.restore")}</button> : <button onClick={() => setArchivedFlag(s.id, true)} disabled={busy === s.id} style={rowBtn(C("amber"), busy === s.id)}>{t("w.analyze.hist.archive")}</button>}
+                <button onClick={() => remove(s.id, s.title)} disabled={busy === s.id} style={rowBtn(C("red"), busy === s.id)}>{t("w.analyze.hist.delete")}</button>
               </div>
             </div>
           </div>

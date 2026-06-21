@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, type LoggedSession } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_KEYS = ["w.analyze.cal.weekdayMon", "w.analyze.cal.weekdayTue", "w.analyze.cal.weekdayWed", "w.analyze.cal.weekdayThu", "w.analyze.cal.weekdayFri", "w.analyze.cal.weekdaySat", "w.analyze.cal.weekdaySun"];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -15,6 +16,7 @@ type AssignmentRow = { id: string; name: string; date: string; status: string };
 /** AURORA Calendar (web) — month heat-grid + day detail (events/assignments/
  *  sessions, mark-done), reusing the exact calendar engine + APIs. */
 export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[] }) {
+  const { t } = useLang();
   const now = new Date();
   const [year, setYear] = useState(now.getUTCFullYear());
   const [month, setMonth] = useState(now.getUTCMonth());
@@ -49,10 +51,10 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{monthLabel}</div>
-          <div style={{ display: "flex", gap: space.xs }}><button onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>Today</button><button onClick={() => go(1)} style={navBtn}>›</button></div>
+          <div style={{ display: "flex", gap: space.xs }}><button onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>{t("w.analyze.cal.today")}</button><button onClick={() => go(1)} style={navBtn}>›</button></div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs, marginBottom: 4 }}>
-          {WEEKDAYS.map((d) => <span key={d} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{d}</span>)}
+          {WEEKDAY_KEYS.map((d) => <span key={d} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{t(d)}</span>)}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs }}>
           {matrix.flat().map((cell) => {
@@ -69,26 +71,26 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
             );
           })}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>Cell shading = training load (sRPE) · <span style={{ color: C("violet") }}>●</span> assigned · <span style={{ color: C("amber") }}>●</span> event</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>{t("w.analyze.cal.legendPre")} <span style={{ color: C("violet") }}>●</span> {t("w.analyze.cal.legendAssigned")} <span style={{ color: C("amber") }}>●</span> {t("w.analyze.cal.legendEvent")}</div>
       </div>
 
       <div style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
-        {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), "Event")}<div style={{ fontWeight: 700, fontSize: fs.note, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{e.sport}</div></div>)}
+        {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), t("w.analyze.cal.event"))}<div style={{ fontWeight: 700, fontSize: fs.note, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{e.sport}</div></div>)}
         {selAssignments.map((a) => (
-          <div key={a.id} style={{ marginTop: 10 }}>{chip(C("violet"), "Assigned")}
+          <div key={a.id} style={{ marginTop: 10 }}>{chip(C("violet"), t("w.analyze.cal.assigned"))}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
               <div style={{ fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
-              {a.status === "completed" ? chip(C("lime"), "done") : <button onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>Mark done</button>}
+              {a.status === "completed" ? chip(C("lime"), t("w.analyze.cal.done")) : <button onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>{t("w.analyze.cal.markDone")}</button>}
             </div>
           </div>
         ))}
         {selSessions.length === 0 && selEvents.length === 0 && selAssignments.length === 0 ? (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 12, color: C("ash") }}>Nothing logged this day.</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 12, color: C("ash") }}>{t("w.analyze.cal.nothing")}</div>
         ) : selSessions.map((s) => (
           <div key={s.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
             <div style={{ fontWeight: 700, fontSize: fs.note }}>{s.title}</div>
-            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("blue"), `load ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} blocks`)}{typeof s.readiness === "number" && chip(C("lime"), `readiness ${s.readiness}`)}</div>
+            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("blue"), `${t("w.analyze.cal.load")} ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} ${t("w.analyze.cal.blocks")}`)}{typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.cal.readiness")} ${s.readiness}`)}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 6, color: C("ash") }}>{s.blocks.map((b) => b.name).join(" · ")}</div>
           </div>
         ))}

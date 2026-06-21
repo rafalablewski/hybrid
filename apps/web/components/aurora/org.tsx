@@ -12,6 +12,7 @@ import { fs, space,
   type TeamNode,
 } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
+import { useLang } from "@/lib/i18n";
 
 type Org = { id: string; name: string; role: OrgRole };
 type Member = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
@@ -43,6 +44,7 @@ const ROLE_COLOR: Record<OrgRole, string> = {
 /** AURORA Org Graph (web) — same /api/org flow, team hierarchy + role-scoped
  *  staff management and athlete twin, in the rounded Aurora style. */
 export default function AuroraOrg() {
+  const { t } = useLang();
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -115,11 +117,11 @@ export default function AuroraOrg() {
     if (res.ok) {
       const d = (await res.json().catch(() => ({}))) as { pending?: boolean };
       setInviteEmail("");
-      setInviteErr(d.pending ? "Invited — they'll join on first sign-in." : "");
+      setInviteErr(d.pending ? t("w.teams.org.invitedPending") : "");
       loadDetail(selected);
     } else {
       const d = (await res.json().catch(() => ({}))) as { error?: string };
-      setInviteErr(d.error ?? "could not add member");
+      setInviteErr(d.error ?? t("w.teams.org.couldNotAddMember"));
     }
   };
 
@@ -165,59 +167,59 @@ export default function AuroraOrg() {
   return (
     <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
-        <div style={kicker("lime")}>Org Graph · Team Operating System</div>
+        <div style={kicker("lime")}>{t("w.teams.org.headerKicker")}</div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           {orgs.map((o) => (
             <button key={o.id} onClick={() => setSelected(o.id)} style={orgChip(o.id === selected)}>
               {o.name} · {o.role.toLowerCase()}
             </button>
           ))}
-          {orgs.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>No organizations yet — create one to run a club or academy.</span>}
+          {orgs.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.org.noOrgs")}</span>}
         </div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-          <input value={newOrg} onChange={(e) => setNewOrg(e.target.value)} placeholder="New organization name" style={{ ...input, flex: "1 1 200px", minWidth: 0 }} />
-          <button onClick={createOrg} style={btn("lime")}>Create org</button>
+          <input value={newOrg} onChange={(e) => setNewOrg(e.target.value)} placeholder={t("w.teams.org.newOrgPlaceholder")} style={{ ...input, flex: "1 1 200px", minWidth: 0 }} />
+          <button onClick={createOrg} style={btn("lime")}>{t("w.teams.org.createOrg")}</button>
         </div>
       </div>
 
       {detail && (
         <>
           <div style={card}>
-            <div style={kicker("blue")}>Your access · {detail.myRole.toLowerCase()}</div>
+            <div style={kicker("blue")}>{t("w.teams.org.yourAccess")} · {detail.myRole.toLowerCase()}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6, color: C("chalk") }}>{roleScope(detail.myRole)}</div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
             <div style={card}>
-              <div style={kicker("ash")}>Team hierarchy</div>
+              <div style={kicker("ash")}>{t("w.teams.org.teamHierarchy")}</div>
               <div style={{ marginTop: 12 }}>
-                {tree.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>No teams yet.</span>}
-                {tree.map((t) => {
-                  const count = detail.members.filter((m) => m.teamId === t.id).length;
+                {tree.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.org.noTeams")}</span>}
+                {tree.map((node) => {
+                  const count = detail.members.filter((m) => m.teamId === node.id).length;
                   return (
-                    <div key={t.id} style={{ padding: "8px 10px", marginLeft: t.depth * 18, marginBottom: 4 }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("chalk") }}>{t.name}</span>
-                      {count > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginLeft: 8, color: C("ash") }}>{count} member{count === 1 ? "" : "s"}</span>}
+                    <div key={node.id} style={{ padding: "8px 10px", marginLeft: node.depth * 18, marginBottom: 4 }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("chalk") }}>{node.name}</span>
+                      {count > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginLeft: 8, color: C("ash") }}>{count} {count === 1 ? t("w.teams.org.member") : t("w.teams.org.members")}</span>}
                     </div>
                   );
                 })}
               </div>
               {canManage && (
                 <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                  <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team" style={{ ...input, flex: "1 1 140px", minWidth: 0 }} />
+                  <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder={t("w.teams.org.newTeamPlaceholder")} style={{ ...input, flex: "1 1 140px", minWidth: 0 }} />
                   <select value={newTeamParent} onChange={(e) => setNewTeamParent(e.target.value)} style={selectStyle}>
-                    <option value="">(top level)</option>
-                    {tree.map((t) => (
-                      <option key={t.id} value={t.id}>{"— ".repeat(t.depth)}{t.name}</option>
+                    <option value="">{t("w.teams.org.topLevel")}</option>
+                    {tree.map((node) => (
+                      <option key={node.id} value={node.id}>{"— ".repeat(node.depth)}{node.name}</option>
                     ))}
                   </select>
-                  <button onClick={addTeam} style={btn("lime")}>Add team</button>
+                  <button onClick={addTeam} style={btn("lime")}>{t("w.teams.org.addTeam")}</button>
                 </div>
               )}
             </div>
 
             <div style={card}>
-              <div style={kicker("ash")}>Staff & athletes</div>
+              <div style={kicker("ash")}>{t("w.teams.org.staffAthletes")}</div>
               <div style={{ marginTop: 12 }}>
                 {detail.members.map((m) => (
                   <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.sm, flexWrap: "wrap", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
@@ -238,8 +240,8 @@ export default function AuroraOrg() {
                           {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                         </select>
                         <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
-                          <option value="">no team</option>
-                          {tree.map((t) => <option key={t.id} value={t.id}>{"— ".repeat(t.depth)}{t.name}</option>)}
+                          <option value="">{t("w.teams.org.noTeam")}</option>
+                          {tree.map((node) => <option key={node.id} value={node.id}>{"— ".repeat(node.depth)}{node.name}</option>)}
                         </select>
                       </div>
                     ) : (
@@ -255,18 +257,18 @@ export default function AuroraOrg() {
                     <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)} style={selectStyle}>
                       {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                     </select>
-                    <button onClick={invite} style={btn("lime")}>Add member</button>
+                    <button onClick={invite} style={btn("lime")}>{t("w.teams.org.addMember")}</button>
                   </div>
                   {inviteErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("amber") }}>{inviteErr}</div>}
                 </div>
               )}
               {canManage && detail.invites.length > 0 && (
                 <div style={{ marginTop: 14 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>Pending invites</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.teams.org.pendingInvites")}</div>
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} · {iv.role.toLowerCase()}</span>
-                      <span style={{ cursor: "pointer", color: C("amber"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)}>revoke</span>
+                      <span style={{ cursor: "pointer", color: C("amber"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)}>{t("w.teams.org.revoke")}</span>
                     </div>
                   ))}
                 </div>
@@ -277,15 +279,15 @@ export default function AuroraOrg() {
           {athlete && (
             <div style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={kicker("blue")}>Athlete Twin · {athlete.name}</div>
+                <div style={kicker("blue")}>{t("w.teams.org.athleteTwin")} · {athlete.name}</div>
                 <span style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)}>✕</span>
               </div>
               <div style={{ display: "flex", gap: space.xl, alignItems: "baseline", marginTop: 8 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 40, color: C(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>
                 <div>
                   {chip(hpiColor(athlete.hpi.band), athlete.hpi.band)}
-                  {chip("amber", `limiter · ${athlete.hpi.limiter}`)}
-                  {chip(athlete.injury.flaggedCount ? "red" : "lime", `injury ${athlete.injury.overall}/100`)}
+                  {chip("amber", `${t("w.teams.org.limiter")} · ${athlete.hpi.limiter}`)}
+                  {chip(athlete.injury.flaggedCount ? "red" : "lime", `${t("w.teams.org.injury")} ${athlete.injury.overall}/100`)}
                 </div>
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 8, lineHeight: 1.5, color: C("chalk") }}>{athlete.summary}</div>
@@ -295,10 +297,10 @@ export default function AuroraOrg() {
                 </div>
               ) : (
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 8, color: C("ash") }}>
-                  {athlete.injury.flaggedCount} tissue(s) flagged · tissue-level detail is medical-tier
+                  {athlete.injury.flaggedCount} {t("w.teams.org.tissuesFlagged")}
                 </div>
               )}
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 8, color: C("ash") }}>{athlete.sessionCount} sessions logged</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 8, color: C("ash") }}>{athlete.sessionCount} {t("w.teams.org.sessionsLogged")}</div>
             </div>
           )}
         </>

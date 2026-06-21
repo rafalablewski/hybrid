@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fs, space } from "@hybrid/core";
 
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
 const BUCKET = "progress";
@@ -12,6 +13,7 @@ type Photo = { name: string; path: string; url: string; date: string };
 /** AURORA Progress photos (web) — same private Supabase Storage capture/timeline
  *  as the classic, in the rounded Aurora style. */
 export default function AuroraProgress() {
+  const { t } = useLang();
   const supabase = isSupabaseConfigured() ? createClient() : null;
   const [uid, setUid] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -65,24 +67,24 @@ export default function AuroraProgress() {
     </div>
   );
 
-  if (status === "no-auth") return notice(C("chalk"), "Progress photos need a signed-in account with Supabase configured. Sign in to capture your transformation timeline.");
-  if (status === "no-bucket") return notice(C("red"), <>The <strong>progress</strong> storage bucket isn&apos;t set up yet. Run <strong>reference/sql-progress-photos.sql</strong> in Supabase, then reload.</>);
+  if (status === "no-auth") return notice(C("chalk"), t("w.recovery.progress.noAuth"));
+  if (status === "no-bucket") return notice(C("red"), <>{t("w.recovery.progress.noBucketPre")} <strong>progress</strong> {t("w.recovery.progress.noBucketMid")} <strong>reference/sql-progress-photos.sql</strong> {t("w.recovery.progress.noBucketPost")}</>);
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>Progress photos</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.progress.title")}</h1>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 14px" }}>Same pose, same light, every couple of weeks. Private to you — stored under your own folder, never shared.</p>
+        <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 14px" }}>{t("w.recovery.progress.intro")}</p>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={busy}
           style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "13px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
-          <AuroraIcon name="add" size={18} color={C("ink")} />{busy ? "Uploading…" : "Add photo"}
+          <AuroraIcon name="add" size={18} color={C("ink")} />{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.addPhoto")}
         </button>
       </div>
 
       {photos.length === 0 ? (
-        <div style={{ fontSize: fs.body, color: C("ash"), marginTop: 16 }}>No photos yet — add your first to start the timeline.</div>
+        <div style={{ fontSize: fs.body, color: C("ash"), marginTop: 16 }}>{t("w.recovery.progress.empty")}</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: space.md, marginTop: 16 }}>
           {photos.map((p) => (
@@ -91,7 +93,7 @@ export default function AuroraProgress() {
               <img src={p.url} alt={p.date} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px" }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{p.date}</span>
-                <button onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>delete</button>
+                <button onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>{t("w.recovery.progress.delete")}</button>
               </div>
             </div>
           ))}

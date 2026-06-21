@@ -2,6 +2,7 @@
 
 import { fs, space, currentPhase, type Macrocycle, type LoggedSession, type Biometrics } from "@hybrid/core";
 import ReconciledWeek from "../reconciled-week";
+import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -20,13 +21,13 @@ export default function AuroraPeriodize({
   sessions?: LoggedSession[];
   bio?: Biometrics | null;
 }) {
+  const { t } = useLang();
   if (!macro)
     return (
       <div style={{ ...card, textAlign: "center", padding: 60, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <div style={{ fontWeight: 800, fontSize: fs.heading }}>No active plan</div>
+        <div style={{ fontWeight: 800, fontSize: fs.heading }}>{t("w.train.periodize.noActivePlan")}</div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>
-          Enroll in a plan from the <b style={{ color: C("lime") }}>Plans</b> tab — your periodized
-          macrocycle (phases, load &amp; recovery weeks) shows up here.
+          {t("w.train.periodize.enrollBefore")} <b style={{ color: C("lime") }}>{t("w.train.periodize.plansTab")}</b> {t("w.train.periodize.enrollAfter")}
         </p>
       </div>
     );
@@ -41,14 +42,14 @@ export default function AuroraPeriodize({
       )}
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
-          {macro.goalOrSport}{macro.model ? ` · ${macro.model}` : " · enrolled"}
+          {macro.goalOrSport}{macro.model ? ` · ${macro.model}` : ` · ${t("w.train.periodize.enrolledLabel")}`}
         </div>
         <div style={{ fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>
-          {macro.totalWeeks}-week macrocycle · now in {current.label}
+          {macro.totalWeeks}{t("w.train.periodize.macroNow")} {current.label}
         </div>
         <div style={{ display: "flex", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>
           {macro.blocks.map((b) => (
-            <div key={b.key} title={`${b.label} · ${b.weeks} wk`} style={{ flex: b.weeks, background: b.key === current.key ? b.color : `${b.color}40` }} />
+            <div key={b.key} title={`${b.label} · ${b.weeks} ${t("w.train.periodize.wk")}`} style={{ flex: b.weeks, background: b.key === current.key ? b.color : `${b.color}40` }} />
           ))}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: space.ms, marginTop: 12 }}>
@@ -66,14 +67,14 @@ export default function AuroraPeriodize({
           <div key={b.key} style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div style={{ fontWeight: 800, fontSize: fs.title, color: b.color }}>{b.label}</div>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>wk {b.startWeek}–{b.endWeek}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.train.periodize.wk")} {b.startWeek}–{b.endWeek}</span>
             </div>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, margin: "6px 0 12px", color: C("ash") }}>{b.focus}</p>
             <div style={{ display: "flex", gap: space.xs }}>
               {b.micros.map((m) => (
                 <div
                   key={m.week}
-                  title={`Week ${m.week} · ${m.kind} · intensity ${m.intensity} / volume ${m.volume}`}
+                  title={`${t("w.train.periodize.week")} ${m.week} · ${m.kind} · ${t("w.train.periodize.intensity")} ${m.intensity} / ${t("w.train.periodize.volume")} ${m.volume}`}
                   style={{
                     flex: 1,
                     textAlign: "center",

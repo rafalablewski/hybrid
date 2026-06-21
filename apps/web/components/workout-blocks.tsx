@@ -5,6 +5,7 @@ import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, pacePerKm, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
+import { useLang } from "@/lib/i18n";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
 // template Builder (builder.tsx). Both screens edit the SAME SessionBlock[]
@@ -26,11 +27,11 @@ const BASE_CATALOG = [
   "Power Clean",
 ];
 
-const SET_TYPE_TITLE: Record<string, string> = {
-  working: "Working set",
-  warmup: "Warm-up set",
-  cooldown: "Cool-down set",
-  drop: "Drop set",
+const SET_TYPE_TITLE_KEY: Record<string, string> = {
+  working: "w.train.blocks.workingSet",
+  warmup: "w.train.blocks.warmupSet",
+  cooldown: "w.train.blocks.cooldownSet",
+  drop: "w.train.blocks.dropSet",
 };
 
 export type EditableBlock = SessionBlock & { uid: string };
@@ -107,6 +108,7 @@ export default function WorkoutBlocks({
   /** Show a barbell plates-per-side hint under each strength block. */
   plateCalc?: boolean;
 }) {
+  const { t } = useLang();
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
@@ -249,7 +251,7 @@ export default function WorkoutBlocks({
                 draggable
                 onDragStart={() => setDragUid(b.uid)}
                 onDragEnd={() => setDragUid(null)}
-                title="Drag to reorder"
+                title={t("w.train.blocks.dragToReorder")}
                 style={{ ...mono, fontSize: fs.note, color: txt(ASH), cursor: "grab", userSelect: "none", lineHeight: 1, padding: "0 2px" }}
               >
                 ⠿
@@ -285,14 +287,14 @@ export default function WorkoutBlocks({
             {b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
               <button
                 onClick={() => supersetWithPrev(b.uid)}
-                title="Superset with the exercise above (no rest between)"
+                title={t("w.train.blocks.supersetTitle")}
                 style={
                   isSupersettedWithPrev(blocks, idx)
                     ? { ...blockBtn(LIME), padding: "6px 10px" }
                     : { ...blockBtn(ASH), padding: "6px 10px" }
                 }
               >
-                ⛓ {isSupersettedWithPrev(blocks, idx) ? "joined" : "superset ↑"}
+                ⛓ {isSupersettedWithPrev(blocks, idx) ? t("w.train.blocks.joined") : t("w.train.blocks.superset")}
               </button>
             )}
             <button onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
@@ -306,13 +308,13 @@ export default function WorkoutBlocks({
               <div style={{ minWidth: detailed ? 360 : 240 }}>
               <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: space.xs, marginBottom: 4, alignItems: "center" }}>
                 <span />
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>load ({units})</Mono>
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>reps</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.reps")}</Mono>
                 {detailed && (
                   <>
                     <button
                       onClick={() => setRpeHelp((v) => !v)}
-                      title="What is RPE?"
+                      title={t("w.train.blocks.whatIsRpe")}
                       style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", color: txt(rpeHelp ? LIME : ASH), background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
                     >
                       {rirMode ? "rir" : "rpe"} ⓘ
@@ -334,7 +336,7 @@ export default function WorkoutBlocks({
                     return (
                       <button
                         onClick={() => cycleType(b.uid, i)}
-                        title={`${SET_TYPE_TITLE[st]} — tap to change (working → warm-up → cool-down → drop)`}
+                        title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`}
                         style={{
                           ...mono,
                           fontSize: accent ? 12 : 13,
@@ -363,7 +365,7 @@ export default function WorkoutBlocks({
                     <button
                       onClick={() => moveSet(b.uid, i, -1)}
                       disabled={i === 0}
-                      title="Move set up"
+                      title={t("w.train.blocks.moveSetUp")}
                       style={{ ...mono, fontSize: fs.nano, lineHeight: 1, color: txt(i === 0 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === 0 ? "default" : "pointer", padding: "2px 0" }}
                     >
                       ↑
@@ -371,7 +373,7 @@ export default function WorkoutBlocks({
                     <button
                       onClick={() => moveSet(b.uid, i, 1)}
                       disabled={i === b.sets.length - 1}
-                      title="Move set down"
+                      title={t("w.train.blocks.moveSetDown")}
                       style={{ ...mono, fontSize: fs.nano, lineHeight: 1, color: txt(i === b.sets.length - 1 ? LINE : ASH), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 5, cursor: i === b.sets.length - 1 ? "default" : "pointer", padding: "2px 0" }}
                     >
                       ↓
@@ -386,19 +388,19 @@ export default function WorkoutBlocks({
               </div>
               <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap" }}>
                 <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
-                  + set
+                  {t("w.train.blocks.addSet")}
                 </button>
-                <button onClick={() => addWarmupSet(b.uid)} style={blockBtn(AMBER)} title="Add a warm-up set — excluded from working volume & PRs, kept for the velocity profile">
-                  + warm-up
+                <button onClick={() => addWarmupSet(b.uid)} style={blockBtn(AMBER)} title={t("w.train.blocks.warmupTitle")}>
+                  {t("w.train.blocks.addWarmup")}
                 </button>
-                <button onClick={() => addWarmupRamp(b.uid)} style={blockBtn(AMBER)} title="Auto warm-up ramp (~40/60/80%) up to your working load">
-                  + ramp
+                <button onClick={() => addWarmupRamp(b.uid)} style={blockBtn(AMBER)} title={t("w.train.blocks.rampTitle")}>
+                  {t("w.train.blocks.addRamp")}
                 </button>
-                <button onClick={() => addCooldownSet(b.uid)} style={blockBtn(BLUE)} title="Add a cool-down set — light back-off work, excluded from working volume & PRs">
-                  + cool-down
+                <button onClick={() => addCooldownSet(b.uid)} style={blockBtn(BLUE)} title={t("w.train.blocks.cooldownTitle")}>
+                  {t("w.train.blocks.addCooldown")}
                 </button>
-                <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title="Add a drop set — a lighter continuation, no rest">
-                  + drop set
+                <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title={t("w.train.blocks.dropTitle")}>
+                  {t("w.train.blocks.addDrop")}
                 </button>
               </div>
               {plateCalc && (() => {
@@ -407,7 +409,7 @@ export default function WorkoutBlocks({
                 const pl = platesPerSide(top, units);
                 return (
                   <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>
-                    {pl.perSide.length ? `Per side @ ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `Bar only (${pl.bar} ${units})`}
+                    {pl.perSide.length ? `${t("w.train.blocks.perSide")} ${displayLoad(String(top), units)} ${units}: ${pl.perSide.join(" · ")}${pl.remainder ? " ≈" : ""}` : `${t("w.train.blocks.barOnly")} (${pl.bar} ${units})`}
                   </Mono>
                 );
               })()}
@@ -415,7 +417,7 @@ export default function WorkoutBlocks({
           ) : b.kind === "cardio" ? (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xs }}>
-                {["dist (km)", "minutes"].map((h) => (
+                {[t("w.train.blocks.distKm"), t("w.train.blocks.minutes")].map((h) => (
                   <Mono key={h} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
                     {h}
                   </Mono>
@@ -425,14 +427,14 @@ export default function WorkoutBlocks({
               </div>
               {pacePerKm(b) && (
                 <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={BLUE}>
-                  pace {pacePerKm(b)}
+                  {t("w.train.blocks.pace")} {pacePerKm(b)}
                 </Mono>
               )}
             </>
           ) : (
             <div style={{ overflowX: "auto", maxWidth: "100%" }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: space.xs, minWidth: 360 }}>
-              {["format", "work (s)", "rest (s)", "rounds", "minutes"].map((h) => (
+              {[t("w.train.blocks.format"), t("w.train.blocks.workS"), t("w.train.blocks.restS"), t("w.train.blocks.roundsCol"), t("w.train.blocks.minutes")].map((h) => (
                 <Mono key={h} s={{ fontSize: fs.nano, textTransform: "uppercase" }}>
                   {h}
                 </Mono>
@@ -459,16 +461,16 @@ export default function WorkoutBlocks({
 
       <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
         <button onClick={addStrength} style={blockBtn(LIME)}>
-          + Strength
+          {t("w.train.blocks.addStrength")}
         </button>
         <button onClick={addCardio} style={blockBtn(BLUE)}>
-          + Cardio
+          {t("w.train.blocks.addCardio")}
         </button>
         <button onClick={addConditioning} style={blockBtn(VIOLET)}>
-          + Conditioning
+          {t("w.train.blocks.addConditioning")}
         </button>
         <button onClick={() => setRpeHelp((v) => !v)} style={blockBtn(ASH)}>
-          What's RPE?
+          {t("w.train.blocks.whatsRpe")}
         </button>
       </div>
     </>
@@ -477,19 +479,20 @@ export default function WorkoutBlocks({
 
 // The RPE cheatsheet — the same scale (from @hybrid/core) the mobile logger shows.
 function RpeHelp({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}`, marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          RPE — how hard did that feel?
+          {t("w.train.blocks.rpeHelpTitle")}
         </Mono>
         <button onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
       </div>
       <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
       <div style={{ display: "grid", gridTemplateColumns: "44px 64px 1fr", gap: "4px 10px", alignItems: "baseline" }}>
-        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>RPE</Mono>
-        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>reps left</Mono>
-        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>feels like</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>{t("w.train.blocks.rpeCol")}</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>{t("w.train.blocks.repsLeft")}</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={ASH}>{t("w.train.blocks.feelsLike")}</Mono>
         {RPE_SCALE.map((step) => (
           <div key={step.rpe} style={{ display: "contents" }}>
             <Mono s={{ fontSize: fs.body, fontWeight: 700 }} c={LIME}>{step.rpe}</Mono>
