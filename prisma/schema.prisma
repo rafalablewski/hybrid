@@ -676,6 +676,55 @@ model FeatureFlag {
   @@index([enabled])
 }
 
+// Per-user onboarding state — its OWN table (not columns on User) so the
+// hot-path user lookup never depends on it: every read is soft-guarded, so the
+// app runs fine before this migration is applied. `onboardedAt` is the
+// server-side source of truth for "has this user finished/skipped onboarding?"
+// — the clients gate the questionnaire on it so it reliably appears once and
+// survives device changes + the email-confirm round-trip (the old localStorage
+// flag did not). `answers` stores the raw answer map (keyed by question key),
+// including any custom admin-added questions. reference/sql-onboarding.sql.
+model OnboardingState {
+  userId      String   @id
+  onboardedAt DateTime @default(now())
+  answers     Json?
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+// One admin-editable onboarding question. The questionnaire is data, not
+// hard-coded UI: admins reword / reorder / add / remove / enable-disable from
+// the web admin. The five built-ins (persona, goal, experience, days, equipment)
+// live as defaults in @hybrid/core (DEFAULT_ONBOARDING_QUESTIONS) so onboarding
+// works with an empty DB; rows here override/extend them. `engineKey` ties an
+// answer to a recommendation-engine field; custom questions leave it null and
+// are stored on the user profile without affecting plan matching. `system` marks
+// a built-in (can't be deleted; key/kind/engineKey locked in the editor).
+// Mutations are server-only (ADMIN-gated + audited); signed-in users read the
+// enabled rows via /api/onboarding/questions. reference/sql-onboarding.sql.
+model OnboardingQuestion {
+  id           String   @id @default(cuid())
+  key          String   @unique // answer key (stable; e.g. "goal", "how-heard")
+  kind         String   @default("single") // persona | goal | single | multi | number | text
+  title        String
+  subtitle     String?
+  engineKey    String?  // persona | goal | experience | daysPerWeek | equipment | null
+  choices      Json? // [{ value, label, blurb? }] for single/multi
+  min          Int?
+  max          Int?
+  step         Int?
+  defaultValue String?
+  required     Boolean  @default(false)
+  enabled      Boolean  @default(true)
+  system       Boolean  @default(false)
+  order        Int      @default(0)
+  authorId     String?
+  authorEmail  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([enabled, order])
+}
+
 // The editable definition of one AI executive agent (CEO/CFO/CMO/COO + custom).
 // The KNOWN role presets live in @hybrid/core (so the org has working defaults
 // with an empty DB); this table stores the admin's edits — mandate, KPIs,

@@ -2,15 +2,10 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { brand } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useSession } from "../lib/session";
 
-// Set when an account is first created, consumed on the next authenticated
-// entry — so a brand-new user lands in onboarding to set their persona + goal +
-// preferences, whether the session is immediate or arrives after email confirm.
-const PENDING_ONBOARDING = "hybrid.pendingOnboarding";
 import { useLang } from "../lib/i18n";
 import { fs, F, Button } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
@@ -54,31 +49,22 @@ function ClassicLogin() {
         options: { data: { name: name.trim() || email.split("@")[0], role: "client" } },
       });
       if (error) return fail(error.message);
-      // Fresh registration → onboarding (now or right after they confirm + sign
-      // in). Any guest workouts have already flushed up on sign-in.
-      await AsyncStorage.setItem(PENDING_ONBOARDING, "1").catch(() => {});
       if (!data.session) {
         setError("Account created. Confirm via email, then sign in.");
         setMode("signin");
         setBusy(false);
         return;
       }
-      await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      setNavTo("/onboarding");
+      // Route through "/" — the entry gate sends a not-yet-onboarded client into
+      // the questionnaire (server-side `onboardedAt`), no fragile flag needed.
+      setNavTo("/");
       return;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return fail(error.message);
-    // Returning users go straight to the app — unless they just registered and
-    // still owe onboarding (email-confirm path).
-    const pending = await AsyncStorage.getItem(PENDING_ONBOARDING).catch(() => null);
-    if (pending) {
-      await AsyncStorage.removeItem(PENDING_ONBOARDING).catch(() => {});
-      setNavTo("/onboarding");
-      return;
-    }
-    setNavTo("/(tabs)");
+    // The entry gate decides onboarding vs the app from server-side state.
+    setNavTo("/");
   };
   const fail = (m: string) => {
     setError(m);
