@@ -100,7 +100,7 @@ export default function Talent() {
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
         <Card>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Your profile</Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.sm, marginTop: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: space.sm, marginTop: 12 }}>
             <Select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
               {SPORTS.map((s) => <option key={s}>{s}</option>)}
             </Select>
