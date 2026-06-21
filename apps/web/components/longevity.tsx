@@ -58,7 +58,7 @@ export default function Longevity() {
         <Card>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Markers</Mono>
           <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>recovery markers prefilled from your latest signals when available</Mono>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.sm, marginTop: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: space.sm, marginTop: 12 }}>
             {fields.map(([k, label, unit]) => (
               <label key={k}>
                 <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", display: "block", marginBottom: 4 }} c={ASH}>{label} ({unit})</Mono>

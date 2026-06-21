@@ -108,7 +108,7 @@ export default function AuroraTalent() {
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg }}>
         <div style={card}>
           <div style={kicker("ash")}>Your profile</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.sm, marginTop: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: space.sm, marginTop: 12 }}>
             <select value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })} style={selectStyle}>
               {SPORTS.map((s) => <option key={s}>{s}</option>)}
             </select>
