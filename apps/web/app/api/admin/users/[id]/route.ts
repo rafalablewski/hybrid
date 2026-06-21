@@ -86,15 +86,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   // Pending requests / applications tied to the account.
   await wipe("accessRequests", () => prisma.accessRequest.deleteMany({ where: { userId: id } }));
   await wipe("coachApplication", () => prisma.coachApplication.deleteMany({ where: { userId: id } }));
-  // Email footprint — enrollments, the deliverability ledger, and their email's
-  // suppression entry (a full wipe of the person's records).
+  // Email footprint — enrollments + the deliverability ledger. The EmailSuppression
+  // (opt-out) row is DELIBERATELY KEPT: a recorded unsubscribe/bounce must be
+  // honoured permanently (CAN-SPAM / GDPR), so a re-import or re-signup of the
+  // same address can never re-email someone who opted out. It holds only the
+  // email + reason, none of the person's training/account data.
   if (target.email) {
     await wipe("emailEnrollments", () => prisma.emailEnrollment.deleteMany({ where: { userId: id } }));
     await wipe("emailMessages", () =>
       prisma.emailMessage.deleteMany({ where: { OR: [{ userId: id }, { email: target.email.toLowerCase() }] } }),
-    );
-    await wipe("emailSuppression", () =>
-      prisma.emailSuppression.deleteMany({ where: { email: target.email.toLowerCase() } }),
     );
   }
   await wipe("featureGrant", () => prisma.featureGrant.deleteMany({ where: { userId: id } }));
