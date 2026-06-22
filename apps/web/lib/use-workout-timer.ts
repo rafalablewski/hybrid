@@ -27,19 +27,22 @@ export function useWorkoutTimer() {
   const [paused, setPaused] = useState(false);
   const pausedAt = useRef(0);
   const begun = useRef(false);
+  // Gate the start until after mount so we read the HYDRATED count-in pref.
+  // (useLoggerPrefs returns defaults on the first SSR/hydration render; reading
+  // it in a bare []-effect would lock in the default and ignore the user's
+  // setting. Depending on prefs.countIn + this flag picks up the real value.)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Begin once, client-side (so there's no SSR/hydration mismatch): count the
   // athlete in, or — when the count-in is off — start the clock immediately.
-  // By the time this passive effect runs, the prefs store has hydrated from
-  // localStorage (useSyncExternalStore subscribes during commit), so
-  // `prefs.countIn` is the user's real setting here.
   useEffect(() => {
-    if (begun.current) return;
+    if (!mounted || begun.current) return;
     begun.current = true;
     startedAt.current = new Date();
     if (prefs.countIn) setCountdown(5);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mounted, prefs.countIn]);
 
   // Drive the count-in: 5→1, a brief "GO", then start the clock from zero so
   // the elapsed time reflects actual training, not the count-in.

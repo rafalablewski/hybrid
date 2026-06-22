@@ -102,10 +102,13 @@ export default function AuroraLogger({
   useEffect(() => {
     if (!initialBlocks || initialBlocks.length === 0) {
       const draft = loadWorkoutDraft();
-      if (draft) {
+      // Guard the parsed start — a corrupt draft date would make startedAt an
+      // Invalid Date and crash toISOString() on save. Fall back to a fresh clock.
+      const parsedStart = draft ? Date.parse(draft.startedAt) : NaN;
+      if (draft && !Number.isNaN(parsedStart)) {
         setBlocks(draft.blocks);
         setTitle(draft.title);
-        resumeFrom(Date.parse(draft.startedAt));
+        resumeFrom(parsedStart);
       }
     }
     setRestored(true);
@@ -121,8 +124,10 @@ export default function AuroraLogger({
       else clearWorkoutDraft();
     }, 500);
     return () => clearTimeout(id);
+    // `paused` is included so a pause/resume (which shifts startedAt) re-persists
+    // the draft with the corrected start — otherwise a stale start drifts on resume.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks, title, restored]);
+  }, [blocks, title, restored, paused]);
 
   // Tick the rest countdown; buzz once when the chosen target is reached.
   useEffect(() => {
@@ -303,7 +308,7 @@ export default function AuroraLogger({
       // field and is kept); other block kinds pass through unchanged.
       blocks: blocks.map(({ uid: _uid, ...b }) =>
         b.kind === "strength"
-          ? { ...b, sets: b.sets.map((s) => { const { done: _done, ...rest } = s as LiveSet; return rest; }) }
+          ? { ...b, sets: b.sets.map((s) => { const { done: _done, ...cleanSet } = s as LiveSet; return cleanSet; }) }
           : b,
       ),
     };

@@ -1144,7 +1144,7 @@ export default function Workout() {
                   style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.violet, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${C.violet}14` }}
                 >
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.violet) }}>✦ {t("train.start")} · AI</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{prior.current.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recent.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
                 </Pressable>
                 {routines.length > 0 && (
                   <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
