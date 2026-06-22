@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finish · 02 Receipt</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+:root{--ink:#0a0c0a;--paper:#f4f3ec;--ink-d:#15140f;--lime:#9bbf12;--ash:#6b6a60;--line:#d9d7cb}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0c0a;font-family:'Space Mono',monospace;display:grid;place-items:center;min-height:100vh;padding:24px}
+.phone{width:390px;height:844px;background:var(--ink);border-radius:44px;overflow:hidden;position:relative;border:1px solid #222;box-shadow:0 40px 120px -30px #000}
+.wrap{height:100%;overflow-y:auto;padding:54px 22px 24px;display:flex;flex-direction:column;align-items:center}
+.kick{font-size:11px;letter-spacing:.3em;color:#c4f035;text-transform:uppercase;margin-bottom:14px}
+.receipt{width:100%;background:var(--paper);color:var(--ink-d);padding:24px 22px;position:relative;
+  -webkit-mask:radial-gradient(9px at 9px 50%,transparent 98%,#000) -9px 0/100% 18px,radial-gradient(9px at calc(100% - 9px) 50%,transparent 98%,#000) 9px 0/100% 18px;mask:radial-gradient(9px at 9px 50%,transparent 98%,#000) -9px,radial-gradient(9px at calc(100% - 9px) 50%,transparent 98%,#000)}
+.brand{text-align:center;font-family:Archivo;font-weight:900;font-size:26px;letter-spacing:-.03em}
+.brand i{color:var(--lime);font-style:normal}
+.sub{text-align:center;font-size:11px;color:var(--ash);margin-top:2px}
+.hr{border-top:2px dashed #c9c7bb;margin:16px 0}
+.row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.row b{font-weight:700}
+.tot{display:flex;justify-content:space-between;font-family:Archivo;font-weight:900;font-size:18px;padding-top:6px}
+.pr{background:var(--ink-d);color:var(--paper);font-size:11px;padding:6px 10px;display:inline-block;border-radius:3px;margin:2px 2px}
+.fun{text-align:center;font-size:13px;margin-top:10px;line-height:1.5}
+.barcode{height:46px;margin-top:16px;background:repeating-linear-gradient(90deg,var(--ink-d) 0 2px,transparent 2px 4px,var(--ink-d) 4px 5px,transparent 5px 9px)}
+.code{text-align:center;font-size:10px;letter-spacing:.3em;color:var(--ash);margin-top:6px}
+.btn{width:100%;border:none;border-radius:10px;padding:15px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Space Mono';margin-top:12px}
+.share{background:#c4f035;color:#0a0c0a}
+.ghost{background:transparent;color:#c4f035;border:1px solid rgba(196,240,53,.4)}
+.analysis{background:transparent;color:#cfd2cc;border:1px solid #2a2d2a;margin-top:18px}
+</style></head>
+<body><div class="phone"><div class="wrap">
+  <div class="kick">— Workout complete —</div>
+  <div class="receipt">
+    <div class="brand">HYBRID<i>.</i></div>
+    <div class="sub">PUSH DAY A · 22 JUN 2026</div>
+    <div class="hr"></div>
+    <div class="row"><span>Duration</span><b>47 min</b></div>
+    <div class="row"><span>Sets logged</span><b>18</b></div>
+    <div class="row"><span>Exercises</span><b>6</b></div>
+    <div class="hr"></div>
+    <div class="tot"><span>TOTAL MOVED</span><span>4.2 t</span></div>
+    <div class="hr"></div>
+    <div style="font-size:11px;color:var(--ash);margin-bottom:6px">PERSONAL RECORDS</div>
+    <span class="pr">🏆 Bench +5 kg</span><span class="pr">⭐ OHP first!</span>
+    <div class="hr"></div>
+    <div class="fun">You moved <b>4.2&nbsp;t</b> today —<br>about a small car 🚗</div>
+    <div class="barcode"></div>
+    <div class="code">H Y B R I D · K E E P · L I F T I N G</div>
+  </div>
+  <button class="btn share">↗ Share receipt</button>
+  <button class="btn ghost">★ Save as routine</button>
+  <button class="btn analysis">See your analysis →</button>
+</div></div></body></html>

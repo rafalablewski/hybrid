@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finish · 08 Confetti</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Space+Mono:wght@400;700&display=swap');
+:root{--ink:#0a0c0a;--chalk:#f1f3ef;--ash:#9aa09a;--lime:#c4f035;--line:rgba(255,255,255,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Archivo,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;border:1px solid #222;box-shadow:0 40px 120px -30px #000;background:radial-gradient(circle at 50% 12%,#1c2410,transparent 55%),var(--ink)}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.confetti i{position:absolute;top:-20px;width:8px;height:14px;opacity:.9;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(900px) rotate(720deg)}}
+.wrap{position:relative;height:100%;overflow-y:auto;padding:70px 22px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.medal{font-size:84px;filter:drop-shadow(0 8px 24px rgba(196,240,53,.4));animation:pop .6s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+.h1{font-weight:900;font-size:38px;letter-spacing:-.03em;margin-top:8px}
+.name{font-weight:600;color:var(--ash);font-size:16px;margin-top:2px}
+.pr{margin-top:16px;background:rgba(196,240,53,.12);border:1px solid var(--lime);border-radius:999px;padding:8px 16px;font-weight:800;font-size:14px;color:var(--lime)}
+.stats{display:flex;gap:10px;margin-top:22px;width:100%}
+.s{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:18px;padding:16px 6px}
+.s b{display:block;font-size:26px;font-weight:900}
+.s span{font-family:'Space Mono';font-size:9px;color:var(--ash);letter-spacing:.08em}
+.fun{margin-top:18px;font-size:16px;line-height:1.4}
+.fun b{color:var(--lime)}
+.spacer{flex:1}
+.btn{width:100%;border:none;border-radius:999px;padding:17px;font-weight:800;font-size:16px;cursor:pointer;font-family:inherit}
+.share{background:var(--lime);color:var(--ink);box-shadow:0 0 30px -4px rgba(196,240,53,.7)}
+.ghost{background:transparent;color:var(--lime);border:1px solid rgba(196,240,53,.4);margin-top:10px}
+.analysis{background:none;border:none;color:var(--ash);font-family:'Space Mono';font-size:13px;padding:16px;cursor:pointer}
+</style></head>
+<body><div class="phone">
+<div class="confetti" id="cf"></div>
+<div class="wrap">
+  <div class="medal">🏅</div>
+  <div class="h1">Crushed it!</div>
+  <div class="name">Push Day A · complete</div>
+  <div class="pr">🏆 2 new personal records</div>
+  <div class="stats">
+    <div class="s"><b>47</b><span>MIN</span></div>
+    <div class="s"><b>18</b><span>SETS</span></div>
+    <div class="s"><b>4.2 t</b><span>VOLUME</span></div>
+  </div>
+  <div class="fun">You moved <b>4.2 t</b> — about a small car 🚗</div>
+  <div class="spacer"></div>
+  <button class="btn share">↗ Share the moment</button>
+  <button class="btn ghost">★ Save as routine</button>
+  <button class="analysis">See your analysis →</button>
+</div></div>
+<script>
+const cf=document.getElementById('cf');const cols=['#c4f035','#5aa7ff','#b79cff','#f2b23e','#fff'];
+for(let i=0;i<40;i++){const s=document.createElement('i');s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];s.style.animationDuration=(2.5+Math.random()*2.5)+'s';s.style.animationDelay=(-Math.random()*4)+'s';s.style.transform='rotate('+Math.random()*360+'deg)';cf.appendChild(s);}
+</script>
+</body></html>
