@@ -60,7 +60,8 @@ export function planToday(planId: string | null | undefined, sessionsLogged: num
  * "3 × 45–60 sec" → "3 × 60 sec". Strings without a range pass through. Use
  * this everywhere an sr is shown so a prescription never reads as a range.
  */
-export function srSingleReps(sr: string): string {
+export function srSingleReps(sr: string | null | undefined): string {
+  if (!sr) return "";
   // Match N–M (en/em dash or hyphen) and keep the top number + any spacing.
   return sr.replace(/(\d+)\s*[–—-]\s*(\d+)/g, "$2");
 }

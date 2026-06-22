@@ -78,4 +78,10 @@ describe("srSingleReps", () => {
     expect(srSingleReps("3 × 8")).toBe("3 × 8");
     expect(srSingleReps("AMRAP")).toBe("AMRAP");
   });
+
+  it("is defensive against null/undefined/empty input", () => {
+    expect(srSingleReps(null)).toBe("");
+    expect(srSingleReps(undefined)).toBe("");
+    expect(srSingleReps("")).toBe("");
+  });
 });
