@@ -42,6 +42,7 @@ export * from "./analytics";
 export * from "./units";
 export * from "./plates";
 export * from "./logger-prefs";
+export * from "./live-stats";
 export * from "./guidance";
 export * from "./account";
 export * from "./scale";

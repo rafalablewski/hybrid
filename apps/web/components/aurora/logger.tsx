@@ -11,6 +11,7 @@ import { fs, space,
   blockBestE1rm,
   lastStrengthByLift,
   blockSummary,
+  liveSessionStats,
   fmtTonnage,
   fmtWeight,
   type WeightUnit,
@@ -24,6 +25,7 @@ import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blo
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
+import { shareWorkoutStory, type ShareBest } from "@/lib/workout-share";
 import { useLang } from "@/lib/i18n";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
@@ -36,6 +38,8 @@ type FinishData = {
   title: string;
   sets: number;
   volume: number;
+  minutes: number;
+  bests: ShareBest[];
   prs: PrHit[];
   cardioPrs: CardioPrHit[];
   firstEver: boolean;
@@ -174,6 +178,10 @@ export default function AuroraLogger({
     lastStrengthByLift(sessions).forEach((blk, name) => out.set(name, blockSummary(blk)));
     return out;
   }, [sessions]);
+
+  // Live in-session scoreboard — running exercises / sets / volume / PRs, off the
+  // shared core helper so it matches the finish summary and the mobile logger.
+  const live = useMemo(() => liveSessionStats(blocks as SessionBlock[], sessions), [blocks, sessions]);
 
   // Pause/resume: shift the running rest forward by the held time too, so it
   // doesn't jump when the clock wakes back up (the elapsed clock is shifted in
@@ -338,6 +346,20 @@ export default function AuroraLogger({
         completedAt: payload.completedAt,
         blocks: cleanBlocks,
       };
+      const prs = newPrsInSession(finished, sessions);
+      const cardioPrs = newCardioPrsInSession(finished, sessions);
+      // Per-lift est-1RM bests (PR-marked) for the share card — same shape mobile uses.
+      const prSet = new Set(prs.map((p) => p.lift));
+      const bestMap = new Map<string, number>();
+      for (const b of cleanBlocks)
+        if (b.kind === "strength") {
+          const e = Math.round(blockBestE1rm(b));
+          if (e > 0) bestMap.set(b.name, Math.max(bestMap.get(b.name) ?? 0, e));
+        }
+      const bests: ShareBest[] = [...bestMap.entries()]
+        .map(([name, e1rm]) => ({ name, e1rm, pr: prSet.has(name) }))
+        .sort((a, b) => b.e1rm - a.e1rm);
+      const minutes = Math.max(1, Math.round((Date.parse(payload.completedAt) - Date.parse(payload.startedAt)) / 60000));
       setSaving(false);
       stop(); // freeze the clock — the workout's done, the celebration is next
       clearWorkoutDraft();
@@ -345,8 +367,10 @@ export default function AuroraLogger({
         title: payload.title,
         sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
         volume: sessionVolume(cleanBlocks),
-        prs: newPrsInSession(finished, sessions),
-        cardioPrs: newCardioPrsInSession(finished, sessions),
+        minutes,
+        bests,
+        prs,
+        cardioPrs,
         firstEver: sessions.length === 0,
       });
     } catch {
@@ -422,6 +446,21 @@ export default function AuroraLogger({
           </div>
         );
       })()}
+
+      {/* Live in-session scoreboard — appears as soon as the first set lands. */}
+      {live.sets > 0 && (
+        <div style={{ display: "flex", gap: space.sm, marginBottom: 14 }}>
+          <LiveStat label={t("w.train.logger.liveExercises")} value={String(live.exercises)} />
+          <LiveStat label={t("w.train.logger.liveSets")} value={String(live.sets)} />
+          <LiveStat label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
+          {live.prs + live.cardioPrs > 0 && (
+            <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`, border: `1px solid ${C("lime")}` }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("lime") }}>🏆 {live.prs + live.cardioPrs}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("lime") }}>{live.prs + live.cardioPrs === 1 ? t("w.train.logger.livePr") : t("w.train.logger.livePrs")}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
         <button
@@ -535,13 +574,23 @@ export default function AuroraLogger({
  *  native success haptic). */
 function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; onDone: () => void }) {
   const { t } = useLang();
-  const { title, sets, volume, prs, cardioPrs, firstEver } = data;
+  const { title, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   const milestone = firstEver || prs.length > 0 || cardioPrs.length > 0;
+  const [shareMsg, setShareMsg] = useState("");
+  const [sharing, setSharing] = useState(false);
   useEffect(() => {
     if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
       try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
     }
   }, [milestone]);
+  const share = async () => {
+    setSharing(true);
+    setShareMsg("");
+    const how = await shareWorkoutStory({ title, minutes, sets, volume, bests, firstEver }, units, t);
+    setSharing(false);
+    if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
+    else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));
+  };
   const prLine = (p: PrHit) =>
     p.previous == null
       ? `${p.lift} ${fmtWeight(p.e1rm, units)} ${t("w.train.logger.firstTime")}`
@@ -573,9 +622,43 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
         </div>
       )}
 
-      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 6 }}>
+      {/* Share — a branded 9:16 story image (Web Share API, downloads as a
+          fallback). The milestone (PR / first-ever) gets the glowing primary. */}
+      <button
+        onClick={share}
+        disabled={sharing}
+        style={{
+          width: "100%",
+          fontFamily: "var(--font-display)",
+          fontWeight: 800,
+          fontSize: fs.note,
+          background: milestone ? C("lime") : "transparent",
+          color: milestone ? C("ink") : C("lime"),
+          border: `1px solid ${C("lime")}`,
+          borderRadius: 999,
+          padding: "13px 28px",
+          cursor: sharing ? "default" : "pointer",
+          marginTop: 6,
+          boxShadow: milestone ? `0 0 18px -2px color-mix(in srgb, ${C("lime")} 60%, transparent)` : "none",
+        }}
+      >
+        {sharing ? "…" : `↗ ${t("w.train.logger.shareStory")}`}
+      </button>
+      {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
+
+      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: milestone ? "transparent" : C("lime"), color: milestone ? C("chalk") : C("ink"), border: milestone ? `1px solid ${C("line")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 10 }}>
         {t("w.train.logger.done")}
       </button>
+    </div>
+  );
+}
+
+/** A single live-scoreboard stat pill (Aurora ink card). */
+function LiveStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: C("ink2"), border: `1px solid ${C("line")}` }}>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk") }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("ash") }}>{label}</div>
     </div>
   );
 }
