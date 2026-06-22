@@ -17,7 +17,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, Card, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { ACard } from "./aurora/kit";
+import { ACard, RADIUS } from "./aurora/kit";
 
 /**
  * Home-screen quick-log widget — pick a sport, enter time (+ distance for
@@ -116,7 +116,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
   const Surface = solid ? ACard : Card;
   return (
     <Surface style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>
         {t("quickSport.title")}
       </Text>
       <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{t("quickSport.sub")}</Mono>
@@ -204,7 +204,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
         <Pressable
           onPress={save}
           disabled={saving}
-          style={{ backgroundColor: C.lime, borderRadius: 10, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}
+          style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}
         >
           <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>{saving ? "…" : t("quickSport.log")}</Text>
         </Pressable>

@@ -302,7 +302,7 @@ export default function AuroraToday({
         return (
         <div style={{ ...card, marginTop: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
               {t("w.home.today.yourSeason")} {macro.goalOrSport}
             </span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: C("violet") }}>✦ Full</span>

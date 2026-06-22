@@ -127,7 +127,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
         <button
           onClick={save}
           disabled={saving}
-          style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}
+          style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}
         >
           {saving ? t("w.home.quickSport.saving") : t("w.home.quickSport.log")}
         </button>
