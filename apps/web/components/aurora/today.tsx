@@ -15,6 +15,7 @@ import { fs, space,
   planDayToBlocks,
   toTrainingLog,
   velocityProfiles,
+  FUNNEL,
   ROLE_COLOR,
   readinessRole,
   hpiRole,
@@ -30,6 +31,7 @@ import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
 import { readIntake, type Intake } from "@/lib/intake";
+import { track } from "@/lib/track";
 import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
 import { AuroraIcon } from "./icons";
@@ -305,10 +307,10 @@ export default function AuroraToday({
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
               {t("w.home.today.yourSeason")} {macro.goalOrSport}
             </span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: C("violet") }}>✦ Full</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", color: C("violet"), background: `color-mix(in srgb, ${C("violet")} 12%, transparent)`, borderRadius: 999, padding: "3px 11px" }}>{t("w.home.today.badgeFull")}</span>
           </div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.heading, letterSpacing: "-.02em", margin: "16px 0 0" }}>
-            {phase.block.label} {t("w.home.today.phase")}
+            {phase.block.label} {t("w.home.today.phaseWeek")} {currentWeek}/{macro.totalWeeks}
           </div>
           <div style={{ marginTop: 16 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
@@ -324,7 +326,7 @@ export default function AuroraToday({
               {ranges.map((b) => {
                 const cur = b.key === phase.block.key;
                 return (
-                  <span key={b.key} style={{ flex: b.weeks, overflow: "hidden", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: fs.nano, lineHeight: 1.3, letterSpacing: ".04em", textTransform: "uppercase", color: cur ? C("violet") : C("ash") }}>
+                  <span key={b.key} style={{ flex: b.weeks, overflow: "hidden", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: fs.nano, lineHeight: 1.3, letterSpacing: ".04em", textTransform: "uppercase", color: cur ? b.color : C("ash") }}>
                     {b.label}
                     <b style={{ display: "block", fontWeight: 600, color: "inherit" }}>{t("w.home.today.wk")} {b.start === b.end ? b.start : `${b.start}–${b.end}`}</b>
                   </span>
@@ -335,7 +337,13 @@ export default function AuroraToday({
           <div style={{ fontFamily: "var(--font-display)", fontSize: fs.caption, lineHeight: 1.65, color: C("ash"), marginTop: 14, maxWidth: "34ch" }}>
             {t("w.home.today.seasonBriefBody")}
           </div>
-          <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase", color: C("violet"), cursor: "pointer" }}>
+          <button
+            onClick={() => {
+              track(FUNNEL.upgradeEntryClick, { client: "web", source: "today-season" });
+              if (onNavigate) onNavigate("upgrade"); else router.push("/upgrade");
+            }}
+            style={{ marginTop: 18, display: "block", width: "100%", background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 16px", fontWeight: 700, fontSize: fs.body, textAlign: "center", cursor: "pointer" }}
+          >
             {t("w.home.today.unlockPeriodization")}
           </button>
         </div>
