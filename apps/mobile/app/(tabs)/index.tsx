@@ -310,19 +310,40 @@ function ClassicHome() {
         </Pressable>
       )}
 
-      {/* UNLOCK FULL — the single, value-labeled upgrade on-ramp for casual users.
-          No scattered locks elsewhere; this one card carries the whole pitch. */}
+      {/* SEE YOUR PERFORMANCE STATE — the single, value-labeled upgrade on-ramp
+          for casual users. Mirrors the web sell card: the limiter pitch + a
+          feature tag cloud (no padlock, no fake score). */}
       {!isAthlete && (
-        <Pressable
-          onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today" }); router.push("/upgrade"); }}
-          style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}80`, borderRadius: 14, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: `${C.lime}14` }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✦ Unlock Full</Text>
-            <Mono style={{ marginTop: 2, fontSize: fs.micro }}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools</Mono>
+        <Card style={{ marginTop: 16 }}>
+          <Kicker color={C.blue}>Unlock with Full</Kicker>
+          <Text style={{ fontFamily: F.bold, fontSize: 20, color: C.chalk, marginTop: 8 }}>See your Performance State</Text>
+          <Mono color={C.ash} style={{ marginTop: 6, lineHeight: 19 }}>
+            HPI, readiness and injury risk fused into one live state — with the limiter that&apos;s holding you back.
+          </Mono>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
+            {[
+              { label: "HPI", on: true },
+              { label: "Readiness", on: false },
+              { label: "Injury risk", on: false },
+              { label: "Velocity", on: false },
+              { label: "Analytics", on: false },
+              { label: "AI coach", on: false },
+            ].map((tag) => (
+              <View
+                key={tag.label}
+                style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: tag.on ? `${C.blue}73` : C.line, backgroundColor: tag.on ? `${C.blue}1a` : "transparent" }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.5, color: tag.on ? txt(C, C.blue) : C.ash }}>{tag.label}</Text>
+              </View>
+            ))}
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, C.lime) }}>→</Text>
-        </Pressable>
+          <Pressable
+            onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today" }); router.push("/upgrade"); }}
+            style={{ marginTop: 18, alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, borderColor: C.blue, backgroundColor: "transparent", paddingHorizontal: 16, paddingVertical: 9 }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6, color: txt(C, C.blue) }}>✦ Unlock Full →</Text>
+          </Pressable>
+        </Card>
       )}
 
       {/* COACH INVITES — incoming mutual-consent links, any persona can accept */}
@@ -459,15 +480,38 @@ function ClassicHome() {
       {/* SEASON — the macrocycle phase timeline (Base → Build → Peak → Taper),
           absorbed from the retired web Dashboard, driven by the real season. */}
       {(isAthlete || coached) && macro && seasonBlock && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime, marginTop: 16 }}>
+        <Card style={{ marginTop: 16 }}>
           <Kicker color={C.lime}>Training for · {macro.goalOrSport} · {seasonBlock.label} phase</Kicker>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 6 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 6 }}>
             Week {currentWeek} of {macro.totalWeeks} · {seasonBlock.focus.toLowerCase()}
           </Text>
-          <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+          {/* Professional progress meter — week count + percent above the bar. */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: 16 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
+              Week {currentWeek} / {macro.totalWeeks}
+            </Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), fontVariant: ["tabular-nums"] }}>
+              {Math.round((currentWeek / macro.totalWeeks) * 100)}%
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 8 }}>
             {macro.blocks.map((b) => (
               <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === seasonBlock.key ? b.color : `${b.color}33` }} />
             ))}
+          </View>
+          {/* Labelled periodisation timeline — each block over its week range. */}
+          <View style={{ flexDirection: "row", gap: 3, marginTop: 7 }}>
+            {macro.blocks.map((b) => {
+              const cur = b.key === seasonBlock.key;
+              return (
+                <View key={b.key} style={{ flex: b.weeks, overflow: "hidden" }}>
+                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.4, color: cur ? b.color : C.ash }}>{b.label}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: cur ? b.color : C.ash }}>
+                    {b.startWeek === b.endWeek ? `wk ${b.startWeek}` : `wk ${b.startWeek}–${b.endWeek}`}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         </Card>
       )}
@@ -614,7 +658,7 @@ function ClassicHome() {
 
       {/* PERFORMANCE STATE — athlete depth, once there's real training to compute it from */}
       {isAthlete && sessions.length > 0 && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.blue }}>
+        <Card>
           <Kicker color={C.blue}>Performance State</Kicker>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>
             <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band)) }}>{state.hpi.score}</Text>

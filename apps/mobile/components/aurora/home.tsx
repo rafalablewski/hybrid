@@ -451,13 +451,36 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>{t("w.home.today.badgeFull")}</Text>
               </View>
             </View>
-            <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 8, marginBottom: 4 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 20, color: C.chalk, marginTop: 8, marginBottom: 4 }}>
               {phase.block.label} {t("w.home.today.phaseWeek")} {currentWeek}/{macro.totalWeeks}
             </Text>
-            <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
+            {/* Professional progress meter — week count + percent above the bar. */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: 12 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
+                {t("w.home.today.week")} {currentWeek} / {macro.totalWeeks}
+              </Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.violet), fontVariant: ["tabular-nums"] }}>
+                {Math.round((currentWeek / macro.totalWeeks) * 100)}%
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 8 }}>
               {macro.blocks.map((b) => (
                 <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === phase.block.key ? b.color : `${b.color}33` }} />
               ))}
+            </View>
+            {/* Labelled periodisation timeline — each block over its week range. */}
+            <View style={{ flexDirection: "row", gap: 3, marginTop: 7 }}>
+              {macro.blocks.map((b) => {
+                const cur = b.key === phase.block.key;
+                return (
+                  <View key={b.key} style={{ flex: b.weeks, overflow: "hidden" }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.4, color: cur ? b.color : C.ash }}>{b.label}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: cur ? b.color : C.ash }}>
+                      {b.startWeek === b.endWeek ? `wk ${b.startWeek}` : `wk ${b.startWeek}–${b.endWeek}`}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 17 }}>
               {t("w.home.today.seasonBriefBody")}
@@ -472,16 +495,35 @@ export default function AuroraHome() {
             the intelligence layer. The Today upsell (#8). */}
         {!isAthlete && (
           <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue), flex: 1 }}>{t("w.home.today.unlockWithFull")}</Text>
-              <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-perfstate" }); router.push("/upgrade"); }} style={{ backgroundColor: C.blue, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{t("w.home.today.unlockFullBtn")}</Text>
-              </Pressable>
-            </View>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.home.today.seePerfState")}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>{t("w.home.today.unlockWithFull")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: 20, color: C.chalk, marginTop: 8 }}>{t("w.home.today.seePerfState")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 6, lineHeight: 19 }}>
               {t("w.home.today.sellFullBody")}
             </Text>
+            {/* Feature tag cloud — HPI highlighted, the rest quiet outlines. */}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
+              {[
+                { label: "HPI", on: true },
+                { label: "Readiness", on: false },
+                { label: "Injury risk", on: false },
+                { label: "Velocity", on: false },
+                { label: "Analytics", on: false },
+                { label: "AI coach", on: false },
+              ].map((tag) => (
+                <View
+                  key={tag.label}
+                  style={{ borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: tag.on ? `${C.blue}73` : C.line, backgroundColor: tag.on ? `${C.blue}1a` : "transparent" }}
+                >
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.5, color: tag.on ? txt(C, C.blue) : C.ash }}>{tag.label}</Text>
+                </View>
+              ))}
+            </View>
+            <Pressable
+              onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-perfstate" }); router.push("/upgrade"); }}
+              style={{ marginTop: 18, alignSelf: "flex-start", borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.blue, backgroundColor: "transparent", paddingHorizontal: 16, paddingVertical: 9 }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6, color: txt(C, C.blue) }}>{t("w.home.today.unlockFullBtn")}</Text>
+            </Pressable>
           </View>
         )}
 

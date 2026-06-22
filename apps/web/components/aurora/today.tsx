@@ -286,45 +286,89 @@ export default function AuroraToday({
       {/* SEASON BRIEF (free) — periodization is Full, so an enrolled free user
           gets only this read-only glimpse here (the one place they can see it),
           with the full Periodize screen behind the upgrade. (#5 / #7) */}
-      {!isAthlete && macro && phase && (
-        <div style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("violet")}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
-              Your season · {macro.goalOrSport}
+      {!isAthlete && macro && phase && (() => {
+        const pct = Math.round((currentWeek / macro.totalWeeks) * 100);
+        // Cumulative week ranges across blocks for the labelled timeline.
+        let cursor = 0;
+        const ranges = macro.blocks.map((b) => {
+          const start = cursor + 1;
+          const end = cursor + b.weeks;
+          cursor = end;
+          return { ...b, start, end };
+        });
+        return (
+        <div style={{ ...card, marginTop: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.ms }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
+              {t("w.home.today.yourSeason")} {macro.goalOrSport}
             </span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("violet"), background: `color-mix(in srgb, ${C("violet")} 16%, transparent)`, borderRadius: 999, padding: "3px 10px" }}>✦ Full</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: C("violet") }}>✦ Full</span>
           </div>
-          <div style={{ fontWeight: 900, fontSize: fs.heading, margin: "8px 0 4px" }}>
-            {phase.block.label} phase · week {currentWeek}/{macro.totalWeeks}
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.heading, letterSpacing: "-.02em", margin: "16px 0 0" }}>
+            {phase.block.label} {t("w.home.today.phase")}
           </div>
-          <div style={{ display: "flex", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
-            {macro.blocks.map((b) => (
-              <div key={b.key} title={`${b.label} · ${b.weeks} wk`} style={{ flex: b.weeks, background: b.key === phase.block.key ? b.color : `${b.color}33` }} />
-            ))}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+              <span>{t("w.home.today.week")} {currentWeek} / {macro.totalWeeks}</span>
+              <span style={{ color: C("violet"), fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+            </div>
+            <div style={{ display: "flex", gap: 2, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 8, background: C("ink") }}>
+              {macro.blocks.map((b) => (
+                <div key={b.key} title={`${b.label} · ${b.weeks} wk`} style={{ flex: b.weeks, background: b.key === phase.block.key ? b.color : `${b.color}33` }} />
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 2, marginTop: 7 }}>
+              {ranges.map((b) => {
+                const cur = b.key === phase.block.key;
+                return (
+                  <span key={b.key} style={{ flex: b.weeks, overflow: "hidden", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: fs.nano, lineHeight: 1.3, letterSpacing: ".04em", textTransform: "uppercase", color: cur ? C("violet") : C("ash") }}>
+                    {b.label}
+                    <b style={{ display: "block", fontWeight: 600, color: "inherit" }}>{t("w.home.today.wk")} {b.start === b.end ? b.start : `${b.start}–${b.end}`}</b>
+                  </span>
+                );
+              })}
+            </div>
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, color: C("ash"), marginTop: 12 }}>
-            You follow the plan as written. The full periodized season — adaptive phases, auto-progression and
-            readiness modulation — is part of Full.
+          <div style={{ fontFamily: "var(--font-display)", fontSize: fs.caption, lineHeight: 1.65, color: C("ash"), marginTop: 14, maxWidth: "34ch" }}>
+            {t("w.home.today.seasonBriefBody")}
           </div>
-          <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ marginTop: 14, background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 18px", fontWeight: 700, fontSize: fs.body, cursor: "pointer" }}>
-            Unlock full periodization →
+          <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase", color: C("violet"), cursor: "pointer" }}>
+            {t("w.home.today.unlockPeriodization")}
           </button>
         </div>
-      )}
+        );
+      })()}
 
       {/* SELL FULL — what a free user unlocks: the Performance State + the rest of
           the intelligence layer. The Today upsell (#8). */}
       {!isAthlete && (
-        <div data-tour="today-upgrade" style={{ ...card, marginTop: 18, borderLeft: `3px solid ${C("blue")}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("blue") }}>{t("w.home.today.unlockWithFull")}</span>
-            <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ background: C("blue"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}>✦ {t("nav.upgrade")} →</button>
+        <div data-tour="today-upgrade" style={{ ...card, marginTop: 18 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.home.today.unlockWithFull")}</span>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 20, letterSpacing: "-.02em", margin: "16px 0 0" }}>{t("w.home.today.seePerfState")}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 16 }}>
+            {[
+              { label: "HPI", on: true },
+              { label: t("w.home.today.psTag.readiness"), on: false },
+              { label: t("w.home.today.psTag.injury"), on: false },
+              { label: t("w.home.today.psTag.velocity"), on: false },
+              { label: t("w.home.today.psTag.analytics"), on: false },
+              { label: t("w.home.today.aiCoach"), on: false },
+            ].map((tag) => (
+              <span
+                key={tag.label}
+                style={{
+                  fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 500, letterSpacing: ".05em", textTransform: "uppercase",
+                  borderRadius: 999, padding: "6px 10px",
+                  color: tag.on ? C("blue") : C("ash"),
+                  border: `1px solid ${tag.on ? `color-mix(in srgb, ${C("blue")} 45%, transparent)` : C("line")}`,
+                  background: tag.on ? `color-mix(in srgb, ${C("blue")} 10%, transparent)` : "transparent",
+                }}
+              >
+                {tag.label}
+              </span>
+            ))}
           </div>
-          <div style={{ fontWeight: 800, fontSize: 22, margin: "8px 0 6px" }}>{t("w.home.today.seePerfState")}</div>
-          <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>
-            HPI, readiness and injury risk fused into one live state — plus adaptive loads, periodization,
-            velocity tracking, analytics and the AI coach.
-          </div>
+          <button onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8, border: `1px solid ${C("blue")}`, borderRadius: 999, background: "none", padding: "9px 16px", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase", color: C("blue"), cursor: "pointer" }}>✦ {t("nav.upgrade")} →</button>
         </div>
       )}
 
