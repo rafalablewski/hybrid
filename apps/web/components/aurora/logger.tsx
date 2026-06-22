@@ -8,6 +8,9 @@ import { fs, space,
   newPrsInSession,
   newCardioPrsInSession,
   sessionVolume,
+  volumeByMuscle,
+  sessionFunFact,
+  funFactText,
   blockBestE1rm,
   lastStrengthByLift,
   blockSummary,
@@ -27,7 +30,7 @@ import SaveRoutineCard, { SessionRename } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
-import { shareWorkoutStory, type ShareBest } from "@/lib/workout-share";
+import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
 import { useLang } from "@/lib/i18n";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
@@ -63,10 +66,13 @@ const pill = (token: string): React.CSSProperties => {
 export default function AuroraLogger({
   sessions,
   onSaved,
+  onHome,
   initialBlocks,
 }: {
   sessions: LoggedSession[];
   onSaved: () => void;
+  /** Go back to Today from the summary (the analysis link uses onSaved → history). */
+  onHome?: () => void;
   initialBlocks?: SessionBlock[];
 }) {
   const { t } = useLang();
@@ -371,7 +377,7 @@ export default function AuroraLogger({
     }
   };
 
-  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} />;
+  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} />;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -553,7 +559,7 @@ export default function AuroraLogger({
  *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
  *  a short navigator.vibrate where the device supports it (the web analog of the
  *  native success haptic). */
-function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; onDone: () => void }) {
+function Finish({ data, units, onDone, onHome }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void }) {
   const { t } = useLang();
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
@@ -561,57 +567,144 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
   const milestone = firstEver || prs.length > 0 || cardioPrs.length > 0;
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
+  const [active, setActive] = useState(0);
+  const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
       try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
     }
   }, [milestone]);
+
+  const prLine = (p: PrHit) =>
+    p.previous == null ? t("w.train.logger.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`;
+  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
+
+  // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
+  const muscleVol = volumeByMuscle(blocks);
+  const muscleMax = muscleVol[0]?.volume ?? 0;
+  const funFact = sessionFunFact(blocks);
+  const prRows: { left: string; right: string; hot?: boolean }[] = [
+    ...prs.map((p) => ({ left: p.lift, right: prLine(p), hot: true })),
+    ...cardioPrs.map((p) => ({ left: cardioLine(p), right: "", hot: true })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+  ];
+  const prHeadline = prs.length > 0
+    ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
+    : cardioPrs.length > 0
+      ? `🏃 ${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}`
+      : t("summary.todaysBests");
+  const slides: StorySlide[] = [
+    { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes, sets, volume, bests, firstEver } },
+    { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
+    ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as StorySlide] : []),
+    ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as StorySlide] : []),
+  ];
+  const activeIdx = Math.min(active, slides.length - 1);
+
   const share = async () => {
     setSharing(true);
     setShareMsg("");
-    const how = await shareWorkoutStory({ title, minutes, sets, volume, bests, firstEver }, units, t);
+    const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t);
+    const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t);
     setSharing(false);
     if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
     else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));
   };
-  const prLine = (p: PrHit) =>
-    p.previous == null
-      ? `${p.lift} ${fmtWeight(p.e1rm, units)} ${t("w.train.logger.firstTime")}`
-      : `${p.lift} ${fmtWeight(p.e1rm, units)} (+${fmtWeight(p.e1rm - p.previous, units)})`;
-  const cardioLine = (p: CardioPrHit) => (p.kind === "distance" ? `${p.move} ${p.value} km` : `${p.move} — ${t("w.train.logger.fasterPace")}`);
+
+  const onPagerScroll = () => {
+    const el = pagerRef.current;
+    if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+  };
+
+  const slideShell = { ...card, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
+  const statCol = (label: string, value: string) => (
+    <div style={{ flex: 1, textAlign: "center" }}>
+      <div style={{ fontWeight: 900, fontSize: 30 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), letterSpacing: ".1em", marginTop: 4 }}>{label}</div>
+    </div>
+  );
+  const renderSlide = (s: StorySlide) => {
+    if (s.kind === "overview")
+      return (
+        <>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.subtitle, marginTop: 10 }}>{s.stats.title || "Workout"}</div>
+          <div style={{ display: "flex", marginTop: 28 }}>
+            {statCol(t("summary.minutes"), String(minutes))}
+            {statCol(t("w.train.logger.sets"), String(sets))}
+            {statCol(t("summary.volumeMoved"), fmtTonnage(volume, units))}
+          </div>
+        </>
+      );
+    if (s.kind === "prs")
+      return (
+        <>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.note, color: C("lime"), marginTop: 10 }}>{s.headline}</div>
+          {s.rows.slice(0, 6).map((r, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.body }}>
+              <span>{r.hot ? "🏆 " : ""}{r.left}</span>
+              {r.right && <span style={{ color: r.hot ? C("lime") : C("chalk"), fontWeight: 700 }}>{r.right}</span>}
+            </div>
+          ))}
+        </>
+      );
+    if (s.kind === "muscle")
+      return (
+        <>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
+          {s.bars.map((b, i) => (
+            <div key={i} style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 4 }}>
+                <span>{b.label}</span>
+                <span style={{ color: C("ash") }}>{b.value}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, background: C("ink"), overflow: "hidden" }}>
+                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: C("lime") }} />
+              </div>
+            </div>
+          ))}
+        </>
+      );
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
+        <div style={{ fontSize: 64 }}>{s.emoji}</div>
+        <div style={{ fontWeight: 700, fontSize: fs.subtitle, marginTop: 14, lineHeight: 1.35 }}>{s.text}</div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {/* Hero + heading + workout name on top. */}
       <div className="win-pop" style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
         <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
         <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? t("w.train.logger.firstDone") : t("w.train.logger.sessionComplete")}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 6 }}>{sets} {t("w.train.logger.sets")} · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
+        <div style={{ fontWeight: 700, fontSize: fs.subtitle, marginTop: 6 }}>{title || "Workout"}</div>
         <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
       </div>
 
-      {prs.length > 0 && (
-        <div className="win-pop" style={{ ...card, borderColor: C("lime"), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("lime") }}>🏆 {prs.length} {prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}</div>
-          {prs.slice(0, 5).map((p) => (
-            <div key={p.lift} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6 }}>{prLine(p)}</div>
-          ))}
-        </div>
-      )}
+      {/* Swipeable summary slides — each shareable as its own 9:16 story. */}
+      <div
+        ref={pagerRef}
+        onScroll={onPagerScroll}
+        style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 -2px" }}
+      >
+        {slides.map((s, i) => (
+          <div key={i} style={{ flex: "0 0 100%", padding: "0 2px", boxSizing: "border-box" }}>
+            <div style={slideShell}>{renderSlide(s)}</div>
+          </div>
+        ))}
+      </div>
 
-      {cardioPrs.length > 0 && (
-        <div className="win-pop" style={{ ...card, borderColor: C("blue"), background: "color-mix(in srgb, var(--color-blue) 8%, transparent)", marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.subtitle, color: C("blue") }}>🏃 {cardioPrs.length} {cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}</div>
-          {cardioPrs.slice(0, 5).map((p) => (
-            <div key={`${p.move}-${p.kind}`} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 6 }}>{cardioLine(p)}</div>
-          ))}
-        </div>
-      )}
+      {/* Dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+        {slides.map((_, i) => (
+          <div key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s" }} />
+        ))}
+      </div>
 
-      {/* Save as routine — lives HERE now (after finishing), the one place a
-          workout name actually matters. Defaults the name to the auto-title. */}
-      <SaveRoutineCard blocks={blocks} defaultName={title} />
-
-      {/* Share — a branded 9:16 story image (Web Share API, downloads as a
-          fallback). The milestone (PR / first-ever) gets the glowing primary. */}
+      {/* One Share button — shares the slide on screen as a 9:16 story. */}
       <button
         onClick={share}
         disabled={sharing}
@@ -620,13 +713,13 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
           fontFamily: "var(--font-display)",
           fontWeight: 800,
           fontSize: fs.note,
-          background: milestone ? C("lime") : "transparent",
-          color: milestone ? C("ink") : C("lime"),
-          border: `1px solid ${C("lime")}`,
+          background: C("lime"),
+          color: C("ink"),
+          border: "none",
           borderRadius: 999,
           padding: "13px 28px",
           cursor: sharing ? "default" : "pointer",
-          marginTop: 6,
+          marginTop: 16,
           boxShadow: milestone ? `0 0 18px -2px color-mix(in srgb, ${C("lime")} 60%, transparent)` : "none",
         }}
       >
@@ -634,9 +727,20 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
       </button>
       {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
 
-      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: milestone ? "transparent" : C("lime"), color: milestone ? C("chalk") : C("ink"), border: milestone ? `1px solid ${C("line")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 10 }}>
-        {t("w.train.logger.done")}
+      {/* Save as routine. */}
+      <div style={{ marginTop: 14 }}>
+        <SaveRoutineCard blocks={blocks} defaultName={title} />
+      </div>
+
+      {/* See analysis — at the very bottom (onDone → history). */}
+      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 24 }}>
+        {t("summary.seeAnalysis")}
       </button>
+      {onHome && (
+        <button onClick={onHome} style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, background: "transparent", color: C("ash"), border: "none", padding: "16px 0", cursor: "pointer" }}>
+          {t("summary.doneToday")}
+        </button>
+      )}
     </div>
   );
 }

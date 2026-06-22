@@ -116,6 +116,98 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
 );
 WorkoutStoryCard.displayName = "WorkoutStoryCard";
 
+// ── Multi-slide story cards ────────────────────────────────────────────────
+// The summary carousel turns each slide into its own shareable 9:16 story. The
+// screen precomputes a SlideData payload per slide; SlideStoryCard renders the
+// matching body inside a shared branded frame (wordmark/glow/footer) so every
+// slide shares with one consistent look.
+
+export type SlideData =
+  | { kind: "overview"; eyebrow: string; stats: ShareStats; firstEver?: boolean }
+  | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
+  | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
+  | { kind: "fun"; eyebrow: string; emoji: string; text: string };
+
+const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; children: React.ReactNode }>(
+  ({ width, eyebrow, tracked, children }, ref) => (
+    <View
+      ref={ref}
+      collapsable={false}
+      style={{ width, height: Math.round((width * 16) / 9), backgroundColor: C.ink, padding: width * 0.09, justifyContent: "space-between" }}
+    >
+      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: `${C.lime}22` }} />
+      <View>
+        <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: C.chalk, letterSpacing: -1 }}>
+          {brand.name}
+          <Text style={{ color: C.lime }}>.</Text>
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.lime, letterSpacing: 2, marginTop: 6 }}>{eyebrow.toUpperCase()}</Text>
+      </View>
+      <View style={{ flex: 1, justifyContent: "center" }}>{children}</View>
+      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.ash }}>{tracked}</Text>
+    </View>
+  ),
+);
+StoryShell.displayName = "StoryShell";
+
+export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number }>(
+  ({ slide, t, units = "kg", width }, ref) => {
+    const tracked = t("share.tracked");
+    if (slide.kind === "overview") {
+      const s = slide.stats;
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.088, color: C.chalk, marginBottom: width * 0.08 }}>
+            {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
+          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Stat label={t("summary.minutes")} value={String(s.minutes)} />
+            <Stat label={t("summary.sets")} value={String(s.sets)} />
+            <Stat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} />
+          </View>
+        </StoryShell>
+      );
+    }
+    if (slide.kind === "prs") {
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: C.lime, marginBottom: width * 0.05 }}>{slide.headline}</Text>
+          {slide.rows.slice(0, 6).map((r, i) => (
+            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
+              <Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: C.chalk }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? C.lime : C.chalk }}>{r.right}</Text>
+            </View>
+          ))}
+        </StoryShell>
+      );
+    }
+    if (slide.kind === "muscle") {
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+          {slide.bars.map((b, i) => (
+            <View key={i} style={{ marginTop: width * 0.04 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: width * 0.015 }}>
+                <Text style={{ fontFamily: F.semi, fontSize: width * 0.04, color: C.chalk }}>{b.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: C.ash }}>{b.value}</Text>
+              </View>
+              <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: C.ink2, overflow: "hidden" }}>
+                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: C.lime }} />
+              </View>
+            </View>
+          ))}
+        </StoryShell>
+      );
+    }
+    return (
+      <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+        <Text style={{ fontSize: width * 0.22, textAlign: "center" }}>{slide.emoji}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: C.chalk, textAlign: "center", marginTop: width * 0.05, lineHeight: width * 0.075 }}>{slide.text}</Text>
+      </StoryShell>
+    );
+  },
+);
+SlideStoryCard.displayName = "SlideStoryCard";
+
 // Branded "this week" recap card — also captured to a PNG for social.
 export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: string) => string; units?: WeightUnit }>(
   ({ recap, t, units = "kg" }, ref) => {

@@ -17,6 +17,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, Card, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
+import { ACard, RADIUS } from "./aurora/kit";
 
 /**
  * Home-screen quick-log widget — pick a sport, enter time (+ distance for
@@ -25,7 +26,7 @@ import { AuroraIcon } from "./aurora/icons";
  * leaves Home. Distance is entered in the sport's natural unit (metres for
  * swimming/rowing); storage stays km. No wearable needed.
  */
-export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void }) {
+export default function QuickSportLog({ sessions = [], onSaved, solid = false }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
   const C = useTheme().palette;
   const { t } = useLang();
   const { session } = useSession();
@@ -110,9 +111,12 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
     onSaved?.();
   };
 
+  // Aurora pairs this with the solid `ink2` season card, so match that surface
+  // (no glass) there; the classic skin keeps the default glass Card.
+  const Surface = solid ? ACard : Card;
   return (
-    <Card style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>
+    <Surface style={{ marginTop: 16 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>
         {t("quickSport.title")}
       </Text>
       <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{t("quickSport.sub")}</Mono>
@@ -200,7 +204,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         <Pressable
           onPress={save}
           disabled={saving}
-          style={{ backgroundColor: C.lime, borderRadius: 10, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}
+          style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}
         >
           <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>{saving ? "…" : t("quickSport.log")}</Text>
         </Pressable>
@@ -211,6 +215,6 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           {msg || `${t("workout.pace")} ${pace}`}
         </Text>
       )}
-    </Card>
+    </Surface>
   );
 }

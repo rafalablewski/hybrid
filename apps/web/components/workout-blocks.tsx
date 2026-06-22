@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, rpeRirSwap, displayLoad, storeLoad, platesPerSide, warmupRamp, moveItem, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
@@ -166,6 +166,21 @@ export default function WorkoutBlocks({
   // pace, PRs, history and the training log read it with no special-casing.
   const addSport = (name: string) => {
     setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name }]);
+    setSportPicker(false);
+  };
+  // Add a named block of the inferred kind — used by the searchable exercise
+  // picker (strength gets a starter set; cardio/conditioning are name-only).
+  const addNamed = (name: string, kind: SessionBlock["kind"]) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setBlocks((bs) => [
+      ...bs,
+      kind === "strength"
+        ? { uid: uid(), kind: "strength", name: clean, sets: [{ load: "", reps: "", rpe: "" }] }
+        : kind === "cardio"
+          ? { uid: uid(), kind: "cardio", name: clean }
+          : { uid: uid(), kind: "conditioning", name: clean, format: "" },
+    ]);
     setSportPicker(false);
   };
   const removeBlock = (u: string) => setBlocks((bs) => bs.filter((b) => b.uid !== u));
@@ -586,35 +601,14 @@ export default function WorkoutBlocks({
 
       {rpeHelp && <RpeHelp onClose={() => setRpeHelp(false)} />}
 
-      {/* Sport picker — log a sport session by hand (no wearable needed). */}
+      {/* Searchable exercise picker — the sport-picker dropdown pattern, grouped
+          by muscle/pattern, plus sports and a free-typed custom entry. */}
       {sportPicker && (
-        <Card style={{ borderLeft: `3px solid ${BLUE}`, marginBottom: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
-              {t("w.train.blocks.pickSport")}
-            </Mono>
-            <button onClick={() => setSportPicker(false)} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
-          </div>
-          {olympicSportsByCategory().map(({ category, sports }) => (
-            <div key={category} style={{ marginBottom: 10 }}>
-              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }} c={ASH}>
-                {category}
-              </Mono>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
-                {sports.map((s) => (
-                  <button
-                    key={s.name}
-                    onClick={() => addSport(s.name)}
-                    style={{ ...cond, fontSize: fs.caption, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: 8, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}
-                  >
-                    <span style={{ fontSize: fs.body }}>{s.icon}</span>
-                    {s.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </Card>
+        <ExercisePicker
+          catalog={catalog}
+          onClose={() => setSportPicker(false)}
+          onPick={(name, kind) => addNamed(name, kind)}
+        />
       )}
 
       <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
@@ -625,7 +619,7 @@ export default function WorkoutBlocks({
           {t("w.train.blocks.addCardio")}
         </button>
         <button onClick={() => setSportPicker((v) => !v)} style={blockBtn(BLUE)}>
-          {t("w.train.blocks.addSport")}
+          {t("w.train.blocks.addExercise")}
         </button>
         <button onClick={addConditioning} style={blockBtn(VIOLET)}>
           {t("w.train.blocks.addConditioning")}
@@ -635,6 +629,82 @@ export default function WorkoutBlocks({
         </button>
       </div>
     </>
+  );
+}
+
+/**
+ * Searchable exercise picker — the dimmed, centered modal twin of the sport
+ * picker in "Log a sport session". Exercises grouped by muscle/pattern (sticky
+ * headers), then sports, then a free-typed custom entry. Replaces the old wall
+ * of chips so adding a movement reads the same as picking a sport.
+ */
+function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
+  const { t } = useLang();
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const match = (n: string) => !q || n.toLowerCase().includes(q);
+  const kindColor = (k: SessionBlock["kind"]) => (k === "strength" ? LIME : k === "cardio" ? BLUE : VIOLET);
+
+  const exGroups = exercisesByCategory(MOVEMENTS, catalog)
+    .map((g) => ({ ...g, names: g.names.filter(match) }))
+    .filter((g) => g.names.length > 0);
+  const sportGroups = olympicSportsByCategory()
+    .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
+    .filter((g) => g.sports.length > 0);
+  const exact = [...Object.keys(MOVEMENTS), ...catalog].some((n) => n.toLowerCase() === q);
+
+  const head = (label: string) => (
+    <div style={{ position: "sticky", top: 0, background: INK2, padding: "9px 15px 4px", ...mono, fontSize: fs.nano, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase", color: ASH }}>{label}</div>
+  );
+  const row = (name: string, kind: SessionBlock["kind"], key: string, icon?: string) => (
+    <button
+      key={key}
+      type="button"
+      onClick={() => onPick(name, kind)}
+      style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "10px 15px", cursor: "pointer", textAlign: "left", border: 0, background: "transparent", color: CHALK }}
+    >
+      {icon ? <span style={{ width: 20, textAlign: "center", fontSize: fs.bodyLg }}>{icon}</span> : <span style={{ width: 20, display: "grid", placeItems: "center" }}><span style={{ width: 8, height: 8, borderRadius: 4, background: kindColor(kind) }} /></span>}
+      <span style={{ ...disp, flex: 1, fontWeight: 500, fontSize: fs.body }}>{name}</span>
+    </button>
+  );
+
+  return (
+    <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("w.home.quickSport.choose")}
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, boxShadow: "0 24px 60px -20px rgba(0,0,0,.8)", overflow: "hidden" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", borderBottom: `1px solid ${LINE}` }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={ASH} strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
+          </svg>
+          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.train.blocks.searchExercise")} style={{ ...disp, flex: 1, minWidth: 0, background: "none", border: 0, outline: "none", color: CHALK, fontSize: fs.body }} />
+          <button onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {exGroups.map((g) => (
+            <div key={g.category}>
+              {head(t(g.labelKey))}
+              {g.names.map((n) => row(n, inferBlockKind(n), `e-${n}`))}
+            </div>
+          ))}
+          {sportGroups.map((g) => (
+            <div key={g.category}>
+              {head(g.category)}
+              {g.sports.map((s) => row(s.name, "cardio", `s-${s.name}`, s.icon))}
+            </div>
+          ))}
+          {q.length > 0 && !exact && (
+            <button type="button" onClick={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ width: "100%", textAlign: "left", border: 0, background: "transparent", cursor: "pointer", padding: "12px 15px", ...disp, fontWeight: 700, fontSize: fs.body, color: txt(LIME) }}>
+              + “{query.trim()}”
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

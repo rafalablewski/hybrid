@@ -782,6 +782,11 @@ export default function AppShell() {
                 refresh();
                 setScreen("history");
               }}
+              onHome={() => {
+                setPendingBlocks(undefined);
+                refresh();
+                setScreen("today");
+              }}
             />
           ) : (
             <Logger

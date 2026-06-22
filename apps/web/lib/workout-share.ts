@@ -135,21 +135,185 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lh: number) {
+// ── Multi-slide story export ───────────────────────────────────────────────
+// The summary carousel shares the currently-visible slide. Each slide paints a
+// shared branded frame (backdrop/glow/wordmark/eyebrow/footer) plus its own body.
+
+export type StorySlide =
+  | { kind: "overview"; eyebrow: string; stats: ShareStats }
+  | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
+  | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
+  | { kind: "fun"; eyebrow: string; emoji: string; text: string };
+
+const SW = 1080;
+const SH = 1920;
+const SPAD = 96;
+
+function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string) {
+  ctx.fillStyle = COL.ink;
+  ctx.fillRect(0, 0, SW, SH);
+  const glow = ctx.createRadialGradient(SW * 0.78, SH * 0.16, 0, SW * 0.78, SH * 0.16, 620);
+  glow.addColorStop(0, "rgba(196,240,53,0.20)");
+  glow.addColorStop(1, "rgba(196,240,53,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, SW, SH);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = font(DISPLAY, 64);
+  ctx.fillStyle = COL.chalk;
+  ctx.fillText(brand.name, SPAD, 200);
+  const wmW = ctx.measureText(brand.name).width;
+  ctx.fillStyle = COL.lime;
+  ctx.fillText(".", SPAD + wmW + 6, 200);
+  ctx.font = font(MONO, 28);
+  ctx.fillStyle = COL.lime;
+  ctx.fillText(eyebrow.toUpperCase(), SPAD, 250);
+  ctx.font = font(MONO, 30);
+  ctx.fillStyle = COL.ash;
+  ctx.fillText("Tracked with HYBRID.", SPAD, SH - 120);
+}
+
+/** Draw any summary slide as the branded 9:16 PNG. */
+export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: string) => string): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  canvas.width = SW;
+  canvas.height = SH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return Promise.resolve(null);
+  paintFrame(ctx, slide.eyebrow);
+
+  if (slide.kind === "overview") {
+    const s = slide.stats;
+    ctx.font = font(DISPLAY, 96);
+    ctx.fillStyle = COL.chalk;
+    wrapText(ctx, s.firstEver ? "First workout 🎉" : s.title || "Workout", SPAD, 470, SW - SPAD * 2, 104);
+    const stat = [
+      { label: "MIN", value: String(s.minutes) },
+      { label: t("w.train.logger.liveSets"), value: String(s.sets) },
+      { label: t("w.train.logger.liveVolume"), value: fmtTonnage(s.volume, units) },
+    ];
+    const colW = (SW - SPAD * 2) / 3;
+    stat.forEach((c, i) => {
+      const cx = SPAD + colW * i + colW / 2;
+      ctx.textAlign = "center";
+      ctx.font = font(DISPLAY, 92);
+      ctx.fillStyle = COL.chalk;
+      ctx.fillText(c.value, cx, 880);
+      ctx.font = font(MONO, 28);
+      ctx.fillStyle = COL.ash;
+      ctx.fillText(c.label, cx, 932);
+    });
+    ctx.textAlign = "left";
+  } else if (slide.kind === "prs") {
+    ctx.font = font(DISPLAY, 64);
+    ctx.fillStyle = COL.lime;
+    ctx.fillText(slide.headline, SPAD, 520);
+    let y = 660;
+    slide.rows.slice(0, 7).forEach((r) => {
+      ctx.font = font(DISPLAY, 46);
+      ctx.fillStyle = COL.chalk;
+      ctx.fillText(`${r.hot ? "🏆 " : ""}${r.left}`, SPAD, y);
+      if (r.right) {
+        ctx.textAlign = "right";
+        ctx.fillStyle = r.hot ? COL.lime : COL.chalk;
+        ctx.fillText(r.right, SW - SPAD, y);
+        ctx.textAlign = "left";
+      }
+      y += 86;
+    });
+  } else if (slide.kind === "muscle") {
+    let y = 560;
+    slide.bars.forEach((b) => {
+      ctx.font = font(DISPLAY, 44);
+      ctx.fillStyle = COL.chalk;
+      ctx.fillText(b.label, SPAD, y);
+      ctx.textAlign = "right";
+      ctx.font = font(MONO, 34);
+      ctx.fillStyle = COL.ash;
+      ctx.fillText(b.value, SW - SPAD, y);
+      ctx.textAlign = "left";
+      const barY = y + 26;
+      const barW = SW - SPAD * 2;
+      ctx.fillStyle = COL.ink2;
+      ctx.fillRect(SPAD, barY, barW, 22);
+      ctx.fillStyle = COL.lime;
+      ctx.fillRect(SPAD, barY, Math.max(barW * 0.04, (barW * Math.max(4, b.pct)) / 100), 22);
+      y += 130;
+    });
+  } else {
+    ctx.textAlign = "center";
+    ctx.font = font(DISPLAY, 200);
+    ctx.fillText(slide.emoji, SW / 2, 760);
+    ctx.font = font(DISPLAY, 64);
+    ctx.fillStyle = COL.chalk;
+    wrapText(ctx, slide.text, SPAD, 940, SW - SPAD * 2, 84, "center");
+    ctx.textAlign = "left";
+  }
+
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+}
+
+/** Share a single summary slide as a 9:16 story image (same delivery + fallbacks
+ *  as shareWorkoutStory). `caption` is the plain-text body/fallback. */
+export async function shareWorkoutSlide(
+  slide: StorySlide,
+  caption: string,
+  units: WeightUnit,
+  t: (k: string) => string,
+): Promise<"shared" | "downloaded" | "text" | "cancelled"> {
+  try {
+    const blob = await drawSlideStory(slide, units, t);
+    if (blob) {
+      const file = new File([blob], "hybrid-workout.png", { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], text: caption } as ShareData);
+        return "shared";
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "hybrid-workout.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return "downloaded";
+    }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") return "cancelled";
+  }
+  try {
+    if (navigator.share) {
+      await navigator.share({ text: caption });
+      return "shared";
+    }
+    await navigator.clipboard?.writeText(caption);
+    return "text";
+  } catch {
+    return "cancelled";
+  }
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lh: number, align: "left" | "center" = "left") {
+  const prevAlign = ctx.textAlign;
+  ctx.textAlign = align;
+  const tx = align === "center" ? x + maxW / 2 : x;
   const words = text.split(" ");
   let line = "";
   let yy = y;
   for (const w of words) {
     const test = line ? `${line} ${w}` : w;
     if (ctx.measureText(test).width > maxW && line) {
-      ctx.fillText(line, x, yy);
+      ctx.fillText(line, tx, yy);
       line = w;
       yy += lh;
     } else {
       line = test;
     }
   }
-  if (line) ctx.fillText(line, x, yy);
+  if (line) ctx.fillText(line, tx, yy);
+  ctx.textAlign = prevAlign;
 }
 
 /**

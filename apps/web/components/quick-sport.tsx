@@ -35,7 +35,7 @@ const field = {
  * never leaves the home screen. Distance reads/writes in the sport's natural
  * unit (metres for swimming/rowing); storage stays km. No wearable needed.
  */
-export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void }) {
+export default function QuickSportLog({ sessions = [], onSaved, solid = false }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
   const { t } = useLang();
   const suggested = suggestedSports(sessions);
   // Until the athlete picks, track the top suggestion — which only resolves once
@@ -94,8 +94,10 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
     }
   };
 
-  return (
-    <Card style={{}}>
+  // Aurora pairs this with the solid `ink2` season card, so match that surface
+  // (no glass) there; the classic skin keeps the default glass Card.
+  const content = (
+    <>
       <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
         {t("w.home.quickSport.title")}
       </Mono>
@@ -125,7 +127,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         <button
           onClick={save}
           disabled={saving}
-          style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 10, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}
+          style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}
         >
           {saving ? t("w.home.quickSport.saving") : t("w.home.quickSport.log")}
         </button>
@@ -135,7 +137,16 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           {msg || `${t("w.home.quickSport.pace")} ${pace}`}
         </Mono>
       )}
-    </Card>
+    </>
+  );
+
+  // Match the aurora season card's solid surface (ink2 + soft shadow, no glass).
+  return solid ? (
+    <div style={{ background: "var(--color-ink2)", border: "1px solid var(--color-line)", borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 }}>
+      {content}
+    </div>
+  ) : (
+    <Card style={{}}>{content}</Card>
   );
 }
 
