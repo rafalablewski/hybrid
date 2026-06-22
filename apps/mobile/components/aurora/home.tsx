@@ -213,7 +213,11 @@ export default function AuroraHome() {
   };
 
   const planReadiness = hasData || plan || phase;
-  const startPrescribed = () => router.push("/workout?source=ai");
+  // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
+  // named plan's day), falls back to the AI-prescribed session, then to an empty
+  // start — each lands in the live workout with the timer running.
+  const startPrescribed = () =>
+    router.push(plan ? "/workout?source=plan" : hasData || phase ? "/workout?source=ai" : "/workout?source=empty");
 
   // First-run guided tutorial (#2): shown once after a fresh account onboards.
   // Guest-first rule — if the user logged a guest workout before signing up,

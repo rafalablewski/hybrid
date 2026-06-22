@@ -19,6 +19,7 @@ import { fs, space,
 } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { useLang } from "@/lib/i18n";
 
 type FinishData = {
@@ -63,6 +64,10 @@ export default function AuroraLogger({
   // payoff, so instead of silently navigating away we land on a win screen.
   const [done, setDone] = useState<FinishData | null>(null);
   const prefs = useLoggerPrefs();
+  // Live workout clock — starts the moment you enter to log (after the get-ready
+  // count-in), so the saved session records real training time. Web twin of the
+  // mobile live logger's timer.
+  const { elapsed, countdown, startedAt, stop } = useWorkoutTimer();
 
   useEffect(() => {
     fetch("/api/templates")
@@ -136,7 +141,8 @@ export default function AuroraLogger({
     const payload = {
       title: title.trim() || "Workout",
       readiness: rx.readiness,
-      startedAt: new Date().toISOString(),
+      // The clock's real start (after the count-in) → true session duration.
+      startedAt: startedAt.current.toISOString(),
       completedAt: new Date().toISOString(),
       blocks: blocks.map(({ uid: _uid, ...b }) => b),
     };
@@ -167,6 +173,7 @@ export default function AuroraLogger({
         blocks: cleanBlocks,
       };
       setSaving(false);
+      stop(); // freeze the clock — the workout's done, the celebration is next
       setDone({
         title: payload.title,
         sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
@@ -185,6 +192,30 @@ export default function AuroraLogger({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {/* Live workout clock — the gym timer running while you log (sticky so it
+          stays visible as you scroll the session). */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: space.sm,
+          marginBottom: 16,
+          padding: "10px 16px",
+          background: "color-mix(in srgb, var(--color-ink2) 86%, transparent)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: `1px solid ${C("line")}`,
+          borderRadius: 999,
+        }}
+      >
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, letterSpacing: 1, color: C("chalk") }}>{mmss(elapsed)}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".18em", color: C("ash") }}>{t("workout.elapsed")}</span>
+      </div>
+
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
@@ -286,6 +317,17 @@ export default function AuroraLogger({
         </button>
         {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
       </div>
+
+      {/* Get-ready count-in — covers the screen on entry until GO, then the
+          elapsed clock starts from zero (the timer "goes off"). */}
+      {countdown != null && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: C("ink"), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, letterSpacing: ".2em", color: C("ash"), marginBottom: 12 }}>{t("workout.getReady").toUpperCase()}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: countdown > 0 ? 132 : 96, color: C("lime"), lineHeight: 1 }}>
+            {countdown > 0 ? countdown : t("workout.go")}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

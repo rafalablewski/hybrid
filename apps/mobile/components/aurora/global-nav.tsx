@@ -25,7 +25,11 @@ const RIGHT: Side[] = [
   { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
   { id: "you", glyph: "user-circle", labelKey: "nav.you", href: "/(tabs)/you", seg: "you" },
 ];
-const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
+// The centre Train action starts logging RIGHT NOW: it drops straight into the
+// live workout with an empty session and the get-ready count-in (so the timer
+// goes off), rather than the launcher hub. `source=empty` resumes an
+// in-progress draft if one exists, so a tap never silently loses a workout.
+const TRAIN: { href: Href; seg: string } = { href: "/workout?source=empty", seg: "workout" };
 
 // Routes that should NOT show the bar: auth/funnel + the focused live workout
 // (accidental nav mid-set loses context). Everything else gets it.
