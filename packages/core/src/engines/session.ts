@@ -143,6 +143,22 @@ export function warmupRamp(workingKg: number): WarmupStep[] {
   return steps.map(([pct, reps]) => ({ load: Math.round((workingKg * pct) / 2.5) * 2.5, reps }));
 }
 
+/**
+ * A friendly default title for a freshly-logged session, by time of day. The
+ * logger no longer asks for a name up front (nobody names a workout), so both
+ * clients seed the title from this — identical defaults across web + mobile. A
+ * real name is only entered when saving a routine (or the optional finish-screen
+ * rename). Returns plain English; this is stored data, not a translated label.
+ */
+export function defaultSessionTitle(date: Date = new Date()): string {
+  const h = date.getHours();
+  if (h < 5) return "Late night workout";
+  if (h < 12) return "Morning workout";
+  if (h < 17) return "Afternoon workout";
+  if (h < 21) return "Evening workout";
+  return "Night workout";
+}
+
 export interface StrengthBlock {
   kind: "strength";
   name: string;

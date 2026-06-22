@@ -5,28 +5,19 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
+  defaultSessionTitle,
+  sessionVolume,
+  fmtTonnage,
   type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
 import { fs, space, INK, INK2, LINE, CHALK, ASH, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { blockBtn, uid, type EditableBlock } from "@/components/workout-blocks";
+import SaveRoutineCard, { SessionRename } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 
 type Routine = { id: string; name: string; blocks: SessionBlock[] };
-
-const inputStyle = {
-  ...mono,
-  fontSize: fs.heading,
-  fontWeight: 800,
-  background: INK2,
-  color: CHALK,
-  border: `1px solid ${LINE}`,
-  borderRadius: 8,
-  padding: "8px 10px",
-  outline: "none",
-  boxSizing: "border-box",
-} as const;
 
 export default function Logger({
   sessions,
@@ -38,14 +29,18 @@ export default function Logger({
   /** Seed blocks for the session — e.g. an enrolled named plan's day. */
   initialBlocks?: SessionBlock[];
 }) {
-  const [title, setTitle] = useState("Workout");
+  // Auto-titled — no name input while logging; a name is only entered on the
+  // finish screen (Save as routine, or the optional rename).
+  const [title, setTitle] = useState(() => defaultSessionTitle());
   const [blocks, setBlocks] = useState<EditableBlock[]>(
     () => initialBlocks?.map((b) => ({ uid: uid(), ...b }) as EditableBlock) ?? [],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [routines, setRoutines] = useState<Routine[]>([]);
-  const [routineMsg, setRoutineMsg] = useState("");
+  // Once finished + saved, land on a compact summary (parity with Aurora's
+  // finish screen) where Save as routine + the optional rename live.
+  const [done, setDone] = useState<{ sessionId: string | null; title: string; blocks: SessionBlock[]; sets: number; volume: number } | null>(null);
   const prefs = useLoggerPrefs();
   // Live workout clock — runs from entry (after the get-ready count-in) so the
   // saved session records real training time. Twin of the mobile live logger.
@@ -63,26 +58,6 @@ export default function Logger({
   const loadRoutine = (r: Routine) => {
     setBlocks(r.blocks.map((b) => ({ uid: uid(), ...b }) as EditableBlock));
     setTitle(r.name);
-  };
-
-  const saveAsRoutine = async () => {
-    setRoutineMsg("");
-    try {
-      const res = await fetch("/api/templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: title.trim() || "Routine", blocks: blocks.map(({ uid: _u, ...b }) => b) }),
-      });
-      if (!res.ok) {
-        setRoutineMsg(res.status === 401 ? "Sign in to save routines." : "Couldn't save routine.");
-        return;
-      }
-      const d = (await res.json()) as { template: Routine };
-      setRoutines((rs) => [d.template, ...rs]);
-      setRoutineMsg("★ Saved to your routines");
-    } catch {
-      setRoutineMsg("Network error — try again.");
-    }
   };
 
   // Engine reads the athlete's REAL history. With no sessions yet it still
@@ -126,13 +101,14 @@ export default function Logger({
   const save = async () => {
     setSaving(true);
     setError("");
+    const cleanBlocks = blocks.map(({ uid: _uid, ...b }) => b) as SessionBlock[];
     const payload = {
-      title: title.trim() || "Workout",
+      title: title.trim() || defaultSessionTitle(),
       readiness: rx.readiness,
       // The clock's real start (after the count-in) → true session duration.
       startedAt: startedAt.current.toISOString(),
       completedAt: new Date().toISOString(),
-      blocks: blocks.map(({ uid: _uid, ...b }) => b),
+      blocks: cleanBlocks,
     };
     try {
       const res = await fetch("/api/sessions", {
@@ -150,12 +126,45 @@ export default function Logger({
         setSaving(false);
         return;
       }
-      onSaved();
+      const saved = (await res.json().catch(() => ({}))) as { session?: { id?: string } };
+      setSaving(false);
+      setDone({
+        sessionId: saved.session?.id ?? null,
+        title: payload.title,
+        blocks: cleanBlocks,
+        sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
+        volume: sessionVolume(cleanBlocks),
+      });
     } catch {
       setError("Network error — try again.");
       setSaving(false);
     }
   };
+
+  // Finish screen — finishing IS the save; this is where naming + Save as
+  // routine live (after you're done, not while logging).
+  if (done)
+    return (
+      <div style={{ maxWidth: 560, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
+          <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: `color-mix(in srgb, ${LIME} 14%, transparent)`, border: `2px solid ${LIME}`, fontSize: 36 }}>✓</div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: 28, marginTop: 14, color: CHALK }}>Session complete</div>
+          <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6 }} c={ASH}>
+            {done.sets} sets · {fmtTonnage(done.volume, prefs.units)}{done.title ? ` · ${done.title}` : ""}
+          </Mono>
+          <div style={{ textAlign: "center" }}>
+            <SessionRename sessionId={done.sessionId} value={done.title} onRenamed={(tt) => setDone((d) => (d ? { ...d, title: tt } : d))} />
+          </div>
+        </div>
+        <SaveRoutineCard blocks={done.blocks} defaultName={done.title} />
+        <button
+          onClick={onSaved}
+          style={{ width: "100%", ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 12, padding: "14px 28px", cursor: "pointer", marginTop: 12 }}
+        >
+          Done →
+        </button>
+      </div>
+    );
 
   return (
     <div style={{ maxWidth: 760 }}>
@@ -230,12 +239,8 @@ export default function Logger({
         )}
       </div>
 
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Session title"
-        style={{ ...inputStyle, ...disp, width: "100%", marginBottom: 14 }}
-      />
+      {/* No session-title input — the workout auto-titles itself; you name it
+          only on the finish screen (Save as routine / optional rename). */}
 
       <WorkoutBlocks
         blocks={blocks}
@@ -254,35 +259,27 @@ export default function Logger({
         </Mono>
       )}
 
-      <div style={{ display: "flex", gap: space.ms, alignItems: "center", flexWrap: "wrap" }}>
-        <button
-          onClick={save}
-          disabled={saving || blocks.length === 0}
-          style={{
-            ...disp,
-            fontWeight: 800,
-            fontSize: fs.note,
-            background: LIME,
-            color: ON_ACCENT,
-            border: "none",
-            borderRadius: 12,
-            padding: "14px 28px",
-            cursor: saving || blocks.length === 0 ? "default" : "pointer",
-            opacity: saving || blocks.length === 0 ? 0.5 : 1,
-          }}
-        >
-          {saving ? "Saving…" : "Save session →"}
-        </button>
-        <button
-          onClick={saveAsRoutine}
-          disabled={blocks.length === 0}
-          style={{ ...blockBtn(LIME), padding: "13px 20px", opacity: blocks.length === 0 ? 0.5 : 1, cursor: blocks.length === 0 ? "default" : "pointer" }}
-          title="Save this workout as a reusable routine"
-        >
-          ★ Save as routine
-        </button>
-        {routineMsg && <Mono s={{ fontSize: fs.caption }} c={routineMsg.startsWith("★") ? LIME : ASH}>{routineMsg}</Mono>}
-      </div>
+      {/* One bottom action — finishing IS the save. "Save as routine" now lives
+          on the finish screen, where naming a workout actually makes sense. */}
+      <button
+        onClick={save}
+        disabled={saving || blocks.length === 0}
+        style={{
+          width: "100%",
+          ...disp,
+          fontWeight: 800,
+          fontSize: fs.note,
+          background: LIME,
+          color: ON_ACCENT,
+          border: "none",
+          borderRadius: 12,
+          padding: "16px 28px",
+          cursor: saving || blocks.length === 0 ? "default" : "pointer",
+          opacity: saving || blocks.length === 0 ? 0.5 : 1,
+        }}
+      >
+        {saving ? "Saving…" : "Finish workout"}
+      </button>
 
       {/* Get-ready count-in — covers the screen on entry until GO, then the
           elapsed clock starts from zero (the timer "goes off"). */}

@@ -91,12 +91,32 @@ export type NewSession = {
   blocks: unknown[];
 };
 
-export async function createSession(payload: NewSession): Promise<boolean> {
+// Returns the created session's id on success (used by the finish screen's
+// optional rename), or null on any failure. Callers that only need success can
+// still treat the result as truthy/falsy.
+export async function createSession(payload: NewSession): Promise<string | null> {
   try {
     const res = await fetch(`${API_URL}/api/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json().catch(() => ({}))) as { session?: { id?: string } };
+    return data.session?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Rename a saved session (optional — most people never name a workout). Best
+// effort: returns true if the server accepted the new title.
+export async function renameSession(id: string, title: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ title }),
     });
     return res.ok;
   } catch {

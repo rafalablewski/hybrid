@@ -12,6 +12,7 @@ import { fs, space,
   lastStrengthByLift,
   blockSummary,
   liveSessionStats,
+  defaultSessionTitle,
   fmtTonnage,
   fmtWeight,
   type WeightUnit,
@@ -22,6 +23,7 @@ import { fs, space,
   type SessionBlock,
 } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
+import SaveRoutineCard, { SessionRename } from "@/components/save-routine-card";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
@@ -35,7 +37,9 @@ type LiveSet = StrengthSet & { done?: boolean };
 const REST_PRESETS = [60, 90, 120, 180] as const;
 
 type FinishData = {
+  sessionId: string | null;
   title: string;
+  blocks: SessionBlock[];
   sets: number;
   volume: number;
   minutes: number;
@@ -66,14 +70,17 @@ export default function AuroraLogger({
   initialBlocks?: SessionBlock[];
 }) {
   const { t } = useLang();
-  const [title, setTitle] = useState(() => t("w.train.logger.workout"));
+  // The session auto-titles itself (nobody names a workout while logging) — a
+  // real name is only entered when saving a routine or via the optional rename
+  // on the finish screen. `title` is internal state seeded by the default /
+  // routine / AI label, no longer an input on this screen.
+  const [title, setTitle] = useState(() => defaultSessionTitle());
   const [blocks, setBlocks] = useState<EditableBlock[]>(
     () => initialBlocks?.map((b) => ({ uid: uid(), ...b }) as EditableBlock) ?? [],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [routines, setRoutines] = useState<Routine[]>([]);
-  const [routineMsg, setRoutineMsg] = useState("");
   // The finish CELEBRATION — at parity with the mobile summary. Finishing is the
   // payoff, so instead of silently navigating away we land on a win screen.
   const [done, setDone] = useState<FinishData | null>(null);
@@ -249,26 +256,6 @@ export default function AuroraLogger({
     setTitle(r.name);
   };
 
-  const saveAsRoutine = async () => {
-    setRoutineMsg("");
-    try {
-      const res = await fetch("/api/templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: title.trim() || t("w.train.logger.defaultRoutine"), blocks: blocks.map(({ uid: _u, ...b }) => b) }),
-      });
-      if (!res.ok) {
-        setRoutineMsg(res.status === 401 ? t("w.train.logger.signInRoutines") : t("w.train.logger.saveRoutineErr"));
-        return;
-      }
-      const d = (await res.json()) as { template: Routine };
-      setRoutines((rs) => [d.template, ...rs]);
-      setRoutineMsg(t("w.train.logger.savedRoutine"));
-    } catch {
-      setRoutineMsg(t("w.train.logger.networkError"));
-    }
-  };
-
   const rx = useMemo(() => {
     const log = toTrainingLog(sessions);
     return prescribeSession(log, undefined, { profiles: velocityProfiles(sessions) });
@@ -336,6 +323,9 @@ export default function AuroraLogger({
         setSaving(false);
         return;
       }
+      // Grab the saved row's id so the finish screen can rename it (optional).
+      const saved = (await res.json().catch(() => ({}))) as { session?: { id?: string } };
+      const sessionId = saved.session?.id ?? null;
       // Compute the win against everything done before this session, then land
       // on the celebration (the parent's onSaved fires when they tap Done).
       const cleanBlocks = payload.blocks as SessionBlock[];
@@ -364,7 +354,9 @@ export default function AuroraLogger({
       stop(); // freeze the clock — the workout's done, the celebration is next
       clearWorkoutDraft();
       setDone({
+        sessionId,
         title: payload.title,
+        blocks: cleanBlocks,
         sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
         volume: sessionVolume(cleanBlocks),
         minutes,
@@ -481,12 +473,8 @@ export default function AuroraLogger({
         )}
       </div>
 
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder={t("w.train.logger.sessionTitlePh")}
-        style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", outline: "none", boxSizing: "border-box", width: "100%", marginBottom: 14 }}
-      />
+      {/* No session-title input here — the workout auto-titles itself; a name is
+          only entered when saving a routine (or via the finish-screen rename). */}
 
       {/* Empty-state quick-starts (compact — keeps this a QUICK LOG, not a
           builder): pull today's AI-prescribed session, or load a saved routine.
@@ -524,35 +512,28 @@ export default function AuroraLogger({
         </div>
       )}
 
-      <div style={{ display: "flex", gap: space.ms, alignItems: "center", flexWrap: "wrap" }}>
-        <button
-          onClick={save}
-          disabled={saving || blocks.length === 0}
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 800,
-            fontSize: fs.note,
-            background: C("lime"),
-            color: C("ink"),
-            border: "none",
-            borderRadius: 999,
-            padding: "14px 28px",
-            cursor: saving || blocks.length === 0 ? "default" : "pointer",
-            opacity: saving || blocks.length === 0 ? 0.5 : 1,
-          }}
-        >
-          {saving ? t("w.train.logger.saving") : t("w.train.logger.saveSession")}
-        </button>
-        <button
-          onClick={saveAsRoutine}
-          disabled={blocks.length === 0}
-          style={{ ...pill("lime"), padding: "13px 22px", opacity: blocks.length === 0 ? 0.5 : 1, cursor: blocks.length === 0 ? "default" : "pointer" }}
-          title={t("w.train.logger.saveRoutineTitle")}
-        >
-          {t("w.train.logger.saveAsRoutine")}
-        </button>
-        {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
-      </div>
+      {/* One bottom action — finishing IS the save. "Save as routine" moved to
+          the finish screen (it belongs after you're done, not while logging). */}
+      <button
+        onClick={save}
+        disabled={saving || blocks.length === 0}
+        style={{
+          width: "100%",
+          fontFamily: "var(--font-display)",
+          fontWeight: 800,
+          fontSize: fs.note,
+          background: C("lime"),
+          color: C("ink"),
+          border: "none",
+          borderRadius: 999,
+          padding: "16px 28px",
+          cursor: saving || blocks.length === 0 ? "default" : "pointer",
+          opacity: saving || blocks.length === 0 ? 0.5 : 1,
+          boxShadow: saving || blocks.length === 0 ? "none" : `0 0 22px -6px color-mix(in srgb, ${C("lime")} 55%, transparent)`,
+        }}
+      >
+        {saving ? t("w.train.logger.saving") : t("w.train.logger.finishWorkout")}
+      </button>
 
       {/* Get-ready count-in — covers the screen on entry until GO, then the
           elapsed clock starts from zero (the timer "goes off"). */}
@@ -574,7 +555,9 @@ export default function AuroraLogger({
  *  native success haptic). */
 function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; onDone: () => void }) {
   const { t } = useLang();
-  const { title, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
+  const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
+  // Title can be renamed here (optional) — start from the auto-title.
+  const [title, setTitle] = useState(data.title);
   const milestone = firstEver || prs.length > 0 || cardioPrs.length > 0;
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
@@ -602,6 +585,7 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
         <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
         <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? t("w.train.logger.firstDone") : t("w.train.logger.sessionComplete")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 6 }}>{sets} {t("w.train.logger.sets")} · {fmtTonnage(volume, units)}{title ? ` · ${title}` : ""}</div>
+        <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
       </div>
 
       {prs.length > 0 && (
@@ -621,6 +605,10 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
           ))}
         </div>
       )}
+
+      {/* Save as routine — lives HERE now (after finishing), the one place a
+          workout name actually matters. Defaults the name to the auto-title. */}
+      <SaveRoutineCard blocks={blocks} defaultName={title} />
 
       {/* Share — a branded 9:16 story image (Web Share API, downloads as a
           fallback). The milestone (PR / first-ever) gets the glowing primary. */}

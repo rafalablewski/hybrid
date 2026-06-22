@@ -125,6 +125,10 @@ export default function WorkoutBlocks({
   const { catalog: libraryCatalog = [] } = useExercises();
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
+  // Which strength block has its "Special ▾" add-set menu open (warm-up / ramp /
+  // cool-down / drop). One primary "+ Add set" button keeps the common path a
+  // single tap; the rarer set types tuck into this menu instead of a 5-button row.
+  const [specialUid, setSpecialUid] = useState<string | null>(null);
   // The Olympic-sport quick-add picker (manual sport-session logging — no gear
   // needed). Picking a sport adds a cardio block named after it.
   const [sportPicker, setSportPicker] = useState(false);
@@ -468,22 +472,52 @@ export default function WorkoutBlocks({
               ))}
               </div>
               </div>
-              <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap" }}>
-                <button onClick={() => addSet(b.uid)} style={blockBtn(ASH)}>
+              {/* Add-set control: one primary "+ Add set", with warm-up / ramp /
+                  cool-down / drop tucked into a compact "Special ▾" menu (instead
+                  of a cluttered row of five equal buttons). The set badge still
+                  re-types a set with a tap, so the menu is just for ADDING. */}
+              <div style={{ display: "flex", gap: space.xs, alignItems: "center", position: "relative" }}>
+                <button
+                  onClick={() => addSet(b.uid)}
+                  style={{ ...disp, fontWeight: 800, fontSize: fs.caption, color: txt(LIME), background: LIME, border: "none", borderRadius: 999, padding: "9px 18px", cursor: "pointer" }}
+                >
                   {t("w.train.blocks.addSet")}
                 </button>
-                <button onClick={() => addWarmupSet(b.uid)} style={blockBtn(AMBER)} title={t("w.train.blocks.warmupTitle")}>
-                  {t("w.train.blocks.addWarmup")}
+                <button
+                  onClick={() => setSpecialUid((u) => (u === b.uid ? null : b.uid))}
+                  title={t("w.train.blocks.specialTitle")}
+                  style={{ ...mono, fontSize: fs.caption, fontWeight: 600, color: ASH, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+                >
+                  {t("w.train.blocks.special")} <span style={{ display: "inline-block", transform: specialUid === b.uid ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▾</span>
                 </button>
-                <button onClick={() => addWarmupRamp(b.uid)} style={blockBtn(AMBER)} title={t("w.train.blocks.rampTitle")}>
-                  {t("w.train.blocks.addRamp")}
-                </button>
-                <button onClick={() => addCooldownSet(b.uid)} style={blockBtn(BLUE)} title={t("w.train.blocks.cooldownTitle")}>
-                  {t("w.train.blocks.addCooldown")}
-                </button>
-                <button onClick={() => addDropSet(b.uid)} style={blockBtn(LIME)} title={t("w.train.blocks.dropTitle")}>
-                  {t("w.train.blocks.addDrop")}
-                </button>
+                {specialUid === b.uid && (
+                  <>
+                    {/* click-away catcher */}
+                    <div onClick={() => setSpecialUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
+                    <div style={{ position: "absolute", top: 44, left: 110, zIndex: 31, minWidth: 230, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 6, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
+                      {[
+                        { run: addWarmupSet, c: AMBER, badge: "W", label: "warmupSet", desc: "warmupTitle" },
+                        { run: addWarmupRamp, c: AMBER, badge: "↗", label: "rampSet", desc: "rampTitle" },
+                        { run: addCooldownSet, c: BLUE, badge: "C", label: "cooldownSet", desc: "cooldownTitle" },
+                        { run: addDropSet, c: LIME, badge: "↓", label: "dropSet", desc: "dropTitle" },
+                      ].map((it) => (
+                        <button
+                          key={it.label}
+                          onClick={() => { it.run(b.uid); setSpecialUid(null); }}
+                          style={{ display: "flex", width: "100%", alignItems: "flex-start", gap: 10, background: "none", border: "none", cursor: "pointer", padding: "10px 11px", borderRadius: 11, textAlign: "left" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = INK2)}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                        >
+                          <span style={{ ...mono, flex: "0 0 auto", width: 22, height: 22, borderRadius: 7, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, color: txt(it.c), background: `${it.c}29` }}>{it.badge}</span>
+                          <span>
+                            <span style={{ ...disp, display: "block", fontSize: fs.caption, fontWeight: 600, color: CHALK }}>{t(`w.train.blocks.${it.label}`)}</span>
+                            <span style={{ ...mono, display: "block", fontSize: fs.nano, color: ASH, marginTop: 1 }}>{t(`w.train.blocks.${it.desc}`)}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
               {plateCalc && (() => {
                 const top = [...b.sets].map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n) && n > 0).sort((x, y) => y - x)[0];

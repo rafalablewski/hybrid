@@ -38,6 +38,7 @@ import {
   moveItem,
   moveItemTo,
   warmupRamp,
+  defaultSessionTitle,
   rpeRirSwap,
   displayLoad,
   storeLoad,
@@ -57,7 +58,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
+import { fetchSessions, createSession, renameSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, WorkoutStoryCard, shareWorkout, type ShareBest } from "../lib/share";
@@ -138,6 +139,8 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 type Summ = {
+  /** The saved session's id (null for guests / offline) — backs the rename. */
+  sessionId: string | null;
   title: string;
   blocks: SessionBlock[];
   volume: number;
@@ -176,7 +179,12 @@ export default function Workout() {
   const prefs = useLoggerPrefs();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
 
-  const [title, setTitle] = useState("Workout");
+  // Auto-titled — no name input while logging; a name is only entered on the
+  // summary (Save as routine, or the optional rename). Seeded by source below.
+  const [title, setTitle] = useState(() => defaultSessionTitle());
+  // Which exercise has its "Special ▾" add-set menu open (warm-up / ramp /
+  // cool-down / drop). One primary "+ Add set" keeps the common path one tap.
+  const [specialUid, setSpecialUid] = useState<string | null>(null);
   const [exercises, setExercises] = useState<WExercise[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [custom, setCustom] = useState("");
@@ -693,12 +701,13 @@ export default function Workout() {
     };
 
     let pending = false;
+    let sessionId: string | null = null;
     if (guest) {
       // No account yet — keep it on the device until they sign up.
       await saveGuestSession(payload);
     } else {
-      const ok = await createSession(payload);
-      if (!ok) {
+      sessionId = await createSession(payload);
+      if (!sessionId) {
         // Offline / server hiccup — never lose the workout. Stash it locally;
         // it syncs on the next foreground / sign-in (see lib/guest + session).
         await saveGuestSession(payload);
@@ -731,6 +740,7 @@ export default function Workout() {
       .sort((a, b) => b.e1rm - a.e1rm);
 
     setSummary({
+      sessionId,
       title: payload.title,
       blocks,
       volume: sessionVolume(blocks),
@@ -779,13 +789,8 @@ export default function Workout() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          placeholder={t("workout.nameWorkout")}
-          placeholderTextColor={C.ash}
-          style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, marginBottom: 4 }}
-        />
+        {/* No session-title input — the workout auto-titles itself; a name is
+            only entered on the summary (Save as routine / optional rename). */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <Mono style={{ flex: 1 }}>
             {exercises.length
@@ -976,23 +981,41 @@ export default function Workout() {
                     </View>
                   </SwipeRow>
                 ))}
-                <View style={{ flexDirection: "row", gap: space.lg, flexWrap: "wrap" }}>
-                  <Pressable onPress={() => addSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.lime) }}>{t("workout.set")}</Text>
+                {/* Add-set control: one primary "+ Add set", with warm-up / ramp
+                    / cool-down / drop in a "Special ▾" menu (instead of a row of
+                    five). The set badge still re-types a set with a tap. */}
+                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center", marginTop: 4 }}>
+                  <Pressable onPress={() => addSet(x.uid)} style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 9, paddingHorizontal: 18 }}>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.ink }}>{t("workout.addSet")}</Text>
                   </Pressable>
-                  <Pressable onPress={() => addWarmupSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.amber) }}>{t("workout.warmupSet")}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => addWarmupRamp(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.amber) }}>{t("workout.warmupRamp")}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => addCooldownSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.blue) }}>{t("workout.cooldownSet")}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => addDropSet(x.uid)} style={{ paddingVertical: 8 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>{t("workout.dropSet")}</Text>
+                  <Pressable
+                    onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 14 }}
+                  >
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.special")} {specialUid === x.uid ? "▴" : "▾"}</Text>
                   </Pressable>
                 </View>
+                {specialUid === x.uid && (
+                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, overflow: "hidden" }}>
+                    {[
+                      { run: addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSet") },
+                      { run: addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRamp") },
+                      { run: addCooldownSet, c: C.blue, badge: "C", label: t("workout.cooldownSet") },
+                      { run: addDropSet, c: C.ash, badge: "↓", label: t("workout.dropSet") },
+                    ].map((it, ii) => (
+                      <Pressable
+                        key={it.badge}
+                        onPress={() => { it.run(x.uid); setSpecialUid(null); }}
+                        style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
+                      >
+                        <View style={{ width: 24, height: 24, borderRadius: 7, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, it.c) }}>{it.badge}</Text>
+                        </View>
+                        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{it.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
                 {/* Quick-increment + plate hint for the last set's load */}
                 {(prefs.quickIncrement > 0 || prefs.plateCalc) && (() => {
                   const last = x.sets[x.sets.length - 1];
@@ -1280,7 +1303,9 @@ function Summary({
   // Story card capture width — a touch under the screen width so the device
   // pixel ratio scales the exported PNG up toward 1080px.
   const storyW = Math.min(Dimensions.get("window").width - 36, 360);
-  const { title, prs, bests, cardioPrs, firstEver } = summary;
+  const { prs, bests, cardioPrs, firstEver } = summary;
+  // Title can be renamed here (optional) — start from the auto-title.
+  const [title, setTitle] = useState(summary.title);
   // A PR or a first-ever workout is the moment worth posting — the share is the
   // climax (and our download engine), so the CTA leans into it.
   const hasWin = prs.length > 0 || cardioPrs.length > 0;
@@ -1453,7 +1478,8 @@ function Summary({
           </>
         ) : (
           <>
-            <SaveRoutine title={title} blocks={summary.blocks} t={t} />
+            <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />
+            <SaveRoutine key={title} title={title} blocks={summary.blocks} t={t} />
             <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
             <Pressable
               onPress={() => router.replace("/(tabs)/history")}
@@ -1515,6 +1541,49 @@ function SaveRoutine({ title, blocks, t }: { title: string; blocks: SessionBlock
         style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 13, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// Optional rename of the just-finished session — "you can add a name after you
+// finish", but it's optional (most never do). Collapsed to a subtle link;
+// expands to an input that PATCHes the saved session's title.
+function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string | null; value: string; onRenamed: (title: string) => void; t: (k: string) => string }) {
+  const C = useTheme().palette;
+  const R = auroraRadii(useTemplate().template === "aurora");
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(value);
+
+  if (!open)
+    return (
+      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 14, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 16 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>✎ {t("summary.nameOptional")}</Text>
+      </Pressable>
+    );
+
+  const commit = () => {
+    const next = name.trim();
+    if (next && next !== value) {
+      onRenamed(next);
+      if (sessionId) renameSession(sessionId, next);
+    }
+    setOpen(false);
+  };
+
+  return (
+    <View style={{ flexDirection: "row", gap: 8, marginTop: 14, alignItems: "center" }}>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        autoFocus
+        onSubmitEditing={commit}
+        placeholder={t("workout.nameWorkout")}
+        placeholderTextColor={C.ash}
+        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
+      />
+      <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>✓</Text>
       </Pressable>
     </View>
   );

@@ -26,6 +26,7 @@ import {
   cycleSetType,
   setTypeBadge,
   warmupRamp,
+  defaultSessionTitle,
   blockBestE1rm,
   moveItem,
   moveItemTo,
@@ -51,6 +52,21 @@ const sessions: LoggedSession[] = [
     ],
   },
 ];
+
+describe("defaultSessionTitle", () => {
+  const at = (h: number) => new Date(2026, 5, 22, h, 0, 0);
+  it("picks a friendly title by time of day", () => {
+    expect(defaultSessionTitle(at(2))).toBe("Late night workout");
+    expect(defaultSessionTitle(at(8))).toBe("Morning workout");
+    expect(defaultSessionTitle(at(14))).toBe("Afternoon workout");
+    expect(defaultSessionTitle(at(19))).toBe("Evening workout");
+    expect(defaultSessionTitle(at(22))).toBe("Night workout");
+  });
+  it("covers the boundaries and is never empty", () => {
+    for (let h = 0; h < 24; h++) expect(defaultSessionTitle(at(h)).length).toBeGreaterThan(0);
+    expect(defaultSessionTitle()).toBeTruthy(); // default arg = now
+  });
+});
 
 describe("block summaries", () => {
   it("conditioningSummary renders the interval (rounds × work/rest) when logged", () => {
