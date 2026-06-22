@@ -56,7 +56,7 @@ import {
   type CardioPrHit,
   type ExerciseUse,
 } from "@hybrid/core";
-import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession } from "../lib/api";
+import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
@@ -191,6 +191,9 @@ export default function Workout() {
   const [summary, setSummary] = useState<Summ | null>(null);
   const [restored, setRestored] = useState(false);
   const [recent, setRecent] = useState<ExerciseUse[]>([]);
+  // Saved routines for the empty-state quick-load (parity with the web logger,
+  // which offers AI-prescribe + your routines right on the logging screen).
+  const [routines, setRoutines] = useState<Routine[]>([]);
   const [rpeHelp, setRpeHelp] = useState(false);
   const [showTip, setShowTip] = useState(false);
   // Get-ready countdown on entering a fresh workout (5→1→GO) before the clock
@@ -405,6 +408,26 @@ export default function Workout() {
     }, 500);
     return () => clearTimeout(id);
   }, [exercises, title, restored]);
+
+  // Saved routines for the empty-state quick-load (guests get none).
+  useEffect(() => {
+    fetchRoutines().then(setRoutines).catch(() => {});
+  }, []);
+
+  // Empty-state quick-starts (parity with the web logger): pull today's
+  // AI-prescribed session, or load one of your saved routines, without leaving
+  // the live screen.
+  const loadPrescribed = () => {
+    const log = toTrainingLog(prior.current);
+    const rx = prescribeSession(log, undefined, { profiles: velocityProfiles(prior.current) });
+    setReadiness(rx.readiness);
+    setTitle("AI session");
+    setExercises(blocksToExercises(rx.blocks as SessionBlock[]));
+  };
+  const loadRoutine = (r: Routine) => {
+    setTitle(r.name || "Workout");
+    setExercises(blocksToExercises(r.blocks));
+  };
 
   const addExercise = (name: string, kind?: WKind) => {
     const clean = name.trim();
@@ -1104,12 +1127,40 @@ export default function Workout() {
             </Card>
           );
         })() : (
-          <Pressable
-            onPress={() => setPickerOpen(true)}
-            style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
-          >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={() => setPickerOpen(true)}
+              style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
+            >
+              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
+            </Pressable>
+
+            {/* Empty-state quick-starts (parity with the web logger): pull today's
+                AI-prescribed session, or load a saved routine, without leaving. */}
+            {exercises.length === 0 && (
+              <View style={{ marginTop: 12, gap: space.sm }}>
+                <Pressable
+                  onPress={loadPrescribed}
+                  style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.violet, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${C.violet}14` }}
+                >
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.violet) }}>✦ {t("train.start")} · AI</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recent.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
+                </Pressable>
+                {routines.length > 0 && (
+                  <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), marginBottom: 8 }}>{t("train.routines")}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
+                      {routines.map((r) => (
+                        <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, borderRadius: R.chip, paddingVertical: 7, paddingHorizontal: 12 }}>
+                          <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{r.name}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+          </>
         )}
 
         {!!error && <Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono>}

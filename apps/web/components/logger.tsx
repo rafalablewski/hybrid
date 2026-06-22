@@ -8,9 +8,10 @@ import {
   type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
-import { fs, space, INK2, LINE, CHALK, ASH, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, CHALK, ASH, LIME, VIOLET, RED, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 import WorkoutBlocks, { blockBtn, uid, type EditableBlock } from "@/components/workout-blocks";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 
 type Routine = { id: string; name: string; blocks: SessionBlock[] };
 
@@ -46,6 +47,9 @@ export default function Logger({
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [routineMsg, setRoutineMsg] = useState("");
   const prefs = useLoggerPrefs();
+  // Live workout clock — runs from entry (after the get-ready count-in) so the
+  // saved session records real training time. Twin of the mobile live logger.
+  const { elapsed, countdown, startedAt } = useWorkoutTimer();
 
   // The user's saved routines (WorkoutTemplates) — load one to start, or save
   // the current workout as a new one.
@@ -125,7 +129,8 @@ export default function Logger({
     const payload = {
       title: title.trim() || "Workout",
       readiness: rx.readiness,
-      startedAt: new Date().toISOString(),
+      // The clock's real start (after the count-in) → true session duration.
+      startedAt: startedAt.current.toISOString(),
       completedAt: new Date().toISOString(),
       blocks: blocks.map(({ uid: _uid, ...b }) => b),
     };
@@ -154,6 +159,27 @@ export default function Logger({
 
   return (
     <div style={{ maxWidth: 760 }}>
+      {/* Live workout clock — the gym timer running while you log (sticky). */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: space.sm,
+          marginBottom: 16,
+          padding: "10px 16px",
+          background: INK2,
+          border: `1px solid ${LINE}`,
+          borderRadius: 12,
+        }}
+      >
+        <span style={{ ...disp, fontWeight: 800, fontSize: 22, letterSpacing: 1, color: CHALK }}>{mmss(elapsed)}</span>
+        <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".18em", color: ASH }}>ELAPSED</span>
+      </div>
+
       {/* AI coach prescription */}
       <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -257,6 +283,17 @@ export default function Logger({
         </button>
         {routineMsg && <Mono s={{ fontSize: fs.caption }} c={routineMsg.startsWith("★") ? LIME : ASH}>{routineMsg}</Mono>}
       </div>
+
+      {/* Get-ready count-in — covers the screen on entry until GO, then the
+          elapsed clock starts from zero (the timer "goes off"). */}
+      {countdown != null && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: INK, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ ...mono, fontSize: fs.body, letterSpacing: ".2em", color: ASH, marginBottom: 12 }}>GET READY</div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: countdown > 0 ? 132 : 96, color: LIME, lineHeight: 1 }}>
+            {countdown > 0 ? countdown : "GO"}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

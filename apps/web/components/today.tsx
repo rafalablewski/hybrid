@@ -200,7 +200,7 @@ export default function Today({
             </Mono>
             <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
               <FirstSessionOption title="Follow a plan" sub="Browse the library and enrol — free." badge="Free" badgeColor={LIME} onClick={() => onNavigate?.("plans")} />
-              <FirstSessionOption title="Build your own" sub="Compose a custom program. Part of Full." badge="✦ Full" badgeColor={VIOLET} onClick={() => onNavigate?.("upgrade")} />
+              <FirstSessionOption title="Build your own" sub="Compose a custom program — free." badge="Free" badgeColor={LIME} onClick={() => onNavigate?.("builder")} />
               <FirstSessionOption title="Log a one-time workout" sub="Just train and log it — no plan needed." badge="Free" badgeColor={LIME} onClick={() => onStart()} />
             </div>
           </Card>

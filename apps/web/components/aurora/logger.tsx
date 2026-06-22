@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fs, space,
   prescribeSession,
   toTrainingLog,
@@ -9,9 +9,12 @@ import { fs, space,
   newCardioPrsInSession,
   sessionVolume,
   blockBestE1rm,
+  lastStrengthByLift,
+  blockSummary,
   fmtTonnage,
   fmtWeight,
   type WeightUnit,
+  type StrengthSet,
   type PrHit,
   type CardioPrHit,
   type LoggedSession,
@@ -19,7 +22,15 @@ import { fs, space,
 } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
+import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
+import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { useLang } from "@/lib/i18n";
+
+// A strength set carrying the transient live-mode flag — `done` is banking
+// state only and is stripped before save (the saved set keeps `rest`, a real
+// SessionBlock field, plus load/reps/rpe/vel/drop/role).
+type LiveSet = StrengthSet & { done?: boolean };
+const REST_PRESETS = [60, 90, 120, 180] as const;
 
 type FinishData = {
   title: string;
@@ -63,6 +74,160 @@ export default function AuroraLogger({
   // payoff, so instead of silently navigating away we land on a win screen.
   const [done, setDone] = useState<FinishData | null>(null);
   const prefs = useLoggerPrefs();
+  // Live workout clock — starts the moment you enter to log (after the get-ready
+  // count-in), so the saved session records real training time. Web twin of the
+  // mobile live logger's timer.
+  const { elapsed, countdown, startedAt, paused, togglePause, resumeFrom, stop } = useWorkoutTimer();
+
+  // --- Live rest timer (twin of the mobile logger) -------------------------
+  // Banking a set (✓) starts a rest countdown to a target (default from prefs),
+  // ticking down to zero then over-resting; a buzz fires when the target's hit.
+  const [restSince, setRestSince] = useState<number | null>(null);
+  const [restNow, setRestNow] = useState(0);
+  const [restTarget, setRestTarget] = useState<number | null>(null);
+  const restFired = useRef(false);
+  const restPausedAt = useRef(0);
+  // Draft restore runs once post-mount (localStorage is client-only — reading it
+  // in render would desync SSR hydration), so we gate the auto-save on it.
+  const [restored, setRestored] = useState(false);
+
+  // Apply the default rest target from prefs (and clear it when the auto rest
+  // timer is turned off). Runs when prefs land/change, not mid-set.
+  useEffect(() => {
+    setRestTarget(prefs.restTimer ? prefs.restSeconds : null);
+  }, [prefs.restTimer, prefs.restSeconds]);
+
+  // Restore an interrupted draft once on mount (unless we were seeded with a
+  // plan/AI day, which wins). Keeps the original clock running via resumeFrom.
+  useEffect(() => {
+    if (!initialBlocks || initialBlocks.length === 0) {
+      const draft = loadWorkoutDraft();
+      // Guard the parsed start — a corrupt draft date would make startedAt an
+      // Invalid Date and crash toISOString() on save. Fall back to a fresh clock.
+      const parsedStart = draft ? Date.parse(draft.startedAt) : NaN;
+      if (draft && !Number.isNaN(parsedStart)) {
+        setBlocks(draft.blocks);
+        setTitle(draft.title);
+        resumeFrom(parsedStart);
+      }
+    }
+    setRestored(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist the in-progress draft as it changes (debounced) so a refresh / crash
+  // / accidental nav never costs the session. Only after the initial restore.
+  useEffect(() => {
+    if (!restored) return;
+    const id = setTimeout(() => {
+      if (blocks.length) saveWorkoutDraft({ title, startedAt: startedAt.current.toISOString(), blocks });
+      else clearWorkoutDraft();
+    }, 500);
+    return () => clearTimeout(id);
+    // `paused` is included so a pause/resume (which shifts startedAt) re-persists
+    // the draft with the corrected start — otherwise a stale start drifts on resume.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks, title, restored, paused]);
+
+  // Tick the rest countdown; buzz once when the chosen target is reached.
+  useEffect(() => {
+    if (restSince == null || paused) return;
+    const id = setInterval(() => {
+      const rn = Math.floor((Date.now() - restSince) / 1000);
+      setRestNow(rn);
+      if (restTarget && rn >= restTarget && !restFired.current) {
+        restFired.current = true;
+        if (prefs.haptics && typeof navigator !== "undefined" && "vibrate" in navigator) {
+          try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
+        }
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [restSince, restTarget, paused, prefs.haptics]);
+
+  // Keep the screen awake while logging (Wake Lock API; re-acquired when the tab
+  // returns to the foreground). Released on finish / unmount. Mobile parity.
+  useEffect(() => {
+    if (!prefs.keepAwake || done) return;
+    type Sentinel = { release: () => Promise<void> };
+    const nav = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<Sentinel> } };
+    if (!nav.wakeLock) return;
+    let sentinel: Sentinel | null = null;
+    let cancelled = false;
+    const acquire = () => {
+      nav.wakeLock!.request("screen").then((s) => { if (cancelled) s.release().catch(() => {}); else sentinel = s; }).catch(() => {});
+    };
+    acquire();
+    const onVis = () => { if (document.visibilityState === "visible" && !cancelled) acquire(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      sentinel?.release().catch(() => {});
+    };
+  }, [prefs.keepAwake, done]);
+
+  // "Last time" per lift — the most recent prior session's sets, as a summary
+  // string the editor shows above each strength block (progressive-overload cue).
+  const lastByLift = useMemo(() => {
+    const out = new Map<string, string>();
+    lastStrengthByLift(sessions).forEach((blk, name) => out.set(name, blockSummary(blk)));
+    return out;
+  }, [sessions]);
+
+  // Pause/resume: shift the running rest forward by the held time too, so it
+  // doesn't jump when the clock wakes back up (the elapsed clock is shifted in
+  // the timer hook).
+  const handlePause = () => {
+    if (paused) {
+      if (restSince != null) setRestSince(restSince + (Date.now() - restPausedAt.current));
+    } else {
+      restPausedAt.current = Date.now();
+    }
+    togglePause();
+  };
+
+  // Bank / un-bank a set (✓). Banking records the rest that preceded it and
+  // starts a fresh rest countdown — unless it flows into a drop set or the next
+  // exercise of a superset (you keep moving), mirroring the mobile logger.
+  const toggleDone = (blockUid: string, i: number, val: boolean) => {
+    const restTaken = val && restSince != null ? Math.floor((Date.now() - restSince) / 1000) : undefined;
+    setBlocks((bs) =>
+      bs.map((b) =>
+        b.uid === blockUid && b.kind === "strength"
+          ? { ...b, sets: b.sets.map((s, j) => (j === i ? ({ ...s, done: val, rest: val ? restTaken : undefined } as LiveSet) : s)) }
+          : b,
+      ),
+    );
+    if (!val) return;
+    if (prefs.haptics && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate?.(8); } catch { /* unsupported */ }
+    }
+    const blk = blocks.find((b) => b.uid === blockUid);
+    if (!blk || blk.kind !== "strength") return;
+    // Auto-advance: banking the last set appends a fresh one so you keep going.
+    if (prefs.autoAdvance && i === blk.sets.length - 1) {
+      setBlocks((bs) => bs.map((b) => (b.uid === blockUid && b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "" }] } : b)));
+    }
+    const nextIsDrop = !!blk.sets[i + 1]?.drop;
+    let midSuperset = false;
+    if (blk.group) {
+      const members = blocks.filter((b) => b.kind === "strength" && b.group === blk.group);
+      midSuperset = members[members.length - 1]?.uid !== blk.uid;
+    }
+    if (nextIsDrop || midSuperset || !prefs.restTimer) {
+      setRestSince(null); // keep moving (or rest timer disabled)
+      return;
+    }
+    setRestSince(Date.now());
+    setRestNow(0);
+    restFired.current = false;
+  };
+
+  const pickRest = (sec: number) => {
+    setRestTarget((cur) => (cur === sec ? null : sec));
+    restFired.current = false;
+  };
 
   useEffect(() => {
     fetch("/api/templates")
@@ -136,9 +301,16 @@ export default function AuroraLogger({
     const payload = {
       title: title.trim() || "Workout",
       readiness: rx.readiness,
-      startedAt: new Date().toISOString(),
+      // The clock's real start (after the count-in) → true session duration.
+      startedAt: startedAt.current.toISOString(),
       completedAt: new Date().toISOString(),
-      blocks: blocks.map(({ uid: _uid, ...b }) => b),
+      // Strip the transient live `done` flag from strength sets (rest is a real
+      // field and is kept); other block kinds pass through unchanged.
+      blocks: blocks.map(({ uid: _uid, ...b }) =>
+        b.kind === "strength"
+          ? { ...b, sets: b.sets.map((s) => { const { done: _done, ...cleanSet } = s as LiveSet; return cleanSet; }) }
+          : b,
+      ),
     };
     try {
       const res = await fetch("/api/sessions", {
@@ -167,6 +339,8 @@ export default function AuroraLogger({
         blocks: cleanBlocks,
       };
       setSaving(false);
+      stop(); // freeze the clock — the workout's done, the celebration is next
+      clearWorkoutDraft();
       setDone({
         title: payload.title,
         sets: cleanBlocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0),
@@ -185,6 +359,70 @@ export default function AuroraLogger({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {/* Live workout clock + pause — the gym timer running while you log (sticky
+          so it stays visible as you scroll the session). */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: space.md,
+          marginBottom: 16,
+          padding: "8px 16px",
+          background: "color-mix(in srgb, var(--color-ink2) 86%, transparent)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: `1px solid ${C("line")}`,
+          borderRadius: 999,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, letterSpacing: 1, color: paused ? C("amber") : C("chalk") }}>{mmss(elapsed)}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".18em", color: paused ? C("amber") : C("ash") }}>{paused ? t("workout.paused") : t("workout.elapsed")}</span>
+        </div>
+        <button
+          onClick={handlePause}
+          title={paused ? t("workout.go") : t("workout.paused")}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 14px", cursor: "pointer" }}
+        >
+          {paused ? "▶" : "❚❚"}
+        </button>
+      </div>
+
+      {/* Rest countdown — appears after you bank a set (✓); ticks down to the
+          target, then shows the over-rest. Twin of the mobile rest banner. */}
+      {restSince != null && (() => {
+        const remaining = restTarget != null ? restTarget - restNow : null;
+        const over = remaining != null && remaining <= 0;
+        const accent = over ? C("lime") : C("blue");
+        const clock = restTarget == null ? mmss(restNow) : over ? `+${mmss(restNow - restTarget)}` : `${mmss(remaining!)} ${t("workout.restLeft")}`;
+        return (
+          <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 18, padding: "10px 14px", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
+                {over ? t("workout.restDone") : t("workout.resting")} · {clock}
+              </span>
+              <button onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 8, padding: "5px 12px", cursor: "pointer" }}>
+                ■ {t("workout.stopRest")}
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: space.xs, marginTop: 10 }}>
+              {REST_PRESETS.map((sec) => {
+                const on = restTarget === sec;
+                return (
+                  <button key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("blue") : C("ash"), background: on ? `color-mix(in srgb, ${C("blue")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("blue") : C("line")}`, borderRadius: 8, padding: "6px 0", cursor: "pointer" }}>
+                    {sec < 120 ? `${sec}s` : `${sec / 60}m`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
@@ -249,6 +487,9 @@ export default function AuroraLogger({
         rirMode={prefs.rpeAsRir}
         units={prefs.units}
         plateCalc={prefs.plateCalc}
+        live
+        lastByLift={lastByLift}
+        onToggleDone={toggleDone}
       />
 
       {error && (
@@ -286,6 +527,17 @@ export default function AuroraLogger({
         </button>
         {routineMsg && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: routineMsg.startsWith("★") ? C("lime") : C("ash") }}>{routineMsg}</span>}
       </div>
+
+      {/* Get-ready count-in — covers the screen on entry until GO, then the
+          elapsed clock starts from zero (the timer "goes off"). */}
+      {countdown != null && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: C("ink"), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, letterSpacing: ".2em", color: C("ash"), marginBottom: 12 }}>{t("workout.getReady").toUpperCase()}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: countdown > 0 ? 132 : 96, color: C("lime"), lineHeight: 1 }}>
+            {countdown > 0 ? countdown : t("workout.go")}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

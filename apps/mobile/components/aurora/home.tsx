@@ -213,7 +213,11 @@ export default function AuroraHome() {
   };
 
   const planReadiness = hasData || plan || phase;
-  const startPrescribed = () => router.push("/workout?source=ai");
+  // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
+  // named plan's day), falls back to the AI-prescribed session, then to an empty
+  // start — each lands in the live workout with the timer running.
+  const startPrescribed = () =>
+    router.push(plan ? "/workout?source=plan" : hasData || phase ? "/workout?source=ai" : "/workout?source=empty");
 
   // First-run guided tutorial (#2): shown once after a fresh account onboards.
   // Guest-first rule — if the user logged a guest workout before signing up,
@@ -341,7 +345,7 @@ export default function AuroraHome() {
                 </Text>
                 <View style={{ marginTop: 12, gap: space.sm }}>
                   <ChooserRow C={C} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/(tabs)/plans")} />
-                  <ChooserRow C={C} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFull")} color={C.violet} onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-build" }); router.push("/upgrade"); }} />
+                  <ChooserRow C={C} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/builder")} />
                   <ChooserRow C={C} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/workout?source=empty")} />
                 </View>
               </>
