@@ -21,6 +21,11 @@ export function useWorkoutTimer() {
   // null = no count-in running (clock is live). >0 = ticking down. 0 = "GO".
   const [countdown, setCountdown] = useState<number | null>(null);
   const [running, setRunning] = useState(true);
+  // Pause/hold — freezes the elapsed clock until resumed (twin of the mobile
+  // logger's pause). On resume we shift startedAt forward by the held duration
+  // so the clock doesn't jump.
+  const [paused, setPaused] = useState(false);
+  const pausedAt = useRef(0);
   const begun = useRef(false);
 
   // Begin once, client-side (so there's no SSR/hydration mismatch): count the
@@ -50,19 +55,40 @@ export function useWorkoutTimer() {
     return () => clearTimeout(id);
   }, [countdown]);
 
-  // Tick the elapsed stopwatch once the count-in (if any) has finished.
+  // Tick the elapsed stopwatch once the count-in (if any) has finished — frozen
+  // while paused.
   useEffect(() => {
-    if (!running || countdown !== null) return;
+    if (!running || countdown !== null || paused) return;
     const id = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt.current.getTime()) / 1000));
     }, 1000);
     return () => clearInterval(id);
-  }, [running, countdown]);
+  }, [running, countdown, paused]);
+
+  /** Resume an in-progress draft: anchor the clock to its original start and
+   *  skip the count-in (the workout was already underway). */
+  const resumeFrom = (ms: number) => {
+    begun.current = true;
+    startedAt.current = new Date(ms);
+    setCountdown(null);
+    setElapsed(Math.floor((Date.now() - ms) / 1000));
+  };
+
+  /** Pause/resume the elapsed clock, shifting startedAt so it never jumps. */
+  const togglePause = () =>
+    setPaused((p) => {
+      if (p) {
+        startedAt.current = new Date(startedAt.current.getTime() + (Date.now() - pausedAt.current));
+        return false;
+      }
+      pausedAt.current = Date.now();
+      return true;
+    });
 
   /** Halt the clock — call when the session finishes so it stops re-rendering. */
   const stop = () => setRunning(false);
 
-  return { elapsed, countdown, startedAt, stop };
+  return { elapsed, countdown, startedAt, paused, togglePause, resumeFrom, stop };
 }
 
 /** m:ss for the elapsed clock (mirrors the mobile logger's `mmss`). */

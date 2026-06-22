@@ -92,6 +92,9 @@ export default function WorkoutBlocks({
   rirMode = false,
   units = "kg",
   plateCalc = false,
+  live = false,
+  lastByLift,
+  onToggleDone,
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -107,6 +110,16 @@ export default function WorkoutBlocks({
   units?: WeightUnit;
   /** Show a barbell plates-per-side hint under each strength block. */
   plateCalc?: boolean;
+  /** LIVE mode (the Logger, not the Builder): adds a ✓-to-bank column per set
+   *  and a "last time" reference per lift — the web twin of the mobile live
+   *  logger. Banking is driven by onToggleDone so the parent runs the rest
+   *  timer + haptics. */
+  live?: boolean;
+  /** Per-exercise "last time" summary string (e.g. "100×5 · 100×5"), keyed by
+   *  exercise name. Shown above the set grid in live mode. */
+  lastByLift?: Map<string, string>;
+  /** Live mode: called when a set's ✓ is toggled (parent owns done + rest). */
+  onToggleDone?: (blockUid: string, setIndex: number, done: boolean) => void;
 }) {
   const { t } = useLang();
   const { catalog: libraryCatalog = [] } = useExercises();
@@ -250,6 +263,9 @@ export default function WorkoutBlocks({
   };
 
   const ssLabels = supersetLabels(blocks);
+  // Set-row grid: the base columns (badge · load · reps [· rpe · m/s] · move ·
+  // remove) gain a ✓-to-bank column at the end in live mode.
+  const strengthCols = `${detailed ? "26px 1fr 1fr 1fr 1fr" : "26px 1fr 1fr"} 22px 28px${live ? " 40px" : ""}`;
 
   return (
     <>
@@ -337,9 +353,16 @@ export default function WorkoutBlocks({
 
           {b.kind === "strength" ? (
             <>
+              {/* "Last time" reference (live mode) — the most recent prior session's
+                  sets for this lift, so progressive overload has a target to beat. */}
+              {live && lastByLift?.get(b.name) && (
+                <Mono s={{ fontSize: fs.micro, display: "block", marginBottom: 8 }} c={ASH}>
+                  {t("workout.lastTime")} · {lastByLift.get(b.name)}
+                </Mono>
+              )}
               <div style={{ overflowX: "auto", maxWidth: "100%" }}>
               <div style={{ minWidth: detailed ? 360 : 240 }}>
-              <div style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: space.xs, marginBottom: 4, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 4, alignItems: "center" }}>
                 <span />
                 <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.load")} ({units})</Mono>
                 <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }}>{t("w.train.blocks.reps")}</Mono>
@@ -357,11 +380,12 @@ export default function WorkoutBlocks({
                 )}
                 <span />
                 <span />
+                {live && <span />}
               </div>
               {b.sets.map((s, i) => (
                 <div
                   key={i}
-                  style={{ display: "grid", gridTemplateColumns: detailed ? "26px 1fr 1fr 1fr 1fr 22px 28px" : "26px 1fr 1fr 22px 28px", gap: space.xs, marginBottom: 6, alignItems: "center" }}
+                  style={{ display: "grid", gridTemplateColumns: strengthCols, gap: space.xs, marginBottom: 6, alignItems: "center" }}
                 >
                   {(() => {
                     const st = setType(s);
@@ -415,6 +439,31 @@ export default function WorkoutBlocks({
                   <button onClick={() => removeSet(b.uid, i)} style={{ ...iconBtn(ASH), padding: 0 }}>
                     −
                   </button>
+                  {/* LIVE: ✓ to bank the set — starts the rest timer (parent). */}
+                  {live && (() => {
+                    const isDone = !!(s as StrengthSet & { done?: boolean }).done;
+                    return (
+                      <button
+                        onClick={() => onToggleDone?.(b.uid, i, !isDone)}
+                        title={t("workout.tapAsYouGo")}
+                        style={{
+                          ...cond,
+                          width: 40,
+                          height: 34,
+                          borderRadius: 8,
+                          fontSize: fs.subtitle,
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          color: isDone ? txt(LIME) : txt(ASH),
+                          background: isDone ? LIME : INK2,
+                          border: `1px solid ${isDone ? LIME : LINE}`,
+                          ...(isDone ? { color: "var(--color-ink)" } : {}),
+                        }}
+                      >
+                        ✓
+                      </button>
+                    );
+                  })()}
                 </div>
               ))}
               </div>
