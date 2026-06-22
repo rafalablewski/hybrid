@@ -57,7 +57,6 @@ import {
   funFactText,
   SHARE_THEMES,
   shareTheme,
-  DEFAULT_SHARE_THEME_ID,
   type ShareThemeId,
   exercisesByCategory,
   type SessionBlock,
@@ -71,7 +70,7 @@ import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
 import { useSession } from "../lib/session";
-import { useLoggerPrefs } from "../lib/logger-prefs";
+import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
@@ -1307,9 +1306,17 @@ function Summary({
   const slideW = Dimensions.get("window").width - 36;
   const storyRefs = useRef<Record<number, View | null>>({});
   const [active, setActive] = useState(0);
-  // The graphic style the user picks for the shared story (default Aurora).
-  const [themeId, setThemeId] = useState<ShareThemeId>(DEFAULT_SHARE_THEME_ID);
+  // The graphic style for the shared story — remembered per device.
+  const sharePrefs = useLoggerPrefs();
+  const [themeId, setThemeId] = useState<ShareThemeId>(sharePrefs.shareThemeId);
+  useEffect(() => { setThemeId(sharePrefs.shareThemeId); }, [sharePrefs.shareThemeId]);
+  const pickTheme = (id: ShareThemeId) => { setThemeId(id); setLoggerPref("shareThemeId", id); };
   const theme = shareTheme(themeId);
+  const themeIndex = Math.max(0, SHARE_THEMES.findIndex((o) => o.id === themeId));
+  // Sliding-toggle thumb: animate to the active segment as width is measured.
+  const [segW, setSegW] = useState(0);
+  const slideX = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.timing(slideX, { toValue: themeIndex * segW, duration: 220, useNativeDriver: true }).start(); }, [themeIndex, segW, slideX]);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -1491,21 +1498,25 @@ function Summary({
           <Mono color={C.lime} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
         )}
 
-        {/* Pick the graphic style for the shared story. */}
+        {/* Pick the graphic style — a sliding segmented toggle. */}
         <Mono color={C.ash} style={{ textAlign: "center", marginTop: 16, marginBottom: 8, letterSpacing: 1.5, fontSize: fs.micro }}>
           {t("summary.pickStyle").toUpperCase()}
         </Mono>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View
+          onLayout={(e) => setSegW((e.nativeEvent.layout.width - 8) / SHARE_THEMES.length)}
+          style={{ flexDirection: "row", position: "relative", padding: 4, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
+        >
+          {segW > 0 && (
+            <Animated.View
+              pointerEvents="none"
+              style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: segW, borderRadius: 999, backgroundColor: C.lime, transform: [{ translateX: slideX }] }}
+            />
+          )}
           {SHARE_THEMES.map((opt) => {
             const on = opt.id === themeId;
             return (
-              <Pressable
-                key={opt.id}
-                onPress={() => setThemeId(opt.id)}
-                style={{ flex: 1, alignItems: "center", gap: 6, paddingVertical: 9, borderRadius: 14, backgroundColor: opt.bg, borderWidth: 2, borderColor: on ? C.lime : C.line }}
-              >
-                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: opt.glow[0] ?? opt.accent, borderWidth: opt.mode === "light" ? 1 : 0, borderColor: opt.line }} />
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: opt.fg }}>{opt.name}</Text>
+              <Pressable key={opt.id} onPress={() => pickTheme(opt.id)} style={{ flex: 1, alignItems: "center", paddingVertical: 9 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.ink : C.ash }}>{opt.name}</Text>
               </Pressable>
             );
           })}

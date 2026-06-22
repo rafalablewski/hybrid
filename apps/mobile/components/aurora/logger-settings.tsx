@@ -6,7 +6,7 @@ import { fs, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
+type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement" | "shareThemeId">;
 
 const ROWS: { key: ToggleKey; titleKey: string; descKey: string }[] = [
   { key: "countWarmupsInVolume", titleKey: "loggerPrefs.countWarmups", descKey: "loggerPrefs.countWarmupsDesc" },

@@ -31,7 +31,7 @@ import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
-import { SHARE_THEMES, shareTheme, DEFAULT_SHARE_THEME_ID, type ShareThemeId } from "@hybrid/core";
+import { SHARE_THEMES, shareTheme, type ShareThemeId } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
@@ -569,9 +569,14 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
   const [active, setActive] = useState(0);
-  // The graphic style the user picks for the shared story (default Aurora).
-  const [themeId, setThemeId] = useState<ShareThemeId>(DEFAULT_SHARE_THEME_ID);
+  // The graphic style for the shared story — remembered per device.
+  const prefs = useLoggerPrefs();
+  const [themeId, setThemeId] = useState<ShareThemeId>(prefs.shareThemeId);
+  // Adopt the stored choice once prefs hydrate (server render starts on default).
+  useEffect(() => { setThemeId(prefs.shareThemeId); }, [prefs.shareThemeId]);
+  const pickTheme = (id: ShareThemeId) => { setThemeId(id); setLoggerPref("shareThemeId", id); };
   const th = shareTheme(themeId);
+  const themeIndex = Math.max(0, SHARE_THEMES.findIndex((o) => o.id === themeId));
   const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -709,23 +714,21 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
         ))}
       </div>
 
-      {/* Pick the graphic style for the shared story. */}
+      {/* Pick the graphic style — a sliding segmented toggle. */}
       <div style={{ marginTop: 18 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.pickStyle")}</div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+        <div style={{ position: "relative", display: "flex", padding: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999 }}>
+          <div aria-hidden style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: "calc((100% - 8px) / 4)", borderRadius: 999, background: C("lime"), transform: `translateX(calc(${themeIndex} * 100%))`, transition: "transform .25s cubic-bezier(.4,0,.2,1)" }} />
           {SHARE_THEMES.map((opt) => {
             const on = opt.id === themeId;
-            const dot = opt.glow[0] ?? opt.accent;
             return (
               <button
                 key={opt.id}
-                onClick={() => setThemeId(opt.id)}
+                onClick={() => pickTheme(opt.id)}
                 aria-pressed={on}
-                title={opt.name}
-                style={{ flex: 1, maxWidth: 120, cursor: "pointer", borderRadius: 14, padding: "8px 6px 7px", background: opt.bg, border: `2px solid ${on ? C("lime") : C("line")}`, boxShadow: on ? `0 0 14px -3px color-mix(in srgb, ${C("lime")} 70%, transparent)` : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
+                style={{ position: "relative", zIndex: 1, flex: 1, cursor: "pointer", background: "transparent", border: "none", padding: "9px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: on ? C("ink") : C("ash"), transition: "color .2s" }}
               >
-                <span style={{ width: 22, height: 22, borderRadius: "50%", background: dot, border: opt.mode === "light" ? `1px solid ${opt.line}` : "none" }} />
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", color: opt.fg }}>{opt.name}</span>
+                {opt.name}
               </button>
             );
           })}

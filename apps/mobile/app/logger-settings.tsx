@@ -7,7 +7,7 @@ import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import AuroraLoggerSettings from "../components/aurora/logger-settings";
 
-type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement">;
+type ToggleKey = Exclude<keyof LoggerPrefs, "restSeconds" | "landmarkOverrides" | "defaultStart" | "units" | "quickIncrement" | "shareThemeId">;
 
 export default function LoggerSettings() {
   if (useTemplate().template === "aurora") return <AuroraLoggerSettings />;

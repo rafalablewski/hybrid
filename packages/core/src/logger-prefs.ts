@@ -5,6 +5,7 @@
 // hardcoded behavior, so nothing changes until they opt in.
 
 import { sanitizeLandmarkOverrides, type LandmarkOverrides } from "./engines/landmarks";
+import { SHARE_THEME_IDS, DEFAULT_SHARE_THEME_ID, type ShareThemeId } from "./share-themes";
 import type { WeightUnit } from "./units";
 
 export interface LoggerPrefs {
@@ -46,6 +47,8 @@ export interface LoggerPrefs {
   fractionalVolume: boolean;
   /** Per-muscle overrides of the default volume landmarks (empty = use defaults). */
   landmarkOverrides: LandmarkOverrides;
+  /** Last-picked graphic style for the post-workout share story (remembered). */
+  shareThemeId: ShareThemeId;
 }
 
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
@@ -67,6 +70,7 @@ export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   countWarmupsInVolume: false,
   fractionalVolume: false,
   landmarkOverrides: {},
+  shareThemeId: DEFAULT_SHARE_THEME_ID,
 };
 
 /** Allowed default-rest values (matches the in-workout presets). */
@@ -115,5 +119,8 @@ export function normalizeLoggerPrefs(raw: unknown): LoggerPrefs {
     countWarmupsInVolume: bool(r.countWarmupsInVolume, DEFAULT_LOGGER_PREFS.countWarmupsInVolume),
     fractionalVolume: bool(r.fractionalVolume, DEFAULT_LOGGER_PREFS.fractionalVolume),
     landmarkOverrides: sanitizeLandmarkOverrides(r.landmarkOverrides),
+    shareThemeId: (SHARE_THEME_IDS as readonly string[]).includes(r.shareThemeId as string)
+      ? (r.shareThemeId as ShareThemeId)
+      : DEFAULT_SHARE_THEME_ID,
   };
 }
