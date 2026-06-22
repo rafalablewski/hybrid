@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Modal } from "react-native";
 import {
   olympicSport,
@@ -68,11 +68,14 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   } as const;
 
   // The categorised catalog, live-filtered by the search query — categories with
-  // no matching sports drop out so the list stays scannable.
-  const q = query.trim().toLowerCase();
-  const filtered = olympicSportsByCategory()
-    .map((g) => ({ ...g, sports: q ? g.sports.filter((s) => s.name.toLowerCase().includes(q)) : g.sports }))
-    .filter((g) => g.sports.length > 0);
+  // no matching sports drop out so the list stays scannable. Memoised so typing
+  // doesn't rebuild + refilter the whole catalog on every keystroke.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return olympicSportsByCategory()
+      .map((g) => ({ ...g, sports: q ? g.sports.filter((s) => s.name.toLowerCase().includes(q)) : g.sports }))
+      .filter((g) => g.sports.length > 0);
+  }, [query]);
 
   const save = async () => {
     const mins = parseFloat(minutes);
