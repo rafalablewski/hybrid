@@ -640,8 +640,10 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
-  // The preview card reflects the picked theme so what you see is what you share.
-  const slideShell = { ...card, background: previewBackground(th), color: th.fg, borderColor: th.line, position: "relative" as const, overflow: "hidden" as const, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
+  // Full-bleed themes the whole screen; the slide card is a glass panel on top.
+  const onColor = th.mode === "light" ? C("chalk") : C("ink");
+  const glass = th.mode === "light" ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.06)";
+  const slideShell = { ...card, background: glass, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", color: th.fg, borderColor: th.line, position: "relative" as const, overflow: "hidden" as const, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
   const statCol = (label: string, value: string) => (
     <div style={{ flex: 1, textAlign: "center" }}>
       <div style={{ fontWeight: 900, fontSize: 30, color: th.fg }}>{value}</div>
@@ -699,11 +701,42 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     );
   };
 
+  // Swipe the hero/preview left↔right to slide through the themes (full-bleed).
+  const stepTheme = (dir: number) => {
+    const next = (themeIndex + dir + SHARE_THEMES.length) % SHARE_THEMES.length;
+    pickTheme(SHARE_THEMES[next]!.id);
+  };
+  const swipe = useRef<number | null>(null);
+
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* Hero + heading + workout name on top. */}
-      <div className="win-pop" style={{ textAlign: "center", marginTop: 8, marginBottom: 18 }}>
-        <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 14%, transparent)", border: `2px solid ${C("lime")}`, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
+    <div style={{ position: "relative", width: "100vw", marginLeft: "calc(50% - 50vw)", minHeight: "100%", overflow: "hidden", fontFamily: "var(--font-display)", color: th.fg, transition: "color .3s" }}>
+      {/* Full-bleed themed backdrop — the whole finish screen wears the style. */}
+      <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, background: previewBackground(th), transition: "background .3s" }}>
+        {th.backdrop === "ticker" && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, overflow: "hidden", pointerEvents: "none" }}>
+            {Array.from({ length: 16 }).map((_, r) => (
+              <div key={r} style={{ whiteSpace: "nowrap", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 46, letterSpacing: "-.02em", textTransform: "uppercase", color: r % 4 === 1 ? "color-mix(in srgb, var(--color-lime) 16%, transparent)" : "transparent", WebkitTextStroke: r % 4 === 1 ? undefined : "1px rgba(243,244,239,.06)" }}>
+                {(title || "Workout").toUpperCase()} · {(title || "Workout").toUpperCase()} ·
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 560, margin: "0 auto", padding: "8px 20px 28px" }}>
+      {/* Hero + heading + workout name on top. Swipe here to slide themes. */}
+      <div
+        className="win-pop"
+        style={{ textAlign: "center", marginTop: 8, marginBottom: 18, touchAction: "pan-y" }}
+        onTouchStart={(e) => { swipe.current = e.touches[0]?.clientX ?? null; }}
+        onTouchEnd={(e) => {
+          if (swipe.current == null) return;
+          const dx = (e.changedTouches[0]?.clientX ?? swipe.current) - swipe.current;
+          if (Math.abs(dx) > 48) stepTheme(dx < 0 ? 1 : -1);
+          swipe.current = null;
+        }}
+      >
+        <div style={{ width: 76, height: 76, borderRadius: "50%", margin: "0 auto", display: "grid", placeItems: "center", background: `color-mix(in srgb, ${th.accent} 16%, transparent)`, border: `2px solid ${th.accent}`, color: th.fg, fontSize: 36 }}>{firstEver ? "🎉" : "✓"}</div>
         <div style={{ fontWeight: 900, fontSize: 28, marginTop: 14 }}>{firstEver ? t("w.train.logger.firstDone") : t("w.train.logger.sessionComplete")}</div>
         <div style={{ fontWeight: 700, fontSize: fs.subtitle, marginTop: 6 }}>{title || "Workout"}</div>
         <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
@@ -718,15 +751,6 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
         {slides.map((s, i) => (
           <div key={i} style={{ flex: "0 0 100%", padding: "0 2px", boxSizing: "border-box" }}>
             <div style={slideShell}>
-              {th.backdrop === "ticker" && (
-                <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2, overflow: "hidden", pointerEvents: "none" }}>
-                  {Array.from({ length: 7 }).map((_, r) => (
-                    <div key={r} style={{ whiteSpace: "nowrap", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 34, letterSpacing: "-.02em", textTransform: "uppercase", color: r === 3 ? "color-mix(in srgb, var(--color-lime) 16%, transparent)" : "transparent", WebkitTextStroke: r === 3 ? undefined : "1px rgba(243,244,239,.06)" }}>
-                      {(title || "Workout").toUpperCase()} · {(title || "Workout").toUpperCase()} ·
-                    </div>
-                  ))}
-                </div>
-              )}
               <div style={{ position: "relative", zIndex: 1, height: "100%" }}>{renderSlide(s)}</div>
             </div>
           </div>
@@ -736,15 +760,15 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       {/* Dots */}
       <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
         {slides.map((_, i) => (
-          <div key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s" }} />
+          <div key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? th.accent : th.line, transition: "width .2s" }} />
         ))}
       </div>
 
-      {/* Pick the graphic style — a sliding segmented toggle. */}
+      {/* Pick the graphic style — a sliding segmented toggle (or swipe the card). */}
       <div style={{ marginTop: 18 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.pickStyle")}</div>
-        <div style={{ position: "relative", display: "flex", padding: 4, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999 }}>
-          <div aria-hidden style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: "calc((100% - 8px) / 4)", borderRadius: 999, background: C("lime"), transform: `translateX(calc(${themeIndex} * 100%))`, transition: "transform .25s cubic-bezier(.4,0,.2,1)" }} />
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: th.muted, textAlign: "center", marginBottom: 8 }}>{t("summary.pickStyle")}</div>
+        <div style={{ position: "relative", display: "flex", padding: 4, background: th.mode === "light" ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.32)", border: `1px solid ${th.line}`, borderRadius: 999, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}>
+          <div aria-hidden style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: "calc((100% - 8px) / 4)", borderRadius: 999, background: th.accent, transform: `translateX(calc(${themeIndex} * 100%))`, transition: "transform .25s cubic-bezier(.4,0,.2,1)" }} />
           {SHARE_THEMES.map((opt) => {
             const on = opt.id === themeId;
             return (
@@ -752,7 +776,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
                 key={opt.id}
                 onClick={() => pickTheme(opt.id)}
                 aria-pressed={on}
-                style={{ position: "relative", zIndex: 1, flex: 1, cursor: "pointer", background: "transparent", border: "none", padding: "9px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: on ? C("ink") : C("ash"), transition: "color .2s" }}
+                style={{ position: "relative", zIndex: 1, flex: 1, cursor: "pointer", background: "transparent", border: "none", padding: "9px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: on ? onColor : th.muted, transition: "color .2s" }}
               >
                 {opt.name}
               </button>
@@ -770,19 +794,19 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
           fontFamily: "var(--font-display)",
           fontWeight: 800,
           fontSize: fs.note,
-          background: C("lime"),
-          color: C("ink"),
+          background: th.accent,
+          color: onColor,
           border: "none",
           borderRadius: 999,
           padding: "13px 28px",
           cursor: sharing ? "default" : "pointer",
           marginTop: 16,
-          boxShadow: milestone ? `0 0 18px -2px color-mix(in srgb, ${C("lime")} 60%, transparent)` : "none",
+          boxShadow: `0 10px 30px -10px color-mix(in srgb, ${th.accent} ${milestone ? "70%" : "45%"}, transparent)`,
         }}
       >
         {sharing ? "…" : `↗ ${t("w.train.logger.shareStory")}`}
       </button>
-      {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
+      {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: th.accent, marginTop: 8 }}>{shareMsg}</div>}
 
       {/* Save as routine. */}
       <div style={{ marginTop: 14 }}>
@@ -790,14 +814,15 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       </div>
 
       {/* See analysis — at the very bottom (onDone → history). */}
-      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 24 }}>
+      <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: "transparent", color: th.fg, border: `1px solid ${th.line}`, borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 24 }}>
         {t("summary.seeAnalysis")}
       </button>
       {onHome && (
-        <button onClick={onHome} style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, background: "transparent", color: C("ash"), border: "none", padding: "16px 0", cursor: "pointer" }}>
+        <button onClick={onHome} style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, background: "transparent", color: th.muted, border: "none", padding: "16px 0", cursor: "pointer" }}>
           {t("summary.doneToday")}
         </button>
       )}
+      </div>
     </div>
   );
 }

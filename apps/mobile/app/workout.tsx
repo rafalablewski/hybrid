@@ -1317,6 +1317,17 @@ function Summary({
   const [segW, setSegW] = useState(0);
   const slideX = useRef(new Animated.Value(0)).current;
   useEffect(() => { Animated.timing(slideX, { toValue: themeIndex * segW, duration: 220, useNativeDriver: true }).start(); }, [themeIndex, segW, slideX]);
+  // Swipe the hero left↔right to slide through themes (full-bleed re-skin).
+  const ax = (hex: string, al: string) => `${hex}${al}`;
+  const onColor = theme.mode === "light" ? C.chalk : C.ink;
+  const tiRef = useRef(themeIndex); tiRef.current = themeIndex;
+  const stepTheme = (dir: number) => pickTheme(SHARE_THEMES[(tiRef.current + dir + SHARE_THEMES.length) % SHARE_THEMES.length]!.id);
+  const themePan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderRelease: (_e, g) => { if (Math.abs(g.dx) > 48) stepTheme(g.dx < 0 ? 1 : -1); },
+    }),
+  ).current;
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -1394,34 +1405,9 @@ function Summary({
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
-  // Inline render of a slide inside the swipeable carousel — themed so the
-  // preview matches the picked style (what you see is what you share).
-  const slideBox = { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.line, borderRadius: 16, padding: 18, minHeight: 230, overflow: "hidden" as const, position: "relative" as const };
-  // Decorative backdrop behind the preview content — mirrors the exported card.
-  const ax = (hex: string, al: string) => `${hex}${al}`;
-  const previewBackdrop = (() => {
-    if (theme.backdrop === "ticker")
-      return (
-        <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: -10, right: 0, justifyContent: "center", overflow: "hidden" }}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Text key={i} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 30, color: ax(theme.fg, "0d"), letterSpacing: -1, marginVertical: 1 }}>
-              {`${(title || "WORKOUT").toUpperCase()}  ${(title || "WORKOUT").toUpperCase()}`}
-            </Text>
-          ))}
-        </View>
-      );
-    if (theme.backdrop === "glow")
-      return <View pointerEvents="none" style={{ position: "absolute", top: -60, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: ax(theme.accent, "22") }} />;
-    // mesh / blobs — soft colour discs (light = stronger wash).
-    const strong = theme.mode === "light";
-    return (
-      <>
-        <View pointerEvents="none" style={{ position: "absolute", top: -54, left: -44, width: 190, height: 190, borderRadius: 95, backgroundColor: ax(theme.glow[0] ?? theme.accent, strong ? "66" : "2e") }} />
-        <View pointerEvents="none" style={{ position: "absolute", top: -30, right: -54, width: 175, height: 175, borderRadius: 88, backgroundColor: ax("#7fd4e8", strong ? "55" : "24") }} />
-        <View pointerEvents="none" style={{ position: "absolute", bottom: -64, left: 28, width: 205, height: 205, borderRadius: 102, backgroundColor: ax("#c9a9f0", strong ? "59" : "22") }} />
-      </>
-    );
-  })();
+  // Inline slide card — a glass panel sitting on the full-bleed themed screen.
+  const slideGlass = theme.mode === "light" ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.06)";
+  const slideBox = { backgroundColor: slideGlass, borderWidth: 1, borderColor: theme.line, borderRadius: 16, padding: 18, minHeight: 230, overflow: "hidden" as const, position: "relative" as const };
   const statCol = (label: string, value: string) => (
     <View style={{ alignItems: "center", flex: 1 }}>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: theme.fg }}>{value}</Text>
@@ -1432,7 +1418,6 @@ function Summary({
     if (s.kind === "overview")
       return (
         <View style={slideBox}>
-          {previewBackdrop}
           <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, marginTop: 10 }}>{s.stats.title || "Workout"}</Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 28 }}>
@@ -1445,7 +1430,6 @@ function Summary({
     if (s.kind === "prs")
       return (
         <View style={slideBox}>
-          {previewBackdrop}
           <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: theme.accent, marginTop: 10 }}>{s.headline}</Text>
           {s.rows.slice(0, 6).map((r, i) => (
@@ -1459,7 +1443,6 @@ function Summary({
     if (s.kind === "muscle")
       return (
         <View style={slideBox}>
-          {previewBackdrop}
           <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           {s.bars.map((b, i) => (
             <View key={i} style={{ marginTop: 12 }}>
@@ -1476,29 +1459,59 @@ function Summary({
       );
     return (
       <View style={[slideBox, { alignItems: "center", justifyContent: "center" }]}>
-        {previewBackdrop}
         <Text style={{ fontSize: 64 }}>{s.emoji}</Text>
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, textAlign: "center", marginTop: 14, lineHeight: 26 }}>{s.text}</Text>
       </View>
     );
   };
 
+  const SCRW = Dimensions.get("window").width;
+  const SCRH = Dimensions.get("window").height;
+  const fill = { position: "absolute" as const, top: 0, left: 0, right: 0, bottom: 0 };
+  const disc = (size: number, top: number, left: number, color: string, alpha: string) => (
+    <View pointerEvents="none" style={{ position: "absolute", top, left, width: size, height: size, borderRadius: size / 2, backgroundColor: ax(color, alpha) }} />
+  );
+  // Full-bleed themed backdrop behind the whole finish screen.
+  const screenBackdrop = (() => {
+    if (theme.backdrop === "ticker")
+      return (
+        <View pointerEvents="none" style={[fill, { justifyContent: "center", overflow: "hidden" }]}>
+          {Array.from({ length: Math.ceil(SCRH / 54) }).map((_, i) => (
+            <Text key={i} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 46, color: i % 4 === 1 ? ax(theme.accent, "1f") : ax(theme.fg, "0b"), letterSpacing: -1 }}>
+              {`${(title || "WORKOUT").toUpperCase()}  ${(title || "WORKOUT").toUpperCase()}`}
+            </Text>
+          ))}
+        </View>
+      );
+    if (theme.backdrop === "glow")
+      return <View pointerEvents="none" style={fill}>{disc(SCRW * 1.1, -SCRW * 0.3, SCRW * 0.25, theme.accent, "22")}</View>;
+    const strong = theme.mode === "light";
+    return (
+      <View pointerEvents="none" style={[fill, { overflow: "hidden" }]}>
+        {disc(SCRW * 0.95, -SCRW * 0.25, -SCRW * 0.3, theme.glow[0] ?? theme.accent, strong ? "77" : "30")}
+        {disc(SCRW * 0.85, SCRH * 0.16, SCRW * 0.5, "#7fd4e8", strong ? "66" : "28")}
+        {disc(SCRW * 1.0, SCRH * 0.52, -SCRW * 0.3, "#c9a9f0", strong ? "66" : "24")}
+        {strong && disc(SCRW * 0.7, SCRH * 0.6, SCRW * 0.55, theme.glow[0] ?? theme.accent, "55")}
+      </View>
+    );
+  })();
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
-      {aurora && <AuroraField />}
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }}>
-        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
-          <Animated.View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.lime}1f`, borderWidth: 2, borderColor: C.lime, alignItems: "center", justifyContent: "center", transform: [{ scale: pop }] }}>
-            <Text style={{ fontSize: 34, color: txt(C, C.lime), fontFamily: F.black }}>{firstEver ? "🎉" : "✓"}</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={["top", "bottom"]}>
+      {screenBackdrop}
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, flexGrow: 1 }} style={{ backgroundColor: "transparent" }}>
+        <View {...themePan.panHandlers} style={{ alignItems: "center", marginTop: 20, marginBottom: 8 }}>
+          <Animated.View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: ax(theme.accent, "1f"), borderWidth: 2, borderColor: theme.accent, alignItems: "center", justifyContent: "center", transform: [{ scale: pop }] }}>
+            <Text style={{ fontSize: 34, color: theme.fg, fontFamily: F.black }}>{firstEver ? "🎉" : "✓"}</Text>
           </Animated.View>
-          <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: 28, color: theme.fg, marginTop: 16, textAlign: "center" }}>
             {firstEver ? t("summary.firstTitle") : t("summary.complete")}
           </Text>
           {/* Workout name, directly under the heading. */}
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8, textAlign: "center" }}>{title || "Workout"}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, marginTop: 8, textAlign: "center" }}>{title || "Workout"}</Text>
           {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
           {firstEver && (
-            <Mono color={C.ash} style={{ marginTop: 6, textAlign: "center" }}>{t("summary.firstSub")}</Mono>
+            <Mono color={theme.muted} style={{ marginTop: 6, textAlign: "center" }}>{t("summary.firstSub")}</Mono>
           )}
         </View>
 
@@ -1519,33 +1532,33 @@ function Summary({
         {/* Dots */}
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 12 }}>
           {slides.map((_, i) => (
-            <View key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === activeIdx ? C.lime : C.line }} />
+            <View key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === activeIdx ? theme.accent : theme.line }} />
           ))}
         </View>
 
         {milestone && (
-          <Mono color={C.lime} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
+          <Mono color={theme.accent} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
         )}
 
-        {/* Pick the graphic style — a sliding segmented toggle. */}
-        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 16, marginBottom: 8, letterSpacing: 1.5, fontSize: fs.micro }}>
+        {/* Pick the graphic style — a sliding segmented toggle (or swipe the hero). */}
+        <Mono color={theme.muted} style={{ textAlign: "center", marginTop: 16, marginBottom: 8, letterSpacing: 1.5, fontSize: fs.micro }}>
           {t("summary.pickStyle").toUpperCase()}
         </Mono>
         <View
           onLayout={(e) => setSegW((e.nativeEvent.layout.width - 8) / SHARE_THEMES.length)}
-          style={{ flexDirection: "row", position: "relative", padding: 4, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
+          style={{ flexDirection: "row", position: "relative", padding: 4, borderRadius: 999, backgroundColor: theme.mode === "light" ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.32)", borderWidth: 1, borderColor: theme.line }}
         >
           {segW > 0 && (
             <Animated.View
               pointerEvents="none"
-              style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: segW, borderRadius: 999, backgroundColor: C.lime, transform: [{ translateX: slideX }] }}
+              style={{ position: "absolute", top: 4, bottom: 4, left: 4, width: segW, borderRadius: 999, backgroundColor: theme.accent, transform: [{ translateX: slideX }] }}
             />
           )}
           {SHARE_THEMES.map((opt) => {
             const on = opt.id === themeId;
             return (
               <Pressable key={opt.id} onPress={() => pickTheme(opt.id)} style={{ flex: 1, alignItems: "center", paddingVertical: 9 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.ink : C.ash }}>{opt.name}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? onColor : theme.muted }}>{opt.name}</Text>
               </Pressable>
             );
           })}
@@ -1555,17 +1568,19 @@ function Summary({
         <Pressable
           onPress={() => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"))}
           style={{
-            backgroundColor: C.lime,
+            backgroundColor: theme.accent,
             borderRadius: R.cta,
             paddingVertical: 16,
             alignItems: "center",
             marginTop: milestone ? 6 : 16,
-            ...(milestone
-              ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
-              : null),
+            shadowColor: theme.accent,
+            shadowOpacity: milestone ? 0.6 : 0.4,
+            shadowRadius: 14,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 6,
           }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>↗ {shareLabel}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: onColor }}>↗ {shareLabel}</Text>
         </Pressable>
 
         {/* Off-screen 9:16 story card per slide — captured by active index. */}
@@ -1602,15 +1617,15 @@ function Summary({
         ) : (
           <>
             <SaveRoutine key={title} title={title} blocks={summary.blocks} t={t} />
-            <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
+            <Mono color={theme.muted} style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
             <Pressable
               onPress={() => router.replace("/(tabs)/history")}
-              style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, paddingVertical: 15, alignItems: "center" }}
+              style={{ borderWidth: 1, borderColor: theme.line, borderRadius: R.cta, paddingVertical: 15, alignItems: "center" }}
             >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("summary.seeAnalysis")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: theme.fg }}>{t("summary.seeAnalysis")}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/(tabs)")} style={{ paddingVertical: 16, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("summary.doneToday")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: theme.muted }}>{t("summary.doneToday")}</Text>
             </Pressable>
           </>
         )}
