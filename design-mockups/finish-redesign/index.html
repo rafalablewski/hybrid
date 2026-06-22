@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finish — 10 redesigns</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0c0d0c;color:#f3f4ef;font-family:Archivo,system-ui,sans-serif;padding:40px 24px 80px}
+header{max-width:1320px;margin:0 auto 32px}
+h1{font-weight:900;font-size:34px;letter-spacing:-.02em}
+p{color:#8b8f86;margin-top:8px;font-size:15px;max-width:680px;line-height:1.5}
+.kick{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#c4f035}
+.grid{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px}
+.cell{display:flex;flex-direction:column;gap:12px}
+.frame{position:relative;border-radius:24px;overflow:hidden;border:1px solid #2a2d2a;background:#000;aspect-ratio:390/844}
+iframe{position:absolute;top:0;left:0;width:390px;height:844px;border:0;transform-origin:top left}
+.cap{display:flex;align-items:baseline;justify-content:space-between}
+.cap b{font-weight:800;font-size:16px}
+.cap span{font-family:'JetBrains Mono';font-size:11px;color:#8b8f86}
+.cap a{color:#c4f035;font-family:'JetBrains Mono';font-size:11px;text-decoration:none}
+</style></head>
+<body>
+<header>
+  <div class="kick">HYBRID · Session complete</div>
+  <h1>Finish screen — 10 redesigns</h1>
+  <p>Ten 1:1 takes on the “Session complete” screen, all on the HYBRID palette (ink / acid-lime / chalk) and type (Archivo · Archivo Narrow · JetBrains Mono). Same data, different design languages. Open any tile full-size for the real thing.</p>
+</header>
+<div class="grid" id="grid"></div>
+<script>
+const items=[
+ ["01","Japandi","01-japandi.html"],
+ ["02","Swiss","02-swiss.html"],
+ ["03","Nordic","03-nordic.html"],
+ ["04","Minimalistic","04-minimalistic.html"],
+ ["05","Professional","05-professional.html"],
+ ["06","Apple","06-apple.html"],
+ ["07","Tesla","07-tesla.html"],
+ ["08","Lucid Motors","08-lucid.html"],
+ ["09","Bauhaus","09-bauhaus.html"],
+ ["10","Editorial","10-editorial.html"],
+];
+const g=document.getElementById('grid');
+for(const [n,name,file] of items){
+ const cell=document.createElement('div');cell.className='cell';
+ cell.innerHTML=`<div class="frame"><iframe src="${file}" scrolling="no"></iframe></div>
+ <div class="cap"><b>${n} · ${name}</b><a href="${file}" target="_blank">open ↗</a></div>`;
+ g.appendChild(cell);
+}
+function scale(){
+ document.querySelectorAll('.frame').forEach(f=>{
+  const w=f.clientWidth;const s=w/390;
+  f.querySelector('iframe').style.transform=`scale(${s})`;
+ });
+}
+window.addEventListener('resize',scale);
+window.addEventListener('load',scale);setTimeout(scale,300);
+</script>
+</body></html>

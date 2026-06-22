@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finish · Minimalistic</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--ink:#0c0d0c;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c4f035;--line:#1e201e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
+.phone{width:390px;height:844px;background:var(--ink);border-radius:44px;overflow:hidden;position:relative;border:1px solid #222;box-shadow:0 40px 120px -30px #000}
+.wrap{height:100%;display:flex;flex-direction:column;padding:80px 34px 30px}
+.top{display:flex;align-items:center;gap:12px}
+.tick{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--lime);display:grid;place-items:center;color:var(--lime);font-size:15px}
+.top span{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ash)}
+.hero{flex:1;display:flex;flex-direction:column;justify-content:center}
+.label{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.big{font-weight:900;font-size:140px;line-height:.84;letter-spacing:-.06em;margin:14px 0 0}
+.big u{text-decoration:none;color:var(--lime)}
+.unit{font-weight:500;font-size:30px;color:var(--ash);letter-spacing:-.02em}
+.sub{margin-top:30px;display:flex;gap:34px}
+.sub div span{display:block;font-family:'JetBrains Mono';font-size:11px;color:var(--ash);letter-spacing:.1em}
+.sub div b{font-weight:600;font-size:22px}
+.name{margin-top:30px;font-size:15px;color:var(--ash)}
+.name b{color:var(--chalk);font-weight:600}
+.dots{display:flex;gap:6px;margin-top:26px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.dot.on{width:20px;background:var(--lime)}
+.acts{margin-top:30px}
+.btn{width:100%;border:none;background:none;padding:18px 0;font-family:inherit;font-size:16px;font-weight:600;text-align:left;cursor:pointer;border-top:1px solid var(--line);color:var(--chalk);display:flex;justify-content:space-between;align-items:center}
+.btn:last-child{border-bottom:1px solid var(--line)}
+.btn .a{color:var(--lime);font-weight:700}
+.btn.share .a{color:var(--lime)}
+.back{text-align:center;color:var(--ash);font-family:'JetBrains Mono';font-size:12px;padding:20px 0 0}
+</style></head>
+<body><div class="phone"><div class="wrap">
+  <div class="top"><div class="tick">✓</div><span>Session complete</span></div>
+  <div class="hero">
+    <div class="label">Volume moved</div>
+    <div class="big"><u>20.0</u><span class="unit"> t</span></div>
+    <div class="sub">
+      <div><span>MINUTES</span><b>1</b></div>
+      <div><span>SETS</span><b>2</b></div>
+    </div>
+    <div class="name">Night workout · <b>✎ name it</b></div>
+    <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <div class="acts">
+    <button class="btn share">Share to story <span class="a">↗</span></button>
+    <button class="btn">Save as routine <span class="a">★</span></button>
+    <button class="btn">See your analysis <span class="a">→</span></button>
+  </div>
+  <div class="back">Done — back to Today</div>
+</div></div></body></html>
