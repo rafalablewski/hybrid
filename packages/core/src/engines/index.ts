@@ -30,6 +30,7 @@ export * from "./load";
 export * from "./compliance";
 export * from "./calendar";
 export * from "./achievements";
+export * from "./comparisons";
 export * from "./forceplate";
 export * from "./composition";
 export * from "./segment";

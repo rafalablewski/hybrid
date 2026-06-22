@@ -52,6 +52,10 @@ import {
   RPE_SCALE,
   RPE_INTRO,
   MOVEMENTS,
+  volumeByMuscle,
+  sessionFunFact,
+  funFactText,
+  exercisesByCategory,
   type SessionBlock,
   type LoggedSession,
   type PrHit,
@@ -61,7 +65,7 @@ import {
 import { fetchSessions, createSession, renameSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
-import { WorkoutShareCard, WorkoutStoryCard, shareWorkout, type ShareBest } from "../lib/share";
+import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
 import { useSession } from "../lib/session";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
@@ -1080,34 +1084,52 @@ export default function Workout() {
           );
         })}
 
-        {pickerOpen ? (() => {
-          const q = custom.trim().toLowerCase();
-          const match = (n: string) => !q || n.toLowerCase().includes(q);
-          const recentNames = new Set(recent.map((r) => r.name));
-          const recentShown = recent.filter((r) => match(r.name)).slice(0, 10);
-          const libShown = Object.keys(MOVEMENTS).filter((n) => !recentNames.has(n) && match(n));
-          // Olympic sports for manual sport-session logging — grouped by category,
-          // filtered by the search box. Picked sports log as a cardio activity.
-          const sportGroups = olympicSportsByCategory()
-            .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
-            .filter((g) => g.sports.length > 0);
-          const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
-          const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
-          const chip = (name: string, kind: WKind, key: string) => {
-            const c = kindColor(kind);
-            return (
-              <Pressable
-                key={key}
-                onPress={() => addExercise(name, kind)}
-                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.chip, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}
-              >
-                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, c) }}>{name}</Text>
-              </Pressable>
-            );
-          };
-          return (
-            <Card>
-              <Kicker color={C.lime}>{t("workout.pickExercise")}</Kicker>
+        {/* Field-styled trigger → searchable modal (matches the sport picker). */}
+        <Pressable
+          onPress={() => setPickerOpen(true)}
+          style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
+        >
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
+        </Pressable>
+
+        {/* Empty-state quick-starts (parity with the web logger): pull today's
+            AI-prescribed session, or load a saved routine, without leaving. */}
+        {exercises.length === 0 && (
+          <View style={{ marginTop: 12, gap: space.sm }}>
+            <Pressable
+              onPress={loadPrescribed}
+              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.violet, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${C.violet}14` }}
+            >
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.violet) }}>✦ {t("train.start")} · AI</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recent.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
+            </Pressable>
+            {routines.length > 0 && (
+              <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), marginBottom: 8 }}>{t("train.routines")}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
+                  {routines.map((r) => (
+                    <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, borderRadius: R.chip, paddingVertical: 7, paddingHorizontal: 12 }}>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{r.name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Searchable exercise picker — grouped by muscle/pattern, mirroring the
+            sport picker. Recent lifts first, then categories, then sports, then a
+            "+ custom" row for a free-typed name. */}
+        <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => { setPickerOpen(false); setCustom(""); }}>
+          <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
+            <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("workout.pickExercise")}</Text>
+                <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} hitSlop={10}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.close")}</Text>
+                </Pressable>
+              </View>
               <TextInput
                 value={custom}
                 onChangeText={setCustom}
@@ -1115,97 +1137,66 @@ export default function Workout() {
                 placeholderTextColor={C.ash}
                 autoFocus
                 onSubmitEditing={() => addExercise(custom)}
-                style={{ fontFamily: F.reg, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 }}
+                style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 14, paddingVertical: 12 }}
               />
-
-              {recentShown.length > 0 && (
-                <>
-                  <Kicker color={C.ash}>{t("workout.yourLifts")}</Kicker>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 8, marginBottom: 4 }}>
-                    {recentShown.map((r) => chip(r.name, r.kind, `r-${r.name}`))}
-                  </View>
-                </>
-              )}
-
-              {libShown.length > 0 && (
-                <>
-                  {recentShown.length > 0 && <Kicker color={C.ash}>{t("workout.library")}</Kicker>}
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 8 }}>
-                    {libShown.map((name) => chip(name, inferBlockKind(name), `l-${name}`))}
-                  </View>
-                </>
-              )}
-
-              {sportGroups.length > 0 && (
-                <>
-                  <Kicker color={C.ash}>{t("workout.sports")}</Kicker>
-                  {sportGroups.map((g) => (
-                    <View key={g.category} style={{ marginTop: 8 }}>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{g.category}</Text>
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
-                        {g.sports.map((s) => (
-                          <Pressable
-                            key={s.name}
-                            onPress={() => addExercise(s.name, "cardio")}
-                            style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: R.chip, borderWidth: 1, borderColor: `${C.blue}55`, backgroundColor: `${C.blue}1f` }}
-                          >
-                            <Text style={{ fontSize: fs.body }}>{s.icon}</Text>
-                            <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.blue) }}>{s.name}</Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    </View>
-                  ))}
-                </>
-              )}
-
-              {q.length > 0 && !exact && (
-                <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 14, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{custom.trim()}”</Text>
-                </Pressable>
-              )}
-
-              <Pressable onPress={() => { setPickerOpen(false); setCustom(""); }} style={{ paddingTop: 12 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>{t("workout.close")}</Text>
-              </Pressable>
-            </Card>
-          );
-        })() : (
-          <>
-            <Pressable
-              onPress={() => setPickerOpen(true)}
-              style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
-            >
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
-            </Pressable>
-
-            {/* Empty-state quick-starts (parity with the web logger): pull today's
-                AI-prescribed session, or load a saved routine, without leaving. */}
-            {exercises.length === 0 && (
-              <View style={{ marginTop: 12, gap: space.sm }}>
-                <Pressable
-                  onPress={loadPrescribed}
-                  style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.violet, borderRadius: R.cta, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: `${C.violet}14` }}
-                >
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.violet) }}>✦ {t("train.start")} · AI</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{recent.length > 0 ? t("train.aiReadiness") : "AI coach"}</Text>
-                </Pressable>
-                {routines.length > 0 && (
-                  <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), marginBottom: 8 }}>{t("train.routines")}</Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
-                      {routines.map((r) => (
-                        <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}1f`, borderRadius: R.chip, paddingVertical: 7, paddingHorizontal: 12 }}>
-                          <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{r.name}</Text>
-                        </Pressable>
+              <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
+                {(() => {
+                  const q = custom.trim().toLowerCase();
+                  const match = (n: string) => !q || n.toLowerCase().includes(q);
+                  const recentNames = new Set(recent.map((r) => r.name));
+                  const recentShown = recent.filter((r) => match(r.name)).slice(0, 12);
+                  const exGroups = exercisesByCategory(MOVEMENTS)
+                    .map((g) => ({ ...g, names: g.names.filter((n) => !recentNames.has(n) && match(n)) }))
+                    .filter((g) => g.names.length > 0);
+                  const sportGroups = olympicSportsByCategory()
+                    .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
+                    .filter((g) => g.sports.length > 0);
+                  const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
+                  const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
+                  const head = (label: string) => (
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{label}</Text>
+                  );
+                  const row = (name: string, kind: WKind, key: string, icon?: string) => (
+                    <Pressable key={key} onPress={() => addExercise(name, kind)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
+                      {icon
+                        ? <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{icon}</Text>
+                        : <View style={{ width: 22, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: kindColor(kind) }} /></View>}
+                      <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{name}</Text>
+                    </Pressable>
+                  );
+                  return (
+                    <>
+                      {recentShown.length > 0 && (
+                        <>
+                          {head(t("workout.yourLifts"))}
+                          {recentShown.map((r) => row(r.name, r.kind, `r-${r.name}`))}
+                        </>
+                      )}
+                      {exGroups.map((g) => (
+                        <View key={g.category}>
+                          {head(t(g.labelKey))}
+                          {g.names.map((n) => row(n, inferBlockKind(n), `e-${n}`))}
+                        </View>
                       ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-          </>
-        )}
+                      {sportGroups.length > 0 && head(t("workout.sports"))}
+                      {sportGroups.map((g) => (
+                        <View key={g.category}>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginTop: 8, marginBottom: 2 }}>{g.category}</Text>
+                          {g.sports.map((s) => row(s.name, "cardio", `s-${s.name}`, s.icon))}
+                        </View>
+                      ))}
+                      {q.length > 0 && !exact && (
+                        <Pressable onPress={() => addExercise(custom)} style={{ marginTop: 16, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{custom.trim()}”</Text>
+                        </Pressable>
+                      )}
+                    </>
+                  );
+                })()}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {!!error && <Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono>}
 
@@ -1298,11 +1289,13 @@ function Summary({
   const C = useTheme().palette;
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
-  const cardRef = useRef<View>(null);
-  const storyRef = useRef<View>(null);
-  // Story card capture width — a touch under the screen width so the device
-  // pixel ratio scales the exported PNG up toward 1080px.
+  // Carousel: one ref per slide's off-screen story card; Share captures the
+  // currently-visible slide. Story capture width is a touch under the screen so
+  // the device pixel ratio scales the exported PNG up toward 1080px.
   const storyW = Math.min(Dimensions.get("window").width - 36, 360);
+  const slideW = Dimensions.get("window").width - 36;
+  const storyRefs = useRef<Record<number, View | null>>({});
+  const [active, setActive] = useState(0);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -1358,6 +1351,87 @@ function Summary({
     .filter(Boolean)
     .join("\n");
 
+  // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
+  const muscleVol = volumeByMuscle(summary.blocks);
+  const muscleMax = muscleVol[0]?.volume ?? 0;
+  const funFact = sessionFunFact(summary.blocks);
+  const prRows: { left: string; right: string; hot?: boolean }[] = [
+    ...prs.map((p) => ({ left: p.lift, right: p.previous == null ? t("summary.firstTime") : `+${fmtWeight(p.e1rm - p.previous, units)}`, hot: true })),
+    ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),
+    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.e1rm, units) })),
+  ];
+  const prHeadline = prs.length > 0
+    ? `🏆 ${prs.length} ${t("summary.newPrs")}`
+    : cardioPrs.length > 0
+      ? `🏃 ${cardioPrs.length} ${t("summary.newCardioPrs")}`
+      : t("summary.todaysBests");
+  const slides: SlideData[] = [
+    { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }, firstEver },
+    { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
+    ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as SlideData] : []),
+    ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as SlideData] : []),
+  ];
+  const activeIdx = Math.min(active, slides.length - 1);
+
+  // Inline render of a slide inside the swipeable carousel.
+  const slideBox = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 18, minHeight: 230 } as const;
+  const statCol = (label: string, value: string) => (
+    <View style={{ alignItems: "center", flex: 1 }}>
+      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+  const renderInline = (s: SlideData) => {
+    if (s.kind === "overview")
+      return (
+        <View style={slideBox}>
+          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 10 }}>{s.stats.title || "Workout"}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 28 }}>
+            {statCol(t("summary.minutes"), String(summary.minutes))}
+            {statCol(t("summary.sets"), String(summary.sets))}
+            {statCol(t("summary.volumeMoved"), fmtTonnage(summary.volume, units))}
+          </View>
+        </View>
+      );
+    if (s.kind === "prs")
+      return (
+        <View style={slideBox}>
+          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime), marginTop: 10 }}>{s.headline}</Text>
+          {s.rows.slice(0, 6).map((r, i) => (
+            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk, flex: 1 }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
+              {!!r.right && <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: r.hot ? txt(C, C.lime) : C.chalk }}>{r.right}</Text>}
+            </View>
+          ))}
+        </View>
+      );
+    if (s.kind === "muscle")
+      return (
+        <View style={slideBox}>
+          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
+          {s.bars.map((b, i) => (
+            <View key={i} style={{ marginTop: 12 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{b.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{b.value}</Text>
+              </View>
+              <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
+                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: C.lime }} />
+              </View>
+            </View>
+          ))}
+        </View>
+      );
+    return (
+      <View style={[slideBox, { alignItems: "center", justifyContent: "center" }]}>
+        <Text style={{ fontSize: 64 }}>{s.emoji}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, textAlign: "center", marginTop: 14, lineHeight: 26 }}>{s.text}</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
@@ -1369,87 +1443,61 @@ function Summary({
           <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, marginTop: 16, textAlign: "center" }}>
             {firstEver ? t("summary.firstTitle") : t("summary.complete")}
           </Text>
+          {/* Workout name, directly under the heading. */}
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8, textAlign: "center" }}>{title || "Workout"}</Text>
+          {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}
           {firstEver && (
             <Mono color={C.ash} style={{ marginTop: 6, textAlign: "center" }}>{t("summary.firstSub")}</Mono>
           )}
         </View>
 
-        {/* PR celebration — the reason to keep coming back (fades/scales in) */}
-        {prs.length > 0 && (
-          <Animated.View style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 16, marginTop: 12, opacity: fade, transform: [{ scale: pop }] }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>
-              🏆 {prs.length} {t("summary.newPrs")}
-            </Text>
-            {prs.slice(0, 4).map((p) => (
-              <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>
-                {prLine(p)}
-              </Text>
+        {/* Swipeable summary slides — each shareable as its own 9:16 story. */}
+        <Animated.View style={{ opacity: fade }}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(e) => setActive(Math.round(e.nativeEvent.contentOffset.x / slideW))}
+          >
+            {slides.map((s, i) => (
+              <View key={i} style={{ width: slideW }}>{renderInline(s)}</View>
             ))}
-          </Animated.View>
-        )}
+          </ScrollView>
+        </Animated.View>
 
-        {/* Cardio PR celebration — runs count too */}
-        {cardioPrs.length > 0 && (
-          <View style={{ backgroundColor: `${C.blue}14`, borderWidth: 1, borderColor: C.blue, borderRadius: 16, padding: 16, marginTop: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.blue) }}>
-              🏃 {cardioPrs.length} {t("summary.newCardioPrs")}
-            </Text>
-            {cardioPrs.slice(0, 4).map((p) => (
-              <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>
-                {cardioPrLine(p, t)}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        <View style={{ marginTop: 14 }}>
-          <WorkoutShareCard
-            ref={cardRef}
-            t={t}
-            units={units}
-            stats={{ title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }}
-          />
+        {/* Dots */}
+        <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 12 }}>
+          {slides.map((_, i) => (
+            <View key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === activeIdx ? C.lime : C.line }} />
+          ))}
         </View>
 
         {milestone && (
           <Mono color={C.lime} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
         )}
+
+        {/* One Share button — shares whichever slide is on screen as a story. */}
         <Pressable
-          onPress={() => shareWorkout(cardRef, shareText, t("summary.share"))}
+          onPress={() => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"))}
           style={{
             backgroundColor: C.lime,
             borderRadius: R.cta,
             paddingVertical: 16,
             alignItems: "center",
-            marginTop: milestone ? 6 : 14,
-            // a stronger, glowing treatment when there's a win worth posting
+            marginTop: milestone ? 6 : 16,
             ...(milestone
               ? { shadowColor: C.lime, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 6 }
               : null),
           }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>{shareLabel}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>↗ {shareLabel}</Text>
         </Pressable>
 
-        {/* Share to STORY — the 9:16 card, captured from an off-screen render. */}
-        <Pressable
-          onPress={() => shareWorkout(storyRef, shareText, t("summary.shareStory"))}
-          style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
-        >
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>↗ {t("summary.shareStory")}</Text>
-        </Pressable>
-
-        {/* Off-screen 9:16 story card — laid out but pushed off the canvas so it
-            can be captured to a tall PNG without showing in the summary flow. */}
+        {/* Off-screen 9:16 story card per slide — captured by active index. */}
         <View style={{ position: "absolute", left: -9999, top: 0 }} pointerEvents="none">
-          <WorkoutStoryCard
-            ref={storyRef}
-            t={t}
-            units={units}
-            width={storyW}
-            firstEver={firstEver}
-            stats={{ title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }}
-          />
+          {slides.map((s, i) => (
+            <SlideStoryCard key={i} ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={storyW} />
+          ))}
         </View>
 
         <View style={{ flex: 1, minHeight: 24 }} />
@@ -1478,7 +1526,6 @@ function Summary({
           </>
         ) : (
           <>
-            <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />
             <SaveRoutine key={title} title={title} blocks={summary.blocks} t={t} />
             <Mono style={{ textAlign: "center", marginTop: 24, marginBottom: 8 }}>{t("summary.digDetail")}</Mono>
             <Pressable

@@ -35,6 +35,52 @@ export const MOVEMENTS: Record<string, Movement> = {
   "Mixed Metcon": { pattern: "cond", muscles: ["posterior", "shoulders"], baseLoad: null, system: "anaerobic" },
 };
 
+/** The exercise picker's category buckets, by movement pattern (+ a catch-all
+ *  for free-typed / library lifts with no pattern data). Mirrors the sport
+ *  picker's category grouping so both pickers read the same way. */
+export type ExerciseCategory = "squat" | "hinge" | "push" | "pull" | "cond" | "other";
+
+// Fixed display order + the i18n key for each bucket's header.
+const EXERCISE_CATEGORY_ORDER: ExerciseCategory[] = ["squat", "hinge", "push", "pull", "cond", "other"];
+export const EXERCISE_CATEGORY_LABEL: Record<ExerciseCategory, string> = {
+  squat: "exercise.cat.squat",
+  hinge: "exercise.cat.hinge",
+  push: "exercise.cat.push",
+  pull: "exercise.cat.pull",
+  cond: "exercise.cat.cond",
+  other: "exercise.cat.other",
+};
+
+const PATTERN_TO_CATEGORY = (pattern: string): ExerciseCategory =>
+  pattern === "squat" || pattern === "hinge" || pattern === "push" || pattern === "pull" || pattern === "cond"
+    ? pattern
+    : "other";
+
+/**
+ * Group an exercise catalog into muscle/pattern buckets for the picker. Names
+ * present in `movements` are bucketed by their movement pattern; everything else
+ * (free-typed lifts, library entries without pattern data, plus any `extraNames`)
+ * falls into "other". Names sorted A–Z within a bucket; empty buckets dropped;
+ * buckets returned in a fixed display order. Pure — mirrors olympicSportsByCategory.
+ */
+export function exercisesByCategory(
+  movements: Record<string, Movement>,
+  extraNames: string[] = [],
+): { category: ExerciseCategory; labelKey: string; names: string[] }[] {
+  const buckets = new Map<ExerciseCategory, Set<string>>();
+  const add = (name: string, cat: ExerciseCategory) => {
+    if (!buckets.has(cat)) buckets.set(cat, new Set());
+    buckets.get(cat)!.add(name);
+  };
+  for (const [name, m] of Object.entries(movements)) add(name, PATTERN_TO_CATEGORY(m.pattern));
+  for (const name of extraNames) if (!(name in movements)) add(name, "other");
+  return EXERCISE_CATEGORY_ORDER.flatMap((category) => {
+    const set = buckets.get(category);
+    if (!set || set.size === 0) return [];
+    return [{ category, labelKey: EXERCISE_CATEGORY_LABEL[category], names: [...set].sort((a, b) => a.localeCompare(b)) }];
+  });
+}
+
 /** A movement that carries its own display name + alternate names — the shape
  *  the admin-managed exercise library yields (Exercise rows, minus the CMS-only
  *  content). Kept here so core stays free of any DB/Prisma dependency. */

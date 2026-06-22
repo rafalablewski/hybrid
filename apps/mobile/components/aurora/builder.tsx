@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import { MOVEMENTS, inferBlockKind, olympicSportsByCategory, sportDistanceUnit } from "@hybrid/core";
+import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
+import { MOVEMENTS, inferBlockKind, olympicSportsByCategory, exercisesByCategory, sportDistanceUnit } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../../lib/use-routine-builder";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
@@ -51,59 +51,70 @@ export default function AuroraBuilder() {
         <ItemCard key={x.uid} item={x} C={C} onRemove={() => b.removeItem(x.uid)} onPatch={(p) => b.patchItem(x.uid, p)} onBump={(d) => b.bumpSets(x.uid, d)} fieldStyle={fieldStyle} />
       ))}
 
-      {picker ? (
-        <ACard style={{ marginTop: 4 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.builder.pickExercise")}</Text>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t("w.train.builder.searchCustomPh")}
-            placeholderTextColor={C.ash}
-            autoFocus
-            onSubmitEditing={() => query.trim() && add(query)}
-            style={[fieldStyle, { marginTop: 10, fontSize: fs.note, paddingVertical: 11 }]}
-          />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-            {matches.map((n) => {
-              const c = kindColor(inferBlockKind(n) as BuilderKind, C);
-              return (
-                <Pressable key={n} onPress={() => add(n, inferBlockKind(n) as BuilderKind)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${c}55`, backgroundColor: `${c}1f` }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, c) }}>{n}</Text>
+      <Pressable onPress={() => setPicker(true)} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 4 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.train.builder.addExercise")}</Text>
+      </Pressable>
+
+      {/* Searchable exercise picker — grouped by muscle/pattern, like the sport picker. */}
+      <Modal visible={picker} transparent animationType="slide" onRequestClose={() => { setPicker(false); setQuery(""); }}>
+        <Pressable onPress={() => { setPicker(false); setQuery(""); }} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
+          <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.train.builder.pickExercise")}</Text>
+              <Pressable onPress={() => { setPicker(false); setQuery(""); }} hitSlop={10}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
+              </Pressable>
+            </View>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t("w.train.builder.searchCustomPh")}
+              placeholderTextColor={C.ash}
+              autoFocus
+              onSubmitEditing={() => query.trim() && add(query)}
+              style={[fieldStyle, { fontSize: fs.bodyLg, paddingVertical: 12 }]}
+            />
+            <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
+              {exercisesByCategory(MOVEMENTS)
+                .map((g) => ({ ...g, names: g.names.filter((n) => !q || n.toLowerCase().includes(q)) }))
+                .filter((g) => g.names.length > 0)
+                .map((g) => (
+                  <View key={g.category}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{t(g.labelKey)}</Text>
+                    {g.names.map((n) => {
+                      const c = kindColor(inferBlockKind(n) as BuilderKind, C);
+                      return (
+                        <Pressable key={n} onPress={() => add(n, inferBlockKind(n) as BuilderKind)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
+                          <View style={{ width: 22, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} /></View>
+                          <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{n}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ))}
+              {olympicSportsByCategory()
+                .map((g) => ({ category: g.category, sports: g.sports.filter((s) => !q || s.name.toLowerCase().includes(q)) }))
+                .filter((g) => g.sports.length > 0)
+                .map((g) => (
+                  <View key={g.category}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{g.category}</Text>
+                    {g.sports.map((s) => (
+                      <Pressable key={s.name} onPress={() => add(s.name, "cardio")} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
+                        <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{s.icon}</Text>
+                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.name}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ))}
+              {q.length > 0 && !exact && (
+                <Pressable onPress={() => add(query)} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{query.trim()}”</Text>
                 </Pressable>
-              );
-            })}
-          </View>
-          {/* Sports — add a sport session as a cardio activity. */}
-          {olympicSportsByCategory()
-            .map((g) => ({ category: g.category, sports: g.sports.filter((s) => !q || s.name.toLowerCase().includes(q)) }))
-            .filter((g) => g.sports.length > 0)
-            .map((g) => (
-              <View key={g.category} style={{ marginTop: 10 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{g.category}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
-                  {g.sports.map((s) => (
-                    <Pressable key={s.name} onPress={() => add(s.name, "cardio")} style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${C.blue}55`, backgroundColor: `${C.blue}1f` }}>
-                      <Text style={{ fontSize: fs.body }}>{s.icon}</Text>
-                      <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: txt(C, C.blue) }}>{s.name}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            ))}
-          {q.length > 0 && !exact && (
-            <Pressable onPress={() => add(query)} style={{ marginTop: 14, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>+ “{query.trim()}”</Text>
-            </Pressable>
-          )}
-          <Pressable onPress={() => { setPicker(false); setQuery(""); }} style={{ paddingTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>{t("w.train.builder.close")}</Text>
+              )}
+            </ScrollView>
           </Pressable>
-        </ACard>
-      ) : (
-        <Pressable onPress={() => setPicker(true)} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 4 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.train.builder.addExercise")}</Text>
         </Pressable>
-      )}
+      </Modal>
 
       {b.msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginTop: 14 }}>{b.msg.text}</Text>}
 
