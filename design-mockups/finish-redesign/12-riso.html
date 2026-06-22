@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share · Risograph</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+:root{--paper:#edeae0;--ink:#0c0d0c;--lime:#c4f035;--ash:#6f6b5e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#16150f;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--ink)}
+.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #2a2a24;box-shadow:0 50px 130px -30px #000;background:var(--paper)}
+.halftone{position:absolute;left:0;right:0;bottom:0;height:58%;
+  background:radial-gradient(circle,#c4f035 32%,transparent 33%);background-size:13px 13px;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 60%);mask-image:linear-gradient(180deg,transparent,#000 60%)}
+.grain{position:absolute;inset:0;opacity:.5;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E")}
+.shift{position:absolute;left:0;right:0;bottom:0;height:58%;
+  background:radial-gradient(circle,rgba(12,13,12,.9) 30%,transparent 31%);background-size:13px 13px;
+  transform:translate(2px,2px);mix-blend-mode:multiply;opacity:.18;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 60%);mask-image:linear-gradient(180deg,transparent,#000 60%)}
+.wrap{position:absolute;inset:0;padding:54px 30px 26px;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:900;letter-spacing:.3em;font-size:15px}
+.stamp{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;border:1.5px solid var(--ink);padding:5px 10px;border-radius:6px;transform:rotate(-3deg);font-weight:600}
+.kick{font-family:'Archivo Narrow';font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;margin-top:40px}
+.h1{font-weight:900;font-size:60px;line-height:.88;letter-spacing:-.04em;text-transform:uppercase;margin-top:8px}
+.big{font-weight:900;font-size:150px;line-height:.8;letter-spacing:-.06em;margin-top:auto;
+  color:var(--lime);-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill}
+.big small{font-size:48px}
+.stats{display:flex;border-top:2.5px solid var(--ink);margin-top:10px}
+.st{flex:1;padding:14px 2px;border-right:2.5px solid var(--ink)}
+.st:last-child{border-right:none}
+.st b{display:block;font-weight:900;font-size:24px}
+.st span{font-family:'Archivo Narrow';font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:3px;display:block}
+.share{width:100%;border:none;border-radius:10px;padding:17px;font-family:inherit;font-weight:900;font-size:16px;background:var(--ink);color:var(--lime);cursor:pointer;margin-top:18px}
+.row{display:flex;gap:10px;margin-top:10px}
+.row button{flex:1;border:2.5px solid var(--ink);background:transparent;border-radius:10px;padding:12px;font-family:inherit;font-weight:800;font-size:13px;color:var(--ink);cursor:pointer}
+.back{text-align:center;font-family:'JetBrains Mono';font-size:12px;color:var(--ash);padding:14px 0 0}
+</style></head>
+<body><div class="phone">
+  <div class="halftone"></div><div class="shift"></div><div class="grain"></div>
+  <div class="wrap">
+    <div class="top"><div class="logo">HYBRID</div><div class="stamp">SESSION ✓</div></div>
+    <div class="kick">Tonight's print run</div>
+    <div class="h1">Night<br>workout</div>
+    <div class="big">20<small>.0t</small></div>
+    <div class="stats">
+      <div class="st"><b>1</b><span>Minutes</span></div>
+      <div class="st"><b>2</b><span>Sets</span></div>
+      <div class="st"><b>20.0t</b><span>Volume</span></div>
+    </div>
+    <button class="share">↗ Share to story</button>
+    <div class="row"><button>★ Save routine</button><button>Analysis →</button></div>
+    <div class="back">Done — back to Today</div>
+  </div>
+</div></body></html>
