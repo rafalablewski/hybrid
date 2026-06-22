@@ -252,7 +252,7 @@ export default function AuroraToday({
 
       {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
       <div style={{ marginTop: 18 }}>
-        <QuickSportLog sessions={sessions} onSaved={onSaved} />
+        <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
       </div>
 
       {/* BROWSE PLANS — free users can follow a pre-built plan; nudge to the library */}

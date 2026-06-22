@@ -40,7 +40,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { APill, RADIUS, Ring, Spark } from "./kit";
+import { ACard, APill, RADIUS, Ring, Spark } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
@@ -423,7 +423,7 @@ export default function AuroraHome() {
         )}
 
         {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
-        <QuickSportLog sessions={sessions} onSaved={load} />
+        <QuickSportLog sessions={sessions} onSaved={load} solid />
 
         {/* SEASON — phase timeline (athlete, or coached read-only) */}
         {(isAthlete || coached) && macro && phase && (
@@ -446,7 +446,7 @@ export default function AuroraHome() {
             gets only this read-only glimpse here (the one place they can see it),
             with the full Periodize screen behind the upgrade. (#5 / #7) */}
         {!isAthlete && macro && phase && (
-          <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3, padding: 20 }}>
+          <ACard style={{ marginTop: 18 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet), flex: 1 }}>
                 {t("w.home.today.yourSeason")} {macro.goalOrSport}
@@ -492,7 +492,7 @@ export default function AuroraHome() {
             <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-season" }); router.push("/upgrade"); }} style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.home.today.unlockPeriodization")}</Text>
             </Pressable>
-          </View>
+          </ACard>
         )}
 
         {/* SELL FULL — what a free user unlocks: Performance State + the rest of

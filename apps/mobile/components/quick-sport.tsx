@@ -17,6 +17,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, Card, Mono, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
+import { ACard } from "./aurora/kit";
 
 /**
  * Home-screen quick-log widget — pick a sport, enter time (+ distance for
@@ -25,7 +26,7 @@ import { AuroraIcon } from "./aurora/icons";
  * leaves Home. Distance is entered in the sport's natural unit (metres for
  * swimming/rowing); storage stays km. No wearable needed.
  */
-export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void }) {
+export default function QuickSportLog({ sessions = [], onSaved, solid = false }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
   const C = useTheme().palette;
   const { t } = useLang();
   const { session } = useSession();
@@ -110,8 +111,11 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
     onSaved?.();
   };
 
+  // Aurora pairs this with the solid `ink2` season card, so match that surface
+  // (no glass) there; the classic skin keeps the default glass Card.
+  const Surface = solid ? ACard : Card;
   return (
-    <Card style={{ marginTop: 16 }}>
+    <Surface style={{ marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>
         {t("quickSport.title")}
       </Text>
@@ -211,6 +215,6 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           {msg || `${t("workout.pace")} ${pace}`}
         </Text>
       )}
-    </Card>
+    </Surface>
   );
 }
