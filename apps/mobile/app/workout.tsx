@@ -1396,7 +1396,32 @@ function Summary({
 
   // Inline render of a slide inside the swipeable carousel — themed so the
   // preview matches the picked style (what you see is what you share).
-  const slideBox = { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.line, borderRadius: 16, padding: 18, minHeight: 230 } as const;
+  const slideBox = { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.line, borderRadius: 16, padding: 18, minHeight: 230, overflow: "hidden" as const, position: "relative" as const };
+  // Decorative backdrop behind the preview content — mirrors the exported card.
+  const ax = (hex: string, al: string) => `${hex}${al}`;
+  const previewBackdrop = (() => {
+    if (theme.backdrop === "ticker")
+      return (
+        <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: -10, right: 0, justifyContent: "center", overflow: "hidden" }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Text key={i} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 30, color: ax(theme.fg, "0d"), letterSpacing: -1, marginVertical: 1 }}>
+              {`${(title || "WORKOUT").toUpperCase()}  ${(title || "WORKOUT").toUpperCase()}`}
+            </Text>
+          ))}
+        </View>
+      );
+    if (theme.backdrop === "glow")
+      return <View pointerEvents="none" style={{ position: "absolute", top: -60, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: ax(theme.accent, "22") }} />;
+    // mesh / blobs — soft colour discs (light = stronger wash).
+    const strong = theme.mode === "light";
+    return (
+      <>
+        <View pointerEvents="none" style={{ position: "absolute", top: -54, left: -44, width: 190, height: 190, borderRadius: 95, backgroundColor: ax(theme.glow[0] ?? theme.accent, strong ? "66" : "2e") }} />
+        <View pointerEvents="none" style={{ position: "absolute", top: -30, right: -54, width: 175, height: 175, borderRadius: 88, backgroundColor: ax("#7fd4e8", strong ? "55" : "24") }} />
+        <View pointerEvents="none" style={{ position: "absolute", bottom: -64, left: 28, width: 205, height: 205, borderRadius: 102, backgroundColor: ax("#c9a9f0", strong ? "59" : "22") }} />
+      </>
+    );
+  })();
   const statCol = (label: string, value: string) => (
     <View style={{ alignItems: "center", flex: 1 }}>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: theme.fg }}>{value}</Text>
@@ -1407,6 +1432,7 @@ function Summary({
     if (s.kind === "overview")
       return (
         <View style={slideBox}>
+          {previewBackdrop}
           <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, marginTop: 10 }}>{s.stats.title || "Workout"}</Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 28 }}>
@@ -1419,6 +1445,7 @@ function Summary({
     if (s.kind === "prs")
       return (
         <View style={slideBox}>
+          {previewBackdrop}
           <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: theme.accent, marginTop: 10 }}>{s.headline}</Text>
           {s.rows.slice(0, 6).map((r, i) => (
@@ -1432,6 +1459,7 @@ function Summary({
     if (s.kind === "muscle")
       return (
         <View style={slideBox}>
+          {previewBackdrop}
           <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           {s.bars.map((b, i) => (
             <View key={i} style={{ marginTop: 12 }}>
@@ -1448,6 +1476,7 @@ function Summary({
       );
     return (
       <View style={[slideBox, { alignItems: "center", justifyContent: "center" }]}>
+        {previewBackdrop}
         <Text style={{ fontSize: 64 }}>{s.emoji}</Text>
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, textAlign: "center", marginTop: 14, lineHeight: 26 }}>{s.text}</Text>
       </View>

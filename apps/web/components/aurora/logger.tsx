@@ -31,7 +31,7 @@ import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
-import { SHARE_THEMES, shareTheme, type ShareThemeId } from "@hybrid/core";
+import { SHARE_THEMES, shareTheme, type ShareTheme, type ShareThemeId } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
@@ -57,6 +57,21 @@ type Routine = { id: string; name: string; blocks: SessionBlock[] };
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+
+/** CSS backdrop for the on-screen story preview — mirrors the exported 9:16
+ *  canvas backdrop (workout-share.ts) so the preview matches what gets shared. */
+function previewBackground(th: ShareTheme): string {
+  switch (th.backdrop) {
+    case "mesh":
+      return "radial-gradient(90% 60% at 12% 6%,#e9ff8f,transparent 55%),radial-gradient(90% 60% at 96% 14%,#bfeef7,transparent 52%),radial-gradient(100% 70% at 50% 104%,#d9c8f5,transparent 60%),radial-gradient(80% 60% at 86% 80%,#c4f035,transparent 60%),#eef0e8";
+    case "blobs":
+      return `radial-gradient(60% 50% at 16% 8%,rgba(196,240,53,.26),transparent 60%),radial-gradient(60% 50% at 96% 40%,rgba(127,212,232,.22),transparent 60%),radial-gradient(70% 60% at 18% 104%,rgba(201,169,240,.22),transparent 62%),${th.bg}`;
+    case "ticker":
+      return `radial-gradient(70% 50% at 50% 50%,rgba(196,240,53,.08),transparent 70%),${th.bg}`;
+    default: // glow
+      return `radial-gradient(80% 60% at 82% 4%,rgba(196,240,53,.2),transparent 60%),${th.bg}`;
+  }
+}
 const pill = (token: string): React.CSSProperties => {
   const c = C(token);
   return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" };
@@ -626,7 +641,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
   };
 
   // The preview card reflects the picked theme so what you see is what you share.
-  const slideShell = { ...card, background: th.bg, color: th.fg, borderColor: th.line, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
+  const slideShell = { ...card, background: previewBackground(th), color: th.fg, borderColor: th.line, position: "relative" as const, overflow: "hidden" as const, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
   const statCol = (label: string, value: string) => (
     <div style={{ flex: 1, textAlign: "center" }}>
       <div style={{ fontWeight: 900, fontSize: 30, color: th.fg }}>{value}</div>
@@ -702,7 +717,18 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       >
         {slides.map((s, i) => (
           <div key={i} style={{ flex: "0 0 100%", padding: "0 2px", boxSizing: "border-box" }}>
-            <div style={slideShell}>{renderSlide(s)}</div>
+            <div style={slideShell}>
+              {th.backdrop === "ticker" && (
+                <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2, overflow: "hidden", pointerEvents: "none" }}>
+                  {Array.from({ length: 7 }).map((_, r) => (
+                    <div key={r} style={{ whiteSpace: "nowrap", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 34, letterSpacing: "-.02em", textTransform: "uppercase", color: r === 3 ? "color-mix(in srgb, var(--color-lime) 16%, transparent)" : "transparent", WebkitTextStroke: r === 3 ? undefined : "1px rgba(243,244,239,.06)" }}>
+                      {(title || "Workout").toUpperCase()} · {(title || "Workout").toUpperCase()} ·
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ position: "relative", zIndex: 1, height: "100%" }}>{renderSlide(s)}</div>
+            </div>
           </div>
         ))}
       </div>
