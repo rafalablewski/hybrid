@@ -31,6 +31,7 @@ import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
+import { SHARE_THEMES, shareTheme, DEFAULT_SHARE_THEME_ID, type ShareThemeId } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
@@ -568,6 +569,9 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
   const [active, setActive] = useState(0);
+  // The graphic style the user picks for the shared story (default Aurora).
+  const [themeId, setThemeId] = useState<ShareThemeId>(DEFAULT_SHARE_THEME_ID);
+  const th = shareTheme(themeId);
   const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -605,7 +609,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     setSharing(true);
     setShareMsg("");
     const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t);
-    const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t);
+    const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, themeId);
     setSharing(false);
     if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
     else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));
@@ -616,18 +620,19 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
-  const slideShell = { ...card, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
+  // The preview card reflects the picked theme so what you see is what you share.
+  const slideShell = { ...card, background: th.bg, color: th.fg, borderColor: th.line, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
   const statCol = (label: string, value: string) => (
     <div style={{ flex: 1, textAlign: "center" }}>
-      <div style={{ fontWeight: 900, fontSize: 30 }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), letterSpacing: ".1em", marginTop: 4 }}>{label}</div>
+      <div style={{ fontWeight: 900, fontSize: 30, color: th.fg }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: th.muted, letterSpacing: ".1em", marginTop: 4 }}>{label}</div>
     </div>
   );
   const renderSlide = (s: StorySlide) => {
     if (s.kind === "overview")
       return (
         <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: th.accent }}>{s.eyebrow}</div>
           <div style={{ fontWeight: 800, fontSize: fs.subtitle, marginTop: 10 }}>{s.stats.title || "Workout"}</div>
           <div style={{ display: "flex", marginTop: 28 }}>
             {statCol(t("summary.minutes"), String(minutes))}
@@ -639,12 +644,12 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     if (s.kind === "prs")
       return (
         <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
-          <div style={{ fontWeight: 800, fontSize: fs.note, color: C("lime"), marginTop: 10 }}>{s.headline}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: th.accent }}>{s.eyebrow}</div>
+          <div style={{ fontWeight: 800, fontSize: fs.note, color: th.accent, marginTop: 10 }}>{s.headline}</div>
           {s.rows.slice(0, 6).map((r, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.body }}>
               <span>{r.hot ? "🏆 " : ""}{r.left}</span>
-              {r.right && <span style={{ color: r.hot ? C("lime") : C("chalk"), fontWeight: 700 }}>{r.right}</span>}
+              {r.right && <span style={{ color: r.hot ? th.accent : th.fg, fontWeight: 700 }}>{r.right}</span>}
             </div>
           ))}
         </>
@@ -652,15 +657,15 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     if (s.kind === "muscle")
       return (
         <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: th.accent }}>{s.eyebrow}</div>
           {s.bars.map((b, i) => (
             <div key={i} style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 4 }}>
                 <span>{b.label}</span>
-                <span style={{ color: C("ash") }}>{b.value}</span>
+                <span style={{ color: th.muted }}>{b.value}</span>
               </div>
-              <div style={{ height: 8, borderRadius: 4, background: C("ink"), overflow: "hidden" }}>
-                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: C("lime") }} />
+              <div style={{ height: 8, borderRadius: 4, background: th.surface, overflow: "hidden" }}>
+                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: th.accent }} />
               </div>
             </div>
           ))}
@@ -702,6 +707,29 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
         {slides.map((_, i) => (
           <div key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s" }} />
         ))}
+      </div>
+
+      {/* Pick the graphic style for the shared story. */}
+      <div style={{ marginTop: 18 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.pickStyle")}</div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          {SHARE_THEMES.map((opt) => {
+            const on = opt.id === themeId;
+            const dot = opt.glow[0] ?? opt.accent;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setThemeId(opt.id)}
+                aria-pressed={on}
+                title={opt.name}
+                style={{ flex: 1, maxWidth: 120, cursor: "pointer", borderRadius: 14, padding: "8px 6px 7px", background: opt.bg, border: `2px solid ${on ? C("lime") : C("line")}`, boxShadow: on ? `0 0 14px -3px color-mix(in srgb, ${C("lime")} 70%, transparent)` : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
+              >
+                <span style={{ width: 22, height: 22, borderRadius: "50%", background: dot, border: opt.mode === "light" ? `1px solid ${opt.line}` : "none" }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", color: opt.fg }}>{opt.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* One Share button — shares the slide on screen as a 9:16 story. */}

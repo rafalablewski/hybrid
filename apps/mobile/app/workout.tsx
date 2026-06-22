@@ -55,6 +55,10 @@ import {
   volumeByMuscle,
   sessionFunFact,
   funFactText,
+  SHARE_THEMES,
+  shareTheme,
+  DEFAULT_SHARE_THEME_ID,
+  type ShareThemeId,
   exercisesByCategory,
   type SessionBlock,
   type LoggedSession,
@@ -1303,6 +1307,9 @@ function Summary({
   const slideW = Dimensions.get("window").width - 36;
   const storyRefs = useRef<Record<number, View | null>>({});
   const [active, setActive] = useState(0);
+  // The graphic style the user picks for the shared story (default Aurora).
+  const [themeId, setThemeId] = useState<ShareThemeId>(DEFAULT_SHARE_THEME_ID);
+  const theme = shareTheme(themeId);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -1380,20 +1387,21 @@ function Summary({
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
-  // Inline render of a slide inside the swipeable carousel.
-  const slideBox = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 18, minHeight: 230 } as const;
+  // Inline render of a slide inside the swipeable carousel — themed so the
+  // preview matches the picked style (what you see is what you share).
+  const slideBox = { backgroundColor: theme.bg, borderWidth: 1, borderColor: theme.line, borderRadius: 16, padding: 18, minHeight: 230 } as const;
   const statCol = (label: string, value: string) => (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 26, color: theme.fg }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: theme.muted, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
   const renderInline = (s: SlideData) => {
     if (s.kind === "overview")
       return (
         <View style={slideBox}>
-          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 10 }}>{s.stats.title || "Workout"}</Text>
+          <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, marginTop: 10 }}>{s.stats.title || "Workout"}</Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 28 }}>
             {statCol(t("summary.minutes"), String(summary.minutes))}
             {statCol(t("summary.sets"), String(summary.sets))}
@@ -1404,12 +1412,12 @@ function Summary({
     if (s.kind === "prs")
       return (
         <View style={slideBox}>
-          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime), marginTop: 10 }}>{s.headline}</Text>
+          <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: theme.accent, marginTop: 10 }}>{s.headline}</Text>
           {s.rows.slice(0, 6).map((r, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk, flex: 1 }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
-              {!!r.right && <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: r.hot ? txt(C, C.lime) : C.chalk }}>{r.right}</Text>}
+              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: theme.fg, flex: 1 }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
+              {!!r.right && <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: r.hot ? theme.accent : theme.fg }}>{r.right}</Text>}
             </View>
           ))}
         </View>
@@ -1417,15 +1425,15 @@ function Summary({
     if (s.kind === "muscle")
       return (
         <View style={slideBox}>
-          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
+          <Kicker color={theme.accent}>{s.eyebrow}</Kicker>
           {s.bars.map((b, i) => (
             <View key={i} style={{ marginTop: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{b.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{b.value}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: theme.fg }}>{b.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: theme.muted }}>{b.value}</Text>
               </View>
-              <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: C.lime }} />
+              <View style={{ height: 8, borderRadius: 4, backgroundColor: theme.surface, overflow: "hidden" }}>
+                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: theme.accent }} />
               </View>
             </View>
           ))}
@@ -1434,7 +1442,7 @@ function Summary({
     return (
       <View style={[slideBox, { alignItems: "center", justifyContent: "center" }]}>
         <Text style={{ fontSize: 64 }}>{s.emoji}</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, textAlign: "center", marginTop: 14, lineHeight: 26 }}>{s.text}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: theme.fg, textAlign: "center", marginTop: 14, lineHeight: 26 }}>{s.text}</Text>
       </View>
     );
   };
@@ -1483,6 +1491,26 @@ function Summary({
           <Mono color={C.lime} style={{ textAlign: "center", marginTop: 14 }}>{t("summary.shareNudge")}</Mono>
         )}
 
+        {/* Pick the graphic style for the shared story. */}
+        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 16, marginBottom: 8, letterSpacing: 1.5, fontSize: fs.micro }}>
+          {t("summary.pickStyle").toUpperCase()}
+        </Mono>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {SHARE_THEMES.map((opt) => {
+            const on = opt.id === themeId;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => setThemeId(opt.id)}
+                style={{ flex: 1, alignItems: "center", gap: 6, paddingVertical: 9, borderRadius: 14, backgroundColor: opt.bg, borderWidth: 2, borderColor: on ? C.lime : C.line }}
+              >
+                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: opt.glow[0] ?? opt.accent, borderWidth: opt.mode === "light" ? 1 : 0, borderColor: opt.line }} />
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: opt.fg }}>{opt.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         {/* One Share button — shares whichever slide is on screen as a story. */}
         <Pressable
           onPress={() => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"))}
@@ -1503,7 +1531,7 @@ function Summary({
         {/* Off-screen 9:16 story card per slide — captured by active index. */}
         <View style={{ position: "absolute", left: -9999, top: 0 }} pointerEvents="none">
           {slides.map((s, i) => (
-            <SlideStoryCard key={i} ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={storyW} />
+            <SlideStoryCard key={i} ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={storyW} themeId={themeId} />
           ))}
         </View>
 

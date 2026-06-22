@@ -31,6 +31,7 @@ export * from "./datanet";
 export * from "./tactical";
 export * from "./longevity";
 export * from "./theme";
+export * from "./share-themes";
 export * from "./templates";
 export * from "./aurora-icons";
 export * from "./interval";

@@ -4,7 +4,7 @@
 // Share API (navigator.share with files — supported on iOS Safari + Android
 // Chrome). Where file-share isn't available we fall back to downloading the
 // PNG, and where canvas/share is unavailable at all, to a plain text share.
-import { brand, fmtTonnage, fmtWeight, type WeightUnit } from "@hybrid/core";
+import { brand, fmtTonnage, fmtWeight, shareTheme, type ShareTheme, type ShareThemeId, type WeightUnit } from "@hybrid/core";
 
 export type ShareBest = { name: string; e1rm: number; pr?: boolean };
 export type ShareStats = {
@@ -149,38 +149,85 @@ const SW = 1080;
 const SH = 1920;
 const SPAD = 96;
 
-function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string) {
-  ctx.fillStyle = COL.ink;
+/** Per-theme palette in the shape the painters use (mirrors the old COL keys). */
+type Pal = { ink: string; ink2: string; line: string; lime: string; chalk: string; ash: string };
+const palette = (th: ShareTheme): Pal => ({ ink: th.bg, ink2: th.surface, line: th.line, lime: th.accent, chalk: th.fg, ash: th.muted });
+
+/** Hex (#rrggbb) → rgba() with the given alpha. Passes through non-hex as-is. */
+function withAlpha(hex: string, a: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1]!, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/** Paint the chosen theme's decorative backdrop (glow / blobs / mesh / ticker). */
+function paintBackdrop(ctx: CanvasRenderingContext2D, th: ShareTheme, tickerText: string) {
+  ctx.fillStyle = th.bg;
   ctx.fillRect(0, 0, SW, SH);
-  const glow = ctx.createRadialGradient(SW * 0.78, SH * 0.16, 0, SW * 0.78, SH * 0.16, 620);
-  glow.addColorStop(0, "rgba(196,240,53,0.20)");
-  glow.addColorStop(1, "rgba(196,240,53,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, SW, SH);
+  const disc = (x: number, y: number, r: number, color: string, a: number) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, withAlpha(color, a));
+    g.addColorStop(1, withAlpha(color, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, SW, SH);
+  };
+  const [c0 = th.accent, c1 = th.accent, c2 = th.accent] = th.glow;
+  if (th.backdrop === "glow") {
+    disc(SW * 0.78, SH * 0.16, 620, c0, 0.2);
+  } else if (th.backdrop === "blobs") {
+    disc(SW * 0.18, SH * 0.1, 560, c0, 0.28);
+    disc(SW * 0.92, SH * 0.34, 520, c1, 0.24);
+    disc(SW * 0.2, SH * 0.82, 600, c2, 0.22);
+  } else if (th.backdrop === "mesh") {
+    disc(SW * 0.12, SH * 0.06, 700, c0, 0.5);
+    disc(SW * 0.96, SH * 0.16, 640, c1, 0.42);
+    disc(SW * 0.5, SH * 1.02, 760, c2, 0.46);
+    disc(SW * 0.86, SH * 0.78, 560, c0, 0.3);
+  } else {
+    // ticker — faint repeated wordmark/eyebrow filling the height.
+    ctx.save();
+    ctx.font = font(DISPLAY, 116);
+    ctx.fillStyle = withAlpha(th.fg, 0.05);
+    ctx.textAlign = "left";
+    const word = `${(tickerText || brand.name).toUpperCase()}   `;
+    const line = word.repeat(4);
+    for (let y = 150; y < SH; y += 150) ctx.fillText(line, ((y / 150) % 2 === 0 ? -120 : -260), y);
+    ctx.restore();
+    disc(SW * 0.5, SH * 0.5, 760, th.bg, 0.55); // vignette so content stays legible
+  }
+}
+
+function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, th: ShareTheme, tickerText: string) {
+  const P = palette(th);
+  paintBackdrop(ctx, th, tickerText);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.font = font(DISPLAY, 64);
-  ctx.fillStyle = COL.chalk;
+  ctx.fillStyle = P.chalk;
   ctx.fillText(brand.name, SPAD, 200);
   const wmW = ctx.measureText(brand.name).width;
-  ctx.fillStyle = COL.lime;
+  ctx.fillStyle = P.lime;
   ctx.fillText(".", SPAD + wmW + 6, 200);
   ctx.font = font(MONO, 28);
-  ctx.fillStyle = COL.lime;
+  ctx.fillStyle = P.lime;
   ctx.fillText(eyebrow.toUpperCase(), SPAD, 250);
   ctx.font = font(MONO, 30);
-  ctx.fillStyle = COL.ash;
+  ctx.fillStyle = P.ash;
   ctx.fillText("Tracked with HYBRID.", SPAD, SH - 120);
 }
 
-/** Draw any summary slide as the branded 9:16 PNG. */
-export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: string) => string): Promise<Blob | null> {
+/** Draw any summary slide as the branded 9:16 PNG, in the chosen theme. */
+export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: string) => string, themeId?: ShareThemeId): Promise<Blob | null> {
   const canvas = document.createElement("canvas");
   canvas.width = SW;
   canvas.height = SH;
   const ctx = canvas.getContext("2d");
   if (!ctx) return Promise.resolve(null);
-  paintFrame(ctx, slide.eyebrow);
+  const th = shareTheme(themeId);
+  const COL = palette(th);
+  const tickerText = slide.kind === "overview" ? slide.stats.title || brand.name : slide.eyebrow;
+  paintFrame(ctx, slide.eyebrow, th, tickerText);
 
   if (slide.kind === "overview") {
     const s = slide.stats;
@@ -260,9 +307,10 @@ export async function shareWorkoutSlide(
   caption: string,
   units: WeightUnit,
   t: (k: string) => string,
+  themeId?: ShareThemeId,
 ): Promise<"shared" | "downloaded" | "text" | "cancelled"> {
   try {
-    const blob = await drawSlideStory(slide, units, t);
+    const blob = await drawSlideStory(slide, units, t, themeId);
     if (blob) {
       const file = new File([blob], "hybrid-workout.png", { type: "image/png" });
       const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };

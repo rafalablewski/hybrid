@@ -2,8 +2,47 @@ import { forwardRef } from "react";
 import { View, Text, Share } from "react-native";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, shareTheme, type ShareTheme, type ShareThemeId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
 import { C, F, Kicker } from "./ui";
+
+const BLUE = "#7fd4e8";
+const VIOLET = "#c9a9f0";
+const a = (hex: string, alpha: string) => `${hex}${alpha}`; // 8-digit hex alpha suffix
+
+/** Soft decorative backdrop discs for a theme (RN approximation of the canvas). */
+function Backdrop({ theme, width, tickerWord }: { theme: ShareTheme; width: number; tickerWord: string }) {
+  const disc = (size: number, top: number, left: number, color: string, alpha: string) => (
+    <View pointerEvents="none" style={{ position: "absolute", top, left, width: size, height: size, borderRadius: size / 2, backgroundColor: a(color, alpha) }} />
+  );
+  if (theme.backdrop === "blobs")
+    return (
+      <>
+        {disc(width * 1.0, -width * 0.2, -width * 0.25, theme.glow[0] ?? theme.accent, "2e")}
+        {disc(width * 0.9, width * 0.5, width * 0.55, theme.glow[1] ?? BLUE, "26")}
+        {disc(width * 1.0, width * 1.1, -width * 0.3, theme.glow[2] ?? VIOLET, "24")}
+      </>
+    );
+  if (theme.backdrop === "mesh")
+    return (
+      <>
+        {disc(width * 1.1, -width * 0.25, -width * 0.2, theme.glow[0] ?? theme.accent, "55")}
+        {disc(width * 1.0, width * 0.1, width * 0.55, theme.glow[1] ?? BLUE, "44")}
+        {disc(width * 1.2, width * 1.2, width * 0.1, theme.glow[2] ?? VIOLET, "4a")}
+      </>
+    );
+  if (theme.backdrop === "ticker")
+    return (
+      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: -width * 0.15, right: 0, bottom: 0, justifyContent: "center" }}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <Text key={i} numberOfLines={1} style={{ fontFamily: F.black, fontSize: width * 0.12, color: a(theme.fg, "0d"), letterSpacing: -1, marginVertical: width * 0.01 }}>
+            {`${tickerWord.toUpperCase()}  ${tickerWord.toUpperCase()}  ${tickerWord.toUpperCase()}`}
+          </Text>
+        ))}
+      </View>
+    );
+  // glow — one accent disc top-right.
+  return <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: a(theme.glow[0] ?? theme.accent, "22") }} />;
+}
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -128,54 +167,56 @@ export type SlideData =
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
   | { kind: "fun"; eyebrow: string; emoji: string; text: string };
 
-const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; children: React.ReactNode }>(
-  ({ width, eyebrow, tracked, children }, ref) => (
+const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; theme: ShareTheme; tickerWord: string; children: React.ReactNode }>(
+  ({ width, eyebrow, tracked, theme, tickerWord, children }, ref) => (
     <View
       ref={ref}
       collapsable={false}
-      style={{ width, height: Math.round((width * 16) / 9), backgroundColor: C.ink, padding: width * 0.09, justifyContent: "space-between" }}
+      style={{ width, height: Math.round((width * 16) / 9), backgroundColor: theme.bg, padding: width * 0.09, justifyContent: "space-between" }}
     >
-      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: `${C.lime}22` }} />
+      <Backdrop theme={theme} width={width} tickerWord={tickerWord} />
       <View>
-        <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: C.chalk, letterSpacing: -1 }}>
+        <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: theme.fg, letterSpacing: -1 }}>
           {brand.name}
-          <Text style={{ color: C.lime }}>.</Text>
+          <Text style={{ color: theme.accent }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.lime, letterSpacing: 2, marginTop: 6 }}>{eyebrow.toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: theme.accent, letterSpacing: 2, marginTop: 6 }}>{eyebrow.toUpperCase()}</Text>
       </View>
       <View style={{ flex: 1, justifyContent: "center" }}>{children}</View>
-      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.ash }}>{tracked}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: theme.muted }}>{tracked}</Text>
     </View>
   ),
 );
 StoryShell.displayName = "StoryShell";
 
-export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number }>(
-  ({ slide, t, units = "kg", width }, ref) => {
+export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; themeId?: ShareThemeId }>(
+  ({ slide, t, units = "kg", width, themeId }, ref) => {
     const tracked = t("share.tracked");
+    const theme = shareTheme(themeId);
     if (slide.kind === "overview") {
       const s = slide.stats;
+      const word = slide.firstEver ? brand.name : s.title || brand.name;
       return (
-        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
-          <Text style={{ fontFamily: F.black, fontSize: width * 0.088, color: C.chalk, marginBottom: width * 0.08 }}>
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} theme={theme} tickerWord={word}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.088, color: theme.fg, marginBottom: width * 0.08 }}>
             {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Stat label={t("summary.minutes")} value={String(s.minutes)} />
-            <Stat label={t("summary.sets")} value={String(s.sets)} />
-            <Stat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} />
+            <Stat label={t("summary.minutes")} value={String(s.minutes)} theme={theme} />
+            <Stat label={t("summary.sets")} value={String(s.sets)} theme={theme} />
+            <Stat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} theme={theme} />
           </View>
         </StoryShell>
       );
     }
     if (slide.kind === "prs") {
       return (
-        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
-          <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: C.lime, marginBottom: width * 0.05 }}>{slide.headline}</Text>
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} theme={theme} tickerWord={slide.eyebrow}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: theme.accent, marginBottom: width * 0.05 }}>{slide.headline}</Text>
           {slide.rows.slice(0, 6).map((r, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: C.chalk }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
-              <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? C.lime : C.chalk }}>{r.right}</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: theme.fg }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? theme.accent : theme.fg }}>{r.right}</Text>
             </View>
           ))}
         </StoryShell>
@@ -183,15 +224,15 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
     }
     if (slide.kind === "muscle") {
       return (
-        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} theme={theme} tickerWord={slide.eyebrow}>
           {slide.bars.map((b, i) => (
             <View key={i} style={{ marginTop: width * 0.04 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: width * 0.015 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: width * 0.04, color: C.chalk }}>{b.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: C.ash }}>{b.value}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: width * 0.04, color: theme.fg }}>{b.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: theme.muted }}>{b.value}</Text>
               </View>
-              <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: C.ink2, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: C.lime }} />
+              <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: theme.surface, overflow: "hidden" }}>
+                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: theme.accent }} />
               </View>
             </View>
           ))}
@@ -199,9 +240,9 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
       );
     }
     return (
-      <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+      <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} theme={theme} tickerWord={slide.eyebrow}>
         <Text style={{ fontSize: width * 0.22, textAlign: "center" }}>{slide.emoji}</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: C.chalk, textAlign: "center", marginTop: width * 0.05, lineHeight: width * 0.075 }}>{slide.text}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: theme.fg, textAlign: "center", marginTop: width * 0.05, lineHeight: width * 0.075 }}>{slide.text}</Text>
       </StoryShell>
     );
   },
@@ -267,11 +308,11 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
     .join("\n");
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, theme }: { label: string; value: string; theme?: ShareTheme }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 26, color: theme?.fg ?? C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, color: theme?.muted ?? C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
