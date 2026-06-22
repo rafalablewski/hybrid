@@ -52,6 +52,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
   {
     titleKey: "more.tools",
     links: [
+      { id: "log", labelKey: "emptyLog.title", sub: "start from scratch", href: "/workout?source=empty", color: C.lime },
       { id: "statistics", labelKey: "nav.statistics", sub: "week · month · year", href: "/statistics", color: C.lime },
       { id: "timer", labelKey: "nav.timer", sub: "work / rest rounds", href: "/interval-timer", color: C.amber },
       { id: "notifications", labelKey: "nav.notifications", sub: "activity · coach workouts", href: "/notifications", color: C.blue },

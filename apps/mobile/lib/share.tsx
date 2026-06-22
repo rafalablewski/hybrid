@@ -65,6 +65,57 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
 );
 WorkoutShareCard.displayName = "WorkoutShareCard";
 
+// Branded 9:16 STORY card — sized for an Instagram/TikTok story. Rendered
+// off-screen in the summary and captured to a tall PNG via the same shareWorkout
+// path. `width` is the on-screen capture width (device pixel ratio scales the
+// output up, so a phone-width card exports near 1080px wide).
+export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: string) => string; units?: WeightUnit; width: number; firstEver?: boolean }>(
+  ({ stats, t, units = "kg", width, firstEver }, ref) => (
+    <View
+      ref={ref}
+      collapsable={false}
+      style={{ width, height: Math.round((width * 16) / 9), backgroundColor: C.ink, padding: width * 0.09, justifyContent: "space-between" }}
+    >
+      {/* Lime glow disc — the Aurora membrane look on the dark backdrop. */}
+      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: `${C.lime}22` }} />
+      <View>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: C.chalk, letterSpacing: -1 }}>
+            {brand.name}
+            <Text style={{ color: C.lime }}>.</Text>
+          </Text>
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.lime, letterSpacing: 2, marginTop: 6 }}>{t("welcome.tagline").toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: width * 0.092, color: C.chalk, marginTop: width * 0.12, lineHeight: width * 0.1 }}>
+          {firstEver ? "First workout 🎉" : stats.title || "Workout"}
+        </Text>
+      </View>
+
+      <View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: width * 0.06 }}>
+          <Stat label={t("summary.minutes")} value={String(stats.minutes)} />
+          <Stat label={t("summary.sets")} value={String(stats.sets)} />
+          <Stat label={t("summary.volumeMoved")} value={fmtTonnage(stats.volume, units)} />
+        </View>
+        {stats.bests.length > 0 && (
+          <View style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: width * 0.05 }}>
+            <Kicker>{t("summary.todaysBests")}</Kicker>
+            {stats.bests.slice(0, 5).map((b) => (
+              <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
+                <Text style={{ fontFamily: F.semi, fontSize: width * 0.042, color: C.chalk }}>{b.pr ? "🏆 " : ""}{b.name}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: width * 0.042, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.e1rm, units)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.ash }}>{t("share.tracked")}</Text>
+    </View>
+  ),
+);
+WorkoutStoryCard.displayName = "WorkoutStoryCard";
+
 // Branded "this week" recap card — also captured to a PNG for social.
 export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: string) => string; units?: WeightUnit }>(
   ({ recap, t, units = "kg" }, ref) => {

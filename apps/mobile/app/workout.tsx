@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
@@ -16,6 +16,7 @@ import {
   blockBestE1rm,
   newPrsInSession,
   newCardioPrsInSession,
+  liveSessionStats,
   exerciseHistory,
   inferBlockKind,
   migrateBlocks,
@@ -59,12 +60,12 @@ import {
 import { fetchSessions, createSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
-import { WorkoutShareCard, shareWorkout, type ShareBest } from "../lib/share";
+import { WorkoutShareCard, WorkoutStoryCard, shareWorkout, type ShareBest } from "../lib/share";
 import { useSession } from "../lib/session";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Kicker, Card } from "../lib/ui";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, type Palette } from "../lib/theme";
 import { useTemplate } from "../lib/template";
 import { AuroraField } from "../components/aurora/kit";
 
@@ -669,6 +670,11 @@ export default function Workout() {
     return blocks;
   };
 
+  // Live in-session scoreboard — running exercises / sets / volume / PRs off the
+  // shared core helper (same numbers the finish summary + share card show).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current), [exercises]);
+
   const finish = async () => {
     const blocks = buildBlocks();
     if (!blocks.length) {
@@ -790,6 +796,21 @@ export default function Workout() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("workout.rpeWhat")}</Text>
           </Pressable>
         </View>
+
+        {/* Live in-session scoreboard — appears once the first set is logged. */}
+        {live.sets > 0 && (
+          <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 14 }}>
+            <LiveStat C={C} label={t("live.exercises")} value={String(live.exercises)} />
+            <LiveStat C={C} label={t("live.sets")} value={String(live.sets)} />
+            <LiveStat C={C} label={t("live.volume")} value={fmtTonnage(live.volume, prefs.units)} />
+            {live.prs + live.cardioPrs > 0 && (
+              <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: R.field, paddingVertical: 8, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>🏆 {live.prs + live.cardioPrs}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.lime), letterSpacing: 1, marginTop: 2 }}>{live.prs + live.cardioPrs === 1 ? t("live.pr") : t("live.prs")}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {showTip && (
           <View style={{ backgroundColor: `${C.lime}12`, borderWidth: 1, borderColor: `${C.lime}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
@@ -1255,6 +1276,10 @@ function Summary({
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
   const cardRef = useRef<View>(null);
+  const storyRef = useRef<View>(null);
+  // Story card capture width — a touch under the screen width so the device
+  // pixel ratio scales the exported PNG up toward 1080px.
+  const storyW = Math.min(Dimensions.get("window").width - 36, 360);
   const { title, prs, bests, cardioPrs, firstEver } = summary;
   // A PR or a first-ever workout is the moment worth posting — the share is the
   // climax (and our download engine), so the CTA leans into it.
@@ -1380,6 +1405,27 @@ function Summary({
         >
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>{shareLabel}</Text>
         </Pressable>
+
+        {/* Share to STORY — the 9:16 card, captured from an off-screen render. */}
+        <Pressable
+          onPress={() => shareWorkout(storyRef, shareText, t("summary.shareStory"))}
+          style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>↗ {t("summary.shareStory")}</Text>
+        </Pressable>
+
+        {/* Off-screen 9:16 story card — laid out but pushed off the canvas so it
+            can be captured to a tall PNG without showing in the summary flow. */}
+        <View style={{ position: "absolute", left: -9999, top: 0 }} pointerEvents="none">
+          <WorkoutStoryCard
+            ref={storyRef}
+            t={t}
+            units={units}
+            width={storyW}
+            firstEver={firstEver}
+            stats={{ title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }}
+          />
+        </View>
 
         <View style={{ flex: 1, minHeight: 24 }} />
 
@@ -1565,6 +1611,16 @@ function DragHandle({ onStart, onMove, onEnd, color }: { onStart: () => void; on
   return (
     <View {...pan.panHandlers} hitSlop={8} style={{ paddingRight: 2, paddingVertical: 4 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color }}>⠿</Text>
+    </View>
+  );
+}
+
+// One live-scoreboard stat cell shown during the workout (parity with web).
+function LiveStat({ C, label, value }: { C: Palette; label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
+      <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
