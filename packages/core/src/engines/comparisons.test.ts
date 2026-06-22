@@ -16,8 +16,17 @@ describe("workoutFunFact", () => {
     expect(workoutFunFact({ volume: 50000, reps: 0, distanceKm: 0 })!.key).toBe("funfact.vol.6");
   });
 
-  it("returns null when nothing clears the lowest tier", () => {
-    expect(workoutFunFact({ volume: 40, reps: 10, distanceKm: 1 })).toBeNull();
+  it("returns null only for a totally empty workout", () => {
+    expect(workoutFunFact({ volume: 0, reps: 0, distanceKm: 0 })).toBeNull();
+  });
+
+  it("always returns a fact for any non-empty workout (entry tier)", () => {
+    // a light bodyweight set: no load (volume 0) but a few reps → reps entry tier
+    expect(workoutFunFact({ volume: 0, reps: 12, distanceKm: 0 })).toMatchObject({ metric: "reps", key: "funfact.reps.s" });
+    // a single light loaded set → volume entry tier
+    expect(workoutFunFact({ volume: 40, reps: 0, distanceKm: 0 })).toMatchObject({ metric: "volume", key: "funfact.vol.s" });
+    // a short walk → distance entry tier
+    expect(workoutFunFact({ volume: 0, reps: 0, distanceKm: 1 })).toMatchObject({ metric: "distance", key: "funfact.dist.s" });
   });
 
   it("surfaces distance for a long run with little tonnage", () => {

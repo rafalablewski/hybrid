@@ -29,8 +29,10 @@ interface Tier {
   emoji: string;
 }
 
-// Ascending thresholds. The highest tier a value reaches wins.
+// Ascending thresholds. The highest tier a value reaches wins. The lowest
+// (min ~0) tier is the entry level so ANY non-empty workout still gets a fact.
 const VOLUME_TIERS: Tier[] = [
+  { min: 1, key: "funfact.vol.s", emoji: "🎒" },
   { min: 100, key: "funfact.vol.0", emoji: "🐼" },
   { min: 250, key: "funfact.vol.1", emoji: "🥤" },
   { min: 500, key: "funfact.vol.2", emoji: "🎹" },
@@ -41,6 +43,7 @@ const VOLUME_TIERS: Tier[] = [
 ];
 
 const REPS_TIERS: Tier[] = [
+  { min: 1, key: "funfact.reps.s", emoji: "🙌" },
   { min: 50, key: "funfact.reps.0", emoji: "💪" },
   { min: 100, key: "funfact.reps.1", emoji: "😅" },
   { min: 200, key: "funfact.reps.2", emoji: "🔁" },
@@ -49,6 +52,7 @@ const REPS_TIERS: Tier[] = [
 ];
 
 const DIST_TIERS: Tier[] = [
+  { min: 0.5, key: "funfact.dist.s", emoji: "👟" },
   { min: 3, key: "funfact.dist.0", emoji: "🏃" },
   { min: 5, key: "funfact.dist.1", emoji: "🏞️" },
   { min: 10, key: "funfact.dist.2", emoji: "🔥" },
