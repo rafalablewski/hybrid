@@ -16,6 +16,7 @@ import {
   currentPhase,
   planToday,
   planDayToBlocks,
+  srSingleReps,
   hpiRole,
   riskRole,
   accountabilityRole,
@@ -159,7 +160,7 @@ export default function Today({
               {plan.items.map((it, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${LINE}` : "none" }}>
                   <span style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, color: txt(CHALK) }}>{it.name}</span>
-                  <Mono s={{ fontSize: fs.caption }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                  <Mono s={{ fontSize: fs.caption }}>{srSingleReps(it.sr)}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
                 </div>
               ))}
             </div>

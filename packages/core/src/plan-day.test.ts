@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planToday, planDayToBlocks, findGoalPlan } from "./plan-day";
+import { planToday, planDayToBlocks, findGoalPlan, srSingleReps } from "./plan-day";
 
 describe("planToday", () => {
   it("returns null for no plan / an unknown plan id", () => {
@@ -37,11 +37,11 @@ describe("planDayToBlocks", () => {
     const first = blocks[0]!;
     expect(first.kind).toBe("strength");
     if (first.kind === "strength") {
-      // "Back Squat 5 × 3–5" → 5 sets, blank load, reps range carried
+      // "Back Squat 5 × 3–5" → 5 sets, blank load, reps collapsed to the top
       expect(first.name).toBe("Back Squat");
       expect(first.sets.length).toBe(5);
       expect(first.sets[0]!.load).toBe("");
-      expect(first.sets[0]!.reps).toBe("3–5");
+      expect(first.sets[0]!.reps).toBe("5");
       expect(first.sets[0]!.rpe).toBe("8");
     }
   });
@@ -51,8 +51,31 @@ describe("planDayToBlocks", () => {
     const b = blocks[0]!;
     if (b.kind === "strength") {
       expect(b.sets.length).toBe(3);
-      expect(b.sets[0]!.reps).toBe("45–60 sec");
+      expect(b.sets[0]!.reps).toBe("60 sec");
       expect(b.sets[0]!.rpe).toBe("");
     }
+  });
+});
+
+describe("srSingleReps", () => {
+  it("collapses a rep range to the top number", () => {
+    expect(srSingleReps("5 × 3–5")).toBe("5 × 5");
+    expect(srSingleReps("4 × 8–12")).toBe("4 × 12");
+    expect(srSingleReps("3 × 10–15")).toBe("3 × 15");
+  });
+
+  it("collapses a time range but keeps the unit", () => {
+    expect(srSingleReps("3 × 45–60 sec")).toBe("3 × 60 sec");
+  });
+
+  it("handles plain hyphens and em dashes too", () => {
+    expect(srSingleReps("5 x 3-5")).toBe("5 x 5");
+    expect(srSingleReps("5 × 3—5")).toBe("5 × 5");
+  });
+
+  it("leaves a single number untouched", () => {
+    expect(srSingleReps("5 × 5")).toBe("5 × 5");
+    expect(srSingleReps("3 × 8")).toBe("3 × 8");
+    expect(srSingleReps("AMRAP")).toBe("AMRAP");
   });
 });

@@ -53,13 +53,26 @@ export function planToday(planId: string | null | undefined, sessionsLogged: num
   };
 }
 
+/**
+ * Collapse every numeric range in a "sets × reps" string to a single number —
+ * the TOP of the range (the double-progression target: hit the top across all
+ * sets, then add load). Reps and time both collapse: "5 × 3–5" → "5 × 5",
+ * "3 × 45–60 sec" → "3 × 60 sec". Strings without a range pass through. Use
+ * this everywhere an sr is shown so a prescription never reads as a range.
+ */
+export function srSingleReps(sr: string): string {
+  // Match N–M (en/em dash or hyphen) and keep the top number + any spacing.
+  return sr.replace(/(\d+)\s*[–—-]\s*(\d+)/g, "$2");
+}
+
 /** Parse a plan item's "sets × reps" string (e.g. "5 × 3–5", "3 × 45–60 sec")
- *  into a set count + a reps label. Falls back to 3 sets when unparseable. */
+ *  into a set count + a reps label. Falls back to 3 sets when unparseable.
+ *  Reps collapse to the single top-of-range target (see srSingleReps). */
 function parseSetsReps(sr: string): { sets: number; reps: string } {
   const parts = sr.split("×");
   const left = (parts[0] ?? "").trim();
   const sets = Math.max(1, Math.min(10, parseInt(left, 10) || 3));
-  const reps = parts.slice(1).join("×").trim() || left;
+  const reps = srSingleReps(parts.slice(1).join("×").trim() || left);
   return { sets, reps };
 }
 

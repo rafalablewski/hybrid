@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
@@ -211,7 +211,7 @@ function PlanDetailView({
               {session.items?.map((it, i) => (
                 <tr key={i}>
                   <td style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.name}</td>
-                  <td style={{ ...mono, fontSize: fs.body, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.sr}</td>
+                  <td style={{ ...mono, fontSize: fs.body, color: CHALK, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{srSingleReps(it.sr)}</td>
                   <td style={{ ...mono, fontSize: fs.body, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rest}</td>
                   <td style={{ ...mono, fontSize: fs.body, color: ASH, padding: "10px 0", borderBottom: `1px solid ${LINE}` }}>{it.rpe}</td>
                 </tr>

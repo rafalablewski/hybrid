@@ -18,6 +18,7 @@ import {
   habitStrength,
   weeklyRecap,
   planToday,
+  srSingleReps,
   FUNNEL,
   toTrainingLog,
   toBiometrics,
@@ -310,7 +311,7 @@ export default function AuroraHome() {
                 {plan.items.map((it, i) => (
                   <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{srSingleReps(it.sr)}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Text>
                   </View>
                 ))}
                 {!isAthlete && (

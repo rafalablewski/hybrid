@@ -13,6 +13,7 @@ import { fs, space,
   currentPhase,
   planToday,
   planDayToBlocks,
+  srSingleReps,
   toTrainingLog,
   velocityProfiles,
   FUNNEL,
@@ -181,7 +182,7 @@ export default function AuroraToday({
                 {plan.items.map((it, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                     <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{it.name}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{srSingleReps(it.sr)}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</span>
                   </div>
                 ))}
               </div>

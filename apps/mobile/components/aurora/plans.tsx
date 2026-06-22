@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { GOAL_TREE, GOAL_GROUPS, planDetail, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -106,7 +106,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
           {session.items?.map((it, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{it.sr}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{srSingleReps(it.sr)}</Text>
             </View>
           ))}
         </ACard>

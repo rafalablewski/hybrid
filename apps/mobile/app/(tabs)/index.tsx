@@ -10,6 +10,7 @@ import {
   trainingDaysPerWeek,
   weekNeedsResync,
   planToday,
+  srSingleReps,
   computePerformanceState,
   computeInjuryRisk,
   computeAccountability,
@@ -426,7 +427,7 @@ function ClassicHome() {
                 {plan.items.map((it, i) => (
                   <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
-                    <Mono color={C.chalk}>{it.sr}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
+                    <Mono color={C.chalk}>{srSingleReps(it.sr)}{it.rpe && it.rpe !== "—" ? ` · RPE ${it.rpe}` : ""}</Mono>
                   </View>
                 ))}
               </View>
