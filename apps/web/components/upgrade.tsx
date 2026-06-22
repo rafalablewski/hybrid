@@ -21,7 +21,6 @@ const BUNDLE: { kicker: string; color: string; items: { ic: string; nm: string; 
     kicker: "Train smarter", color: LIME, items: [
       { ic: "▤", nm: "Adaptive plans", ds: "Auto-progression on top of the free plan library." },
       { ic: "◰", nm: "Periodize", ds: "Your season — phases, deloads, peak." },
-      { ic: "⊕", nm: "Builder", ds: "Design your own templates." },
       { ic: "▲", nm: "Competition", ds: "Peak on the day." },
     ],
   },

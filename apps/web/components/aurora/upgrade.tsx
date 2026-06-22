@@ -20,7 +20,6 @@ const buildBundle = (t: (k: string) => string): { kicker: string; color: string;
     kicker: t("w.account.upgrade.cat-train"), color: C("lime"), items: [
       { ic: "▤", nm: t("w.account.upgrade.adaptive-plans"), ds: t("w.account.upgrade.adaptive-plans-ds") },
       { ic: "◰", nm: t("w.account.upgrade.periodize"), ds: t("w.account.upgrade.periodize-ds") },
-      { ic: "⊕", nm: t("w.account.upgrade.builder"), ds: t("w.account.upgrade.builder-ds") },
       { ic: "▲", nm: t("w.account.upgrade.competition"), ds: t("w.account.upgrade.competition-ds") },
     ],
   },

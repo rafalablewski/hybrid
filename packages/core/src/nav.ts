@@ -56,10 +56,11 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 // DEFAULT ACCESS POLICY (the "done deal" — an admin can override any of this in
 // Access control). The guiding rule: don't overload retail.
 //   • CASUAL (Average Joe) — the lean loop only: train, review, share, basic
-//     health (today/log/history/calendar/nutrition/progress/check-in) + setup.
+//     health (today/log/history/calendar/nutrition/progress/check-in) + setup,
+//     PLUS the routine Builder (composing your own workout is free).
 //   • ATHLETE — adds the depth + analytics (cockpit/plans/periodize/
 //     sport/competition/performance/velocity/running/force-plate/video/longevity/
-//     talent/connections/builder).
+//     talent/connections).
 //   • COACH — adds the coaching console (coach/squad/team-compare/org/tactical),
 //     on top of all the athlete depth (a coach trains too).
 //   • ADMIN — everything.
@@ -78,7 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "timer", label: "Interval timer", icon: "⏱", group: "train" },
   { id: "runtrack", label: "Run tracking", icon: "📍", group: "train" },
   { id: "calendar", label: "Calendar", icon: "▦", group: "train" },
-  { id: "builder", label: "Builder", icon: "⊕", group: "train", minPersona: "athlete" },
+  { id: "builder", label: "Builder", icon: "⊕", group: "train" },
   { id: "plans", label: "Plans", icon: "▤", group: "train" },
   { id: "periodize", label: "Periodize", icon: "◰", group: "train", minPersona: "athlete" },
   { id: "sport", label: "Sport", icon: "◎", group: "train", minPersona: "athlete" },

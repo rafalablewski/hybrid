@@ -204,7 +204,7 @@ export default function AuroraToday({
             </>
           ) : (
             /* Brand-new and not enrolled — first-session chooser (#3): follow a
-               plan (free), build your own (Full), or log a one-off. */
+               plan (free), build your own (free), or log a one-off. */
             <>
               <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.howStart")}</div>
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 12 }}>
@@ -212,7 +212,7 @@ export default function AuroraToday({
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
                 <ChooserRow title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} badge={t("w.home.today.badgeFree")} color={C("lime")} onClick={() => (onNavigate ? onNavigate("plans") : router.push("/(tabs)/plans"))} />
-                <ChooserRow title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFull")} color={C("violet")} onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))} />
+                <ChooserRow title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFree")} color={C("lime")} onClick={() => (onNavigate ? onNavigate("builder") : router.push("/builder"))} />
                 <ChooserRow title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} badge={t("w.home.today.badgeFree")} color={C("lime")} onClick={() => onStart()} />
               </div>
             </>

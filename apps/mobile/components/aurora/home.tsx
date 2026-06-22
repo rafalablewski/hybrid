@@ -345,7 +345,7 @@ export default function AuroraHome() {
                 </Text>
                 <View style={{ marginTop: 12, gap: space.sm }}>
                   <ChooserRow C={C} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/(tabs)/plans")} />
-                  <ChooserRow C={C} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFull")} color={C.violet} onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-build" }); router.push("/upgrade"); }} />
+                  <ChooserRow C={C} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/builder")} />
                   <ChooserRow C={C} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} badge={t("w.home.today.badgeFree")} color={C.lime} onPress={() => router.push("/workout?source=empty")} />
                 </View>
               </>

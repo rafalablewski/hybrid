@@ -134,11 +134,10 @@ export default function More() {
   // `onboarding` is the universal setup flow — it's no longer a nav item (so
   // navVisibleTo can't gate it), but every persona can re-run it, so it always
   // shows. Everything else is persona/access gated as before.
-  // `onboarding` is the universal setup flow (no longer a nav item). `builder`
-  // IS an athlete-gated nav item, but the Train launcher offers "Build a routine"
-  // to everyone, so we surface it here for everyone too (parity with Train) —
-  // both bypass the persona filter and always show.
-  const ALWAYS = new Set(["onboarding", "builder"]);
+  // `onboarding` is the universal setup flow (no longer a nav item), so it always
+  // shows and bypasses the persona filter. (`builder` is a free, ungated nav item
+  // now — navVisibleTo lets it through for every persona, so it needs no bypass.)
+  const ALWAYS = new Set(["onboarding"]);
   const sections = SECTIONS.map((s) => ({
     ...s,
     links: s.links.filter((l) => ALWAYS.has(l.id) || navVisibleTo(persona, l.id, access)),
