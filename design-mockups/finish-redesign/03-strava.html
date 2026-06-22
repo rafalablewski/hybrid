@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share · Athletic</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{--lime:#c4f035;--chalk:#f4f6f2;--ash:#9aa09a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
+.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000;background:#070808}
+.photo{position:absolute;inset:0;
+  background:
+   radial-gradient(80% 50% at 70% 18%,rgba(196,240,53,.20),transparent 60%),
+   linear-gradient(180deg,#10130f 0%,#0a0c0a 40%,#060706 100%);
+  overflow:hidden}
+.lines{position:absolute;inset:0;opacity:.5}
+.lines svg{position:absolute;inset:0;width:100%;height:100%}
+.veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 26%,transparent 52%,rgba(0,0,0,.82) 100%)}
+.wrap{position:absolute;inset:0;padding:56px 28px 26px;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:900;letter-spacing:.3em;font-size:15px}
+.live{font-family:'JetBrains Mono';font-size:11px;color:var(--lime);display:flex;align-items:center;gap:7px;letter-spacing:.1em}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.spacer{flex:1}
+.title{font-family:'Archivo Narrow';font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--lime)}
+.h1{font-weight:900;font-size:40px;letter-spacing:-.03em;margin-top:6px}
+.meta{font-family:'JetBrains Mono';font-size:12px;color:var(--ash);margin-top:8px;letter-spacing:.04em}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:24px;border-top:1px solid rgba(255,255,255,.16)}
+.st{padding:18px 4px;border-right:1px solid rgba(255,255,255,.12)}
+.st:last-child{border-right:none}
+.st b{display:block;font-weight:900;font-size:34px;letter-spacing:-.03em}
+.st b small{font-size:15px;color:var(--ash);font-weight:600}
+.st span{font-family:'Archivo Narrow';font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);margin-top:4px;display:block}
+.acts{margin-top:22px}
+.share{width:100%;border:none;border-radius:14px;padding:17px;font-family:inherit;font-weight:800;font-size:16px;background:var(--lime);color:#06270a;cursor:pointer}
+.row{display:flex;gap:10px;margin-top:10px}
+.row button{flex:1;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);border-radius:14px;padding:13px;font-family:inherit;font-weight:600;font-size:13px;color:var(--chalk);cursor:pointer}
+.back{text-align:center;font-family:'JetBrains Mono';font-size:12px;color:var(--ash);padding:14px 0 0}
+</style></head>
+<body><div class="phone">
+  <div class="photo">
+    <div class="lines"><svg viewBox="0 0 390 844" preserveAspectRatio="none">
+      <polyline points="-10,300 60,250 120,280 180,200 250,240 320,160 400,210" fill="none" stroke="rgba(196,240,53,.5)" stroke-width="2"/>
+      <polyline points="-10,360 70,330 140,350 210,300 290,330 360,280 400,300" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+    </svg></div>
+  </div>
+  <div class="veil"></div>
+  <div class="wrap">
+    <div class="top"><div class="logo">HYBRID</div><div class="live"><i></i>SESSION COMPLETE</div></div>
+    <div class="spacer"></div>
+    <div class="title">Strength · PR Effort</div>
+    <div class="h1">Night workout</div>
+    <div class="meta">22 JUN 2026 · 22:41 · ✎ name it</div>
+    <div class="stats">
+      <div class="st"><b>1<small>m</small></b><span>Duration</span></div>
+      <div class="st"><b>2</b><span>Sets</span></div>
+      <div class="st"><b>20.0<small>t</small></b><span>Volume</span></div>
+    </div>
+    <div class="acts">
+      <button class="share">↗ Share to story</button>
+      <div class="row"><button>★ Save as routine</button><button>See analysis →</button></div>
+    </div>
+    <div class="back">Done — back to Today</div>
+  </div>
+</div></body></html>
