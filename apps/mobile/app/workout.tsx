@@ -71,6 +71,7 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, Mono, Kicker, Card } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
+import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField } from "../components/aurora/kit";
 
@@ -1087,9 +1088,11 @@ export default function Workout() {
         {/* Field-styled trigger → searchable modal (matches the sport picker). */}
         <Pressable
           onPress={() => setPickerOpen(true)}
-          style={{ borderWidth: 1, borderColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 4 }}
+          style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 13 }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("workout.addExercise")}</Text>
+          <AuroraIcon name="add" size={18} color={txt(C, C.lime)} />
+          <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t("workout.addExercise")}</Text>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>▾</Text>
         </Pressable>
 
         {/* Empty-state quick-starts (parity with the web logger): pull today's
@@ -1130,15 +1133,19 @@ export default function Workout() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("workout.close")}</Text>
                 </Pressable>
               </View>
-              <TextInput
-                value={custom}
-                onChangeText={setCustom}
-                placeholder={t("workout.search")}
-                placeholderTextColor={C.ash}
-                autoFocus
-                onSubmitEditing={() => addExercise(custom)}
-                style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 14, paddingVertical: 12 }}
-              />
+              {/* Search row — the canonical icon + TextInput pill (matches the sport picker). */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
+                <AuroraIcon name="search" size={18} color={C.ash} />
+                <TextInput
+                  value={custom}
+                  onChangeText={setCustom}
+                  placeholder={t("workout.search")}
+                  placeholderTextColor={C.ash}
+                  autoFocus
+                  onSubmitEditing={() => addExercise(custom)}
+                  style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
+                />
+              </View>
               <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
                 {(() => {
                   const q = custom.trim().toLowerCase();

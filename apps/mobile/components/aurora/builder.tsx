@@ -6,6 +6,7 @@ import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
 
 const kindColor = (k: BuilderKind, C: ReturnType<typeof useTheme>["palette"]) =>
   k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet;
@@ -51,8 +52,10 @@ export default function AuroraBuilder() {
         <ItemCard key={x.uid} item={x} C={C} onRemove={() => b.removeItem(x.uid)} onPatch={(p) => b.patchItem(x.uid, p)} onBump={(d) => b.bumpSets(x.uid, d)} fieldStyle={fieldStyle} />
       ))}
 
-      <Pressable onPress={() => setPicker(true)} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 4 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.train.builder.addExercise")}</Text>
+      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 13 }}>
+        <AuroraIcon name="add" size={18} color={txt(C, C.lime)} />
+        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.train.builder.addExercise")}</Text>
+        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>▾</Text>
       </Pressable>
 
       {/* Searchable exercise picker — grouped by muscle/pattern, like the sport picker. */}
@@ -65,15 +68,18 @@ export default function AuroraBuilder() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
               </Pressable>
             </View>
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder={t("w.train.builder.searchCustomPh")}
-              placeholderTextColor={C.ash}
-              autoFocus
-              onSubmitEditing={() => query.trim() && add(query)}
-              style={[fieldStyle, { fontSize: fs.bodyLg, paddingVertical: 12 }]}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
+              <AuroraIcon name="search" size={18} color={C.ash} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t("w.train.builder.searchCustomPh")}
+                placeholderTextColor={C.ash}
+                autoFocus
+                onSubmitEditing={() => query.trim() && add(query)}
+                style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
+              />
+            </View>
             <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
               {exercisesByCategory(MOVEMENTS)
                 .map((g) => ({ ...g, names: g.names.filter((n) => !q || n.toLowerCase().includes(q)) }))
