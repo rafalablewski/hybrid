@@ -66,10 +66,13 @@ const pill = (token: string): React.CSSProperties => {
 export default function AuroraLogger({
   sessions,
   onSaved,
+  onHome,
   initialBlocks,
 }: {
   sessions: LoggedSession[];
   onSaved: () => void;
+  /** Go back to Today from the summary (the analysis link uses onSaved → history). */
+  onHome?: () => void;
   initialBlocks?: SessionBlock[];
 }) {
   const { t } = useLang();
@@ -374,7 +377,7 @@ export default function AuroraLogger({
     }
   };
 
-  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} />;
+  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} />;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -556,7 +559,7 @@ export default function AuroraLogger({
  *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
  *  a short navigator.vibrate where the device supports it (the web analog of the
  *  native success haptic). */
-function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; onDone: () => void }) {
+function Finish({ data, units, onDone, onHome }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void }) {
   const { t } = useLang();
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
@@ -729,10 +732,15 @@ function Finish({ data, units, onDone }: { data: FinishData; units: WeightUnit; 
         <SaveRoutineCard blocks={blocks} defaultName={title} />
       </div>
 
-      {/* See analysis — at the very bottom. */}
+      {/* See analysis — at the very bottom (onDone → history). */}
       <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 24 }}>
-        {t("w.train.logger.done")}
+        {t("summary.seeAnalysis")}
       </button>
+      {onHome && (
+        <button onClick={onHome} style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, background: "transparent", color: C("ash"), border: "none", padding: "16px 0", cursor: "pointer" }}>
+          {t("summary.doneToday")}
+        </button>
+      )}
     </div>
   );
 }
