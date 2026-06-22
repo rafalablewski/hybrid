@@ -159,7 +159,10 @@ export default function AuroraToday({
               {/* Readiness as a glanceable dial, not "95/100" digits to parse. */}
               {isAthlete && (hasData || plan || phase) ? <Ring value={rx.readiness} color={readyColor(rx.readiness)} /> : null}
               <button
-                onClick={() => onStart(plan ? planDayToBlocks(plan.items) : undefined)}
+                // Start the PRESCRIBED session: the named plan's day if enrolled,
+                // else today's AI-prescribed blocks (the ones shown on this card),
+                // else a clean empty log for a brand-new user.
+                onClick={() => onStart(plan ? planDayToBlocks(plan.items) : hasData || phase ? (rx.blocks as SessionBlock[]) : undefined)}
                 style={{ background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "8px 15px", fontWeight: 700, fontSize: fs.body, cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 {t("w.home.today.start")}

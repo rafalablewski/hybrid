@@ -174,7 +174,7 @@ export default function Today({
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today
               </Mono>
-              <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
+              <button onClick={() => onStart(rx.blocks as SessionBlock[])} style={cta(LIME)}>Start session →</button>
             </div>
             <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>
               {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
@@ -210,7 +210,7 @@ export default function Today({
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
                 Your plan today · readiness {rx.readiness}/100
               </Mono>
-              <button onClick={() => onStart()} style={cta(LIME)}>Start session →</button>
+              <button onClick={() => onStart(rx.blocks as SessionBlock[])} style={cta(LIME)}>Start session →</button>
             </div>
             <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, margin: "8px 0 6px" }}>
               {rx.blocks[0]?.name}{rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}
