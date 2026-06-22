@@ -504,11 +504,11 @@ export default function AuroraHome() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
               {[
                 { label: "HPI", on: true },
-                { label: "Readiness", on: false },
-                { label: "Injury risk", on: false },
-                { label: "Velocity", on: false },
-                { label: "Analytics", on: false },
-                { label: "AI coach", on: false },
+                { label: t("w.home.today.psTag.readiness"), on: false },
+                { label: t("w.home.today.psTag.injury"), on: false },
+                { label: t("w.home.today.psTag.velocity"), on: false },
+                { label: t("w.home.today.psTag.analytics"), on: false },
+                { label: t("w.home.today.aiCoach"), on: false },
               ].map((tag) => (
                 <View
                   key={tag.label}

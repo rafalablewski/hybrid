@@ -129,9 +129,9 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
           <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>Choose sport</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.quickSport.choose")}</Text>
               <Pressable onPress={() => setPickerOpen(false)} hitSlop={10}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>Close</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
               </Pressable>
             </View>
 
@@ -141,7 +141,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
               <TextInput
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Search 100+ sports…"
+                placeholder={t("w.home.quickSport.search")}
                 placeholderTextColor={C.ash}
                 autoFocus
                 style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
