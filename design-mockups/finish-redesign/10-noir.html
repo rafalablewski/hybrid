@@ -1,36 +1,42 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Share · Noir Luxe</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500&display=swap');
-:root{--ink:#070807;--lime:#c4f035;--chalk:#f4f6f2;--ash:#8b8f86;--gold:#d8e89a}
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--gold:#d8e89a}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
-.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000;
-  background:radial-gradient(120% 80% at 50% -10%,#13150f 0%,#0a0b08 50%,#060705 100%)}
-.frame{position:absolute;inset:22px;border:1px solid rgba(196,240,53,.28);border-radius:30px;pointer-events:none}
+body{background:#000;font-family:'Archivo',system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;-webkit-font-smoothing:antialiased}
+.phone{--fg:var(--chalk);width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000;color:var(--fg);background:radial-gradient(120% 80% at 50% -10%,#13150f 0%,#0a0b08 50%,#060705 100%)}
+.statusbar{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;z-index:40;font-family:'JetBrains Mono';font-size:14px;font-weight:400;color:var(--fg)}
+.statusbar .icons{display:flex;align-items:center;gap:6px}
+.home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:128px;height:5px;border-radius:3px;background:var(--fg);opacity:.22;z-index:40}
+.statlabel{font-family:'Archivo Narrow';font-weight:600;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);display:block;margin-top:6px}
+.primary{width:100%;border:none;border-radius:999px;padding:16px;font-family:inherit;font-weight:600;font-size:15px;letter-spacing:.02em;cursor:pointer;background:var(--lime);color:var(--ink)}
+.srow{display:flex;gap:12px;margin-top:12px}
+.srow button{flex:1;border:1px solid rgba(216,232,154,.35);background:transparent;color:var(--gold);border-radius:999px;padding:13px;font-family:inherit;font-weight:400;font-size:13px;letter-spacing:.02em;cursor:pointer}
+.done{display:block;width:100%;text-align:center;background:none;border:none;color:var(--ash);font-family:'JetBrains Mono';font-weight:300;font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:18px 0 0;cursor:pointer}
+/* —— noir art —— */
+.frame{position:absolute;inset:22px;border:1px solid rgba(196,240,53,.28);border-radius:30px;pointer-events:none;z-index:5}
 .sheen{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(216,232,154,.06) 48%,transparent 60%)}
-.wrap{position:absolute;inset:0;padding:60px 42px 40px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.wrap{position:absolute;inset:0;padding:64px 42px 40px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .logo{font-weight:300;letter-spacing:.52em;font-size:15px;color:var(--gold)}
 .line{width:34px;height:1px;background:var(--lime);margin:18px 0}
 .kick{font-family:'JetBrains Mono';font-weight:300;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ash)}
 .mid{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center}
-.big{font-weight:300;font-size:120px;line-height:.86;letter-spacing:-.04em;
-  background:linear-gradient(180deg,#fdffe9,var(--lime) 55%,#7d9418);-webkit-background-clip:text;background-clip:text;color:transparent}
+.big{font-weight:300;font-size:116px;line-height:.86;letter-spacing:-.04em;background:linear-gradient(180deg,#fdffe9,var(--lime) 55%,#7d9418);-webkit-background-clip:text;background-clip:text;color:transparent}
 .big small{font-weight:300;font-size:36px}
 .h1{font-weight:400;font-size:24px;letter-spacing:.02em;margin-top:18px}
 .h1 b{font-weight:600}
 .stats{display:flex;gap:28px;margin-top:30px}
-.st b{display:block;font-weight:400;font-size:26px}
-.st b small{font-size:13px;color:var(--ash)}
-.st span{font-family:'JetBrains Mono';font-weight:300;font-size:9px;letter-spacing:.18em;color:var(--ash);text-transform:uppercase;margin-top:6px;display:block}
-.acts{width:100%}
-.share{width:100%;border:1px solid var(--lime);border-radius:999px;padding:16px;font-family:inherit;font-weight:500;font-size:15px;letter-spacing:.04em;background:var(--lime);color:var(--ink);cursor:pointer}
-.row{display:flex;gap:12px;margin-top:12px}
-.row button{flex:1;border:1px solid rgba(216,232,154,.35);background:transparent;border-radius:999px;padding:13px;font-family:inherit;font-weight:400;font-size:13px;letter-spacing:.04em;color:var(--gold);cursor:pointer}
-.back{font-family:'JetBrains Mono';font-weight:300;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);padding:18px 0 0}
+.stat b{display:block;font-weight:400;font-size:26px}
+.stat b small{font-size:13px;color:var(--ash)}
+.actions{width:100%}
 </style></head>
 <body><div class="phone">
   <div class="sheen"></div><div class="frame"></div>
+  <div class="statusbar"><span class="time">22:41</span><span class="icons">
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+    <svg width="26" height="12" viewBox="0 0 26 12"><rect x="1" y="1" width="21" height="10" rx="3" fill="none" stroke="currentColor" opacity=".5"/><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor"/><rect x="23.5" y="4" width="1.5" height="4" rx=".75" fill="currentColor" opacity=".5"/></svg>
+  </span></div>
   <div class="wrap">
     <div class="logo">HYBRID</div>
     <div class="line"></div>
@@ -39,15 +45,16 @@ body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place
       <div class="big">20.0<small>t</small></div>
       <div class="h1">Night <b>workout</b></div>
       <div class="stats">
-        <div class="st"><b>1<small>m</small></b><span>Minutes</span></div>
-        <div class="st"><b>2</b><span>Sets</span></div>
-        <div class="st"><b>20.0<small>t</small></b><span>Volume</span></div>
+        <div class="stat"><b>1<small>m</small></b><span class="statlabel">Minutes</span></div>
+        <div class="stat"><b>2</b><span class="statlabel">Sets</span></div>
+        <div class="stat"><b>20.0<small>t</small></b><span class="statlabel">Volume</span></div>
       </div>
     </div>
-    <div class="acts">
-      <button class="share">↗ Share to story</button>
-      <div class="row"><button>★ Save as routine</button><button>Analysis →</button></div>
+    <div class="actions">
+      <button class="primary">↗ Share to story</button>
+      <div class="srow"><button>★ Save as routine</button><button>See analysis →</button></div>
+      <button class="done">Done — back to Today</button>
     </div>
-    <div class="back">Done — back to Today</div>
   </div>
+  <div class="home"></div>
 </div></body></html>

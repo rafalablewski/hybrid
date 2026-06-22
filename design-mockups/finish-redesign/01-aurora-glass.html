@@ -1,57 +1,68 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Share · Aurora Glass</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
-:root{--lime:#c4f035;--blue:#7fd4e8;--violet:#c9a9f0;--chalk:#f4f6f2;--ash:#aeb4ac}
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
-.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000}
-.art{position:absolute;inset:0;background:#05070a;
-  background-image:
-   radial-gradient(120% 70% at 18% 8%,rgba(196,240,53,.55),transparent 55%),
-   radial-gradient(110% 70% at 92% 22%,rgba(127,212,232,.45),transparent 55%),
-   radial-gradient(130% 80% at 50% 108%,rgba(201,169,240,.5),transparent 60%),
-   radial-gradient(90% 60% at 80% 78%,rgba(91,167,255,.35),transparent 60%)}
-.grain{position:absolute;inset:0;opacity:.10;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-.veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,10,.15) 0%,rgba(5,7,10,.0) 30%,rgba(5,7,10,.55) 100%)}
-.wrap{position:absolute;inset:0;padding:60px 30px 26px;display:flex;flex-direction:column}
+body{background:#000;font-family:'Archivo',system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;-webkit-font-smoothing:antialiased}
+.phone{--fg:var(--chalk);width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000;color:var(--fg)}
+.statusbar{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;z-index:40;font-family:'JetBrains Mono';font-size:14px;font-weight:500;color:var(--fg)}
+.statusbar .icons{display:flex;align-items:center;gap:6px}
+.home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:128px;height:5px;border-radius:3px;background:var(--fg);opacity:.22;z-index:40}
+.logo{font-weight:900;font-size:14px;letter-spacing:.3em}
+.kicker{font-family:'JetBrains Mono';font-weight:500;font-size:11px;letter-spacing:.24em;text-transform:uppercase}
+.statlabel{font-family:'Archivo Narrow';font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);display:block;margin-top:5px}
+.actions{margin-top:auto}
+.primary{width:100%;border:none;border-radius:16px;padding:16px;font-family:inherit;font-weight:700;font-size:16px;cursor:pointer;background:var(--lime);color:var(--ink);box-shadow:0 14px 36px -12px rgba(196,240,53,.55)}
+.srow{display:flex;gap:10px;margin-top:10px}
+.srow button{flex:1;border:1px solid var(--btnline,var(--line));background:transparent;color:var(--fg);border-radius:16px;padding:13px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.done{display:block;width:100%;text-align:center;background:none;border:none;color:var(--ash);font-family:'JetBrains Mono';font-size:12px;padding:15px 0 0;cursor:pointer;letter-spacing:.02em}
+/* —— aurora art —— */
+.phone{background:#05070a;background-image:
+  radial-gradient(120% 70% at 18% 8%,rgba(196,240,53,.5),transparent 55%),
+  radial-gradient(110% 70% at 92% 22%,rgba(127,212,232,.42),transparent 55%),
+  radial-gradient(130% 80% at 50% 108%,rgba(201,169,240,.48),transparent 60%),
+  radial-gradient(90% 60% at 80% 78%,rgba(127,212,232,.3),transparent 60%)}
+.grain{position:absolute;inset:0;opacity:.1;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,10,.2) 0%,rgba(5,7,10,0) 28%,rgba(5,7,10,.5) 100%)}
+.wrap{position:absolute;inset:0;padding:64px 30px 30px;display:flex;flex-direction:column}
 .top{display:flex;justify-content:space-between;align-items:center}
-.logo{font-weight:900;font-size:17px;letter-spacing:.34em}
-.badge{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#06270a;background:var(--lime);padding:6px 11px;border-radius:999px;font-weight:600}
+.badge{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#06270a;background:var(--lime);padding:6px 12px;border-radius:999px;font-weight:600}
 .mid{flex:1;display:flex;flex-direction:column;justify-content:center}
-.kick{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--chalk);opacity:.85}
-.hero{font-weight:900;font-size:120px;line-height:.82;letter-spacing:-.05em;margin-top:14px;text-shadow:0 20px 60px rgba(0,0,0,.4)}
-.hero small{font-weight:600;font-size:40px;letter-spacing:-.02em;opacity:.7}
-.headline{font-weight:800;font-size:25px;letter-spacing:-.02em;margin-top:20px;max-width:300px;line-height:1.12}
-.headline b{color:var(--lime)}
-.chips{display:flex;gap:10px;margin-top:24px}
-.chip{flex:1;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:14px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
-.chip b{display:block;font-weight:800;font-size:24px;letter-spacing:-.02em}
-.chip span{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.12em;color:var(--ash);text-transform:uppercase}
-.bar{backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:26px;padding:12px;margin-top:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 20px 50px -20px rgba(0,0,0,.6)}
-.share{width:100%;border:none;border-radius:18px;padding:16px;font-family:inherit;font-weight:800;font-size:16px;background:var(--lime);color:#06270a;cursor:pointer;box-shadow:0 12px 34px -8px rgba(196,240,53,.6)}
-.row{display:flex;gap:8px;margin-top:10px}
-.row button{flex:1;border:none;border-radius:14px;padding:12px;font-family:inherit;font-weight:600;font-size:13px;background:rgba(255,255,255,.10);color:var(--chalk);cursor:pointer}
-.back{text-align:center;font-family:'JetBrains Mono';font-size:12px;color:var(--ash);padding:14px 0 0}
+.kicker{color:var(--chalk);opacity:.82;margin-top:4px}
+.hero{font-weight:900;font-size:112px;line-height:.82;letter-spacing:-.05em;margin-top:14px;text-shadow:0 20px 60px rgba(0,0,0,.4)}
+.hero small{font-weight:600;font-size:38px;letter-spacing:-.02em;opacity:.72}
+.headline{font-weight:700;font-size:23px;letter-spacing:-.02em;margin-top:20px;max-width:300px;line-height:1.16}
+.headline b{color:var(--lime);font-weight:800}
+.stats{display:flex;gap:10px;margin-top:26px}
+.stat{flex:1;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.2);border-radius:18px;padding:15px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.28)}
+.stat b{display:block;font-weight:800;font-size:23px;letter-spacing:-.02em}
+.stat b small{font-size:13px;color:var(--ash);font-weight:600}
+.actions{margin-top:26px}
 </style></head>
 <body><div class="phone">
-  <div class="art"></div><div class="grain"></div><div class="veil"></div>
+  <div class="grain"></div><div class="veil"></div>
+  <div class="statusbar"><span class="time">22:41</span><span class="icons">
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+    <svg width="26" height="12" viewBox="0 0 26 12"><rect x="1" y="1" width="21" height="10" rx="3" fill="none" stroke="currentColor" opacity=".5"/><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor"/><rect x="23.5" y="4" width="1.5" height="4" rx=".75" fill="currentColor" opacity=".5"/></svg>
+  </span></div>
   <div class="wrap">
     <div class="top"><div class="logo">HYBRID</div><div class="badge">✓ Complete</div></div>
     <div class="mid">
-      <div class="kick">Tonight you moved</div>
+      <div class="kicker">Tonight you moved</div>
       <div class="hero">20<small>.0t</small></div>
       <div class="headline">A <b>20-tonne</b> night.<br>That's a humpback whale.</div>
-      <div class="chips">
-        <div class="chip"><b>1</b><span>Minutes</span></div>
-        <div class="chip"><b>2</b><span>Sets</span></div>
-        <div class="chip"><b>20.0t</b><span>Volume</span></div>
+      <div class="stats">
+        <div class="stat"><b>1</b><span class="statlabel">Minutes</span></div>
+        <div class="stat"><b>2</b><span class="statlabel">Sets</span></div>
+        <div class="stat"><b>20.0<small>t</small></b><span class="statlabel">Volume</span></div>
       </div>
     </div>
-    <div class="bar">
-      <button class="share">↗ Share to story</button>
-      <div class="row"><button>★ Save as routine</button><button>See analysis →</button></div>
+    <div class="actions">
+      <button class="primary">↗ Share to story</button>
+      <div class="srow"><button>★ Save as routine</button><button>See analysis →</button></div>
+      <button class="done">Done — back to Today</button>
     </div>
-    <div class="back">Done — back to Today</div>
   </div>
+  <div class="home"></div>
 </div></body></html>
