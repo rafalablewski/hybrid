@@ -1,0 +1,149 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share — finalists</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{--ink:#0c0d0c;--lime:#c4f035;--blue:#7fd4e8;--chalk:#f4f6f2;--ash:#8b8f86;--line:#1e211e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Archivo,system-ui,sans-serif;min-height:100vh;color:var(--chalk);padding:40px 24px 64px}
+.page{max-width:920px;margin:0 auto}
+.page h1{font-weight:900;font-size:30px;letter-spacing:-.02em}
+.page .kick{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--lime)}
+.page p{color:var(--ash);font-size:14px;margin-top:8px;max-width:620px;line-height:1.5}
+.stage{display:flex;flex-wrap:wrap;gap:40px;justify-content:center;margin-top:36px}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.col .cap{font-family:'JetBrains Mono';font-size:12px;color:var(--ash);letter-spacing:.06em}
+.col .cap b{color:var(--chalk);font-weight:700}
+
+/* ===== shared phone shell ===== */
+.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000}
+
+/* ============ 14 · KINETIC ============ */
+#k .phone{background:var(--ink)}
+#k .ticker{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden}
+#k .line{white-space:nowrap;font-weight:900;font-size:46px;letter-spacing:-.02em;text-transform:uppercase;line-height:1.04;color:transparent;-webkit-text-stroke:1px rgba(244,246,242,.10)}
+#k .line.on{color:var(--lime);-webkit-text-stroke:0}
+#k .line.dim{-webkit-text-stroke:1px rgba(196,240,53,.18)}
+#k .veil{position:absolute;inset:0;background:radial-gradient(80% 55% at 50% 50%,rgba(12,13,12,.4),rgba(12,13,12,.92) 78%)}
+#k .wrap{position:absolute;inset:0;padding:54px 30px 26px;display:flex;flex-direction:column}
+#k .top{display:flex;justify-content:space-between;align-items:center}
+#k .logo{font-weight:900;letter-spacing:.3em;font-size:15px}
+#k .badge{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.14em;color:#06270a;background:var(--lime);padding:6px 11px;border-radius:999px;font-weight:600}
+#k .mid{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#k .kick{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--ash)}
+#k .big{font-weight:900;font-size:128px;line-height:.82;letter-spacing:-.05em;margin-top:8px;text-shadow:0 10px 50px rgba(0,0,0,.6)}
+#k .big small{font-weight:700;font-size:40px;color:var(--lime)}
+#k .sub{font-weight:800;font-size:20px;margin-top:14px}
+#k .chips{display:flex;gap:8px;margin-top:18px}
+#k .chip{font-family:'JetBrains Mono';font-size:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);padding:8px 13px;border-radius:999px}
+#k .chip b{color:var(--lime)}
+#k .acts{position:relative;z-index:2}
+#k .share{width:100%;border:none;border-radius:16px;padding:17px;font-family:inherit;font-weight:800;font-size:16px;background:var(--lime);color:#06270a;cursor:pointer}
+#k .row{display:flex;gap:10px;margin-top:10px}
+#k .row button{flex:1;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);border-radius:16px;padding:13px;font-family:inherit;font-weight:600;font-size:13px;color:var(--chalk);cursor:pointer}
+#k .back{text-align:center;font-family:'JetBrains Mono';font-size:12px;color:var(--ash);padding:14px 0 0}
+
+/* ============ 15 · DATA VIZ ============ */
+#d .phone{background:radial-gradient(120% 60% at 80% 0,#13170f,#080a08 55%)}
+#d .wrap{position:absolute;inset:0;padding:54px 28px 26px;display:flex;flex-direction:column}
+#d .top{display:flex;justify-content:space-between;align-items:center}
+#d .logo{font-weight:900;letter-spacing:.3em;font-size:15px}
+#d .date{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);letter-spacing:.08em}
+#d .kick{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime);margin-top:30px}
+#d .h1{font-weight:900;font-size:30px;letter-spacing:-.03em;margin-top:6px}
+#d .hero{margin-top:8px;display:flex;align-items:baseline;gap:10px}
+#d .hero b{font-weight:900;font-size:76px;letter-spacing:-.04em;line-height:1}
+#d .hero small{font-weight:700;font-size:24px;color:var(--ash)}
+#d .hero .up{font-family:'JetBrains Mono';font-size:12px;color:#7fe0a0;background:rgba(127,224,160,.12);border:1px solid rgba(127,224,160,.3);padding:4px 9px;border-radius:999px;align-self:center}
+#d .chart{flex:1;margin-top:18px;display:flex;align-items:flex-end;gap:9px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+#d .bar{flex:1;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#26301a,#1a2113);position:relative}
+#d .bar.on{background:linear-gradient(180deg,#d6ff5e,var(--lime));box-shadow:0 0 24px -4px rgba(196,240,53,.6)}
+#d .bar span{position:absolute;top:-18px;left:0;right:0;text-align:center;font-family:'JetBrains Mono';font-size:9px;color:var(--ash)}
+#d .bar.on span{color:var(--lime)}
+#d .axis{display:flex;gap:9px;margin-top:8px}
+#d .axis div{flex:1;text-align:center;font-family:'JetBrains Mono';font-size:9px;color:var(--ash);letter-spacing:.04em}
+#d .foot{display:flex;margin-top:18px;border-top:1px solid var(--line)}
+#d .f{flex:1;padding:16px 2px;border-right:1px solid var(--line)}
+#d .f:last-child{border-right:none}
+#d .f b{display:block;font-weight:900;font-size:24px}
+#d .f span{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:4px;display:block}
+#d .share{width:100%;border:none;border-radius:14px;padding:16px;font-family:inherit;font-weight:800;font-size:16px;background:var(--lime);color:#06270a;cursor:pointer;margin-top:18px}
+#d .row{display:flex;gap:10px;margin-top:10px}
+#d .row button{flex:1;border:1px solid var(--line);background:transparent;border-radius:14px;padding:13px;font-family:inherit;font-weight:600;font-size:13px;color:var(--chalk);cursor:pointer}
+#d .back{text-align:center;font-family:'JetBrains Mono';font-size:12px;color:var(--ash);padding:12px 0 0}
+
+@media(max-width:880px){.stage{gap:48px}}
+</style></head>
+<body>
+<div class="page">
+  <div class="kick">HYBRID · Share to story</div>
+  <h1>Session result — finalists</h1>
+  <p>Two share-card directions side by side: a kinetic typographic take and a data-viz progress take. Same HYBRID palette + type, same data.</p>
+</div>
+
+<div class="stage">
+
+  <!-- 14 · Kinetic -->
+  <div class="col" id="k">
+    <div class="phone">
+      <div class="ticker">
+        <div class="line">Night workout · Night workout ·</div>
+        <div class="line dim">· Night workout · Night workout</div>
+        <div class="line">Night workout · Night workout ·</div>
+        <div class="line on">· Night workout · Night workout</div>
+        <div class="line dim">Night workout · Night workout ·</div>
+        <div class="line">· Night workout · Night workout</div>
+        <div class="line dim">Night workout · Night workout ·</div>
+        <div class="line">· Night workout · Night workout</div>
+      </div>
+      <div class="veil"></div>
+      <div class="wrap">
+        <div class="top"><div class="logo">HYBRID</div><div class="badge">✓ Complete</div></div>
+        <div class="mid">
+          <div class="kick">You moved</div>
+          <div class="big">20<small>.0t</small></div>
+          <div class="sub">Night workout — done.</div>
+          <div class="chips"><span class="chip"><b>1</b> min</span><span class="chip"><b>2</b> sets</span><span class="chip"><b>20.0t</b> vol</span></div>
+        </div>
+        <div class="acts">
+          <button class="share">↗ Share to story</button>
+          <div class="row"><button>★ Save as routine</button><button>See analysis →</button></div>
+        </div>
+        <div class="back">Done — back to Today</div>
+      </div>
+    </div>
+    <div class="cap"><b>14 · Kinetic</b></div>
+  </div>
+
+  <!-- 15 · Data Viz -->
+  <div class="col" id="d">
+    <div class="phone">
+      <div class="wrap">
+        <div class="top"><div class="logo">HYBRID</div><div class="date">22 JUN · 22:41</div></div>
+        <div class="kick">Session complete</div>
+        <div class="h1">Night workout</div>
+        <div class="hero"><b>20.0</b><small>t volume</small><span class="up">▲ new high</span></div>
+        <div class="chart">
+          <div class="bar" style="height:34%"><span>9t</span></div>
+          <div class="bar" style="height:50%"><span>13t</span></div>
+          <div class="bar" style="height:42%"><span>11t</span></div>
+          <div class="bar" style="height:64%"><span>16t</span></div>
+          <div class="bar" style="height:55%"><span>14t</span></div>
+          <div class="bar" style="height:70%"><span>17t</span></div>
+          <div class="bar on" style="height:100%"><span>20t</span></div>
+        </div>
+        <div class="axis"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Tonight</div></div>
+        <div class="foot">
+          <div class="f"><b>1</b><span>Minutes</span></div>
+          <div class="f"><b>2</b><span>Sets</span></div>
+          <div class="f"><b>7</b><span>Day streak</span></div>
+        </div>
+        <button class="share">↗ Share to story</button>
+        <div class="row"><button>★ Save as routine</button><button>See analysis →</button></div>
+        <div class="back">Done — back to Today</div>
+      </div>
+    </div>
+    <div class="cap"><b>15 · Data Viz</b></div>
+  </div>
+
+</div>
+</body></html>
