@@ -423,35 +423,6 @@ export default function AuroraLogger({
         );
       })()}
 
-      <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>
-            {t("w.train.logger.aiCoach")}{sessions.length > 0 ? ` · ${t("w.train.logger.readiness")} ${rx.readiness}/100` : ""}
-          </div>
-          <button onClick={loadPrescribed} style={pill("violet")}>
-            {sessions.length > 0 ? t("w.train.logger.usePrescribed") : t("w.train.logger.startSession")}
-          </button>
-        </div>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 8, color: C("ash") }}>
-          {sessions.length > 0
-            ? rx.why
-            : t("w.train.logger.coachIntro")}
-        </p>
-      </div>
-
-      {routines.length > 0 && (
-        <div style={{ ...card, marginBottom: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.train.logger.yourRoutines")}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-            {routines.map((r) => (
-              <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" · ")}>
-                {r.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
@@ -477,6 +448,22 @@ export default function AuroraLogger({
         placeholder={t("w.train.logger.sessionTitlePh")}
         style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", outline: "none", boxSizing: "border-box", width: "100%", marginBottom: 14 }}
       />
+
+      {/* Empty-state quick-starts (compact — keeps this a QUICK LOG, not a
+          builder): pull today's AI-prescribed session, or load a saved routine.
+          Hidden once you've added/seeded blocks. */}
+      {blocks.length === 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 14 }}>
+          <button onClick={loadPrescribed} style={pill("violet")}>
+            {sessions.length > 0 ? `✦ ${t("w.train.logger.usePrescribed")} · ${rx.readiness}` : `✦ ${t("w.train.logger.startSession")}`}
+          </button>
+          {routines.map((r) => (
+            <button key={r.id} onClick={() => loadRoutine(r)} style={pill("lime")} title={r.blocks.map((b) => b.name).join(" · ")}>
+              {r.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <WorkoutBlocks
         blocks={blocks}
