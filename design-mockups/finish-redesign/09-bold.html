@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share · Bold</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
+:root{--ink:#0c0d0c;--lime:#c4f035;--chalk:#f4f6f2;--ash:#8b8f86}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
+.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000;background:var(--ink)}
+.stripe{position:absolute;left:0;right:0;top:0;height:46%;background:var(--lime);
+  clip-path:polygon(0 0,100% 0,100% 78%,0 100%)}
+.bignum{position:absolute;top:96px;left:0;right:0;text-align:center;font-weight:900;font-size:210px;line-height:.8;letter-spacing:-.07em;color:var(--ink)}
+.bignum small{font-weight:700;font-size:60px}
+.wrap{position:absolute;inset:0;padding:54px 28px 26px;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center;color:var(--ink);position:relative;z-index:2}
+.logo{font-weight:900;letter-spacing:.3em;font-size:15px}
+.badge{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.14em;font-weight:700}
+.spacer{flex:1}
+.kick{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime)}
+.h1{font-weight:900;font-size:60px;line-height:.86;letter-spacing:-.04em;text-transform:uppercase;margin-top:10px}
+.sub{font-weight:700;font-size:16px;color:var(--ash);margin-top:14px}
+.stats{display:flex;margin-top:24px;border-top:2px solid #2a2d2a}
+.st{flex:1;padding:16px 2px;border-right:2px solid #2a2d2a}
+.st:last-child{border-right:none}
+.st b{display:block;font-weight:900;font-size:28px;letter-spacing:-.02em}
+.st span{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.1em;color:var(--ash);text-transform:uppercase;margin-top:4px;display:block}
+.share{width:100%;border:none;border-radius:0;padding:18px;font-family:inherit;font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.04em;background:var(--lime);color:var(--ink);cursor:pointer;margin-top:22px}
+.row{display:flex;gap:10px;margin-top:10px}
+.row button{flex:1;border:2px solid var(--chalk);background:transparent;border-radius:0;padding:13px;font-family:inherit;font-weight:800;font-size:13px;text-transform:uppercase;color:var(--chalk);cursor:pointer}
+.back{text-align:center;font-family:'JetBrains Mono';font-size:12px;color:var(--ash);padding:14px 0 0}
+</style></head>
+<body><div class="phone">
+  <div class="stripe"></div>
+  <div class="bignum">20<small>.0t</small></div>
+  <div class="wrap">
+    <div class="top"><div class="logo">HYBRID</div><div class="badge">SESSION ✓</div></div>
+    <div class="spacer"></div>
+    <div class="kick">Twenty tonnes moved</div>
+    <div class="h1">Night<br>workout.</div>
+    <div class="sub">No excuses. Logged & done.</div>
+    <div class="stats">
+      <div class="st"><b>1</b><span>Minutes</span></div>
+      <div class="st"><b>2</b><span>Sets</span></div>
+      <div class="st"><b>20.0t</b><span>Volume</span></div>
+    </div>
+    <button class="share">↗ Share to story</button>
+    <div class="row"><button>★ Save routine</button><button>Analysis →</button></div>
+    <div class="back">Done — back to Today</div>
+  </div>
+</div></body></html>

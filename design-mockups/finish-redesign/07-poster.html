@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share · Poster</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--ink:#0c0d0c;--lime:#c4f035;--chalk:#f4f6f2;--ash:#7e827a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Archivo,system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;color:var(--chalk)}
+.phone{width:390px;height:844px;border-radius:46px;overflow:hidden;position:relative;border:1px solid #1c1c1c;box-shadow:0 50px 130px -30px #000;background:var(--ink)}
+.wrap{position:absolute;inset:0;display:flex;flex-direction:column}
+.head{padding:52px 28px 16px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #2a2d2a}
+.head .logo{font-weight:900;letter-spacing:.3em;font-size:15px}
+.head .meta{font-family:'JetBrains Mono';font-size:10px;color:var(--ash);text-align:right;letter-spacing:.06em}
+.hero{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 28px;overflow:hidden}
+.watermark{position:absolute;right:-30px;top:50%;transform:translateY(-50%) rotate(90deg);font-weight:900;font-size:170px;color:rgba(196,240,53,.06);letter-spacing:-.05em;white-space:nowrap}
+.kick{font-family:'Archivo Narrow';font-weight:700;font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:var(--lime)}
+.big{font-weight:900;font-size:128px;line-height:.8;letter-spacing:-.05em;margin-top:10px}
+.big small{font-weight:600;font-size:42px;color:var(--ash)}
+.rule{height:3px;background:var(--lime);width:64px;margin:24px 0}
+.body{font-size:16px;line-height:1.5;color:#c9ccc4;max-width:280px}
+.body b{color:var(--chalk);font-weight:700}
+.foot{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #2a2d2a}
+.f{padding:18px 20px;border-right:1px solid #2a2d2a}
+.f:last-child{border-right:none}
+.f b{display:block;font-weight:900;font-size:26px;letter-spacing:-.02em}
+.f span{font-family:'Archivo Narrow';font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin-top:4px;display:block}
+.acts{padding:18px 28px 24px;border-top:1px solid #2a2d2a}
+.share{width:100%;border:none;background:var(--lime);color:var(--ink);border-radius:12px;padding:16px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.row{display:flex;gap:10px;margin-top:10px}
+.row button{flex:1;border:1px solid #2a2d2a;background:transparent;border-radius:12px;padding:13px;font-family:inherit;font-weight:600;font-size:13px;color:var(--chalk);cursor:pointer}
+.back{text-align:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ash);padding:14px 0 0;letter-spacing:.06em}
+</style></head>
+<body><div class="phone"><div class="wrap">
+  <div class="head"><div class="logo">HYBRID</div><div class="meta">VOL.1 · NO.22<br>22 JUN 2026</div></div>
+  <div class="hero">
+    <div class="watermark">HYBRID</div>
+    <div class="kick">Session complete</div>
+    <div class="big">20.0<small>t</small></div>
+    <div class="rule"></div>
+    <div class="body"><b>Night workout.</b> Twenty tonnes moved across two sets — short, sharp, and on the record.</div>
+  </div>
+  <div class="foot">
+    <div class="f"><b>1</b><span>Minutes</span></div>
+    <div class="f"><b>2</b><span>Sets</span></div>
+    <div class="f"><b>20.0t</b><span>Volume</span></div>
+  </div>
+  <div class="acts">
+    <button class="share">↗ Share to story</button>
+    <div class="row"><button>★ Save as routine</button><button>See analysis →</button></div>
+    <div class="back">Done — back to Today</div>
+  </div>
+</div></div></body></html>
