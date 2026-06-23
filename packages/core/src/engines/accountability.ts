@@ -99,6 +99,9 @@ export function computeAccountability(
   const dormantBoost = daysSinceLast > 14 ? 25 : 0;
   const risk = Math.round(clamp(gapRisk + declineRisk + targetMiss + dormantBoost, 0, 100));
 
+  // "dormant" is reserved for a genuine absence (>14d). A high risk score with
+  // RECENT activity is "at-risk", not dormant — otherwise someone who trained a
+  // few days ago gets the "it's been a while" win-back message.
   const band: EngagementBand =
     daysSinceLast > 14
       ? "dormant"
@@ -108,9 +111,7 @@ export function computeAccountability(
           ? "steady"
           : risk < 55
             ? "wobbling"
-            : risk < 80
-              ? "at-risk"
-              : "dormant";
+            : "at-risk";
 
   const drivers: AccountabilityDriver[] = [];
   if (daysSinceLast >= 1) drivers.push({ label: `${daysSinceLast}d since last session`, weight: Math.round(gapRisk) });
