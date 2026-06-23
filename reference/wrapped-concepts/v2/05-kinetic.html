@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>HYBRID · Kinetic</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Archivo+Narrow:wght@700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Archivo",system-ui,sans-serif;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#0c0d0c}
+  .stage{position:relative;width:min(440px,100vw);height:min(900px,100vh);overflow:hidden;background:#0c0d0c;transition:background .5s ease}
+
+  .bars{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:6px;z-index:40}
+  .bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
+  .bars i b{display:block;height:100%;width:0;background:#fff}
+  .wmtop{position:absolute;top:34px;left:24px;z-index:30;font-weight:900;font-size:18px;letter-spacing:-.02em;color:#fff;mix-blend-mode:difference}
+  .num{position:absolute;top:34px;right:24px;z-index:30;font-family:"JetBrains Mono";font-size:12px;letter-spacing:.2em;color:#fff;mix-blend-mode:difference}
+
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:30px 24px 70px}
+  .slide.on{display:flex}
+
+  /* mask-reveal line: each line clips its text sliding up */
+  .line{overflow:hidden;display:block}
+  .line>span{display:block;transform:translateY(110%);transition:transform .7s cubic-bezier(.16,1,.3,1)}
+  .slide.on .line>span{transform:none}
+  .slide.on .l2>span{transition-delay:.12s}.slide.on .l3>span{transition-delay:.24s}.slide.on .l4>span{transition-delay:.36s}.slide.on .l5>span{transition-delay:.48s}
+
+  .display{font-family:"Archivo";font-weight:900;letter-spacing:-.045em;line-height:.86;text-transform:uppercase}
+  .xl{font-size:clamp(78px,26vw,168px)}
+  .l{font-size:clamp(40px,13vw,84px)}
+  .narrow{font-family:"Archivo Narrow";font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  .kick{font-family:"JetBrains Mono";font-weight:700;font-size:13px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:14px}
+  .sub{font-weight:600;font-size:clamp(15px,4.2vw,19px);margin-top:20px;max-width:24ch;line-height:1.35}
+
+  .marquee{position:absolute;left:0;right:0;white-space:nowrap;overflow:hidden;opacity:.9}
+  .marquee .track{display:inline-block;animation:scroll 14s linear infinite;font-family:"Archivo";font-weight:900;font-size:clamp(40px,12vw,80px);text-transform:uppercase;letter-spacing:-.03em}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  .foot{position:absolute;bottom:24px;left:24px;z-index:30;font-family:"JetBrains Mono";font-size:11px;mix-blend-mode:difference;color:#fff}
+  .foot b{font-family:"Archivo";font-weight:900}
+  .nav{position:absolute;inset:0;display:flex;z-index:35}.nav div{flex:1;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="bars" id="bars"></div>
+    <div class="wmtop">HYBRID.</div><div class="num">SPRING ’26</div>
+
+    <!-- 1 -->
+    <div class="slide on" data-bg="#0c0d0c" data-fg="#f3f4ef" data-acc="#c4f035">
+      <span class="kick" style="color:#c4f035">The recap</span>
+      <h1 class="display xl" style="color:#f3f4ef">
+        <span class="line l1"><span>One</span></span>
+        <span class="line l2"><span style="color:#c4f035">season.</span></span>
+        <span class="line l3"><span>No</span></span>
+        <span class="line l4"><span>skips.</span></span>
+      </h1>
+      <p class="sub" style="color:#8b8f86">142 sessions. Tap through the numbers that built it.</p>
+    </div>
+
+    <!-- 2 sessions -->
+    <div class="slide" data-bg="#c4f035" data-fg="#0c0d0c">
+      <span class="kick" style="color:#0c0d0c">You showed up</span>
+      <h2 class="display" style="color:#0c0d0c">
+        <span class="line l1"><span class="xl">142</span></span>
+        <span class="line l2"><span class="l">times.</span></span>
+      </h2>
+      <p class="sub" style="color:#0c0d0c">Your most consistent quarter on record. One every other day.</p>
+    </div>
+
+    <!-- 3 volume marquee -->
+    <div class="slide" data-bg="#0c0d0c" data-fg="#fff">
+      <span class="kick" style="color:#7fd4e8">Total load</span>
+      <h2 class="display" style="color:#fff">
+        <span class="line l1"><span class="xl" style="color:#7fd4e8">1.24M</span></span>
+        <span class="line l2"><span class="l">kg moved.</span></span>
+      </h2>
+      <div class="marquee" style="bottom:120px"><div class="track">A BLUE WHALE · A BLUE WHALE · A BLUE WHALE · A BLUE WHALE · </div></div>
+    </div>
+
+    <!-- 4 PR -->
+    <div class="slide" data-bg="#e0625e" data-fg="#fff">
+      <span class="kick" style="color:#fff">Personal best</span>
+      <h2 class="display" style="color:#fff">
+        <span class="line l1"><span class="l">Deadlift</span></span>
+        <span class="line l2"><span class="xl">220</span></span>
+        <span class="line l3"><span class="l">kilos.</span></span>
+      </h2>
+      <p class="sub" style="color:#fff">One of 38 records you broke. Up 15 kg this season.</p>
+    </div>
+
+    <!-- 5 streak -->
+    <div class="slide" data-bg="#7fd4e8" data-fg="#0c0d0c">
+      <span class="kick" style="color:#0c0d0c">Unbroken</span>
+      <h2 class="display" style="color:#0c0d0c">
+        <span class="line l1"><span class="xl">21</span></span>
+        <span class="line l2"><span class="l">week streak.</span></span>
+      </h2>
+      <p class="sub" style="color:#0c0d0c">Discipline you can measure. The hardest stat to fake.</p>
+    </div>
+
+    <!-- 6 close -->
+    <div class="slide" data-bg="#0c0d0c" data-fg="#f3f4ef" data-acc="#c4f035">
+      <span class="kick" style="color:#c4f035">See you in summer</span>
+      <h2 class="display xl" style="color:#f3f4ef">
+        <span class="line l1"><span>Go</span></span>
+        <span class="line l2"><span style="color:#c4f035">again.</span></span>
+      </h2>
+      <p class="sub" style="color:#8b8f86">Tracked with <b style="color:#f3f4ef">HYBRID<span style="color:#c4f035">.</span></b></p>
+    </div>
+
+    <div class="foot">Tracked with <b>HYBRID.</b></div>
+    <div class="nav"><div id="prev"></div><div id="next"></div></div>
+  </div>
+
+<script>
+  const stage=document.getElementById('stage');
+  const slides=[...document.querySelectorAll('.slide')];
+  const barsEl=document.getElementById('bars');
+  slides.forEach(()=>barsEl.insertAdjacentHTML('beforeend','<i><b></b></i>'));
+  const fills=[...barsEl.querySelectorAll('b')];
+  const DUR=4400;let cur=0,timer;
+  function show(i){
+    cur=(i+slides.length)%slides.length;
+    slides.forEach((s,n)=>s.classList.toggle('on',n===cur));
+    stage.style.background=slides[cur].dataset.bg||'#0c0d0c';
+    fills.forEach((f,n)=>{f.style.transition='none';f.style.width=n<cur?'100%':'0';f.style.background=(slides[cur].dataset.fg||'#fff')});
+    requestAnimationFrame(()=>{const f=fills[cur];f.style.transition=`width ${DUR}ms linear`;f.style.width='100%'});
+    clearTimeout(timer);timer=setTimeout(()=>show(cur+1),DUR);
+  }
+  document.getElementById('next').onclick=()=>show(cur+1);
+  document.getElementById('prev').onclick=()=>show(cur-1);
+  show(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>HYBRID · Monolith</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  body{background:#000;color:#f3f4ef;font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .mono{font-family:"JetBrains Mono",monospace}
+  section{height:100vh;width:100%;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:0 28px;position:relative;text-align:center;overflow:hidden}
+  .eyebrow{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.42em;color:#6c6f68;text-transform:uppercase}
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity 1.1s cubic-bezier(.16,1,.3,1),transform 1.1s cubic-bezier(.16,1,.3,1)}
+  .in .reveal{opacity:1;transform:none}
+  .in .d1{transition-delay:.05s}.in .d2{transition-delay:.18s}.in .d3{transition-delay:.32s}.in .d4{transition-delay:.46s}
+
+  /* hero */
+  .glow{position:absolute;width:120vw;height:120vw;border-radius:50%;
+    background:radial-gradient(circle,rgba(196,240,53,.16),transparent 60%);filter:blur(20px);
+    top:-30vw;right:-40vw;pointer-events:none}
+  .wm{font-weight:900;font-size:clamp(40px,11vw,128px);letter-spacing:-.04em;line-height:.9}
+  .wm i{color:#c4f035;font-style:normal}
+  .lede{font-weight:300;font-size:clamp(18px,4.5vw,30px);color:#a7aaa2;margin-top:22px;max-width:14ch;line-height:1.25}
+
+  /* giant number screens */
+  .figure{font-weight:900;letter-spacing:-.05em;line-height:.82;
+    font-size:clamp(96px,34vw,360px);
+    background:linear-gradient(180deg,#ffffff,#9fa39a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .figure.lime{background:linear-gradient(180deg,#dcff66,#9fce1f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .unit{font-weight:600;font-size:clamp(18px,5vw,34px);color:#f3f4ef;margin-top:6px}
+  .caption{font-weight:300;font-size:clamp(15px,4vw,22px);color:#8b8f86;margin-top:26px;max-width:22ch;line-height:1.4}
+
+  /* PR list */
+  .pr-wrap{width:min(560px,92vw);text-align:left}
+  .pr{display:flex;justify-content:space-between;align-items:baseline;padding:22px 0;border-bottom:1px solid #1b1c1a}
+  .pr .n{font-weight:600;font-size:clamp(20px,5vw,30px)}
+  .pr .v{font-weight:800;font-size:clamp(20px,5vw,30px)}
+  .pr.hot .v{color:#c4f035}.pr .delta{font-family:"JetBrains Mono";font-size:13px;color:#6c6f68;margin-left:10px}
+
+  .scrollcue{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);font-family:"JetBrains Mono";font-size:11px;letter-spacing:.3em;color:#55584f;text-transform:uppercase;animation:bob 2.2s ease-in-out infinite;z-index:10}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);opacity:.5}50%{transform:translateX(-50%) translateY(7px);opacity:1}}
+  .foot{font-family:"JetBrains Mono";font-size:12px;color:#55584f;margin-top:36px}
+  .foot b{font-family:"Archivo";font-weight:900;color:#f3f4ef}.foot b i{color:#c4f035;font-style:normal}
+  .progress{position:fixed;top:0;left:0;height:2px;background:#c4f035;width:0;z-index:20;transition:width .15s linear}
+</style>
+</head>
+<body>
+  <div class="progress" id="bar"></div>
+
+  <section class="in">
+    <div class="glow"></div>
+    <div class="reveal d1 eyebrow">Spring · 2026</div>
+    <h1 class="reveal d2 wm" style="margin-top:18px">HYBRID<i>.</i></h1>
+    <p class="reveal d3 lede">Your season, in full.</p>
+  </section>
+
+  <section>
+    <div class="reveal d1 eyebrow">You showed up</div>
+    <div class="reveal d2 figure" style="margin-top:14px">142</div>
+    <div class="reveal d3 unit">sessions</div>
+    <p class="reveal d4 caption">Roughly one every other day. Quietly, relentlessly.</p>
+  </section>
+
+  <section>
+    <div class="reveal d1 eyebrow">You moved</div>
+    <div class="reveal d2 figure lime" style="margin-top:14px">1.24<span style="font-size:.4em;letter-spacing:0">M</span></div>
+    <div class="reveal d3 unit">kilograms, total</div>
+    <p class="reveal d4 caption">The mass of a blue whale. You lifted it, set by set.</p>
+  </section>
+
+  <section>
+    <div class="reveal d1 eyebrow">You broke</div>
+    <div class="reveal pr-wrap">
+      <div class="pr hot d2 reveal"><span class="n">Deadlift</span><span class="v">220 kg<span class="delta">+15</span></span></div>
+      <div class="pr hot d3 reveal"><span class="n">Bench Press</span><span class="v">102.5 kg<span class="delta">+5</span></span></div>
+      <div class="pr d4 reveal"><span class="n">Back Squat</span><span class="v">180 kg<span class="delta">+10</span></span></div>
+    </div>
+    <p class="reveal d4 caption" style="margin-top:30px">38 personal records. Three of them, this month.</p>
+  </section>
+
+  <section>
+    <div class="reveal d1 eyebrow">The one thing</div>
+    <div class="reveal d2 figure" style="font-size:clamp(56px,16vw,150px);margin-top:14px">21</div>
+    <div class="reveal d3 unit">weeks, unbroken</div>
+    <p class="reveal d4 caption">Your longest streak yet. Consistency is the whole secret.</p>
+  </section>
+
+  <section class="in">
+    <div class="glow" style="background:radial-gradient(circle,rgba(196,240,53,.12),transparent 60%);left:-40vw;right:auto;top:auto;bottom:-30vw"></div>
+    <div class="reveal d1 eyebrow">That was spring</div>
+    <h2 class="reveal d2 wm" style="font-size:clamp(34px,9vw,92px);margin-top:14px">Summer is<br><i>yours.</i></h2>
+    <p class="reveal d3 foot">Tracked with <b>HYBRID<i>.</i></b></p>
+  </section>
+
+  <div class="scrollcue">scroll ↓</div>
+
+<script>
+  const secs=[...document.querySelectorAll('section')];
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.5});
+  secs.forEach(s=>io.observe(s));
+  const bar=document.getElementById('bar');
+  addEventListener('scroll',()=>{const m=document.documentElement.scrollHeight-innerHeight;bar.style.width=(scrollY/m*100)+'%'},{passive:true});
+</script>
+</body>
+</html>

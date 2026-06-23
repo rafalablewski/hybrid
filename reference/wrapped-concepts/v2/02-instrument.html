@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>HYBRID · Instrument</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#000;font-family:"Archivo",system-ui,sans-serif;color:#eef1f4;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .stage{position:relative;width:min(440px,100vw);height:min(900px,100vh);background:radial-gradient(130% 90% at 50% 0%,#0e1620,#05080c 70%);overflow:hidden}
+  /* faint hud grid */
+  .stage::before{content:"";position:absolute;inset:0;opacity:.5;
+    background-image:linear-gradient(rgba(120,180,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,180,210,.05) 1px,transparent 1px);
+    background-size:36px 36px}
+
+  .bars{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:6px;z-index:30}
+  .bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+  .bars i b{display:block;height:100%;width:0;background:#7fd4e8;border-radius:2px}
+  .topbar{position:absolute;top:34px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;z-index:20;
+    font-family:"JetBrains Mono";font-size:11px;letter-spacing:.18em;color:#5d7585;text-transform:uppercase}
+  .topbar .wm{font-family:"Archivo";font-weight:900;font-size:18px;color:#eef1f4;letter-spacing:-.02em}
+  .topbar .wm i{color:#7fd4e8;font-style:normal}
+
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:72px 30px 56px;text-align:center}
+  .slide.on{display:flex}
+  .label{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.34em;color:#5d7585;text-transform:uppercase}
+
+  .pop{opacity:0;transform:translateY(16px) scale(.98);animation:pop .7s cubic-bezier(.16,1,.3,1) forwards}
+  .slide.on .d1{animation-delay:.05s}.slide.on .d2{animation-delay:.2s}.slide.on .d3{animation-delay:.38s}.slide.on .d4{animation-delay:.56s}
+  @keyframes pop{to{opacity:1;transform:none}}
+
+  /* gauge */
+  .gauge{position:relative;width:300px;height:300px;margin-top:8px}
+  .gauge svg{transform:rotate(135deg)}
+  .gauge .read{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .big{font-weight:900;font-size:74px;letter-spacing:-.03em;line-height:1}
+  .gauge .big span{font-size:30px;color:#7fd4e8}
+  .gauge .sub{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.2em;color:#5d7585;margin-top:4px;text-transform:uppercase}
+
+  .big2{font-weight:900;font-size:96px;letter-spacing:-.04em;line-height:.9}
+  .accent{color:#7fd4e8}
+  .cap{font-weight:400;font-size:18px;color:#9fb0bc;margin-top:18px;max-width:24ch;line-height:1.4}
+
+  /* telemetry rows */
+  .telem{width:min(360px,86%);margin-top:10px}
+  .trow{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid rgba(120,180,210,.14)}
+  .trow .k{font-family:"JetBrains Mono";font-size:13px;color:#7fd4e8;letter-spacing:.14em}
+  .trow .v{font-weight:700;font-size:22px}
+  .trow .v small{font-family:"JetBrains Mono";color:#5d7585;font-weight:400;font-size:12px;margin-left:6px}
+
+  .foot{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-family:"JetBrains Mono";font-size:11px;color:#46586a}
+  .foot b{font-family:"Archivo";font-weight:900;color:#cfd9e0}.foot b i{color:#7fd4e8;font-style:normal}
+  .nav{position:absolute;inset:0;display:flex;z-index:25}.nav div{flex:1;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="bars" id="bars"></div>
+    <div class="topbar"><span class="wm">HYBRID<i>.</i></span><span>SPRING ’26 · RECAP</span></div>
+
+    <!-- 1 BOOT -->
+    <div class="slide on">
+      <div class="pop d1 label">System online</div>
+      <div class="pop d2 big2" style="margin-top:14px">SPRING<br><span class="accent">REPORT</span></div>
+      <div class="pop d3 cap">142 sessions logged. Diagnostics complete. Swipe to read the telemetry.</div>
+    </div>
+
+    <!-- 2 GAUGE: volume -->
+    <div class="slide">
+      <div class="pop d1 label">Total load moved</div>
+      <div class="pop d2 gauge">
+        <svg width="300" height="300" viewBox="0 0 300 300">
+          <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(120,180,210,.14)" stroke-width="16" stroke-dasharray="612 816" stroke-linecap="round"/>
+          <circle id="arc" cx="150" cy="150" r="130" fill="none" stroke="#7fd4e8" stroke-width="16" stroke-dasharray="0 816" stroke-linecap="round" style="filter:drop-shadow(0 0 10px rgba(127,212,232,.6))"/>
+        </svg>
+        <div class="read"><div class="big">1.24<span>M</span></div><div class="sub">kg moved</div></div>
+      </div>
+      <div class="pop d3 cap" style="margin-top:24px">Peak output. That's a blue whale, lifted in pieces.</div>
+    </div>
+
+    <!-- 3 telemetry -->
+    <div class="slide">
+      <div class="pop d1 label">Performance readout</div>
+      <div class="pop telem">
+        <div class="trow d1"><span class="k">SESSIONS</span><span class="v">142</span></div>
+        <div class="trow d2"><span class="k">PERSONAL BESTS</span><span class="v accent">38</span></div>
+        <div class="trow d3"><span class="k">STREAK</span><span class="v">21<small>WEEKS</small></span></div>
+        <div class="trow d4"><span class="k">TIME UNDER BAR</span><span class="v">96<small>HRS</small></span></div>
+      </div>
+    </div>
+
+    <!-- 4 top lift -->
+    <div class="slide">
+      <div class="pop d1 label">Max recorded · single lift</div>
+      <div class="pop d2 big2" style="margin-top:14px"><span class="accent">220</span><span style="font-size:.34em">kg</span></div>
+      <div class="pop d3 cap">Deadlift, week 18. A new ceiling — up 15 kg on the season.</div>
+    </div>
+
+    <!-- 5 fun -->
+    <div class="slide">
+      <div class="pop d1 label">Anomaly detected</div>
+      <div class="pop d2" style="font-size:120px;line-height:1;margin-top:6px">🐋</div>
+      <div class="pop d3 big2" style="font-size:40px;margin-top:8px">Whale-class output.</div>
+      <div class="pop d4 cap">You out-lifted 99% of your past self. Recalibrating expectations.</div>
+    </div>
+
+    <!-- 6 close -->
+    <div class="slide">
+      <div class="pop d1 label">End of report</div>
+      <div class="pop d2 big2" style="margin-top:14px">Summer<br>awaits<span class="accent">.</span></div>
+      <div class="pop d3 cap">Next quarter starts now.</div>
+    </div>
+
+    <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    <div class="nav"><div id="prev"></div><div id="next"></div></div>
+  </div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const barsEl=document.getElementById('bars');
+  slides.forEach(()=>barsEl.insertAdjacentHTML('beforeend','<i><b></b></i>'));
+  const fills=[...barsEl.querySelectorAll('b')];
+  const DUR=4200;let cur=0,timer,start;
+  function arc(){const a=document.getElementById('arc');if(a){a.style.transition='none';a.setAttribute('stroke-dasharray','0 816');requestAnimationFrame(()=>{a.style.transition='stroke-dasharray 1.4s cubic-bezier(.16,1,.3,1)';a.setAttribute('stroke-dasharray','550 816')})}}
+  function show(i){
+    cur=(i+slides.length)%slides.length;
+    slides.forEach((s,n)=>s.classList.toggle('on',n===cur));
+    fills.forEach((f,n)=>{f.style.transition='none';f.style.width=n<cur?'100%':'0'});
+    requestAnimationFrame(()=>{const f=fills[cur];f.style.transition=`width ${DUR}ms linear`;f.style.width='100%'});
+    if(slides[cur].querySelector('#arc'))arc();
+    clearTimeout(timer);timer=setTimeout(()=>show(cur+1),DUR);
+  }
+  document.getElementById('next').onclick=()=>show(cur+1);
+  document.getElementById('prev').onclick=()=>show(cur-1);
+  show(0);
+</script>
+</body>
+</html>

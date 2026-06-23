@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>HYBRID · Halo</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Archivo",system-ui,sans-serif;color:#16181c;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#e9eaf0}
+  @keyframes mesh{0%{background-position:0% 0%,100% 0%,50% 100%}50%{background-position:40% 60%,60% 40%,30% 20%}100%{background-position:0% 0%,100% 0%,50% 100%}}
+  .stage{position:relative;width:min(440px,100vw);height:min(900px,100vh);overflow:hidden;
+    background:
+      radial-gradient(60% 50% at 20% 15%,#ffd8e6,transparent 70%),
+      radial-gradient(55% 50% at 90% 25%,#c9e6ff,transparent 70%),
+      radial-gradient(70% 60% at 50% 100%,#d8ffe4,transparent 70%),
+      linear-gradient(180deg,#fbfcff,#f1f3f8);
+    background-size:200% 200%,200% 200%,200% 200%,100% 100%;animation:mesh 16s ease-in-out infinite}
+
+  .bars{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:6px;z-index:30}
+  .bars i{flex:1;height:3px;border-radius:2px;background:rgba(22,24,28,.14);overflow:hidden}
+  .bars i b{display:block;height:100%;width:0;background:#16181c}
+  .wmtop{position:absolute;top:34px;left:0;right:0;text-align:center;z-index:20;font-weight:900;font-size:19px;letter-spacing:-.02em}
+  .wmtop i{color:#ff4d7d;font-style:normal}
+
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:78px 30px 60px;text-align:center}
+  .slide.on{display:flex}
+  .kicker{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.26em;color:#7b8088;text-transform:uppercase}
+  .pop{opacity:0;transform:translateY(18px);animation:rise .8s cubic-bezier(.16,1,.3,1) forwards}
+  .slide.on .d1{animation-delay:.06s}.slide.on .d2{animation-delay:.22s}.slide.on .d3{animation-delay:.4s}.slide.on .d4{animation-delay:.58s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  .glass{background:rgba(255,255,255,.45);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.7);border-radius:30px;box-shadow:0 20px 50px rgba(60,70,110,.16)}
+
+  .hero{font-weight:900;letter-spacing:-.03em;line-height:.95;font-size:clamp(44px,13vw,84px)}
+  .grad-pink{background:linear-gradient(120deg,#ff4d7d,#ff8a5c);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cap{font-weight:500;font-size:clamp(16px,4.4vw,20px);color:#565b63;margin-top:18px;max-width:22ch;line-height:1.4}
+
+  /* rings */
+  .rings{position:relative;width:300px;height:300px}
+  .rings svg{transform:rotate(-90deg)}
+  .rings .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .rings .ctr b{font-weight:900;font-size:58px;letter-spacing:-.03em;line-height:1}
+  .rings .ctr span{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.18em;color:#7b8088;text-transform:uppercase;margin-top:2px}
+  .legend{display:flex;gap:18px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+  .legend div{display:flex;align-items:center;gap:7px;font-family:"JetBrains Mono";font-size:12px;color:#565b63}
+  .legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
+
+  .stat-num{font-weight:900;font-size:clamp(96px,32vw,200px);letter-spacing:-.04em;line-height:.85}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;margin-top:18px;
+    font-family:"JetBrains Mono";font-size:13px;letter-spacing:.06em}
+  .award{font-size:120px;line-height:1;filter:drop-shadow(0 10px 26px rgba(255,140,90,.4))}
+
+  .foot{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:"JetBrains Mono";font-size:11px;color:#9aa0a8}
+  .foot b{font-family:"Archivo";font-weight:900;color:#16181c}.foot b i{color:#ff4d7d;font-style:normal}
+  .nav{position:absolute;inset:0;display:flex;z-index:25}.nav div{flex:1;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="bars" id="bars"></div>
+    <div class="wmtop">HYBRID<i>.</i></div>
+
+    <div class="slide on">
+      <div class="pop d1 kicker">Spring 2026</div>
+      <div class="pop d2 hero" style="margin-top:14px">Look how<br>far you<br><span class="grad-pink">came.</span></div>
+      <div class="pop d3 cap">Three rings. One season. Let's close them.</div>
+    </div>
+
+    <div class="slide">
+      <div class="pop d1 kicker">Your season, in rings</div>
+      <div class="pop d2 rings" style="margin-top:14px">
+        <svg width="300" height="300" viewBox="0 0 300 300">
+          <circle cx="150" cy="150" r="128" fill="none" stroke="rgba(255,77,125,.15)" stroke-width="20"/>
+          <circle cx="150" cy="150" r="98" fill="none" stroke="rgba(124,196,90,.15)" stroke-width="20"/>
+          <circle cx="150" cy="150" r="68" fill="none" stroke="rgba(90,168,255,.15)" stroke-width="20"/>
+          <circle class="ring" data-r="128" cx="150" cy="150" r="128" fill="none" stroke="#ff4d7d" stroke-width="20" stroke-linecap="round"/>
+          <circle class="ring" data-r="98" cx="150" cy="150" r="98" fill="none" stroke="#7cc45a" stroke-width="20" stroke-linecap="round"/>
+          <circle class="ring" data-r="68" cx="150" cy="150" r="68" fill="none" stroke="#5aa8ff" stroke-width="20" stroke-linecap="round"/>
+        </svg>
+        <div class="ctr"><b>96%</b><span>goals hit</span></div>
+      </div>
+      <div class="pop d3 legend">
+        <div><i style="background:#ff4d7d"></i>Volume</div>
+        <div><i style="background:#7cc45a"></i>Consistency</div>
+        <div><i style="background:#5aa8ff"></i>Intensity</div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="pop d1 kicker">You showed up</div>
+      <div class="pop d2 stat-num grad-pink">142</div>
+      <div class="pop d3 cap">sessions logged — your most consistent quarter ever.</div>
+      <div class="pop d4 pill glass" style="color:#7cc45a">🟢 21-week streak, unbroken</div>
+    </div>
+
+    <div class="slide">
+      <div class="pop d1 award">🏅</div>
+      <div class="pop d2 hero" style="margin-top:14px">38 new<br><span class="grad-pink">records.</span></div>
+      <div class="pop d3 cap">Topped by a 220 kg deadlift — a personal ceiling, raised.</div>
+    </div>
+
+    <div class="slide">
+      <div class="pop d1 kicker">The headline</div>
+      <div class="pop d2 hero" style="margin-top:14px">1.24M kg</div>
+      <div class="pop d3 cap">moved this season — about the weight of a blue whale. 🐋</div>
+    </div>
+
+    <div class="slide">
+      <div class="pop d1 hero" style="margin-top:6px">Rings<br><span class="grad-pink">closed.</span></div>
+      <div class="pop d2 cap">Beautiful work. Summer's three rings are waiting.</div>
+      <div class="pop d3 foot" style="position:static;margin-top:34px">Tracked with <b>HYBRID<i>.</i></b></div>
+    </div>
+
+    <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    <div class="nav"><div id="prev"></div><div id="next"></div></div>
+  </div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const barsEl=document.getElementById('bars');
+  slides.forEach(()=>barsEl.insertAdjacentHTML('beforeend','<i><b></b></i>'));
+  const fills=[...barsEl.querySelectorAll('b')];
+  const DUR=4600;let cur=0,timer;
+  const pct=[.96,.88,.7];
+  function spinRings(){[...document.querySelectorAll('.ring')].forEach((c,i)=>{
+    const r=+c.dataset.r,C=2*Math.PI*r;
+    c.style.transition='none';c.style.strokeDasharray=C;c.style.strokeDashoffset=C;
+    requestAnimationFrame(()=>{c.style.transition='stroke-dashoffset 1.5s cubic-bezier(.16,1,.3,1) '+(i*.12)+'s';c.style.strokeDashoffset=C*(1-pct[i])});
+  })}
+  function show(i){
+    cur=(i+slides.length)%slides.length;
+    slides.forEach((s,n)=>s.classList.toggle('on',n===cur));
+    fills.forEach((f,n)=>{f.style.transition='none';f.style.width=n<cur?'100%':'0'});
+    requestAnimationFrame(()=>{const f=fills[cur];f.style.transition=`width ${DUR}ms linear`;f.style.width='100%'});
+    if(slides[cur].querySelector('.ring'))spinRings();
+    clearTimeout(timer);timer=setTimeout(()=>show(cur+1),DUR);
+  }
+  document.getElementById('next').onclick=()=>show(cur+1);
+  document.getElementById('prev').onclick=()=>show(cur-1);
+  show(0);
+</script>
+</body>
+</html>
