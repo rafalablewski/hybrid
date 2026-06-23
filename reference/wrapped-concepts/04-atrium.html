@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID Wrapped — Atrium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Archivo:wght@500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{--forest:#0f2a22;--forest2:#15392e;--cream:#f3ecdc;--gold:#d8b46a;--sage:#9db8a4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#081712;font-family:"Archivo",system-ui,sans-serif;color:var(--cream);min-height:100vh;padding:48px 24px 80px}
+  .head{max-width:1200px;margin:0 auto 40px}
+  .head h1{font-family:"JetBrains Mono";font-weight:500;letter-spacing:.2em;text-transform:uppercase;font-size:13px;color:var(--gold)}
+  .head h2{font-family:"Fraunces";font-weight:900;font-size:44px;letter-spacing:-.01em;margin-top:6px}
+  .head p{font-size:13px;color:#7e9a89;margin-top:10px;max-width:640px;line-height:1.6}
+  .gallery{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;max-width:1200px;margin:0 auto}
+
+  .card{
+    position:relative;width:340px;height:604px;border-radius:18px;overflow:hidden;
+    background:radial-gradient(120% 80% at 80% 0%,var(--forest2),var(--forest) 60%);
+    color:var(--cream);padding:48px 40px;display:flex;flex-direction:column;
+    box-shadow:0 30px 60px rgba(0,0,0,.55),inset 0 0 0 1px rgba(216,180,106,.18);
+  }
+  .card::before{content:"";position:absolute;inset:14px;border:1px solid rgba(216,180,106,.32);border-radius:10px;pointer-events:none}
+  .vign{position:absolute;inset:0;pointer-events:none;background:radial-gradient(100% 70% at 50% 120%,rgba(216,180,106,.10),transparent 60%)}
+
+  .wm{position:relative;font-family:"Fraunces";font-weight:900;font-size:24px;letter-spacing:0}
+  .wm i{color:var(--gold);font-style:normal}
+  .rule{position:relative;display:flex;align-items:center;gap:10px;margin-top:14px}
+  .rule .ln{height:1px;flex:1;background:rgba(216,180,106,.4)}
+  .eyebrow{position:relative;font-family:"JetBrains Mono";font-weight:500;font-size:11px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase}
+  .body{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center}
+  .foot{position:relative;font-family:"JetBrains Mono";font-size:11px;letter-spacing:.06em;color:var(--sage)}
+  .foot b{font-family:"Fraunces";font-weight:900;color:var(--cream)}.foot b i{color:var(--gold);font-style:normal}
+
+  .title{font-family:"Fraunces";font-weight:900;font-size:54px;line-height:1;letter-spacing:-.02em}
+  .title em{font-style:italic;font-weight:500;color:var(--gold)}
+  .stats{display:flex;margin-top:40px}
+  .stats .s{flex:1;text-align:center;border-right:1px solid rgba(216,180,106,.25)}
+  .stats .s:last-child{border:none}
+  .stats .v{font-family:"Fraunces";font-weight:600;font-size:40px;line-height:1}
+  .stats .l{font-family:"JetBrains Mono";font-size:10px;letter-spacing:.16em;color:var(--sage);margin-top:8px}
+
+  .pr-head{font-family:"Fraunces";font-style:italic;font-weight:500;font-size:34px;color:var(--gold)}
+  .pr{display:flex;justify-content:space-between;align-items:baseline;margin-top:20px;padding-bottom:14px;border-bottom:1px solid rgba(216,180,106,.22)}
+  .pr .n{font-family:"Fraunces";font-weight:500;font-size:22px}.pr .w{font-family:"Fraunces";font-weight:600;font-size:22px}
+  .pr.hot .w{color:var(--gold)}.pr.hot .n::before{content:"✦ ";color:var(--gold)}
+
+  .bar{margin-top:26px}
+  .bar .t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .bar .t b{font-family:"Fraunces";font-weight:500;font-size:21px}.bar .t span{font-family:"JetBrains Mono";font-size:12px;color:var(--sage)}
+  .track{height:8px;border-radius:4px;background:rgba(216,180,106,.16);overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--sage),var(--gold))}
+
+  .fun{text-align:center}.fun .e{font-size:104px;line-height:1;filter:saturate(.85)}
+  .fun .t{font-family:"Fraunces";font-weight:500;font-size:32px;line-height:1.22;margin-top:22px}
+  .fun .t em{font-style:italic;color:var(--gold)}
+</style>
+</head>
+<body>
+  <header class="head">
+    <h1>Concept 04</h1>
+    <h2>Atrium</h2>
+    <p>Premium editorial — deep forest field, gilt hairline frame, Fraunces serif display with italic accents. Quiet luxury; reads like a members-club annual report.</p>
+  </header>
+  <section class="gallery">
+    <article class="card">
+      <div class="vign"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="rule"><span class="eyebrow">Your workout</span><span class="ln"></span></div>
+      <div class="body">
+        <div class="title">Push <em>Day</em></div>
+        <div class="stats">
+          <div class="s"><div class="v">58</div><div class="l">MIN</div></div>
+          <div class="s"><div class="v">24</div><div class="l">SETS</div></div>
+          <div class="s"><div class="v">12.4t</div><div class="l">VOLUME</div></div>
+        </div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <article class="card">
+      <div class="vign"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="rule"><span class="eyebrow">Personal records</span><span class="ln"></span></div>
+      <div class="body">
+        <div class="pr-head">Two new records</div>
+        <div class="pr hot" style="margin-top:22px"><span class="n">Bench Press</span><span class="w">102.5 kg</span></div>
+        <div class="pr hot"><span class="n">Overhead Press</span><span class="w">60 kg</span></div>
+        <div class="pr"><span class="n">Incline DB</span><span class="w">34 kg</span></div>
+        <div class="pr"><span class="n">Cable Fly</span><span class="w">22 kg</span></div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <article class="card">
+      <div class="vign"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="rule"><span class="eyebrow">Muscle map</span><span class="ln"></span></div>
+      <div class="body">
+        <div class="bar"><div class="t"><b>Chest</b><span>5.2t</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+        <div class="bar"><div class="t"><b>Shoulders</b><span>3.8t</span></div><div class="track"><div class="fill" style="width:72%"></div></div></div>
+        <div class="bar"><div class="t"><b>Triceps</b><span>2.1t</span></div><div class="track"><div class="fill" style="width:58%"></div></div></div>
+        <div class="bar"><div class="t"><b>Back</b><span>1.3t</span></div><div class="track"><div class="fill" style="width:36%"></div></div></div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <article class="card">
+      <div class="vign"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="rule"><span class="eyebrow">Fun fact</span><span class="ln"></span></div>
+      <div class="body fun"><div class="e">🔥</div><div class="t">You moved <em>12,400 kg</em> — the weight of two grand pianos.</div></div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+  </section>
+</body>
+</html>

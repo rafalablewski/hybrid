@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID Wrapped — Blueprint Brutal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#ededea;--ink:#0c0d0c;--lime:#c4f035;--line:#0c0d0c}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#cfcfca;font-family:"JetBrains Mono",monospace;color:var(--ink);min-height:100vh;padding:48px 24px 80px}
+  .head{max-width:1200px;margin:0 auto 40px}
+  .head h1{font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:14px}
+  .head h2{font-family:"Archivo";font-weight:900;font-size:40px;letter-spacing:-.03em;margin-top:6px}
+  .head p{font-size:13px;color:#555;margin-top:10px;max-width:640px;line-height:1.6}
+  .gallery{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;max-width:1200px;margin:0 auto}
+
+  .card{
+    position:relative;width:340px;height:604px;overflow:hidden;
+    background:var(--paper);color:var(--ink);
+    border:2px solid var(--ink);
+    padding:30px 28px;display:flex;flex-direction:column;
+    box-shadow:10px 10px 0 var(--ink);
+  }
+  .card::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(12,13,12,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(12,13,12,.06) 1px,transparent 1px);
+    background-size:28px 28px}
+
+  .top{position:relative;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:12px}
+  .wm{font-family:"Archivo";font-weight:900;font-size:24px;letter-spacing:-.03em}
+  .wm i{background:var(--lime);font-style:normal;padding:0 2px}
+  .idx{font-size:11px;font-weight:700;letter-spacing:.1em;text-align:right;line-height:1.5}
+  .eyebrow{position:relative;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-top:16px;
+    display:inline-block;background:var(--ink);color:var(--paper);padding:4px 8px;align-self:flex-start}
+  .body{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center}
+  .foot{position:relative;font-size:11px;letter-spacing:.06em;border-top:2px solid var(--ink);padding-top:12px;text-transform:uppercase}
+  .foot b{font-family:"Archivo";font-weight:900}.foot b i{background:var(--lime);font-style:normal;padding:0 2px}
+
+  .title{font-family:"Archivo";font-weight:900;font-size:52px;line-height:.95;letter-spacing:-.04em;text-transform:uppercase}
+  .stats{margin-top:36px;border-top:2px solid var(--ink)}
+  .row{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--ink);padding:14px 0}
+  .row .l{font-size:12px;font-weight:700;letter-spacing:.14em}
+  .row .v{font-family:"Archivo";font-weight:900;font-size:40px;letter-spacing:-.03em}
+  .row .v em{font-style:normal;background:var(--lime);padding:0 4px}
+
+  .pr-head{font-family:"Archivo";font-weight:900;font-size:30px;letter-spacing:-.02em;text-transform:uppercase}
+  .pr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--ink);padding:13px 0}
+  .pr .n{font-size:14px;font-weight:700}.pr .w{font-family:"Archivo";font-weight:900;font-size:20px}
+  .pr.hot .w em{font-style:normal;background:var(--lime);padding:0 3px}
+
+  .bar{margin-top:22px}
+  .bar .t{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px}
+  .track{height:18px;border:2px solid var(--ink);overflow:hidden;background:repeating-linear-gradient(45deg,transparent 0 5px,rgba(12,13,12,.07) 5px 10px)}
+  .fill{height:100%;background:var(--lime);border-right:2px solid var(--ink)}
+
+  .fun{text-align:left}.fun .e{font-size:96px;line-height:1}
+  .fun .t{font-family:"Archivo";font-weight:900;font-size:32px;line-height:1.05;margin-top:18px;text-transform:uppercase;letter-spacing:-.02em}
+  .fun .t mark{background:var(--lime)}
+</style>
+</head>
+<body>
+  <header class="head">
+    <h1>Concept 03</h1>
+    <h2>Blueprint Brutal</h2>
+    <p>Swiss brutalist — engineering-paper grid, hard 2px rules, offset drop-shadow block, monospace data and acid-lime highlighter marks. Stark, technical, no-nonsense.</p>
+  </header>
+  <section class="gallery">
+    <article class="card">
+      <div class="top"><div class="wm">HYBRID<i>.</i></div><div class="idx">FILE 01/04<br>2026·06·23</div></div>
+      <div class="eyebrow">Your workout</div>
+      <div class="body">
+        <div class="title">Push<br>Day</div>
+        <div class="stats">
+          <div class="row"><div class="l">MIN</div><div class="v">58</div></div>
+          <div class="row"><div class="l">SETS</div><div class="v">24</div></div>
+          <div class="row"><div class="l">VOLUME</div><div class="v"><em>12.4t</em></div></div>
+        </div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <article class="card">
+      <div class="top"><div class="wm">HYBRID<i>.</i></div><div class="idx">FILE 02/04<br>PR LOG</div></div>
+      <div class="eyebrow">Personal records</div>
+      <div class="body">
+        <div class="pr-head">2 New PRs 🏆</div>
+        <div style="margin-top:16px;border-top:2px solid var(--ink)"></div>
+        <div class="pr hot"><span class="n">🏆 BENCH PRESS</span><span class="w"><em>102.5 kg</em></span></div>
+        <div class="pr hot"><span class="n">🏆 OVERHEAD PRESS</span><span class="w"><em>60 kg</em></span></div>
+        <div class="pr"><span class="n">INCLINE DB</span><span class="w">34 kg</span></div>
+        <div class="pr"><span class="n">CABLE FLY</span><span class="w">22 kg</span></div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <article class="card">
+      <div class="top"><div class="wm">HYBRID<i>.</i></div><div class="idx">FILE 03/04<br>MUSCLE</div></div>
+      <div class="eyebrow">Muscle map</div>
+      <div class="body">
+        <div class="bar"><div class="t"><span>CHEST</span><span>5.2t</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+        <div class="bar"><div class="t"><span>SHOULDERS</span><span>3.8t</span></div><div class="track"><div class="fill" style="width:72%"></div></div></div>
+        <div class="bar"><div class="t"><span>TRICEPS</span><span>2.1t</span></div><div class="track"><div class="fill" style="width:58%"></div></div></div>
+        <div class="bar"><div class="t"><span>BACK</span><span>1.3t</span></div><div class="track"><div class="fill" style="width:36%"></div></div></div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <article class="card">
+      <div class="top"><div class="wm">HYBRID<i>.</i></div><div class="idx">FILE 04/04<br>FUN FACT</div></div>
+      <div class="eyebrow">Fun fact</div>
+      <div class="body fun"><div class="e">🔥</div><div class="t">You moved <mark>12,400 kg</mark> — two grand pianos.</div></div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+  </section>
+</body>
+</html>

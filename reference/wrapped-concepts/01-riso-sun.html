@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID Wrapped — Riso Sun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4ead6; --ink:#1c140c; --sun:#ff5d2e; --amber:#f5a623; --bonus:#3b6b5e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#2a221a;
+    font-family:"Archivo",system-ui,sans-serif;color:var(--paper);
+    min-height:100vh;padding:48px 24px 80px;
+  }
+  .head{max-width:1200px;margin:0 auto 40px}
+  .head h1{font-family:"Archivo Narrow";font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:14px;color:var(--amber)}
+  .head h2{font-weight:900;font-size:40px;letter-spacing:-.02em;margin-top:6px}
+  .head p{font-family:"JetBrains Mono";font-size:13px;color:#b7a98f;margin-top:10px;max-width:640px;line-height:1.6}
+  .gallery{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;max-width:1200px;margin:0 auto}
+
+  /* ── 9:16 card ── */
+  .card{
+    position:relative;width:340px;height:604px;border-radius:26px;overflow:hidden;
+    background:var(--paper);color:var(--ink);
+    padding:54px 38px;display:flex;flex-direction:column;
+    box-shadow:0 30px 60px rgba(0,0,0,.5);
+  }
+  /* halftone grain + sun disc */
+  .card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:radial-gradient(var(--ink) 1px,transparent 1.4px);
+    background-size:7px 7px;opacity:.06;mix-blend-mode:multiply;
+  }
+  .sun{position:absolute;border-radius:50%;mix-blend-mode:multiply;filter:saturate(1.1)}
+  .sun.a{width:360px;height:360px;right:-130px;top:-110px;background:radial-gradient(circle at 35% 35%,var(--sun),var(--amber) 60%,transparent 72%)}
+  .sun.b{width:240px;height:240px;left:-120px;bottom:40px;background:radial-gradient(circle,var(--amber),transparent 70%);opacity:.7}
+
+  .wm{position:relative;font-weight:900;font-size:26px;letter-spacing:-.02em}
+  .wm i{color:var(--sun);font-style:normal}
+  .eyebrow{position:relative;font-family:"JetBrains Mono";font-weight:700;font-size:12px;letter-spacing:.22em;color:var(--sun);margin-top:8px;text-transform:uppercase}
+  .body{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center}
+  .foot{position:relative;font-family:"JetBrains Mono";font-size:12px;color:#7a6c54}
+  .foot b{font-family:"Archivo";font-weight:900;color:var(--ink)}
+  .foot b i{color:var(--sun);font-style:normal}
+
+  .title{font-weight:900;font-size:46px;line-height:1.02;letter-spacing:-.02em}
+  .stats{display:flex;margin-top:42px;gap:6px}
+  .stats .s{flex:1;text-align:center}
+  .stats .v{font-weight:900;font-size:40px;line-height:1}
+  .stats .l{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.12em;color:#7a6c54;margin-top:8px}
+
+  .pr-head{font-family:"Archivo Narrow";font-weight:700;font-size:30px;color:var(--sun);text-transform:uppercase;letter-spacing:.02em}
+  .pr{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-bottom:14px;border-bottom:2px solid rgba(28,20,12,.14)}
+  .pr .n{font-weight:700;font-size:21px}
+  .pr .w{font-weight:900;font-size:21px}
+  .pr.hot .w{color:var(--sun)}
+
+  .bar{margin-top:26px}
+  .bar .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .bar .top b{font-weight:700;font-size:20px}
+  .bar .top span{font-family:"JetBrains Mono";font-size:13px;color:#7a6c54}
+  .track{height:14px;border-radius:8px;background:rgba(28,20,12,.12);overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--sun))}
+
+  .fun{text-align:center}
+  .fun .e{font-size:120px;line-height:1}
+  .fun .t{font-weight:800;font-size:30px;line-height:1.2;margin-top:24px}
+</style>
+</head>
+<body>
+  <header class="head">
+    <h1>Concept 01</h1>
+    <h2>Riso Sun</h2>
+    <p>Risograph print aesthetic — warm cream paper, sun-burnt orange ink, halftone grain and overprint discs. Tactile, editorial, retro-athletic. Bold condensed display type.</p>
+  </header>
+
+  <section class="gallery">
+    <!-- OVERVIEW -->
+    <article class="card">
+      <div class="sun a"></div><div class="sun b"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="eyebrow">Your workout</div>
+      <div class="body">
+        <div class="title">Push Day</div>
+        <div class="stats">
+          <div class="s"><div class="v">58</div><div class="l">MIN</div></div>
+          <div class="s"><div class="v">24</div><div class="l">SETS</div></div>
+          <div class="s"><div class="v">12.4t</div><div class="l">VOLUME</div></div>
+        </div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <!-- PRs -->
+    <article class="card">
+      <div class="sun a"></div><div class="sun b"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="eyebrow">Personal records</div>
+      <div class="body">
+        <div class="pr-head">2 new PRs 🏆</div>
+        <div class="pr hot"><span class="n">🏆 Bench Press</span><span class="w">102.5 kg</span></div>
+        <div class="pr hot"><span class="n">🏆 Overhead Press</span><span class="w">60 kg</span></div>
+        <div class="pr"><span class="n">Incline DB</span><span class="w">34 kg</span></div>
+        <div class="pr"><span class="n">Cable Fly</span><span class="w">22 kg</span></div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <!-- MUSCLE -->
+    <article class="card">
+      <div class="sun a"></div><div class="sun b"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="eyebrow">Muscle map</div>
+      <div class="body">
+        <div class="bar"><div class="top"><b>Chest</b><span>5.2t</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div>
+        <div class="bar"><div class="top"><b>Shoulders</b><span>3.8t</span></div><div class="track"><div class="fill" style="width:72%"></div></div></div>
+        <div class="bar"><div class="top"><b>Triceps</b><span>2.1t</span></div><div class="track"><div class="fill" style="width:58%"></div></div></div>
+        <div class="bar"><div class="top"><b>Back</b><span>1.3t</span></div><div class="track"><div class="fill" style="width:36%"></div></div></div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+
+    <!-- FUN -->
+    <article class="card">
+      <div class="sun a"></div><div class="sun b"></div>
+      <div class="wm">HYBRID<i>.</i></div>
+      <div class="eyebrow">Fun fact</div>
+      <div class="body fun">
+        <div class="e">🔥</div>
+        <div class="t">You moved 12,400 kg — that's two grand pianos.</div>
+      </div>
+      <div class="foot">Tracked with <b>HYBRID<i>.</i></b></div>
+    </article>
+  </section>
+</body>
+</html>
