@@ -42,7 +42,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, APill, RADIUS, Ring, Spark } from "./kit";
+import { ACard, APill, AuroraField, RADIUS, Ring, Spark } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
@@ -252,6 +252,10 @@ export default function AuroraHome() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
+      {/* Ambient Aurora gradient backdrop — Today owns its own shell (custom
+          entrance + horizontal pager) rather than AuroraScreen, so render the
+          same field here so it isn't the one flat tab next to History/More/You. */}
+      <AuroraField />
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         <Animated.View style={enterStyle}>

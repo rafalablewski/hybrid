@@ -1,20 +1,24 @@
-import { useState } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
+import { useRef, useState, type ReactNode } from "react";
+import { View, Text, Pressable, Alert, Animated, PanResponder } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, type LoggedSession, type AuroraIconName } from "@hybrid/core";
 import { archiveSession, deleteSession } from "../../lib/api";
 import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-/** AURORA History — logged-session list with archive/restore/delete + PR badges,
- *  reusing the exact session APIs. */
+type SwipeAction = { key: string; label: string; color: string; onPress: () => void };
+
+/** AURORA History — logged-session list with PR badges. Manage actions
+ *  (archive/restore/delete) live behind a SWIPE: drag a card left to reveal
+ *  them (iOS-native pattern), so the resting card is clean — no footer buttons,
+ *  no divider lines — and tap still opens the full breakdown. */
 export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -39,11 +43,6 @@ export default function AuroraHistory() {
   ]);
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
-  const action = (label: string, color: string, onPress: () => void, id: string, fill = false) => (
-    <Pressable onPress={onPress} disabled={busy === id} style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: color, backgroundColor: fill ? `${color}1a` : "transparent", opacity: busy === id ? 0.5 : 1 }}>
-      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, color) }}>{label}</Text>
-    </Pressable>
-  );
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={() => q.refetch()}>
@@ -61,37 +60,107 @@ export default function AuroraHistory() {
         </ACard>
       ) : (
         <View style={{ marginTop: 14 }}>
+          {/* Swipe hint, once at the top of the list. */}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginBottom: 8 }}>{t("history.swipeHint")}</Text>
           {sessions.map((s) => {
             const prCount = prsForSession(sessions, s.id).length;
+            const actions: SwipeAction[] = [
+              showArchived
+                ? { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) }
+                : { key: "archive", label: t("common.archive"), color: C.amber, onPress: () => onArchive(s.id, true) },
+              { key: "delete", label: t("common.delete"), color: C.red, onPress: () => onDelete(s) },
+            ];
             return (
-              <ACard key={s.id} style={{ marginBottom: 12 }}>
-                <Pressable onPress={() => router.push(`/session/${s.id}`)}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
-                  </View>
-                  <View style={{ flexDirection: "row", gap: space.sm, marginVertical: 8 }}>
-                    {chip(C.blue, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
-                    {chip(C.ash, `${s.blocks.length} blocks`)}
-                    {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
-                  </View>
+              <SwipeCard key={s.id} C={C} busy={busy === s.id} actions={actions} onOpen={() => router.push(`/session/${s.id}`)}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
+                  {chip(C.blue, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
+                  {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
+                  {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
+                </View>
+                <View style={{ marginTop: 14 }}>
                   {s.blocks.map((b, i) => (
-                    <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line }}>
+                    <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 }}>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{b.name}</Text>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{blockSummary(b)}</Text>
                     </View>
                   ))}
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("history.tapDetail")}</Text>
-                </Pressable>
-                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-                  {showArchived ? action(t("common.restore"), C.lime, () => onArchive(s.id, false), s.id, true) : action(t("common.archive"), C.line, () => onArchive(s.id, true), s.id)}
-                  {action(t("common.delete"), C.red, () => onDelete(s), s.id, true)}
                 </View>
-              </ACard>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("history.tapDetail")}</Text>
+                  <AuroraIcon name="arrow-up" size={11} color={C.ash} style={{ transform: [{ rotate: "90deg" }] }} />
+                </View>
+              </SwipeCard>
             );
           })}
         </View>
       )}
     </AuroraScreen>
+  );
+}
+
+/** A card whose manage actions are revealed by dragging it left. Built on
+ *  Animated + PanResponder (no gesture-handler dep — matches the live logger's
+ *  SwipeRow). Only claims clearly-horizontal drags, so vertical scroll + tap
+ *  still work; a tap when open closes the reveal instead of navigating. */
+function SwipeCard({ C, busy, actions, onOpen, children }: {
+  C: Palette;
+  busy: boolean;
+  actions: SwipeAction[];
+  onOpen: () => void;
+  children: ReactNode;
+}) {
+  const TILE = 88;
+  const reveal = TILE * actions.length;
+  const tx = useRef(new Animated.Value(0)).current;
+  const openRef = useRef(false);
+  const animate = (open: boolean) => {
+    openRef.current = open;
+    Animated.spring(tx, { toValue: open ? -revealRef.current : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
+  };
+  // The PanResponder is created once, so its callbacks would close over the
+  // first render's values. Read `reveal` + `animate` through refs (kept current
+  // each render) so the gesture never acts on a stale closure.
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
+  const animateRef = useRef(animate);
+  animateRef.current = animate;
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+      onPanResponderMove: (_, g) => {
+        const base = openRef.current ? -revealRef.current : 0;
+        tx.setValue(Math.max(-revealRef.current, Math.min(0, base + g.dx)));
+      },
+      onPanResponderRelease: (_, g) => animateRef.current(openRef.current ? g.dx < 60 : g.dx < -60),
+    }),
+  ).current;
+  return (
+    <View style={{ marginBottom: 12, borderRadius: 26, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 }}>
+      <View style={{ borderRadius: 26, overflow: "hidden" }}>
+        {/* Revealed actions, pinned to the right behind the card. */}
+        <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, flexDirection: "row" }}>
+          {actions.map((a) => (
+            <Pressable
+              key={a.key}
+              onPress={() => { animate(false); a.onPress(); }}
+              disabled={busy}
+              style={{ width: TILE, alignItems: "center", justifyContent: "center", gap: 4, backgroundColor: `${a.color}26`, opacity: busy ? 0.5 : 1 }}
+            >
+              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, a.color) }}>{a.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {/* The card itself — opaque so the actions don't bleed through. */}
+        <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26 }}>
+          <Pressable onPress={() => (openRef.current ? animate(false) : onOpen())} style={{ padding: 18 }}>
+            {children}
+          </Pressable>
+        </Animated.View>
+      </View>
+    </View>
   );
 }

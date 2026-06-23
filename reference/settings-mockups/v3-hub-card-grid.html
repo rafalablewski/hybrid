@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYBRID Settings — V3 · Hub Card Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --glass:rgba(22,24,22,.55);
+    --disp:'Archivo',sans-serif; --cond:'Archivo Narrow',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:#070807; min-height:100vh; font-family:var(--disp); color:var(--chalk); padding:28px; -webkit-font-smoothing:antialiased}
+  .meta{font-family:var(--mono); font-size:12px; color:var(--ash); text-align:center; line-height:1.7; margin-bottom:18px}
+  .meta b{color:var(--lime); font-weight:600}
+
+  .win{max-width:1100px; margin:0 auto; background:var(--ink); border:1px solid var(--line); border-radius:20px; overflow:hidden;
+    box-shadow:0 40px 120px -40px rgba(0,0,0,.9); position:relative}
+  .fieldbg{position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none}
+  .blob{position:absolute; width:680px; height:680px; border-radius:50%; filter:blur(70px); opacity:.16; mix-blend-mode:screen}
+  .b-a{background:var(--lime);   top:-220px; left:-140px; animation:d1 19s ease-in-out infinite}
+  .b-b{background:var(--blue);   top:-120px; right:-200px; animation:d2 23s ease-in-out infinite}
+  .b-c{background:var(--violet); top:600px; left:35%; animation:d3 27s ease-in-out infinite}
+  @keyframes d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,40px) scale(1.15)}}
+  @keyframes d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-44px,44px) scale(1.1)}}
+  @keyframes d3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-38px,-38px) scale(1.2)}}
+
+  .glass{background:var(--glass); -webkit-backdrop-filter:blur(18px) saturate(150%) brightness(1.06);
+    backdrop-filter:blur(18px) saturate(150%) brightness(1.06); border:1px solid var(--line); box-shadow:0 14px 40px -18px rgba(0,0,0,.6)}
+
+  .titlebar{position:relative; z-index:5; height:44px; display:flex; align-items:center; gap:8px; padding:0 16px;
+    border-bottom:1px solid var(--line); background:rgba(20,22,20,.5); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px)}
+  .dot{width:11px; height:11px; border-radius:50%}.d1{background:#e0625e}.d2{background:#f0b45e}.d3{background:#c4f035}
+  .url{margin-left:14px; font-family:var(--mono); font-size:12px; color:var(--ash)}
+
+  .wrap{position:relative; z-index:5; padding:40px 46px 54px}
+  .hero{display:flex; align-items:center; gap:18px}
+  .h-av{width:64px; height:64px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:26px; color:var(--ink); background:linear-gradient(135deg,var(--lime),#9bd400)}
+  .h-title{font-weight:900; font-size:32px; letter-spacing:-.03em}
+  .h-sub{font-family:var(--mono); font-size:13px; color:var(--ash); margin-top:4px}
+  .h-badges{display:flex; gap:8px; margin-top:9px}
+  .badge{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; padding:3px 10px; border-radius:999px; font-weight:600}
+  .b-role{color:var(--violet); background:rgba(201,169,240,.14); border:1px solid rgba(201,169,240,.45)}
+  .b-free{color:var(--ash); border:1px solid var(--line)}
+
+  .search{margin:26px 0 32px; display:flex; align-items:center; gap:11px; border-radius:18px; padding:14px 16px; max-width:540px}
+  .search input{flex:1; background:none; border:none; outline:none; color:var(--ash); font-family:var(--mono); font-size:14px}
+  .search svg{color:var(--ash)}
+
+  .grouplabel{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.13em; color:var(--ash); font-weight:600; margin:6px 0 14px}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:30px}
+  @media(max-width:880px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .tile{display:block; border-radius:22px; padding:20px; cursor:pointer; transition:transform .15s, border-color .15s; position:relative; overflow:hidden; text-decoration:none; color:inherit}
+  .tile:hover{transform:translateY(-2px); border-color:#3a3d3a}
+  .tile::after{content:''; position:absolute; inset:0; background:radial-gradient(75% 55% at 100% 0%, var(--glow,transparent), transparent 70%); pointer-events:none}
+  .t-ico{width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; margin-bottom:14px; position:relative; z-index:1}
+  .t-ico svg{width:22px; height:22px}
+  .t-title{font-weight:700; font-size:16px; position:relative; z-index:1}
+  .t-desc{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:6px; line-height:1.55; position:relative; z-index:1}
+  .t-chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:13px; position:relative; z-index:1}
+  .chip{font-family:var(--mono); font-size:10px; color:var(--ash); border:1px solid var(--line); border-radius:999px; padding:3px 9px}
+  .i-lime{background:rgba(196,240,53,.14); color:var(--lime)}
+  .i-blue{background:rgba(127,212,232,.14); color:var(--blue)}
+  .i-violet{background:rgba(201,169,240,.14); color:var(--violet)}
+  .i-amber{background:rgba(240,180,94,.14); color:var(--amber)}
+  .i-red{background:rgba(224,98,94,.14); color:var(--red)}
+  .i-ash{background:rgba(139,143,134,.14); color:var(--ash)}
+
+  /* detailed sections below */
+  .detail{scroll-margin-top:20px; margin-bottom:18px; border-radius:24px; padding:24px; transition:border-color .3s}
+  .detail:target{border-color:var(--lime); box-shadow:0 0 0 1px var(--lime), 0 14px 40px -18px rgba(0,0,0,.6)}
+  .dhead{display:flex; align-items:center; gap:13px; margin-bottom:4px}
+  .dhead .d-ico{width:38px; height:38px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center}
+  .dhead .d-ico svg{width:20px;height:20px}
+  .d-title{font-weight:800; font-size:19px}
+  .d-sub{font-family:var(--mono); font-size:12px; color:var(--ash); margin-top:2px}
+  .block{border-top:1px solid var(--line); margin-top:18px; padding-top:18px}
+  .block:first-of-type{border-top:none; margin-top:14px; padding-top:0}
+  .kick{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:600}
+  .desc{font-family:var(--mono); font-size:12px; color:var(--ash); margin-top:6px; line-height:1.6}
+  .field{margin-top:14px; max-width:460px}
+  .flabel{font-family:var(--mono); font-size:12px; color:var(--ash); margin-bottom:7px; display:block}
+  .inrow{display:flex; gap:9px}
+  .input{flex:1; width:100%; background:rgba(20,22,20,.6); border:1px solid var(--line); border-radius:16px; padding:11px 13px; color:var(--chalk); font-family:var(--mono); font-size:13px; outline:none}
+  .input:focus{border-color:var(--lime)}
+  textarea.input{resize:vertical}
+  .segrow{display:flex; gap:7px; flex-wrap:wrap}
+  .seg{font-family:var(--mono); font-size:12px; padding:8px 16px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--ash); cursor:pointer}
+  .seg.on{color:var(--lime); background:rgba(196,240,53,.12); border-color:var(--lime)}
+  .btn{font-family:var(--disp); font-weight:700; font-size:13px; padding:10px 18px; border-radius:16px; cursor:pointer; border:1px solid}
+  .btn-lime{color:var(--lime); background:rgba(196,240,53,.12); border-color:var(--lime)}
+  .btn-ghost{color:var(--chalk); background:transparent; border-color:var(--line)}
+  .btn-violet{color:var(--violet); background:rgba(201,169,240,.12); border-color:var(--violet)}
+  .btn-red{color:#fff; background:var(--red); border-color:var(--red)}
+  .trow{display:flex; align-items:center; gap:14px; padding:13px 0; border-top:1px solid var(--line)}
+  .trow:first-of-type{border-top:none}
+  .ttext{flex:1}.ttitle{font-weight:600; font-size:14px}
+  .tdesc{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:3px; line-height:1.5}
+  .tg{appearance:none; -webkit-appearance:none; width:46px; height:26px; border-radius:999px; border:1px solid var(--line); background:transparent; position:relative; cursor:pointer; flex:none; transition:.18s}
+  .tg::before{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--ash); transition:.18s}
+  .tg:checked{background:var(--lime); border-color:var(--lime)}
+  .tg:checked::before{left:22px; background:var(--ink)}
+  .upgrade{background:linear-gradient(120deg, rgba(196,240,53,.14), rgba(196,240,53,.02)); border:1px solid rgba(196,240,53,.4); border-radius:18px; padding:18px; margin-top:14px}
+  .danger-block{border-left:3px solid var(--red); padding-left:14px; margin-top:18px}
+  .note{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:11px; line-height:1.6}
+  .sectitle{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.13em; color:var(--ash); font-weight:600; margin:34px 0 16px}
+</style>
+</head>
+<body>
+  <div class="meta"><b>HYBRID Settings — Version 3</b><br />Hub card grid · documented tiles jump to detailed sections below (Accounts-Center pattern, Aurora glass)</div>
+
+  <div class="win">
+    <div class="fieldbg"><div class="blob b-a"></div><div class="blob b-b"></div><div class="blob b-c"></div></div>
+    <div class="titlebar"><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span><span class="url">app.hybrid.app/settings</span></div>
+
+    <div class="wrap">
+      <div class="hero">
+        <div class="h-av">R</div>
+        <div><div class="h-title">Settings</div><div class="h-sub">Rafal Ablewski · rafal@hybrid.app</div>
+          <div class="h-badges"><span class="badge b-role">Client</span><span class="badge b-free">Free</span></div></div>
+      </div>
+
+      <div class="search glass">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input placeholder="Search settings — appearance, privacy, password…" />
+      </div>
+
+      <!-- HUB: documented category tiles -->
+      <div class="grouplabel">How you use HYBRID</div>
+      <div class="grid">
+        <a class="tile glass" href="#d-account" style="--glow:rgba(196,240,53,.10)">
+          <div class="t-ico i-lime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+          <div class="t-title">Account &amp; profile</div><div class="t-desc">Your name, email and account type.</div>
+          <div class="t-chips"><span class="chip">Name</span><span class="chip">Email</span><span class="chip">Role</span></div></a>
+        <a class="tile glass" href="#d-prefs" style="--glow:rgba(127,212,232,.10)">
+          <div class="t-ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="18" r="2" fill="currentColor"/></svg></div>
+          <div class="t-title">Preferences</div><div class="t-desc">Appearance, language and units.</div>
+          <div class="t-chips"><span class="chip">Dark</span><span class="chip">English</span><span class="chip">kg</span></div></a>
+        <a class="tile glass" href="#d-logger" style="--glow:rgba(240,180,94,.10)">
+          <div class="t-ico i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6v12M3 9v6M18 6v12M21 9v6M6 12h12"/></svg></div>
+          <div class="t-title">Workout logger</div><div class="t-desc">Logging detail and how volume is counted.</div>
+          <div class="t-chips"><span class="chip">Detailed</span><span class="chip">Volume</span></div></a>
+        <a class="tile glass" href="#d-notif" style="--glow:rgba(201,169,240,.10)">
+          <div class="t-ico i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+          <div class="t-title">Notifications</div><div class="t-desc">Recaps, coach messages and reminders.</div>
+          <div class="t-chips"><span class="chip">Email</span><span class="chip">Push</span></div></a>
+      </div>
+
+      <div class="grouplabel">Who can see &amp; reach you</div>
+      <div class="grid">
+        <a class="tile glass" href="#d-privacy" style="--glow:rgba(127,212,232,.10)">
+          <div class="t-ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="t-title">Privacy</div><div class="t-desc">Sharing, discoverability and analytics.</div>
+          <div class="t-chips"><span class="chip">Sharing</span><span class="chip">Talent</span></div></a>
+        <a class="tile glass" href="#d-coaching" style="--glow:rgba(201,169,240,.10)">
+          <div class="t-ico i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a6 6 0 0 0 6 6h2l4 3v-3a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6z"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg></div>
+          <div class="t-title">Coaching &amp; access</div><div class="t-desc">Become a coach or request access.</div>
+          <div class="t-chips"><span class="chip">Coach</span><span class="chip">Access</span></div></a>
+      </div>
+
+      <div class="grouplabel">Login &amp; billing</div>
+      <div class="grid">
+        <a class="tile glass" href="#d-security" style="--glow:rgba(127,212,232,.10)">
+          <div class="t-ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div>
+          <div class="t-title">Security</div><div class="t-desc">Password, 2-factor and active sessions.</div>
+          <div class="t-chips"><span class="chip">Password</span><span class="chip">2FA</span></div></a>
+        <a class="tile glass" href="#d-billing" style="--glow:rgba(196,240,53,.10)">
+          <div class="t-ico i-lime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg></div>
+          <div class="t-title">Subscription</div><div class="t-desc">Your plan and billing.</div>
+          <div class="t-chips"><span class="chip">Free</span></div></a>
+      </div>
+
+      <div class="grouplabel">Your data &amp; support</div>
+      <div class="grid">
+        <a class="tile glass" href="#d-data" style="--glow:rgba(139,143,134,.08)">
+          <div class="t-ico i-ash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></div>
+          <div class="t-title">Your data</div><div class="t-desc">Export a copy of everything in your account.</div>
+          <div class="t-chips"><span class="chip">Export</span></div></a>
+        <a class="tile glass" href="#d-danger" style="--glow:rgba(224,98,94,.10)">
+          <div class="t-ico i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+          <div class="t-title">Danger zone</div><div class="t-desc">Sign out or permanently erase your account.</div>
+          <div class="t-chips"><span class="chip">Sign out</span><span class="chip">Erase</span></div></a>
+      </div>
+
+      <!-- DETAILED SECTIONS -->
+      <div class="sectitle">Details</div>
+
+      <section class="detail glass" id="d-account">
+        <div class="dhead"><div class="d-ico i-lime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><div><div class="d-title">Account &amp; profile</div><div class="d-sub">Your identity and account type.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--lime)">PROFILE</div>
+          <div class="field"><label class="flabel">Display name</label><div class="inrow"><input class="input" value="Rafal Ablewski" /><button class="btn btn-lime">Save</button></div></div>
+          <div class="field"><label class="flabel">Email</label><div class="inrow"><input class="input" value="rafal@hybrid.app" /><button class="btn btn-ghost">Update</button></div></div></div>
+        <div class="block"><div class="kick" style="color:var(--violet)">ACCOUNT TYPE</div>
+          <div class="desc">You're on a <b style="color:var(--chalk)">Client · Free</b> plan. Switch to Full to unlock the athlete toolkit.</div>
+          <a class="btn btn-ghost" href="#d-billing" style="display:inline-block; margin-top:14px">View subscription</a></div>
+      </section>
+
+      <section class="detail glass" id="d-prefs">
+        <div class="dhead"><div class="d-ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="18" r="2" fill="currentColor"/></svg></div><div><div class="d-title">Preferences</div><div class="d-sub">Appearance, language and units.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">APPEARANCE</div>
+          <div class="field"><label class="flabel">Theme</label><div class="segrow"><button class="seg on">Dark</button><button class="seg">Light</button></div></div>
+          <div class="field"><label class="flabel">Template</label><div class="segrow"><button class="seg on">Aurora</button><button class="seg">Classic</button></div></div></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">REGION &amp; UNITS</div>
+          <div class="field"><label class="flabel">Language</label><div class="segrow"><button class="seg on">English</button><button class="seg">Polski</button><button class="seg">Deutsch</button></div></div>
+          <div class="field"><label class="flabel">Units</label><div class="segrow"><button class="seg on">Kilograms</button><button class="seg">Pounds</button></div></div></div>
+      </section>
+
+      <section class="detail glass" id="d-logger">
+        <div class="dhead"><div class="d-ico i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6v12M3 9v6M18 6v12M21 9v6M6 12h12"/></svg></div><div><div class="d-title">Workout logger</div><div class="d-sub">How you capture sets and count volume.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--amber)">LOGGING DETAIL</div>
+          <div class="desc">Detailed captures RPE, tempo and notes per set. Simple keeps it to weight × reps.</div>
+          <div class="field"><label class="flabel">Logger mode</label><div class="segrow"><button class="seg on">Detailed</button><button class="seg">Simple</button></div></div></div>
+        <div class="block"><div class="kick" style="color:var(--amber)">VOLUME COUNTING</div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Count warm-ups in volume</div><div class="tdesc">Include warm-up sets in your weekly tonnage.</div></div><input type="checkbox" class="tg" /></div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Fractional volume</div><div class="tdesc">Count back-off & top-set fractions toward volume targets.</div></div><input type="checkbox" class="tg" checked /></div></div>
+      </section>
+
+      <section class="detail glass" id="d-notif">
+        <div class="dhead"><div class="d-ico i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div><div><div class="d-title">Notifications</div><div class="d-sub">Choose what HYBRID can send you.</div></div></div>
+        <div class="block">
+          <div class="trow"><div class="ttext"><div class="ttitle">Weekly recap</div><div class="tdesc">Your Sunday training summary.</div></div><input type="checkbox" class="tg" checked /></div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Coach messages</div><div class="tdesc">When your coach replies or assigns work.</div></div><input type="checkbox" class="tg" checked /></div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Check-in reminders</div><div class="tdesc">A nudge when your weekly check-in is due.</div></div><input type="checkbox" class="tg" checked /></div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Product updates</div><div class="tdesc">Occasional news about new features.</div></div><input type="checkbox" class="tg" /></div></div>
+      </section>
+
+      <section class="detail glass" id="d-privacy">
+        <div class="dhead"><div class="d-ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div><div><div class="d-title">Privacy</div><div class="d-sub">Who sees your training and how data is used.</div></div></div>
+        <div class="block">
+          <div class="trow"><div class="ttext"><div class="ttitle">Share detail with my coach</div><div class="tdesc">Let a linked coach see full session detail, not just summaries.</div></div><input type="checkbox" class="tg" checked /></div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Discoverable in Talent</div><div class="tdesc">Appear in coach talent searches (benchmarks, never raw logs).</div></div><input type="checkbox" class="tg" /></div>
+          <div class="trow"><div class="ttext"><div class="ttitle">Opt out of product analytics</div><div class="tdesc">Don't include my usage in aggregate analytics.</div></div><input type="checkbox" class="tg" /></div></div>
+      </section>
+
+      <section class="detail glass" id="d-coaching">
+        <div class="dhead"><div class="d-ico i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a6 6 0 0 0 6 6h2l4 3v-3a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6z"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg></div><div><div class="d-title">Coaching &amp; access</div><div class="d-sub">Become a coach or request access.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--violet)">BECOME A COACH</div>
+          <div class="desc">Apply with your credentials. An admin reviews it and grants the coach role on approval.</div>
+          <div class="field" style="max-width:560px"><label class="flabel">Your credentials</label><textarea class="input" rows="3" placeholder="Certifications, athletes coached, experience…"></textarea></div>
+          <button class="btn btn-violet" style="margin-top:13px">Apply to coach</button></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">REQUEST ACCESS</div>
+          <div class="desc">Have an invite code or want to join a coach's roster? Request access here.</div>
+          <button class="btn btn-ghost" style="margin-top:13px">Request access</button></div>
+      </section>
+
+      <section class="detail glass" id="d-security">
+        <div class="dhead"><div class="d-ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div><div><div class="d-title">Security</div><div class="d-sub">Password, 2-factor and sessions.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">PASSWORD</div>
+          <div class="field"><label class="flabel">New password</label><div class="inrow"><input class="input" type="password" placeholder="••••••••" /><button class="btn btn-lime">Update</button></div></div></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">TWO-FACTOR (2FA)</div>
+          <div class="desc">Add an authenticator app for an extra layer of security.</div>
+          <button class="btn btn-ghost" style="margin-top:13px">Set up 2-factor</button></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">ACTIVE SESSIONS</div>
+          <div class="desc">Sign out of HYBRID everywhere you're logged in.</div>
+          <button class="btn btn-ghost" style="margin-top:13px">Sign out everywhere</button></div>
+      </section>
+
+      <section class="detail glass" id="d-billing">
+        <div class="dhead"><div class="d-ico i-lime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg></div><div><div class="d-title">Subscription</div><div class="d-sub">Your plan and billing.</div></div></div>
+        <div class="upgrade"><div class="kick" style="color:var(--lime)">UPGRADE TO FULL</div>
+          <div class="desc">Unlock the full athlete toolkit — periodization, readiness, the sport engine and prescription.</div>
+          <button class="btn btn-lime" style="margin-top:14px; font-size:14px; padding:11px 22px">Upgrade to Full</button>
+          <div class="note">You're currently on the Free plan.</div></div>
+        <div class="block"><div class="kick" style="color:var(--ash)">CURRENT PLAN</div>
+          <div class="desc"><b style="color:var(--chalk)">Free</b> — the lean tracker. No payment method on file.</div></div>
+      </section>
+
+      <section class="detail glass" id="d-data">
+        <div class="dhead"><div class="d-ico i-ash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></div><div><div class="d-title">Your data</div><div class="d-sub">Export everything in your account.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--blue)">EXPORT</div>
+          <div class="desc">Download a complete copy of your account data — sessions, plans, benchmarks and profile.</div>
+          <button class="btn btn-lime" style="margin-top:13px">Download my data</button></div>
+      </section>
+
+      <section class="detail glass" id="d-danger">
+        <div class="dhead"><div class="d-ico i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div><div><div class="d-title">Danger zone</div><div class="d-sub">Irreversible account actions.</div></div></div>
+        <div class="block"><div class="kick" style="color:var(--ash)">SIGN OUT</div>
+          <button class="btn btn-ghost" style="margin-top:13px">Sign out of this device</button></div>
+        <div class="danger-block"><div class="kick" style="color:var(--red)">ERASE ACCOUNT</div>
+          <div class="desc">Permanently delete all your training data. <b style="color:var(--red)">This cannot be undone.</b></div>
+          <div class="field"><label class="flabel">Type RESET to confirm</label><input class="input" placeholder="RESET" style="max-width:200px" /></div>
+          <button class="btn btn-red" style="margin-top:13px">Erase everything</button></div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
