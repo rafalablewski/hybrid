@@ -237,6 +237,8 @@ model Checkin {
   createdAt    DateTime  @default(now())
 
   @@index([userId])
+  // Coach views read a client's SHARED check-ins.
+  @@index([userId, sharedWithCoach])
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.
@@ -271,6 +273,7 @@ model Assignment {
   createdAt    DateTime @default(now())
 
   @@index([athleteId])
+  @@index([athleteId, date])
   @@index([assignedById])
 }
 
@@ -300,6 +303,10 @@ model Session {
   archivedAt  DateTime?
 
   @@index([userId])
+  // The dominant read is "this user's sessions, newest first" (History + every
+  // analytics engine). A composite index serves the filter + ORDER BY without a
+  // per-user sort.
+  @@index([userId, startedAt])
 }
 
 // A workout logged BEFORE the athlete has an account (guest mode). The mobile
