@@ -52,7 +52,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: true, queued: true, size });
   }
 
-  await prisma.emailCampaign.update({ where: { id }, data: { status: "sending" } });
+  // Atomic claim: flip to "sending" only if it isn't already sent/sending.
+  // The findUnique check above is advisory (TOCTOU) — two near-simultaneous
+  // admin clicks (the 10/min limit lets both through) could both pass it and
+  // double-send. This guarded updateMany is the real gate: the loser 409s.
+  const claim = await prisma.emailCampaign.updateMany({
+    where: { id, status: { notIn: ["sent", "sending"] } },
+    data: { status: "sending" },
+  });
+  if (claim.count === 0) return NextResponse.json({ error: "This campaign has already been sent." }, { status: 409 });
 
   let sent = 0;
   let failed = 0;

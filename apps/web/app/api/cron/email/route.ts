@@ -36,7 +36,15 @@ export async function GET(request: Request) {
       take: MAX_CAMPAIGNS,
     });
     for (const c of dueCampaigns) {
-      await prisma.emailCampaign.update({ where: { id: c.id }, data: { status: "sending" } });
+      // CLAIM BEFORE SENDING: only the cron invocation that flips scheduled→
+      // sending (count 1) fans out. An overlapping invocation — or the inline
+      // admin send route hitting the same campaign — sees count 0 and skips, so
+      // the whole audience is never emailed twice.
+      const claim = await prisma.emailCampaign.updateMany({
+        where: { id: c.id, status: "scheduled" },
+        data: { status: "sending" },
+      });
+      if (claim.count === 0) continue;
       try {
         const { sent, failed } = await sendCampaign(c);
         await prisma.emailCampaign.update({
@@ -77,28 +85,43 @@ export async function GET(request: Request) {
       const ordered = orderSteps(seq.steps);
       const step = ordered[en.currentStep];
       if (!step) {
-        await prisma.emailEnrollment.update({ where: { id: en.id }, data: { status: "completed", nextSendAt: null } });
+        await prisma.emailEnrollment.updateMany({
+          where: { id: en.id, currentStep: en.currentStep },
+          data: { status: "completed", nextSendAt: null },
+        });
         result.completed++;
         continue;
       }
-      const user = userById.get(en.userId);
-      await sendEmail({
-        to: en.email,
-        subject: step.subject,
-        body: step.body,
-        kind: "sequence",
-        sequenceId: seq.id,
-        userId: en.userId,
-        marketing: true,
-        vars: { name: greetingName(user?.name ?? null, en.email) },
-      });
+      // CLAIM BEFORE SENDING: advance the enrollment cursor atomically, guarded
+      // on the step we're about to send still being the current, due one. The
+      // loser of an overlapping cron sees count 0 and skips, so a sequence step
+      // is never double-sent (the unique [sequenceId,userId] enrollment guard
+      // doesn't help here — this is an update of an existing row, not an insert).
       const adv = advanceEnrollment(en.currentStep, ordered, Date.now());
-      await prisma.emailEnrollment.update({
-        where: { id: en.id },
+      const claim = await prisma.emailEnrollment.updateMany({
+        where: { id: en.id, status: "active", currentStep: en.currentStep, nextSendAt: { lte: now } },
         data: adv.done
           ? { status: "completed", currentStep: adv.nextStep, nextSendAt: null }
           : { currentStep: adv.nextStep, nextSendAt: adv.nextSendAtMs ? new Date(adv.nextSendAtMs) : null },
       });
+      if (claim.count === 0) continue;
+      const user = userById.get(en.userId);
+      try {
+        await sendEmail({
+          to: en.email,
+          subject: step.subject,
+          body: step.body,
+          kind: "sequence",
+          sequenceId: seq.id,
+          userId: en.userId,
+          marketing: true,
+          vars: { name: greetingName(user?.name ?? null, en.email) },
+        });
+      } catch (e) {
+        // Step already advanced (at-most-once); isolate the failure so one bad
+        // recipient doesn't abort the rest of the batch.
+        console.error("[cron email] step send failed", en.id, e);
+      }
       result.steps++;
       if (adv.done) result.completed++;
     }
