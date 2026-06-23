@@ -19,22 +19,37 @@
   .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:30px 24px 70px}
   .slide.on{display:flex}
 
-  /* mask-reveal line: each line clips its text sliding up */
   .line{overflow:hidden;display:block}
   .line>span{display:block;transform:translateY(110%);transition:transform .7s cubic-bezier(.16,1,.3,1)}
   .slide.on .line>span{transform:none}
-  .slide.on .l2>span{transition-delay:.12s}.slide.on .l3>span{transition-delay:.24s}.slide.on .l4>span{transition-delay:.36s}.slide.on .l5>span{transition-delay:.48s}
+  .slide.on .l2>span{transition-delay:.1s}.slide.on .l3>span{transition-delay:.2s}.slide.on .l4>span{transition-delay:.3s}.slide.on .l5>span{transition-delay:.4s}
 
   .display{font-family:"Archivo";font-weight:900;letter-spacing:-.045em;line-height:.86;text-transform:uppercase}
-  .xl{font-size:clamp(78px,26vw,168px)}
-  .l{font-size:clamp(40px,13vw,84px)}
-  .narrow{font-family:"Archivo Narrow";font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  .xl{font-size:clamp(72px,24vw,150px)}
+  .l{font-size:clamp(38px,12vw,78px)}
+  .m{font-size:clamp(28px,9vw,52px)}
   .kick{font-family:"JetBrains Mono";font-weight:700;font-size:13px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:14px}
-  .sub{font-weight:600;font-size:clamp(15px,4.2vw,19px);margin-top:20px;max-width:24ch;line-height:1.35}
+  .sub{font-weight:600;font-size:clamp(14px,4vw,18px);margin-top:18px;max-width:26ch;line-height:1.35}
 
-  .marquee{position:absolute;left:0;right:0;white-space:nowrap;overflow:hidden;opacity:.9}
-  .marquee .track{display:inline-block;animation:scroll 14s linear infinite;font-family:"Archivo";font-weight:900;font-size:clamp(40px,12vw,80px);text-transform:uppercase;letter-spacing:-.03em}
-  @keyframes scroll{to{transform:translateX(-50%)}}
+  /* overview inline stats */
+  .ovstats{display:flex;gap:22px;margin-top:22px}
+  .ovstats .v{font-weight:900;font-size:clamp(30px,9vw,52px);letter-spacing:-.03em;line-height:1}
+  .ovstats .k{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;opacity:.7}
+
+  /* records rows */
+  .recs{margin-top:20px}
+  .rec{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:2px solid currentColor}
+  .rec .n{font-family:"Archivo Narrow";font-weight:700;text-transform:uppercase;font-size:clamp(18px,5vw,26px);letter-spacing:.02em}
+  .rec .v{font-weight:900;font-size:clamp(18px,5vw,26px)}
+
+  /* muscle bars */
+  .kbars{margin-top:20px}
+  .kb{margin-top:14px}.kb:first-child{margin-top:0}
+  .kb .t{display:flex;justify-content:space-between;font-family:"Archivo Narrow";font-weight:700;text-transform:uppercase;font-size:clamp(16px,4.4vw,22px);margin-bottom:6px;letter-spacing:.02em}
+  .kb .t span{font-family:"JetBrains Mono";font-weight:500;font-size:12px;opacity:.7}
+  .ktrack{height:14px;border:2px solid currentColor;overflow:hidden}
+  .kfill{height:100%;width:0;background:currentColor;transition:width 1s cubic-bezier(.16,1,.3,1) .15s}
+  .slide.on .kfill{width:var(--w)}
 
   .foot{position:absolute;bottom:24px;left:24px;z-index:30;font-family:"JetBrains Mono";font-size:11px;mix-blend-mode:difference;color:#fff}
   .foot b{font-family:"Archivo";font-weight:900}
@@ -44,64 +59,76 @@
 <body>
   <div class="stage" id="stage">
     <div class="bars" id="bars"></div>
-    <div class="wmtop">HYBRID.</div><div class="num">SPRING ’26</div>
+    <div class="wmtop">HYBRID.</div><div class="num">PUSH DAY</div>
 
-    <!-- 1 -->
-    <div class="slide on" data-bg="#0c0d0c" data-fg="#f3f4ef" data-acc="#c4f035">
+    <!-- INTRO -->
+    <div class="slide on" data-bg="#0c0d0c">
       <span class="kick" style="color:#c4f035">The recap</span>
       <h1 class="display xl" style="color:#f3f4ef">
-        <span class="line l1"><span>One</span></span>
-        <span class="line l2"><span style="color:#c4f035">season.</span></span>
-        <span class="line l3"><span>No</span></span>
-        <span class="line l4"><span>skips.</span></span>
+        <span class="line l1"><span>Push</span></span>
+        <span class="line l2"><span style="color:#c4f035">day,</span></span>
+        <span class="line l3"><span>done.</span></span>
       </h1>
-      <p class="sub" style="color:#8b8f86">142 sessions. Tap through the numbers that built it.</p>
+      <p class="sub" style="color:#8b8f86">Four cards. Tap through the numbers that built it.</p>
     </div>
 
-    <!-- 2 sessions -->
-    <div class="slide" data-bg="#c4f035" data-fg="#0c0d0c">
-      <span class="kick" style="color:#0c0d0c">You showed up</span>
+    <!-- OVERVIEW -->
+    <div class="slide" data-bg="#c4f035">
+      <span class="kick" style="color:#0c0d0c">Your workout</span>
       <h2 class="display" style="color:#0c0d0c">
-        <span class="line l1"><span class="xl">142</span></span>
-        <span class="line l2"><span class="l">times.</span></span>
+        <span class="line l1"><span class="l">Overview</span></span>
       </h2>
-      <p class="sub" style="color:#0c0d0c">Your most consistent quarter on record. One every other day.</p>
+      <div class="ovstats" style="color:#0c0d0c">
+        <div><div class="v">58</div><div class="k">Min</div></div>
+        <div><div class="v">24</div><div class="k">Sets</div></div>
+        <div><div class="v">12.4t</div><div class="k">Volume</div></div>
+      </div>
+      <p class="sub" style="color:#0c0d0c">Logged, scored and saved. A clean, heavy session.</p>
     </div>
 
-    <!-- 3 volume marquee -->
-    <div class="slide" data-bg="#0c0d0c" data-fg="#fff">
-      <span class="kick" style="color:#7fd4e8">Total load</span>
+    <!-- RECORDS -->
+    <div class="slide" data-bg="#e0625e">
+      <span class="kick" style="color:#fff">Personal records</span>
       <h2 class="display" style="color:#fff">
-        <span class="line l1"><span class="xl" style="color:#7fd4e8">1.24M</span></span>
-        <span class="line l2"><span class="l">kg moved.</span></span>
+        <span class="line l1"><span class="l">2 new</span></span>
+        <span class="line l2"><span class="l">PRs 🏆</span></span>
       </h2>
-      <div class="marquee" style="bottom:120px"><div class="track">A BLUE WHALE · A BLUE WHALE · A BLUE WHALE · A BLUE WHALE · </div></div>
+      <div class="recs" style="color:#fff">
+        <div class="rec"><span class="n">🏆 Bench Press</span><span class="v">102.5 kg</span></div>
+        <div class="rec"><span class="n">🏆 Overhead Press</span><span class="v">60 kg</span></div>
+        <div class="rec"><span class="n">Incline DB</span><span class="v">34 kg</span></div>
+        <div class="rec"><span class="n">Cable Fly</span><span class="v">22 kg</span></div>
+      </div>
     </div>
 
-    <!-- 4 PR -->
-    <div class="slide" data-bg="#e0625e" data-fg="#fff">
-      <span class="kick" style="color:#fff">Personal best</span>
+    <!-- MUSCLE -->
+    <div class="slide" data-bg="#7fd4e8">
+      <span class="kick" style="color:#0c0d0c">Muscle map</span>
+      <h2 class="display" style="color:#0c0d0c">
+        <span class="line l1"><span class="m">Where it landed</span></span>
+      </h2>
+      <div class="kbars" style="color:#0c0d0c">
+        <div class="kb"><div class="t"><span>Chest</span><span>5.2t</span></div><div class="ktrack"><div class="kfill" style="--w:100%"></div></div></div>
+        <div class="kb"><div class="t"><span>Shoulders</span><span>3.8t</span></div><div class="ktrack"><div class="kfill" style="--w:72%"></div></div></div>
+        <div class="kb"><div class="t"><span>Triceps</span><span>2.1t</span></div><div class="ktrack"><div class="kfill" style="--w:58%"></div></div></div>
+        <div class="kb"><div class="t"><span>Back</span><span>1.3t</span></div><div class="ktrack"><div class="kfill" style="--w:36%"></div></div></div>
+      </div>
+    </div>
+
+    <!-- FUN FACT -->
+    <div class="slide" data-bg="#0c0d0c">
+      <span class="kick" style="color:#c4f035">Fun fact</span>
       <h2 class="display" style="color:#fff">
-        <span class="line l1"><span class="l">Deadlift</span></span>
-        <span class="line l2"><span class="xl">220</span></span>
+        <span class="line l1"><span class="l">You moved</span></span>
+        <span class="line l2"><span class="xl" style="color:#c4f035">12,400</span></span>
         <span class="line l3"><span class="l">kilos.</span></span>
       </h2>
-      <p class="sub" style="color:#fff">One of 38 records you broke. Up 15 kg this season.</p>
+      <p class="sub" style="color:#8b8f86">That's two grand pianos — set by set. 🔥</p>
     </div>
 
-    <!-- 5 streak -->
-    <div class="slide" data-bg="#7fd4e8" data-fg="#0c0d0c">
-      <span class="kick" style="color:#0c0d0c">Unbroken</span>
-      <h2 class="display" style="color:#0c0d0c">
-        <span class="line l1"><span class="xl">21</span></span>
-        <span class="line l2"><span class="l">week streak.</span></span>
-      </h2>
-      <p class="sub" style="color:#0c0d0c">Discipline you can measure. The hardest stat to fake.</p>
-    </div>
-
-    <!-- 6 close -->
-    <div class="slide" data-bg="#0c0d0c" data-fg="#f3f4ef" data-acc="#c4f035">
-      <span class="kick" style="color:#c4f035">See you in summer</span>
+    <!-- OUTRO -->
+    <div class="slide" data-bg="#0c0d0c">
+      <span class="kick" style="color:#c4f035">See you tomorrow</span>
       <h2 class="display xl" style="color:#f3f4ef">
         <span class="line l1"><span>Go</span></span>
         <span class="line l2"><span style="color:#c4f035">again.</span></span>
@@ -124,7 +151,8 @@
     cur=(i+slides.length)%slides.length;
     slides.forEach((s,n)=>s.classList.toggle('on',n===cur));
     stage.style.background=slides[cur].dataset.bg||'#0c0d0c';
-    fills.forEach((f,n)=>{f.style.transition='none';f.style.width=n<cur?'100%':'0';f.style.background=(slides[cur].dataset.fg||'#fff')});
+    const dark=['#c4f035','#7fd4e8'].includes(slides[cur].dataset.bg);
+    fills.forEach((f,n)=>{f.style.transition='none';f.style.width=n<cur?'100%':'0';f.style.background=dark?'#0c0d0c':'#fff'});
     requestAnimationFrame(()=>{const f=fills[cur];f.style.transition=`width ${DUR}ms linear`;f.style.width='100%'});
     clearTimeout(timer);timer=setTimeout(()=>show(cur+1),DUR);
   }

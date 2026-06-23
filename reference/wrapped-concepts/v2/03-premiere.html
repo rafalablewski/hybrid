@@ -10,16 +10,14 @@
   body{background:#120617;font-family:"Archivo",system-ui,sans-serif;color:#fff5ea;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
   .stage{position:relative;width:min(440px,100vw);height:min(900px,100vh);overflow:hidden;
     background:radial-gradient(120% 80% at 50% -10%,#46175f,#1a0826 55%,#0b0312 100%)}
-  /* twinkling starfield */
   .stars{position:absolute;inset:0;pointer-events:none;
     background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 20%,#ffe9b0,transparent),
       radial-gradient(1.5px 1.5px at 40% 70%,#fff,transparent),radial-gradient(1px 1px at 85% 60%,#ffd2f0,transparent),
       radial-gradient(2px 2px at 60% 85%,#fff,transparent),radial-gradient(1px 1px at 12% 80%,#bfe6ff,transparent);
-    background-size:100% 100%;animation:twinkle 4s ease-in-out infinite}
+    animation:twinkle 4s ease-in-out infinite}
   @keyframes twinkle{0%,100%{opacity:.5}50%{opacity:1}}
-  /* magic glow */
-  .halo{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);width:320px;height:320px;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,196,110,.35),transparent 62%);filter:blur(6px);pointer-events:none}
+  .halo{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);width:320px;height:320px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,196,110,.32),transparent 62%);filter:blur(6px);pointer-events:none}
 
   .bars{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:6px;z-index:30}
   .bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
@@ -27,29 +25,47 @@
   .wmtop{position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;font-family:"Fraunces";font-weight:900;font-size:20px;color:#fff5ea}
   .wmtop i{font-style:italic;background:linear-gradient(90deg,#ffd36e,#ff8fcf);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-  .slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 32px 64px;text-align:center}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:78px 32px 62px;text-align:center}
   .slide.on{display:flex}
   .kicker{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.3em;color:#e8b9ff;text-transform:uppercase}
   .pop{opacity:0;transform:translateY(20px) scale(.96);animation:rise .8s cubic-bezier(.2,1.1,.3,1) forwards}
-  .slide.on .d1{animation-delay:.1s}.slide.on .d2{animation-delay:.3s}.slide.on .d3{animation-delay:.55s}.slide.on .d4{animation-delay:.8s}
+  .slide.on .d1{animation-delay:.1s}.slide.on .d2{animation-delay:.3s}.slide.on .d3{animation-delay:.52s}.slide.on .d4{animation-delay:.72s}.slide.on .d5{animation-delay:.9s}
   @keyframes rise{to{opacity:1;transform:none}}
 
   .serif{font-family:"Fraunces";font-weight:900;letter-spacing:-.01em;line-height:.98}
   .serif em{font-style:italic;font-weight:600;background:linear-gradient(90deg,#ffd36e,#ff8fcf);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .h-xl{font-size:clamp(60px,18vw,120px)}
-  .h-l{font-size:clamp(34px,10vw,60px)}
-  .star-emoji{font-size:128px;line-height:1;filter:drop-shadow(0 8px 24px rgba(255,160,80,.5));animation:float 3.5s ease-in-out infinite}
+  .h-xl{font-size:clamp(58px,17vw,116px)}
+  .h-l{font-size:clamp(34px,10vw,58px)}
+  .star-emoji{font-size:118px;line-height:1;filter:drop-shadow(0 8px 24px rgba(255,160,80,.5));animation:float 3.5s ease-in-out infinite}
   @keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
-  .narr{font-family:"Fraunces";font-weight:400;font-size:clamp(19px,5vw,26px);color:#f3dcff;margin-top:22px;max-width:18ch;line-height:1.35}
-  .big-num{font-family:"Fraunces";font-weight:900;font-size:clamp(90px,30vw,200px);line-height:.85;
+  .narr{font-family:"Fraunces";font-weight:400;font-size:clamp(18px,4.8vw,24px);color:#f3dcff;margin-top:20px;max-width:20ch;line-height:1.35}
+  .label{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.2em;color:#e8b9ff;text-transform:uppercase;margin-top:12px}
+
+  /* overview stats */
+  .stats{display:flex;gap:14px;margin-top:30px}
+  .stats .s{text-align:center}
+  .stats .v{font-family:"Fraunces";font-weight:900;font-size:clamp(40px,12vw,64px);line-height:1;
     background:linear-gradient(180deg,#ffe9a8,#ff9ed4);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .label{font-family:"JetBrains Mono";font-size:13px;letter-spacing:.22em;color:#e8b9ff;text-transform:uppercase;margin-top:14px}
+  .stats .l{font-family:"JetBrains Mono";font-size:10px;letter-spacing:.14em;color:#c79be0;margin-top:6px;text-transform:uppercase}
+
+  /* records list */
+  .pr-wrap{width:min(380px,90%);margin-top:18px;text-align:left}
+  .pr{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-bottom:1px solid rgba(232,185,255,.2)}
+  .pr .n{font-family:"Fraunces";font-weight:500;font-size:20px}.pr .v{font-family:"Fraunces";font-weight:600;font-size:20px}
+  .pr.hot .v{background:linear-gradient(90deg,#ffd36e,#ff8fcf);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* muscle bars */
+  .mbars{width:min(380px,90%);margin-top:22px;text-align:left}
+  .mb{margin-top:18px}.mb:first-child{margin-top:0}
+  .mb .t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;font-family:"Fraunces"}
+  .mb .t b{font-weight:500;font-size:19px}.mb .t span{font-family:"JetBrains Mono";font-size:12px;color:#c79be0}
+  .mtrack{height:9px;border-radius:5px;background:rgba(232,185,255,.16);overflow:hidden}
+  .mfill{height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#ffd36e,#ff8fcf)}
 
   .foot{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-family:"JetBrains Mono";font-size:11px;color:#9a7ab0}
   .foot b{font-family:"Fraunces";font-weight:900;color:#fff5ea}.foot b i{font-style:italic;background:linear-gradient(90deg,#ffd36e,#ff8fcf);-webkit-background-clip:text;background-clip:text;color:transparent}
   .nav{position:absolute;inset:0;display:flex;z-index:25}.nav div{flex:1;cursor:pointer}
 
-  /* confetti */
   .confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:15}
   .confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;opacity:.9;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(960px) rotate(540deg);opacity:0}}
@@ -61,46 +77,64 @@
     <div class="bars" id="bars"></div>
     <div class="wmtop">HYBRID<i>.</i></div>
 
+    <!-- INTRO -->
     <div class="slide on">
       <div class="pop d1 kicker">Now showing</div>
-      <div class="pop d2 serif h-l" style="margin-top:16px">Your Spring,</div>
+      <div class="pop d2 serif h-l" style="margin-top:16px">Push Day,</div>
       <div class="pop d3 serif h-xl"><em>the movie.</em></div>
-      <div class="pop d4 narr">A story in 142 sessions. Roll it.</div>
+      <div class="pop d4 narr">Four scenes. One workout. Roll it.</div>
     </div>
 
+    <!-- OVERVIEW -->
     <div class="slide">
-      <div class="pop d1 star-emoji">💪</div>
-      <div class="pop d2 serif h-l" style="margin-top:18px">Our hero showed up</div>
-      <div class="pop d3 big-num">142×</div>
-      <div class="pop d4 narr">Through rain, soreness and snooze buttons. Every single time.</div>
+      <div class="pop d1 kicker">Scene one · the overview</div>
+      <div class="pop d2 star-emoji">💪</div>
+      <div class="pop d3 serif h-l" style="margin-top:14px">Push Day</div>
+      <div class="pop d4 stats">
+        <div class="s"><div class="v">58</div><div class="l">Min</div></div>
+        <div class="s"><div class="v">24</div><div class="l">Sets</div></div>
+        <div class="s"><div class="v">12.4t</div><div class="l">Volume</div></div>
+      </div>
     </div>
 
+    <!-- RECORDS -->
     <div class="slide">
-      <div class="pop d1 kicker">Plot twist</div>
-      <div class="pop d2 big-num" style="margin-top:8px">38</div>
-      <div class="pop d3 label">personal records shattered</div>
-      <div class="pop d4 narr">The crowd went wild. (The crowd was you, in the mirror.)</div>
+      <div class="pop d1 kicker">Scene two · plot twist</div>
+      <div class="pop d2 serif h-l" style="margin-top:10px"><em>2 new PRs</em> 🏆</div>
+      <div class="pop d3 pr-wrap">
+        <div class="pr hot"><span class="n">🏆 Bench Press</span><span class="v">102.5 kg</span></div>
+        <div class="pr hot"><span class="n">🏆 Overhead Press</span><span class="v">60 kg</span></div>
+        <div class="pr"><span class="n">Incline DB</span><span class="v">34 kg</span></div>
+        <div class="pr"><span class="n">Cable Fly</span><span class="v">22 kg</span></div>
+      </div>
     </div>
 
+    <!-- MUSCLE -->
     <div class="slide">
-      <div class="pop d1 star-emoji">🐋</div>
-      <div class="pop d2 serif h-l" style="margin-top:18px">You moved a</div>
-      <div class="pop d3 serif h-xl" style="font-size:clamp(48px,14vw,90px)"><em>blue whale</em></div>
-      <div class="pop d4 narr">1,240,000 kg, lifted bar by bar. No big deal.</div>
+      <div class="pop d1 kicker">Scene three · the cast</div>
+      <div class="pop d2 serif h-l" style="margin-top:6px">Muscle map</div>
+      <div class="pop d3 mbars">
+        <div class="mb"><div class="t"><b>Chest</b><span>5.2t</span></div><div class="mtrack"><div class="mfill" data-w="100%"></div></div></div>
+        <div class="mb"><div class="t"><b>Shoulders</b><span>3.8t</span></div><div class="mtrack"><div class="mfill" data-w="72%"></div></div></div>
+        <div class="mb"><div class="t"><b>Triceps</b><span>2.1t</span></div><div class="mtrack"><div class="mfill" data-w="58%"></div></div></div>
+        <div class="mb"><div class="t"><b>Back</b><span>1.3t</span></div><div class="mtrack"><div class="mfill" data-w="36%"></div></div></div>
+      </div>
     </div>
 
+    <!-- FUN FACT -->
     <div class="slide">
-      <div class="pop d1 kicker">The grand finale</div>
-      <div class="pop d2 big-num" style="margin-top:8px">220<span style="font-size:.3em">kg</span></div>
-      <div class="pop d3 label">deadlift · new record</div>
-      <div class="pop d4 narr">Cue the music. You earned the spotlight.</div>
+      <div class="pop d1 kicker">Scene four · the grand finale</div>
+      <div class="pop d2 star-emoji">🔥</div>
+      <div class="pop d3 serif h-l" style="margin-top:14px">You moved<br><em>two grand pianos</em></div>
+      <div class="pop d4 narr">12,400 kg, lifted bar by bar. Cue the applause.</div>
     </div>
 
+    <!-- OUTRO -->
     <div class="slide">
       <div class="pop d1 serif h-l">To be</div>
       <div class="pop d2 serif h-xl"><em>continued…</em></div>
-      <div class="pop d3 narr" style="margin-top:24px">Summer's sequel is already in production.</div>
-      <div class="pop d4 foot" style="position:static;margin-top:34px">Tracked with <b>HYBRID<i>.</i></b></div>
+      <div class="pop d3 narr" style="margin-top:24px">Tomorrow's sequel is already in production.</div>
+      <div class="pop d4 foot" style="position:static;margin-top:32px">Tracked with <b>HYBRID<i>.</i></b></div>
     </div>
 
     <div class="confetti" id="confetti"></div>
@@ -116,12 +150,14 @@
   const DUR=4600;let cur=0,timer;
   const cols=['#ffd36e','#ff8fcf','#9be7ff','#c4f035','#ffffff'];
   function burst(){const c=document.getElementById('confetti');c.innerHTML='';for(let i=0;i<60;i++){const p=document.createElement('i');p.style.left=Math.random()*100+'%';p.style.background=cols[i%cols.length];p.style.animationDuration=(2.4+Math.random()*2)+'s';p.style.animationDelay=(Math.random()*.6)+'s';c.appendChild(p)}}
+  function mbars(s){s.querySelectorAll('.mfill').forEach((f,i)=>{f.style.transition='none';f.style.width='0';requestAnimationFrame(()=>{f.style.transition='width 1.1s cubic-bezier(.16,1,.3,1) '+(i*.12)+'s';f.style.width=f.dataset.w})})}
   function show(i){
     cur=(i+slides.length)%slides.length;
     slides.forEach((s,n)=>s.classList.toggle('on',n===cur));
     fills.forEach((f,n)=>{f.style.transition='none';f.style.width=n<cur?'100%':'0'});
     requestAnimationFrame(()=>{const f=fills[cur];f.style.transition=`width ${DUR}ms linear`;f.style.width='100%'});
-    if(cur===2||cur===5)burst();
+    if(cur===2||cur===4||cur===5)burst();
+    if(slides[cur].querySelector('.mfill'))mbars(slides[cur]);
     clearTimeout(timer);timer=setTimeout(()=>show(cur+1),DUR);
   }
   document.getElementById('next').onclick=()=>show(cur+1);

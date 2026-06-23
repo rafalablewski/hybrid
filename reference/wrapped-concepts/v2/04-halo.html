@@ -27,30 +27,39 @@
   .slide.on{display:flex}
   .kicker{font-family:"JetBrains Mono";font-size:12px;letter-spacing:.26em;color:#7b8088;text-transform:uppercase}
   .pop{opacity:0;transform:translateY(18px);animation:rise .8s cubic-bezier(.16,1,.3,1) forwards}
-  .slide.on .d1{animation-delay:.06s}.slide.on .d2{animation-delay:.22s}.slide.on .d3{animation-delay:.4s}.slide.on .d4{animation-delay:.58s}
+  .slide.on .d1{animation-delay:.06s}.slide.on .d2{animation-delay:.22s}.slide.on .d3{animation-delay:.4s}.slide.on .d4{animation-delay:.58s}.slide.on .d5{animation-delay:.74s}
   @keyframes rise{to{opacity:1;transform:none}}
 
   .glass{background:rgba(255,255,255,.45);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
     border:1px solid rgba(255,255,255,.7);border-radius:30px;box-shadow:0 20px 50px rgba(60,70,110,.16)}
-
   .hero{font-weight:900;letter-spacing:-.03em;line-height:.95;font-size:clamp(44px,13vw,84px)}
   .grad-pink{background:linear-gradient(120deg,#ff4d7d,#ff8a5c);-webkit-background-clip:text;background-clip:text;color:transparent}
   .cap{font-weight:500;font-size:clamp(16px,4.4vw,20px);color:#565b63;margin-top:18px;max-width:22ch;line-height:1.4}
 
+  /* overview stats */
+  .stats{display:flex;gap:10px;margin-top:30px}
+  .stats .s{padding:18px 16px;border-radius:22px;text-align:center;min-width:92px}
+  .stats .v{font-weight:900;font-size:clamp(30px,8vw,46px);letter-spacing:-.03em;line-height:1}
+  .stats .l{font-family:"JetBrains Mono";font-size:10px;letter-spacing:.14em;color:#7b8088;margin-top:6px;text-transform:uppercase}
+
   /* rings */
-  .rings{position:relative;width:300px;height:300px}
+  .rings{position:relative;width:288px;height:288px}
   .rings svg{transform:rotate(-90deg)}
   .rings .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .rings .ctr b{font-weight:900;font-size:58px;letter-spacing:-.03em;line-height:1}
-  .rings .ctr span{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.18em;color:#7b8088;text-transform:uppercase;margin-top:2px}
-  .legend{display:flex;gap:18px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+  .rings .ctr b{font-weight:900;font-size:46px;letter-spacing:-.03em;line-height:1}
+  .rings .ctr span{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.16em;color:#7b8088;text-transform:uppercase;margin-top:2px}
+  .legend{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap;justify-content:center}
   .legend div{display:flex;align-items:center;gap:7px;font-family:"JetBrains Mono";font-size:12px;color:#565b63}
   .legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
 
-  .stat-num{font-weight:900;font-size:clamp(96px,32vw,200px);letter-spacing:-.04em;line-height:.85}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;margin-top:18px;
-    font-family:"JetBrains Mono";font-size:13px;letter-spacing:.06em}
-  .award{font-size:120px;line-height:1;filter:drop-shadow(0 10px 26px rgba(255,140,90,.4))}
+  /* records */
+  .pr-wrap{width:min(360px,90%);margin-top:18px;text-align:left}
+  .pr{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-bottom:1px solid rgba(22,24,28,.12)}
+  .pr .n{font-weight:600;font-size:19px}.pr .v{font-weight:800;font-size:19px}
+  .pr.hot .v{color:#ff4d7d}
+
+  .award{font-size:118px;line-height:1;filter:drop-shadow(0 10px 26px rgba(255,140,90,.4))}
+  .stat-num{font-weight:900;font-size:clamp(80px,26vw,150px);letter-spacing:-.04em;line-height:.85}
 
   .foot{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-family:"JetBrains Mono";font-size:11px;color:#9aa0a8}
   .foot b{font-family:"Archivo";font-weight:900;color:#16181c}.foot b i{color:#ff4d7d;font-style:normal}
@@ -62,54 +71,69 @@
     <div class="bars" id="bars"></div>
     <div class="wmtop">HYBRID<i>.</i></div>
 
+    <!-- INTRO -->
     <div class="slide on">
-      <div class="pop d1 kicker">Spring 2026</div>
-      <div class="pop d2 hero" style="margin-top:14px">Look how<br>far you<br><span class="grad-pink">came.</span></div>
-      <div class="pop d3 cap">Three rings. One season. Let's close them.</div>
+      <div class="pop d1 kicker">Workout complete</div>
+      <div class="pop d2 hero" style="margin-top:14px">Nice<br>work,<br><span class="grad-pink">today.</span></div>
+      <div class="pop d3 cap">Four cards. Let's run through them.</div>
     </div>
 
+    <!-- OVERVIEW -->
     <div class="slide">
-      <div class="pop d1 kicker">Your season, in rings</div>
-      <div class="pop d2 rings" style="margin-top:14px">
-        <svg width="300" height="300" viewBox="0 0 300 300">
-          <circle cx="150" cy="150" r="128" fill="none" stroke="rgba(255,77,125,.15)" stroke-width="20"/>
-          <circle cx="150" cy="150" r="98" fill="none" stroke="rgba(124,196,90,.15)" stroke-width="20"/>
-          <circle cx="150" cy="150" r="68" fill="none" stroke="rgba(90,168,255,.15)" stroke-width="20"/>
-          <circle class="ring" data-r="128" cx="150" cy="150" r="128" fill="none" stroke="#ff4d7d" stroke-width="20" stroke-linecap="round"/>
-          <circle class="ring" data-r="98" cx="150" cy="150" r="98" fill="none" stroke="#7cc45a" stroke-width="20" stroke-linecap="round"/>
-          <circle class="ring" data-r="68" cx="150" cy="150" r="68" fill="none" stroke="#5aa8ff" stroke-width="20" stroke-linecap="round"/>
-        </svg>
-        <div class="ctr"><b>96%</b><span>goals hit</span></div>
-      </div>
-      <div class="pop d3 legend">
-        <div><i style="background:#ff4d7d"></i>Volume</div>
-        <div><i style="background:#7cc45a"></i>Consistency</div>
-        <div><i style="background:#5aa8ff"></i>Intensity</div>
+      <div class="pop d1 kicker">Your workout</div>
+      <div class="pop d2 hero grad-pink" style="margin-top:14px">Push Day</div>
+      <div class="pop d3 stats">
+        <div class="s glass"><div class="v">58</div><div class="l">Min</div></div>
+        <div class="s glass"><div class="v">24</div><div class="l">Sets</div></div>
+        <div class="s glass"><div class="v grad-pink">12.4t</div><div class="l">Volume</div></div>
       </div>
     </div>
 
-    <div class="slide">
-      <div class="pop d1 kicker">You showed up</div>
-      <div class="pop d2 stat-num grad-pink">142</div>
-      <div class="pop d3 cap">sessions logged — your most consistent quarter ever.</div>
-      <div class="pop d4 pill glass" style="color:#7cc45a">🟢 21-week streak, unbroken</div>
-    </div>
-
+    <!-- RECORDS -->
     <div class="slide">
       <div class="pop d1 award">🏅</div>
-      <div class="pop d2 hero" style="margin-top:14px">38 new<br><span class="grad-pink">records.</span></div>
-      <div class="pop d3 cap">Topped by a 220 kg deadlift — a personal ceiling, raised.</div>
+      <div class="pop d2 hero" style="margin-top:8px;font-size:clamp(36px,10vw,56px)">2 new <span class="grad-pink">PRs</span></div>
+      <div class="pop d3 pr-wrap">
+        <div class="pr hot"><span class="n">🏆 Bench Press</span><span class="v">102.5 kg</span></div>
+        <div class="pr hot"><span class="n">🏆 Overhead Press</span><span class="v">60 kg</span></div>
+        <div class="pr"><span class="n">Incline DB</span><span class="v">34 kg</span></div>
+        <div class="pr"><span class="n">Cable Fly</span><span class="v">22 kg</span></div>
+      </div>
     </div>
 
+    <!-- MUSCLE (the rings) -->
     <div class="slide">
-      <div class="pop d1 kicker">The headline</div>
-      <div class="pop d2 hero" style="margin-top:14px">1.24M kg</div>
-      <div class="pop d3 cap">moved this season — about the weight of a blue whale. 🐋</div>
+      <div class="pop d1 kicker">Muscle map</div>
+      <div class="pop d2 rings" style="margin-top:12px">
+        <svg width="288" height="288" viewBox="0 0 288 288">
+          <circle cx="144" cy="144" r="124" fill="none" stroke="rgba(255,77,125,.15)" stroke-width="19"/>
+          <circle cx="144" cy="144" r="95" fill="none" stroke="rgba(255,138,92,.15)" stroke-width="19"/>
+          <circle cx="144" cy="144" r="66" fill="none" stroke="rgba(90,168,255,.15)" stroke-width="19"/>
+          <circle class="ring" data-r="124" cx="144" cy="144" r="124" fill="none" stroke="#ff4d7d" stroke-width="19" stroke-linecap="round"/>
+          <circle class="ring" data-r="95" cx="144" cy="144" r="95" fill="none" stroke="#ff8a5c" stroke-width="19" stroke-linecap="round"/>
+          <circle class="ring" data-r="66" cx="144" cy="144" r="66" fill="none" stroke="#5aa8ff" stroke-width="19" stroke-linecap="round"/>
+        </svg>
+        <div class="ctr"><b>Chest</b><span>top mover</span></div>
+      </div>
+      <div class="pop d3 legend">
+        <div><i style="background:#ff4d7d"></i>Chest 5.2t</div>
+        <div><i style="background:#ff8a5c"></i>Shoulders 3.8t</div>
+        <div><i style="background:#5aa8ff"></i>Triceps 2.1t</div>
+      </div>
     </div>
 
+    <!-- FUN FACT -->
     <div class="slide">
-      <div class="pop d1 hero" style="margin-top:6px">Rings<br><span class="grad-pink">closed.</span></div>
-      <div class="pop d2 cap">Beautiful work. Summer's three rings are waiting.</div>
+      <div class="pop d1 kicker">Fun fact</div>
+      <div class="pop d2 award" style="filter:drop-shadow(0 10px 26px rgba(255,90,90,.4))">🔥</div>
+      <div class="pop d3 hero" style="margin-top:10px;font-size:clamp(34px,9vw,52px)">12,400 kg<br>moved</div>
+      <div class="pop d4 cap">about the weight of two grand pianos. 🎹</div>
+    </div>
+
+    <!-- OUTRO -->
+    <div class="slide">
+      <div class="pop d1 hero" style="margin-top:6px">All done.<br><span class="grad-pink">Recover.</span></div>
+      <div class="pop d2 cap">Beautiful work. Tomorrow's cards are waiting.</div>
       <div class="pop d3 foot" style="position:static;margin-top:34px">Tracked with <b>HYBRID<i>.</i></b></div>
     </div>
 
@@ -123,7 +147,7 @@
   slides.forEach(()=>barsEl.insertAdjacentHTML('beforeend','<i><b></b></i>'));
   const fills=[...barsEl.querySelectorAll('b')];
   const DUR=4600;let cur=0,timer;
-  const pct=[.96,.88,.7];
+  const pct=[1,.73,.58];
   function spinRings(){[...document.querySelectorAll('.ring')].forEach((c,i)=>{
     const r=+c.dataset.r,C=2*Math.PI*r;
     c.style.transition='none';c.style.strokeDasharray=C;c.style.strokeDashoffset=C;
