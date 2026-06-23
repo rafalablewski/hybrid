@@ -41,7 +41,8 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
   };
   const toggle = async (g: CoachGroup, clientId: string) => {
     const has = g.clientIds.includes(clientId);
-    await patchCoachGroup(g.id, { clientIds: has ? g.clientIds.filter((x) => x !== clientId) : [...g.clientIds, clientId] });
+    // Atomic delta (not a whole-array replace) so concurrent toggles don't clobber.
+    await patchCoachGroup(g.id, has ? { removeClientId: clientId } : { addClientId: clientId });
     load();
   };
   const del = async (id: string) => { await deleteCoachGroup(id); load(); };
