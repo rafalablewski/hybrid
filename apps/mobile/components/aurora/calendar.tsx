@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
@@ -26,7 +26,7 @@ export default function AuroraCalendar() {
   const [selected, setSelected] = useState(todayKey());
 
   const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const byDay = useMemo(() => sessionsByDay(sessions), [sessions]);
   const intensity = useMemo(() => loadIntensity(byDay), [byDay]);

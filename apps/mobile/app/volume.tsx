@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import {
   volumeStatus,
@@ -47,7 +48,7 @@ function ClassicVolume() {
     setRefreshing(true);
     fetchSessions().then(setSessions).finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;

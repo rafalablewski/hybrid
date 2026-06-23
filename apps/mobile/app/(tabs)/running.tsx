@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { View, Text, Pressable } from "react-native";
 import {
   runTotals,
@@ -35,7 +36,7 @@ function ClassicRunning() {
     setRefreshing(true);
     fetchSessions().then(setSessions).finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);

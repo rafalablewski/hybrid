@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES,
@@ -29,7 +29,7 @@ export default function AuroraVelocity() {
   const [targetVel, setTargetVel] = useState(0.5);
 
   const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
   const noData = lifts.length === 0;

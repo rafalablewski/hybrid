@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   todayNutrition,
   adaptiveTargets,
@@ -41,7 +41,7 @@ function ClassicNutrition() {
     setRefreshing(true);
     fetchSignals().then(setSignals as (s: CoreSignal[]) => void).finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const sig = signals as unknown as Parameters<typeof todayNutrition>[0];
   const today = useMemo(() => todayNutrition(sig), [signals]);

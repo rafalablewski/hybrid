@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   weeklyVolumeTrend, weeklyMuscleSets, exerciseTable, volumeStatus, volumeAdvice, resolveLandmarks, fmtWeight,
   type LoggedSession, type ExercisePeriod, type TrendDir, type MuscleGroup, type ExerciseTableRow,
@@ -30,7 +30,7 @@ export default function AuroraTrends() {
   const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
 
   const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume, units = prefs.units, fr = prefs.fractionalVolume;

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import {
   exerciseHistory,
   exerciseDashboard,
@@ -56,7 +56,7 @@ function ClassicExercises() {
     setRefreshing(true);
     fetchSessions().then(setSessions).finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const history = useMemo(() => exerciseHistory(sessions), [sessions]);
   const active = selected || history[0]?.name || "";

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../lib/api";
 import { fs, space, Screen, Card, Kicker, Mono, Chip, Button, F } from "../lib/ui";
@@ -38,7 +38,7 @@ function ClassicCheckin() {
       .then(([c, s]) => { setHistory(c); setSessions(s); })
       .finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
   useEffect(() => {
     fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {});
   }, []);

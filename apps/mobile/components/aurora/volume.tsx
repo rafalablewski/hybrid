@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   volumeStatus, volumeAdvice, resolveLandmarks, ALL_MUSCLES,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
@@ -26,7 +26,7 @@ export default function AuroraVolume() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
 
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;
