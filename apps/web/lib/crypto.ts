@@ -9,9 +9,12 @@ export function verifyBearerSecret(authHeader: string | null, secret: string | u
   if (!secret) return false;
   const prefix = "Bearer ";
   if (!authHeader || !authHeader.startsWith(prefix)) return false;
-  const provided = Buffer.from(authHeader.slice(prefix.length));
-  const expected = Buffer.from(secret);
-  return provided.length === expected.length && timingSafeEqual(provided, expected);
+  // Compare SHA-256 digests (always 32 bytes) rather than the raw strings: this
+  // keeps the comparison constant-time AND avoids leaking the secret's length via
+  // the early length check timingSafeEqual would otherwise require.
+  const provided = createHash("sha256").update(authHeader.slice(prefix.length)).digest();
+  const expected = createHash("sha256").update(secret).digest();
+  return timingSafeEqual(provided, expected);
 }
 
 // App-layer encryption for secrets at rest (wearable OAuth tokens). AES-256-GCM

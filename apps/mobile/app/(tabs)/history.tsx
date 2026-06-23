@@ -30,7 +30,6 @@ function ClassicHistory() {
   const sessions = q.data ?? [];
   const loading = q.isPending;
   const refreshing = q.isFetching;
-  const load = () => revalidate.sessions();
 
   // Refetch whenever the tab regains focus (e.g. right after logging).
   useRefreshOnFocus(q.refetch);

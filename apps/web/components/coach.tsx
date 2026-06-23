@@ -44,19 +44,20 @@ export default function CoachScreen() {
   const { isEnabled } = useFlags();
   const qc = useQueryClient();
 
-  const linksQuery = useQuery({
+  const { data: linksData, refetch: refetchLinks } = useQuery({
     queryKey: ["coach-links"],
     queryFn: async (): Promise<Links> => {
       const res = await fetch("/api/coach/links");
       return res.ok ? ((await res.json()) as Links) : { asCoach: [], asClient: [] };
     },
   });
-  const data = linksQuery.data ?? null;
-  // A link change (invite/accept/end) also changes the computed roster — revalidate both.
+  const data = linksData ?? null;
+  // A link change (invite/accept/end) also changes the computed roster — revalidate
+  // both. Depend on the stable refetch (not the per-render query object).
   const load = useCallback(() => {
-    linksQuery.refetch();
+    refetchLinks();
     qc.invalidateQueries({ queryKey: rosterKey });
-  }, [linksQuery, qc]);
+  }, [refetchLinks, qc]);
 
   const invite = async () => {
     setMsg(null);

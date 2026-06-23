@@ -139,9 +139,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           if (!cancelled) setSession(null);
           return Promise.resolve();
         }
-        return resolveSession(user).then((s) => {
-          if (!cancelled && mine === seq) setSession(s);
-        });
+        return resolveSession(user)
+          .then((s) => {
+            if (!cancelled && mine === seq) setSession(s);
+          })
+          .catch((err) => {
+            // resolveSession already falls back internally, but guard against an
+            // unexpected rejection so it never surfaces as an unhandled promise.
+            console.error("session resolve failed:", err);
+            if (!cancelled && mine === seq) setSession(null);
+          });
       };
 
       supabase.auth.getUser().then(async ({ data }) => {

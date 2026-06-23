@@ -31,7 +31,7 @@ function emit() {
 
 function load() {
   fetch("/api/flags")
-    .then((r) => r.json())
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
     .then((d) => {
       snapshot = { flags: d.flags ?? {}, values: d.values ?? {}, ready: true };
       emit();
