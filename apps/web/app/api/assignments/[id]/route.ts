@@ -23,6 +23,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!status && typeof b.sessionId !== "string")
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
+  // A linked session must belong to the assignment's athlete — never trust a
+  // caller-supplied id, or one user could attach another user's Session to the
+  // assignment (cross-object reference / data-leak vector).
+  if (typeof b.sessionId === "string") {
+    const owned = await prisma.session.findFirst({ where: { id: b.sessionId, userId: a.athleteId }, select: { id: true } });
+    if (!owned) return NextResponse.json({ error: "invalid sessionId" }, { status: 400 });
+  }
+
   const updated = await prisma.assignment.update({
     where: { id },
     data: {
