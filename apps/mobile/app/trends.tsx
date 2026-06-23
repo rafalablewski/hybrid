@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   weeklyVolumeTrend,
   weeklyMuscleSets,
@@ -15,7 +15,8 @@ import {
   type MuscleGroup,
   type ExerciseTableRow,
 } from "@hybrid/core";
-import { fetchSessions } from "../lib/api";
+import { useSessionsQuery } from "../lib/queries";
+import { useRefreshOnFocus } from "../lib/query";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { fs, space, Screen, Card, Kicker, H1, Mono, F } from "../lib/ui";
@@ -44,17 +45,13 @@ function ClassicTrends() {
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [period, setPeriod] = useState<ExercisePeriod>("all");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
   const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
 
-  const load = () => {
-    setRefreshing(true);
-    fetchSessions().then(setSessions).finally(() => setRefreshing(false));
-  };
-  useFocusEffect(useCallback(load, []));
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;

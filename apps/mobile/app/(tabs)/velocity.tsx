@@ -1,5 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
   fitLoadVelocityProfile,
@@ -15,7 +14,8 @@ import {
   type LoadVelocityProfile,
   type LVPoint,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { useSessionsQuery } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { fs, space, Screen, Card, Kicker, Mono, Chip, C, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -37,18 +37,12 @@ export default function Velocity() {
 function ClassicVelocity() {
   const C = useTheme().palette;
   const { t } = useLang();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [lift, setLift] = useState<string>("");
   const [targetVel, setTargetVel] = useState(0.5);
 
-  const load = () => {
-    setRefreshing(true);
-    fetchSessions()
-      .then(setSessions)
-      .finally(() => setRefreshing(false));
-  };
-  useFocusEffect(useCallback(load, []));
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
   const noData = lifts.length === 0;
