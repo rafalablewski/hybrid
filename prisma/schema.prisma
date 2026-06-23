@@ -82,6 +82,9 @@ model User {
   coachInvites  CoachInvite[]   @relation("coachInvites")
   coachDiets    CoachDiet[]     @relation("coachDiets")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
+
+  // Admin lists order/filter users by recency (admin/users, admin/stats growth).
+  @@index([createdAt])
 }
 
 // Admin-granted per-user feature access (nav ids) beyond the user's persona.
@@ -244,7 +247,8 @@ model Checkin {
   sharedWithCoach Boolean @default(false)
   createdAt    DateTime  @default(now())
 
-  @@index([userId])
+  // Read as "where userId order by weekOf desc".
+  @@index([userId, weekOf])
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.
@@ -307,7 +311,12 @@ model Session {
   // the default History list + all engines, but kept for the audit trail.
   archivedAt  DateTime?
 
-  @@index([userId])
+  // History/engine reads are "where userId (+ archivedAt is null) order by
+  // startedAt desc". A bare userId index made Postgres sort in memory and
+  // couldn't serve the global `order by startedAt` admin paths.
+  @@index([userId, startedAt])
+  @@index([userId, archivedAt, startedAt])
+  @@index([startedAt])
 }
 
 // A workout logged BEFORE the athlete has an account (guest mode). The mobile
@@ -354,7 +363,8 @@ model Biometric {
   sleepH    Float?
   source    String // "apple" | "whoop" | ...
 
-  @@index([userId])
+  // Read as "where userId order by date desc".
+  @@index([userId, date])
 }
 
 // The Athlete Twin's universal time-series. Every measurement — recovery, GPS
@@ -789,6 +799,9 @@ model AgentRun {
   createdAt    DateTime @default(now())
 
   @@index([agentId, createdAt])
+  // Global admin views sort runs by recency without an agentId filter, which the
+  // composite above can't serve.
+  @@index([createdAt])
 }
 
 // A standing task that runs an agent on a cadence. The cron route (/api/cron/
