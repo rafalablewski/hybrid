@@ -171,7 +171,7 @@ const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: s
       {st.panel && (
         <View
           pointerEvents="none"
-          style={{ position: "absolute", top: width * 0.045, left: width * 0.045, right: width * 0.045, bottom: width * 0.045, borderRadius: width * 0.045, backgroundColor: st.panel.fill, borderWidth: 1.5, borderColor: st.panel.border }}
+          style={{ position: "absolute", top: width * 0.045, left: width * 0.045, right: width * 0.045, bottom: width * 0.045, borderRadius: width * 0.045, backgroundColor: st.panel.fill, borderWidth: st.panel.border ? 1.5 : 0, borderColor: st.panel.border }}
         />
       )}
       <View>
@@ -182,7 +182,13 @@ const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: s
         <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.accent, letterSpacing: 2, marginTop: 6 }}>{eyebrow.toUpperCase()}</Text>
       </View>
       <View style={{ flex: 1, justifyContent: "center" }}>{children}</View>
-      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.muted }}>{tracked}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.muted }}>
+        {tracked.endsWith(`${brand.name}.`) ? tracked.slice(0, -(brand.name.length + 1)) : `${tracked} `}
+        {/* Render the trailing brand as the LOGO — display wordmark + lime dot. */}
+        <Text style={{ fontFamily: F.black, color: st.wordmark }}>
+          {brand.name}<Text style={{ color: st.accent }}>.</Text>
+        </Text>
+      </Text>
     </View>
   ),
 );

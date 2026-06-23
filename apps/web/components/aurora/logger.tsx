@@ -639,7 +639,7 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
         );
       })}
       {st.panel && (
-        <div style={{ position: "absolute", inset: w * 0.045, borderRadius: px(40), background: st.panel.fill, border: `2px solid ${st.panel.border}`, backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: w * 0.045, borderRadius: px(40), background: st.panel.fill, border: st.panel.border ? `2px solid ${st.panel.border}` : "none", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", pointerEvents: "none" }} />
       )}
       <div style={{ position: "absolute", inset: 0, padding: `${px(170)} ${px(96)}`, display: "flex", flexDirection: "column", justifyContent: "space-between", boxSizing: "border-box" }}>
         <div>
@@ -649,7 +649,21 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
           <div style={{ fontFamily: M, fontSize: px(28), color: st.accent, letterSpacing: ".14em", marginTop: px(10) }}>{slide.eyebrow.toUpperCase()}</div>
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>{body}</div>
-        <div style={{ fontFamily: M, fontSize: px(30), color: st.muted }}>{t("share.tracked")}</div>
+        {(() => {
+          // "Tracked with HYBRID." — render the trailing brand as the LOGO
+          // (display wordmark + lime dot) rather than plain muted text.
+          const tracked = t("share.tracked");
+          const mark = "HYBRID.";
+          const prefix = tracked.endsWith(mark) ? tracked.slice(0, -mark.length) : `${tracked} `;
+          return (
+            <div style={{ fontFamily: M, fontSize: px(30), color: st.muted, display: "flex", alignItems: "baseline", flexWrap: "wrap" }}>
+              {prefix}
+              <span style={{ fontFamily: D, fontWeight: 900, color: st.wordmark, letterSpacing: "-0.02em" }}>
+                HYBRID<span style={{ color: st.accent }}>.</span>
+              </span>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

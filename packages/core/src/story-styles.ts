@@ -27,8 +27,9 @@ export type StoryDisc = { x: number; y: number; r: number; color: string };
 /** A diagonal gradient (top-left `from` → bottom-right `to`) painted over `bg`. */
 export type StoryGradient = { from: string; to: string };
 
-/** A translucent inset slab behind the content (Liquid Glass). */
-export type StoryPanel = { fill: string; border: string };
+/** A translucent inset slab behind the content (Liquid Glass). The `border`
+ *  (rim stroke) is optional — omit it for a borderless frosted slab. */
+export type StoryPanel = { fill: string; border?: string };
 
 export type StoryStyle = {
   id: StoryStyleId;
@@ -83,7 +84,9 @@ export const STORY_STYLES: readonly StoryStyle[] = [
       { x: 0.24, y: 0.2, r: 0.58, color: "rgba(196,240,53,0.30)" },
       { x: 0.82, y: 0.78, r: 0.58, color: "rgba(127,212,232,0.28)" },
     ],
-    panel: { fill: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.22)" },
+    // Borderless frosted slab — the rim stroke read as a "weird" floating box,
+    // so the glass is just the translucent fill + the lime×blue glows behind it.
+    panel: { fill: "rgba(255,255,255,0.08)" },
     text: colors.chalk,
     muted: "#b6bcb3",
     accent: colors.lime,
