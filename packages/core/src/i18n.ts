@@ -1082,7 +1082,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.tapDetail": "Tippen für die volle Auswertung →",
     "share.done": "erledigt.",
     "share.topLift": "Top-Übung",
-    "share.tracked": "Mit HYBRID getrackt.",
+    "share.tracked": "Getrackt mit HYBRID.",
     "summary.slide.overview": "Überblick",
     "summary.slide.prs": "Rekorde & Bestwerte",
     "summary.slide.muscle": "Muskelfokus",

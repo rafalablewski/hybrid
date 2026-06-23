@@ -162,7 +162,7 @@ function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
   ctx.closePath();
 }
 
-function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StoryStyle) {
+function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StoryStyle, footer: string) {
   ctx.fillStyle = st.bg;
   ctx.fillRect(0, 0, SW, SH);
   // Optional diagonal gradient over the base (top-left → bottom-right).
@@ -190,9 +190,11 @@ function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StorySty
     roundRectPath(ctx, inset, inset, SW - inset * 2, SH - inset * 2, SW * 0.05);
     ctx.fillStyle = st.panel.fill;
     ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = st.panel.border;
-    ctx.stroke();
+    if (st.panel.border) {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = st.panel.border;
+      ctx.stroke();
+    }
   }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
@@ -205,9 +207,21 @@ function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StorySty
   ctx.font = font(MONO, 28);
   ctx.fillStyle = st.accent;
   ctx.fillText(eyebrow.toUpperCase(), SPAD, 250);
+  // Footer: "Tracked with HYBRID." with the trailing brand drawn as the LOGO
+  // (display wordmark + lime accent dot) instead of flat muted text.
+  const fy = SH - 120;
+  const mark = `${brand.name}.`;
+  const prefix = footer.endsWith(mark) ? footer.slice(0, -mark.length) : `${footer} `;
   ctx.font = font(MONO, 30);
   ctx.fillStyle = st.muted;
-  ctx.fillText("Tracked with HYBRID.", SPAD, SH - 120);
+  ctx.fillText(prefix, SPAD, fy);
+  const prefixW = ctx.measureText(prefix).width;
+  ctx.font = font(DISPLAY, 30);
+  ctx.fillStyle = st.wordmark;
+  ctx.fillText(brand.name, SPAD + prefixW, fy);
+  const markW = ctx.measureText(brand.name).width;
+  ctx.fillStyle = st.accent;
+  ctx.fillText(".", SPAD + prefixW + markW + 3, fy);
 }
 
 /** Draw any summary slide as the branded 9:16 PNG in the chosen style. */
@@ -218,7 +232,7 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
   const ctx = canvas.getContext("2d");
   if (!ctx) return Promise.resolve(null);
   const st = storyStyle(styleId);
-  paintFrame(ctx, slide.eyebrow, st);
+  paintFrame(ctx, slide.eyebrow, st, t("share.tracked"));
 
   if (slide.kind === "overview") {
     const s = slide.stats;
