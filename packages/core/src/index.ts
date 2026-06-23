@@ -45,6 +45,7 @@ export * from "./logger-prefs";
 export * from "./live-stats";
 export * from "./guidance";
 export * from "./account";
+export * from "./settings-nav";
 export * from "./scale";
 export * from "./email";
 
