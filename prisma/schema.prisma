@@ -51,6 +51,10 @@ model User {
   entitlement        String   @default("free") // free | paid
   stripeCustomerId   String?  @unique
   subscriptionStatus String?  // active | trialing | past_due | canceled | null
+  // Timestamp (Stripe event.created) of the last applied subscription event, so
+  // a delayed/out-of-order webhook can't roll the entitlement back to a stale
+  // state (e.g. a late "deleted" landing after a re-subscribe).
+  subscriptionStatusAt DateTime?
   // The Apple originalTransactionId that granted Full, if via IAP. Unique so a
   // (cryptographically valid) StoreKit transaction can be redeemed by exactly
   // one account — prevents replay / cross-account sharing of one purchase.
@@ -1022,4 +1026,14 @@ model EmailSuppression {
   email     String   @id
   reason    String   @default("unsubscribe") // unsubscribe | bounce | complaint
   createdAt DateTime @default(now())
+}
+
+// Idempotency ledger for inbound provider webhooks (Stripe). The event id is the
+// PK, so re-processing a redelivered event is a no-op (Stripe retries on any
+// non-2xx and can deliver the same event more than once by design).
+model ProcessedWebhookEvent {
+  id          String   @id // the provider's event id (e.g. Stripe evt_...)
+  provider    String   @default("stripe")
+  type        String
+  processedAt DateTime @default(now())
 }
