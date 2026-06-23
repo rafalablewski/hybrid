@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   canRead,
   canManageOrg,
+  canAssignRole,
   roleScope,
   buildTeamTree,
   flattenTree,
@@ -79,6 +80,18 @@ describe("team tree", () => {
     expect(visibleTeamIds("COACH", null, teams)).toBeNull(); // unscoped staff → all
     expect(visibleTeamIds("COACH", "b", teams)!.sort()).toEqual(["b", "u12", "u16", "u19"]);
     expect(visibleTeamIds("ATHLETE", "b", teams)).toEqual([]);
+  });
+
+  it("canAssignRole stops a DIRECTOR minting an OWNER but allows other staff", () => {
+    // only an OWNER may grant/promote to OWNER
+    expect(canAssignRole("OWNER", "OWNER")).toBe(true);
+    expect(canAssignRole("DIRECTOR", "OWNER")).toBe(false);
+    // a DIRECTOR can still assign non-owner staff roles
+    expect(canAssignRole("DIRECTOR", "COACH")).toBe(true);
+    expect(canAssignRole("DIRECTOR", "DIRECTOR")).toBe(true);
+    // non-managers can assign nothing
+    expect(canAssignRole("COACH", "ATHLETE")).toBe(false);
+    expect(canAssignRole("ATHLETE", "ATHLETE")).toBe(false);
   });
 
   it("canSeeAthlete enforces subtree + performance permission", () => {
