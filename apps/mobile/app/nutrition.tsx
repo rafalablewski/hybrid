@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   todayNutrition,
   adaptiveTargets,
@@ -8,7 +8,9 @@ import {
   dailyNutrition,
   type NutritionGoal,
 } from "@hybrid/core";
-import { fetchSignals, createSignal, getAssignedDiet, type CoreSignal } from "../lib/api";
+import { createSignal, getAssignedDiet, type CoreSignal } from "../lib/api";
+import { useSignalsQuery, useRevalidate } from "../lib/queries";
+import { useRefreshOnFocus } from "../lib/query";
 import { fs, space, Screen, Card, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useTemplate } from "../lib/template";
@@ -28,8 +30,8 @@ export default function Nutrition() {
 function ClassicNutrition() {
   const C = useTheme().palette;
   const router = useRouter();
-  const [signals, setSignals] = useState<CoreSignal[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: signals = [], isFetching: refreshing, refetch } = useSignalsQuery();
+  const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
@@ -37,11 +39,8 @@ function ClassicNutrition() {
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { getAssignedDiet().then(setCoachDiet).catch(() => {}); }, []);
 
-  const load = () => {
-    setRefreshing(true);
-    fetchSignals().then(setSignals as (s: CoreSignal[]) => void).finally(() => setRefreshing(false));
-  };
-  useFocusEffect(useCallback(load, []));
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const sig = signals as unknown as Parameters<typeof todayNutrition>[0];
   const today = useMemo(() => todayNutrition(sig), [signals]);
@@ -71,7 +70,7 @@ function ClassicNutrition() {
       setF({ kcal: "", protein: "", carbs: "", fat: "" });
     }
     setSaving(false);
-    load();
+    revalidate.recovery();
   };
 
   return (

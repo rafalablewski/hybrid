@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
-import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../lib/api";
+import { fetchCheckins, createCheckin, fetchBillingStatus, type Checkin } from "../lib/api";
+import { useSessionsQuery, useRevalidate } from "../lib/queries";
 import { fs, space, Screen, Card, Kicker, Mono, Chip, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
@@ -23,8 +24,9 @@ export default function CheckinScreen() {
 function ClassicCheckin() {
   const C = useTheme().palette;
   const router = useRouter();
+  const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
+  const revalidate = useRevalidate();
   const [history, setHistory] = useState<Checkin[]>([]);
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -32,10 +34,11 @@ function ClassicCheckin() {
     { bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false },
   );
 
+  // History is checkin-specific (local); sessions come from the shared cache.
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchCheckins(), fetchSessions()])
-      .then(([c, s]) => { setHistory(c); setSessions(s); })
+    Promise.all([fetchCheckins(), refetchSessions()])
+      .then(([c]) => { setHistory(c); })
       .finally(() => setRefreshing(false));
   };
   useFocusEffect(useCallback(load, []));
@@ -63,6 +66,9 @@ function ClassicCheckin() {
     }
     setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     load();
+    // A check-in writes recovery + body-mass signals — revalidate so Today /
+    // nutrition reflect the new readiness without a manual refresh.
+    revalidate.recovery();
   };
 
   return (
