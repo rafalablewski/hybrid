@@ -28,6 +28,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const data: { role?: string; teamId?: string | null } = {};
   if (typeof b.role === "string") {
     if (!ORG_ROLES.includes(b.role as OrgRole)) return NextResponse.json({ error: "invalid role" }, { status: 400 });
+    // Only an OWNER may GRANT the OWNER role — otherwise a DIRECTOR (who also
+    // passes canManageOrg) could promote themselves or anyone to OWNER and seize
+    // the org. Demoting an existing owner is already guarded above + below.
+    if (b.role === "OWNER" && me.role !== "OWNER")
+      return NextResponse.json({ error: "only owners can grant the owner role" }, { status: 403 });
     data.role = b.role;
   }
   if (b.teamId !== undefined) data.teamId = typeof b.teamId === "string" && b.teamId ? b.teamId : null;
