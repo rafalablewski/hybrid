@@ -10,6 +10,7 @@ import { useAccountSettings } from "../../lib/account";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
+import { useLiquidGlass } from "../../lib/liquid-glass";
 import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
@@ -36,6 +37,7 @@ export default function AuroraSettings() {
   const { signOut, name, role, entitlement } = useSession();
   const { pref, setPref } = useTheme();
   const { template, setTemplate } = useTemplate();
+  const lg = useLiquidGlass();
   const acct = useAccountSettings();
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -101,6 +103,18 @@ export default function AuroraSettings() {
         <Field icon="share" label={t("w.account.settings.language")}>
           <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         </Field>
+        {lg.supported && (
+          <ACard style={{ marginBottom: 12 }}>
+            <ToggleRow
+              C={C}
+              title={t("w.account.settings.liquid-glass")}
+              desc={t("w.account.settings.liquid-glass-help")}
+              on={lg.enabled}
+              onToggle={() => lg.setEnabled(!lg.enabled)}
+              noBorder
+            />
+          </ACard>
+        )}
       </Section>
 
       <Section title={t("w.account.settings.workout-section")}>
