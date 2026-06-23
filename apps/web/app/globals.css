@@ -128,22 +128,18 @@ body {
 :root { --r-card: 16px; --r-chip: 5px; --r-field: 9px; --r-tip: 8px; }
 [data-template="aurora"] { --r-card: 28px; --r-chip: 999px; --r-field: 16px; --r-tip: 14px; }
 
-/* AURORA turns the Liquid-Glass surface into a SOLID ink2 card (the bespoke
-   Aurora look) — flat fill, solid hairline border, no blur/grain/sheen/glow —
-   so every shared Card (Settings, the admin console, analytics, etc.) matches
-   the hand-built Aurora screens instead of looking like the classic glass. */
+/* AURORA glass cards keep the full Liquid-Glass material (backdrop blur, grain,
+   sheen) but adopt the Aurora radius token and a subtle hairline border so
+   every shared Card matches the Aurora shape language. The animated field blobs
+   (lg-field) show through the glass and tint it, giving the same ambient-colour
+   feel as the mobile glass surfaces. */
 [data-template="aurora"] .liquid-glass {
-  border-radius: 24px;
-  background: var(--color-ink2);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  border-radius: var(--r-card);
   border: 1px solid var(--color-line);
-  box-shadow: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
-[data-template="aurora"] .liquid-glass::before,
-[data-template="aurora"] .liquid-glass::after,
-[data-template="aurora"] .liquid-glass > .lg-sheen { display: none; }
-[data-template="aurora"] .liquid-glass.lg-hover:hover { transform: none; }
+/* Calm the hover lift slightly — Aurora motion is gentler than classic. */
+[data-template="aurora"] .liquid-glass.lg-hover:hover { transform: translateY(-2px) scale(1.005); }
 [data-template="aurora"] input,
 [data-template="aurora"] select,
 [data-template="aurora"] textarea { border-radius: var(--r-field); }

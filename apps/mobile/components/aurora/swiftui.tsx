@@ -52,8 +52,9 @@ export function GlassSurface({ radius = RADIUS.card, tintColor }: { radius?: num
   if (!active) return null;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: "hidden" }]}>
-      {/* Visible floor for iOS < 26 / pre-mount. */}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(palette.ink2, 0.55) }]} />
+      {/* Visible floor for iOS < 26 / pre-mount. Low opacity so the ambient
+          field blobs show through and the glass reads as coloured, not grey. */}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(palette.ink2, 0.28) }]} />
       <Host style={StyleSheet.absoluteFill} pointerEvents="none">
         <RoundedRectangle
           cornerRadius={radius}

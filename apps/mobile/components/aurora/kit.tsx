@@ -38,19 +38,21 @@ export const RADIUS = { card: 28, field: 16, pill: 999 } as const;
  *  sticky timer header) can drop the same backdrop behind their content. */
 export function AuroraField() {
   const { palette } = useTheme();
-  const blob = (color: string, style: ViewStyle): ViewStyle => ({
+  const blob = (color: string, opacity: number, style: ViewStyle): ViewStyle => ({
     position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 160,
+    borderRadius: 9999,
     backgroundColor: color,
-    opacity: 0.1,
+    opacity,
     ...style,
   });
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
-      <View style={blob(palette.violet, { top: -120, left: -90 })} />
-      <View style={blob(palette.lime, { bottom: -140, right: -80 })} />
+      {/* Violet bloom — top-left */}
+      <View style={blob(palette.violet, 0.22, { width: 380, height: 380, top: -150, left: -110 })} />
+      {/* Lime bloom — bottom-right */}
+      <View style={blob(palette.lime, 0.18, { width: 340, height: 340, bottom: -160, right: -90 })} />
+      {/* Blue accent — centre-right, adds depth behind glass cards */}
+      <View style={blob(palette.blue, 0.12, { width: 260, height: 260, top: "35%", right: -80 })} />
     </View>
   );
 }

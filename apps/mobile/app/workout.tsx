@@ -1007,22 +1007,25 @@ export default function Workout() {
                   </Pressable>
                 </View>
                 {specialUid === x.uid && (
-                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, overflow: "hidden" }}>
+                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, overflow: "hidden" }}>
                     {[
-                      { run: addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSet") },
-                      { run: addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRamp") },
-                      { run: addCooldownSet, c: C.blue, badge: "C", label: t("workout.cooldownSet") },
-                      { run: addDropSet, c: C.ash, badge: "↓", label: t("workout.dropSet") },
+                      { run: addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSetTitle"), desc: t("workout.warmupSetDesc") },
+                      { run: addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRampTitle"), desc: t("workout.warmupRampDesc") },
+                      { run: addCooldownSet, c: C.blue, badge: "C", label: t("workout.cooldownSetTitle"), desc: t("workout.cooldownSetDesc") },
+                      { run: addDropSet, c: C.ash, badge: "↓", label: t("workout.dropSetTitle"), desc: t("workout.dropSetDesc") },
                     ].map((it, ii) => (
                       <Pressable
                         key={it.badge}
                         onPress={() => { it.run(x.uid); setSpecialUid(null); }}
-                        style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
+                        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
                       >
-                        <View style={{ width: 24, height: 24, borderRadius: 7, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
+                        <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, it.c) }}>{it.badge}</Text>
                         </View>
-                        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{it.label}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{it.label}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{it.desc}</Text>
+                        </View>
                       </Pressable>
                     ))}
                   </View>
