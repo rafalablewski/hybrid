@@ -38,8 +38,14 @@ const publicUrl = () =>
   process.env.NEXT_PUBLIC_APP_URL ??
   "https://hybrid-web-rosy.vercel.app";
 
-const unsubSecret = () =>
-  process.env.EMAIL_UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET ?? "hybrid-email-unsub";
+// Fail closed: never fall back to a public constant. A hardcoded default would
+// let anyone forge a one-click-unsubscribe link for any user. Require an
+// explicit secret (CRON_SECRET is already set in the deployment alongside Resend).
+function unsubSecret(): string {
+  const s = process.env.EMAIL_UNSUBSCRIBE_SECRET ?? process.env.CRON_SECRET;
+  if (!s) throw new Error("EMAIL_UNSUBSCRIBE_SECRET (or CRON_SECRET) must be set to sign unsubscribe links");
+  return s;
+}
 
 // ---------------------------------------------------------------------------
 // One-click unsubscribe — an HMAC over the email so the link can't be forged
@@ -51,7 +57,12 @@ export function unsubscribeToken(email: string): string {
 }
 
 export function verifyUnsubscribeToken(email: string, token: string): boolean {
-  const expected = unsubscribeToken(email);
+  let expected: string;
+  try {
+    expected = unsubscribeToken(email);
+  } catch {
+    return false; // not configured → reject rather than accept a forgeable token
+  }
   // Constant-time compare to avoid leaking via timing.
   const a = Buffer.from(expected);
   const b = Buffer.from(token);
