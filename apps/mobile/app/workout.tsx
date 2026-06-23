@@ -1317,6 +1317,9 @@ function Summary({
   // to fit comfortably in the page so the share is what-you-see-is-what-you-get.
   const previewW = Math.min(slideW, 320);
   const storyRefs = useRef<Record<number, View | null>>({});
+  // The slide pager — a ref so tapping a dot can scroll to that slide (parity
+  // with web; native swipe paging still works too).
+  const pagerRef = useRef<ScrollView>(null);
   const [active, setActive] = useState(0);
   // The chosen "wrapped" style — one of the 4 shared looks.
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
@@ -1420,6 +1423,7 @@ function Summary({
             (what-you-see-is-what-you-share) and captured by active index. */}
         <Animated.View style={{ opacity: fade }}>
           <ScrollView
+            ref={pagerRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -1433,10 +1437,17 @@ function Summary({
           </ScrollView>
         </Animated.View>
 
-        {/* Dots */}
+        {/* Dots — tappable (jump to that slide), matching web. */}
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 12 }}>
-          {slides.map((_, i) => (
-            <View key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === activeIdx ? C.lime : C.line }} />
+          {slides.map((s, i) => (
+            <Pressable
+              key={i}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={s.eyebrow}
+              onPress={() => pagerRef.current?.scrollTo({ x: i * slideW, animated: true })}
+              style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === activeIdx ? C.lime : C.line }}
+            />
           ))}
         </View>
 
