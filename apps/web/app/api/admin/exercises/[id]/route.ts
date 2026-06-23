@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-exercise-patch", limit: 80, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-exercise-patch", limit: 80, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id } = await params;
@@ -70,7 +70,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-exercise-delete", limit: 40, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-exercise-delete", limit: 40, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id } = await params;

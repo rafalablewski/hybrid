@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // Expensive (LLM) endpoint — cap per IP to blunt cost-abuse / hammering.
-  const limited = rateLimit(request, { key: "ai-coach", limit: 20, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "ai-coach", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   const rows = await prisma.session.findMany({

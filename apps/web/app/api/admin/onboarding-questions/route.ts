@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-onboarding-post", limit: 40, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-onboarding-post", limit: 40, windowMs: 60_000 });
   if (limited) return limited;
 
   const parsed = await readJsonLimited<Body>(request, 32 * 1024);

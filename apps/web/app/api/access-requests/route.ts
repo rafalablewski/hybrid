@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const limited = rateLimit(request, { key: "access-request", limit: 20, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "access-request", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   const parsed = await readJsonLimited<{ navId?: unknown }>(request, 4 * 1024);

@@ -12,7 +12,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-agent-sched-patch", limit: 60, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-agent-sched-patch", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id, sid } = await params;
@@ -64,7 +64,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-agent-sched-delete", limit: 30, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-agent-sched-delete", limit: 30, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id, sid } = await params;

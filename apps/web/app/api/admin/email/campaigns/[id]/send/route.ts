@@ -21,7 +21,7 @@ const INLINE_LIMIT = 250;
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
-  const limited = rateLimit(request, { key: "admin-email-campaign-send", limit: 10, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-email-campaign-send", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
   const { id } = await params;
 

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-media-post", limit: 60, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-media-post", limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   const parsed = await readJsonLimited<MediaInput>(request, 8 * 1024);
