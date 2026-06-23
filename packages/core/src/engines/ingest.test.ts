@@ -10,6 +10,18 @@ describe("force-plate CSV ingest", () => {
     expect(mapMetric("Takeoff Asymmetry %")).toBe("asymmetry");
     expect(mapMetric("Body Mass")).toBe("bodyMass");
     expect(mapMetric("Peak Power")).toBeNull();
+    // Force columns must NOT be read as kg body mass.
+    expect(mapMetric("Weight (N)")).toBeNull();
+    expect(mapMetric("System Weight (N)")).toBeNull();
+    expect(mapMetric("Peak Force")).toBeNull();
+  });
+
+  it("rejects a bare Weight column whose unit is Newtons (force, not kg)", () => {
+    const csv = ["date,metric,value,unit", "2026-05-01,Weight,712,N", "2026-05-02,Weight,80,kg"].join("\n");
+    const r = parseForcePlateCsv(csv, { athleteId: "u" });
+    expect(r.imported).toBe(1); // the N row is dropped, the kg row kept
+    expect(r.signals[0]!.kind).toBe("bodyMass");
+    expect(r.signals[0]!.value).toBe(80);
   });
 
   it("parses a WIDE csv (date + metric columns)", () => {
