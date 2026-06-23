@@ -63,6 +63,7 @@ import {
   type ExerciseUse,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
+import { useRevalidate } from "../lib/queries";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
@@ -180,6 +181,7 @@ export default function Workout() {
   const router = useRouter();
   const { t } = useLang();
   const { session } = useSession();
+  const revalidate = useRevalidate();
   const guest = !session;
   const prefs = useLoggerPrefs();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
@@ -717,6 +719,10 @@ export default function Workout() {
         // it syncs on the next foreground / sign-in (see lib/guest + session).
         await saveGuestSession(payload);
         pending = true;
+      } else {
+        // Revalidate the shared sessions cache so Home/History + every
+        // session-derived screen reflects the new workout without a manual refresh.
+        revalidate.sessions();
       }
     }
     await clearDraft();
