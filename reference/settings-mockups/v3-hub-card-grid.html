@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYBRID Settings — V3 · Hub Card Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --disp:'Archivo',sans-serif; --cond:'Archivo Narrow',sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070807; min-height:100vh; font-family:var(--disp); color:var(--chalk); padding:28px; -webkit-font-smoothing:antialiased}
+  .meta{font-family:var(--mono); font-size:12px; color:var(--ash); text-align:center; line-height:1.7; margin-bottom:18px}
+  .meta b{color:var(--lime); font-weight:600}
+
+  .win{max-width:1100px; margin:0 auto; background:radial-gradient(130% 90% at 20% -10%, #17191b 0%, #0c0d0c 55%); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 40px 120px -40px rgba(0,0,0,.9); position:relative}
+  .titlebar{height:42px; display:flex; align-items:center; gap:8px; padding:0 16px; border-bottom:1px solid var(--line); background:rgba(20,22,20,.6)}
+  .dot{width:11px; height:11px; border-radius:50%}
+  .d1{background:#e0625e}.d2{background:#f0b45e}.d3{background:#c4f035}
+  .url{margin-left:14px; font-family:var(--mono); font-size:12px; color:var(--ash)}
+
+  .wrap{padding:38px 44px 48px}
+  /* hero */
+  .hero{display:flex; align-items:center; gap:18px; margin-bottom:8px}
+  .h-av{width:64px; height:64px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:26px; color:var(--ink); background:linear-gradient(135deg,var(--lime),#9bd400)}
+  .h-title{font-weight:900; font-size:30px; letter-spacing:-.03em}
+  .h-sub{font-family:var(--mono); font-size:13px; color:var(--ash); margin-top:4px}
+  .h-badges{display:flex; gap:8px; margin-top:9px}
+  .badge{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:7px; font-weight:600}
+  .b-role{color:var(--violet); background:rgba(201,169,240,.12); border:1px solid rgba(201,169,240,.4)}
+  .b-free{color:var(--ash); border:1px solid var(--line)}
+
+  .search{margin:26px 0 30px; display:flex; align-items:center; gap:11px; background:var(--ink2); border:1px solid var(--line); border-radius:14px; padding:13px 16px; max-width:520px}
+  .search input{flex:1; background:none; border:none; outline:none; color:var(--chalk); font-family:var(--mono); font-size:14px}
+  .search input::placeholder{color:var(--ash)}
+  .search svg{color:var(--ash)}
+
+  .grouplabel{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.13em; color:var(--ash); font-weight:600; margin:8px 0 14px}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:30px}
+  @media(max-width:880px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+
+  .tile{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; cursor:pointer; transition:.15s; position:relative; overflow:hidden}
+  .tile:hover{border-color:#3a3d3a; transform:translateY(-2px)}
+  .tile::after{content:''; position:absolute; inset:0; background:radial-gradient(80% 60% at 100% 0%, var(--glow,transparent), transparent 70%); opacity:.5; pointer-events:none}
+  .t-ico{width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; margin-bottom:14px}
+  .t-ico svg{width:21px; height:21px}
+  .t-title{font-weight:700; font-size:16px}
+  .t-desc{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:6px; line-height:1.55}
+  .t-chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:13px}
+  .chip{font-family:var(--mono); font-size:10px; color:var(--ash); border:1px solid var(--line); border-radius:7px; padding:3px 8px}
+  .i-lime{background:rgba(196,240,53,.13); color:var(--lime)}
+  .i-blue{background:rgba(127,212,232,.13); color:var(--blue)}
+  .i-violet{background:rgba(201,169,240,.13); color:var(--violet)}
+  .i-amber{background:rgba(240,180,94,.13); color:var(--amber)}
+  .i-red{background:rgba(224,98,94,.13); color:var(--red)}
+  .i-ash{background:rgba(139,143,134,.13); color:var(--ash)}
+
+  /* slide-over */
+  .scrim{position:absolute; inset:0; background:rgba(6,7,6,.6); backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:.2s; z-index:40}
+  .scrim.show{opacity:1; pointer-events:auto}
+  .sheet{position:absolute; top:0; right:0; bottom:0; width:480px; max-width:92%; background:var(--ink); border-left:1px solid var(--line); transform:translateX(100%); transition:transform .26s cubic-bezier(.4,0,.2,1); z-index:50; display:flex; flex-direction:column}
+  .sheet.show{transform:translateX(0)}
+  .shead{flex:none; padding:24px 28px 18px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; gap:14px}
+  .shead .s-ico{width:38px; height:38px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center}
+  .shead .s-ico svg{width:20px;height:20px}
+  .s-title{font-weight:800; font-size:20px}
+  .s-sub{font-family:var(--mono); font-size:12px; color:var(--ash); margin-top:3px; line-height:1.5}
+  .close{margin-left:auto; width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:var(--ink2); color:var(--ash); cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center}
+  .sbody{flex:1; overflow-y:auto; padding:22px 28px 40px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px}
+  .kick{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.12em; font-weight:600}
+  .desc{font-family:var(--mono); font-size:12px; color:var(--ash); margin-top:6px; line-height:1.6}
+  .field{margin-top:15px}
+  .flabel{font-family:var(--mono); font-size:11px; color:var(--ash); margin-bottom:7px; display:block}
+  .inrow{display:flex; gap:9px}
+  .input{flex:1; width:100%; background:var(--ink2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; color:var(--chalk); font-family:var(--mono); font-size:13px; outline:none}
+  .input:focus{border-color:var(--lime)}
+  textarea.input{resize:vertical}
+  .segrow{display:flex; gap:7px; flex-wrap:wrap}
+  .seg{font-family:var(--mono); font-size:12px; padding:8px 15px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--ash); cursor:pointer; transition:.12s}
+  .seg.on{color:var(--lime); background:rgba(196,240,53,.12); border-color:var(--lime)}
+  .btn{font-family:var(--disp); font-weight:700; font-size:13px; padding:10px 18px; border-radius:10px; cursor:pointer; border:1px solid; transition:.12s}
+  .btn-lime{color:var(--lime); background:rgba(196,240,53,.12); border-color:var(--lime)}
+  .btn-ghost{color:var(--chalk); background:transparent; border-color:var(--line)}
+  .btn-violet{color:var(--violet); background:rgba(201,169,240,.12); border-color:var(--violet)}
+  .btn-red{color:#fff; background:var(--red); border-color:var(--red)}
+
+  .trow{display:flex; align-items:center; gap:14px; padding:13px 0; border-top:1px solid var(--line)}
+  .trow:first-of-type{border-top:none; padding-top:4px}
+  .ttext{flex:1}
+  .ttitle{font-weight:600; font-size:14px}
+  .tdesc{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:3px; line-height:1.5}
+  .toggle{flex:none; width:46px; height:26px; border-radius:999px; border:1px solid var(--line); background:transparent; position:relative; cursor:pointer; transition:.18s}
+  .toggle.on{background:var(--lime); border-color:var(--lime)}
+  .knob{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--ash); transition:.18s}
+  .toggle.on .knob{left:22px; background:var(--ink)}
+  .danger{border-color:rgba(224,98,94,.4); border-left:3px solid var(--red)}
+  .upgrade{background:linear-gradient(120deg, rgba(196,240,53,.12), rgba(196,240,53,.02)); border:1px solid rgba(196,240,53,.4)}
+  .note{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:11px; line-height:1.6}
+</style>
+</head>
+<body>
+  <div class="meta"><b>HYBRID Settings — Version 3</b><br />Hub card grid · documented category tiles + slide-over detail (Accounts-Center pattern)</div>
+
+  <div class="win">
+    <div class="titlebar"><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span><span class="url">app.hybrid.app/settings</span></div>
+    <div class="wrap">
+      <div class="hero">
+        <div class="h-av">R</div>
+        <div>
+          <div class="h-title">Settings</div>
+          <div class="h-sub">Rafal Ablewski · rafal@hybrid.app</div>
+          <div class="h-badges"><span class="badge b-role">Client</span><span class="badge b-free">Free</span></div>
+        </div>
+      </div>
+      <div class="search">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input placeholder="Search settings — appearance, privacy, password…" />
+      </div>
+      <div id="hub"></div>
+    </div>
+
+    <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+    <aside class="sheet" id="sheet">
+      <div class="shead">
+        <div class="s-ico" id="sheetIco"></div>
+        <div><div class="s-title" id="sheetTitle"></div><div class="s-sub" id="sheetSub"></div></div>
+        <button class="close" onclick="closeSheet()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+      </div>
+      <div class="sbody" id="sheetBody"></div>
+    </aside>
+  </div>
+
+<script>
+  const I={
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+    sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="18" r="2" fill="currentColor"/></svg>',
+    dumbbell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6v12M3 9v6M18 6v12M21 9v6M6 12h12"/></svg>',
+    bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+    eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+    whistle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a6 6 0 0 0 6 6h2l4 3v-3a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6z"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg>',
+    shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>',
+    spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>',
+    download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>',
+    info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  };
+  const GLOW={lime:'rgba(196,240,53,.10)',blue:'rgba(127,212,232,.10)',violet:'rgba(201,169,240,.10)',amber:'rgba(240,180,94,.10)',red:'rgba(224,98,94,.10)',ash:'transparent'};
+  const toggle=(t,d,on)=>'<div class="trow"><div class="ttext"><div class="ttitle">'+t+'</div><div class="tdesc">'+d+'</div></div><button class="toggle'+(on?' on':'')+'"><span class="knob"></span></button></div>';
+
+  const GROUPS=[
+    {label:'How you use HYBRID', tiles:[
+      {id:'account',ic:'user',tone:'lime',t:'Account & profile',d:'Your name, email and account type.',chips:['Name','Email','Role']},
+      {id:'prefs',ic:'sliders',tone:'blue',t:'Preferences',d:'Appearance, language and units.',chips:['Dark','English','kg']},
+      {id:'logger',ic:'dumbbell',tone:'amber',t:'Workout logger',d:'Logging detail and how volume is counted.',chips:['Detailed','Volume']},
+      {id:'notif',ic:'bell',tone:'violet',t:'Notifications',d:'Recaps, coach messages and reminders.',chips:['Email','Push']},
+    ]},
+    {label:'Who can see & reach you', tiles:[
+      {id:'privacy',ic:'eye',tone:'blue',t:'Privacy',d:'Sharing, discoverability and analytics.',chips:['Sharing','Talent']},
+      {id:'coaching',ic:'whistle',tone:'violet',t:'Coaching & access',d:'Become a coach or request access.',chips:['Coach','Access']},
+    ]},
+    {label:'Login & billing', tiles:[
+      {id:'security',ic:'shield',tone:'blue',t:'Security',d:'Password, 2-factor and active sessions.',chips:['Password','2FA']},
+      {id:'billing',ic:'spark',tone:'lime',t:'Subscription',d:'Your plan and billing.',chips:['Free']},
+    ]},
+    {label:'Your data & support', tiles:[
+      {id:'data',ic:'download',tone:'ash',t:'Your data',d:'Export a copy of everything in your account.',chips:['Export']},
+      {id:'about',ic:'info',tone:'ash',t:'Help & about',d:'Support and product information.',chips:['v1.0']},
+      {id:'danger',ic:'trash',tone:'red',t:'Danger zone',d:'Sign out or permanently erase your account.',chips:['Sign out','Erase']},
+    ]},
+  ];
+
+  const PANES={
+    account:{sub:'Your identity and account type.',html:`
+      <div class="card"><div class="kick" style="color:var(--lime)">PROFILE</div>
+        <div class="field"><label class="flabel">Display name</label><div class="inrow"><input class="input" value="Rafal Ablewski"/><button class="btn btn-lime">Save</button></div></div>
+        <div class="field"><label class="flabel">Email</label><div class="inrow"><input class="input" value="rafal@hybrid.app"/><button class="btn btn-ghost">Update</button></div></div></div>
+      <div class="card"><div class="kick" style="color:var(--violet)">ACCOUNT TYPE</div>
+        <div class="desc">You're on a <b style="color:var(--chalk)">Client · Free</b> plan. Switch to Full to unlock the athlete toolkit.</div>
+        <button class="btn btn-ghost" style="margin-top:14px" data-go="billing">View subscription</button></div>`},
+    prefs:{sub:'Appearance, language and units.',html:`
+      <div class="card"><div class="kick" style="color:var(--blue)">APPEARANCE</div>
+        <div class="field"><label class="flabel">Theme</label><div class="segrow"><button class="seg on">Dark</button><button class="seg">Light</button></div></div>
+        <div class="field"><label class="flabel">Template</label><div class="segrow"><button class="seg on">Aurora</button><button class="seg">Classic</button></div></div></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">REGION & UNITS</div>
+        <div class="field"><label class="flabel">Language</label><div class="segrow"><button class="seg on">English</button><button class="seg">Polski</button><button class="seg">Deutsch</button></div></div>
+        <div class="field"><label class="flabel">Units</label><div class="segrow"><button class="seg on">Kilograms</button><button class="seg">Pounds</button></div></div></div>`},
+    logger:{sub:'How you capture sets and count volume.',html:`
+      <div class="card"><div class="kick" style="color:var(--amber)">LOGGING DETAIL</div>
+        <div class="desc">Detailed captures RPE, tempo and notes per set. Simple keeps it to weight × reps.</div>
+        <div class="field"><label class="flabel">Logger mode</label><div class="segrow"><button class="seg on">Detailed</button><button class="seg">Simple</button></div></div></div>
+      <div class="card"><div class="kick" style="color:var(--amber)">VOLUME COUNTING</div><div style="margin-top:8px">
+        ${toggle('Count warm-ups in volume','Include warm-up sets in your weekly tonnage.',false)}
+        ${toggle('Fractional volume','Count back-off & top-set fractions toward volume targets.',true)}
+      </div></div>`},
+    notif:{sub:'Choose what HYBRID can send you.',html:`
+      <div class="card"><div class="kick" style="color:var(--violet)">NOTIFICATIONS</div><div style="margin-top:8px">
+        ${toggle('Weekly recap','Your Sunday training summary.',true)}
+        ${toggle('Coach messages','When your coach replies or assigns work.',true)}
+        ${toggle('Check-in reminders','A nudge when your weekly check-in is due.',true)}
+        ${toggle('Product updates','Occasional news about new features.',false)}
+      </div></div>`},
+    privacy:{sub:'Who sees your training and how data is used.',html:`
+      <div class="card"><div class="kick" style="color:var(--blue)">PRIVACY</div><div style="margin-top:8px">
+        ${toggle('Share detail with my coach','Let a linked coach see full session detail, not just summaries.',true)}
+        ${toggle('Discoverable in Talent','Appear in coach talent searches (benchmarks, never raw logs).',false)}
+        ${toggle('Opt out of product analytics',"Don't include my usage in aggregate analytics.",false)}
+      </div></div>`},
+    coaching:{sub:'Become a coach or request access.',html:`
+      <div class="card"><div class="kick" style="color:var(--violet)">BECOME A COACH</div>
+        <div class="desc">Apply with your credentials. An admin reviews it and grants the coach role on approval.</div>
+        <div class="field"><label class="flabel">Your credentials</label><textarea class="input" rows="3" placeholder="Certifications, athletes coached, experience…"></textarea></div>
+        <button class="btn btn-violet" style="margin-top:13px">Apply to coach</button></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">REQUEST ACCESS</div>
+        <div class="desc">Have an invite code or want to join a coach's roster? Request access here.</div>
+        <button class="btn btn-ghost" style="margin-top:13px">Request access</button></div>`},
+    security:{sub:'Password, 2-factor and sessions.',html:`
+      <div class="card"><div class="kick" style="color:var(--blue)">PASSWORD</div>
+        <div class="field"><label class="flabel">New password</label><div class="inrow"><input class="input" type="password" placeholder="••••••••"/><button class="btn btn-lime">Update</button></div></div></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">TWO-FACTOR (2FA)</div>
+        <div class="desc">Add an authenticator app for an extra layer of security.</div>
+        <button class="btn btn-ghost" style="margin-top:13px">Set up 2-factor</button></div>
+      <div class="card"><div class="kick" style="color:var(--blue)">ACTIVE SESSIONS</div>
+        <div class="desc">Sign out of HYBRID everywhere you're logged in.</div>
+        <button class="btn btn-ghost" style="margin-top:13px">Sign out everywhere</button></div>`},
+    billing:{sub:'Your plan and billing.',html:`
+      <div class="card upgrade"><div class="kick" style="color:var(--lime)">UPGRADE TO FULL</div>
+        <div class="desc">Unlock the full athlete toolkit — periodization, readiness, the sport engine and prescription.</div>
+        <button class="btn btn-lime" style="margin-top:14px;font-size:14px;padding:11px 22px">Upgrade to Full</button>
+        <div class="note">You're currently on the Free plan.</div></div>
+      <div class="card"><div class="kick" style="color:var(--ash)">CURRENT PLAN</div>
+        <div class="desc"><b style="color:var(--chalk)">Free</b> — the lean tracker. No payment method on file.</div></div>`},
+    data:{sub:'Export everything in your account.',html:`
+      <div class="card"><div class="kick" style="color:var(--blue)">EXPORT</div>
+        <div class="desc">Download a complete copy of your account data — sessions, plans, benchmarks and profile.</div>
+        <button class="btn btn-lime" style="margin-top:13px">Download my data</button></div>`},
+    about:{sub:'Support and product information.',html:`
+      <div class="card"><div class="kick" style="color:var(--ash)">SUPPORT</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px">
+          <button class="btn btn-ghost">Help center</button><button class="btn btn-ghost">Contact support</button><button class="btn btn-ghost">Terms & privacy</button></div></div>
+      <div class="card"><div class="desc" style="text-align:center;margin:0">HYBRID · version 1.0.0</div></div>`},
+    danger:{sub:'Irreversible account actions.',html:`
+      <div class="card"><div class="kick" style="color:var(--ash)">SIGN OUT</div>
+        <button class="btn btn-ghost" style="margin-top:13px">Sign out of this device</button></div>
+      <div class="card danger"><div class="kick" style="color:var(--red)">ERASE ACCOUNT</div>
+        <div class="desc">Permanently delete all your training data. <b style="color:var(--red)">This cannot be undone.</b></div>
+        <div class="field"><label class="flabel">Type RESET to confirm</label><input class="input" placeholder="RESET" style="max-width:200px"/></div>
+        <button class="btn btn-red" style="margin-top:13px">Erase everything</button></div>`},
+  };
+
+  // build hub
+  const META={};
+  document.getElementById('hub').innerHTML=GROUPS.map(g=>`<div class="grouplabel">${g.label}</div><div class="grid">${
+    g.tiles.map(tl=>{META[tl.id]={ic:tl.ic,tone:tl.tone,t:tl.t};return `<div class="tile" data-id="${tl.id}" style="--glow:${GLOW[tl.tone]}">
+      <div class="t-ico i-${tl.tone}">${I[tl.ic]}</div>
+      <div class="t-title">${tl.t}</div>
+      <div class="t-desc">${tl.d}</div>
+      <div class="t-chips">${tl.chips.map(c=>`<span class="chip">${c}</span>`).join('')}</div></div>`;}).join('')
+  }</div>`).join('');
+
+  const sheet=document.getElementById('sheet'), scrim=document.getElementById('scrim'), body=document.getElementById('sheetBody');
+  function openSheet(id){
+    const p=PANES[id], m=META[id]; if(!p) return;
+    document.getElementById('sheetTitle').textContent=m.t;
+    document.getElementById('sheetSub').textContent=p.sub;
+    const si=document.getElementById('sheetIco'); si.className='s-ico i-'+m.tone; si.innerHTML=I[m.ic];
+    body.innerHTML=p.html; body.scrollTop=0;
+    sheet.classList.add('show'); scrim.classList.add('show');
+    body.querySelectorAll('.toggle').forEach(t=>t.onclick=()=>t.classList.toggle('on'));
+    body.querySelectorAll('.segrow').forEach(g=>g.querySelectorAll('.seg').forEach(b=>b.onclick=()=>{g.querySelectorAll('.seg').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
+    body.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openSheet(b.dataset.go));
+  }
+  function closeSheet(){ sheet.classList.remove('show'); scrim.classList.remove('show'); }
+  document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>openSheet(t.dataset.id));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
+</script>
+</body>
+</html>
