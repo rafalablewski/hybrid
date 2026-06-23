@@ -71,7 +71,6 @@ import { useRevalidate } from "../lib/queries";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
-import { AuroraWrappedNative, auroraWrappedNativeAvailable } from "../modules/aurora-wrapped";
 import { useSession } from "../lib/session";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
@@ -1398,29 +1397,6 @@ function Summary({
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
-  // For the SwiftUI theme, serialize a slide to the JSON the native SwiftUI card
-  // decodes (see modules/aurora-wrapped). Used only when the native module is in
-  // the build; otherwise the RN SlideStoryCard renders the same look.
-  const slidePayload = (s: SlideData): string => {
-    const tracked = t("share.tracked");
-    if (s.kind === "overview")
-      return JSON.stringify({
-        kind: "overview", eyebrow: s.eyebrow, tracked,
-        title: s.firstEver ? "First workout 🎉" : s.stats.title || "Workout",
-        stats: [
-          { label: t("summary.minutes"), value: String(s.stats.minutes) },
-          { label: t("summary.sets"), value: String(s.stats.sets) },
-          { label: t("summary.volumeMoved"), value: fmtTonnage(s.stats.volume, units) },
-        ],
-      });
-    if (s.kind === "prs")
-      return JSON.stringify({ kind: "prs", eyebrow: s.eyebrow, tracked, headline: s.headline, rows: s.rows.slice(0, 6) });
-    if (s.kind === "muscle")
-      return JSON.stringify({ kind: "muscle", eyebrow: s.eyebrow, tracked, bars: s.bars });
-    return JSON.stringify({ kind: "fun", eyebrow: s.eyebrow, tracked, emoji: s.emoji, text: s.text });
-  };
-  const useNativeSwiftUI = styleId === "swiftui" && auroraWrappedNativeAvailable;
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
@@ -1451,15 +1427,7 @@ function Summary({
           >
             {slides.map((s, i) => (
               <View key={i} style={{ width: slideW, alignItems: "center" }}>
-                {useNativeSwiftUI ? (
-                  <AuroraWrappedNative
-                    ref={(r) => { storyRefs.current[i] = r; }}
-                    payload={slidePayload(s)}
-                    style={{ width: previewW, height: Math.round((previewW * 16) / 9), borderRadius: previewW * 0.05, overflow: "hidden" }}
-                  />
-                ) : (
-                  <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} />
-                )}
+                <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} />
               </View>
             ))}
           </ScrollView>

@@ -27,7 +27,10 @@ const COL = {
 
 const DISPLAY = "800 //px 'Geist','Inter',system-ui,-apple-system,'Segoe UI',sans-serif";
 const MONO = "//px 'Geist Mono','SFMono-Regular',ui-monospace,Menlo,monospace";
-const font = (spec: string, px: number) => spec.replace("//", `${px} `).replace("//", "");
+// The spec carries a `//px` placeholder; swap in the size so the unit stays
+// glued to the number ("96px") — a stray space ("96 px") is an invalid CSS font
+// string, which canvas silently ignores, leaving every label at the default 10px.
+const font = (spec: string, px: number) => spec.replace("//px", `${px}px`);
 
 /** Build the plain-text caption used as the share fallback and body text. */
 export function shareText(stats: ShareStats, units: WeightUnit, t: (k: string) => string): string {
