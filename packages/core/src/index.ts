@@ -6,7 +6,9 @@
  * readiness, progression, periodization), api-client/, validation/.
  */
 
-export * from "./brand";
+// The Aurora theme — one self-contained, swappable folder (tokens, palette,
+// templates, icons). See packages/core/src/theme/README.md.
+export * from "./theme";
 export * from "./semantic";
 export * from "./engines";
 export * from "./plans";
@@ -30,9 +32,6 @@ export * from "./benchmarks";
 export * from "./datanet";
 export * from "./tactical";
 export * from "./longevity";
-export * from "./theme";
-export * from "./templates";
-export * from "./aurora-icons";
 export * from "./interval";
 export * from "./activity";
 export * from "./stats";

@@ -21,6 +21,8 @@ import { fs, space, F } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
+import { GlassSurface, GlassSegment } from "./swiftui";
+import { useLiquidGlass } from "../../lib/liquid-glass";
 
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
@@ -211,11 +213,17 @@ export function Spark({
 
 export function ACard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { palette } = useTheme();
+  const { active: glass } = useLiquidGlass();
+  // When Liquid Glass is active (iOS + toggle on) the surface is a native SwiftUI
+  // layer dropped behind the content (transparent RN base so the glass refracts
+  // the screen field); otherwise the solid ink2 card. The glass clips itself to
+  // the same radius, so honour a caller-supplied borderRadius.
+  const radius = typeof style?.borderRadius === "number" ? style.borderRadius : RADIUS.card;
   return (
     <View
       style={[
         {
-          backgroundColor: palette.ink2,
+          backgroundColor: glass ? "transparent" : palette.ink2,
           borderColor: palette.line,
           borderWidth: 1,
           borderRadius: RADIUS.card,
@@ -231,6 +239,7 @@ export function ACard({ children, style }: { children: ReactNode; style?: ViewSt
         style,
       ]}
     >
+      {glass && <GlassSurface radius={radius} />}
       {children}
     </View>
   );
@@ -252,8 +261,13 @@ export function APill({
   style?: ViewStyle;
 }) {
   const { palette } = useTheme();
+  const { active: glass } = useLiquidGlass();
+  // The bright primary/light fills stay on brand on every client. The neutral
+  // `soft` pill becomes a native Liquid Glass surface when active (iOS + toggle
+  // on): transparent RN base + GlassSurface behind the label; ink2 otherwise.
+  const glassSoft = variant === "soft" && glass;
   const bg =
-    variant === "primary" ? palette.lime : variant === "light" ? palette.chalk : palette.ink2;
+    variant === "primary" ? palette.lime : variant === "light" ? palette.chalk : glassSoft ? "transparent" : palette.ink2;
   const fg = variant === "soft" ? palette.chalk : palette.onAccent;
   return (
     <Pressable
@@ -268,10 +282,12 @@ export function APill({
           opacity: disabled ? 0.5 : 1,
           borderWidth: variant === "soft" ? 1 : 0,
           borderColor: palette.line,
+          overflow: "hidden",
         },
         style,
       ]}
     >
+      {glassSoft && <GlassSurface radius={RADIUS.pill} />}
       <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
     </Pressable>
   );
@@ -341,6 +357,12 @@ export function ASegment<T extends string>({
   onPick: (v: T) => void;
 }) {
   const { palette } = useTheme();
+  const { active: glass } = useLiquidGlass();
+  // When active (iOS + toggle on) a real SwiftUI segmented Picker (tinted with
+  // the brand lime); the RN pill segment below is the fallback everywhere else.
+  if (glass) {
+    return <GlassSegment options={options} value={value} onPick={onPick} accent={palette.lime} />;
+  }
   return (
     <View
       style={{

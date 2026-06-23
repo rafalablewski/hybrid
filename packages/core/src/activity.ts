@@ -4,7 +4,7 @@
  * notification list. No fabricated entries: an empty history yields an empty
  * feed and the UI shows an honest empty state.
  */
-import type { AuroraIconName } from "./aurora-icons";
+import type { AuroraIconName } from "./theme/icons";
 import type { LoggedSession } from "./engines/session";
 
 export type ActivityAccent = "lime" | "blue" | "violet" | "amber";
