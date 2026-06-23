@@ -72,8 +72,15 @@ export function unsubscribeUrl(email: string): string {
 export async function isSuppressed(email: string): Promise<boolean> {
   try {
     return Boolean(await prisma.emailSuppression.findUnique({ where: { email: email.toLowerCase() } }));
-  } catch {
-    return false; // table not migrated yet → fail open (still won't send if unconfigured)
+  } catch (e) {
+    const code = (e as { code?: string })?.code;
+    // Table not migrated yet → fail OPEN (the feature isn't live, and nothing
+    // sends without email configured anyway). But a transient/live DB error must
+    // fail CLOSED: treat as suppressed and skip the send, so a blip never mails
+    // someone who opted out (CAN-SPAM / GDPR exposure).
+    if (code === "P2021" || code === "P2010") return false;
+    console.error("[email] suppression check failed — failing closed (skipping send)", e);
+    return true;
   }
 }
 
