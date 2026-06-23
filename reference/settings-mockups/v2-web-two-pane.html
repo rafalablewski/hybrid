@@ -12,6 +12,7 @@
     --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
     --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
     --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    --glass:rgba(22,24,22,.55);
     --disp:'Archivo',sans-serif; --cond:'Archivo Narrow',sans-serif; --mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -19,55 +20,58 @@
   .meta{font-family:var(--mono); font-size:12px; color:var(--ash); text-align:center; line-height:1.7; margin-bottom:18px}
   .meta b{color:var(--lime); font-weight:600}
 
-  .win{max-width:1080px; margin:0 auto; background:radial-gradient(120% 90% at 80% -10%, #16181a 0%, #0c0d0c 55%); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 40px 120px -40px rgba(0,0,0,.9)}
-  .titlebar{height:42px; display:flex; align-items:center; gap:8px; padding:0 16px; border-bottom:1px solid var(--line); background:rgba(20,22,20,.6)}
-  .dot{width:11px; height:11px; border-radius:50%}
-  .d1{background:#e0625e}.d2{background:#f0b45e}.d3{background:#c4f035}
+  .win{max-width:1080px; margin:0 auto; background:var(--ink); border:1px solid var(--line); border-radius:20px; overflow:hidden;
+    box-shadow:0 40px 120px -40px rgba(0,0,0,.9); position:relative}
+  .fieldbg{position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none}
+  .blob{position:absolute; width:640px; height:640px; border-radius:50%; filter:blur(70px); opacity:.16; mix-blend-mode:screen}
+  .b-a{background:var(--lime);   top:-200px; left:-120px; animation:d1 19s ease-in-out infinite}
+  .b-b{background:var(--blue);   top:-120px; right:-180px; animation:d2 23s ease-in-out infinite}
+  .b-c{background:var(--violet); bottom:-280px; left:40%; animation:d3 27s ease-in-out infinite}
+  @keyframes d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,40px) scale(1.15)}}
+  @keyframes d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-44px,44px) scale(1.1)}}
+  @keyframes d3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-38px,-38px) scale(1.2)}}
+
+  .glass{background:var(--glass); -webkit-backdrop-filter:blur(18px) saturate(150%) brightness(1.06);
+    backdrop-filter:blur(18px) saturate(150%) brightness(1.06); border:1px solid var(--line); box-shadow:0 14px 40px -18px rgba(0,0,0,.6)}
+
+  .titlebar{position:relative; z-index:5; height:44px; display:flex; align-items:center; gap:8px; padding:0 16px;
+    border-bottom:1px solid var(--line); background:rgba(20,22,20,.5); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px)}
+  .dot{width:11px; height:11px; border-radius:50%}.d1{background:#e0625e}.d2{background:#f0b45e}.d3{background:#c4f035}
   .url{margin-left:14px; font-family:var(--mono); font-size:12px; color:var(--ash)}
 
-  .layout{display:grid; grid-template-columns:280px 1fr; min-height:680px}
-
-  /* sidebar */
-  .side{border-right:1px solid var(--line); padding:22px 14px; overflow-y:auto; background:rgba(12,13,12,.4)}
+  .layout{position:relative; z-index:5; display:grid; grid-template-columns:286px 1fr; min-height:700px}
+  .side{border-right:1px solid var(--line); padding:22px 14px; background:rgba(12,13,12,.35)}
   .brand{display:flex; align-items:center; gap:10px; padding:0 8px 18px}
-  .logo{font-weight:900; font-size:20px; letter-spacing:-.04em}
-  .logo b{color:var(--lime)}
-  .ver{font-family:var(--mono); font-size:10px; color:var(--ash); border:1px solid var(--line); border-radius:6px; padding:2px 6px}
-
-  .me{display:flex; align-items:center; gap:11px; padding:11px; background:var(--card); border:1px solid var(--line); border-radius:14px; margin-bottom:18px}
+  .logo{font-weight:900; font-size:20px; letter-spacing:-.04em}.logo b{color:var(--lime)}
+  .ver{font-family:var(--mono); font-size:10px; color:var(--ash); border:1px solid var(--line); border-radius:999px; padding:2px 8px}
+  .me{display:flex; align-items:center; gap:11px; padding:12px; border-radius:18px; margin-bottom:18px}
   .av{width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:var(--ink); background:linear-gradient(135deg,var(--lime),#9bd400)}
-  .me .nm{font-weight:700; font-size:14px}
-  .me .em{font-family:var(--mono); font-size:11px; color:var(--ash)}
+  .nm{font-weight:700; font-size:14px}.em{font-family:var(--mono); font-size:11px; color:var(--ash)}
 
-  .navgroup{margin-bottom:16px}
-  .navlabel{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.13em; color:var(--ash); padding:0 10px 7px; font-weight:600}
-  .navitem{display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:11px; cursor:pointer; transition:.12s; color:var(--ash); font-size:14px; font-weight:500}
+  .navlabel{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.13em; color:var(--ash); padding:14px 10px 7px; font-weight:600}
+  .navlabel:first-child{padding-top:0}
+  .navitem{display:flex; align-items:center; gap:11px; padding:10px; border-radius:14px; cursor:pointer; color:var(--ash); font-size:14px; font-weight:500; transition:.12s}
   .navitem:hover{background:rgba(255,255,255,.03); color:var(--chalk)}
-  .navitem.on{background:rgba(196,240,53,.12); color:var(--lime)}
   .navitem svg{width:17px; height:17px; flex:none}
-  .navitem .nlabel{flex:1}
-  .navitem.on .nlabel{font-weight:600}
 
-  /* content */
-  .content{padding:32px 40px; overflow-y:auto}
-  .chead{margin-bottom:8px}
-  .ctitle{font-weight:800; font-size:26px; letter-spacing:-.02em}
-  .csub{font-family:var(--mono); font-size:13px; color:var(--ash); margin-top:4px}
+  .content{padding:34px 42px; overflow-y:auto; position:relative}
+  .chead .ctitle{font-weight:900; font-size:27px; letter-spacing:-.03em}
+  .chead .csub{font-family:var(--mono); font-size:13px; color:var(--ash); margin-top:4px}
   .divider{height:1px; background:var(--line); margin:22px 0 26px}
 
-  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:18px}
+  .card{border-radius:24px; padding:22px; margin-bottom:18px}
   .kick{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:600}
   .desc{font-family:var(--mono); font-size:12px; color:var(--ash); margin-top:6px; line-height:1.6}
   .field{margin-top:18px; max-width:440px}
   .flabel{font-family:var(--mono); font-size:12px; color:var(--ash); margin-bottom:8px; display:block}
   .inrow{display:flex; gap:10px}
-  .input{flex:1; background:var(--ink2); border:1px solid var(--line); border-radius:11px; padding:11px 13px; color:var(--chalk); font-family:var(--mono); font-size:14px; outline:none}
+  .input{flex:1; width:100%; background:rgba(20,22,20,.6); border:1px solid var(--line); border-radius:16px; padding:11px 13px; color:var(--chalk); font-family:var(--mono); font-size:14px; outline:none}
   .input:focus{border-color:var(--lime)}
-  textarea.input{resize:vertical; width:100%}
+  textarea.input{resize:vertical}
   .segrow{display:flex; gap:8px; flex-wrap:wrap}
-  .seg{font-family:var(--mono); font-size:13px; padding:9px 18px; border-radius:11px; border:1px solid var(--line); background:transparent; color:var(--ash); cursor:pointer; transition:.12s}
+  .seg{font-family:var(--mono); font-size:13px; padding:9px 18px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--ash); cursor:pointer}
   .seg.on{color:var(--lime); background:rgba(196,240,53,.12); border-color:var(--lime)}
-  .btn{font-family:var(--disp); font-weight:700; font-size:14px; padding:11px 20px; border-radius:11px; cursor:pointer; border:1px solid; transition:.12s; white-space:nowrap}
+  .btn{font-family:var(--disp); font-weight:700; font-size:14px; padding:11px 20px; border-radius:16px; cursor:pointer; border:1px solid; white-space:nowrap}
   .btn-lime{color:var(--lime); background:rgba(196,240,53,.12); border-color:var(--lime)}
   .btn-ghost{color:var(--chalk); background:transparent; border-color:var(--line)}
   .btn-violet{color:var(--violet); background:rgba(201,169,240,.12); border-color:var(--violet)}
@@ -75,174 +79,198 @@
 
   .trow{display:flex; align-items:center; gap:16px; padding:15px 0; border-top:1px solid var(--line)}
   .trow:first-of-type{border-top:none; padding-top:6px}
-  .ttext{flex:1}
-  .ttitle{font-weight:600; font-size:15px}
+  .ttext{flex:1}.ttitle{font-weight:600; font-size:15px}
   .tdesc{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:3px; line-height:1.5; max-width:520px}
-  .toggle{flex:none; width:48px; height:27px; border-radius:999px; border:1px solid var(--line); background:transparent; position:relative; cursor:pointer; transition:.18s}
-  .toggle.on{background:var(--lime); border-color:var(--lime)}
-  .knob{position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%; background:var(--ash); transition:.18s}
-  .toggle.on .knob{left:23px; background:var(--ink)}
+  .tg{appearance:none; -webkit-appearance:none; width:48px; height:27px; border-radius:999px; border:1px solid var(--line); background:transparent; position:relative; cursor:pointer; flex:none; transition:.18s}
+  .tg::before{content:""; position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%; background:var(--ash); transition:.18s}
+  .tg:checked{background:var(--lime); border-color:var(--lime)}
+  .tg:checked::before{left:23px; background:var(--ink)}
 
-  .badges{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
-  .badge{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:7px; font-weight:600}
-  .b-role{color:var(--violet); background:rgba(201,169,240,.12); border:1px solid rgba(201,169,240,.4)}
+  .badges{display:flex; gap:8px; margin-top:12px}
+  .badge{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; padding:3px 10px; border-radius:999px; font-weight:600}
+  .b-role{color:var(--violet); background:rgba(201,169,240,.14); border:1px solid rgba(201,169,240,.45)}
   .b-free{color:var(--ash); border:1px solid var(--line)}
-  .danger{border-color:rgba(224,98,94,.4); border-left:3px solid var(--red)}
-  .upgrade{background:linear-gradient(120deg, rgba(196,240,53,.12), rgba(196,240,53,.02)); border:1px solid rgba(196,240,53,.4)}
+  .danger{border-left:3px solid var(--red)}
+  .upgrade{background:linear-gradient(120deg, rgba(196,240,53,.14), rgba(196,240,53,.02)); border:1px solid rgba(196,240,53,.4)}
   .note{font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:12px; line-height:1.6}
-  .pane{animation:fade .2s ease}
-  @keyframes fade{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:translateY(0)}}
-  @media(max-width:760px){.layout{grid-template-columns:1fr}.side{display:none}}
+
+  /* CSS-only tab switching */
+  .nav-radio{position:absolute; opacity:0; pointer-events:none}
+  .pane{display:none}
+  #t-account:checked  ~ .layout .p-account{display:block}
+  #t-prefs:checked    ~ .layout .p-prefs{display:block}
+  #t-logger:checked   ~ .layout .p-logger{display:block}
+  #t-notif:checked    ~ .layout .p-notif{display:block}
+  #t-privacy:checked  ~ .layout .p-privacy{display:block}
+  #t-coaching:checked ~ .layout .p-coaching{display:block}
+  #t-security:checked ~ .layout .p-security{display:block}
+  #t-billing:checked  ~ .layout .p-billing{display:block}
+  #t-data:checked     ~ .layout .p-data{display:block}
+  #t-danger:checked   ~ .layout .p-danger{display:block}
+  /* active nav highlight */
+  #t-account:checked  ~ .layout .n-account,
+  #t-prefs:checked    ~ .layout .n-prefs,
+  #t-logger:checked   ~ .layout .n-logger,
+  #t-notif:checked    ~ .layout .n-notif,
+  #t-privacy:checked  ~ .layout .n-privacy,
+  #t-coaching:checked ~ .layout .n-coaching,
+  #t-security:checked ~ .layout .n-security,
+  #t-billing:checked  ~ .layout .n-billing,
+  #t-data:checked     ~ .layout .n-data,
+  #t-danger:checked   ~ .layout .n-danger{background:rgba(196,240,53,.12); color:var(--lime); font-weight:600}
+  @media(max-width:760px){.layout{grid-template-columns:1fr}.side{border-right:none; border-bottom:1px solid var(--line)}}
 </style>
 </head>
 <body>
-  <div class="meta"><b>HYBRID Settings — Version 2</b><br />Web two-pane · categorized sidebar nav + live detail panel (desktop-first)</div>
+  <div class="meta"><b>HYBRID Settings — Version 2</b><br />Web two-pane · categorized sidebar + detail panel, click a category (Aurora glass, no-JS)</div>
 
   <div class="win">
+    <div class="fieldbg"><div class="blob b-a"></div><div class="blob b-b"></div><div class="blob b-c"></div></div>
+
+    <!-- hidden radios drive the tabs -->
+    <input class="nav-radio" type="radio" name="tab" id="t-account" checked />
+    <input class="nav-radio" type="radio" name="tab" id="t-prefs" />
+    <input class="nav-radio" type="radio" name="tab" id="t-logger" />
+    <input class="nav-radio" type="radio" name="tab" id="t-notif" />
+    <input class="nav-radio" type="radio" name="tab" id="t-privacy" />
+    <input class="nav-radio" type="radio" name="tab" id="t-coaching" />
+    <input class="nav-radio" type="radio" name="tab" id="t-security" />
+    <input class="nav-radio" type="radio" name="tab" id="t-billing" />
+    <input class="nav-radio" type="radio" name="tab" id="t-data" />
+    <input class="nav-radio" type="radio" name="tab" id="t-danger" />
+
     <div class="titlebar"><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span><span class="url">app.hybrid.app/settings</span></div>
+
     <div class="layout">
       <aside class="side">
         <div class="brand"><span class="logo"><b>//</b> HYBRID</span><span class="ver">v1.0</span></div>
-        <div class="me"><div class="av">R</div><div><div class="nm">Rafal Ablewski</div><div class="em">rafal@hybrid.app</div></div></div>
-        <div id="nav"></div>
+        <div class="me glass"><div class="av">R</div><div><div class="nm">Rafal Ablewski</div><div class="em">rafal@hybrid.app</div></div></div>
+
+        <div class="navlabel">How you use HYBRID</div>
+        <label class="navitem n-account" for="t-account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Account &amp; profile</label>
+        <label class="navitem n-prefs" for="t-prefs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="18" r="2" fill="currentColor"/></svg>Preferences</label>
+        <label class="navitem n-logger" for="t-logger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6v12M3 9v6M18 6v12M21 9v6M6 12h12"/></svg>Workout logger</label>
+        <label class="navitem n-notif" for="t-notif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Notifications</label>
+
+        <div class="navlabel">Who can see &amp; reach you</div>
+        <label class="navitem n-privacy" for="t-privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Privacy</label>
+        <label class="navitem n-coaching" for="t-coaching"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a6 6 0 0 0 6 6h2l4 3v-3a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6z"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg>Coaching &amp; access</label>
+
+        <div class="navlabel">Login &amp; billing</div>
+        <label class="navitem n-security" for="t-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Security</label>
+        <label class="navitem n-billing" for="t-billing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>Subscription</label>
+
+        <div class="navlabel">Your data &amp; support</div>
+        <label class="navitem n-data" for="t-data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>Your data</label>
+        <label class="navitem n-danger" for="t-danger" style="color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Danger zone</label>
       </aside>
-      <main class="content" id="content"></main>
+
+      <main class="content">
+        <div class="pane p-account">
+          <div class="chead"><div class="ctitle">Account &amp; profile</div><div class="csub">Your identity and account type.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--lime)">PROFILE</div>
+            <div class="field"><label class="flabel">Display name</label><div class="inrow"><input class="input" value="Rafal Ablewski" /><button class="btn btn-lime">Save</button></div></div>
+            <div class="field"><label class="flabel">Email</label><div class="inrow"><input class="input" value="rafal@hybrid.app" /><button class="btn btn-ghost">Update</button></div></div></div>
+          <div class="card glass"><div class="kick" style="color:var(--violet)">ACCOUNT TYPE</div>
+            <div class="desc">Your role and plan determine which tools are available.</div>
+            <div class="badges"><span class="badge b-role">Client</span><span class="badge b-free">Free</span></div>
+            <label class="btn btn-ghost" for="t-billing" style="display:inline-block; margin-top:16px">View subscription</label></div>
+        </div>
+
+        <div class="pane p-prefs">
+          <div class="chead"><div class="ctitle">Preferences</div><div class="csub">Appearance, language and measurement units.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">APPEARANCE</div>
+            <div class="field"><label class="flabel">Theme</label><div class="segrow"><button class="seg on">Dark</button><button class="seg">Light</button></div></div>
+            <div class="field"><label class="flabel">Template</label><div class="segrow"><button class="seg on">Aurora</button><button class="seg">Classic</button></div></div></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">REGION &amp; UNITS</div>
+            <div class="field"><label class="flabel">Language</label><div class="segrow"><button class="seg on">English</button><button class="seg">Polski</button><button class="seg">Deutsch</button></div></div>
+            <div class="field"><label class="flabel">Units</label><div class="segrow"><button class="seg on">Kilograms</button><button class="seg">Pounds</button></div></div></div>
+        </div>
+
+        <div class="pane p-logger">
+          <div class="chead"><div class="ctitle">Workout logger</div><div class="csub">How you capture sets and count training volume.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--amber)">LOGGING DETAIL</div>
+            <div class="desc">Detailed captures RPE, tempo and notes per set. Simple keeps it to weight × reps.</div>
+            <div class="field"><label class="flabel">Logger mode</label><div class="segrow"><button class="seg on">Detailed</button><button class="seg">Simple</button></div></div></div>
+          <div class="card glass"><div class="kick" style="color:var(--amber)">VOLUME COUNTING</div>
+            <div style="margin-top:10px">
+              <div class="trow"><div class="ttext"><div class="ttitle">Count warm-ups in volume</div><div class="tdesc">Include warm-up sets in your weekly tonnage totals.</div></div><input type="checkbox" class="tg" /></div>
+              <div class="trow"><div class="ttext"><div class="ttitle">Fractional volume</div><div class="tdesc">Count back-off and top-set fractions toward volume targets.</div></div><input type="checkbox" class="tg" checked /></div>
+            </div></div>
+        </div>
+
+        <div class="pane p-notif">
+          <div class="chead"><div class="ctitle">Notifications</div><div class="csub">Choose what HYBRID can email or push to you.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--violet)">NOTIFICATIONS</div>
+            <div style="margin-top:10px">
+              <div class="trow"><div class="ttext"><div class="ttitle">Weekly recap</div><div class="tdesc">Your Sunday training summary.</div></div><input type="checkbox" class="tg" checked /></div>
+              <div class="trow"><div class="ttext"><div class="ttitle">Coach messages</div><div class="tdesc">When your coach replies to a check-in or assigns work.</div></div><input type="checkbox" class="tg" checked /></div>
+              <div class="trow"><div class="ttext"><div class="ttitle">Check-in reminders</div><div class="tdesc">A nudge when your weekly check-in is due.</div></div><input type="checkbox" class="tg" checked /></div>
+              <div class="trow"><div class="ttext"><div class="ttitle">Product updates</div><div class="tdesc">Occasional news about new features.</div></div><input type="checkbox" class="tg" /></div>
+            </div></div>
+        </div>
+
+        <div class="pane p-privacy">
+          <div class="chead"><div class="ctitle">Privacy</div><div class="csub">Control who sees your training and how your data is used.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">PRIVACY</div>
+            <div style="margin-top:10px">
+              <div class="trow"><div class="ttext"><div class="ttitle">Share detail with my coach</div><div class="tdesc">Let a linked coach see your full session detail, not just summaries.</div></div><input type="checkbox" class="tg" checked /></div>
+              <div class="trow"><div class="ttext"><div class="ttitle">Discoverable in Talent</div><div class="tdesc">Appear in coach talent searches (your benchmarks, never raw logs).</div></div><input type="checkbox" class="tg" /></div>
+              <div class="trow"><div class="ttext"><div class="ttitle">Opt out of product analytics</div><div class="tdesc">Don't include my usage in aggregate product analytics.</div></div><input type="checkbox" class="tg" /></div>
+            </div></div>
+        </div>
+
+        <div class="pane p-coaching">
+          <div class="chead"><div class="ctitle">Coaching &amp; access</div><div class="csub">Become a coach or request access to a roster.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--violet)">BECOME A COACH</div>
+            <div class="desc">Apply with your credentials. An admin reviews it in the queue and grants the coach role on approval.</div>
+            <div class="field" style="max-width:560px"><label class="flabel">Your credentials</label><textarea class="input" rows="3" placeholder="Certifications, athletes coached, experience…"></textarea></div>
+            <button class="btn btn-violet" style="margin-top:14px">Apply to coach</button></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">REQUEST ACCESS</div>
+            <div class="desc">Have an invite code, or want to join a coach's roster? Request access here.</div>
+            <button class="btn btn-ghost" style="margin-top:14px">Request access</button></div>
+        </div>
+
+        <div class="pane p-security">
+          <div class="chead"><div class="ctitle">Security</div><div class="csub">Password, two-factor authentication and active sessions.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">PASSWORD</div>
+            <div class="field"><label class="flabel">New password</label><div class="inrow"><input class="input" type="password" placeholder="••••••••" /><button class="btn btn-lime">Update</button></div></div></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">TWO-FACTOR (2FA)</div>
+            <div class="desc">Add an authenticator app for an extra layer of security on sign-in.</div>
+            <button class="btn btn-ghost" style="margin-top:14px">Set up 2-factor</button></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">ACTIVE SESSIONS</div>
+            <div class="desc">Sign out of HYBRID everywhere you're currently logged in.</div>
+            <button class="btn btn-ghost" style="margin-top:14px">Sign out everywhere</button></div>
+        </div>
+
+        <div class="pane p-billing">
+          <div class="chead"><div class="ctitle">Subscription</div><div class="csub">Your plan and billing.</div></div><div class="divider"></div>
+          <div class="card glass upgrade"><div class="kick" style="color:var(--lime)">UPGRADE TO FULL</div>
+            <div class="desc">Unlock the full athlete toolkit — periodization, readiness, the sport engine and prescription.</div>
+            <button class="btn btn-lime" style="margin-top:16px; font-size:15px; padding:12px 24px">Upgrade to Full</button>
+            <div class="note">You're currently on the Free plan.</div></div>
+          <div class="card glass"><div class="kick" style="color:var(--ash)">CURRENT PLAN</div>
+            <div class="desc"><b style="color:var(--chalk)">Free</b> — the lean tracker. No payment method on file.</div></div>
+        </div>
+
+        <div class="pane p-data">
+          <div class="chead"><div class="ctitle">Your data</div><div class="csub">Export a copy of everything in your account.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--blue)">EXPORT</div>
+            <div class="desc">Download a complete copy of your account data — sessions, plans, benchmarks and profile — as a single file.</div>
+            <button class="btn btn-lime" style="margin-top:14px">Download my data</button></div>
+        </div>
+
+        <div class="pane p-danger">
+          <div class="chead"><div class="ctitle">Danger zone</div><div class="csub">Irreversible account actions.</div></div><div class="divider"></div>
+          <div class="card glass"><div class="kick" style="color:var(--ash)">SIGN OUT</div>
+            <button class="btn btn-ghost" style="margin-top:14px">Sign out of this device</button></div>
+          <div class="card glass danger"><div class="kick" style="color:var(--red)">ERASE ACCOUNT</div>
+            <div class="desc">Permanently delete all your training data. <b style="color:var(--red)">This cannot be undone.</b></div>
+            <div class="field" style="max-width:280px"><label class="flabel">Type RESET to confirm</label><input class="input" placeholder="RESET" /></div>
+            <button class="btn btn-red" style="margin-top:14px">Erase everything</button></div>
+        </div>
+      </main>
     </div>
   </div>
-
-<script>
-  const I = {
-    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
-    sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="18" r="2" fill="currentColor"/></svg>',
-    dumbbell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6v12M3 9v6M18 6v12M21 9v6M6 12h12"/></svg>',
-    bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
-    eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
-    whistle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a6 6 0 0 0 6 6h2l4 3v-3a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6z"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/></svg>',
-    shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>',
-    spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>',
-    download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>',
-    info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/></svg>',
-    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
-  };
-  const toggle=(t,d,on)=>'<div class="trow"><div class="ttext"><div class="ttitle">'+t+'</div><div class="tdesc">'+d+'</div></div><button class="toggle'+(on?' on':'')+'"><span class="knob"></span></button></div>';
-
-  const NAV=[
-    {label:'How you use HYBRID', items:[
-      {id:'account',ic:'user',t:'Account & profile'},
-      {id:'prefs',ic:'sliders',t:'Preferences'},
-      {id:'logger',ic:'dumbbell',t:'Workout logger'},
-      {id:'notif',ic:'bell',t:'Notifications'},
-    ]},
-    {label:'Who can see & reach you', items:[
-      {id:'privacy',ic:'eye',t:'Privacy'},
-      {id:'coaching',ic:'whistle',t:'Coaching & access'},
-    ]},
-    {label:'Login & billing', items:[
-      {id:'security',ic:'shield',t:'Security'},
-      {id:'billing',ic:'spark',t:'Subscription'},
-    ]},
-    {label:'Your data & support', items:[
-      {id:'data',ic:'download',t:'Your data'},
-      {id:'about',ic:'info',t:'Help & about'},
-      {id:'danger',ic:'trash',t:'Danger zone'},
-    ]},
-  ];
-
-  const PANES={
-    account:{title:'Account & profile',sub:'Your identity and account type.',html:`
-      <div class="card"><div class="kick" style="color:var(--lime)">PROFILE</div>
-        <div class="field"><label class="flabel">Display name</label><div class="inrow"><input class="input" value="Rafal Ablewski"/><button class="btn btn-lime">Save</button></div></div>
-        <div class="field"><label class="flabel">Email</label><div class="inrow"><input class="input" value="rafal@hybrid.app"/><button class="btn btn-ghost">Update</button></div></div></div>
-      <div class="card"><div class="kick" style="color:var(--violet)">ACCOUNT TYPE</div>
-        <div class="desc">Your role and plan determine which tools are available.</div>
-        <div class="badges"><span class="badge b-role">Client</span><span class="badge b-free">Free</span></div>
-        <button class="btn btn-ghost" style="margin-top:16px" data-go="billing">View subscription</button></div>`},
-    prefs:{title:'Preferences',sub:'Appearance, language and measurement units.',html:`
-      <div class="card"><div class="kick" style="color:var(--blue)">APPEARANCE</div>
-        <div class="field"><label class="flabel">Theme</label><div class="segrow"><button class="seg on">Dark</button><button class="seg">Light</button></div></div>
-        <div class="field"><label class="flabel">Template</label><div class="segrow"><button class="seg on">Aurora</button><button class="seg">Classic</button></div></div></div>
-      <div class="card"><div class="kick" style="color:var(--blue)">REGION & UNITS</div>
-        <div class="field"><label class="flabel">Language</label><div class="segrow"><button class="seg on">English</button><button class="seg">Polski</button><button class="seg">Deutsch</button></div></div>
-        <div class="field"><label class="flabel">Units</label><div class="segrow"><button class="seg on">Kilograms</button><button class="seg">Pounds</button></div></div></div>`},
-    logger:{title:'Workout logger',sub:'How you capture sets and count training volume.',html:`
-      <div class="card"><div class="kick" style="color:var(--amber)">LOGGING DETAIL</div>
-        <div class="desc">Detailed captures RPE, tempo and notes per set. Simple keeps it to weight × reps.</div>
-        <div class="field"><label class="flabel">Logger mode</label><div class="segrow"><button class="seg on">Detailed</button><button class="seg">Simple</button></div></div></div>
-      <div class="card"><div class="kick" style="color:var(--amber)">VOLUME COUNTING</div><div style="margin-top:10px">
-        ${toggle('Count warm-ups in volume','Include warm-up sets in your weekly tonnage totals.',false)}
-        ${toggle('Fractional volume','Count back-off and top-set fractions toward volume targets.',true)}
-      </div></div>`},
-    notif:{title:'Notifications',sub:'Choose what HYBRID can email or push to you.',html:`
-      <div class="card"><div class="kick" style="color:var(--violet)">NOTIFICATIONS</div><div style="margin-top:10px">
-        ${toggle('Weekly recap','Your Sunday training summary.',true)}
-        ${toggle('Coach messages','When your coach replies to a check-in or assigns work.',true)}
-        ${toggle('Check-in reminders','A nudge when your weekly check-in is due.',true)}
-        ${toggle('Product updates','Occasional news about new features.',false)}
-      </div></div>`},
-    privacy:{title:'Privacy',sub:'Control who sees your training and how your data is used.',html:`
-      <div class="card"><div class="kick" style="color:var(--blue)">PRIVACY</div><div style="margin-top:10px">
-        ${toggle('Share detail with my coach','Let a linked coach see your full session detail, not just summaries.',true)}
-        ${toggle('Discoverable in Talent','Appear in coach talent searches (your benchmarks, never raw logs).',false)}
-        ${toggle('Opt out of product analytics',"Don't include my usage in aggregate product analytics.",false)}
-      </div></div>`},
-    coaching:{title:'Coaching & access',sub:'Become a coach or request access to a roster.',html:`
-      <div class="card"><div class="kick" style="color:var(--violet)">BECOME A COACH</div>
-        <div class="desc">Apply with your credentials. An admin reviews it in the queue and grants the coach role on approval.</div>
-        <div class="field" style="max-width:560px"><label class="flabel">Your credentials</label><textarea class="input" rows="3" placeholder="Certifications, athletes coached, experience…"></textarea></div>
-        <button class="btn btn-violet" style="margin-top:14px">Apply to coach</button></div>
-      <div class="card"><div class="kick" style="color:var(--blue)">REQUEST ACCESS</div>
-        <div class="desc">Have an invite code, or want to join a coach's roster? Request access here.</div>
-        <button class="btn btn-ghost" style="margin-top:14px">Request access</button></div>`},
-    security:{title:'Security',sub:'Password, two-factor authentication and active sessions.',html:`
-      <div class="card"><div class="kick" style="color:var(--blue)">PASSWORD</div>
-        <div class="field"><label class="flabel">New password</label><div class="inrow"><input class="input" type="password" placeholder="••••••••"/><button class="btn btn-lime">Update</button></div></div></div>
-      <div class="card"><div class="kick" style="color:var(--blue)">TWO-FACTOR (2FA)</div>
-        <div class="desc">Add an authenticator app for an extra layer of security on sign-in.</div>
-        <button class="btn btn-ghost" style="margin-top:14px">Set up 2-factor</button></div>
-      <div class="card"><div class="kick" style="color:var(--blue)">ACTIVE SESSIONS</div>
-        <div class="desc">Sign out of HYBRID everywhere you're currently logged in.</div>
-        <button class="btn btn-ghost" style="margin-top:14px">Sign out everywhere</button></div>`},
-    billing:{title:'Subscription',sub:'Your plan and billing.',html:`
-      <div class="card upgrade"><div class="kick" style="color:var(--lime)">UPGRADE TO FULL</div>
-        <div class="desc">Unlock the full athlete toolkit — periodization, readiness, the sport engine and prescription.</div>
-        <button class="btn btn-lime" style="margin-top:16px;font-size:15px;padding:12px 24px">Upgrade to Full</button>
-        <div class="note">You're currently on the Free plan.</div></div>
-      <div class="card"><div class="kick" style="color:var(--ash)">CURRENT PLAN</div>
-        <div class="desc"><b style="color:var(--chalk)">Free</b> — the lean tracker. No payment method on file.</div></div>`},
-    data:{title:'Your data',sub:'Export a copy of everything in your account.',html:`
-      <div class="card"><div class="kick" style="color:var(--blue)">EXPORT</div>
-        <div class="desc">Download a complete copy of your account data — sessions, plans, benchmarks and profile — as a single file.</div>
-        <button class="btn btn-lime" style="margin-top:14px">Download my data</button></div>`},
-    about:{title:'Help & about',sub:'Support and product information.',html:`
-      <div class="card"><div class="kick" style="color:var(--ash)">SUPPORT</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-          <button class="btn btn-ghost">Help center</button><button class="btn btn-ghost">Contact support</button><button class="btn btn-ghost">Terms & privacy</button></div></div>
-      <div class="card"><div class="desc" style="text-align:center;margin:0">HYBRID — strength & conditioning for hybrid athletes · version 1.0.0</div></div>`},
-    danger:{title:'Danger zone',sub:'Irreversible account actions.',html:`
-      <div class="card"><div class="kick" style="color:var(--ash)">SIGN OUT</div>
-        <button class="btn btn-ghost" style="margin-top:14px">Sign out of this device</button></div>
-      <div class="card danger"><div class="kick" style="color:var(--red)">ERASE ACCOUNT</div>
-        <div class="desc">Permanently delete all your training data. <b style="color:var(--red)">This cannot be undone.</b></div>
-        <div class="field" style="max-width:280px"><label class="flabel">Type RESET to confirm</label><input class="input" placeholder="RESET"/></div>
-        <button class="btn btn-red" style="margin-top:14px">Erase everything</button></div>`},
-  };
-
-  const navEl=document.getElementById('nav'), contentEl=document.getElementById('content');
-  navEl.innerHTML=NAV.map(g=>`<div class="navgroup"><div class="navlabel">${g.label}</div>${
-    g.items.map(it=>`<div class="navitem" data-id="${it.id}">${I[it.ic]}<span class="nlabel">${it.t}</span></div>`).join('')
-  }</div>`).join('');
-
-  function select(id){
-    const p=PANES[id]; if(!p) return;
-    document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('on', n.dataset.id===id));
-    contentEl.innerHTML=`<div class="pane"><div class="chead"><div class="ctitle">${p.title}</div><div class="csub">${p.sub}</div></div><div class="divider"></div>${p.html}</div>`;
-    contentEl.scrollTop=0;
-    contentEl.querySelectorAll('.toggle').forEach(t=>t.onclick=()=>t.classList.toggle('on'));
-    contentEl.querySelectorAll('.segrow').forEach(g=>g.querySelectorAll('.seg').forEach(b=>b.onclick=()=>{g.querySelectorAll('.seg').forEach(x=>x.classList.remove('on'));b.classList.add('on');}));
-    contentEl.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>select(b.dataset.go));
-  }
-  navEl.querySelectorAll('.navitem').forEach(n=>n.onclick=()=>select(n.dataset.id));
-  select('account');
-</script>
 </body>
 </html>
