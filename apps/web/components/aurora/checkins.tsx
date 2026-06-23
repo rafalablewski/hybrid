@@ -19,7 +19,7 @@ const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[
 
 /** AURORA Check-in (web) — bespoke rounded layout, same compliance + /api/checkins
  *  flow as the classic. */
-export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[] }) {
+export default function AuroraCheckins({ sessions, onSaved }: { sessions: LoggedSession[]; onSaved?: () => void }) {
   const { t } = useLang();
   const isPaid = useSession().entitlement === "paid";
   const [history, setHistory] = useState<Checkin[]>([]);
@@ -56,6 +56,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
       if (!res.ok) { setError(`${t("w.recovery.checkins.errSubmit")} (HTTP ${res.status}).`); setSaving(false); return; }
       setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
       await load();
+      onSaved?.();
     } catch { setError(t("w.recovery.checkins.errNetwork")); }
     setSaving(false);
   };

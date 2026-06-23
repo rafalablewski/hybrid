@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
@@ -141,8 +141,15 @@ export default function AppShell() {
   const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
-  const { bio: bioFromBiometrics } = useBiometrics();
-  const { bio: bioFromSignals } = useSignals();
+  const { bio: bioFromBiometrics, refresh: refreshBiometrics } = useBiometrics();
+  const { bio: bioFromSignals, refresh: refreshSignals } = useSignals();
+  // A check-in / weigh-in / nutrition log writes the recovery + body-mass
+  // signals that drive the shell's Performance State on Today. Revalidate BOTH
+  // sources so the dashboard never shows pre-check-in numbers until a reload.
+  const refreshBio = useCallback(() => {
+    refreshBiometrics();
+    refreshSignals();
+  }, [refreshBiometrics, refreshSignals]);
   // Runtime feature flags — gate nav items + the announcement banner. Fail-open
   // (isEnabled returns true until loaded), so a flag hiccup never hides defaults.
   const { isEnabled, value } = useFlags();
@@ -719,11 +726,11 @@ export default function AppShell() {
 
         {screen === "forceplate" && (aurora ? <AuroraForcePlate /> : <ForcePlate />)}
 
-        {screen === "nutrition" && (aurora ? <AuroraNutrition /> : <Nutrition />)}
+        {screen === "nutrition" && (aurora ? <AuroraNutrition onSaved={refreshBio} /> : <Nutrition onSaved={refreshBio} />)}
 
         {screen === "progress" && (aurora ? <AuroraProgress /> : <Progress />)}
 
-        {screen === "checkin" && (aurora ? <AuroraCheckins sessions={sessions} /> : <Checkins sessions={sessions} />)}
+        {screen === "checkin" && (aurora ? <AuroraCheckins sessions={sessions} onSaved={refreshBio} /> : <Checkins sessions={sessions} onSaved={refreshBio} />)}
 
         {screen === "calendar" && (aurora ? <AuroraCalendar sessions={sessions} /> : <Calendar sessions={sessions} />)}
 

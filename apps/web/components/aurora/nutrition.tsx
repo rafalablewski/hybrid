@@ -17,7 +17,7 @@ type Row = { userId: string; kind: string; value: number; unit: string; source: 
 
 /** AURORA Nutrition (web) — rounded macro tracker, same adaptive-targets engine
  *  + /api/signals logging + bodyweight trend as the classic. */
-export default function AuroraNutrition() {
+export default function AuroraNutrition({ onSaved }: { onSaved?: () => void }) {
   const { t } = useLang();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
@@ -58,7 +58,7 @@ export default function AuroraNutrition() {
         if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
         if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
       }
-      if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); }
+      if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); onSaved?.(); }
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
     setSaving(false);
   };
