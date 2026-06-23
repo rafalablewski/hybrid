@@ -149,9 +149,27 @@ const SW = 1080;
 const SH = 1920;
 const SPAD = 96;
 
+function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StoryStyle) {
   ctx.fillStyle = st.bg;
   ctx.fillRect(0, 0, SW, SH);
+  // Optional diagonal gradient over the base (top-left → bottom-right).
+  if (st.gradient) {
+    const g = ctx.createLinearGradient(0, 0, SW, SH);
+    g.addColorStop(0, st.gradient.from);
+    g.addColorStop(1, st.gradient.to);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, SW, SH);
+  }
   // The style's glow discs (positions are fractions of the card).
   st.discs.forEach((d) => {
     const cx = SW * d.x;
@@ -163,6 +181,16 @@ function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StorySty
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, SW, SH);
   });
+  // Optional translucent glass slab inset behind the content.
+  if (st.panel) {
+    const inset = SW * 0.045;
+    roundRectPath(ctx, inset, inset, SW - inset * 2, SH - inset * 2, SW * 0.05);
+    ctx.fillStyle = st.panel.fill;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = st.panel.border;
+    ctx.stroke();
+  }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.font = font(DISPLAY, 64);

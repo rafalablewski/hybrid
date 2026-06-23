@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { View, Text, Share } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
@@ -145,6 +146,16 @@ const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: s
       collapsable={false}
       style={{ width, height: Math.round((width * 16) / 9), backgroundColor: st.bg, padding: width * 0.09, justifyContent: "space-between", overflow: "hidden", borderRadius: width * 0.05 }}
     >
+      {/* Optional diagonal gradient over the base (top-left → bottom-right). */}
+      {st.gradient && (
+        <LinearGradient
+          pointerEvents="none"
+          colors={[st.gradient.from, st.gradient.to]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      )}
       {/* Soft glow discs — the look that distinguishes each style. */}
       {st.discs.map((d, i) => {
         const size = width * d.r * 2;
@@ -156,6 +167,13 @@ const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: s
           />
         );
       })}
+      {/* Optional translucent glass slab inset behind the content. */}
+      {st.panel && (
+        <View
+          pointerEvents="none"
+          style={{ position: "absolute", top: width * 0.045, left: width * 0.045, right: width * 0.045, bottom: width * 0.045, borderRadius: width * 0.045, backgroundColor: st.panel.fill, borderWidth: 1.5, borderColor: st.panel.border }}
+        />
+      )}
       <View>
         <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: st.wordmark, letterSpacing: -1 }}>
           {brand.name}

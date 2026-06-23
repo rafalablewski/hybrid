@@ -629,14 +629,18 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
     );
   })();
 
+  const background = st.gradient ? `linear-gradient(135deg, ${st.gradient.from}, ${st.gradient.to})` : st.bg;
   return (
-    <div style={{ position: "relative", width: w, height: h, borderRadius: px(54), overflow: "hidden", background: st.bg, boxSizing: "border-box" }}>
+    <div style={{ position: "relative", width: w, height: h, borderRadius: px(54), overflow: "hidden", background, boxSizing: "border-box" }}>
       {st.discs.map((d, i) => {
         const size = w * d.r * 2;
         return (
           <div key={i} style={{ position: "absolute", left: w * d.x - size / 2, top: h * d.y - size / 2, width: size, height: size, borderRadius: "50%", background: `radial-gradient(circle, ${d.color} 0%, rgba(0,0,0,0) 70%)`, pointerEvents: "none" }} />
         );
       })}
+      {st.panel && (
+        <div style={{ position: "absolute", inset: w * 0.045, borderRadius: px(40), background: st.panel.fill, border: `2px solid ${st.panel.border}`, backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", pointerEvents: "none" }} />
+      )}
       <div style={{ position: "absolute", inset: 0, padding: `${px(170)} ${px(96)}`, display: "flex", flexDirection: "column", justifyContent: "space-between", boxSizing: "border-box" }}>
         <div>
           <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(64), color: st.wordmark, letterSpacing: "-0.02em" }}>
@@ -761,7 +765,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
                 style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
                 aria-pressed={selected}
               >
-                <span style={{ width: 38, height: 38, borderRadius: 11, background: s.bg, border: `${selected ? 2 : 1}px solid ${selected ? C("lime") : C("line")}`, display: "grid", placeItems: "center" }}>
+                <span style={{ width: 38, height: 38, borderRadius: 11, background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `${selected ? 2 : 1}px solid ${selected ? C("lime") : C("line")}`, display: "grid", placeItems: "center" }}>
                   <span style={{ width: 13, height: 13, borderRadius: "50%", background: s.swatch }} />
                 </span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: selected ? C("lime") : C("ash") }}>{t(s.nameKey)}</span>
