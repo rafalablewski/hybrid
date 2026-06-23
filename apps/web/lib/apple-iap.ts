@@ -114,7 +114,13 @@ export function appleProductFull(): string | undefined {
   return process.env.APPLE_IAP_PRODUCT_FULL || undefined;
 }
 
-export type VerifiedPurchase = { productId?: string; expiresDateMs?: number };
+export type VerifiedPurchase = {
+  productId?: string;
+  expiresDateMs?: number;
+  /** Stable id for the purchase across renewals — used to bind a transaction to
+   *  exactly one account so a (valid) transaction can't be replayed/shared. */
+  originalTransactionId?: string;
+};
 
 /**
  * Fetch + signature-verify a StoreKit 2 transaction from Apple. Returns the
@@ -152,5 +158,9 @@ export async function verifyAppleTransaction(
 
   // Verifies the JWS signature chain to an Apple root before we trust a field.
   const payload = await _verifier.verifyAndDecodeTransaction(signed);
-  return { productId: payload.productId, expiresDateMs: payload.expiresDate };
+  return {
+    productId: payload.productId,
+    expiresDateMs: payload.expiresDate,
+    originalTransactionId: payload.originalTransactionId,
+  };
 }

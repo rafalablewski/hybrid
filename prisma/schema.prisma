@@ -51,6 +51,10 @@ model User {
   entitlement        String   @default("free") // free | paid
   stripeCustomerId   String?  @unique
   subscriptionStatus String?  // active | trialing | past_due | canceled | null
+  // The Apple originalTransactionId that granted Full, if via IAP. Unique so a
+  // (cryptographically valid) StoreKit transaction can be redeemed by exactly
+  // one account — prevents replay / cross-account sharing of one purchase.
+  appleOriginalTransactionId String? @unique
 
   sessions      Session[]
   macrocycles   Macrocycle[]
