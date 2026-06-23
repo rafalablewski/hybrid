@@ -5,7 +5,8 @@ import {
   exerciseHistory, exerciseDashboard, paceClock, fmtWeight, fmtTonnage, kgToUnit,
   type LoggedSession, type ExercisePeriod, type ExerciseStats, type WeightUnit,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { useSessionsQuery } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
@@ -25,15 +26,14 @@ export default function AuroraExercises() {
   const { t } = useLang();
   const router = useRouter();
   const params = useLocalSearchParams<{ name?: string }>();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("");
   const [period, setPeriod] = useState<ExercisePeriod>("all");
 
   useEffect(() => { if (params.name) setSelected(params.name); }, [params.name]);
-  const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const history = useMemo(() => exerciseHistory(sessions), [sessions]);
   const active = selected || history[0]?.name || "";

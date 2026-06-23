@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
-import { prisma } from "@/lib/db";
+import { getCachedPublishedExercises } from "@/lib/cache";
 
 // Published exercises from the admin-managed library, for any signed-in user.
 // The client folds these over the built-in MOVEMENTS (mergeMovements) into the
@@ -24,30 +24,8 @@ export async function GET(request: Request) {
     videoUrl: string | null;
   }> = [];
 
-  try {
-    exercises = await prisma.exercise.findMany({
-      where: { status: "published" },
-      orderBy: { name: "asc" },
-      select: {
-        name: true,
-        pattern: true,
-        muscles: true,
-        baseLoad: true,
-        system: true,
-        aliases: true,
-        kind: true,
-        category: true,
-        equipment: true,
-        description: true,
-        cues: true,
-        videoUrl: true,
-      },
-    });
-  } catch {
-    // Table not created yet (reference/sql-exercise.sql) — degrade to empty so
-    // the built-in catalog still serves.
-    exercises = [];
-  }
+  // Global published library — cached (short TTL, busted on admin edits).
+  exercises = await getCachedPublishedExercises();
 
   return NextResponse.json({ exercises });
 }

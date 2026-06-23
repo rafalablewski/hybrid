@@ -34,6 +34,25 @@ export type ClientPersona = "casual" | "athlete";
  *  session on both clients; the real purchase flow is still pending (billing). */
 export type Entitlement = "free" | "paid";
 
+/** The account's auth role, lowercased. Mirrors the Prisma Role enum
+ *  (CLIENT|COACH|ADMIN). This is access-control input, so both clients MUST
+ *  derive it the same way — hence these shared normalizers (a drift between web
+ *  and mobile here would mean the two clients disagree on who is admin/paid). */
+export type AuthRole = "client" | "coach" | "admin";
+
+/** Coerce any raw role value (DB uppercase, metadata, unknown) to an AuthRole.
+ *  (Distinct from security.normalizeRole, which yields the server-side uppercase
+ *  SecurityRole|null; this is the lowercase client-facing role both apps use.) */
+export function normalizeAuthRole(raw: unknown): AuthRole {
+  const s = String(raw ?? "client").toLowerCase();
+  return s === "coach" || s === "admin" ? s : "client";
+}
+
+/** Coerce any raw entitlement value to an Entitlement (default "free"). */
+export function normalizeEntitlement(raw: unknown): Entitlement {
+  return String(raw ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+}
+
 export interface NavItem {
   /** stable id — also the web screen id, and the i18n key suffix (nav.<id>) */
   id: string;

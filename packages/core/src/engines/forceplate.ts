@@ -24,12 +24,21 @@ export interface ForcePlateImport {
   ignored: string[];
 }
 
+/** True for a force/Newton column label, which must never be read as kg mass. */
+const isForceLabel = (s: string) => s.includes("force") || s.includes("newton") || /\(\s*n\s*\)/.test(s);
+/** True for a unit string that denotes force (Newtons), not mass. */
+export const isForceUnit = (u: string) => /^\s*n\s*$|newton/i.test(u.trim());
+
 /** Map a column/metric label to a Signal kind, or null if unrecognized. */
 export function mapMetric(label: string): SignalKind | null {
   const s = label.trim().toLowerCase();
   if (!s) return null;
   if (s.includes("jump") || s.includes("cmj") || s === "height" || s.includes("jh")) return "jumpHeight";
   if (s.includes("asymmet") || s.includes("imbalance")) return "asymmetry";
+  // A "Weight (N)" / "Peak Force" / "System Weight (N)" column is a FORCE reading
+  // in Newtons (~700 for an 70kg athlete) — ingesting it as bodyMass poisoned the
+  // weight-trend + nutrition engines with absurd "700 kg" body masses.
+  if (isForceLabel(s)) return null;
   if (s.includes("body") && s.includes("mass")) return "bodyMass";
   if (s === "weight" || s === "mass" || s.includes("bodyweight")) return "bodyMass";
   return null;
@@ -75,8 +84,11 @@ export function parseForcePlateCsv(
       const value = parseFloat(cols[valueIdx] ?? "");
       if (!kind) { ignored.add(label); continue; }
       if (!Number.isFinite(value)) continue;
+      const unit = (unitIdx >= 0 && cols[unitIdx]) || signalUnit(kind);
+      // A "Weight" column whose unit is Newtons is a force reading, not kg mass.
+      if (kind === "bodyMass" && unitIdx >= 0 && isForceUnit(cols[unitIdx] ?? "")) { ignored.add(label); continue; }
       recognized.add(label);
-      signals.push({ athleteId: opts.athleteId, kind, value, unit: (unitIdx >= 0 && cols[unitIdx]) || signalUnit(kind), source, ts: iso });
+      signals.push({ athleteId: opts.athleteId, kind, value, unit, source, ts: iso });
     } else {
       // wide: every non-date column is a metric
       for (let c = 0; c < header.length; c++) {

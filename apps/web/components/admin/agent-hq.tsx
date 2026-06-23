@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -112,12 +112,17 @@ export default function AgentHQ() {
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("command");
 
+  // load() runs on mount, from the ↻ refresh button, and after mutations — so
+  // several can be in flight at once. Gate writes on a monotonic sequence so a
+  // slower earlier response can't overwrite a newer one (last-write-by-arrival).
+  const loadSeq = useRef(0);
   const load = useCallback(() => {
     setErr(null);
+    const mine = ++loadSeq.current;
     fetch("/api/admin/agents/overview")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => setData(d))
-      .catch(() => { setData(null); setErr("Couldn't load the operations center — try refreshing."); });
+      .then((d) => { if (mine === loadSeq.current) setData(d); })
+      .catch(() => { if (mine === loadSeq.current) { setData(null); setErr("Couldn't load the operations center — try refreshing."); } });
   }, []);
   useEffect(load, [load]);
 

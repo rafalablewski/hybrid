@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
-  const limited = rateLimit(request, { key: "admin-costreport-send", limit: 10, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-costreport-send", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
 
   const { start, end, label } = monthRange(new URL(request.url).searchParams.get("month"));

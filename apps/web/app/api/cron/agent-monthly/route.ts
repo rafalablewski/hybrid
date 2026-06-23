@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { costUsd } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { postSlack } from "@/lib/slack";
+import { verifyBearerSecret } from "@/lib/crypto";
 
 // Monthly cost report worker — Vercel Cron on the 1st (apps/web/vercel.json).
 // CRON_SECRET-authenticated. Posts the PREVIOUS month's per-agent spend to Slack.
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "cron not configured" }, { status: 503 });
-  if ((request.headers.get("authorization") ?? "") !== `Bearer ${secret}`)
+  if (!verifyBearerSecret(request.headers.get("authorization"), secret))
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const now = new Date();

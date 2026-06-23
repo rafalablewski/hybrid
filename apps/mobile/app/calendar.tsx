@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, type LoggedSession } from "@hybrid/core";
-import { fetchSessions } from "../lib/api";
+import { useSessionsQuery } from "../lib/queries";
+import { useRefreshOnFocus } from "../lib/query";
 import { fs, space, Screen, Card, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useTemplate } from "../lib/template";
@@ -23,14 +24,13 @@ function ClassicCalendar() {
   const navTxt = { fontFamily: F.black, fontSize: fs.title, color: C.chalk };
   const router = useRouter();
   const now = new Date();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [year, setYear] = useState(now.getUTCFullYear());
   const [month, setMonth] = useState(now.getUTCMonth());
   const [selected, setSelected] = useState(todayKey());
 
-  const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const byDay = useMemo(() => sessionsByDay(sessions), [sessions]);
   const intensity = useMemo(() => loadIntensity(byDay), [byDay]);

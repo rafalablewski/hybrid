@@ -16,7 +16,7 @@ import { prisma } from "@/lib/db";
 // Best-effort by design: if the AnonSession table isn't migrated yet, this
 // no-ops with 200 so it never breaks the guest's logging flow.
 export async function POST(request: Request) {
-  const limited = rateLimit(request, { key: "anon-sessions", limit: 30, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "anon-sessions", limit: 30, windowMs: 60_000 });
   if (limited) return limited;
 
   const b = (await request.json().catch(() => ({}))) as {

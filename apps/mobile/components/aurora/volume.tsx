@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import { useRouter } from "expo-router";
 import {
   volumeStatus, volumeAdvice, resolveLandmarks, ALL_MUSCLES,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { useSessionsQuery } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -22,11 +23,10 @@ export default function AuroraVolume() {
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const router = useRouter();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
 
-  const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume;

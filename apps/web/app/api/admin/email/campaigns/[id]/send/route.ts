@@ -21,7 +21,7 @@ const INLINE_LIMIT = 250;
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
-  const limited = rateLimit(request, { key: "admin-email-campaign-send", limit: 10, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-email-campaign-send", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
   const { id } = await params;
 
@@ -52,18 +52,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: true, queued: true, size });
   }
 
-  await prisma.emailCampaign.update({ where: { id }, data: { status: "sending" } });
+  // Lease-claim: take a short lease so two near-simultaneous admin clicks (the
+  // 10/min limit lets both through) — or the cron worker — can't both fan out.
+  // The loser sees count 0 and 409s. sendCampaign persists progress + status and
+  // releases the lease; this small (<= INLINE_LIMIT) audience finishes in one batch.
+  const now = new Date();
+  const claim = await prisma.emailCampaign.updateMany({
+    where: { id, status: { not: "sent" }, OR: [{ lockedUntil: null }, { lockedUntil: { lt: now } }] },
+    data: { status: "sending", lockedUntil: new Date(now.getTime() + 5 * 60_000) },
+  });
+  if (claim.count === 0) return NextResponse.json({ error: "This campaign is already sending or sent." }, { status: 409 });
 
   let sent = 0;
   let failed = 0;
   try {
     ({ sent, failed } = await sendCampaign(campaign));
-    await prisma.emailCampaign.update({
-      where: { id },
-      data: { status: failed > 0 && sent === 0 ? "failed" : "sent", sentAt: new Date(), sentCount: sent, failedCount: failed },
-    });
   } catch (e) {
-    await prisma.emailCampaign.update({ where: { id }, data: { status: "failed" } });
+    await prisma.emailCampaign.update({ where: { id }, data: { status: "failed", lockedUntil: null } });
     return NextResponse.json({ error: e instanceof Error ? e.message : "Send failed." }, { status: 500 });
   }
 

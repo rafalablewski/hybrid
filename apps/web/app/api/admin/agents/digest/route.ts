@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
-  const limited = rateLimit(request, { key: "admin-digest-send", limit: 10, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-digest-send", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
 
   const { text } = await buildDigest();

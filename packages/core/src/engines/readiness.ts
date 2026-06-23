@@ -30,7 +30,9 @@ export function computeReadiness(
   bio?: Biometrics,
 ): Readiness {
   const vals = Object.values(fatigue.muscles);
-  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  // Guard the empty-muscle-set edge: an empty average is NaN, which survives
+  // Math.round/min/max and poisons the score. Mirrors computeHpi's `|| 1` guard.
+  const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   const base = 100 - avg * 0.7;
   const bioAdj = bio ? biometricAdjustment(bio) : 0;
   return {

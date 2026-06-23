@@ -96,6 +96,17 @@ describe("accountability engine", () => {
     expect(a.risk).toBeGreaterThan(70);
   });
 
+  it("bands a high-risk but RECENTLY-active user as at-risk, not dormant", () => {
+    // Trained 12 days ago (≤14) but risk is maxed — must NOT be 'dormant'
+    // (which would fire the "it's been a while" win-back at someone still here).
+    const s = [session("a", daysAgo(12)), session("b", daysAgo(13))];
+    const a = computeAccountability(s, { now: NOW, targetPerWeek: 3 });
+    expect(a.daysSinceLast).toBeLessThanOrEqual(14);
+    expect(a.risk).toBeGreaterThanOrEqual(55);
+    expect(a.band).toBe("at-risk");
+    expect(a.band).not.toBe("dormant");
+  });
+
   it("detects week-over-week frequency decline", () => {
     // 1 session this week, 3 last week
     const s = [

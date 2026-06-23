@@ -40,10 +40,16 @@ export async function PATCH(
   }
 
   if (action === "accept") {
-    if (link.clientId !== me.id || link.status !== "PENDING") {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    }
-    const updated = await prisma.coachLink.update({ where: { id }, data: { status: "ACTIVE" } });
+    if (link.clientId !== me.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    // Guarded transition: only PENDING→ACTIVE. If a concurrent `end` already
+    // moved the row out of PENDING, this finds nothing (409) rather than
+    // resurrecting a link the coach just terminated.
+    const claimed = await prisma.coachLink.updateMany({
+      where: { id, clientId: me.id, status: "PENDING" },
+      data: { status: "ACTIVE" },
+    });
+    if (claimed.count === 0) return NextResponse.json({ error: "no longer pending" }, { status: 409 });
+    const updated = await prisma.coachLink.findUnique({ where: { id } });
     return NextResponse.json({ link: updated });
   }
 
@@ -51,7 +57,13 @@ export async function PATCH(
     if (link.coachId !== me.id && link.clientId !== me.id) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
-    const updated = await prisma.coachLink.update({ where: { id }, data: { status: "ENDED" } });
+    // Terminating intent must win over a concurrent accept: end from any
+    // non-ENDED state (idempotent if already ended).
+    await prisma.coachLink.updateMany({
+      where: { id, status: { not: "ENDED" } },
+      data: { status: "ENDED" },
+    });
+    const updated = await prisma.coachLink.findUnique({ where: { id } });
     return NextResponse.json({ link: updated });
   }
 

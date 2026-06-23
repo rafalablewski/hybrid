@@ -23,6 +23,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!status && typeof b.sessionId !== "string")
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
+  // A linked session must belong to this athlete — don't store an arbitrary /
+  // cross-tenant session id as the assignment's completed-session reference.
+  if (typeof b.sessionId === "string") {
+    const s = await prisma.session.findUnique({ where: { id: b.sessionId }, select: { userId: true } });
+    if (!s || s.userId !== a.athleteId)
+      return NextResponse.json({ error: "invalid session" }, { status: 400 });
+  }
+
   const updated = await prisma.assignment.update({
     where: { id },
     data: {

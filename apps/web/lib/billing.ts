@@ -50,6 +50,9 @@ export async function setEntitlement(opts: {
   entitlement: Entitlement;
   subscriptionStatus?: string | null;
   stripeCustomerId?: string | null;
+  /** When applying a provider subscription event, its timestamp — persisted for
+   *  the out-of-order guard in the webhook. */
+  eventAt?: Date | null;
 }): Promise<void> {
   const updated = await prisma.user.update({
     where: { id: opts.userId },
@@ -59,6 +62,7 @@ export async function setEntitlement(opts: {
         ? { subscriptionStatus: opts.subscriptionStatus }
         : {}),
       ...(opts.stripeCustomerId ? { stripeCustomerId: opts.stripeCustomerId } : {}),
+      ...(opts.eventAt ? { subscriptionStatusAt: opts.eventAt } : {}),
     },
     select: { id: true, email: true, role: true },
   });

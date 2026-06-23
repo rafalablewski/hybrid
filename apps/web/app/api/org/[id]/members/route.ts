@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { canManageOrg, ORG_ROLES, type OrgRole } from "@hybrid/core";
+import { canManageOrg, canAssignRole, ORG_ROLES, type OrgRole } from "@hybrid/core";
 
 // Invite an existing user into the org with a role (managers only). v1 adds
 // users who already have an account, by email — no pending-invite flow yet.
@@ -19,6 +19,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const role = b.role as OrgRole;
   if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
   if (!ORG_ROLES.includes(role)) return NextResponse.json({ error: "invalid role" }, { status: 400 });
+  // A DIRECTOR manages staff but must not mint an OWNER (privilege escalation).
+  if (!canAssignRole(me.role as OrgRole, role))
+    return NextResponse.json({ error: "only an owner can grant the owner role" }, { status: 403 });
 
   const teamId = typeof b.teamId === "string" && b.teamId ? b.teamId : null;
   const target = await prisma.user.findUnique({ where: { email } });

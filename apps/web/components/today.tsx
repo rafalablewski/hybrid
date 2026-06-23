@@ -62,6 +62,7 @@ export default function Today({
   onStart,
   onNavigate,
   onSaved,
+  loading = false,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -73,6 +74,10 @@ export default function Today({
   onNavigate?: (screen: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
+  /** True while the FIRST sessions fetch is in flight — suppresses the
+   *  "Start your first session" empty state so a returning user doesn't see a
+   *  false cold-start flash before their data lands. */
+  loading?: boolean;
 }) {
   // Casual users get the lean home; athletes/coaches get the deep cockpit cards
   // (This week, Future Self, Performance State). Switchable from Settings.
@@ -141,7 +146,16 @@ export default function Today({
         }}
       >
         {/* card 1 — Your plan today */}
-        {plan ? (
+        {loading && sessions.length === 0 ? (
+          /* First load in flight — show a quiet skeleton, NOT the cold-start
+             empty state (which would flash "Start your first session" at a
+             returning athlete before their sessions arrive). */
+          <Card glass variant="vibrant" style={{ ...snapCard, borderLeft: `3px solid ${LINE}` }} aria-busy>
+            <div style={{ height: 11, width: 120, borderRadius: 6, background: LINE, opacity: 0.6 }} />
+            <div style={{ height: 26, width: "70%", borderRadius: 8, background: LINE, opacity: 0.5, margin: "12px 0 10px" }} />
+            <div style={{ height: 11, width: "90%", borderRadius: 6, background: LINE, opacity: 0.35 }} />
+          </Card>
+        ) : plan ? (
           /* Enrolled in a REAL named plan → its exact day drives the card. */
           <Card glass variant="vibrant" data-tour="today-plan" style={{ ...snapCard, borderLeft: `3px solid ${LIME}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

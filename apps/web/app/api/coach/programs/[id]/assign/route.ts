@@ -49,7 +49,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (clientIds.length === 0) return NextResponse.json({ error: "no active clients to assign" }, { status: 400 });
 
     const rows = clientIds.flatMap((cid) => programAssignments(weeks, cid, me.id, start));
-    await prisma.assignment.createMany({ data: rows });
+
+    // Idempotent (re-)assign: a double-click or retry must not duplicate the
+    // whole calendar (Assignment has no natural unique key). Atomically clear any
+    // prior copies of exactly the slots we're about to write — this coach's
+    // assignments to these clients on the same (date, name) — then insert.
+    const dates = [...new Set(rows.map((r) => +new Date(r.date as Date)))].map((t) => new Date(t));
+    const names = [...new Set(rows.map((r) => r.name))];
+    await prisma.$transaction([
+      prisma.assignment.deleteMany({
+        where: { assignedById: me.id, athleteId: { in: clientIds }, date: { in: dates }, name: { in: names } },
+      }),
+      prisma.assignment.createMany({ data: rows }),
+    ]);
     return NextResponse.json({ assigned: clientIds.length, sessions }, { status: 201 });
   } catch (e) {
     if (tableMissing(e))

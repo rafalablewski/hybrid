@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
   runTotals,
@@ -10,7 +10,8 @@ import {
   paceClock,
   type LoggedSession,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { useSessionsQuery } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { fs, space, Screen, Card, Kicker, Mono, C, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
@@ -27,15 +28,11 @@ export default function Running() {
 function ClassicRunning() {
   const C = useTheme().palette;
   const { t } = useLang();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [move, setMove] = useState("");
 
-  const load = () => {
-    setRefreshing(true);
-    fetchSessions().then(setSessions).finally(() => setRefreshing(false));
-  };
-  useEffect(load, []);
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const stats = useMemo(() => runStats(sessions), [sessions]);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -6,7 +6,8 @@ import {
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES,
   type LoggedSession, type LoadVelocityProfile, type LVPoint,
 } from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { useSessionsQuery } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
@@ -23,13 +24,12 @@ export default function AuroraVelocity() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [lift, setLift] = useState<string>("");
   const [targetVel, setTargetVel] = useState(0.5);
 
-  const load = () => { setRefreshing(true); fetchSessions().then(setSessions).finally(() => setRefreshing(false)); };
-  useEffect(load, []);
+  const load = () => refetch();
+  useRefreshOnFocus(refetch);
 
   const lifts = useMemo(() => liftsWithVelocity(sessions), [sessions]);
   const noData = lifts.length === 0;

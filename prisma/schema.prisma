@@ -51,6 +51,14 @@ model User {
   entitlement        String   @default("free") // free | paid
   stripeCustomerId   String?  @unique
   subscriptionStatus String?  // active | trialing | past_due | canceled | null
+  // Timestamp (Stripe event.created) of the last applied subscription event, so
+  // a delayed/out-of-order webhook can't roll the entitlement back to a stale
+  // state (e.g. a late "deleted" landing after a re-subscribe).
+  subscriptionStatusAt DateTime?
+  // The Apple originalTransactionId that granted Full, if via IAP. Unique so a
+  // (cryptographically valid) StoreKit transaction can be redeemed by exactly
+  // one account — prevents replay / cross-account sharing of one purchase.
+  appleOriginalTransactionId String? @unique
 
   sessions      Session[]
   macrocycles   Macrocycle[]
@@ -74,6 +82,9 @@ model User {
   coachInvites  CoachInvite[]   @relation("coachInvites")
   coachDiets    CoachDiet[]     @relation("coachDiets")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
+
+  // Admin lists order/filter users by recency (admin/users, admin/stats growth).
+  @@index([createdAt])
 }
 
 // Admin-granted per-user feature access (nav ids) beyond the user's persona.
@@ -119,9 +130,9 @@ model CoachApplication {
 // not by role label alone.
 model CoachLink {
   id        String      @id @default(cuid())
-  coach     User        @relation("asCoach", fields: [coachId], references: [id])
+  coach     User        @relation("asCoach", fields: [coachId], references: [id], onDelete: Cascade)
   coachId   String
-  client    User        @relation("asClient", fields: [clientId], references: [id])
+  client    User        @relation("asClient", fields: [clientId], references: [id], onDelete: Cascade)
   clientId  String
   status    LinkStatus  @default(PENDING)
   tags      String[]    @default([]) // coach-authored labels for roster segmentation
@@ -141,7 +152,7 @@ model CoachLink {
 // grant on its own).
 model CoachGroup {
   id        String   @id @default(cuid())
-  coach     User     @relation("coachGroups", fields: [coachId], references: [id])
+  coach     User     @relation("coachGroups", fields: [coachId], references: [id], onDelete: Cascade)
   coachId   String
   name      String
   clientIds String[] @default([])
@@ -157,7 +168,7 @@ model CoachGroup {
 // the core plan shape so planDayToBlocks() can turn each day into session blocks.
 model CoachProgram {
   id        String   @id @default(cuid())
-  coach     User     @relation("coachPrograms", fields: [coachId], references: [id])
+  coach     User     @relation("coachPrograms", fields: [coachId], references: [id], onDelete: Cascade)
   coachId   String
   name      String
   goal      String?
@@ -176,7 +187,7 @@ model CoachProgram {
 // assigns. See reference/sql-coach-invites.sql (soft-degrades until run).
 model CoachInvite {
   id          String    @id @default(cuid())
-  coach       User      @relation("coachInvites", fields: [coachId], references: [id])
+  coach       User      @relation("coachInvites", fields: [coachId], references: [id], onDelete: Cascade)
   coachId     String
   token       String    @unique // random; encodes the link + QR, also the claim key
   email       String? // optional auto-match target (verified email on signup)
@@ -197,7 +208,7 @@ model CoachInvite {
 // honoured while an ACTIVE CoachLink exists. See reference/sql-coach-diet.sql.
 model CoachDiet {
   id        String   @id @default(cuid())
-  coach     User     @relation("coachDiets", fields: [coachId], references: [id])
+  coach     User     @relation("coachDiets", fields: [coachId], references: [id], onDelete: Cascade)
   coachId   String
   clientId  String // the athlete this diet is for
   kcal      Int?
@@ -218,7 +229,7 @@ model CoachDiet {
 // via an ACTIVE CoachLink. Authored by the client (userId).
 model Checkin {
   id           String    @id @default(cuid())
-  user         User      @relation(fields: [userId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   weekOf       DateTime // the day this check-in covers (midnight-normalized); legacy name
   bodyMassKg   Float?
@@ -236,13 +247,16 @@ model Checkin {
   sharedWithCoach Boolean @default(false)
   createdAt    DateTime  @default(now())
 
-  @@index([userId])
+  // Read as "where userId order by weekOf desc".
+  @@index([userId, weekOf])
+  // Coach views read a client's SHARED check-ins.
+  @@index([userId, sharedWithCoach])
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.
 model WorkoutTemplate {
   id          String   @id @default(cuid())
-  owner       User     @relation(fields: [ownerId], references: [id])
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId     String
   name        String
   description String?
@@ -258,9 +272,9 @@ model WorkoutTemplate {
 // the logged session).
 model Assignment {
   id           String   @id @default(cuid())
-  athlete      User     @relation("assignmentAthlete", fields: [athleteId], references: [id])
+  athlete      User     @relation("assignmentAthlete", fields: [athleteId], references: [id], onDelete: Cascade)
   athleteId    String
-  assignedBy   User     @relation("assignmentCoach", fields: [assignedById], references: [id])
+  assignedBy   User     @relation("assignmentCoach", fields: [assignedById], references: [id], onDelete: Cascade)
   assignedById String
   templateId   String?
   name         String
@@ -271,12 +285,13 @@ model Assignment {
   createdAt    DateTime @default(now())
 
   @@index([athleteId])
+  @@index([athleteId, date])
   @@index([assignedById])
 }
 
 model CoachNote {
   id        String    @id @default(cuid())
-  link      CoachLink @relation(fields: [linkId], references: [id])
+  link      CoachLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   linkId    String
   body      String
   private   Boolean   @default(false) // private notes the client never sees
@@ -287,7 +302,7 @@ model CoachNote {
 
 model Session {
   id          String    @id @default(cuid())
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   title       String
   startedAt   DateTime
@@ -299,7 +314,12 @@ model Session {
   // the default History list + all engines, but kept for the audit trail.
   archivedAt  DateTime?
 
-  @@index([userId])
+  // History/engine reads are "where userId (+ archivedAt is null) order by
+  // startedAt desc". A bare userId index made Postgres sort in memory and
+  // couldn't serve the global `order by startedAt` admin paths.
+  @@index([userId, startedAt])
+  @@index([userId, archivedAt, startedAt])
+  @@index([startedAt])
 }
 
 // A workout logged BEFORE the athlete has an account (guest mode). The mobile
@@ -322,7 +342,7 @@ model AnonSession {
 
 model Macrocycle {
   id        String    @id @default(cuid())
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   goal      String
   // The enrolled NAMED plan id (e.g. "bb-fb4"), when the athlete picked a real
@@ -338,7 +358,7 @@ model Macrocycle {
 
 model Biometric {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   date      DateTime
   hrv       Float?
@@ -346,7 +366,8 @@ model Biometric {
   sleepH    Float?
   source    String // "apple" | "whoop" | ...
 
-  @@index([userId])
+  // Read as "where userId order by date desc".
+  @@index([userId, date])
 }
 
 // The Athlete Twin's universal time-series. Every measurement — recovery, GPS
@@ -355,7 +376,7 @@ model Biometric {
 // ontology). Generalizes Biometric; same own-rows RLS as Session/Biometric.
 model Signal {
   id     String   @id @default(cuid())
-  user   User     @relation(fields: [userId], references: [id])
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
   kind   String // "hrv" | "restingHr" | "sleep" | "highSpeedRunning" | ...
   value  Float
@@ -382,10 +403,10 @@ model Organization {
 
 model Team {
   id        String       @id @default(cuid())
-  org       Organization @relation(fields: [orgId], references: [id])
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId     String
   name      String
-  parent    Team?        @relation("TeamTree", fields: [parentId], references: [id])
+  parent    Team?        @relation("TeamTree", fields: [parentId], references: [id], onDelete: SetNull)
   parentId  String?
   children  Team[]       @relation("TeamTree")
   createdAt DateTime     @default(now())
@@ -396,9 +417,9 @@ model Team {
 
 model Membership {
   id        String       @id @default(cuid())
-  org       Organization @relation(fields: [orgId], references: [id])
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orgId     String
-  user      User         @relation(fields: [userId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   role      String // OrgRole: OWNER | DIRECTOR | COACH | MEDICAL | ANALYST | ATHLETE
   teamId    String? // optional: scope this member to a team subtree
@@ -413,7 +434,7 @@ model Membership {
 // progression lives in @hybrid/core (rtp.ts); this stores state + audit.
 model RtpProtocol {
   id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
   tissue     String
   injuryDate DateTime
@@ -431,7 +452,7 @@ model RtpProtocol {
 // in the Signal ontology.
 model VideoAnalysis {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   movement  String
   metrics   Json // MotionAnalysis shape
@@ -444,7 +465,7 @@ model VideoAnalysis {
 // plan to land the athlete's best day on this date.
 model Event {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   name      String
   sport     String
@@ -458,7 +479,7 @@ model Event {
 // @hybrid/core (benchmarks.ts); visibility gates discovery (the talent market).
 model TalentProfile {
   id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String   @unique
   sport      String
   sex        String // "M" | "F"
@@ -480,7 +501,7 @@ model TalentProfile {
 // Captured when an injury occurs (RTP opened) or fed in from medical records.
 model RiskOutcome {
   id      String   @id @default(cuid())
-  user    User     @relation(fields: [userId], references: [id])
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String
   tissue  String?
   score   Float // the heuristic risk score at the time
@@ -524,7 +545,7 @@ model OrgInvite {
 // should be encrypted at rest in production.
 model Connection {
   id           String    @id @default(cuid())
-  user         User      @relation(fields: [userId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   provider     String // "whoop" | "oura" | "garmin" | "apple" | ...
   status       String    @default("active") // "active" | "revoked" | "error"
@@ -781,6 +802,9 @@ model AgentRun {
   createdAt    DateTime @default(now())
 
   @@index([agentId, createdAt])
+  // Global admin views sort runs by recency without an agentId filter, which the
+  // composite above can't serve.
+  @@index([createdAt])
 }
 
 // A standing task that runs an agent on a cadence. The cron route (/api/cron/
@@ -929,6 +953,12 @@ model EmailCampaign {
   sentAt       DateTime?
   sentCount    Int       @default(0)
   failedCount  Int       @default(0)
+  // Resumable fan-out: the last recipient userId processed (id-ordered), so a
+  // large send continues across cron ticks instead of timing out in one request.
+  sendCursor   String?
+  // Short lease while a worker is processing a batch — serializes overlapping
+  // crons so a recipient is never double-sent.
+  lockedUntil  DateTime?
   createdById  String?
   createdEmail String?
   createdAt    DateTime  @default(now())
@@ -1018,4 +1048,14 @@ model EmailSuppression {
   email     String   @id
   reason    String   @default("unsubscribe") // unsubscribe | bounce | complaint
   createdAt DateTime @default(now())
+}
+
+// Idempotency ledger for inbound provider webhooks (Stripe). The event id is the
+// PK, so re-processing a redelivered event is a no-op (Stripe retries on any
+// non-2xx and can deliver the same event more than once by design).
+model ProcessedWebhookEvent {
+  id          String   @id // the provider's event id (e.g. Stripe evt_...)
+  provider    String   @default("stripe")
+  type        String
+  processedAt DateTime @default(now())
 }

@@ -6,7 +6,7 @@ import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
 import { enforceBudget, needsApproval } from "@/lib/agent-policy";
 import { postSlackApproval } from "@/lib/slack";
-import type { RunEvent, RunResult } from "@/lib/agent-runtime";
+import { partialFromError, type RunEvent, type RunResult } from "@/lib/agent-runtime";
 import { rowToDefinition } from "../../shared";
 
 // Streaming variant of /run: forwards live progress (text deltas + delegation
@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-agent-run", limit: 10, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-agent-run", limit: 10, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id } = await params;
@@ -103,7 +103,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         send({ type: "done", result });
       } catch (e) {
         console.error("[agent stream] failed", e);
-        await recordRun({ def, task, result: { output: "(run failed)", steps: [], usage: { input: 0, output: 0 } }, status: "error", actor: gate.admin });
+        await recordRun({ def, task, result: partialFromError(e), status: "error", actor: gate.admin });
         send({ type: "error", message: "agent run failed" });
       } finally {
         controller.close();

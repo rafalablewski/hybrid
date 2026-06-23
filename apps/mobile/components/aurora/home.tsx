@@ -34,7 +34,8 @@ import {
   type Experience,
   type Equipment,
 } from "@hybrid/core";
-import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
+import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
@@ -90,9 +91,10 @@ export default function AuroraHome() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  // Sessions + signals from the shared cache; the rest stay home-local.
+  const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
+  const { data: signals = [], refetch: refetchSignals } = useSignalsQuery();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -104,9 +106,9 @@ export default function AuroraHome() {
 
   const load = useCallback(() => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle()])
-      .then(([s, a, sig, m]) => {
-        setSessions(s); setAssignments(a); setSignals(sig);
+    Promise.all([fetchAssignments(), fetchMacrocycle(), refetchSessions(), refetchSignals()])
+      .then(([a, m]) => {
+        setAssignments(a);
         setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null);
       })
       .catch((err) => console.error("Failed to load home data:", err))

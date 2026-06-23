@@ -16,6 +16,8 @@ import CoachPrograms from "./coach-programs";
 import CoachInvite from "./coach-invite";
 import CoachDiet from "./coach-diet";
 import { useFlags } from "@/lib/use-flags";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { rosterKey } from "@/lib/use-roster";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator.
@@ -36,25 +38,26 @@ const VerifiedTick = ({ p }: { p?: Person }) =>
   ) : null;
 
 export default function CoachScreen() {
-  const [data, setData] = useState<Links | null>(null);
   const [openLink, setOpenLink] = useState<CoachLink | null>(null);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const { isEnabled } = useFlags();
+  const qc = useQueryClient();
 
-  const load = useCallback(async () => {
-    try {
+  const { data: linksData, refetch: refetchLinks } = useQuery({
+    queryKey: ["coach-links"],
+    queryFn: async (): Promise<Links> => {
       const res = await fetch("/api/coach/links");
-      if (res.ok) setData((await res.json()) as Links);
-      else setData({ asCoach: [], asClient: [] });
-    } catch {
-      setData({ asCoach: [], asClient: [] });
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+      return res.ok ? ((await res.json()) as Links) : { asCoach: [], asClient: [] };
+    },
+  });
+  const data = linksData ?? null;
+  // A link change (invite/accept/end) also changes the computed roster — revalidate
+  // both. Depend on the stable refetch (not the per-render query object).
+  const load = useCallback(() => {
+    refetchLinks();
+    qc.invalidateQueries({ queryKey: rosterKey });
+  }, [refetchLinks, qc]);
 
   const invite = async () => {
     setMsg(null);
@@ -204,20 +207,20 @@ type Group = { id: string; name: string; clientIds: string[] };
 // then assign a whole periodized plan (by goal) to everyone at once. Soft-
 // degrades to an "enable it" note until reference/sql-coach-groups.sql is run.
 function GroupsManager({ clients }: { clients: { clientId: string; name: string }[] }) {
-  const [groups, setGroups] = useState<Group[] | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
   const [newName, setNewName] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [goalFor, setGoalFor] = useState<Record<string, string>>({});
   const [planFor, setPlanFor] = useState<Record<string, string>>({});
 
+  // Local state (not useQuery) so the atomic-delta toggle below can apply an
+  // optimistic setGroups update; the server call sends a delta, not the whole
+  // array, so concurrent toggles don't clobber each other.
+  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const load = useCallback(() => {
     fetch("/api/coach/groups")
       .then((r) => r.json())
-      .then((d) => {
-        setUnavailable(Boolean(d.unavailable));
-        setGroups((d.groups as Group[]) ?? []);
-      })
+      .then((d) => { setUnavailable(Boolean(d.unavailable)); setGroups((d.groups as Group[]) ?? []); })
       .catch(() => setGroups([]));
   }, []);
   useEffect(load, [load]);
@@ -229,13 +232,22 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
     if (res.ok) { setNewName(""); load(); }
     else { const j = await res.json().catch(() => ({})); setMsg(j.error ?? "Couldn't create the group."); }
   };
-  const patch = async (id: string, body: object) => {
-    await fetch(`/api/coach/groups/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => {});
-    load();
-  };
   const toggle = (g: Group, clientId: string) => {
     const has = g.clientIds.includes(clientId);
-    patch(g.id, { clientIds: has ? g.clientIds.filter((x) => x !== clientId) : [...g.clientIds, clientId] });
+    // Send an atomic delta (not the whole array) so concurrent toggles don't
+    // clobber each other server-side. Update this group optimistically.
+    setGroups((prev) =>
+      (prev ?? []).map((x) =>
+        x.id === g.id
+          ? { ...x, clientIds: has ? x.clientIds.filter((c) => c !== clientId) : [...x.clientIds, clientId] }
+          : x,
+      ),
+    );
+    fetch(`/api/coach/groups/${g.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(has ? { removeClientId: clientId } : { addClientId: clientId }),
+    }).catch(() => {});
   };
   const del = async (id: string) => { await fetch(`/api/coach/groups/${id}`, { method: "DELETE" }).catch(() => {}); load(); };
   const assign = async (g: Group) => {

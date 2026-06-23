@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orderSteps, advanceEnrollment, greetingName, INACTIVE_TRIGGER_DAYS } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { sendEmail, sendCampaign, emailConfigured, enrollInTrigger } from "@/lib/email";
+import { verifyBearerSecret } from "@/lib/crypto";
 
 // Email worker. Hit by Vercel Cron (see apps/web/vercel.json) — NOT admin-gated;
 // authenticated by CRON_SECRET (Bearer). Each run, bounded for cost/latency:
@@ -20,33 +21,46 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "cron not configured" }, { status: 503 });
-  const auth = request.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!verifyBearerSecret(request.headers.get("authorization"), secret))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   if (!emailConfigured()) return NextResponse.json({ ran: 0, reason: "email not configured (RESEND_API_KEY/EMAIL_FROM)" });
 
   const now = new Date();
   const result = { campaigns: 0, steps: 0, completed: 0, enrolledInactive: 0 };
 
-  // --- 1. Due scheduled campaigns -----------------------------------------
+  // --- 1. Due scheduled + in-progress campaigns ---------------------------
   try {
+    // Pick campaigns that are newly due (scheduled) OR mid-fan-out (sending) so a
+    // large audience resumes across ticks. One batch each per tick.
     const dueCampaigns = await prisma.emailCampaign.findMany({
-      where: { status: "scheduled", scheduledAt: { lte: now } },
+      where: { OR: [{ status: "scheduled", scheduledAt: { lte: now } }, { status: "sending" }] },
       orderBy: { scheduledAt: "asc" },
       take: MAX_CAMPAIGNS,
     });
     for (const c of dueCampaigns) {
-      await prisma.emailCampaign.update({ where: { id: c.id }, data: { status: "sending" } });
+      // LEASE-CLAIM: take a short lease so overlapping crons (or the inline admin
+      // send) can't process the same batch twice. The loser sees count 0 and
+      // skips. sendCampaign clears the lease and advances the cursor atomically.
+      const lease = await prisma.emailCampaign.updateMany({
+        where: {
+          id: c.id,
+          status: { in: ["scheduled", "sending"] },
+          OR: [{ lockedUntil: null }, { lockedUntil: { lt: now } }],
+        },
+        data: { status: "sending", lockedUntil: new Date(now.getTime() + 5 * 60_000) },
+      });
+      if (lease.count === 0) continue;
       try {
-        const { sent, failed } = await sendCampaign(c);
-        await prisma.emailCampaign.update({
-          where: { id: c.id },
-          data: { status: failed > 0 && sent === 0 ? "failed" : "sent", sentAt: new Date(), sentCount: sent, failedCount: failed },
-        });
-        result.campaigns++;
+        // Re-read so we resume from the latest cursor (a prior tick may have advanced it).
+        const fresh = await prisma.emailCampaign.findUnique({ where: { id: c.id } });
+        if (fresh) {
+          await sendCampaign(fresh);
+          result.campaigns++;
+        }
       } catch (e) {
         console.error("[cron email] campaign send failed", c.id, e);
-        await prisma.emailCampaign.update({ where: { id: c.id }, data: { status: "failed" } });
+        await prisma.emailCampaign.update({ where: { id: c.id }, data: { status: "failed", lockedUntil: null } });
       }
     }
   } catch {
@@ -77,28 +91,43 @@ export async function GET(request: Request) {
       const ordered = orderSteps(seq.steps);
       const step = ordered[en.currentStep];
       if (!step) {
-        await prisma.emailEnrollment.update({ where: { id: en.id }, data: { status: "completed", nextSendAt: null } });
+        await prisma.emailEnrollment.updateMany({
+          where: { id: en.id, currentStep: en.currentStep },
+          data: { status: "completed", nextSendAt: null },
+        });
         result.completed++;
         continue;
       }
-      const user = userById.get(en.userId);
-      await sendEmail({
-        to: en.email,
-        subject: step.subject,
-        body: step.body,
-        kind: "sequence",
-        sequenceId: seq.id,
-        userId: en.userId,
-        marketing: true,
-        vars: { name: greetingName(user?.name ?? null, en.email) },
-      });
+      // CLAIM BEFORE SENDING: advance the enrollment cursor atomically, guarded
+      // on the step we're about to send still being the current, due one. The
+      // loser of an overlapping cron sees count 0 and skips, so a sequence step
+      // is never double-sent (the unique [sequenceId,userId] enrollment guard
+      // doesn't help here — this is an update of an existing row, not an insert).
       const adv = advanceEnrollment(en.currentStep, ordered, Date.now());
-      await prisma.emailEnrollment.update({
-        where: { id: en.id },
+      const claim = await prisma.emailEnrollment.updateMany({
+        where: { id: en.id, status: "active", currentStep: en.currentStep, nextSendAt: { lte: now } },
         data: adv.done
           ? { status: "completed", currentStep: adv.nextStep, nextSendAt: null }
           : { currentStep: adv.nextStep, nextSendAt: adv.nextSendAtMs ? new Date(adv.nextSendAtMs) : null },
       });
+      if (claim.count === 0) continue;
+      const user = userById.get(en.userId);
+      try {
+        await sendEmail({
+          to: en.email,
+          subject: step.subject,
+          body: step.body,
+          kind: "sequence",
+          sequenceId: seq.id,
+          userId: en.userId,
+          marketing: true,
+          vars: { name: greetingName(user?.name ?? null, en.email) },
+        });
+      } catch (e) {
+        // Step already advanced (at-most-once); isolate the failure so one bad
+        // recipient doesn't abort the rest of the batch.
+        console.error("[cron email] step send failed", en.id, e);
+      }
       result.steps++;
       if (adv.done) result.completed++;
     }

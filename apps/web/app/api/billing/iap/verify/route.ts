@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { prisma } from "@/lib/db";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { setEntitlement } from "@/lib/billing";
 import {
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const limited = rateLimit(request, { key: "billing-iap", limit: 20, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "billing-iap", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   if (!appleIapConfigured()) {
@@ -58,6 +60,28 @@ export async function POST(request: Request) {
     const active = tx.expiresDateMs === undefined || tx.expiresDateMs > Date.now();
     if (!active) {
       return NextResponse.json({ error: "subscription has expired" }, { status: 400 });
+    }
+
+    // BIND THE PURCHASE TO THIS ACCOUNT BEFORE GRANTING. The transaction is
+    // cryptographically valid, but Apple will return it for anyone who posts the
+    // id — so without binding, one purchase could be replayed across unlimited
+    // accounts. Claim the originalTransactionId via the @unique column: if it's
+    // already held by a different user, the write hits P2002 and we refuse.
+    const otid = tx.originalTransactionId;
+    if (otid) {
+      try {
+        await prisma.user.update({ where: { id: user.id }, data: { appleOriginalTransactionId: otid } });
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+          return NextResponse.json(
+            { error: "This purchase is already linked to another account." },
+            { status: 409 },
+          );
+        }
+        throw e;
+      }
+    } else {
+      console.warn("[billing] Apple IAP: no originalTransactionId on a verified transaction — granting without replay binding");
     }
 
     await setEntitlement({

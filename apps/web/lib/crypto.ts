@@ -1,4 +1,21 @@
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHash, timingSafeEqual } from "node:crypto";
+
+/**
+ * Verify an `Authorization: Bearer <secret>` header against a configured secret
+ * in constant time. Fails closed: returns false when the secret is unset (so a
+ * literal "Bearer undefined" can never authenticate a misconfigured deployment).
+ */
+export function verifyBearerSecret(authHeader: string | null, secret: string | undefined): boolean {
+  if (!secret) return false;
+  const prefix = "Bearer ";
+  if (!authHeader || !authHeader.startsWith(prefix)) return false;
+  // Compare SHA-256 digests (always 32 bytes) rather than the raw strings: this
+  // keeps the comparison constant-time AND avoids leaking the secret's length via
+  // the early length check timingSafeEqual would otherwise require.
+  const provided = createHash("sha256").update(authHeader.slice(prefix.length)).digest();
+  const expected = createHash("sha256").update(secret).digest();
+  return timingSafeEqual(provided, expected);
+}
 
 // App-layer encryption for secrets at rest (wearable OAuth tokens). AES-256-GCM
 // with a random per-record IV and an authentication tag, so a DB leak alone

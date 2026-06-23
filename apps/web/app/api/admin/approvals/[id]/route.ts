@@ -9,7 +9,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const gate = await requireAgentOperator(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-approval-post", limit: 30, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-approval-post", limit: 30, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id } = await params;

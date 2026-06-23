@@ -15,6 +15,7 @@ import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
 import { LiquidGlassProvider } from "../lib/liquid-glass";
 import { ThemeProvider, useTheme } from "../lib/theme";
+import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
@@ -54,17 +55,19 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <TemplateProvider>
-          <LiquidGlassProvider>
-            <SessionProvider>
-              <LanguageProvider>
-                <Shell />
-              </LanguageProvider>
-            </SessionProvider>
-          </LiquidGlassProvider>
-        </TemplateProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <TemplateProvider>
+            <LiquidGlassProvider>
+              <SessionProvider>
+                <LanguageProvider>
+                  <Shell />
+                </LanguageProvider>
+              </SessionProvider>
+            </LiquidGlassProvider>
+          </TemplateProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </SafeAreaProvider>
   );
 }
