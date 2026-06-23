@@ -16,6 +16,8 @@ import CoachPrograms from "./coach-programs";
 import CoachInvite from "./coach-invite";
 import CoachDiet from "./coach-diet";
 import { useFlags } from "@/lib/use-flags";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { rosterKey } from "@/lib/use-roster";
 
 // goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator.
@@ -36,25 +38,25 @@ const VerifiedTick = ({ p }: { p?: Person }) =>
   ) : null;
 
 export default function CoachScreen() {
-  const [data, setData] = useState<Links | null>(null);
   const [openLink, setOpenLink] = useState<CoachLink | null>(null);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const { isEnabled } = useFlags();
+  const qc = useQueryClient();
 
-  const load = useCallback(async () => {
-    try {
+  const linksQuery = useQuery({
+    queryKey: ["coach-links"],
+    queryFn: async (): Promise<Links> => {
       const res = await fetch("/api/coach/links");
-      if (res.ok) setData((await res.json()) as Links);
-      else setData({ asCoach: [], asClient: [] });
-    } catch {
-      setData({ asCoach: [], asClient: [] });
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+      return res.ok ? ((await res.json()) as Links) : { asCoach: [], asClient: [] };
+    },
+  });
+  const data = linksQuery.data ?? null;
+  // A link change (invite/accept/end) also changes the computed roster — revalidate both.
+  const load = useCallback(() => {
+    linksQuery.refetch();
+    qc.invalidateQueries({ queryKey: rosterKey });
+  }, [linksQuery, qc]);
 
   const invite = async () => {
     setMsg(null);
@@ -204,23 +206,22 @@ type Group = { id: string; name: string; clientIds: string[] };
 // then assign a whole periodized plan (by goal) to everyone at once. Soft-
 // degrades to an "enable it" note until reference/sql-coach-groups.sql is run.
 function GroupsManager({ clients }: { clients: { clientId: string; name: string }[] }) {
-  const [groups, setGroups] = useState<Group[] | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
   const [newName, setNewName] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [goalFor, setGoalFor] = useState<Record<string, string>>({});
   const [planFor, setPlanFor] = useState<Record<string, string>>({});
 
-  const load = useCallback(() => {
-    fetch("/api/coach/groups")
-      .then((r) => r.json())
-      .then((d) => {
-        setUnavailable(Boolean(d.unavailable));
-        setGroups((d.groups as Group[]) ?? []);
-      })
-      .catch(() => setGroups([]));
-  }, []);
-  useEffect(load, [load]);
+  const groupsQuery = useQuery({
+    queryKey: ["coach-groups"],
+    queryFn: async (): Promise<{ groups: Group[]; unavailable: boolean }> => {
+      const r = await fetch("/api/coach/groups");
+      const d = await r.json();
+      return { groups: (d.groups as Group[]) ?? [], unavailable: Boolean(d.unavailable) };
+    },
+  });
+  const groups = groupsQuery.data?.groups ?? (groupsQuery.isPending ? null : []);
+  const unavailable = groupsQuery.data?.unavailable ?? false;
+  const load = () => groupsQuery.refetch();
 
   const create = async () => {
     const name = newName.trim();
