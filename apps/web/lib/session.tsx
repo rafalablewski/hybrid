@@ -10,9 +10,32 @@ import {
 import type { User } from "@supabase/supabase-js";
 import type { Entitlement } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { resetPersona } from "@/lib/persona";
 
 // Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN).
 export type Role = "client" | "coach" | "admin";
+
+// Device-level prefs that are NOT user data and may safely survive a logout.
+// Everything else under the `hybrid.` namespace is user-scoped and is wiped so a
+// shared device never leaks one account's state (persona, sport, in-progress
+// workout draft, onboarding answers, coach invite token, …) to the next user.
+const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announce.dismissed"]);
+
+/** Wipe all user-scoped client state (localStorage namespace + persona module
+ *  singletons) so nothing carries across a logout or user switch. */
+function clearClientState() {
+  resetPersona();
+  try {
+    const drop: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k)) drop.push(k);
+    }
+    drop.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // ignore storage failures (private mode, etc.)
+  }
+}
 
 export type Session = {
   name: string;
@@ -110,7 +133,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       });
       const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
         if (s?.user) resolveSession(s.user).then(setSession);
-        else setSession(null);
+        else {
+          // Token expiry / cross-tab sign-out: wipe user-scoped state too.
+          clearClientState();
+          setSession(null);
+        }
       });
       return () => sub.subscription.unsubscribe();
     }
@@ -154,11 +181,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
     }
     setSession(null);
-    try {
-      localStorage.removeItem(KEY);
-    } catch {
-      // ignore
-    }
+    clearClientState();
   };
 
   return (

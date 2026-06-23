@@ -32,6 +32,17 @@ export function setClientPersona(c: ClientPersona): void {
   emit();
 }
 
+/** Reset the module-level persona singletons on sign-out / user switch so the
+ *  next account on this device doesn't inherit the previous user's persona,
+ *  active-coach flag, or the one-shot fetch guard. Mirrors web resetPersona(). */
+export function resetPersona(): void {
+  choice = null;
+  activeCoach = false;
+  coachFetched = false;
+  AsyncStorage.removeItem(KEY).catch(() => {});
+  emit();
+}
+
 // A client with an ACTIVE coach gets the full adaptive experience on their
 // coach's seat (see resolvePersona). Learned once from /api/coach/links.
 let activeCoach = false;

@@ -56,6 +56,25 @@ export function setClientPersona(c: ClientPersona): void {
   emit();
 }
 
+/**
+ * Reset the module-level persona state on logout / user switch. These singletons
+ * live for the lifetime of the JS context (shared across whoever uses this tab),
+ * so without this a second user signing in on the same tab without a full reload
+ * would inherit the previous user's persona choice and active-coach flag — and
+ * `coachFetched` would suppress the fresh lookup. Called from session logout.
+ */
+export function resetPersona(): void {
+  choice = null;
+  activeCoach = false;
+  coachFetched = false;
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* ignore (private mode) */
+  }
+  emit();
+}
+
 function subscribe(l: () => void): () => void {
   listeners.add(l);
   ensureCoachFetch(); // kick the one-time active-coach lookup on first use
