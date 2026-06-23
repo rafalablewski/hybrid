@@ -32,11 +32,15 @@ export async function POST(request: Request) {
   const eligible = ids.filter((id) => !injured.has(id) && !already.has(id));
   const skipped = ids.length - eligible.length;
 
-  // athleteState is the engine compute (inherently per-athlete); run it only for
-  // eligible athletes, then persist every sample in a single createMany.
-  const samples = await Promise.all(
-    eligible.map(async (id) => ({ userId: id, score: (await athleteState(id)).risk.overall, injured: false })),
-  );
+  // athleteState is the engine compute (inherently per-athlete, several queries
+  // each); run it SEQUENTIALLY for the eligible athletes so we don't fan out
+  // hundreds of concurrent connections and exhaust the pool, then persist every
+  // sample in a single createMany.
+  const samples: { userId: string; score: number; injured: boolean }[] = [];
+  for (const id of eligible) {
+    const { risk } = await athleteState(id);
+    samples.push({ userId: id, score: risk.overall, injured: false });
+  }
   if (samples.length) await prisma.riskOutcome.createMany({ data: samples });
 
   return NextResponse.json({ written: samples.length, skipped, athletes: users.length });
