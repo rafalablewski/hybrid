@@ -1437,39 +1437,26 @@ function Summary({
           ))}
         </View>
 
-        {/* Style picker — pick one of the 4 "wrapped" looks; the card + the
-            shared image update live. */}
+        {/* Theme toggle — switch the "wrapped" look; the card + the shared
+            image update live. */}
         <View style={{ marginTop: 16 }}>
           <Mono color={C.ash} style={{ textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</Mono>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 14 }}>
+          <View style={{ flexDirection: "row", gap: 4, padding: 4, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignSelf: "center" }}>
             {STORY_STYLES.map((s) => {
               const selected = s.id === styleId;
               return (
-                <Pressable key={s.id} onPress={() => setStyleId(s.id)} style={{ alignItems: "center", width: 56 }}>
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      overflow: "hidden",
-                      backgroundColor: s.bg,
-                      borderWidth: selected ? 2 : 1,
-                      borderColor: selected ? C.lime : C.line,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+                <Pressable
+                  key={s.id}
+                  onPress={() => setStyleId(s.id)}
+                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16, backgroundColor: selected ? C.lime : "transparent" }}
+                >
+                  <View style={{ width: 14, height: 14, borderRadius: 7, overflow: "hidden", backgroundColor: s.bg, borderWidth: 1, borderColor: selected ? "rgba(0,0,0,0.25)" : C.line, alignItems: "center", justifyContent: "center" }}>
                     {s.gradient && (
-                      <LinearGradient
-                        colors={[s.gradient.from, s.gradient.to]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-                      />
+                      <LinearGradient colors={[s.gradient.from, s.gradient.to]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
                     )}
-                    <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: s.swatch }} />
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: s.swatch }} />
                   </View>
-                  <Mono color={selected ? C.lime : C.ash} style={{ fontSize: fs.nano, marginTop: 4, textAlign: "center" }}>{t(s.nameKey)}</Mono>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: selected ? C.ink : C.ash }}>{t(s.nameKey)}</Text>
                 </Pressable>
               );
             })}

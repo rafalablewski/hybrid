@@ -752,23 +752,40 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
         ))}
       </div>
 
-      {/* Style picker — pick one of the 4 looks; the card + share image follow. */}
+      {/* Theme toggle — switch the wrapped look; the card + share image follow. */}
       <div style={{ marginTop: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</div>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14 }}>
+        <div role="tablist" style={{ display: "flex", gap: 4, padding: 4, borderRadius: 999, background: C("ink2"), border: `1px solid ${C("line")}`, maxWidth: 360, margin: "0 auto" }}>
           {STORY_STYLES.map((s) => {
             const selected = s.id === styleId;
             return (
               <button
                 key={s.id}
+                role="tab"
+                aria-selected={selected}
                 onClick={() => setStyleId(s.id)}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
-                aria-pressed={selected}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  borderRadius: 999,
+                  border: "none",
+                  padding: "9px 12px",
+                  background: selected ? C("lime") : "transparent",
+                  color: selected ? C("ink") : C("ash"),
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 700,
+                  fontSize: fs.caption,
+                  transition: "background .15s, color .15s",
+                }}
               >
-                <span style={{ width: 38, height: 38, borderRadius: 11, background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `${selected ? 2 : 1}px solid ${selected ? C("lime") : C("line")}`, display: "grid", placeItems: "center" }}>
-                  <span style={{ width: 13, height: 13, borderRadius: "50%", background: s.swatch }} />
+                <span style={{ width: 14, height: 14, borderRadius: "50%", background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `1px solid ${selected ? "rgba(0,0,0,0.25)" : C("line")}`, display: "inline-grid", placeItems: "center", flex: "0 0 auto" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.swatch }} />
                 </span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: selected ? C("lime") : C("ash") }}>{t(s.nameKey)}</span>
+                {t(s.nameKey)}
               </button>
             );
           })}
