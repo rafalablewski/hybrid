@@ -1,40 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { LoggedSession } from "@hybrid/core";
 
-/** Fetches the signed-in user's sessions from the API. In demo mode (no auth)
- *  the API returns 401, so this resolves to an empty list and callers render
- *  honest empty states (no sample data). */
+/** Query key for the signed-in user's (non-archived) sessions. Mutations that
+ *  change sessions should invalidate this key to revalidate every consumer. */
+export const sessionsKey = ["sessions"] as const;
+
+async function fetchSessions(): Promise<LoggedSession[]> {
+  const res = await fetch("/api/sessions");
+  if (res.ok) {
+    const data = (await res.json()) as { sessions?: LoggedSession[] };
+    return data.sessions ?? [];
+  }
+  // In demo mode (no auth) the API returns 401 → resolve to an empty list so
+  // callers render honest empty states (no sample data).
+  if (res.status === 401) return [];
+  throw new Error(`HTTP ${res.status}`);
+}
+
+/** Fetches the signed-in user's sessions, backed by the shared query cache so
+ *  every consumer dedupes one request and a mutation can revalidate them all.
+ *  Return shape preserved (sessions/loading/error/refresh) so call sites are
+ *  unchanged. */
 export function useSessions() {
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/sessions");
-      if (res.ok) {
-        const data = (await res.json()) as { sessions?: LoggedSession[] };
-        setSessions(data.sessions ?? []);
-        setError(null);
-      } else if (res.status === 401) {
-        setSessions([]);
-        setError(null);
-      } else {
-        setError(`HTTP ${res.status}`);
-      }
-    } catch {
-      setError("network");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { sessions, loading, error, refresh };
+  const q = useQuery({ queryKey: sessionsKey, queryFn: fetchSessions });
+  return {
+    sessions: q.data ?? [],
+    // `loading` historically meant "a fetch is in flight". isPending covers the
+    // first load; isFetching keeps the existing refresh-spinner semantics.
+    loading: q.isPending || q.isFetching,
+    error: q.isError ? (q.error instanceof Error ? q.error.message : "network") : null,
+    refresh: () => q.refetch(),
+  };
 }
