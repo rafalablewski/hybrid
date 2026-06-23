@@ -130,7 +130,7 @@ export async function refreshAccessToken(provider: ProviderId, conn: Refreshable
     });
     return tok.access_token;
   } catch (e) {
-    console.error(`[connect] ${provider} token refresh failed`, e);
+    console.error(`[connect] ${provider} OAuth refresh failed`, e);
     await prisma.connection.update({ where: { id: conn.id }, data: { status: "error" } }).catch(() => {});
     return null;
   }
