@@ -919,13 +919,13 @@ export default function Workout() {
                   </Pressable>
                 );
               })()}
-              <Pressable onPress={() => moveExercise(x.uid, -1)} disabled={xi === 0} hitSlop={6}>
+              <Pressable onPress={() => moveExercise(x.uid, -1)} disabled={xi === 0} hitSlop={14}>
                 <Text style={{ color: xi === 0 ? C.line : C.ash, fontSize: fs.note }}>↑</Text>
               </Pressable>
-              <Pressable onPress={() => moveExercise(x.uid, 1)} disabled={xi === exercises.length - 1} hitSlop={6}>
+              <Pressable onPress={() => moveExercise(x.uid, 1)} disabled={xi === exercises.length - 1} hitSlop={14}>
                 <Text style={{ color: xi === exercises.length - 1 ? C.line : C.ash, fontSize: fs.note }}>↓</Text>
               </Pressable>
-              <Pressable onPress={() => removeExercise(x.uid)} hitSlop={8}>
+              <Pressable onPress={() => removeExercise(x.uid)} hitSlop={14}>
                 <Text style={{ color: C.ash, fontSize: fs.note }}>✕</Text>
               </Pressable>
             </View>
@@ -970,10 +970,10 @@ export default function Workout() {
                     <Cell value={s.reps} onChange={(v) => setSetField(x.uid, i, "reps", v)} done={s.done} />
                     {prefs.detailed && <Cell value={rpeRirSwap(s.rpe, prefs.rpeAsRir)} onChange={(v) => setSetField(x.uid, i, "rpe", rpeRirSwap(v, prefs.rpeAsRir))} done={s.done} />}
                     <View style={{ width: 22, justifyContent: "center" }}>
-                      <Pressable onPress={() => moveSet(x.uid, i, -1)} disabled={i === 0} hitSlop={4} style={{ alignItems: "center" }}>
+                      <Pressable onPress={() => moveSet(x.uid, i, -1)} disabled={i === 0} hitSlop={12} style={{ alignItems: "center" }}>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === 0 ? C.line : C.ash }}>↑</Text>
                       </Pressable>
-                      <Pressable onPress={() => moveSet(x.uid, i, 1)} disabled={i === x.sets.length - 1} hitSlop={4} style={{ alignItems: "center" }}>
+                      <Pressable onPress={() => moveSet(x.uid, i, 1)} disabled={i === x.sets.length - 1} hitSlop={12} style={{ alignItems: "center" }}>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: i === x.sets.length - 1 ? C.line : C.ash }}>↓</Text>
                       </Pressable>
                     </View>
