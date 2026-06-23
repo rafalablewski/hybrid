@@ -755,7 +755,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       {/* Style picker — pick one of the 4 looks; the card + share image follow. */}
       <div style={{ marginTop: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 14 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14 }}>
           {STORY_STYLES.map((s) => {
             const selected = s.id === styleId;
             return (

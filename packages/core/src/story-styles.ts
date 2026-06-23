@@ -18,7 +18,17 @@
  */
 import { colors } from "./theme/tokens";
 
-export type StoryStyleId = "aurora" | "neon" | "liquid-glass" | "swiss" | "japandi" | "swiftui";
+export type StoryStyleId =
+  | "aurora"
+  | "liquid-glass"
+  | "noir"
+  | "ember"
+  | "tidal"
+  | "sage"
+  | "gold"
+  | "concrete"
+  | "blush"
+  | "carbon";
 
 /** A soft radial glow disc, positioned as fractions of the card (x,y of width
  *  & height; r of width). `color` should already carry its alpha. */
@@ -73,25 +83,7 @@ export const STORY_STYLES: readonly StoryStyle[] = [
     barFill: colors.lime,
     swatch: colors.lime,
   },
-  // 2 — Neon: synthwave magenta×cyan glow on a deep violet night. Electric.
-  {
-    id: "neon",
-    nameKey: "summary.style.neon",
-    bg: "#0a0612",
-    gradient: { from: "#1b0b3a", to: "#060410" },
-    discs: [
-      { x: 0.16, y: 0.12, r: 0.62, color: "rgba(255,45,149,0.45)" },
-      { x: 0.86, y: 0.86, r: 0.62, color: "rgba(0,229,255,0.38)" },
-    ],
-    text: "#f4f2ff",
-    muted: "#9a8fc0",
-    accent: "#00e5ff",
-    wordmark: "#ffffff",
-    barTrack: "rgba(255,255,255,0.10)",
-    barFill: "#ff2d95",
-    swatch: "#ff2d95",
-  },
-  // 3 — Liquid Glass: a frosted translucent slab over a lime×blue blur. The
+  // 2 — Liquid Glass: a frosted translucent slab over a lime×blue blur. The
   // app's signature Liquid Glass surface, as a share card.
   {
     id: "liquid-glass",
@@ -110,51 +102,131 @@ export const STORY_STYLES: readonly StoryStyle[] = [
     barFill: colors.lime,
     swatch: "#dfe6e2",
   },
-  // 4 — Swiss: International Typographic — stark white, bold black type, one
-  // red accent. Grid-clean, no glow.
+  // 3 — Noir: pure monochrome. Near-black, crisp white type, a soft top light.
+  // Timeless, editorial, zero colour.
   {
-    id: "swiss",
-    nameKey: "summary.style.swiss",
-    bg: "#ffffff",
+    id: "noir",
+    nameKey: "summary.style.noir",
+    bg: "#0d0d0d",
+    discs: [{ x: 0.5, y: 0.08, r: 0.75, color: "rgba(255,255,255,0.07)" }],
+    text: "#fafafa",
+    muted: "#8a8a8a",
+    accent: "#fafafa",
+    wordmark: "#fafafa",
+    barTrack: "rgba(255,255,255,0.10)",
+    barFill: "#fafafa",
+    swatch: "#fafafa",
+  },
+  // 4 — Ember: a warm magma gradient with orange embers. Energetic, fiery.
+  {
+    id: "ember",
+    nameKey: "summary.style.ember",
+    bg: "#160404",
+    gradient: { from: "#b3210b", to: "#160404" },
+    discs: [
+      { x: 0.2, y: 0.86, r: 0.7, color: "rgba(255,138,0,0.40)" },
+      { x: 0.86, y: 0.16, r: 0.55, color: "rgba(255,61,0,0.28)" },
+    ],
+    text: "#fff3e8",
+    muted: "#c79a86",
+    accent: "#ffae3d",
+    wordmark: "#fff3e8",
+    barTrack: "rgba(255,255,255,0.12)",
+    barFill: "#ff8a00",
+    swatch: "#ff6a00",
+  },
+  // 5 — Tidal: a deep teal→navy ocean with aqua light. Calm, premium.
+  {
+    id: "tidal",
+    nameKey: "summary.style.tidal",
+    bg: "#03101a",
+    gradient: { from: "#0d3a4a", to: "#03101a" },
+    discs: [
+      { x: 0.8, y: 0.2, r: 0.6, color: "rgba(45,212,191,0.30)" },
+      { x: 0.15, y: 0.9, r: 0.6, color: "rgba(56,135,190,0.26)" },
+    ],
+    text: "#eaf7f6",
+    muted: "#7fa3a8",
+    accent: "#2dd4bf",
+    wordmark: "#eaf7f6",
+    barTrack: "rgba(255,255,255,0.10)",
+    barFill: "#2dd4bf",
+    swatch: "#2dd4bf",
+  },
+  // 6 — Sage: a fresh eucalyptus light with deep forest type. Clean, natural.
+  {
+    id: "sage",
+    nameKey: "summary.style.sage",
+    bg: "#d9e4dc",
+    discs: [{ x: 0.85, y: 0.15, r: 0.5, color: "rgba(95,140,110,0.16)" }],
+    text: "#1f3026",
+    muted: "#6a7d70",
+    accent: "#2f6b4f",
+    wordmark: "#1f3026",
+    barTrack: "rgba(31,48,38,0.08)",
+    barFill: "#3f8a63",
+    swatch: "#2f6b4f",
+  },
+  // 7 — Gold: black with gold-foil accents. Luxe, premium, understated.
+  {
+    id: "gold",
+    nameKey: "summary.style.gold",
+    bg: "#070706",
+    gradient: { from: "#1a160c", to: "#070706" },
+    discs: [{ x: 0.5, y: 0.12, r: 0.72, color: "rgba(212,175,55,0.18)" }],
+    text: "#f5efe0",
+    muted: "#9a8f73",
+    accent: "#d4af37",
+    wordmark: "#f5efe0",
+    barTrack: "rgba(212,175,55,0.14)",
+    barFill: "#d4af37",
+    swatch: "#d4af37",
+  },
+  // 8 — Concrete: cool brutalist grey, heavy black type, safety-orange accent.
+  // Raw, bold, modern. No glow.
+  {
+    id: "concrete",
+    nameKey: "summary.style.concrete",
+    bg: "#c9c7c2",
     discs: [],
-    text: "#0a0a0a",
-    muted: "#6b6b6b",
-    accent: "#e2231a",
-    wordmark: "#0a0a0a",
-    barTrack: "rgba(0,0,0,0.08)",
-    barFill: "#0a0a0a",
-    swatch: "#e2231a",
+    text: "#161616",
+    muted: "#5c5c58",
+    accent: "#ff4d00",
+    wordmark: "#161616",
+    barTrack: "rgba(0,0,0,0.10)",
+    barFill: "#ff4d00",
+    swatch: "#ff4d00",
   },
-  // 5 — Japandi: warm Japanese×Scandinavian calm — clay paper, soft charcoal,
-  // terracotta + sage accents.
+  // 9 — Blush: a soft lilac→peach pastel with deep plum type. Airy, friendly.
   {
-    id: "japandi",
-    nameKey: "summary.style.japandi",
-    bg: "#e7e0d4",
-    discs: [{ x: 0.82, y: 0.16, r: 0.5, color: "rgba(176,122,90,0.18)" }],
-    text: "#33302a",
-    muted: "#8a8275",
-    accent: "#9a6a4b",
-    wordmark: "#33302a",
-    barTrack: "rgba(51,48,42,0.08)",
-    barFill: "#7f8a63",
-    swatch: "#9a6a4b",
+    id: "blush",
+    nameKey: "summary.style.blush",
+    bg: "#f3e3ef",
+    gradient: { from: "#e9d4f0", to: "#fbe3d8" },
+    discs: [{ x: 0.2, y: 0.15, r: 0.5, color: "rgba(255,255,255,0.35)" }],
+    text: "#3a2740",
+    muted: "#8a7790",
+    accent: "#b5478a",
+    wordmark: "#3a2740",
+    barTrack: "rgba(58,39,64,0.08)",
+    barFill: "#d06aa0",
+    swatch: "#d06aa0",
   },
-  // 6 — SwiftUI: the iOS system look — a vibrant indigo→blue gradient, crisp
-  // white type, system-rounded feel.
+  // 10 — Carbon: corporate dark slate with an electric-blue accent. Clean,
+  // technical, SaaS-grade.
   {
-    id: "swiftui",
-    nameKey: "summary.style.swiftui",
-    bg: "#0a84ff",
-    gradient: { from: "#5e5ce6", to: "#0a84ff" },
-    discs: [{ x: 0.8, y: 0.12, r: 0.5, color: "rgba(255,255,255,0.20)" }],
-    text: "#ffffff",
-    muted: "rgba(255,255,255,0.78)",
-    accent: "#ffffff",
-    wordmark: "#ffffff",
-    barTrack: "rgba(255,255,255,0.24)",
-    barFill: "#ffffff",
-    swatch: "#ffffff",
+    id: "carbon",
+    nameKey: "summary.style.carbon",
+    bg: "#0e1014",
+    gradient: { from: "#1b2230", to: "#0e1014" },
+    discs: [{ x: 0.85, y: 0.18, r: 0.55, color: "rgba(59,130,246,0.22)" }],
+    text: "#eef2f7",
+    muted: "#8b93a1",
+    accent: "#3b82f6",
+    wordmark: "#eef2f7",
+    barTrack: "rgba(255,255,255,0.08)",
+    barFill: "#3b82f6",
+    swatch: "#3b82f6",
   },
 ] as const;
 
