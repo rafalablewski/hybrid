@@ -68,7 +68,10 @@ function distributeWeeks(weights: number[], total: number): number[] {
   const byRemainder = raw
     .map((r, i) => ({ i, frac: r - Math.floor(r) }))
     .sort((a, b) => b.frac - a.frac);
-  for (let k = 0; used < total; k++, used++) out[byRemainder[k % n]!.i]++;
+  for (let k = 0; used < total; k++, used++) {
+    const i = byRemainder[k % n]!.i;
+    out[i] = (out[i] ?? 0) + 1;
+  }
 
   // The min-of-1 floor can overshoot; trim from the longest phases (never below 1).
   while (used > total) {
@@ -77,7 +80,7 @@ function distributeWeeks(weights: number[], total: number): number[] {
       .filter((x) => x.w > 1)
       .sort((a, b) => b.w - a.w)[0]?.i;
     if (idx === undefined) break;
-    out[idx]!--;
+    out[idx] = (out[idx] ?? 0) - 1;
     used--;
   }
   return out;
