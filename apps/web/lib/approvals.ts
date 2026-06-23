@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { executeAgent } from "./agent-execute";
+import { partialFromError } from "./agent-runtime";
 import { recordRun } from "./agent-runs";
 import { enforceBudget } from "./agent-policy";
 import { rowToDefinition } from "../app/api/admin/agents/shared";
@@ -75,7 +76,7 @@ export async function decideApproval(opts: {
     return { ok: true, status: "approved", output: result.output, agentName: ap.agentName };
   } catch (e) {
     console.error("[approval] run failed", e);
-    await recordRun({ def, task: ap.task, result: { output: "(run failed)", steps: [], usage: { input: 0, output: 0 } }, status: "error", actor: { id: opts.decidedById ?? "approver", email: opts.decidedByEmail } });
+    await recordRun({ def, task: ap.task, result: partialFromError(e), status: "error", actor: { id: opts.decidedById ?? "approver", email: opts.decidedByEmail } });
     // Release the claim back to `pending` so the run can be retried (matching
     // the prior retryable-on-failure behaviour), without a stuck `approving` row.
     await prisma.agentApproval.updateMany({

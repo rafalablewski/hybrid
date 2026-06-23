@@ -3,6 +3,7 @@ import { nextRunFrom } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
+import { partialFromError } from "@/lib/agent-runtime";
 import { enforceBudget } from "@/lib/agent-policy";
 import { rowToDefinition } from "../../admin/agents/shared";
 
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
       ran++;
     } catch (e) {
       console.error("[cron agents] run failed for", sched.agentId, e);
-      await recordRun({ def, task: sched.task, result: { output: "(scheduled run failed)", steps: [], usage: { input: 0, output: 0 } }, status: "error" });
+      await recordRun({ def, task: sched.task, result: partialFromError(e), status: "error" });
     }
   }
 
