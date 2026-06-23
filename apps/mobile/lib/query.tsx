@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useState, useRef, useCallback, type ReactNode } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { useFocusEffect } from "expo-router";
 import {
@@ -49,14 +49,20 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
  *  refetchOnWindowFocus). Skips the very first focus so it doesn't double-fetch
  *  the initial mount. */
 export function useRefreshOnFocus(refetch: () => unknown) {
-  const firstTime = useState(true);
+  // A REF, not state: useState returns a fresh [value, setter] tuple every
+  // render, so putting it in the callback deps made the callback change on
+  // every render → useFocusEffect re-fired while focused → refetch → re-render
+  // → an endless refetch loop (the "refreshes every second" bug). A ref is
+  // stable and doesn't trigger a render, so the callback only depends on the
+  // (stable) refetch fn and fires once per real focus.
+  const firstTime = useRef(true);
   useFocusEffect(
     useCallback(() => {
-      if (firstTime[0]) {
-        firstTime[1](false);
+      if (firstTime.current) {
+        firstTime.current = false;
         return;
       }
       refetch();
-    }, [refetch, firstTime]),
+    }, [refetch]),
   );
 }
