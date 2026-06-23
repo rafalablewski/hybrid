@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fs, space,
+  brand,
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
@@ -644,7 +645,7 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
       <div style={{ position: "absolute", inset: 0, padding: `${px(170)} ${px(96)}`, display: "flex", flexDirection: "column", justifyContent: "space-between", boxSizing: "border-box" }}>
         <div>
           <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(64), color: st.wordmark, letterSpacing: "-0.02em" }}>
-            HYBRID<span style={{ color: st.accent }}>.</span>
+            {brand.name}<span style={{ color: st.accent }}>.</span>
           </div>
           <div style={{ fontFamily: M, fontSize: px(28), color: st.accent, letterSpacing: ".14em", marginTop: px(10) }}>{slide.eyebrow.toUpperCase()}</div>
         </div>
@@ -653,13 +654,13 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
           // "Tracked with HYBRID." — render the trailing brand as the LOGO
           // (display wordmark + lime dot) rather than plain muted text.
           const tracked = t("share.tracked");
-          const mark = "HYBRID.";
+          const mark = `${brand.name}.`;
           const prefix = tracked.endsWith(mark) ? tracked.slice(0, -mark.length) : `${tracked} `;
           return (
             <div style={{ fontFamily: M, fontSize: px(30), color: st.muted, display: "flex", alignItems: "baseline", flexWrap: "wrap" }}>
               {prefix}
               <span style={{ fontFamily: D, fontWeight: 900, color: st.wordmark, letterSpacing: "-0.02em" }}>
-                HYBRID<span style={{ color: st.accent }}>.</span>
+                {brand.name}<span style={{ color: st.accent }}>.</span>
               </span>
             </div>
           );
