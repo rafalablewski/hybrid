@@ -78,6 +78,7 @@ export default function AuroraToday({
   onStart,
   onNavigate,
   onSaved,
+  loading = false,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -89,6 +90,9 @@ export default function AuroraToday({
   onNavigate?: (screen: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
+  /** True while the first sessions fetch is in flight — suppresses the
+   *  cold-start chooser so returning athletes don't see a false flash. */
+  loading?: boolean;
 }) {
   const router = useRouter();
   const { t } = useLang();
@@ -207,6 +211,13 @@ export default function AuroraToday({
                 </div>
               )}
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk") }}>{rx.why}</div>
+            </>
+          ) : loading ? (
+            /* First load in flight — quiet skeleton instead of the cold-start
+               chooser, so a returning athlete doesn't see a false flash. */
+            <>
+              <div style={{ height: 24, width: "60%", borderRadius: 8, background: C("line"), opacity: 0.5, margin: "8px 0 10px" }} />
+              <div style={{ height: 12, width: "90%", borderRadius: 6, background: C("line"), opacity: 0.35 }} />
             </>
           ) : (
             /* Brand-new and not enrolled — first-session chooser (#3): follow a

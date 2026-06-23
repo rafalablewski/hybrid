@@ -137,7 +137,7 @@ const SCOPES_FOR: Record<Role, Scope[]> = {
 export default function AppShell() {
   const router = useRouter();
   const { session, ready, logout } = useSession();
-  const { sessions, refresh } = useSessions();
+  const { sessions, loading: sessionsLoading, refresh } = useSessions();
   const { macro, currentWeek, planId, refresh: refreshMacro } = useMacrocycle();
   const { roster } = useRoster();
   const { lang, setLang, t } = useLang();
@@ -682,9 +682,9 @@ export default function AppShell() {
 
         {screen === "today" && (
           aurora ? (
-            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} />
+            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} loading={sessionsLoading} />
           ) : (
-            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} />
+            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} loading={sessionsLoading} />
           )
         )}
 
