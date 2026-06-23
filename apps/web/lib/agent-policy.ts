@@ -34,23 +34,38 @@ export async function spend7d(agentId: string, model: string): Promise<number> {
 }
 
 /** If the agent has a 7-day budget and it's now reached, pause it + notify.
- *  Returns true when the agent is (or just became) over budget. */
+ *  Returns true when the agent is (or just became) over budget.
+ *
+ *  The pause is an ATOMIC conditional update (only flips a still-active agent),
+ *  and the "budget exceeded" notification is created ONLY by the call that
+ *  actually performed the flip — so two concurrent over-budget runs can't double-
+ *  pause or spam duplicate alerts. (Full prevention of two runs each reading
+ *  under-budget before either records its cost needs a row reservation; the cron
+ *  worker runs agents sequentially, so the practical window is the rare
+ *  simultaneous manual trigger.) */
 export async function enforceBudget(def: AgentDefinition): Promise<boolean> {
   if (!def.budgetUsd7d || def.budgetUsd7d <= 0) return false;
   const spent = await spend7d(def.id, def.model);
   if (spent < def.budgetUsd7d) return false;
   try {
-    await prisma.agentConfig.update({ where: { id: def.id }, data: { status: "paused" } });
-    await prisma.agentNotification.create({
-      data: {
-        kind: "budget_exceeded",
-        agentId: def.id,
-        agentName: def.name,
-        title: `${def.name} paused — 7-day budget reached`,
-        body: `Spent $${spent.toFixed(2)} of the $${def.budgetUsd7d.toFixed(2)} weekly cap.`,
-        severity: "error",
-      },
+    // updateMany is a single atomic WHERE status != paused → 0 rows if another
+    // concurrent call already paused it.
+    const flipped = await prisma.agentConfig.updateMany({
+      where: { id: def.id, status: { not: "paused" } },
+      data: { status: "paused" },
     });
+    if (flipped.count > 0) {
+      await prisma.agentNotification.create({
+        data: {
+          kind: "budget_exceeded",
+          agentId: def.id,
+          agentName: def.name,
+          title: `${def.name} paused — 7-day budget reached`,
+          body: `Spent $${spent.toFixed(2)} of the $${def.budgetUsd7d.toFixed(2)} weekly cap.`,
+          severity: "error",
+        },
+      });
+    }
   } catch (e) {
     console.error("[budget] enforce failed for", def.id, e);
   }
