@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./brand": "./src/brand.ts",
+    "./brand": "./src/theme/tokens.ts",
+    "./theme": "./src/theme/index.ts",
     "./engines": "./src/engines/index.ts"
   },
   "scripts": {
