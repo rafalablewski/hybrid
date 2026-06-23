@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRevalidate } from "@/lib/use-invalidate";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { fs, space,
@@ -21,7 +22,8 @@ const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[
 
 const statusColor = (s: string) => (s === "on-plan" ? LIME : s === "over" ? AMBER : s === "no-plan" ? ASH : AMBER);
 
-export default function Checkins({ sessions, onSaved }: { sessions: LoggedSession[]; onSaved?: () => void }) {
+export default function Checkins({ sessions }: { sessions: LoggedSession[] }) {
+  const revalidate = useRevalidate();
   // Sharing a check-in with a coach is a paid ("Full") feature — the server
   // coerces it false for free accounts, so gate the UI off the same entitlement.
   const isPaid = useSession().entitlement === "paid";
@@ -59,10 +61,10 @@ export default function Checkins({ sessions, onSaved }: { sessions: LoggedSessio
       if (!res.ok) { setError(`Couldn't submit (HTTP ${res.status}). If this persists, the Checkin table may need creating — run reference/sql-checkin.sql.`); setSaving(false); return; }
       setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
       await load();
-      // A check-in writes recovery + body-mass signals that drive the shell's
-      // Performance State / readiness on Today — revalidate those too, or the
-      // dashboard keeps showing pre-check-in numbers until a full reload.
-      onSaved?.();
+      // A check-in writes recovery + body-mass signals that drive the
+      // Performance State / readiness on Today — invalidate those queries so the
+      // dashboard revalidates instead of showing pre-check-in numbers.
+      revalidate.recovery();
     } catch { setError("Network error — try again."); }
     setSaving(false);
   };
