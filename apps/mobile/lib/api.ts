@@ -851,7 +851,10 @@ export async function createCoachGroup(name: string): Promise<boolean> {
   }
 }
 
-export async function patchCoachGroup(id: string, body: { name?: string; clientIds?: string[] }): Promise<boolean> {
+export async function patchCoachGroup(
+  id: string,
+  body: { name?: string; clientIds?: string[]; addClientId?: string; removeClientId?: string },
+): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/api/coach/groups/${id}`, {
       method: "PATCH",

@@ -1,57 +1,60 @@
-# HYBRID — Production-Readiness Audit & Remediation Dossier
+# HYBRID — Audit Dossier
 
-**Engagement:** Full production-readiness audit of the HYBRID hybrid-athlete training platform, followed by an end-to-end remediation pass.
-**Branch:** `claude/production-readiness-audit-cshqbi`
-**Scope:** `packages/core` (engines), `apps/web` (Next.js 16 + 129 API routes), `apps/mobile` (Expo / React Native), `prisma` (51 models).
-**Outcome:** 40 commits · 78 files changed · +1,996 / −579 lines · 562 core tests green · web build + iOS export verified.
+This directory holds the records of **two complementary audit engagements** run against the HYBRID platform. They covered different (mostly non-overlapping) ground and were merged together; where they touched the same code, the stronger fix was kept (see "Reconciliation" below).
 
 ---
 
-## What's in this folder
+## Engagement A — Enterprise Due-Diligence Audit
+*Security · data integrity · concurrency · scalability* — merged via **PR #86** (`claude/enterprise-due-diligence-audit-00gidh`).
 
-| File | Contents |
-|------|----------|
-| [`01-audit-findings.md`](./01-audit-findings.md) | The original audit: every finding by category, severity, root cause, impact, fix. |
-| [`02-remediation-log.md`](./02-remediation-log.md) | Every change shipped, grouped and mapped to its commit hash. |
-| [`03-architecture-data-layer.md`](./03-architecture-data-layer.md) | Deep dive on the keystone refactor: client cache, mutation invalidation, code-splitting, web↔mobile parity. |
-| [`04-database-hardening.md`](./04-database-hardening.md) | Indexes, deletion cascades, and the row-level-security findings (incl. the inert-RLS discovery) + the SQL that was run. |
-| [`05-scorecard-and-roadmap.md`](./05-scorecard-and-roadmap.md) | Before/after production-readiness scores, gate verdicts, and the path to >90. |
+| Document | Covers |
+|----------|--------|
+| [`remediation-report.md`](./remediation-report.md) | Full report: 25 findings with severity / root cause / fix / commit, migrations, outstanding items, commit ledger. |
+| [`deployment-runbook.md`](./deployment-runbook.md) | Operator checklist — migrations, env vars, deploy, post-deploy verification, rollback. |
+| [`findings.md`](./findings.md) | One-line-per-finding index. |
+
+**Headline fixes:** paywall bypass via client-writable metadata (F-01), agent-approval & cron double-spend (F-02/F-03), Apple IAP replay (F-04), Stripe webhook idempotency/ordering (F-08), org DIRECTOR→OWNER escalation (F-07, `canAssignRole`), fleet-wide rate limiting (F-05), coach-roster N+1 (F-17), resumable email fan-out (F-10).
+
+## Engagement B — Production-Readiness Audit
+*Architecture · stale-data · performance · mobile · DB hardening* — this branch (`claude/production-readiness-audit-cshqbi`).
+
+| Document | Covers |
+|----------|--------|
+| [`01-audit-findings.md`](./01-audit-findings.md) | Every finding by domain, severity, root cause, impact, fix. |
+| [`02-remediation-log.md`](./02-remediation-log.md) | All 41 commits grouped + mapped to hashes. |
+| [`03-architecture-data-layer.md`](./03-architecture-data-layer.md) | The keystone: TanStack Query cache, mutation invalidation, code-splitting, web↔mobile parity. |
+| [`04-database-hardening.md`](./04-database-hardening.md) | Indexes, deletion cascades, and the inert-RLS discovery + the SQL. |
+| [`05-scorecard-and-roadmap.md`](./05-scorecard-and-roadmap.md) | Before/after scores, gate verdicts, the path to >90. |
+
+**Headline work:** the web client had **no data layer** (one 939-line component remounting every screen) → introduced a shared query cache on both clients; **code-split** the 80-screen monolith (recharts out of the entry bundle); discovered the **RLS policies were never enabled** (inert) with ~10 sensitive tables uncovered → completed + enabled RLS; **GDPR deletion cascades**; four **engine correctness bugs** (incl. the flagship "peak on event day" mis-dating).
 
 ---
 
-## Executive summary
+## Reconciliation (where the two engagements overlapped)
 
-HYBRID is a genuinely well-engineered product — disciplined auth (one server-side token-validation path, consistent admin gating across all 51 admin routes), correctly-verified Stripe/Slack webhooks, pure/deterministic training engines with injectable clocks, and careful hydration handling. It was **far above prototype quality** at the start of the engagement.
+Both audits independently found and fixed several of the same issues. On merge, the stronger/already-reviewed version was kept and the additive work combined:
 
-It was **not yet production-ready for the stated bar** (enterprise customers + App Store + investor diligence + security review), and the reasons were **architectural, not cosmetic**. The single largest issue: the web client had **no data layer** — no cache, and the entire signed-in app was one 939-line component that force-remounted every screen on navigation. That one pattern was the root cause of the loading flicker, the stale-data-after-mutation, the duplicate requests, and the oversized bundle simultaneously.
+| Area | Resolution |
+|------|------------|
+| Org DIRECTOR→OWNER escalation | Kept Engagement A's `canAssignRole` (core helper + unit test). |
+| First-login user resolution | Kept A's read-first pattern **and** applied B's anti-escalation (new rows are always `CLIENT`, never seeded from `user_metadata.role`). |
+| Session-resolution race | Combined — B's monotonic sequence guard **and** A's `clearClientState()` on sign-out. |
+| Assignment `sessionId` IDOR | Equivalent fixes; kept A's. |
+| Composite indexes (Session/Checkin) | Union of both index sets (the live DB has both). |
+| `coach.tsx` | Combined — A's atomic group-membership deltas **and** B's `useQuery` migration. |
 
-The remediation addressed the findings in four waves:
+---
 
-1. **Correctness & security quick wins** — a privilege-escalation hole, an IDOR, timing-unsafe secret comparisons, a forgeable unsubscribe token, role-escalation at signup, four engine correctness bugs (incl. the flagship "peak on event day" mis-dating), three stale-data races, and error/404 boundaries.
-2. **The keystone data layer** — TanStack Query on both clients, mutation-driven cache invalidation, and removal of the remount-on-navigation pattern.
-3. **Performance** — code-splitting the 80-screen monolith (recharts proven out of the initial bundle), composite DB indexes, and shared-fetch deduplication.
-4. **Database hardening** — GDPR deletion cascades and the discovery that the existing row-level-security policies **were never enabled** (inert), plus ~10 sensitive tables (including OAuth-token storage) with no policy at all.
+## Database scripts
 
-### Grade
+Two combined, idempotent migration scripts were produced and **applied** in the Supabase SQL Editor:
+- `reference/sql-audit-migrations.sql` (Engagement A) — webhook idempotency, IAP binding, resumable send, A's indexes.
+- `reference/sql-all.sql` (Engagement B) — B's indexes, deletion-cascade FKs, and **RLS enable + completion**.
 
-| | Start | End |
-|---|---|---|
-| **Overall** | **C+** (≈58/100) | **B / B+** (≈80–82/100, with DB scripts applied) |
+Both are safe to re-run.
 
-### Gate verdicts (end state)
+---
 
-| Gate | Verdict | Notes |
-|------|---------|-------|
-| Security review | ✅ Likely pass | The HIGH privesc is gone; RLS is now enabled & complete. Remaining: Redis-backed rate limiting. |
-| App Store review | ✅ Conditional pass | Touch targets, haptics, and stale-on-focus addressed. Virtualization is quality, not a rejection risk. |
-| Enterprise procurement | ⚠️ Near | Deletion cascade + tenant isolation (via RLS) resolved. Remaining: SSO/audit-export maturity. |
-| Investor diligence | ⚠️ Improved | The "no data layer" red flag that a technical DD partner would raise is now resolved. |
+## Net result
 
-### Verification posture
-
-Every change was verified by the strongest signal available in the sandbox:
-- **Web:** `tsc --noEmit` (clean) + a full `next build` (compiles; recharts confirmed out of the entry bundle).
-- **Mobile:** `tsc --noEmit` (clean) + `expo export --platform ios` (bundles clean, ×2).
-- **Core:** 562 unit tests (all green; +3 new regression tests added for the engine fixes).
-
-The sandbox could not reach the Supabase host, so all DB changes were shipped as reviewed, idempotent SQL (now applied by the team) rather than executed directly.
+Overall production-readiness moved from **C+ (≈58/100)** to **B / B+ (≈80–82/100)** with the DB scripts applied. Remaining path to >90 is the operational-maturity layer (CI gates, observability/Sentry, load-test evidence) — detailed in [`05-scorecard-and-roadmap.md`](./05-scorecard-and-roadmap.md) §2.

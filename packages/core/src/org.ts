@@ -37,6 +37,19 @@ export function canManageOrg(role: OrgRole): boolean {
   return MANAGE_ROLES.includes(role);
 }
 
+/**
+ * Whether an actor with `actorRole` may assign/grant `targetRole` to a member.
+ * Managers (OWNER, DIRECTOR) can manage staff, but only an OWNER may create or
+ * promote another OWNER — otherwise a DIRECTOR could mint an OWNER (themselves
+ * via a second account, or an accomplice) and seize the org. A non-manager can
+ * assign nothing.
+ */
+export function canAssignRole(actorRole: OrgRole, targetRole: OrgRole): boolean {
+  if (!canManageOrg(actorRole)) return false;
+  if (targetRole === "OWNER") return actorRole === "OWNER";
+  return true;
+}
+
 /** Human-readable summary of what a role can see, for the permissions UI. */
 export function roleScope(role: OrgRole): string {
   if (role === "ATHLETE") return "Own performance + medical data only";

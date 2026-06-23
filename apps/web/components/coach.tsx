@@ -211,17 +211,18 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
   const [goalFor, setGoalFor] = useState<Record<string, string>>({});
   const [planFor, setPlanFor] = useState<Record<string, string>>({});
 
-  const groupsQuery = useQuery({
-    queryKey: ["coach-groups"],
-    queryFn: async (): Promise<{ groups: Group[]; unavailable: boolean }> => {
-      const r = await fetch("/api/coach/groups");
-      const d = await r.json();
-      return { groups: (d.groups as Group[]) ?? [], unavailable: Boolean(d.unavailable) };
-    },
-  });
-  const groups = groupsQuery.data?.groups ?? (groupsQuery.isPending ? null : []);
-  const unavailable = groupsQuery.data?.unavailable ?? false;
-  const load = () => groupsQuery.refetch();
+  // Local state (not useQuery) so the atomic-delta toggle below can apply an
+  // optimistic setGroups update; the server call sends a delta, not the whole
+  // array, so concurrent toggles don't clobber each other.
+  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const load = useCallback(() => {
+    fetch("/api/coach/groups")
+      .then((r) => r.json())
+      .then((d) => { setUnavailable(Boolean(d.unavailable)); setGroups((d.groups as Group[]) ?? []); })
+      .catch(() => setGroups([]));
+  }, []);
+  useEffect(load, [load]);
 
   const create = async () => {
     const name = newName.trim();
@@ -230,13 +231,22 @@ function GroupsManager({ clients }: { clients: { clientId: string; name: string 
     if (res.ok) { setNewName(""); load(); }
     else { const j = await res.json().catch(() => ({})); setMsg(j.error ?? "Couldn't create the group."); }
   };
-  const patch = async (id: string, body: object) => {
-    await fetch(`/api/coach/groups/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => {});
-    load();
-  };
   const toggle = (g: Group, clientId: string) => {
     const has = g.clientIds.includes(clientId);
-    patch(g.id, { clientIds: has ? g.clientIds.filter((x) => x !== clientId) : [...g.clientIds, clientId] });
+    // Send an atomic delta (not the whole array) so concurrent toggles don't
+    // clobber each other server-side. Update this group optimistically.
+    setGroups((prev) =>
+      (prev ?? []).map((x) =>
+        x.id === g.id
+          ? { ...x, clientIds: has ? x.clientIds.filter((c) => c !== clientId) : [...x.clientIds, clientId] }
+          : x,
+      ),
+    );
+    fetch(`/api/coach/groups/${g.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(has ? { removeClientId: clientId } : { addClientId: clientId }),
+    }).catch(() => {});
   };
   const del = async (id: string) => { await fetch(`/api/coach/groups/${id}`, { method: "DELETE" }).catch(() => {}); load(); };
   const assign = async (g: Group) => {

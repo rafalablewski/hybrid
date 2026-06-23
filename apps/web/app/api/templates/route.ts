@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SessionBlock } from "@hybrid/core";
-import { getOrCreateDbUser, getAuthEntitlement } from "@/lib/server-auth";
+import { getOrCreateDbUser, entitlementOf } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
 // Reusable workout templates the user owns. GET lists; POST creates.
@@ -22,8 +22,9 @@ export async function POST(request: Request) {
   // A free CLIENT — including a coached client — can VIEW what's assigned but
   // must upgrade to create/edit records. Coaches & admins author by role.
   if (me.role === "CLIENT") {
-    const ent = await getAuthEntitlement(request);
-    if (ent !== "paid") {
+    // Read entitlement from the DB row (source of truth) — never from
+    // user-writable Supabase metadata, which a free user can self-set to 'paid'.
+    if (entitlementOf(me) !== "paid") {
       return NextResponse.json(
         { error: "Upgrade to Full to create your own workouts.", code: "upgrade_required" },
         { status: 403 },

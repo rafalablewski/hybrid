@@ -23,6 +23,29 @@ const MAX_DELEGATION_TURNS = 4; // bound latency + cost for an admin-triggered r
 export type RunStep = { agent: string; role: string; task: string; output: string };
 export type RunResult = { output: string; steps: RunStep[]; usage: { input: number; output: number } };
 
+/** Thrown when a run fails PART-WAY through, carrying the tokens already spent
+ *  (and partial steps/output) so the failure is recorded with its real cost
+ *  rather than zero — otherwise the 7-day budget cap under-counts and a
+ *  repeatedly-failing agent can blow past it. */
+export class AgentRunError extends Error {
+  usage: { input: number; output: number };
+  steps: RunStep[];
+  output: string;
+  constructor(message: string, partial: { usage: { input: number; output: number }; steps: RunStep[]; output: string }, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AgentRunError";
+    this.usage = partial.usage;
+    this.steps = partial.steps;
+    this.output = partial.output;
+  }
+}
+
+/** Best-effort partial usage/steps from a failed run, for recordRun on error. */
+export function partialFromError(e: unknown): { usage: { input: number; output: number }; steps: RunStep[]; output: string } {
+  if (e instanceof AgentRunError) return { usage: e.usage, steps: e.steps, output: e.output };
+  return { usage: { input: 0, output: 0 }, steps: [], output: "(run failed)" };
+}
+
 /** Live progress events. The route forwards these to the browser over SSE. */
 export type RunEvent =
   | { type: "status"; message: string }
@@ -100,6 +123,7 @@ async function runExecutive(
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: task }];
   let final = "";
 
+  try {
   for (let turn = 0; turn < MAX_DELEGATION_TURNS; turn++) {
     const resp = await streamMessage(client, { ...baseParams(def, buildSystemPrompt(def)), messages, tools }, (t) =>
       onEvent?.({ type: "text", delta: t }),
@@ -134,6 +158,11 @@ async function runExecutive(
       results.push({ type: "tool_result", tool_use_id: tu.id, content: r.output || "(no output)" });
     }
     messages.push({ role: "user", content: results });
+  }
+  } catch (e) {
+    // Preserve the tokens already spent across prior turns/delegates so the
+    // failed run is recorded with its real cost (not zero).
+    throw new AgentRunError("agent run failed", { usage: { input: inTok, output: outTok }, steps, output: final }, { cause: e });
   }
 
   return { output: final, steps, usage: { input: inTok, output: outTok } };

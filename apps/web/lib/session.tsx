@@ -8,11 +8,35 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import type { Entitlement } from "@hybrid/core";
+import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { resetPersona } from "@/lib/persona";
 
-// Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN).
-export type Role = "client" | "coach" | "admin";
+// Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN). Aliased to the
+// shared core AuthRole so web and mobile normalize identical access-control input.
+export type Role = AuthRole;
+
+// Device-level prefs that are NOT user data and may safely survive a logout.
+// Everything else under the `hybrid.` namespace is user-scoped and is wiped so a
+// shared device never leaks one account's state (persona, sport, in-progress
+// workout draft, onboarding answers, coach invite token, …) to the next user.
+const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announce.dismissed"]);
+
+/** Wipe all user-scoped client state (localStorage namespace + persona module
+ *  singletons) so nothing carries across a logout or user switch. */
+function clearClientState() {
+  resetPersona();
+  try {
+    const drop: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k)) drop.push(k);
+    }
+    drop.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // ignore storage failures (private mode, etc.)
+  }
+}
 
 export type Session = {
   name: string;
@@ -46,10 +70,8 @@ function fromSupabaseUser(user: User): Session {
   const email = user.email ?? "";
   // The DB stores uppercase roles (CLIENT|COACH|ADMIN); normalize so strict
   // equality against the lowercase Role type never silently fails.
-  const rawRole = String(meta.role ?? "client").toLowerCase();
-  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
-  const entitlement: Entitlement =
-    String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+  const role: Role = normalizeAuthRole(meta.role);
+  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
   const name =
     (meta.name as string) ||
     (meta.full_name as string) ||
@@ -83,8 +105,8 @@ async function resolveSession(user: User): Promise<Session> {
           ? me.name.charAt(0).toUpperCase() + me.name.slice(1)
           : fallback.name,
         email: me.email ?? fallback.email,
-        role: me.role ? ((me.role as string).toLowerCase() as Role) : fallback.role,
-        entitlement: me.entitlement ?? fallback.entitlement,
+        role: me.role ? normalizeAuthRole(me.role) : fallback.role,
+        entitlement: me.entitlement ? normalizeEntitlement(me.entitlement) : fallback.entitlement,
         provider: fallback.provider,
         onboardedAt: me.onboardedAt ?? null,
       };
@@ -127,7 +149,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setReady(true);
       });
       const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-        applyLatest(s?.user ?? null);
+        if (s?.user) {
+          applyLatest(s.user);
+        } else {
+          // Token expiry / cross-tab sign-out: wipe user-scoped state too.
+          clearClientState();
+          applyLatest(null); // sequence-guarded → setSession(null)
+        }
       });
       return () => {
         cancelled = true;
@@ -174,11 +202,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
     }
     setSession(null);
-    try {
-      localStorage.removeItem(KEY);
-    } catch {
-      // ignore
-    }
+    clearClientState();
   };
 
   return (

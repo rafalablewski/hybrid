@@ -49,9 +49,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     update: {
       status: "active",
       accessToken: protectToken(tok.access_token),
-      refreshToken: protectToken(tok.refresh_token),
+      // Many providers omit refresh_token on a RE-auth — only overwrite it (and
+      // scope) when actually returned, otherwise a re-connect would null out the
+      // still-valid refresh token we need to keep the sync alive.
+      ...(tok.refresh_token ? { refreshToken: protectToken(tok.refresh_token) } : {}),
       expiresAt: tok.expires_in ? new Date(Date.now() + tok.expires_in * 1000) : null,
-      scope: tok.scope ?? cfg.scopes.join(" "),
+      ...(tok.scope ? { scope: tok.scope } : {}),
     },
     create: {
       userId: user.id,

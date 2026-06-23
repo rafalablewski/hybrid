@@ -17,22 +17,31 @@ export async function POST(request: Request) {
   dayStart.setHours(0, 0, 0, 0);
 
   const users = await prisma.user.findMany({ select: { id: true }, take: 500 });
-  let written = 0;
-  let skipped = 0;
+  const ids = users.map((u) => u.id);
 
-  for (const u of users) {
-    const [activeRtp, already] = await Promise.all([
-      prisma.rtpProtocol.count({ where: { userId: u.id, status: "active" } }),
-      prisma.riskOutcome.findFirst({ where: { userId: u.id, injured: false, ts: { gte: dayStart } } }),
-    ]);
-    if (activeRtp > 0 || already) {
-      skipped++;
-      continue;
-    }
-    const { risk } = await athleteState(u.id);
-    await prisma.riskOutcome.create({ data: { userId: u.id, score: risk.overall, injured: false } });
-    written++;
+  // Batch the two eligibility lookups into ONE query each (instead of 2 per user
+  // = ~1,000 queries): who currently has an active RTP (injured), and who already
+  // has today's negative sample.
+  const [injuredRows, alreadyRows] = await Promise.all([
+    prisma.rtpProtocol.findMany({ where: { status: "active", userId: { in: ids } }, select: { userId: true }, distinct: ["userId"] }),
+    prisma.riskOutcome.findMany({ where: { injured: false, ts: { gte: dayStart }, userId: { in: ids } }, select: { userId: true }, distinct: ["userId"] }),
+  ]);
+  const injured = new Set(injuredRows.map((r) => r.userId));
+  const already = new Set(alreadyRows.map((r) => r.userId));
+
+  const eligible = ids.filter((id) => !injured.has(id) && !already.has(id));
+  const skipped = ids.length - eligible.length;
+
+  // athleteState is the engine compute (inherently per-athlete, several queries
+  // each); run it SEQUENTIALLY for the eligible athletes so we don't fan out
+  // hundreds of concurrent connections and exhaust the pool, then persist every
+  // sample in a single createMany.
+  const samples: { userId: string; score: number; injured: boolean }[] = [];
+  for (const id of eligible) {
+    const { risk } = await athleteState(id);
+    samples.push({ userId: id, score: risk.overall, injured: false });
   }
+  if (samples.length) await prisma.riskOutcome.createMany({ data: samples });
 
-  return NextResponse.json({ written, skipped, athletes: users.length });
+  return NextResponse.json({ written: samples.length, skipped, athletes: users.length });
 }
