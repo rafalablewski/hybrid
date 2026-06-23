@@ -81,9 +81,13 @@ export default function AuroraSettings() {
   const tone = (c: string) => ({ tile: `${c}24`, fg: txt(C, c) });
   const toneColor: Record<string, string> = { lime: C.lime, blue: C.blue, violet: C.violet, amber: C.amber, red: C.red, ash: C.ash };
 
-  // The expandable body for each category. Rows not listed here navigate.
-  const BODIES: Partial<Record<SettingsCategoryId, ReactNode>> = {
-    account: (
+  // The expandable body for each category, generated lazily so only the OPEN
+  // category's JSX is built (not all of them on every keystroke). Rows not
+  // listed here navigate instead of expanding.
+  const renderBody = (id: SettingsCategoryId): ReactNode => {
+    switch (id) {
+      case "account":
+        return (
       <>
         <Label color={C.lime}>PROFILE</Label>
         <AField value={acct.name} onChange={acct.setName} placeholder={t("w.account.settings.your-name-ph")} icon="user" />
@@ -95,8 +99,9 @@ export default function AuroraSettings() {
         </View>
         {!acct.authOn && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>{t("w.account.settings.profile-needs-account")}</Text>}
       </>
-    ),
-    preferences: (
+        );
+      case "preferences":
+        return (
       <>
         <Label color={C.blue}>APPEARANCE</Label>
         <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
@@ -111,24 +116,27 @@ export default function AuroraSettings() {
           </View>
         )}
       </>
-    ),
-    notifications: (
+        );
+      case "notifications":
+        return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.notifications-desc")}</Text>
         {ACCOUNT_NOTIF_ROWS.map((row) => (
           <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} />
         ))}
       </>
-    ),
-    privacy: (
+        );
+      case "privacy":
+        return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 2 }}>{t("w.account.settings.privacy-desc")}</Text>
         {ACCOUNT_PRIVACY_ROWS.map((row) => (
           <ToggleRow key={row.key} C={C} title={t(`w.account.settings.priv-${row.key}-t`)} desc={t(`w.account.settings.priv-${row.key}-d`)} on={!!acct.priv[row.key]} onToggle={() => acct.togglePriv(row.key)} disabled={!acct.authOn} />
         ))}
       </>
-    ),
-    security: (
+        );
+      case "security":
+        return (
       <>
         <Label color={C.blue}>PASSWORD</Label>
         {acct.provider && acct.provider !== "email" ? (
@@ -144,16 +152,18 @@ export default function AuroraSettings() {
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
         <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
       </>
-    ),
-    data: (
+        );
+      case "data":
+        return (
       <>
         <Label color={C.blue}>EXPORT</Label>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
         {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
         {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
       </>
-    ),
-    danger: (
+        );
+      case "danger":
+        return (
       <>
         <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 13 }} />
         <View style={{ borderLeftWidth: 3, borderLeftColor: C.red, paddingLeft: 14, marginTop: 16 }}>
@@ -171,7 +181,10 @@ export default function AuroraSettings() {
           </Pressable>
         </View>
       </>
-    ),
+        );
+      default:
+        return null;
+    }
   };
 
   // Rows that navigate to a dedicated screen instead of expanding.
@@ -228,7 +241,7 @@ export default function AuroraSettings() {
                   </Pressable>
                   {isOpen && !navTo && (
                     <View style={{ paddingHorizontal: 16, paddingBottom: 18, paddingTop: 2, borderTopWidth: 1, borderTopColor: `${C.line}99` }}>
-                      {BODIES[cat.id]}
+                      {renderBody(cat.id)}
                     </View>
                   )}
                 </View>

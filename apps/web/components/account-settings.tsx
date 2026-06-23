@@ -519,7 +519,7 @@ export default function AccountSettings() {
                 isOpen={open === cat.id}
                 onToggle={() => toggleOpen(cat.id)}
               >
-                {renderBody(cat.id)}
+                {open === cat.id ? renderBody(cat.id) : null}
               </HubRow>
             ))}
           </Card>

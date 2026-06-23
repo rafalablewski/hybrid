@@ -119,16 +119,23 @@ function SwipeCard({ C, busy, actions, onOpen, children }: {
   const openRef = useRef(false);
   const animate = (open: boolean) => {
     openRef.current = open;
-    Animated.spring(tx, { toValue: open ? -reveal : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
+    Animated.spring(tx, { toValue: open ? -revealRef.current : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
   };
+  // The PanResponder is created once, so its callbacks would close over the
+  // first render's values. Read `reveal` + `animate` through refs (kept current
+  // each render) so the gesture never acts on a stale closure.
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
+  const animateRef = useRef(animate);
+  animateRef.current = animate;
   const pan = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
       onPanResponderMove: (_, g) => {
-        const base = openRef.current ? -reveal : 0;
-        tx.setValue(Math.max(-reveal, Math.min(0, base + g.dx)));
+        const base = openRef.current ? -revealRef.current : 0;
+        tx.setValue(Math.max(-revealRef.current, Math.min(0, base + g.dx)));
       },
-      onPanResponderRelease: (_, g) => animate(openRef.current ? g.dx < 60 : g.dx < -60),
+      onPanResponderRelease: (_, g) => animateRef.current(openRef.current ? g.dx < 60 : g.dx < -60),
     }),
   ).current;
   return (
