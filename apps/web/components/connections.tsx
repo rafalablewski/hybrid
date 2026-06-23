@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { fs, space, LIME, CHALK, ASH, AMBER, BLUE, ON_ACCENT, disp, Mono, Card, Chip } from "@/lib/ui";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
@@ -10,21 +11,19 @@ type Provider = { id: string; label: string; auth: string; provides: string[]; c
 // OAuth providers connect in-browser; Apple Health connects from the mobile app;
 // team feeds (Catapult) are provisioned by an admin.
 export default function Connections() {
-  const [connections, setConnections] = useState<Conn[]>([]);
-  const [providers, setProviders] = useState<Provider[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const refresh = async () => {
-    const res = await fetch("/api/connections");
-    if (res.ok) {
-      const d = (await res.json()) as { connections: Conn[]; providers: Provider[] };
-      setConnections(d.connections);
-      setProviders(d.providers);
-    }
-  };
-  useEffect(() => {
-    refresh();
-  }, []);
+  const q = useQuery({
+    queryKey: ["connections"],
+    queryFn: async (): Promise<{ connections: Conn[]; providers: Provider[] }> => {
+      const res = await fetch("/api/connections");
+      if (!res.ok) return { connections: [], providers: [] };
+      return (await res.json()) as { connections: Conn[]; providers: Provider[] };
+    },
+  });
+  const connections = q.data?.connections ?? [];
+  const providers = q.data?.providers ?? [];
+  const refresh = () => q.refetch();
 
   const connected = (id: string) => connections.find((c) => c.provider === id);
 

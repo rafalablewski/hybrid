@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
 import { useRouter, useSegments, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { navVisibleTo, type AuroraIconName } from "@hybrid/core";
@@ -9,6 +10,7 @@ import { useSession } from "../../lib/session";
 import { useTemplate } from "../../lib/template";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
@@ -52,6 +54,7 @@ export default function AuroraGlobalNav() {
   const { session, ready } = useSession();
   const persona = usePersona();
   const access = useNavAccess();
+  const haptics = useLoggerPrefs().haptics;
 
   // Gate: Aurora only, signed in, and not on an auth/funnel/live-workout route.
   if (!aurora || !ready || !session) return null;
@@ -85,7 +88,7 @@ export default function AuroraGlobalNav() {
     return (
       <Pressable
         key={tab.id}
-        onPress={() => { if (!focused) router.navigate(tab.href); }}
+        onPress={() => { if (!focused) { if (haptics) Haptics.selectionAsync().catch(() => {}); router.navigate(tab.href); } }}
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={label}
@@ -147,7 +150,7 @@ export default function AuroraGlobalNav() {
           Rendered in the OUTER (non-clipped) wrapper so it can overflow upward. */}
       <View pointerEvents="box-none" style={{ position: "absolute", top: 0, left: 0, right: 0, alignItems: "center" }}>
         <Pressable
-          onPress={() => { if (!trainFocused) router.navigate(TRAIN.href); }}
+          onPress={() => { if (!trainFocused) { if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); router.navigate(TRAIN.href); } }}
           accessibilityRole="button"
           accessibilityState={{ selected: trainFocused }}
           accessibilityLabel={t("nav.train")}

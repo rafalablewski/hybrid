@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { computeCompliance, type LoggedSession } from "@hybrid/core";
-import { fetchCheckins, createCheckin, fetchSessions, fetchBillingStatus, type Checkin } from "../../lib/api";
+import { fetchCheckins, createCheckin, fetchBillingStatus, type Checkin } from "../../lib/api";
+import { useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
@@ -22,8 +23,9 @@ export default function AuroraCheckin() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
+  const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
+  const revalidate = useRevalidate();
   const [history, setHistory] = useState<Checkin[]>([]);
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -31,11 +33,11 @@ export default function AuroraCheckin() {
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchCheckins(), fetchSessions()])
-      .then(([c, s]) => { setHistory(c); setSessions(s); })
+    Promise.all([fetchCheckins(), refetchSessions()])
+      .then(([c]) => { setHistory(c); })
       .finally(() => setRefreshing(false));
   };
-  useEffect(load, []);
+  useFocusEffect(useCallback(load, []));
   useEffect(() => { fetchBillingStatus().then((b) => setPaid(b?.entitlement === "paid")).catch(() => {}); }, []);
 
   const compliance = useMemo(() => computeCompliance(sessions, { targetPerWeek: 3 }), [sessions]);
@@ -54,6 +56,7 @@ export default function AuroraCheckin() {
     if (!ok) { Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody")); return; }
     setForm({ bodyMassKg: "", energy: 3, sleep: 3, soreness: 3, mood: 3, adherencePct: "", note: "", sharedWithCoach: false });
     load();
+    revalidate.recovery();
   };
 
   return (

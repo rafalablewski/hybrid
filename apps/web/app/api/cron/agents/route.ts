@@ -6,6 +6,7 @@ import { recordRun } from "@/lib/agent-runs";
 import { partialFromError } from "@/lib/agent-runtime";
 import { enforceBudget } from "@/lib/agent-policy";
 import { rowToDefinition } from "../../admin/agents/shared";
+import { verifyBearerSecret } from "@/lib/crypto";
 
 // Scheduled-run worker. Hit by Vercel Cron (see apps/web/vercel.json) — NOT
 // admin-gated; authenticated by CRON_SECRET (Vercel sends it as a Bearer token
@@ -16,8 +17,8 @@ const MAX_PER_RUN = 5;
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "cron not configured" }, { status: 503 });
-  const auth = request.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!verifyBearerSecret(request.headers.get("authorization"), secret))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ ran: 0, reason: "ANTHROPIC_API_KEY not set" });

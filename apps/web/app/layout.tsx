@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { brand } from "@hybrid/core";
 import { SessionProvider } from "@/lib/session";
 import { LanguageProvider } from "@/lib/i18n";
+import QueryProvider from "@/components/query-provider";
 import TemplateSync from "@/components/template-sync";
 import "./globals.css";
 
@@ -30,9 +31,11 @@ export default async function RootLayout({
     <html lang="en" data-theme={theme}>
       <body>
         <TemplateSync />
-        <LanguageProvider>
-          <SessionProvider>{children}</SessionProvider>
-        </LanguageProvider>
+        <QueryProvider>
+          <LanguageProvider>
+            <SessionProvider>{children}</SessionProvider>
+          </LanguageProvider>
+        </QueryProvider>
       </body>
     </html>
   );

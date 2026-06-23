@@ -1,8 +1,10 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, type LoggedSession } from "@hybrid/core";
-import { fetchSessions, archiveSession, deleteSession } from "../../lib/api";
+import { archiveSession, deleteSession } from "../../lib/api";
+import { useSessionsQuery, useRevalidate } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { fs, space, Screen, Card, Kicker, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
@@ -20,31 +22,23 @@ function ClassicHistory() {
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const revalidate = useRevalidate();
 
-  const load = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true);
-    setSessions(await fetchSessions(showArchived ? { archived: true } : undefined));
-    setLoading(false);
-    setRefreshing(false);
-  }, [showArchived]);
+  const q = useSessionsQuery({ archived: showArchived });
+  const sessions = q.data ?? [];
+  const loading = q.isPending;
+  const refreshing = q.isFetching;
 
   // Refetch whenever the tab regains focus (e.g. right after logging).
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  useRefreshOnFocus(q.refetch);
 
   const onArchive = async (id: string, archived: boolean) => {
     setBusy(id);
     const ok = await archiveSession(id, archived);
     setBusy(null);
-    if (ok) load();
+    if (ok) revalidate.sessions(); // moved between active/archived → revalidate both
     else Alert.alert("Error", `Couldn't ${archived ? "archive" : "restore"} the workout. Please try again.`);
   };
   const onDelete = (s: LoggedSession) => {
@@ -60,7 +54,7 @@ function ClassicHistory() {
             setBusy(s.id);
             const ok = await deleteSession(s.id);
             setBusy(null);
-            if (ok) load();
+            if (ok) revalidate.sessions();
             else Alert.alert("Error", "Couldn't delete the workout. Please try again.");
           },
         },
@@ -69,11 +63,11 @@ function ClassicHistory() {
   };
 
   return (
-    <Screen refreshing={refreshing} onRefresh={() => load(true)}>
+    <Screen refreshing={refreshing} onRefresh={() => q.refetch()}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Kicker>{t("nav.history")}</Kicker>
         <Pressable
-          onPress={() => { setLoading(true); setShowArchived((v) => !v); }}
+          onPress={() => setShowArchived((v) => !v)}
           style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: showArchived ? C.blue : C.line, backgroundColor: showArchived ? `${C.blue}1a` : "transparent" }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? C.blue : C.ash }}>Archived</Text>

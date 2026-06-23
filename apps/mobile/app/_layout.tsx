@@ -14,6 +14,7 @@ import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
 import { ThemeProvider, useTheme } from "../lib/theme";
+import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
 import AuroraGlobalNav from "../components/aurora/global-nav";
 
@@ -53,15 +54,17 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <TemplateProvider>
-          <SessionProvider>
-            <LanguageProvider>
-              <Shell />
-            </LanguageProvider>
-          </SessionProvider>
-        </TemplateProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <TemplateProvider>
+            <SessionProvider>
+              <LanguageProvider>
+                <Shell />
+              </LanguageProvider>
+            </SessionProvider>
+          </TemplateProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </SafeAreaProvider>
   );
 }

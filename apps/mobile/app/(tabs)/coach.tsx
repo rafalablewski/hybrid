@@ -95,7 +95,7 @@ function ClassicCoach() {
                   <Mono style={{ marginBottom: 8 }}>{t("coach.wantsToCoach")}</Mono>
                   <View style={{ flexDirection: "row", gap: space.sm }}>
                     <Button label={t("common.accept")} color={C.lime} onPress={() => act(l.id, "accept")} />
-                    <Pressable onPress={() => act(l.id, "end")} style={{ justifyContent: "center" }}>
+                    <Pressable onPress={() => act(l.id, "end")} hitSlop={12} style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: 8 }}>
                       <Mono>{t("common.decline")}</Mono>
                     </Pressable>
                   </View>
@@ -112,7 +112,7 @@ function ClassicCoach() {
               <Card key={l.id}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{personName(l.coach)}{l.coach?.coachVerified ? <Text style={{ color: C.blue }}>{"  ✓"}</Text> : null}</Text>
-                  <Pressable onPress={() => act(l.id, "end")}>
+                  <Pressable onPress={() => act(l.id, "end")} hitSlop={12} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 8 }}>
                     <Mono>{t("common.end")}</Mono>
                   </Pressable>
                 </View>

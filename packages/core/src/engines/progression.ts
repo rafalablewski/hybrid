@@ -13,6 +13,11 @@ export function progressionSignal(
 ): ProgressionSignal {
   const hits = log
     .filter((s) => s.items.some((i) => i.move === move))
+    // Sort newest-first by daysAgo so the trend never inverts when a caller
+    // passes an unsorted or oldest-first log (previously this trusted input
+    // order and only worked because the live API happens to return desc).
+    .slice()
+    .sort((a, b) => a.daysAgo - b.daysAgo)
     .map((s) => s.items.find((i) => i.move === move))
     .filter((i): i is LogItem => !!i && i.e1rm !== undefined);
 

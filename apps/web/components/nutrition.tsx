@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRevalidate } from "@/lib/use-invalidate";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition,
@@ -26,6 +27,7 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
 export default function Nutrition() {
+  const revalidate = useRevalidate();
   const isMobile = useIsMobile();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
@@ -82,7 +84,7 @@ export default function Nutrition() {
         if (res.status === 401) { setError("Sign in to log nutrition (demo mode doesn't persist)."); setSaving(false); return; }
         if (!res.ok) { setError(`Couldn't save ${kind} (HTTP ${res.status}).`); setSaving(false); return; }
       }
-      if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); }
+      if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); revalidate.recovery(); }
     } catch {
       setError("Network error — try again.");
     }

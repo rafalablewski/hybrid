@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 export type RosterRow = {
   linkId: string;
@@ -13,16 +13,19 @@ export type RosterRow = {
   volume: number;
 };
 
-/** The coach's active roster with real, computed stats. Empty for non-coaches. */
+/** Query key for the coach's roster. */
+export const rosterKey = ["coach-roster"] as const;
+
+async function fetchRoster(): Promise<RosterRow[]> {
+  const res = await fetch("/api/coach/roster");
+  if (!res.ok) return [];
+  const d = (await res.json()) as { roster?: RosterRow[] };
+  return d.roster ?? [];
+}
+
+/** The coach's active roster with real, computed stats. Empty for non-coaches.
+ *  Backed by the shared query cache. */
 export function useRoster() {
-  const [roster, setRoster] = useState<RosterRow[]>([]);
-
-  useEffect(() => {
-    fetch("/api/coach/roster")
-      .then((r) => (r.ok ? r.json() : { roster: [] }))
-      .then((d: { roster?: RosterRow[] }) => setRoster(d.roster ?? []))
-      .catch(() => setRoster([]));
-  }, []);
-
-  return { roster };
+  const q = useQuery({ queryKey: rosterKey, queryFn: fetchRoster });
+  return { roster: q.data ?? [], refresh: () => q.refetch() };
 }

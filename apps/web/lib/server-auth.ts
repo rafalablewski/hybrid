@@ -2,18 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
-type DbRole = "CLIENT" | "COACH" | "ADMIN";
-
-function toDbRole(r: unknown): DbRole {
-  const s = String(r ?? "").toUpperCase();
-  return s === "ADMIN" ? "ADMIN" : s === "COACH" ? "COACH" : "CLIENT";
-}
-
 /**
  * Resolve the signed-in Supabase user to our app `User` row, creating it on
- * first sight (keyed by the Supabase auth id). Role is taken from auth metadata
- * only at creation — after that the DB row is the source of truth. Returns null
- * when there is no authenticated user.
+ * first sight (keyed by the Supabase auth id). New self-signups are ALWAYS
+ * created as CLIENT — never seeded from client-controllable user_metadata.role,
+ * which a crafted signup could set to "admin"/"coach" to self-escalate. Elevated
+ * roles are granted only by an admin action (which writes the DB row directly).
+ * After creation the DB row is the source of truth. Returns null when there is
+ * no authenticated user.
  *
  * Read-first: this runs on nearly every authenticated request, so the common
  * (returning-user) path is a plain read — no row lock / WAL write per request.
@@ -43,7 +39,9 @@ export async function getOrCreateDbUser(req?: Request) {
           authId: user.id,
           email,
           name: (meta.name as string | undefined) ?? null,
-          role: toDbRole(meta.role),
+          // Never trust meta.role — a crafted signup could set it to admin/coach.
+          // New rows are always CLIENT; elevation is an admin-only action.
+          role: "CLIENT",
         },
       });
       created = true;

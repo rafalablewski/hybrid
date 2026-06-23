@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { orderSteps, advanceEnrollment, greetingName, INACTIVE_TRIGGER_DAYS } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { sendEmail, sendCampaign, emailConfigured, enrollInTrigger } from "@/lib/email";
+import { verifyBearerSecret } from "@/lib/crypto";
 
 // Email worker. Hit by Vercel Cron (see apps/web/vercel.json) — NOT admin-gated;
 // authenticated by CRON_SECRET (Bearer). Each run, bounded for cost/latency:
@@ -20,8 +21,8 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "cron not configured" }, { status: 503 });
-  const auth = request.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!verifyBearerSecret(request.headers.get("authorization"), secret))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   if (!emailConfigured()) return NextResponse.json({ ran: 0, reason: "email not configured (RESEND_API_KEY/EMAIL_FROM)" });
 

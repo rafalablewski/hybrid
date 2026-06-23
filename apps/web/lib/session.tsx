@@ -126,19 +126,48 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // --- Real auth: hydrate from Supabase and follow auth-state changes ---
     if (live) {
       const supabase = createClient();
+      // The initial getUser() resolve and every onAuthStateChange (SIGNED_IN,
+      // TOKEN_REFRESHED, …) each kick off an async resolveSession() that hits
+      // /api/me. Without ordering, a slower earlier call can resolve AFTER a
+      // newer one and overwrite it with stale role/entitlement. Gate writes on a
+      // monotonic sequence so only the most recently-started resolve can win.
+      let cancelled = false;
+      let seq = 0;
+      const applyLatest = (user: User | null) => {
+        const mine = ++seq;
+        if (!user) {
+          if (!cancelled) setSession(null);
+          return Promise.resolve();
+        }
+        return resolveSession(user)
+          .then((s) => {
+            if (!cancelled && mine === seq) setSession(s);
+          })
+          .catch((err) => {
+            // resolveSession already falls back internally, but guard against an
+            // unexpected rejection so it never surfaces as an unhandled promise.
+            console.error("session resolve failed:", err);
+            if (!cancelled && mine === seq) setSession(null);
+          });
+      };
+
       supabase.auth.getUser().then(async ({ data }) => {
-        setSession(data.user ? await resolveSession(data.user) : null);
-        setReady(true);
+        await applyLatest(data.user ?? null);
+        if (!cancelled) setReady(true);
       });
       const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-        if (s?.user) resolveSession(s.user).then(setSession);
-        else {
+        if (s?.user) {
+          applyLatest(s.user);
+        } else {
           // Token expiry / cross-tab sign-out: wipe user-scoped state too.
           clearClientState();
-          setSession(null);
+          applyLatest(null); // sequence-guarded → setSession(null)
         }
       });
-      return () => sub.subscription.unsubscribe();
+      return () => {
+        cancelled = true;
+        sub.subscription.unsubscribe();
+      };
     }
 
     // --- Demo auth: persist a chosen session in localStorage ---
