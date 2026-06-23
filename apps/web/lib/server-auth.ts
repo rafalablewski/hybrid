@@ -1,18 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
 
-type DbRole = "CLIENT" | "COACH" | "ADMIN";
-
-function toDbRole(r: unknown): DbRole {
-  const s = String(r ?? "").toUpperCase();
-  return s === "ADMIN" ? "ADMIN" : s === "COACH" ? "COACH" : "CLIENT";
-}
-
 /**
  * Resolve the signed-in Supabase user to our app `User` row, creating it on
- * first sight (keyed by the Supabase auth id). Role is taken from auth metadata
- * only at creation — after that the DB row is the source of truth. Returns null
- * when there is no authenticated user.
+ * first sight (keyed by the Supabase auth id). New self-signups are ALWAYS
+ * created as CLIENT — never seeded from client-controllable user_metadata.role,
+ * which a crafted signup could set to "admin"/"coach" to self-escalate.
+ * Elevated roles are granted only by an admin action (which writes the DB row
+ * directly, so this upsert hits the update branch on the user's first login).
+ * After creation the DB row is the source of truth. Returns null when there is
+ * no authenticated user.
  */
 export async function getOrCreateDbUser(req?: Request) {
   const supabase = await createClient();
@@ -34,7 +31,8 @@ export async function getOrCreateDbUser(req?: Request) {
       authId: user.id,
       email: user.email ?? "",
       name: (meta.name as string | undefined) ?? null,
-      role: toDbRole(meta.role),
+      // Never trust meta.role here — default to CLIENT (see fn doc).
+      role: "CLIENT",
     },
   });
 
