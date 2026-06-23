@@ -51,6 +51,14 @@ model User {
   entitlement        String   @default("free") // free | paid
   stripeCustomerId   String?  @unique
   subscriptionStatus String?  // active | trialing | past_due | canceled | null
+  // Timestamp (Stripe event.created) of the last applied subscription event, so
+  // a delayed/out-of-order webhook can't roll the entitlement back to a stale
+  // state (e.g. a late "deleted" landing after a re-subscribe).
+  subscriptionStatusAt DateTime?
+  // The Apple originalTransactionId that granted Full, if via IAP. Unique so a
+  // (cryptographically valid) StoreKit transaction can be redeemed by exactly
+  // one account — prevents replay / cross-account sharing of one purchase.
+  appleOriginalTransactionId String? @unique
 
   sessions      Session[]
   macrocycles   Macrocycle[]
@@ -74,6 +82,9 @@ model User {
   coachInvites  CoachInvite[]   @relation("coachInvites")
   coachDiets    CoachDiet[]     @relation("coachDiets")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
+
+  // Admin lists order/filter users by recency (admin/users, admin/stats growth).
+  @@index([createdAt])
 }
 
 // Admin-granted per-user feature access (nav ids) beyond the user's persona.
@@ -236,7 +247,8 @@ model Checkin {
   sharedWithCoach Boolean @default(false)
   createdAt    DateTime  @default(now())
 
-  @@index([userId])
+  // Read as "where userId order by weekOf desc".
+  @@index([userId, weekOf])
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.
@@ -299,7 +311,12 @@ model Session {
   // the default History list + all engines, but kept for the audit trail.
   archivedAt  DateTime?
 
-  @@index([userId])
+  // History/engine reads are "where userId (+ archivedAt is null) order by
+  // startedAt desc". A bare userId index made Postgres sort in memory and
+  // couldn't serve the global `order by startedAt` admin paths.
+  @@index([userId, startedAt])
+  @@index([userId, archivedAt, startedAt])
+  @@index([startedAt])
 }
 
 // A workout logged BEFORE the athlete has an account (guest mode). The mobile
@@ -346,7 +363,8 @@ model Biometric {
   sleepH    Float?
   source    String // "apple" | "whoop" | ...
 
-  @@index([userId])
+  // Read as "where userId order by date desc".
+  @@index([userId, date])
 }
 
 // The Athlete Twin's universal time-series. Every measurement — recovery, GPS
@@ -781,6 +799,9 @@ model AgentRun {
   createdAt    DateTime @default(now())
 
   @@index([agentId, createdAt])
+  // Global admin views sort runs by recency without an agentId filter, which the
+  // composite above can't serve.
+  @@index([createdAt])
 }
 
 // A standing task that runs an agent on a cadence. The cron route (/api/cron/
@@ -929,6 +950,12 @@ model EmailCampaign {
   sentAt       DateTime?
   sentCount    Int       @default(0)
   failedCount  Int       @default(0)
+  // Resumable fan-out: the last recipient userId processed (id-ordered), so a
+  // large send continues across cron ticks instead of timing out in one request.
+  sendCursor   String?
+  // Short lease while a worker is processing a batch — serializes overlapping
+  // crons so a recipient is never double-sent.
+  lockedUntil  DateTime?
   createdById  String?
   createdEmail String?
   createdAt    DateTime  @default(now())
@@ -1018,4 +1045,14 @@ model EmailSuppression {
   email     String   @id
   reason    String   @default("unsubscribe") // unsubscribe | bounce | complaint
   createdAt DateTime @default(now())
+}
+
+// Idempotency ledger for inbound provider webhooks (Stripe). The event id is the
+// PK, so re-processing a redelivered event is a no-op (Stripe retries on any
+// non-2xx and can deliver the same event more than once by design).
+model ProcessedWebhookEvent {
+  id          String   @id // the provider's event id (e.g. Stripe evt_...)
+  provider    String   @default("stripe")
+  type        String
+  processedAt DateTime @default(now())
 }

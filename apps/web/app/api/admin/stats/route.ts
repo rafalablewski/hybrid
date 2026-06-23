@@ -3,6 +3,10 @@ import { costUsd } from "@hybrid/core";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 
+// How many whole 7-day windows ago a timestamp falls (0 = current week). Used to
+// bucket growth in SQL instead of fetching every row and filtering 12× in JS.
+type WeekBucket = { wk_ago: number; n: number };
+
 // Real platform analytics for the operator/admin dashboard — computed live from
 // the database, no fabricated numbers. Admin-only. Aggregates only: no single
 // user's private training rows are returned here.
@@ -25,48 +29,59 @@ export async function GET(request: Request) {
     roleSplit,
     orgs,
     activeLinks,
-    recentUsers,
-    recentSessions,
+    userWeeks,
+    sessionWeeks,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.session.count(),
     prisma.user.count({ where: { createdAt: { gte: since30 } } }),
-    prisma.coachLink.findMany({ where: { status: "ACTIVE" }, select: { coachId: true }, distinct: ["coachId"] }),
-    prisma.session.findMany({ where: { startedAt: { gte: since30 } }, select: { userId: true }, distinct: ["userId"] }),
+    // COUNT(DISTINCT ...) in SQL instead of fetching every distinct row to .length in JS.
+    prisma.$queryRaw<{ n: number }[]>`SELECT count(DISTINCT "coachId")::int AS n FROM "CoachLink" WHERE "status" = 'ACTIVE'`,
+    prisma.$queryRaw<{ n: number }[]>`SELECT count(DISTINCT "userId")::int AS n FROM "Session" WHERE "startedAt" >= ${since30}`,
     prisma.macrocycle.groupBy({ by: ["goal"], _count: { goal: true }, orderBy: { _count: { goal: "desc" } }, take: 6 }),
     prisma.user.groupBy({ by: ["language"], _count: { language: true } }),
     prisma.user.groupBy({ by: ["role"], _count: { role: true } }),
     prisma.organization.count(),
     prisma.coachLink.count({ where: { status: "ACTIVE" } }),
-    prisma.user.findMany({ where: { createdAt: { gte: since12w } }, select: { createdAt: true } }),
-    prisma.session.findMany({ where: { startedAt: { gte: since12w } }, select: { startedAt: true } }),
+    // Growth buckets computed in SQL (≤12 rows back) rather than fetching every
+    // row in the window and filtering it 12 times in the lambda.
+    prisma.$queryRaw<WeekBucket[]>`SELECT floor(extract(epoch from (now() - "createdAt")) / 604800)::int AS wk_ago, count(*)::int AS n FROM "User" WHERE "createdAt" >= ${since12w} GROUP BY 1`,
+    prisma.$queryRaw<WeekBucket[]>`SELECT floor(extract(epoch from (now() - "startedAt")) / 604800)::int AS wk_ago, count(*)::int AS n FROM "Session" WHERE "startedAt" >= ${since12w} GROUP BY 1`,
   ]);
 
-  // Bucket the last 12 ISO-ish weeks for the growth chart.
+  const signupsByWeek = new Map(userWeeks.map((w) => [w.wk_ago, w.n]));
+  const sessionsByWeek = new Map(sessionWeeks.map((w) => [w.wk_ago, w.n]));
   const weeks: { week: string; signups: number; sessions: number }[] = [];
   for (let i = 11; i >= 0; i--) {
-    const start = now - (i + 1) * 7 * 86_400_000;
     const end = now - i * 7 * 86_400_000;
-    const label = new Date(end).toISOString().slice(5, 10); // MM-DD
     weeks.push({
-      week: label,
-      signups: recentUsers.filter((u) => +u.createdAt > start && +u.createdAt <= end).length,
-      sessions: recentSessions.filter((s) => +s.startedAt > start && +s.startedAt <= end).length,
+      week: new Date(end).toISOString().slice(5, 10), // MM-DD
+      signups: signupsByWeek.get(i) ?? 0,
+      sessions: sessionsByWeek.get(i) ?? 0,
     });
   }
 
-  // Actual AI agent run spend over the last 30 days (real cost, fed into the
-  // Financials console). Best-effort: empty if the agent tables aren't migrated.
+  // Actual AI agent run spend over the last 30 days. Aggregate tokens per agent
+  // in SQL (one row per agent), then apply that agent's model price — instead of
+  // loading every run row and reducing in memory.
   let agentSpend30d = 0;
   let agentRuns30d = 0;
   try {
-    const [runRows, agentRows] = await Promise.all([
-      prisma.agentRun.findMany({ where: { createdAt: { gte: since30 } }, select: { agentId: true, inputTokens: true, outputTokens: true } }),
+    const [grouped, agentRows] = await Promise.all([
+      prisma.agentRun.groupBy({
+        by: ["agentId"],
+        where: { createdAt: { gte: since30 } },
+        _sum: { inputTokens: true, outputTokens: true },
+        _count: { _all: true },
+      }),
       prisma.agentConfig.findMany({ select: { id: true, model: true } }),
     ]);
     const modelOf = new Map(agentRows.map((a) => [a.id, a.model]));
-    agentRuns30d = runRows.length;
-    agentSpend30d = runRows.reduce((n, r) => n + costUsd(modelOf.get(r.agentId) ?? "claude-opus-4-8", r.inputTokens, r.outputTokens), 0);
+    agentRuns30d = grouped.reduce((n, g) => n + g._count._all, 0);
+    agentSpend30d = grouped.reduce(
+      (n, g) => n + costUsd(modelOf.get(g.agentId) ?? "claude-opus-4-8", g._sum.inputTokens ?? 0, g._sum.outputTokens ?? 0),
+      0,
+    );
   } catch {
     /* agent tables not migrated yet */
   }
@@ -77,8 +92,8 @@ export async function GET(request: Request) {
     newUsers30,
     agentSpend30d,
     agentRuns30d,
-    coaches: activeCoaches.length,
-    mau: recentSessionUsers.length,
+    coaches: activeCoaches[0]?.n ?? 0,
+    mau: recentSessionUsers[0]?.n ?? 0,
     orgs,
     activeLinks,
     planPopularity: plansByGoal.map((p) => ({ goal: p.goal, n: p._count.goal })),

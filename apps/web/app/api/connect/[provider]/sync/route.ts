@@ -9,7 +9,7 @@ import {
   type ProviderId,
   type Signal,
 } from "@hybrid/core";
-import { PROVIDER_ENDPOINTS } from "@/lib/connectors";
+import { PROVIDER_ENDPOINTS, refreshAccessToken, tokenExpired } from "@/lib/connectors";
 import { revealToken } from "@/lib/crypto";
 
 // Pull (or receive) provider data and write it into the Signal ontology.
@@ -39,13 +39,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     const ep = PROVIDER_ENDPOINTS[provider as ProviderId];
     if (!ep) return NextResponse.json({ error: "provider not configured" }, { status: 501 });
 
+    // Proactively refresh a token that's at/near expiry before spending the call.
+    let accessToken = revealToken(conn.accessToken);
+    if (tokenExpired(conn.expiresAt)) {
+      const refreshed = await refreshAccessToken(provider as ProviderId, conn);
+      if (!refreshed) return NextResponse.json({ error: "token expired — reconnect" }, { status: 401 });
+      accessToken = refreshed;
+    }
+
     const path = provider === "whoop" ? "/recovery" : "/daily_readiness";
-    const res = await fetch(`${ep.apiBase}${path}`, {
-      headers: { Authorization: `Bearer ${revealToken(conn.accessToken)}` },
-    });
+    const callApi = (token: string) =>
+      fetch(`${ep.apiBase}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+
+    let res = await callApi(accessToken!);
+    // Reactive refresh: the token expired early / was revoked — refresh once and
+    // retry before giving up and asking the user to reconnect.
     if (res.status === 401) {
-      await prisma.connection.update({ where: { id: conn.id }, data: { status: "error" } });
-      return NextResponse.json({ error: "token expired — reconnect" }, { status: 401 });
+      const refreshed = await refreshAccessToken(provider as ProviderId, conn);
+      if (!refreshed) return NextResponse.json({ error: "token expired — reconnect" }, { status: 401 });
+      res = await callApi(refreshed);
+      if (res.status === 401) return NextResponse.json({ error: "token expired — reconnect" }, { status: 401 });
     }
     if (!res.ok) return NextResponse.json({ error: "provider fetch failed" }, { status: 502 });
     const raw = await res.json();

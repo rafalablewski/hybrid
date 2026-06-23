@@ -10,7 +10,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
 
-  const limited = rateLimit(request, { key: "admin-onboarding-delete", limit: 40, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "admin-onboarding-delete", limit: 40, windowMs: 60_000 });
   if (limited) return limited;
 
   const { id } = await params;

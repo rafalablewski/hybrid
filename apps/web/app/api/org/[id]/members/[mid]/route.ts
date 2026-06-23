@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { canManageOrg, ORG_ROLES, type OrgRole } from "@hybrid/core";
+import { canManageOrg, canAssignRole, ORG_ROLES, type OrgRole } from "@hybrid/core";
 
 async function manager(orgId: string, userId: string) {
   const me = await prisma.membership.findUnique({ where: { orgId_userId: { orgId, userId } } });
@@ -28,6 +28,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const data: { role?: string; teamId?: string | null } = {};
   if (typeof b.role === "string") {
     if (!ORG_ROLES.includes(b.role as OrgRole)) return NextResponse.json({ error: "invalid role" }, { status: 400 });
+    // A DIRECTOR can manage staff but must not promote anyone to OWNER.
+    if (!canAssignRole(me.role as OrgRole, b.role as OrgRole))
+      return NextResponse.json({ error: "only an owner can grant the owner role" }, { status: 403 });
     data.role = b.role;
   }
   if (b.teamId !== undefined) data.teamId = typeof b.teamId === "string" && b.teamId ? b.teamId : null;

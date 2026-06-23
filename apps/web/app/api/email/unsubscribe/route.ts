@@ -30,7 +30,7 @@ function page(message: string, ok: boolean): Response {
 const limit = { key: "email-unsubscribe", limit: 30, windowMs: 60_000 };
 
 export async function GET(request: Request) {
-  const limited = rateLimit(request, limit);
+  const limited = await rateLimit(request, limit);
   if (limited) return limited;
   const url = new URL(request.url);
   const { ok, message } = await handle(url.searchParams.get("e") ?? "", url.searchParams.get("t") ?? "");
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const limited = rateLimit(request, limit);
+  const limited = await rateLimit(request, limit);
   if (limited) return limited;
   const url = new URL(request.url);
   const { ok, message } = await handle(url.searchParams.get("e") ?? "", url.searchParams.get("t") ?? "");

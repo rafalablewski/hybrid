@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const limited = rateLimit(request, { key: "report-post", limit: 20, windowMs: 60_000 });
+  const limited = await rateLimit(request, { key: "report-post", limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   const parsed = await readJsonLimited<{ targetType?: unknown; targetId?: unknown; reason?: unknown; detail?: unknown }>(request, 8 * 1024);

@@ -3,6 +3,7 @@ import { nextRunFrom } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { executeAgent } from "@/lib/agent-execute";
 import { recordRun } from "@/lib/agent-runs";
+import { partialFromError } from "@/lib/agent-runtime";
 import { enforceBudget } from "@/lib/agent-policy";
 import { rowToDefinition } from "../../admin/agents/shared";
 
@@ -39,24 +40,26 @@ export async function GET(request: Request) {
 
   let ran = 0;
   for (const sched of due) {
-    const row = activeRows.find((a) => a.id === sched.agentId);
-    // Always roll the schedule forward so a paused/missing agent doesn't wedge the queue.
-    const advance = prisma.agentSchedule.update({
-      where: { id: sched.id },
+    // CLAIM BEFORE RUNNING. Atomically roll nextRunAt forward, guarded on the
+    // row still being due. Only the cron invocation that wins this race (count
+    // 1) executes the schedule; an overlapping invocation (Vercel retry, manual
+    // trigger, or a previous run that overran the interval) sees count 0 and
+    // skips — so a scheduled agent never double-runs / double-spends. Advancing
+    // up-front also gives at-most-once semantics (a crashed run rolls forward
+    // rather than retrying), matching the prior "always roll forward" intent.
+    const claim = await prisma.agentSchedule.updateMany({
+      where: { id: sched.id, enabled: true, nextRunAt: { lte: now } },
       data: { lastRunAt: now, nextRunAt: nextRunFrom(sched.cadence, now) },
     });
-    if (!row) {
-      await advance;
-      continue;
-    }
+    if (claim.count === 0) continue;
+
+    const row = activeRows.find((a) => a.id === sched.agentId);
+    if (!row) continue; // paused/missing agent — already advanced above
     const def = rowToDefinition(row);
     // Respect the 7-day budget: skip (and pause) an over-budget agent. Scheduled
     // runs are pre-authorized by the operator who created them, so they bypass the
     // approval gate — but never the budget cap.
-    if (await enforceBudget(def)) {
-      await advance;
-      continue;
-    }
+    if (await enforceBudget(def)) continue;
     try {
       const result = await executeAgent({ apiKey, row, def, roster, task: sched.task });
       await recordRun({ def, task: sched.task, result, status: "ok" });
@@ -64,9 +67,8 @@ export async function GET(request: Request) {
       ran++;
     } catch (e) {
       console.error("[cron agents] run failed for", sched.agentId, e);
-      await recordRun({ def, task: sched.task, result: { output: "(scheduled run failed)", steps: [], usage: { input: 0, output: 0 } }, status: "error" });
+      await recordRun({ def, task: sched.task, result: partialFromError(e), status: "error" });
     }
-    await advance;
   }
 
   return NextResponse.json({ ran, due: due.length });

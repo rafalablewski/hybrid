@@ -11,6 +11,25 @@ import type { Session as SupaSession } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { flushGuestSessions } from "./guest";
 import { claimCoachInvite } from "./api";
+import { resetPersona } from "./persona";
+
+// Device-level prefs that may safely survive a sign-out (everything else under
+// the `hybrid.` namespace is user-scoped and is wiped so a shared device never
+// leaks one account's state to the next). Mirrors web session.tsx.
+const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announce.dismissed"]);
+
+/** Wipe all user-scoped on-device state (AsyncStorage namespace + persona module
+ *  singletons) so nothing carries across a sign-out or user switch. */
+async function clearClientState() {
+  resetPersona();
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const drop = keys.filter((k) => k.startsWith("hybrid.") && !KEEP_ON_LOGOUT.has(k));
+    await Promise.all(drop.map((k) => AsyncStorage.removeItem(k)));
+  } catch {
+    // best-effort
+  }
+}
 
 // Finish a coach-led onboarding claim: a QR/link invite token stashed before
 // sign-up (see app/invite/[token]) is claimed once we're authenticated.
@@ -27,9 +46,10 @@ async function claimStoredCoachInvite() {
   }
 }
 
-import type { Entitlement } from "@hybrid/core";
+import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 
-type Role = "client" | "coach" | "admin";
+// Shared with web via core so both clients normalize identical access-control input.
+type Role = AuthRole;
 
 type Ctx = {
   session: SupaSession | null;
@@ -77,14 +97,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const name =
     (meta.name as string) ||
     (session?.user.email ? session.user.email.split("@")[0]! : "Athlete");
-  const rawRole = String(meta.role ?? "client").toLowerCase();
-  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
-  const entitlement: Entitlement =
-    String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+  const role: Role = normalizeAuthRole(meta.role);
+  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
 
   return (
     <SessionCtx.Provider
-      value={{ session, ready, name, role, entitlement, signOut: async () => void (await supabase.auth.signOut()) }}
+      value={{
+        session,
+        ready,
+        name,
+        role,
+        entitlement,
+        signOut: async () => {
+          await supabase.auth.signOut();
+          await clearClientState();
+        },
+      }}
     >
       {children}
     </SessionCtx.Provider>
