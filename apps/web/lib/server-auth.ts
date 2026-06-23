@@ -61,20 +61,22 @@ export async function getOrCreateDbUser(req?: Request) {
 }
 
 /**
- * The signed-in user's billing entitlement, read from Supabase auth metadata
- * ('free' | 'paid'; default 'free'). Server-side mirror of the client check —
- * used to gate paid (athlete) AUTHORING actions on the API so a coached/casual
- * free client can't POST around the hidden UI. Being coached never confers this.
+ * The signed-in user's billing entitlement ('free' | 'paid'; default 'free'),
+ * read from the DB `User` row — the server source of truth. Used to gate paid
+ * (athlete) AUTHORING actions on the API so a coached/casual free client can't
+ * POST around the hidden UI. Being coached never confers this.
+ *
+ * SECURITY: this MUST read the DB column, never Supabase `user_metadata` — the
+ * latter is writable by the end user (`supabase.auth.updateUser({ data })`), so
+ * trusting it for a paywall lets a free user self-grant 'paid'. The metadata
+ * mirror exists only as a client display hint; the DB row is authoritative.
  */
+export function entitlementOf(user: { entitlement: string } | null | undefined): "free" | "paid" {
+  return user?.entitlement === "paid" ? "paid" : "free";
+}
+
 export async function getAuthEntitlement(req?: Request): Promise<"free" | "paid"> {
-  const supabase = await createClient();
-  const authHeader = req?.headers.get("authorization");
-  const user =
-    authHeader && authHeader.toLowerCase().startsWith("bearer ")
-      ? (await supabase.auth.getUser(authHeader.slice(7).trim())).data.user
-      : (await supabase.auth.getUser()).data.user;
-  const meta = user?.user_metadata ?? {};
-  return String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+  return entitlementOf(await getOrCreateDbUser(req));
 }
 
 /**
