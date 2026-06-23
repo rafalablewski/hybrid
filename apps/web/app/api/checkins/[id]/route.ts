@@ -23,9 +23,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (typeof b.coachReply !== "string" || !b.coachReply.trim())
     return NextResponse.json({ error: "reply is required" }, { status: 400 });
 
-  const updated = await prisma.checkin.update({
-    where: { id },
+  // Guard the single-author field: a client can have more than one ACTIVE coach,
+  // and a blind update let a second coach's reply silently overwrite the first.
+  // Only the first reply lands (where coachReply is null); a later one 409s.
+  const claimed = await prisma.checkin.updateMany({
+    where: { id, coachReply: null },
     data: { coachReply: b.coachReply.trim().slice(0, 2000), repliedAt: new Date() },
   });
+  if (claimed.count === 0) return NextResponse.json({ error: "already replied" }, { status: 409 });
+  const updated = await prisma.checkin.findUnique({ where: { id } });
   return NextResponse.json({ checkin: updated });
 }
