@@ -55,6 +55,9 @@ import {
   volumeByMuscle,
   sessionFunFact,
   funFactText,
+  STORY_STYLES,
+  DEFAULT_STORY_STYLE,
+  type StoryStyleId,
   exercisesByCategory,
   type SessionBlock,
   type LoggedSession,
@@ -70,7 +73,7 @@ import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "..
 import { useSession } from "../lib/session";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, Mono, Kicker, Card } from "../lib/ui";
+import { fs, space, F, Mono, Card } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
@@ -1305,10 +1308,14 @@ function Summary({
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
-  const storyW = Math.min(Dimensions.get("window").width - 36, 360);
   const slideW = Dimensions.get("window").width - 36;
+  // The visible card IS a true 9:16 story (and the exact node we capture), sized
+  // to fit comfortably in the page so the share is what-you-see-is-what-you-get.
+  const previewW = Math.min(slideW, 320);
   const storyRefs = useRef<Record<number, View | null>>({});
   const [active, setActive] = useState(0);
+  // The chosen "wrapped" style — one of the 4 shared looks.
+  const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -1386,65 +1393,6 @@ function Summary({
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
-  // Inline render of a slide inside the swipeable carousel.
-  const slideBox = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 18, minHeight: 230 } as const;
-  const statCol = (label: string, value: string) => (
-    <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
-    </View>
-  );
-  const renderInline = (s: SlideData) => {
-    if (s.kind === "overview")
-      return (
-        <View style={slideBox}>
-          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 10 }}>{s.stats.title || "Workout"}</Text>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 28 }}>
-            {statCol(t("summary.minutes"), String(summary.minutes))}
-            {statCol(t("summary.sets"), String(summary.sets))}
-            {statCol(t("summary.volumeMoved"), fmtTonnage(summary.volume, units))}
-          </View>
-        </View>
-      );
-    if (s.kind === "prs")
-      return (
-        <View style={slideBox}>
-          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime), marginTop: 10 }}>{s.headline}</Text>
-          {s.rows.slice(0, 6).map((r, i) => (
-            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk, flex: 1 }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
-              {!!r.right && <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: r.hot ? txt(C, C.lime) : C.chalk }}>{r.right}</Text>}
-            </View>
-          ))}
-        </View>
-      );
-    if (s.kind === "muscle")
-      return (
-        <View style={slideBox}>
-          <Kicker color={C.lime}>{s.eyebrow}</Kicker>
-          {s.bars.map((b, i) => (
-            <View key={i} style={{ marginTop: 12 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{b.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{b.value}</Text>
-              </View>
-              <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: C.lime }} />
-              </View>
-            </View>
-          ))}
-        </View>
-      );
-    return (
-      <View style={[slideBox, { alignItems: "center", justifyContent: "center" }]}>
-        <Text style={{ fontSize: 64 }}>{s.emoji}</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, textAlign: "center", marginTop: 14, lineHeight: 26 }}>{s.text}</Text>
-      </View>
-    );
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
@@ -1464,7 +1412,8 @@ function Summary({
           )}
         </View>
 
-        {/* Swipeable summary slides — each shareable as its own 9:16 story. */}
+        {/* Swipeable summary slides — each rendered as the real 9:16 story card
+            (what-you-see-is-what-you-share) and captured by active index. */}
         <Animated.View style={{ opacity: fade }}>
           <ScrollView
             horizontal
@@ -1473,7 +1422,9 @@ function Summary({
             onMomentumScrollEnd={(e) => setActive(Math.round(e.nativeEvent.contentOffset.x / slideW))}
           >
             {slides.map((s, i) => (
-              <View key={i} style={{ width: slideW }}>{renderInline(s)}</View>
+              <View key={i} style={{ width: slideW, alignItems: "center" }}>
+                <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} />
+              </View>
             ))}
           </ScrollView>
         </Animated.View>
@@ -1483,6 +1434,36 @@ function Summary({
           {slides.map((_, i) => (
             <View key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === activeIdx ? C.lime : C.line }} />
           ))}
+        </View>
+
+        {/* Style picker — pick one of the 4 "wrapped" looks; the card + the
+            shared image update live. */}
+        <View style={{ marginTop: 16 }}>
+          <Mono color={C.ash} style={{ textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</Mono>
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 12 }}>
+            {STORY_STYLES.map((s) => {
+              const selected = s.id === styleId;
+              return (
+                <Pressable key={s.id} onPress={() => setStyleId(s.id)} style={{ alignItems: "center" }}>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      backgroundColor: s.bg,
+                      borderWidth: selected ? 2 : 1,
+                      borderColor: selected ? C.lime : C.line,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: s.swatch }} />
+                  </View>
+                  <Mono color={selected ? C.lime : C.ash} style={{ fontSize: fs.nano, marginTop: 4 }}>{t(s.nameKey)}</Mono>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {milestone && (
@@ -1505,13 +1486,6 @@ function Summary({
         >
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.ink }}>↗ {shareLabel}</Text>
         </Pressable>
-
-        {/* Off-screen 9:16 story card per slide — captured by active index. */}
-        <View style={{ position: "absolute", left: -9999, top: 0 }} pointerEvents="none">
-          {slides.map((s, i) => (
-            <SlideStoryCard key={i} ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={storyW} />
-          ))}
-        </View>
 
         <View style={{ flex: 1, minHeight: 24 }} />
 
