@@ -1,8 +1,10 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { sessionVolume, prsForSession, blockSummary, type LoggedSession, type AuroraIconName } from "@hybrid/core";
-import { fetchSessions, archiveSession, deleteSession } from "../../lib/api";
+import { archiveSession, deleteSession } from "../../lib/api";
+import { useSessionsQuery, useRevalidate } from "../../lib/queries";
+import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, Loading } from "../../lib/ui";
@@ -17,26 +19,23 @@ export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const revalidate = useRevalidate();
 
-  const load = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true);
-    setSessions(await fetchSessions(showArchived ? { archived: true } : undefined));
-    setLoading(false); setRefreshing(false);
-  }, [showArchived]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const q = useSessionsQuery({ archived: showArchived });
+  const sessions = q.data ?? [];
+  const loading = q.isPending;
+  const refreshing = q.isFetching;
+  useRefreshOnFocus(q.refetch);
 
   const onArchive = async (id: string, archived: boolean) => {
     setBusy(id); const ok = await archiveSession(id, archived); setBusy(null);
-    if (ok) load(); else Alert.alert(t("common.error"), archived ? t("history.archiveError") : t("history.restoreError"));
+    if (ok) revalidate.sessions(); else Alert.alert(t("common.error"), archived ? t("history.archiveError") : t("history.restoreError"));
   };
   const onDelete = (s: LoggedSession) => Alert.alert(t("history.deleteWorkout"), `“${s.title}” ${t("history.deleteWorkoutBody")}`, [
     { text: t("common.cancel"), style: "cancel" },
-    { text: t("common.delete"), style: "destructive", onPress: async () => { setBusy(s.id); const ok = await deleteSession(s.id); setBusy(null); if (ok) load(); else Alert.alert(t("common.error"), t("history.deleteError")); } },
+    { text: t("common.delete"), style: "destructive", onPress: async () => { setBusy(s.id); const ok = await deleteSession(s.id); setBusy(null); if (ok) revalidate.sessions(); else Alert.alert(t("common.error"), t("history.deleteError")); } },
   ]);
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
@@ -47,10 +46,10 @@ export default function AuroraHistory() {
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={() => load(true)}>
+    <AuroraScreen refreshing={refreshing} onRefresh={() => q.refetch()}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
-        <Pressable onPress={() => { setLoading(true); setShowArchived((v) => !v); }} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.blue : C.line, backgroundColor: showArchived ? `${C.blue}1a` : "transparent" }}>
+        <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.blue : C.line, backgroundColor: showArchived ? `${C.blue}1a` : "transparent" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.blue) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
