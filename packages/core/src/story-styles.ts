@@ -18,7 +18,7 @@
  */
 import { colors } from "./theme/tokens";
 
-export type StoryStyleId = "aurora" | "liquid-glass" | "swiftui";
+export type StoryStyleId = "aurora" | "liquid-glass";
 
 /** A soft radial glow disc, positioned as fractions of the card (x,y of width
  *  & height; r of width). `color` should already carry its alpha. */
@@ -91,28 +91,6 @@ export const STORY_STYLES: readonly StoryStyle[] = [
     barTrack: "rgba(255,255,255,0.12)",
     barFill: colors.lime,
     swatch: "#dfe6e2",
-  },
-  // 3 — SwiftUI: Aurora's ink+lime identity given the iOS treatment — a system
-  // gradient and a translucent .material panel. This is the design the native
-  // SwiftUI module (apps/mobile/modules/aurora-wrapped) renders on iOS; the
-  // web canvas/DOM + RN view paint the same look as the cross-platform fallback.
-  {
-    id: "swiftui",
-    nameKey: "summary.style.swiftui",
-    bg: colors.ink,
-    gradient: { from: "#141a2c", to: "#0a0b0e" },
-    discs: [
-      { x: 0.8, y: 0.14, r: 0.5, color: "rgba(196,240,53,0.18)" },
-      { x: 0.2, y: 0.85, r: 0.55, color: "rgba(10,132,255,0.18)" },
-    ],
-    panel: { fill: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.16)" },
-    text: colors.chalk,
-    muted: colors.ash,
-    accent: colors.lime,
-    wordmark: colors.chalk,
-    barTrack: "rgba(255,255,255,0.10)",
-    barFill: colors.lime,
-    swatch: "#0a84ff",
   },
 ] as const;
 

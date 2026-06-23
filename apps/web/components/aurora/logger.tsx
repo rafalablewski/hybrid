@@ -718,6 +718,13 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     const el = pagerRef.current;
     if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
+  // Tapping a dot jumps to that slide — a non-swipe path to every slide so the
+  // muscle/fun cards are reachable even where a horizontal swipe is awkward
+  // (mobile web, trackpad-less desktop).
+  const goTo = (i: number) => {
+    const el = pagerRef.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
 
   const previewW = 300; // on-screen story width (9:16 → 533 tall)
 
@@ -736,7 +743,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       <div
         ref={pagerRef}
         onScroll={onPagerScroll}
-        style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}
+        style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", touchAction: "pan-x", WebkitOverflowScrolling: "touch", overscrollBehaviorX: "contain" }}
       >
         {slides.map((s, i) => (
           <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center", boxSizing: "border-box" }}>
@@ -748,7 +755,14 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       {/* Dots */}
       <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
         {slides.map((_, i) => (
-          <div key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s" }} />
+          <button
+            key={i}
+            type="button"
+            onClick={() => goTo(i)}
+            aria-label={slides[i]!.eyebrow}
+            aria-current={i === activeIdx}
+            style={{ width: i === activeIdx ? 18 : 6, height: 6, padding: 0, border: "none", borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s", cursor: "pointer" }}
+          />
         ))}
       </div>
 
