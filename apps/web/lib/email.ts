@@ -245,19 +245,44 @@ export async function audienceSize(audience: EmailAudience): Promise<number> {
 // each. Returns the tallies the caller persists onto the campaign row.
 // ---------------------------------------------------------------------------
 
+// Recipients processed per invocation. Bounds one cron tick / request to well
+// under the serverless timeout; larger audiences resume on the next tick via the
+// id cursor.
+const CAMPAIGN_BATCH = 500;
+
+/**
+ * Send ONE batch of a campaign, resuming from its `sendCursor` (recipients are
+ * processed in id order). Persists progress atomically — increments the tallies,
+ * advances the cursor, flips to "sent" only when the final batch is done — and
+ * always clears the lease so the next tick can pick up where this left off.
+ * Returns `done: false` while more recipients remain.
+ *
+ * The whole-audience-in-one-pass version timed out (and lost progress) at scale;
+ * this makes a 100k-recipient send a sequence of bounded, resumable batches.
+ */
 export async function sendCampaign(campaign: {
   id: string;
   subject: string;
   body: string;
   audience: string;
-}): Promise<{ sent: number; failed: number }> {
+  sendCursor?: string | null;
+}): Promise<{ sent: number; failed: number; done: boolean }> {
   const recipients = await prisma.user.findMany({
-    where: audienceWhere(campaign.audience as EmailAudience),
+    where: {
+      ...audienceWhere(campaign.audience as EmailAudience),
+      email: { not: "" },
+      id: { gt: campaign.sendCursor ?? "" },
+    },
     select: { id: true, email: true, name: true },
+    orderBy: { id: "asc" },
+    take: CAMPAIGN_BATCH + 1, // one extra row tells us whether more remain
   });
+  const done = recipients.length <= CAMPAIGN_BATCH;
+  const batch = done ? recipients : recipients.slice(0, CAMPAIGN_BATCH);
+
   let sent = 0;
   let failed = 0;
-  for (const r of recipients) {
+  for (const r of batch) {
     if (!r.email) continue;
     const res = await sendEmail({
       to: r.email,
@@ -272,7 +297,20 @@ export async function sendCampaign(campaign: {
     if (res.ok) sent++;
     else if (res.skipped !== "suppressed") failed++;
   }
-  return { sent, failed };
+  const cursor = batch.length ? batch[batch.length - 1]!.id : campaign.sendCursor ?? null;
+
+  await prisma.emailCampaign.update({
+    where: { id: campaign.id },
+    data: {
+      sentCount: { increment: sent },
+      failedCount: { increment: failed },
+      sendCursor: cursor,
+      lockedUntil: null, // release the lease for the next batch / tick
+      ...(done ? { status: "sent", sentAt: new Date() } : { status: "sending" }),
+    },
+  });
+
+  return { sent, failed, done };
 }
 
 // ---------------------------------------------------------------------------

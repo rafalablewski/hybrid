@@ -950,6 +950,12 @@ model EmailCampaign {
   sentAt       DateTime?
   sentCount    Int       @default(0)
   failedCount  Int       @default(0)
+  // Resumable fan-out: the last recipient userId processed (id-ordered), so a
+  // large send continues across cron ticks instead of timing out in one request.
+  sendCursor   String?
+  // Short lease while a worker is processing a batch — serializes overlapping
+  // crons so a recipient is never double-sent.
+  lockedUntil  DateTime?
   createdById  String?
   createdEmail String?
   createdAt    DateTime  @default(now())

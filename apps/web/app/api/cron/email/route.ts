@@ -28,33 +28,38 @@ export async function GET(request: Request) {
   const now = new Date();
   const result = { campaigns: 0, steps: 0, completed: 0, enrolledInactive: 0 };
 
-  // --- 1. Due scheduled campaigns -----------------------------------------
+  // --- 1. Due scheduled + in-progress campaigns ---------------------------
   try {
+    // Pick campaigns that are newly due (scheduled) OR mid-fan-out (sending) so a
+    // large audience resumes across ticks. One batch each per tick.
     const dueCampaigns = await prisma.emailCampaign.findMany({
-      where: { status: "scheduled", scheduledAt: { lte: now } },
+      where: { OR: [{ status: "scheduled", scheduledAt: { lte: now } }, { status: "sending" }] },
       orderBy: { scheduledAt: "asc" },
       take: MAX_CAMPAIGNS,
     });
     for (const c of dueCampaigns) {
-      // CLAIM BEFORE SENDING: only the cron invocation that flips scheduled→
-      // sending (count 1) fans out. An overlapping invocation — or the inline
-      // admin send route hitting the same campaign — sees count 0 and skips, so
-      // the whole audience is never emailed twice.
-      const claim = await prisma.emailCampaign.updateMany({
-        where: { id: c.id, status: "scheduled" },
-        data: { status: "sending" },
+      // LEASE-CLAIM: take a short lease so overlapping crons (or the inline admin
+      // send) can't process the same batch twice. The loser sees count 0 and
+      // skips. sendCampaign clears the lease and advances the cursor atomically.
+      const lease = await prisma.emailCampaign.updateMany({
+        where: {
+          id: c.id,
+          status: { in: ["scheduled", "sending"] },
+          OR: [{ lockedUntil: null }, { lockedUntil: { lt: now } }],
+        },
+        data: { status: "sending", lockedUntil: new Date(now.getTime() + 5 * 60_000) },
       });
-      if (claim.count === 0) continue;
+      if (lease.count === 0) continue;
       try {
-        const { sent, failed } = await sendCampaign(c);
-        await prisma.emailCampaign.update({
-          where: { id: c.id },
-          data: { status: failed > 0 && sent === 0 ? "failed" : "sent", sentAt: new Date(), sentCount: sent, failedCount: failed },
-        });
-        result.campaigns++;
+        // Re-read so we resume from the latest cursor (a prior tick may have advanced it).
+        const fresh = await prisma.emailCampaign.findUnique({ where: { id: c.id } });
+        if (fresh) {
+          await sendCampaign(fresh);
+          result.campaigns++;
+        }
       } catch (e) {
         console.error("[cron email] campaign send failed", c.id, e);
-        await prisma.emailCampaign.update({ where: { id: c.id }, data: { status: "failed" } });
+        await prisma.emailCampaign.update({ where: { id: c.id }, data: { status: "failed", lockedUntil: null } });
       }
     }
   } catch {
