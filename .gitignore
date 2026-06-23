@@ -19,6 +19,10 @@ next-env.d.ts
 web-build/
 ios/
 android/
+# ...but DO track hand-written native sources for local Expo modules (the
+# generated app-level ios/ above stays ignored; these are real source files).
+!apps/mobile/modules/**/ios/
+!apps/mobile/modules/**/ios/**
 expo-env.d.ts
 
 # env / secrets — NEVER commit

@@ -71,6 +71,7 @@ import { useRevalidate } from "../lib/queries";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
+import { AuroraWrappedNative, auroraWrappedNativeAvailable } from "../modules/aurora-wrapped";
 import { useSession } from "../lib/session";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
@@ -1394,6 +1395,29 @@ function Summary({
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
+  // For the SwiftUI theme, serialize a slide to the JSON the native SwiftUI card
+  // decodes (see modules/aurora-wrapped). Used only when the native module is in
+  // the build; otherwise the RN SlideStoryCard renders the same look.
+  const slidePayload = (s: SlideData): string => {
+    const tracked = t("share.tracked");
+    if (s.kind === "overview")
+      return JSON.stringify({
+        kind: "overview", eyebrow: s.eyebrow, tracked,
+        title: s.firstEver ? "First workout 🎉" : s.stats.title || "Workout",
+        stats: [
+          { label: t("summary.minutes"), value: String(s.stats.minutes) },
+          { label: t("summary.sets"), value: String(s.stats.sets) },
+          { label: t("summary.volumeMoved"), value: fmtTonnage(s.stats.volume, units) },
+        ],
+      });
+    if (s.kind === "prs")
+      return JSON.stringify({ kind: "prs", eyebrow: s.eyebrow, tracked, headline: s.headline, rows: s.rows.slice(0, 6) });
+    if (s.kind === "muscle")
+      return JSON.stringify({ kind: "muscle", eyebrow: s.eyebrow, tracked, bars: s.bars });
+    return JSON.stringify({ kind: "fun", eyebrow: s.eyebrow, tracked, emoji: s.emoji, text: s.text });
+  };
+  const useNativeSwiftUI = styleId === "swiftui" && auroraWrappedNativeAvailable;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
@@ -1424,7 +1448,15 @@ function Summary({
           >
             {slides.map((s, i) => (
               <View key={i} style={{ width: slideW, alignItems: "center" }}>
-                <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} />
+                {useNativeSwiftUI ? (
+                  <AuroraWrappedNative
+                    ref={(r) => { storyRefs.current[i] = r; }}
+                    payload={slidePayload(s)}
+                    style={{ width: previewW, height: Math.round((previewW * 16) / 9), borderRadius: previewW * 0.05, overflow: "hidden" }}
+                  />
+                ) : (
+                  <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} />
+                )}
               </View>
             ))}
           </ScrollView>
@@ -1441,22 +1473,22 @@ function Summary({
             image update live. */}
         <View style={{ marginTop: 16 }}>
           <Mono color={C.ash} style={{ textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</Mono>
-          <View style={{ flexDirection: "row", gap: 4, padding: 4, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignSelf: "center" }}>
+          <View style={{ flexDirection: "row", gap: 4, padding: 4, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignSelf: "stretch" }}>
             {STORY_STYLES.map((s) => {
               const selected = s.id === styleId;
               return (
                 <Pressable
                   key={s.id}
                   onPress={() => setStyleId(s.id)}
-                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16, backgroundColor: selected ? C.lime : "transparent" }}
+                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 6, backgroundColor: selected ? C.lime : "transparent" }}
                 >
-                  <View style={{ width: 14, height: 14, borderRadius: 7, overflow: "hidden", backgroundColor: s.bg, borderWidth: 1, borderColor: selected ? "rgba(0,0,0,0.25)" : C.line, alignItems: "center", justifyContent: "center" }}>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, overflow: "hidden", backgroundColor: s.bg, borderWidth: 1, borderColor: selected ? "rgba(0,0,0,0.25)" : C.line, alignItems: "center", justifyContent: "center" }}>
                     {s.gradient && (
                       <LinearGradient colors={[s.gradient.from, s.gradient.to]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
                     )}
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: s.swatch }} />
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: s.swatch }} />
                   </View>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: selected ? C.ink : C.ash }}>{t(s.nameKey)}</Text>
+                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.micro, color: selected ? C.ink : C.ash }}>{t(s.nameKey)}</Text>
                 </Pressable>
               );
             })}

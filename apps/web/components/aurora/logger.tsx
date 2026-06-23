@@ -769,21 +769,22 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 8,
+                  gap: 6,
                   cursor: "pointer",
                   borderRadius: 999,
                   border: "none",
-                  padding: "9px 12px",
+                  padding: "9px 6px",
                   background: selected ? C("lime") : "transparent",
                   color: selected ? C("ink") : C("ash"),
                   fontFamily: "var(--font-display)",
                   fontWeight: 700,
-                  fontSize: fs.caption,
+                  fontSize: fs.micro,
+                  whiteSpace: "nowrap",
                   transition: "background .15s, color .15s",
                 }}
               >
-                <span style={{ width: 14, height: 14, borderRadius: "50%", background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `1px solid ${selected ? "rgba(0,0,0,0.25)" : C("line")}`, display: "inline-grid", placeItems: "center", flex: "0 0 auto" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.swatch }} />
+                <span style={{ width: 12, height: 12, borderRadius: "50%", background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `1px solid ${selected ? "rgba(0,0,0,0.25)" : C("line")}`, display: "inline-grid", placeItems: "center", flex: "0 0 auto" }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.swatch }} />
                 </span>
                 {t(s.nameKey)}
               </button>
