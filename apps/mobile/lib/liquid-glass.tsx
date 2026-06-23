@@ -6,9 +6,10 @@ import { LIQUID_GLASS_STORAGE_KEY } from "@hybrid/core";
 /**
  * Liquid Glass preference — the on/off switch for the native SwiftUI kit
  * (apps/mobile/components/aurora/swiftui.tsx). Mirrors the TemplateProvider
- * pattern: a per-device toggle persisted to AsyncStorage, defaulting ON so a
- * fresh install shows the new look first. Flipping it OFF in Settings restores
- * the plain React-Native Aurora treatment with no rebuild.
+ * pattern: a per-device toggle persisted to AsyncStorage, defaulting OFF so a
+ * fresh install shows the classic Aurora theme first and the native SwiftUI
+ * (Liquid Glass) look is opt-in. Flipping it ON in Settings swaps in the native
+ * SwiftUI surfaces with no rebuild.
  *
  * SwiftUI is iOS-only, so `supported` is false off-iOS and `active` is always
  * false there — the toggle simply isn't shown on web/Android.
@@ -27,13 +28,13 @@ interface LiquidGlassCtx {
 
 const Ctx = createContext<LiquidGlassCtx>({
   supported: SUPPORTED,
-  enabled: true,
-  active: SUPPORTED,
+  enabled: false,
+  active: false,
   setEnabled: () => {},
 });
 
 export function LiquidGlassProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabledState] = useState(true);
+  const [enabled, setEnabledState] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(LIQUID_GLASS_STORAGE_KEY)

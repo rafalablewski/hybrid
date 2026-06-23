@@ -15,6 +15,7 @@ import {
   type TextStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
@@ -32,27 +33,51 @@ import { useLiquidGlass } from "../../lib/liquid-glass";
  */
 export const RADIUS = { card: 28, field: 16, pill: 999 } as const;
 
-/** Ambient soft blobs — a calmer version of the classic GlassField, giving the
- *  rounded screens an airy gradient-like backdrop without a native gradient dep.
- *  Exported so screens that own their own shell (e.g. the live logger, with its
- *  sticky timer header) can drop the same backdrop behind their content. */
+/** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA` (passthrough
+ *  for anything that isn't a 6-digit hex). */
+function withAlpha(hex: string, alpha: number): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `${hex}${a}`;
+}
+
+/** Ambient AURORA backdrop — soft accent gradients that bleed in from the edges
+ *  and fade to transparent, giving the rounded screens a smooth gradient wash
+ *  (the classic Aurora look). Built from layered `LinearGradient`s rather than
+ *  hard-edged blobs so it reads as a gradient, not discs — the RN parity of the
+ *  web `.lg-field` (which blurs its blobs 70px to the same effect). Renders in
+ *  both modes: with Liquid Glass on it's the colour the glass cards refract;
+ *  with it off it's the plain Aurora gradient. Exported so screens that own
+ *  their own shell (e.g. the live logger) can drop the same backdrop behind
+ *  their content. */
 export function AuroraField() {
   const { palette } = useTheme();
-  const blob = (color: string, opacity: number, style: ViewStyle): ViewStyle => ({
-    position: "absolute",
-    borderRadius: 9999,
-    backgroundColor: color,
-    opacity,
-    ...style,
-  });
+  const fill = StyleSheet.absoluteFill;
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
-      {/* Violet bloom — top-left */}
-      <View style={blob(palette.violet, 0.22, { width: 380, height: 380, top: -150, left: -110 })} />
-      {/* Lime bloom — bottom-right */}
-      <View style={blob(palette.lime, 0.18, { width: 340, height: 340, bottom: -160, right: -90 })} />
-      {/* Blue accent — centre-right, adds depth behind glass cards */}
-      <View style={blob(palette.blue, 0.12, { width: 260, height: 260, top: "35%", right: -80 })} />
+    <View pointerEvents="none" style={[fill, { overflow: "hidden" }]}>
+      {/* Lime — bleeds from the top-left corner. */}
+      <LinearGradient
+        colors={[withAlpha(palette.lime, 0.14), "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.9, y: 0.9 }}
+        style={fill}
+      />
+      {/* Violet — bleeds from the bottom-left. */}
+      <LinearGradient
+        colors={[withAlpha(palette.violet, 0.16), "transparent"]}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 0.9, y: 0.15 }}
+        style={fill}
+      />
+      {/* Blue — a faint depth glow from the right edge. */}
+      <LinearGradient
+        colors={["transparent", withAlpha(palette.blue, 0.1)]}
+        start={{ x: 0.25, y: 0.4 }}
+        end={{ x: 1, y: 0.4 }}
+        style={fill}
+      />
     </View>
   );
 }
