@@ -46,9 +46,10 @@ async function claimStoredCoachInvite() {
   }
 }
 
-import type { Entitlement } from "@hybrid/core";
+import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 
-type Role = "client" | "coach" | "admin";
+// Shared with web via core so both clients normalize identical access-control input.
+type Role = AuthRole;
 
 type Ctx = {
   session: SupaSession | null;
@@ -96,10 +97,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const name =
     (meta.name as string) ||
     (session?.user.email ? session.user.email.split("@")[0]! : "Athlete");
-  const rawRole = String(meta.role ?? "client").toLowerCase();
-  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
-  const entitlement: Entitlement =
-    String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+  const role: Role = normalizeAuthRole(meta.role);
+  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
 
   return (
     <SessionCtx.Provider

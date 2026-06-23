@@ -8,12 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import type { Entitlement } from "@hybrid/core";
+import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { resetPersona } from "@/lib/persona";
 
-// Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN).
-export type Role = "client" | "coach" | "admin";
+// Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN). Aliased to the
+// shared core AuthRole so web and mobile normalize identical access-control input.
+export type Role = AuthRole;
 
 // Device-level prefs that are NOT user data and may safely survive a logout.
 // Everything else under the `hybrid.` namespace is user-scoped and is wiped so a
@@ -69,10 +70,8 @@ function fromSupabaseUser(user: User): Session {
   const email = user.email ?? "";
   // The DB stores uppercase roles (CLIENT|COACH|ADMIN); normalize so strict
   // equality against the lowercase Role type never silently fails.
-  const rawRole = String(meta.role ?? "client").toLowerCase();
-  const role: Role = rawRole === "coach" || rawRole === "admin" ? rawRole : "client";
-  const entitlement: Entitlement =
-    String(meta.entitlement ?? "free").toLowerCase() === "paid" ? "paid" : "free";
+  const role: Role = normalizeAuthRole(meta.role);
+  const entitlement: Entitlement = normalizeEntitlement(meta.entitlement);
   const name =
     (meta.name as string) ||
     (meta.full_name as string) ||
@@ -106,8 +105,8 @@ async function resolveSession(user: User): Promise<Session> {
           ? me.name.charAt(0).toUpperCase() + me.name.slice(1)
           : fallback.name,
         email: me.email ?? fallback.email,
-        role: me.role ? ((me.role as string).toLowerCase() as Role) : fallback.role,
-        entitlement: me.entitlement ?? fallback.entitlement,
+        role: me.role ? normalizeAuthRole(me.role) : fallback.role,
+        entitlement: me.entitlement ? normalizeEntitlement(me.entitlement) : fallback.entitlement,
         provider: fallback.provider,
         onboardedAt: me.onboardedAt ?? null,
       };
