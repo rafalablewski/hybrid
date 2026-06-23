@@ -4,7 +4,7 @@
 // Share API (navigator.share with files — supported on iOS Safari + Android
 // Chrome). Where file-share isn't available we fall back to downloading the
 // PNG, and where canvas/share is unavailable at all, to a plain text share.
-import { brand, fmtTonnage, fmtWeight, type WeightUnit } from "@hybrid/core";
+import { brand, fmtTonnage, fmtWeight, storyStyle, type StoryStyle, type StoryStyleId, type WeightUnit } from "@hybrid/core";
 
 export type ShareBest = { name: string; e1rm: number; pr?: boolean };
 export type ShareStats = {
@@ -149,43 +149,78 @@ const SW = 1080;
 const SH = 1920;
 const SPAD = 96;
 
-function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string) {
-  ctx.fillStyle = COL.ink;
+function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function paintFrame(ctx: CanvasRenderingContext2D, eyebrow: string, st: StoryStyle) {
+  ctx.fillStyle = st.bg;
   ctx.fillRect(0, 0, SW, SH);
-  const glow = ctx.createRadialGradient(SW * 0.78, SH * 0.16, 0, SW * 0.78, SH * 0.16, 620);
-  glow.addColorStop(0, "rgba(196,240,53,0.20)");
-  glow.addColorStop(1, "rgba(196,240,53,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, SW, SH);
+  // Optional diagonal gradient over the base (top-left → bottom-right).
+  if (st.gradient) {
+    const g = ctx.createLinearGradient(0, 0, SW, SH);
+    g.addColorStop(0, st.gradient.from);
+    g.addColorStop(1, st.gradient.to);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, SW, SH);
+  }
+  // The style's glow discs (positions are fractions of the card).
+  st.discs.forEach((d) => {
+    const cx = SW * d.x;
+    const cy = SH * d.y;
+    const r = SW * d.r;
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    glow.addColorStop(0, d.color);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, SW, SH);
+  });
+  // Optional translucent glass slab inset behind the content.
+  if (st.panel) {
+    const inset = SW * 0.045;
+    roundRectPath(ctx, inset, inset, SW - inset * 2, SH - inset * 2, SW * 0.05);
+    ctx.fillStyle = st.panel.fill;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = st.panel.border;
+    ctx.stroke();
+  }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.font = font(DISPLAY, 64);
-  ctx.fillStyle = COL.chalk;
+  ctx.fillStyle = st.wordmark;
   ctx.fillText(brand.name, SPAD, 200);
   const wmW = ctx.measureText(brand.name).width;
-  ctx.fillStyle = COL.lime;
+  ctx.fillStyle = st.accent;
   ctx.fillText(".", SPAD + wmW + 6, 200);
   ctx.font = font(MONO, 28);
-  ctx.fillStyle = COL.lime;
+  ctx.fillStyle = st.accent;
   ctx.fillText(eyebrow.toUpperCase(), SPAD, 250);
   ctx.font = font(MONO, 30);
-  ctx.fillStyle = COL.ash;
+  ctx.fillStyle = st.muted;
   ctx.fillText("Tracked with HYBRID.", SPAD, SH - 120);
 }
 
-/** Draw any summary slide as the branded 9:16 PNG. */
-export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: string) => string): Promise<Blob | null> {
+/** Draw any summary slide as the branded 9:16 PNG in the chosen style. */
+export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: string) => string, styleId?: StoryStyleId): Promise<Blob | null> {
   const canvas = document.createElement("canvas");
   canvas.width = SW;
   canvas.height = SH;
   const ctx = canvas.getContext("2d");
   if (!ctx) return Promise.resolve(null);
-  paintFrame(ctx, slide.eyebrow);
+  const st = storyStyle(styleId);
+  paintFrame(ctx, slide.eyebrow, st);
 
   if (slide.kind === "overview") {
     const s = slide.stats;
     ctx.font = font(DISPLAY, 96);
-    ctx.fillStyle = COL.chalk;
+    ctx.fillStyle = st.text;
     wrapText(ctx, s.firstEver ? "First workout 🎉" : s.title || "Workout", SPAD, 470, SW - SPAD * 2, 104);
     const stat = [
       { label: "MIN", value: String(s.minutes) },
@@ -197,25 +232,25 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
       const cx = SPAD + colW * i + colW / 2;
       ctx.textAlign = "center";
       ctx.font = font(DISPLAY, 92);
-      ctx.fillStyle = COL.chalk;
+      ctx.fillStyle = st.text;
       ctx.fillText(c.value, cx, 880);
       ctx.font = font(MONO, 28);
-      ctx.fillStyle = COL.ash;
+      ctx.fillStyle = st.muted;
       ctx.fillText(c.label, cx, 932);
     });
     ctx.textAlign = "left";
   } else if (slide.kind === "prs") {
     ctx.font = font(DISPLAY, 64);
-    ctx.fillStyle = COL.lime;
+    ctx.fillStyle = st.barFill;
     ctx.fillText(slide.headline, SPAD, 520);
     let y = 660;
     slide.rows.slice(0, 7).forEach((r) => {
       ctx.font = font(DISPLAY, 46);
-      ctx.fillStyle = COL.chalk;
+      ctx.fillStyle = st.text;
       ctx.fillText(`${r.hot ? "🏆 " : ""}${r.left}`, SPAD, y);
       if (r.right) {
         ctx.textAlign = "right";
-        ctx.fillStyle = r.hot ? COL.lime : COL.chalk;
+        ctx.fillStyle = r.hot ? st.barFill : st.text;
         ctx.fillText(r.right, SW - SPAD, y);
         ctx.textAlign = "left";
       }
@@ -225,18 +260,18 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
     let y = 560;
     slide.bars.forEach((b) => {
       ctx.font = font(DISPLAY, 44);
-      ctx.fillStyle = COL.chalk;
+      ctx.fillStyle = st.text;
       ctx.fillText(b.label, SPAD, y);
       ctx.textAlign = "right";
       ctx.font = font(MONO, 34);
-      ctx.fillStyle = COL.ash;
+      ctx.fillStyle = st.muted;
       ctx.fillText(b.value, SW - SPAD, y);
       ctx.textAlign = "left";
       const barY = y + 26;
       const barW = SW - SPAD * 2;
-      ctx.fillStyle = COL.ink2;
+      ctx.fillStyle = st.barTrack;
       ctx.fillRect(SPAD, barY, barW, 22);
-      ctx.fillStyle = COL.lime;
+      ctx.fillStyle = st.barFill;
       ctx.fillRect(SPAD, barY, Math.max(barW * 0.04, (barW * Math.max(4, b.pct)) / 100), 22);
       y += 130;
     });
@@ -245,7 +280,7 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
     ctx.font = font(DISPLAY, 200);
     ctx.fillText(slide.emoji, SW / 2, 760);
     ctx.font = font(DISPLAY, 64);
-    ctx.fillStyle = COL.chalk;
+    ctx.fillStyle = st.text;
     wrapText(ctx, slide.text, SPAD, 940, SW - SPAD * 2, 84, "center");
     ctx.textAlign = "left";
   }
@@ -260,9 +295,10 @@ export async function shareWorkoutSlide(
   caption: string,
   units: WeightUnit,
   t: (k: string) => string,
+  styleId?: StoryStyleId,
 ): Promise<"shared" | "downloaded" | "text" | "cancelled"> {
   try {
-    const blob = await drawSlideStory(slide, units, t);
+    const blob = await drawSlideStory(slide, units, t, styleId);
     if (blob) {
       const file = new File([blob], "hybrid-workout.png", { type: "image/png" });
       const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };

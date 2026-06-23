@@ -1,8 +1,9 @@
 import { forwardRef } from "react";
 import { View, Text, Share } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
 import { C, F, Kicker } from "./ui";
 
 const MUSCLE_LABEL: Record<string, string> = {
@@ -128,54 +129,92 @@ export type SlideData =
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
   | { kind: "fun"; eyebrow: string; emoji: string; text: string };
 
-const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; children: React.ReactNode }>(
-  ({ width, eyebrow, tracked, children }, ref) => (
+// Style-aware stat cell for the story card (colours come from the chosen style).
+function StoryStat({ label, value, st, width }: { label: string; value: string; st: StoryStyle; width: number }) {
+  return (
+    <View style={{ alignItems: "center", flex: 1 }}>
+      <Text style={{ fontFamily: F.black, fontSize: width * 0.092, color: st.text }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.muted, letterSpacing: 1, marginTop: width * 0.01 }}>{label}</Text>
+    </View>
+  );
+}
+
+const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; st: StoryStyle; children: React.ReactNode }>(
+  ({ width, eyebrow, tracked, st, children }, ref) => (
     <View
       ref={ref}
       collapsable={false}
-      style={{ width, height: Math.round((width * 16) / 9), backgroundColor: C.ink, padding: width * 0.09, justifyContent: "space-between" }}
+      style={{ width, height: Math.round((width * 16) / 9), backgroundColor: st.bg, padding: width * 0.09, justifyContent: "space-between", overflow: "hidden", borderRadius: width * 0.05 }}
     >
-      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: `${C.lime}22` }} />
+      {/* Optional diagonal gradient over the base (top-left → bottom-right). */}
+      {st.gradient && (
+        <LinearGradient
+          pointerEvents="none"
+          colors={[st.gradient.from, st.gradient.to]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      )}
+      {/* Soft glow discs — the look that distinguishes each style. */}
+      {st.discs.map((d, i) => {
+        const size = width * d.r * 2;
+        return (
+          <View
+            key={i}
+            pointerEvents="none"
+            style={{ position: "absolute", left: width * d.x - size / 2, top: ((width * 16) / 9) * d.y - size / 2, width: size, height: size, borderRadius: size / 2, backgroundColor: d.color }}
+          />
+        );
+      })}
+      {/* Optional translucent glass slab inset behind the content. */}
+      {st.panel && (
+        <View
+          pointerEvents="none"
+          style={{ position: "absolute", top: width * 0.045, left: width * 0.045, right: width * 0.045, bottom: width * 0.045, borderRadius: width * 0.045, backgroundColor: st.panel.fill, borderWidth: 1.5, borderColor: st.panel.border }}
+        />
+      )}
       <View>
-        <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: C.chalk, letterSpacing: -1 }}>
+        <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: st.wordmark, letterSpacing: -1 }}>
           {brand.name}
-          <Text style={{ color: C.lime }}>.</Text>
+          <Text style={{ color: st.accent }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.lime, letterSpacing: 2, marginTop: 6 }}>{eyebrow.toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.accent, letterSpacing: 2, marginTop: 6 }}>{eyebrow.toUpperCase()}</Text>
       </View>
       <View style={{ flex: 1, justifyContent: "center" }}>{children}</View>
-      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.ash }}>{tracked}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.muted }}>{tracked}</Text>
     </View>
   ),
 );
 StoryShell.displayName = "StoryShell";
 
-export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number }>(
-  ({ slide, t, units = "kg", width }, ref) => {
+export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; styleId?: StoryStyleId }>(
+  ({ slide, t, units = "kg", width, styleId }, ref) => {
     const tracked = t("share.tracked");
+    const st = storyStyle(styleId);
     if (slide.kind === "overview") {
       const s = slide.stats;
       return (
-        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
-          <Text style={{ fontFamily: F.black, fontSize: width * 0.088, color: C.chalk, marginBottom: width * 0.08 }}>
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.088, color: st.text, marginBottom: width * 0.08 }}>
             {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Stat label={t("summary.minutes")} value={String(s.minutes)} />
-            <Stat label={t("summary.sets")} value={String(s.sets)} />
-            <Stat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} />
+            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} />
+            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} />
+            <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} />
           </View>
         </StoryShell>
       );
     }
     if (slide.kind === "prs") {
       return (
-        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
-          <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: C.lime, marginBottom: width * 0.05 }}>{slide.headline}</Text>
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: st.barFill, marginBottom: width * 0.05 }}>{slide.headline}</Text>
           {slide.rows.slice(0, 6).map((r, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: C.chalk }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
-              <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? C.lime : C.chalk }}>{r.right}</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: st.text }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? st.barFill : st.text }}>{r.right}</Text>
             </View>
           ))}
         </StoryShell>
@@ -183,15 +222,15 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
     }
     if (slide.kind === "muscle") {
       return (
-        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
           {slide.bars.map((b, i) => (
             <View key={i} style={{ marginTop: width * 0.04 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: width * 0.015 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: width * 0.04, color: C.chalk }}>{b.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: C.ash }}>{b.value}</Text>
+                <Text style={{ fontFamily: F.semi, fontSize: width * 0.04, color: st.text }}>{b.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: st.muted }}>{b.value}</Text>
               </View>
-              <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: C.ink2, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: C.lime }} />
+              <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: st.barTrack, overflow: "hidden" }}>
+                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: st.barFill }} />
               </View>
             </View>
           ))}
@@ -199,9 +238,9 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
       );
     }
     return (
-      <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked}>
+      <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
         <Text style={{ fontSize: width * 0.22, textAlign: "center" }}>{slide.emoji}</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: C.chalk, textAlign: "center", marginTop: width * 0.05, lineHeight: width * 0.075 }}>{slide.text}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: st.text, textAlign: "center", marginTop: width * 0.05, lineHeight: width * 0.075 }}>{slide.text}</Text>
       </StoryShell>
     );
   },

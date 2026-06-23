@@ -11,6 +11,11 @@ import { fs, space,
   volumeByMuscle,
   sessionFunFact,
   funFactText,
+  STORY_STYLES,
+  DEFAULT_STORY_STYLE,
+  storyStyle,
+  type StoryStyle,
+  type StoryStyleId,
   blockBestE1rm,
   lastStrengthByLift,
   blockSummary,
@@ -555,6 +560,101 @@ export default function AuroraLogger({
   );
 }
 
+/** The real 9:16 story card, rendered in the DOM so the on-screen preview is
+ *  exactly what gets shared (the PNG is painted from the same StoryStyle). `w`
+ *  is the on-screen width; everything scales from the 1080-wide design grid. */
+function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StoryStyle; w: number; t: (k: string) => string; units: WeightUnit }) {
+  const h = (w * 16) / 9;
+  const k = w / 1080; // design grid → on-screen scale
+  const px = (n: number) => `${n * k}px`;
+  const D = "var(--font-display)";
+  const M = "var(--font-mono)";
+  const body = (() => {
+    if (slide.kind === "overview") {
+      const s = slide.stats;
+      const stat = [
+        { label: "MIN", value: String(s.minutes) },
+        { label: t("w.train.logger.liveSets"), value: String(s.sets) },
+        { label: t("w.train.logger.liveVolume"), value: fmtTonnage(s.volume, units) },
+      ];
+      return (
+        <>
+          <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(92), color: st.text, lineHeight: 1.05 }}>{s.firstEver ? "First workout 🎉" : s.title || "Workout"}</div>
+          <div style={{ display: "flex", marginTop: px(80) }}>
+            {stat.map((c, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(86), color: st.text }}>{c.value}</div>
+                <div style={{ fontFamily: M, fontSize: px(28), color: st.muted, letterSpacing: ".1em", marginTop: px(8) }}>{c.label}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    }
+    if (slide.kind === "prs")
+      return (
+        <>
+          <div style={{ fontFamily: D, fontWeight: 800, fontSize: px(64), color: st.barFill }}>{slide.headline}</div>
+          <div style={{ marginTop: px(40) }}>
+            {slide.rows.slice(0, 7).map((r, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: px(36) }}>
+                <span style={{ fontFamily: D, fontWeight: 600, fontSize: px(46), color: st.text }}>{r.hot ? "🏆 " : ""}{r.left}</span>
+                {r.right && <span style={{ fontFamily: D, fontWeight: 800, fontSize: px(46), color: r.hot ? st.barFill : st.text }}>{r.right}</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    if (slide.kind === "muscle")
+      return (
+        <div>
+          {slide.bars.map((b, i) => (
+            <div key={i} style={{ marginTop: px(44) }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: px(14) }}>
+                <span style={{ fontFamily: D, fontWeight: 600, fontSize: px(44), color: st.text }}>{b.label}</span>
+                <span style={{ fontFamily: M, fontSize: px(34), color: st.muted }}>{b.value}</span>
+              </div>
+              <div style={{ height: px(22), borderRadius: px(11), background: st.barTrack, overflow: "hidden" }}>
+                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: st.barFill }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: px(200), lineHeight: 1 }}>{slide.emoji}</div>
+        <div style={{ fontFamily: D, fontWeight: 800, fontSize: px(60), color: st.text, marginTop: px(40), lineHeight: 1.25 }}>{slide.text}</div>
+      </div>
+    );
+  })();
+
+  const background = st.gradient ? `linear-gradient(135deg, ${st.gradient.from}, ${st.gradient.to})` : st.bg;
+  return (
+    <div style={{ position: "relative", width: w, height: h, borderRadius: px(54), overflow: "hidden", background, boxSizing: "border-box" }}>
+      {st.discs.map((d, i) => {
+        const size = w * d.r * 2;
+        return (
+          <div key={i} style={{ position: "absolute", left: w * d.x - size / 2, top: h * d.y - size / 2, width: size, height: size, borderRadius: "50%", background: `radial-gradient(circle, ${d.color} 0%, rgba(0,0,0,0) 70%)`, pointerEvents: "none" }} />
+        );
+      })}
+      {st.panel && (
+        <div style={{ position: "absolute", inset: w * 0.045, borderRadius: px(40), background: st.panel.fill, border: `2px solid ${st.panel.border}`, backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", pointerEvents: "none" }} />
+      )}
+      <div style={{ position: "absolute", inset: 0, padding: `${px(170)} ${px(96)}`, display: "flex", flexDirection: "column", justifyContent: "space-between", boxSizing: "border-box" }}>
+        <div>
+          <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(64), color: st.wordmark, letterSpacing: "-0.02em" }}>
+            HYBRID<span style={{ color: st.accent }}>.</span>
+          </div>
+          <div style={{ fontFamily: M, fontSize: px(28), color: st.accent, letterSpacing: ".14em", marginTop: px(10) }}>{slide.eyebrow.toUpperCase()}</div>
+        </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>{body}</div>
+        <div style={{ fontFamily: M, fontSize: px(30), color: st.muted }}>{t("share.tracked")}</div>
+      </div>
+    </div>
+  );
+}
+
 /** The finish CELEBRATION — the web twin of the mobile workout summary. A win
  *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
  *  a short navigator.vibrate where the device supports it (the web analog of the
@@ -568,6 +668,9 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
   const [shareMsg, setShareMsg] = useState("");
   const [sharing, setSharing] = useState(false);
   const [active, setActive] = useState(0);
+  // The chosen "wrapped" look — one of the 4 shared styles.
+  const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
+  const st = storyStyle(styleId);
   const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -605,7 +708,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     setSharing(true);
     setShareMsg("");
     const caption = buildShareText({ title, minutes, sets, volume, bests, firstEver }, units, t);
-    const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t);
+    const how = await shareWorkoutSlide(slides[activeIdx]!, caption, units, t, styleId);
     setSharing(false);
     if (how === "downloaded") setShareMsg(t("w.train.logger.downloaded"));
     else if (how === "shared" || how === "text") setShareMsg(t("w.train.logger.shared"));
@@ -616,63 +719,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
     if (el) setActive(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
-  const slideShell = { ...card, scrollSnapAlign: "center" as const, flex: "0 0 100%", boxSizing: "border-box" as const, minHeight: 230 };
-  const statCol = (label: string, value: string) => (
-    <div style={{ flex: 1, textAlign: "center" }}>
-      <div style={{ fontWeight: 900, fontSize: 30 }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), letterSpacing: ".1em", marginTop: 4 }}>{label}</div>
-    </div>
-  );
-  const renderSlide = (s: StorySlide) => {
-    if (s.kind === "overview")
-      return (
-        <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
-          <div style={{ fontWeight: 800, fontSize: fs.subtitle, marginTop: 10 }}>{s.stats.title || "Workout"}</div>
-          <div style={{ display: "flex", marginTop: 28 }}>
-            {statCol(t("summary.minutes"), String(minutes))}
-            {statCol(t("w.train.logger.sets"), String(sets))}
-            {statCol(t("summary.volumeMoved"), fmtTonnage(volume, units))}
-          </div>
-        </>
-      );
-    if (s.kind === "prs")
-      return (
-        <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
-          <div style={{ fontWeight: 800, fontSize: fs.note, color: C("lime"), marginTop: 10 }}>{s.headline}</div>
-          {s.rows.slice(0, 6).map((r, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.body }}>
-              <span>{r.hot ? "🏆 " : ""}{r.left}</span>
-              {r.right && <span style={{ color: r.hot ? C("lime") : C("chalk"), fontWeight: 700 }}>{r.right}</span>}
-            </div>
-          ))}
-        </>
-      );
-    if (s.kind === "muscle")
-      return (
-        <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{s.eyebrow}</div>
-          {s.bars.map((b, i) => (
-            <div key={i} style={{ marginTop: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 4 }}>
-                <span>{b.label}</span>
-                <span style={{ color: C("ash") }}>{b.value}</span>
-              </div>
-              <div style={{ height: 8, borderRadius: 4, background: C("ink"), overflow: "hidden" }}>
-                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: C("lime") }} />
-              </div>
-            </div>
-          ))}
-        </>
-      );
-    return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
-        <div style={{ fontSize: 64 }}>{s.emoji}</div>
-        <div style={{ fontWeight: 700, fontSize: fs.subtitle, marginTop: 14, lineHeight: 1.35 }}>{s.text}</div>
-      </div>
-    );
-  };
+  const previewW = 300; // on-screen story width (9:16 → 533 tall)
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -684,15 +731,16 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
         <SessionRename sessionId={sessionId} value={title} onRenamed={setTitle} />
       </div>
 
-      {/* Swipeable summary slides — each shareable as its own 9:16 story. */}
+      {/* Swipeable summary slides — each is the real 9:16 story card (what you
+          see is what gets shared, in the chosen style). */}
       <div
         ref={pagerRef}
         onScroll={onPagerScroll}
-        style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 -2px" }}
+        style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}
       >
         {slides.map((s, i) => (
-          <div key={i} style={{ flex: "0 0 100%", padding: "0 2px", boxSizing: "border-box" }}>
-            <div style={slideShell}>{renderSlide(s)}</div>
+          <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center", boxSizing: "border-box" }}>
+            <StoryCard slide={s} st={st} w={previewW} t={t} units={units} />
           </div>
         ))}
       </div>
@@ -702,6 +750,47 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
         {slides.map((_, i) => (
           <div key={i} style={{ width: i === activeIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === activeIdx ? C("lime") : C("line"), transition: "width .2s" }} />
         ))}
+      </div>
+
+      {/* Theme toggle — switch the wrapped look; the card + share image follow. */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("ash"), textAlign: "center", marginBottom: 8 }}>{t("summary.styleLabel").toUpperCase()}</div>
+        <div role="tablist" style={{ display: "flex", gap: 4, padding: 4, borderRadius: 999, background: C("ink2"), border: `1px solid ${C("line")}`, maxWidth: 360, margin: "0 auto" }}>
+          {STORY_STYLES.map((s) => {
+            const selected = s.id === styleId;
+            return (
+              <button
+                key={s.id}
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setStyleId(s.id)}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                  borderRadius: 999,
+                  border: "none",
+                  padding: "9px 6px",
+                  background: selected ? C("lime") : "transparent",
+                  color: selected ? C("ink") : C("ash"),
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 700,
+                  fontSize: fs.micro,
+                  whiteSpace: "nowrap",
+                  transition: "background .15s, color .15s",
+                }}
+              >
+                <span style={{ width: 12, height: 12, borderRadius: "50%", background: s.gradient ? `linear-gradient(135deg, ${s.gradient.from}, ${s.gradient.to})` : s.bg, border: `1px solid ${selected ? "rgba(0,0,0,0.25)" : C("line")}`, display: "inline-grid", placeItems: "center", flex: "0 0 auto" }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.swatch }} />
+                </span>
+                {t(s.nameKey)}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* One Share button — shares the slide on screen as a 9:16 story. */}

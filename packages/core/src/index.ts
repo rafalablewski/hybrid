@@ -9,6 +9,7 @@
 // The Aurora theme — one self-contained, swappable folder (tokens, palette,
 // templates, icons). See packages/core/src/theme/README.md.
 export * from "./theme";
+export * from "./story-styles";
 export * from "./semantic";
 export * from "./engines";
 export * from "./plans";
