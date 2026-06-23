@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 type DbRole = "CLIENT" | "COACH" | "ADMIN";
@@ -13,6 +14,10 @@ function toDbRole(r: unknown): DbRole {
  * first sight (keyed by the Supabase auth id). Role is taken from auth metadata
  * only at creation — after that the DB row is the source of truth. Returns null
  * when there is no authenticated user.
+ *
+ * Read-first: this runs on nearly every authenticated request, so the common
+ * (returning-user) path is a plain read — no row lock / WAL write per request.
+ * We only write to create the row on first sight, or to sync a changed email.
  */
 export async function getOrCreateDbUser(req?: Request) {
   const supabase = await createClient();
@@ -26,24 +31,43 @@ export async function getOrCreateDbUser(req?: Request) {
       : (await supabase.auth.getUser()).data.user;
   if (!user) return null;
 
-  const meta = user.user_metadata ?? {};
-  const dbUser = await prisma.user.upsert({
-    where: { authId: user.id },
-    update: { email: user.email ?? "" },
-    create: {
-      authId: user.id,
-      email: user.email ?? "",
-      name: (meta.name as string | undefined) ?? null,
-      role: toDbRole(meta.role),
-    },
-  });
+  const email = user.email ?? "";
+  let dbUser = await prisma.user.findUnique({ where: { authId: user.id } });
+  let created = false;
 
-  // Fire the `signup` lifecycle automation once, just after the row is first
-  // created. We can't get a "created" flag back from upsert, so we gate on a
-  // short window after createdAt; enrollInTrigger is idempotent (unique
-  // [sequenceId,userId]) so a couple of attempts in that window are harmless, and
-  // it no-ops entirely until email sequences exist. Never blocks the request.
-  if (dbUser.email && Date.now() - dbUser.createdAt.getTime() < 30_000) {
+  if (!dbUser) {
+    const meta = user.user_metadata ?? {};
+    try {
+      dbUser = await prisma.user.create({
+        data: {
+          authId: user.id,
+          email,
+          name: (meta.name as string | undefined) ?? null,
+          role: toDbRole(meta.role),
+        },
+      });
+      created = true;
+    } catch (e) {
+      // Concurrent first login: another request inserted the row between our
+      // read and create (the clients fan out many parallel authed requests on
+      // load). Re-read instead of surfacing the P2002 as a 500.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        dbUser = await prisma.user.findUnique({ where: { authId: user.id } });
+      } else {
+        throw e;
+      }
+    }
+    if (!dbUser) throw new Error("could not resolve user row after create race");
+  } else if (email && dbUser.email !== email) {
+    // Email changed in Supabase — sync it, but ONLY when it actually differs so
+    // the steady state stays a pure read.
+    dbUser = await prisma.user.update({ where: { authId: user.id }, data: { email } });
+  }
+
+  // Fire the `signup` lifecycle automation exactly once, when we created the
+  // row (no more fuzzy "createdAt within 30s" window). enrollInTrigger is
+  // idempotent and no-ops until email sequences exist. Never blocks the request.
+  if (created && dbUser.email) {
     try {
       const { enrollInTrigger } = await import("@/lib/email");
       await enrollInTrigger("signup", {
