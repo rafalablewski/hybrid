@@ -131,8 +131,12 @@ export function prescribeSession(
     .sort((a, b) => b.recovery - a.recovery);
   const primary = scored[0]!;
 
-  // load prescription from signal
+  // load prescription from signal. Sort newest-first by daysAgo so loggedE1rm[0]
+  // is genuinely the most recent reading regardless of the caller's input order
+  // (previously this trusted the log to arrive newest-first).
   const loggedE1rm = log
+    .slice()
+    .sort((a, b) => a.daysAgo - b.daysAgo)
     .flatMap((s) => s.items)
     .filter((i) => i.move === primary.move && i.e1rm !== undefined);
   // No logged history for this lift → fall back to a generic starting load
