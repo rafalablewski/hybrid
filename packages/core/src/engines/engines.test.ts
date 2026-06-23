@@ -264,6 +264,15 @@ describe("periodization", () => {
     for (const b of macro.blocks) expect(b.weeks).toBeGreaterThanOrEqual(1);
   });
 
+  it("lands the plan EXACTLY on the event for any horizon (no over/undershoot)", () => {
+    for (const wk of [1, 2, 3, 4, 7, 10, 13, 16, 20, 26, 52]) {
+      const macro = buildMacrocycle("Hyrox", wk);
+      const total = macro.blocks.reduce((s, b) => s + b.weeks, 0);
+      expect(total).toBe(wk);
+      for (const b of macro.blocks) expect(b.weeks).toBeGreaterThanOrEqual(1);
+    }
+  });
+
   it("resolves the current phase + microcycle for a given week", () => {
     const macro = buildMacrocycle("Hybrid");
     const { block, micro } = currentPhase(macro, 5);

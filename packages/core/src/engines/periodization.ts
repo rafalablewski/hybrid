@@ -48,6 +48,42 @@ export function modelFor(goalOrSport: string): { name: string; phases: Phase[] }
 }
 
 /**
+ * Apportion `total` weeks across phases in proportion to their natural length,
+ * guaranteeing the result sums to EXACTLY `total`. Uses the largest-remainder
+ * (Hamilton) method. When `total` is smaller than the phase count, the earliest
+ * phases are dropped (0 weeks) and the final `total` phases get one week each —
+ * so the peak/taper that must land on the event is always preserved.
+ */
+function distributeWeeks(weights: number[], total: number): number[] {
+  const n = weights.length;
+  if (n === 0) return [];
+  if (total <= n) return weights.map((_, i) => (i >= n - total ? 1 : 0));
+
+  const sum = weights.reduce((s, w) => s + w, 0) || n;
+  const raw = weights.map((w) => (w / sum) * total);
+  const out = raw.map((r) => Math.max(1, Math.floor(r)));
+  let used = out.reduce((s, w) => s + w, 0);
+
+  // Hand out any shortfall to the phases with the largest fractional remainder.
+  const byRemainder = raw
+    .map((r, i) => ({ i, frac: r - Math.floor(r) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let k = 0; used < total; k++, used++) out[byRemainder[k % n]!.i]++;
+
+  // The min-of-1 floor can overshoot; trim from the longest phases (never below 1).
+  while (used > total) {
+    const idx = out
+      .map((w, i) => ({ w, i }))
+      .filter((x) => x.w > 1)
+      .sort((a, b) => b.w - a.w)[0]?.i;
+    if (idx === undefined) break;
+    out[idx]!--;
+    used--;
+  }
+  return out;
+}
+
+/**
  * Build a macrocycle. If `eventInWeeks` is given, the active phases are scaled
  * to fit the available weeks (taper/peak land on the event). Otherwise all
  * phases are stacked forward from now, including the recovery block.
@@ -65,14 +101,18 @@ export function buildMacrocycle(
   );
 
   let mesos: Phase[];
-  if (eventInWeeks) {
+  if (eventInWeeks && eventInWeeks > 0) {
     const ordered = [...phases]; // base...taper, in order
-    const total = ordered.reduce((s, p) => s + p.weeks, 0);
-    const scale = eventInWeeks / total;
-    mesos = ordered.map((p) => ({
-      ...p,
-      weeks: Math.max(1, Math.round(p.weeks * scale)),
-    }));
+    // Distribute the available weeks across the phases so they sum EXACTLY to
+    // eventInWeeks (taper/peak land ON the event). Rounding each phase
+    // independently used to overshoot for short horizons (event 2wk out -> a
+    // 4wk plan whose peak lands after the event) and drift for long ones
+    // (event 20wk out -> 19wk). Largest-remainder keeps the total exact.
+    const weeks = distributeWeeks(ordered.map((p) => p.weeks), eventInWeeks);
+    // When there isn't room for every phase (eventInWeeks < phase count) the
+    // earliest base phases get 0 weeks — drop them and keep the peak block,
+    // rather than forcing a minimum that pushes the plan past the event.
+    mesos = ordered.map((p, i) => ({ ...p, weeks: weeks[i]! })).filter((p) => p.weeks > 0);
   } else {
     mesos = [...phases, ...(recovery ? [recovery] : [])];
   }
