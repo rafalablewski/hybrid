@@ -34,7 +34,8 @@ import {
   type Equipment,
 } from "@hybrid/core";
 import { track } from "../../lib/track";
-import { fetchSessions, fetchAssignments, fetchSignals, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, createSelfAssignments, updateAssignment, fetchCoachInvites, actCoachInvite, type Assignment, type CoreSignal, type CoachInvite } from "../../lib/api";
+import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { RecapShareCard, shareWorkout, recapShareText } from "../../lib/share";
 import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
@@ -76,9 +77,11 @@ function ClassicHome() {
   const { draft } = useDraft();
   const { defaultStart, units } = useLoggerPrefs();
   const { t } = useLang();
-  const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  // Sessions + signals come from the shared cache (so logging a workout / check-in
+  // revalidates Home automatically); the rest stay home-local.
+  const { data: sessions = [], refetch: refetchSessions } = useSessionsQuery();
+  const { data: signals = [], refetch: refetchSignals } = useSignalsQuery();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [signals, setSignals] = useState<CoreSignal[]>([]);
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -91,9 +94,9 @@ function ClassicHome() {
 
   const load = () => {
     setRefreshing(true);
-    Promise.all([fetchSessions(), fetchAssignments(), fetchSignals(), fetchMacrocycle(), fetchCoachInvites()])
-      .then(([s, a, sig, m, inv]) => {
-        setSessions(s); setAssignments(a); setSignals(sig);
+    Promise.all([fetchAssignments(), fetchMacrocycle(), fetchCoachInvites(), refetchSessions(), refetchSignals()])
+      .then(([a, m, inv]) => {
+        setAssignments(a);
         setMacro(m?.macro ?? null); setCurrentWeek(m?.currentWeek ?? 1); setPlanId(m?.planId ?? null);
         setInvites(inv);
       })
