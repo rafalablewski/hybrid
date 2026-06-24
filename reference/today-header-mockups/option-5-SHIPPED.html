@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today header — SHIPPED (Option 5)</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;font-family:"Archivo",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:16px;padding:34px 16px 60px}
+.label{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8b8f86}
+.label b{color:#c4f035}
+.frames{display:flex;gap:26px;flex-wrap:wrap;justify-content:center}
+.cap{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:10px}
+
+/* theme scopes */
+.dark{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--limeT:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--violet:#c9a9f0;--red:#e0625e}
+.light{--ink:#e9ece6;--ink2:#dfe2da;--line:#cdd0c6;--lime:#c4f035;--limeT:#4c6606;--chalk:#14160f;--ash:#5a5e54;--violet:#5f3f93;--red:#a82e2a}
+
+.phone{position:relative;width:360px;height:560px;border-radius:44px;background:var(--ink);overflow:hidden;border:1px solid #1c1e1c;box-shadow:0 24px 64px -20px rgba(0,0,0,.8),inset 0 0 0 7px rgba(0,0,0,.25)}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:130px;height:24px;background:#000;border-radius:0 0 15px 15px;z-index:30}
+.aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.aurora i{position:absolute;border-radius:50%;filter:blur(64px);mix-blend-mode:screen}
+.aurora .a1{width:230px;height:230px;background:var(--lime);top:-50px;left:-60px;opacity:.16}
+.aurora .a2{width:220px;height:220px;background:#7fd4e8;top:110px;right:-80px;opacity:.12}
+.aurora .a3{width:260px;height:260px;background:var(--violet);bottom:-70px;left:-50px;opacity:.12}
+.light .aurora i{mix-blend-mode:multiply;opacity:.1}
+.screen{position:relative;z-index:10;height:100%;padding:50px 22px 24px;display:flex;flex-direction:column;color:var(--chalk)}
+
+/* ===== shipped header ===== */
+.hdr{display:flex;align-items:center;justify-content:space-between}
+.avatar{position:relative;width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--lime) 13%,transparent);border:1px solid var(--lime);display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--limeT);cursor:pointer}
+.avatar .live{position:absolute;bottom:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:var(--lime);border:2.5px solid var(--ink)}
+.logo{display:flex;flex-direction:column;align-items:center;gap:5px}
+.logo .wm{font-weight:900;font-size:19px;letter-spacing:-.03em;line-height:1}
+.logo .wm .d{color:var(--limeT)}
+.logo .rule{width:26px;height:3px;border-radius:2px;background:var(--lime)}
+.bell{position:relative;width:44px;height:44px;border-radius:14px;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center;cursor:pointer}
+.bell svg{width:20px;height:20px}
+.badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:700;color:#fff}
+
+/* card */
+.card{margin-top:20px;background:var(--ink2);border:1px solid var(--line);border-radius:26px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.row{display:flex;justify-content:space-between;align-items:center}
+.kick{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--limeT)}
+.ring{width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--lime) 0 320deg,var(--line) 0);display:grid;place-items:center}
+.ring span{width:34px;height:34px;border-radius:50%;background:var(--ink2);display:grid;place-items:center;font-weight:900;font-size:14px}
+.start{background:var(--lime);color:#0c0d0c;border:none;border-radius:999px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer}
+.h2{font-size:23px;font-weight:900;margin-top:10px}
+.sub{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--violet);margin-top:3px}
+.ex{display:flex;justify-content:space-between;padding-top:9px;margin-top:9px;border-top:1px solid var(--line)}
+.ex.first{border-top:none;margin-top:8px}
+.ex b{font-weight:700;font-size:14px}
+.ex .m{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ash)}
+.dots{display:flex;gap:7px;justify-content:center;margin-top:14px}
+.dots i{width:7px;height:7px;border-radius:999px;background:var(--line)}
+.dots i.on{width:20px;background:var(--lime)}
+</style>
+</head>
+<body>
+<div class="label">Shipped · Option <b>5</b> — profile · HYBRID logo · notifications (web + mobile)</div>
+<div class="frames">
+  <div>
+    <div class="cap" style="color:#8b8f86">Dark</div>
+    <div class="phone dark" id="d"></div>
+  </div>
+  <div>
+    <div class="cap" style="color:#8b8f86">Light</div>
+    <div class="phone light" id="l"></div>
+  </div>
+</div>
+<script>
+const inner = `
+  <div class="notch"></div>
+  <div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+  <div class="screen">
+    <header class="hdr">
+      <div class="avatar">RA<span class="live"></span></div>
+      <div class="logo"><div class="wm">HYBRID<span class="d">.</span></div><div class="rule"></div></div>
+      <button class="bell" aria-label="Notifications">
+        <svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ash)">
+          <path d="M36 16.5C44.2843 16.5 51 23.2157 51 31.5V38.2188C51 39.6883 51.5393 41.1067 52.5155 42.205L56.3425 46.5104C58.9221 49.4124 56.862 54 52.9792 54H19.0208C15.1379 54 13.0778 49.4124 15.6574 46.5104L19.4844 42.205C20.4607 41.1067 21 39.6883 21 38.2188L21 31.5C21 23.2157 27.7157 16.5 36 16.5ZM36 16.5V9M33 63H39"/>
+        </svg>
+        <span class="badge">3</span>
+      </button>
+    </header>
+    <div class="card">
+      <div class="row"><span class="kick">Your plan today</span>
+        <div class="row" style="gap:10px"><div class="ring"><span>92</span></div><button class="start">Start →</button></div>
+      </div>
+      <div class="h2">Lower Power + Zone 2</div>
+      <div class="sub">Push · Day 3/5 · Build wk 4/12</div>
+      <div class="ex first"><b>Back Squat</b><span class="m">5×3 · RPE 8</span></div>
+      <div class="ex"><b>Romanian Deadlift</b><span class="m">3×8 · RPE 7</span></div>
+      <div class="ex"><b>Zone 2 Bike</b><span class="m">30:00</span></div>
+    </div>
+    <div class="dots"><i class="on"></i><i></i></div>
+  </div>`;
+document.getElementById('d').innerHTML = inner;
+document.getElementById('l').innerHTML = inner;
+</script>
+</body>
+</html>

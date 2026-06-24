@@ -10,6 +10,7 @@ import { fs, space,
   computeAccountability,
   habitStrength,
   weeklyRecap,
+  buildActivityFeed,
   currentPhase,
   planToday,
   planDayToBlocks,
@@ -121,6 +122,14 @@ export default function AuroraToday({
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
 
+  // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
+  // count (the shared activity feed; never a fabricated number).
+  const initials = useMemo(
+    () => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "A",
+    [name],
+  );
+  const notifCount = useMemo(() => buildActivityFeed({ sessions }).length, [sessions]);
+
   // Horizontal pager (Plan today ⇄ AI coach) — track the active card so the dots
   // below clearly signal there's a second card to swipe to.
   const pagerRef = useRef<HTMLDivElement>(null);
@@ -131,21 +140,43 @@ export default function AuroraToday({
     setActiveCard(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
 
-  const iconBtn = { width: 44, height: 44, borderRadius: "50%", background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
+  // Squared (rounded-rect) icon button — the Today-header treatment (step 1).
+  const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" }}>
-      {/* Greeting + search/bell — the greeting is a single quiet line so the
-          PLAN (the reason you opened the app) is the hero, not your own name. */}
+      {/* TODAY HEADER (step-1 redesign) — profile · HYBRID wordmark · bell.
+          Replaces the old greeting + search/bell row: the brand sits centre with
+          a lime accent rule, the avatar opens the profile, the bell carries a
+          live activity count. */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ color: C("ash"), fontSize: fs.note }}>
-          {t("w.home.today.hi")} <span style={{ fontWeight: 700, color: C("chalk") }}>{name.split(" ")[0]}</span>
+        {/* profile — avatar opens the account screen */}
+        <button
+          onClick={() => (onNavigate ? onNavigate("profile") : router.push("/profile"))}
+          aria-label={t("w.home.today.profileAria")}
+          style={{ position: "relative", width: 44, height: 44, borderRadius: 14, background: `${C("lime")}22`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}
+        >
+          {initials}
+          {/* live dot */}
+          <span style={{ position: "absolute", bottom: -3, right: -3, width: 12, height: 12, borderRadius: "50%", background: C("lime"), border: `2.5px solid ${C("ink")}` }} />
+        </button>
+        {/* centred wordmark + lime accent rule */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+          <div style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
+            HYBRID<span style={{ color: "var(--lime-text)" }}>.</span>
+          </div>
+          <div style={{ width: 26, height: 3, borderRadius: 2, background: C("lime") }} />
         </div>
-        <div style={{ display: "flex", gap: space.ms }}>
-          <button onClick={() => (onNavigate ? onNavigate("exercises") : router.push("/exercises"))} style={iconBtn} aria-label={t("w.home.today.searchAria")}><AuroraIcon name="search" size={20} color={C("ash")} /></button>
-          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}><AuroraIcon name="bell" size={20} color={C("ash")} /></button>
-        </div>
+        {/* notifications — count badge from the real activity feed */}
+        <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
+          <AuroraIcon name="bell" size={20} color={C("ash")} />
+          {notifCount > 0 && (
+            <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
+              {notifCount > 9 ? "9+" : notifCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* PLAN TODAY ⇄ AI COACH — horizontal, scroll-snapping pager. Each card sits

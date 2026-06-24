@@ -17,6 +17,7 @@ import {
   computeAccountability,
   habitStrength,
   weeklyRecap,
+  buildActivityFeed,
   planToday,
   srSingleReps,
   FUNNEL,
@@ -166,6 +167,15 @@ export default function AuroraHome() {
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
 
+  // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
+  // count (the shared activity feed; never a fabricated number).
+  const initials = useMemo(() => {
+    const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "·";
+    return (parts[0]![0]! + (parts[1]?.[0] ?? "")).toUpperCase();
+  }, [name]);
+  const notifCount = useMemo(() => buildActivityFeed({ sessions, assignments }).length, [sessions, assignments]);
+
   // Reconciled "This week" — macrocycle phase arbitrates daily + sport transfer.
   const sportRx = useMemo(() => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined), [sportSel, sessions]);
   const reconciled = useMemo(() => (macro ? reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek }) : null), [macro, rx, sportRx, currentWeek]);
@@ -259,22 +269,33 @@ export default function AuroraHome() {
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         <Animated.View style={enterStyle}>
-        {/* Greeting + search/bell — the greeting is one quiet line so the PLAN
-            (the reason you opened the app), not your own name, is the hero. */}
+        {/* TODAY HEADER (step-1 redesign) — profile · HYBRID wordmark · bell.
+            Replaces the old greeting + search/bell row: the brand sits centre
+            with a lime accent rule, the avatar opens the profile, the bell
+            carries a live activity count. */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash }}>
-            {t("w.home.today.hi")} <Text style={{ fontFamily: F.bold, color: C.chalk }}>{name.split(" ")[0]}</Text>
-          </Text>
-          <View style={{ flexDirection: "row", gap: space.sm }}>
-            {/* Was a bare View — looked tappable but did nothing. Wire it to the
-                searchable Exercises browser so the magnifier actually searches. */}
-            <Pressable onPress={() => router.push("/exercises")} accessibilityRole="button" accessibilityLabel="Search exercises" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="search" size={20} color={C.ash} />
-            </Pressable>
-            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel="Notifications" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="bell" size={20} color={C.ash} />
-            </Pressable>
+          {/* profile — avatar opens the You / account tab */}
+          <Pressable onPress={() => router.push("/(tabs)/you")} accessibilityRole="button" accessibilityLabel={t("w.home.today.profileAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
+            {/* live dot */}
+            <View style={{ position: "absolute", bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime, borderWidth: 2.5, borderColor: C.ink }} />
+          </Pressable>
+          {/* centred wordmark + lime accent rule */}
+          <View style={{ alignItems: "center", gap: 5 }}>
+            <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
+              HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
+            </Text>
+            <View style={{ width: 26, height: 3, borderRadius: 2, backgroundColor: C.lime }} />
           </View>
+          {/* notifications — count badge from the real activity feed */}
+          <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="bell" size={20} color={C.ash} />
+            {notifCount > 0 && (
+              <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
         {/* PLAN TODAY ⇄ AI COACH — horizontal snapping pager + dots */}
