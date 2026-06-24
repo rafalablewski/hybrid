@@ -88,7 +88,11 @@ export const GOAL_TREE: GoalNode[] = [
       { id: "pl-5day", name: "5-Day Powerbuilding", weeks: 12, sessions: 5, tag: "Powerbuilding", desc: "Three heavy main-lift days, a volume day, and a dedicated upper-body day. Maximal strength with the muscle to back it up.", focus: ["Strength", "Hypertrophy"], hot: true },
     ] },
   { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: AMBER, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
-    plans: [] },
+    plans: [
+      { id: "oly-4day", name: "4-Day Intermediate", weeks: 12, sessions: 4, tag: "4 Days", desc: "The strongest balance of progress and recovery. Snatch, clean & jerk, and front and back squat each trained twice a week — ~90% of the results with far less fatigue than elite training.", focus: ["Power", "Strength"], hot: true },
+      { id: "oly-3day", name: "3-Day Beginner", weeks: 8, sessions: 3, tag: "Technique", desc: "Build the lifts and the engine. Percentage-based snatch and clean & jerk practice plus squats and pulls — fitness and technique for the recreational lifter.", focus: ["Technique", "Power"] },
+      { id: "oly-5day", name: "5-Day Advanced", weeks: 12, sessions: 5, tag: "5 Days", desc: "Serious-club volume: heavy singles, dedicated power and volume days, and high squat and pull frequency. For the focused Olympic weightlifter.", focus: ["Power", "Strength"], hot: true },
+    ] },
   { id: "strongman", name: "Strongman", icon: "◤", color: VIOLET, category: "Strength", blurb: "Carry, press, and pull heavy odd objects. Raw, full-body, real-world strength.",
     plans: [] },
   // ---- Physique ----
@@ -299,6 +303,123 @@ export const PLAN_DETAIL: Record<string, PlanDetail> = {
       ] },
     ],
     progression: "Warm up every session: 5 min cardio + hip/arm circles + bodyweight squats, then ramp the first main lift (empty bar ×10, 40% ×5, 55% ×5, 70% ×3) into the work sets. Push the heavy main lifts to RPE 8 and add load when all reps move well; keep the volume day around RPE 7 to bank tonnage without burning out. Deload every 6th week: cut volume ~50% and intensity 10–15%.",
+  },
+  // ---- Olympic Weightlifting ----
+  // Intensity column carries the prescription as the sport coaches it: a % of
+  // 1RM where given, a qualitative cue for the classic lifts ("Heavy" = work up
+  // to a heavy single/double, "Volume" = lighter technical tonnage), an RPE for
+  // strength/accessory work, and "—" for skill/AMRAP effort.
+  "oly-3day": {
+    level: "Beginner",
+    forWho: "Recreational lifters who can already snatch and clean & jerk safely and train 3 days/week — learning technique while building a base.",
+    outcome: "A more reliable snatch and clean & jerk plus the squat and pull strength that underpins them, with the athleticism and mobility the sport demands.",
+    sessionLength: "75–90 min",
+    equipment: "Full gym (barbell, bumper plates, platform, squat rack, rings/bar)",
+    split: ["Day 1", "Rest", "Day 2", "Rest", "Day 3", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Snatch", items: [
+        { name: "Snatch", sr: "6 × 2", rest: "2:30", rpe: "65–75%" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "3 × 8", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Plank", sr: "3 × 60 sec", rest: "1:00", rpe: "—" },
+      ] },
+      { day: "Day 2 — Clean & Jerk", items: [
+        { name: "Clean & Jerk", sr: "6 × 2", rest: "2:30", rpe: "65–75%" },
+        { name: "Front Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Push Press", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Chest Supported Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 3 — Power", items: [
+        { name: "Power Snatch", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Power Clean", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "4 × 6", rest: "3:00", rpe: "8" },
+        { name: "Snatch Pull", sr: "4 × 4", rest: "2:00", rpe: "8" },
+        { name: "Back Extension", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min row/bike/rope + ankle & hip mobility, thoracic rotations and PVC pass-throughs, then 2 barbell rounds (muscle snatch, overhead squat, snatch balance, muscle clean, front squat, push press ×5). Keep the classic lifts in the 65–75% technical range and add load only when the bar speed and positions stay crisp. Beginner weekly volume targets: 20–40 reps of snatch variations, 20–40 of clean variations, 8–15 squat sets, 6–10 pull sets.",
+  },
+  "oly-4day": {
+    level: "Intermediate",
+    forWho: "Recreational-to-serious lifters training 4 days/week — the recommended pick: snatch, clean & jerk, and front and back squat each trained twice weekly.",
+    outcome: "Bigger snatch and clean & jerk built on heavy doubles, a strong front/back squat, and the power and consistency to express it — most of the result for far less fatigue than elite training.",
+    sessionLength: "90–105 min",
+    equipment: "Full gym (barbell, bumper plates, platform, squat rack, reverse hyper/GHR, rings/bar)",
+    split: ["Day 1", "Day 2", "Rest", "Day 3", "Day 4", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Snatch Focus", items: [
+        { name: "Snatch — Work to Heavy Double", sr: "Work to 2", rest: "3:00", rpe: "Heavy" },
+        { name: "Snatch Pull", sr: "4 × 3", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 2 — Clean & Jerk Focus", items: [
+        { name: "Clean & Jerk — Work to Heavy Double", sr: "Work to 2", rest: "3:00", rpe: "Heavy" },
+        { name: "Front Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Clean Pull", sr: "4 × 3", rest: "2:30", rpe: "8" },
+        { name: "Push Press", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Reverse Hyper", sr: "3 × 12", rest: "1:30", rpe: "9" },
+      ] },
+      { day: "Day 3 — Power", items: [
+        { name: "Power Snatch", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Power Clean", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Snatch Balance", sr: "5 × 2", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "4 × 5", rest: "3:00", rpe: "8" },
+        { name: "Cable Crunch", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 4 — Strength", items: [
+        { name: "Front Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Clean Pull", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Barbell Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Face Pull", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min row/bike/rope + ankle & hip mobility, thoracic rotations and PVC pass-throughs, then 2 barbell rounds (muscle snatch, overhead squat, snatch balance, muscle clean, front squat, push press ×5). On the focus days work up to a heavy double that still looks fast — when it moves well, nudge the daily heavy up week to week. Intermediate weekly volume targets: 40–70 reps of snatch variations, 40–70 of clean variations, 12–20 squat sets, 8–15 pull sets.",
+  },
+  "oly-5day": {
+    level: "Advanced",
+    forWho: "Focused Olympic weightlifters who can recover from 5 sessions/week — the volume and frequency you'd see in a serious club.",
+    outcome: "Maximal snatch and clean & jerk from heavy singles, technical volume work, and the high squat and pull frequency that drives a competitive total.",
+    sessionLength: "90–120 min",
+    equipment: "Full gym (barbell, bumper plates, platform, squat rack, reverse hyper/GHR, rings/bar)",
+    split: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Snatch", items: [
+        { name: "Snatch — Heavy Singles", sr: "Work to 1", rest: "3:00", rpe: "Heavy" },
+        { name: "Snatch Pull", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 2 — Clean & Jerk", items: [
+        { name: "Clean & Jerk — Heavy Singles", sr: "Work to 1", rest: "3:00", rpe: "Heavy" },
+        { name: "Front Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Push Press", sr: "5 × 5", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+      ] },
+      { day: "Day 3 — Power", items: [
+        { name: "Power Snatch", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Power Clean", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Snatch Balance", sr: "5 × 2", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "4 × 6", rest: "3:00", rpe: "8" },
+      ] },
+      { day: "Day 4 — Volume", items: [
+        { name: "Snatch — Volume Work", sr: "8 × 2", rest: "2:00", rpe: "Volume" },
+        { name: "Clean & Jerk — Volume Work", sr: "6 × 2", rest: "2:30", rpe: "Volume" },
+        { name: "Clean Pull", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Cable Crunch", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 5 — Strength", items: [
+        { name: "Front Squat — Heavy", sr: "5 × 2", rest: "3:00", rpe: "Heavy" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Barbell Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min row/bike/rope + ankle & hip mobility, thoracic rotations and PVC pass-throughs, then 2 barbell rounds (muscle snatch, overhead squat, snatch balance, muscle clean, front squat, push press ×5). Take the classic lifts to a heavy single that stays technically sound, then bank lighter, fast technical doubles on the volume day. Advanced weekly volume targets: 70–120 reps of snatch variations, 70–120 of clean variations, 15–25 squat sets, 10–20 pull sets — back the volume off ~50% on a deload week when bar speed or positions start to slip.",
   },
   // ---- Bodybuilding ----
   "bb-fb4": {
