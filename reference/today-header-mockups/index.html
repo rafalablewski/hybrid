@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today tab header — 5 options</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0c0d0c;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--line:#2a2d2a;--ink2:#141614}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;color:var(--chalk);font-family:"Archivo",system-ui,sans-serif;padding:48px 20px 80px}
+h1{font-size:30px;font-weight:900;letter-spacing:-.03em;text-align:center}
+h1 .d{color:var(--lime)}
+p.sub{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ash);text-align:center;margin-top:10px}
+.grid{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;max-width:1100px;margin:40px auto 0}
+a.opt{display:block;width:320px;padding:22px;border-radius:20px;background:var(--ink2);border:1px solid var(--line);text-decoration:none;color:var(--chalk);transition:.2s}
+a.opt:hover{border-color:var(--lime);transform:translateY(-3px)}
+a.opt .n{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+a.opt h2{font-size:20px;font-weight:800;margin-top:8px}
+a.opt em{display:block;font-style:normal;font-size:14px;color:var(--ash);margin-top:8px;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>Today header — 5 options<span class="d">.</span></h1>
+<p class="sub">profile · HYBRID logo · notifications — open each to compare</p>
+<div class="grid">
+  <a class="opt" href="option-1-balanced.html"><div class="n">Option 1</div><h2>Balanced</h2><em>Avatar left, centred wordmark, bell right, with a hairline divider. The safe, classic top bar.</em></a>
+  <a class="opt" href="option-2-glass-bar.html"><div class="n">Option 2</div><h2>Liquid Glass bar</h2><em>All three elements inside one frosted floating glass pill over a stronger aurora. On-brand "Liquid Glass".</em></a>
+  <a class="opt" href="option-3-logo-left.html"><div class="n">Option 3</div><h2>Logo-left lockup</h2><em>Circular H. mark + wordmark on the left, bell & avatar grouped right. Standard app identity bar.</em></a>
+  <a class="opt" href="option-4-hero-wordmark.html"><div class="n">Option 4</div><h2>Hero wordmark</h2><em>Big centred HYBRID statement with date kicker; avatar & bell float as glass buttons in the corners. Airy.</em></a>
+  <a class="opt" href="option-5-compact-accent.html"><div class="n">Option 5</div><h2>Compact + accent</h2><em>Squared icons, centred logo with a lime accent rule, live dot on the avatar and a count badge on the bell. Dense/utility.</em></a>
+</div>
+</body>
+</html>

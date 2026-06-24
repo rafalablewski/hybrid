@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today header · Option 2 — Liquid Glass bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--display:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050605;font-family:var(--display);color:var(--chalk);min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:18px;padding:36px 16px 60px}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+.label b{color:var(--lime)}
+.phone{position:relative;width:390px;height:780px;border-radius:46px;background:var(--ink);overflow:hidden;border:1px solid #1c1e1c;box-shadow:0 30px 80px -20px rgba(0,0,0,.8),inset 0 0 0 8px #0a0b0a}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:140px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:30}
+.aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.aurora i{position:absolute;border-radius:50%;filter:blur(64px);mix-blend-mode:screen}
+.aurora .a1{width:280px;height:280px;background:var(--lime);top:-50px;left:-60px;opacity:.26}
+.aurora .a2{width:260px;height:260px;background:var(--blue);top:90px;right:-90px;opacity:.2}
+.aurora .a3{width:300px;height:300px;background:var(--violet);bottom:-70px;left:-50px;opacity:.18}
+.screen{position:relative;z-index:10;height:100%;overflow:hidden;padding:50px 18px 24px;display:flex;flex-direction:column}
+.iconbtn{position:relative;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn svg{width:21px;height:21px}
+.dot-badge{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid rgba(20,22,20,.9)}
+.avatar{width:40px;height:40px;border-radius:50%;flex:none;background:linear-gradient(150deg,#3a4a16,#1d2410);display:grid;place-items:center;color:var(--lime);font-weight:900;font-size:15px}
+.body{margin-top:22px;display:flex;flex-direction:column;gap:14px;flex:1}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:26px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.22)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.row{display:flex;justify-content:space-between;align-items:center}
+.ring{width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--lime) 0 320deg,var(--line) 0);display:grid;place-items:center}
+.ring span{width:34px;height:34px;border-radius:50%;background:var(--ink2);display:grid;place-items:center;font-weight:900;font-size:14px}
+.start{background:var(--lime);color:var(--ink);border:none;border-radius:999px;padding:9px 16px;font-family:var(--display);font-weight:800;font-size:13px;cursor:pointer}
+.h2{font-size:23px;font-weight:900;margin-top:10px}
+.sub{font-family:var(--mono);font-size:12px;color:var(--violet);margin-top:3px}
+.ex{display:flex;justify-content:space-between;padding-top:9px;margin-top:9px;border-top:1px solid var(--line)}
+.ex.first{border-top:none;margin-top:8px}
+.ex b{font-weight:700;font-size:14px}
+.ex .m{font-family:var(--mono);font-size:12px;color:var(--ash)}
+.dots{display:flex;gap:7px;justify-content:center;margin-top:6px}
+.dots i{width:7px;height:7px;border-radius:999px;background:var(--line)}
+.dots i.on{width:20px;background:var(--lime)}
+
+/* ===== OPTION 2 — three elements inside one frosted Liquid-Glass bar ===== */
+.glassbar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 14px;border-radius:999px;
+  background:rgba(28,30,26,.45);
+  backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid rgba(243,244,239,.10);
+  box-shadow:inset 0 1.5px 0 rgba(243,244,239,.14),0 14px 40px -18px rgba(0,0,0,.6)}
+.glassbar .iconbtn,.glassbar .avatar{box-shadow:inset 0 0 0 1px rgba(243,244,239,.10)}
+.wordmark{font-weight:900;font-size:21px;letter-spacing:-.04em}
+.wordmark .d{color:var(--lime)}
+</style>
+</head>
+<body>
+<div class="label">Option <b>2</b> · Liquid Glass — frosted floating bar</div>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+  <div class="screen">
+
+    <!-- NEW HEADER -->
+    <header class="glassbar">
+      <div class="avatar">RA</div>
+      <div class="wordmark">HYBRID<span class="d">.</span></div>
+      <button class="iconbtn" aria-label="Notifications">
+        <svg viewBox="0 0 72 72" fill="none" stroke="#f3f4ef" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M36 16.5C44.2843 16.5 51 23.2157 51 31.5V38.2188C51 39.6883 51.5393 41.1067 52.5155 42.205L56.3425 46.5104C58.9221 49.4124 56.862 54 52.9792 54H19.0208C15.1379 54 13.0778 49.4124 15.6574 46.5104L19.4844 42.205C20.4607 41.1067 21 39.6883 21 38.2188L21 31.5C21 23.2157 27.7157 16.5 36 16.5ZM36 16.5V9M33 63H39"/>
+        </svg>
+        <span class="dot-badge"></span>
+      </button>
+    </header>
+
+    <main class="body">
+      <div class="card">
+        <div class="row">
+          <span class="kick" style="color:var(--lime)">Your plan today</span>
+          <div class="row" style="gap:10px">
+            <div class="ring"><span>92</span></div>
+            <button class="start">Start →</button>
+          </div>
+        </div>
+        <div class="h2">Lower Power + Zone 2</div>
+        <div class="sub">Push · Day 3/5 · Build wk 4/12</div>
+        <div class="ex first"><b>Back Squat</b><span class="m">5×3 · RPE 8</span></div>
+        <div class="ex"><b>Romanian Deadlift</b><span class="m">3×8 · RPE 7</span></div>
+        <div class="ex"><b>Zone 2 Bike</b><span class="m">30:00</span></div>
+      </div>
+      <div class="dots"><i class="on"></i><i></i></div>
+    </main>
+
+  </div>
+</div>
+</body>
+</html>
