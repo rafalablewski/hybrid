@@ -60,7 +60,7 @@ export type StoryStyle = {
 };
 
 export const STORY_STYLES: readonly StoryStyle[] = [
-  // 1 — Aurora: the signature dark membrane (ink + a lime glow). The default.
+  // 1 — Aurora: the signature dark membrane (ink + a lime glow).
   {
     id: "aurora",
     nameKey: "summary.style.aurora",
@@ -75,7 +75,7 @@ export const STORY_STYLES: readonly StoryStyle[] = [
     swatch: colors.lime,
   },
   // 2 — Liquid Glass: a frosted translucent slab over a lime×blue blur. The
-  // app's signature Liquid Glass surface, as a share card.
+  // app's signature Liquid Glass surface, as a share card. The default.
   {
     id: "liquid-glass",
     nameKey: "summary.style.liquidGlass",
@@ -97,9 +97,13 @@ export const STORY_STYLES: readonly StoryStyle[] = [
   },
 ] as const;
 
-export const DEFAULT_STORY_STYLE: StoryStyleId = "aurora";
+export const DEFAULT_STORY_STYLE: StoryStyleId = "liquid-glass";
 
-/** Resolve a style by id, falling back to the default (never returns null). */
+/** Resolve a style by id, falling back to the default style (never returns null). */
 export function storyStyle(id?: StoryStyleId | string | null): StoryStyle {
-  return STORY_STYLES.find((s) => s.id === id) ?? STORY_STYLES[0]!;
+  return (
+    STORY_STYLES.find((s) => s.id === id) ??
+    STORY_STYLES.find((s) => s.id === DEFAULT_STORY_STYLE) ??
+    STORY_STYLES[0]!
+  );
 }
