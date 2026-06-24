@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
@@ -13,8 +13,12 @@ export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void })
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
-  if (plan && goal)
+  if (plan && goal) {
+    const program = programFor(plan.id);
+    if (program)
+      return <PercentProgramView goal={goal} plan={plan} program={program} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
     return <PlanDetailView goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+  }
   if (goal)
     return (
       <PlanList
@@ -245,6 +249,149 @@ function PlanDetailView({
           : state === "done"
             ? "✓ Enrolled — see Periodize"
             : `Enroll in ${plan.name} →`}
+      </button>
+      {state === "error" && (
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={AMBER}>
+          Couldn&apos;t enroll — sign in (real auth) and try again.
+        </Mono>
+      )}
+    </div>
+  );
+}
+
+// Discipline-shaped (% of 1RM) program view — the Olympic-weightlifting shape:
+// a week selector, NL (number-of-lifts) volume, AM/PM days, complexes, tempo, and
+// the percentage prescription KEPT as written (with the working kg shown next to
+// it once you enter your maxes). Reads the shared planProgramView from core, so
+// web + mobile render the same thing.
+function PercentProgramView({
+  goal,
+  plan,
+  program,
+  back,
+  onEnrolled,
+}: {
+  goal: GoalNode;
+  plan: GoalPlan;
+  program: PlanProgram;
+  back: () => void;
+  onEnrolled?: () => void;
+}) {
+  const [week, setWeek] = useState(1);
+  const [maxes, setMaxes] = useState<Record<string, number>>({});
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const view = planProgramView(program, { week, maxes });
+
+  const enroll = async () => {
+    setState("busy");
+    try {
+      const res = await fetch("/api/macrocycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: goal.name, planId: plan.id }),
+      });
+      if (!res.ok) return setState("error");
+      setState("done");
+      onEnrolled?.();
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 860 }}>
+      <BackLink onClick={back} label={goal.name} />
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }}>
+        {plan.weeks} weeks · {plan.sessions}×/week · {plan.tag}
+        {view.anchored ? " · peaks to competition" : ""}
+      </Mono>
+
+      {/* Maxes — turn the % into working kg. Optional; % stays either way. */}
+      <Card style={{ marginBottom: 16 }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+          Your maxes (kg) — optional, to see working weights
+        </Mono>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
+          {view.refLifts.map((rl) => (
+            <label key={rl.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Mono s={{ fontSize: fs.nano }} c={ASH}>{rl.label}</Mono>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={maxes[rl.key] ?? ""}
+                onChange={(e) => {
+                  const n = parseFloat(e.target.value);
+                  setMaxes((m) => {
+                    const next = { ...m };
+                    if (Number.isFinite(n) && n > 0) next[rl.key] = n;
+                    else delete next[rl.key];
+                    return next;
+                  });
+                }}
+                style={{ ...mono, width: 78, fontSize: fs.body, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 9px", outline: "none" }}
+              />
+            </label>
+          ))}
+        </div>
+      </Card>
+
+      {/* Week selector + week volume. */}
+      <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+        {view.weeks.map((w) => (
+          <button
+            key={w}
+            onClick={() => setWeek(w)}
+            style={{ ...mono, fontSize: fs.caption, color: w === view.week ? ON_ACCENT : CHALK, background: w === view.week ? LIME : INK2, border: `1px solid ${w === view.week ? LIME : LINE}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}
+          >
+            Wk {w}
+          </button>
+        ))}
+        <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={ASH}>
+          {view.weekNL} lifts this week
+        </Mono>
+      </div>
+
+      {view.days.map((day, di) => (
+        <Card key={di} style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+              {day.title}
+              {day.kindLabel ? ` — ${day.kindLabel}` : ""}
+            </Mono>
+            {day.nl > 0 && <Mono s={{ fontSize: fs.nano }} c={ASH}>{day.nl} lifts</Mono>}
+          </div>
+          {day.sessions.map((s, si) => (
+            <div key={si} style={{ marginTop: 10 }}>
+              {s.label && (
+                <Mono s={{ fontSize: fs.nano, letterSpacing: ".1em" }} c={LIME}>
+                  {s.label} · {s.nl} lifts
+                </Mono>
+              )}
+              {s.lifts.map((l, li) => (
+                <div key={li} style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>
+                    {l.note && <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 2 }} c={ASH}>{l.note}</Mono>}
+                  </div>
+                  <Mono s={{ fontSize: fs.caption, textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }} c={CHALK}>
+                    {l.prescription}
+                  </Mono>
+                </div>
+              ))}
+            </div>
+          ))}
+        </Card>
+      ))}
+
+      <Info label="How it progresses" value={view.progression} />
+
+      <button
+        onClick={enroll}
+        disabled={state === "busy" || state === "done"}
+        style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: state === "done" ? INK2 : LIME, color: state === "done" ? LIME : ON_ACCENT, border: state === "done" ? `1px solid ${LIME}` : "none", borderRadius: 12, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}
+      >
+        {state === "busy" ? "Enrolling…" : state === "done" ? "✓ Enrolled — see Periodize" : `Enroll in ${plan.name} →`}
       </button>
       {state === "error" && (
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={AMBER}>

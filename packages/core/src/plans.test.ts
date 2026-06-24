@@ -2,10 +2,14 @@ import { describe, it, expect } from "vitest";
 import { plansForGoal, GOAL_TREE, PLAN_DETAIL } from "./plans";
 
 describe("plansForGoal", () => {
-  // All saved plans have been retired — every goal now carries 0 plans until
-  // real plans are uploaded. Guards against a plan sneaking back into the tree.
-  it("is empty for every goal in the library", () => {
+  // The old gym plans were retired; plans are being rebuilt goal-shaped. Olympic
+  // Weightlifting now carries the first one (the Soviet 8-week %-of-1RM block);
+  // every other goal is still empty until authored in its own shape.
+  it("carries the Soviet plan for Olympic Weightlifting, nothing elsewhere", () => {
+    const oly = plansForGoal("Olympic Weightlifting");
+    expect(oly.map((p) => p.id)).toEqual(["oly-soviet-8wk"]);
     for (const node of GOAL_TREE) {
+      if (node.id === "oly") continue;
       expect(plansForGoal(node.name)).toEqual([]);
     }
   });

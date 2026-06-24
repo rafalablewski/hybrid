@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -18,7 +18,11 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
-  if (plan && goal) return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+  if (plan && goal) {
+    const program = programFor(plan.id);
+    if (program) return <PercentDetail goal={goal} plan={plan} program={program} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+  }
   if (goal) return <List goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
   return (
@@ -120,4 +124,72 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
 
 function Info({ label, value }: { label: string; value: string }) {
   return <div style={card}><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div><p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 6, color: C("chalk") }}>{value}</p></div>;
+}
+
+// Aurora rendering of a discipline-shaped (% of 1RM) program — same shared
+// planProgramView as the classic web + mobile, in the rounded Aurora skin.
+function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNode; plan: GoalPlan; program: PlanProgram; back: () => void; onEnrolled?: () => void }) {
+  const { t } = useLang();
+  const [week, setWeek] = useState(1);
+  const [maxes, setMaxes] = useState<Record<string, number>>({});
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const view = planProgramView(program, { week, maxes });
+  const enroll = async () => {
+    setState("busy");
+    try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
+    catch { setState("error"); }
+  };
+  const setMax = (key: string, raw: string) => setMaxes((m) => { const n = parseFloat(raw); const next = { ...m }; if (Number.isFinite(n) && n > 0) next[key] = n; else delete next[key]; return next; });
+  return (
+    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {backLink(back, goal.name)}
+      <h2 style={{ fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }}>{plan.weeks} {t("w.train.plans.weeks")} · {plan.sessions}{t("w.train.plans.perWeek")} · {plan.tag}{view.anchored ? " · peaks to competition" : ""}</div>
+
+      <div style={{ ...card, marginBottom: 16 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Your maxes (kg) — optional, to see working weights</div>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
+          {view.refLifts.map((rl) => (
+            <label key={rl.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rl.label}</span>
+              <input type="number" inputMode="numeric" value={maxes[rl.key] ?? ""} onChange={(e) => setMax(rl.key, e.target.value)} style={{ fontFamily: "var(--font-mono)", width: 78, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 10px", outline: "none" }} />
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+        {view.weeks.map((w) => (
+          <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>Wk {w}</button>
+        ))}
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekNL} lifts this week</span>
+      </div>
+
+      {view.days.map((day, di) => (
+        <div key={di} style={{ ...card, marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("amber") }}>{day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}</div>
+            {day.nl > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{day.nl} lifts</span>}
+          </div>
+          {day.sessions.map((s, si) => (
+            <div key={si} style={{ marginTop: 10 }}>
+              {s.label && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", color: C("lime") }}>{s.label} · {s.nl} lifts</div>}
+              {s.lifts.map((l, li) => (
+                <div key={li} style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
+                  <div style={{ minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>{l.note && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{l.note}</div>}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>{l.prescription}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <Info label={t("w.train.plans.progression")} value={view.progression} />
+      <button onClick={enroll} disabled={state === "busy" || state === "done"} style={{ fontWeight: 800, fontSize: fs.note, background: state === "done" ? C("ink2") : C("lime"), color: state === "done" ? C("lime") : C("ink"), border: state === "done" ? `1px solid ${C("lime")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}>
+        {state === "busy" ? t("w.train.plans.enrolling") : state === "done" ? t("w.train.plans.enrolledSee") : `${t("w.train.plans.enrollIn")} ${plan.name} →`}
+      </button>
+      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("amber") }}>{t("w.train.plans.enrollError")}</div>}
+    </div>
+  );
 }

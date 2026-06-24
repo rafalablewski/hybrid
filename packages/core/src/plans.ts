@@ -76,16 +76,19 @@ export interface PlanDetail {
 //  GOAL TREE — choose a goal, then see the plans built for it.
 // ============================================================
 
-// NOTE: ALL saved plans have been retired — every goal now carries 0 plans. The
-// goals below are kept (the tree, categories, grouping, onboarding goal picker
-// and detail rendering all stay live); real plans will be uploaded per goal.
-// Each goal's `plans` array is intentionally empty until then.
+// NOTE: the old one-size-fits-all gym plans were retired; plans are being
+// rebuilt goal-by-goal in the SHAPE that fits each goal (see plan-program.ts +
+// reference/plan-model-redesign.md). Olympic Weightlifting now carries the first
+// discipline-shaped plan (the Soviet 8-week %-of-1RM block, surfaced via
+// programFor()); the rest stay empty until authored in their own shape.
 export const GOAL_TREE: GoalNode[] = [
   // ---- Strength ----
   { id: "power", name: "Powerlifting", icon: "▬", color: VIOLET, category: "Strength", blurb: "One goal: a bigger squat, bench, and deadlift total.",
     plans: [] },
   { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: AMBER, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
-    plans: [] },
+    plans: [
+      { id: "oly-soviet-8wk", name: "Soviet 8-Week Peaking", weeks: 8, sessions: 6, tag: "% of 1RM", desc: "A classic Soviet block: percentage-based snatch, clean & jerk, squat and pull work that waves volume and intensity across 8 weeks and tapers into a competition. AM/PM training days, complexes, tempo pulls — programmed by number of lifts, not reps to failure.", focus: ["Power", "Technique"], hot: true },
+    ] },
   { id: "strongman", name: "Strongman", icon: "◤", color: VIOLET, category: "Strength", blurb: "Carry, press, and pull heavy odd objects. Raw, full-body, real-world strength.",
     plans: [] },
   // ---- Physique ----

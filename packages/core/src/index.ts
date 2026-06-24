@@ -15,6 +15,8 @@ export * from "./semantic";
 export * from "./engines";
 export * from "./plans";
 export * from "./plan-day";
+export * from "./plan-program";
+export * from "./plan-programs";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
