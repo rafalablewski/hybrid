@@ -100,9 +100,7 @@ export default function PercentProgram({
           </View>
 
           {day.sessions.map((s, si) => {
-            // Mixed sessions (run + gym) get 4-col headers so gym rows align;
-            // prose/strength rows within that session render a spanning prescription.
-            const hasStructured = s.lifts.some((l) => l.rpe != null);
+            const isHypo = s.lifts.some((l) => l.rpe != null);
             return (
               <View key={si}>
                 {/* Session sub-label (AM / PM) */}
@@ -115,7 +113,7 @@ export default function PercentProgram({
                 {/* Column headers */}
                 <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line }}>
                   <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
-                  {hasStructured ? (
+                  {isHypo ? (
                     <>
                       <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets</Text>
                       <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Wt</Text>
@@ -133,19 +131,16 @@ export default function PercentProgram({
                       <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{l.name}</Text>
                       {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
                     </View>
-                    {l.rpe != null ? (
-                      // Structured gym row — 3 fixed-width right cells
+                    {isHypo ? (
                       <>
                         <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{l.setsReps ?? "—"}</Text>
                         <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.body, color: C.ash, textAlign: "right" }}>{l.weight ?? "—"}</Text>
                         <View style={{ width: 38, alignItems: "flex-end" }}>
-                          <MobileRpeBadge rpe={l.rpe} C={C} />
+                          {l.rpe != null && <MobileRpeBadge rpe={l.rpe} C={C} />}
                         </View>
                       </>
                     ) : (
-                      // Prose/strength row — prescription fills the right side,
-                      // matching the total width of the 3 gym columns when mixed.
-                      <Text style={{ width: hasStructured ? 146 : undefined, maxWidth: hasStructured ? undefined : "60%", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
                     )}
                   </View>
                 ))}

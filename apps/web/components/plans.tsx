@@ -365,10 +365,7 @@ function PercentProgramView({
             {day.volume && <Mono s={{ fontSize: fs.nano }} c={ASH}>{day.volume}</Mono>}
           </div>
           {day.sessions.map((s, si) => {
-            // A session may mix run/prose rows (no rpe) with gym rows (rpe set).
-            // When any row has rpe, we open 4 columns so gym rows align properly;
-            // prose/strength rows span those 3 right cols with their prescription.
-            const hasStructured = s.lifts.some((l) => l.rpe != null);
+            const isHypo = s.lifts.some((l) => l.rpe != null);
             return (
               <div key={si}>
                 {(s.label || s.volume) && (
@@ -382,7 +379,7 @@ function PercentProgramView({
                   <thead>
                     <tr>
                       <th style={{ ...thStyle }}>Exercise</th>
-                      {hasStructured ? (
+                      {isHypo ? (
                         <>
                           <th style={{ ...thStyle, textAlign: "right" }}>Sets × Reps</th>
                           <th style={{ ...thStyle, textAlign: "right" }}>Weight</th>
@@ -400,8 +397,7 @@ function PercentProgramView({
                           <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>
                           {l.note && <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 2 }} c={ASH}>{l.note}</Mono>}
                         </td>
-                        {l.rpe != null ? (
-                          // Structured gym row — 3 right cells
+                        {isHypo ? (
                           <>
                             <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
                               <Mono s={{ fontSize: fs.body }} c={CHALK}>{l.setsReps ?? "—"}</Mono>
@@ -410,19 +406,12 @@ function PercentProgramView({
                               <Mono s={{ fontSize: fs.body }} c={ASH}>{l.weight ?? "—"}</Mono>
                             </td>
                             <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
-                              <RpeBadge rpe={l.rpe} />
+                              {l.rpe != null && <RpeBadge rpe={l.rpe} />}
                             </td>
                           </>
-                        ) : hasStructured ? (
-                          // Prose/strength row inside a mixed session — span all 3 right cols.
-                          // No numCell here: width:1 + nowrap on a colspan breaks wrapping.
-                          <td colSpan={3} style={{ ...tdStyle, textAlign: "right", borderTop: `1px solid ${LINE}` }}>
-                            <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
-                          </td>
                         ) : (
-                          // Pure prose/strength session — single prescription cell
-                          <td style={{ ...tdStyle, textAlign: "right", borderTop: `1px solid ${LINE}` }}>
-                            <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
+                          <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
+                            <Mono s={{ fontSize: fs.caption, whiteSpace: "nowrap" }} c={CHALK}>{l.prescription}</Mono>
                           </td>
                         )}
                       </tr>
