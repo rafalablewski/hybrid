@@ -145,7 +145,7 @@ export default function PercentProgram({
                     ) : (
                       // Prose/strength row — prescription fills the right side,
                       // matching the total width of the 3 gym columns when mixed.
-                      <Text style={{ width: hasStructured ? 146 : undefined, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
+                      <Text style={{ width: hasStructured ? 146 : undefined, maxWidth: hasStructured ? undefined : "60%", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
                     )}
                   </View>
                 ))}
