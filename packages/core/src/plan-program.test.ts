@@ -113,7 +113,7 @@ describe("the Soviet 8-week program", () => {
     const allSteps = SOVIET_OWL_8WK.weeks
       .flatMap((w) => w.days)
       .flatMap((d) => d.sessions)
-      .flatMap((s) => s.lifts)
+      .flatMap((s) => s.lifts ?? [])
       .filter((l) => l.name === "Back Squat")
       .flatMap((l) => l.steps);
     expect(allSteps.some((s) => (s.pct ?? 0) > 100)).toBe(true);
