@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import { plansForGoal, GOAL_TREE, PLAN_DETAIL } from "./plans";
 
 describe("plansForGoal", () => {
-  // The old gym plans were retired; plans are being rebuilt goal-shaped. Olympic
-  // Weightlifting carries the Soviet %-of-1RM block and Running carries the 5K
-  // pace plan; every other goal is still empty until authored in its own shape.
+  // The old gym plans were retired; plans are being rebuilt goal-shaped. Each
+  // authored goal carries the plan in the shape that fits it; the rest are empty.
   it("carries the authored plans per goal, nothing elsewhere", () => {
     const authored: Record<string, string[]> = {
       oly: ["oly-soviet-8wk"],
       run: ["run-5k-beginner-9wk"],
+      bb: ["bb-ppl-6day"],
     };
     for (const node of GOAL_TREE) {
       expect(plansForGoal(node.name).map((p) => p.id)).toEqual(authored[node.id] ?? []);

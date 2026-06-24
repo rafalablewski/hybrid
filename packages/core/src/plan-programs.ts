@@ -672,12 +672,138 @@ export const RUN_5K_BEGINNER_9WK: PlanProgram = buildRunProgram(
   RUN_WEEKS,
 );
 
+// ============================================================
+//  HYPERTROPHY — the bodybuilding shape: a weekday split of exercises with
+//  sets × reps ranges. Same PlanProgram model + planProgramView, so it renders in
+//  the identical HYBRID plan UI — sets/reps instead of % or paces, and an
+//  exercise count instead of NL. One repeating week (run it for as long as you
+//  like, adding weight/reps each cycle). Source: a 6-day Push/Pull/Legs split.
+// ============================================================
+
+// An exercise row: [name, sets, reps] (sets/reps are ranges, e.g. "4–5", "6–12").
+type BBExercise = [string, string, string];
+// A focused training day: a weekday + a focus label + its exercises.
+interface BBDay {
+  day: string;
+  focus: string;
+  exercises: BBExercise[];
+}
+
+function buildBBDay(d: BBDay, index: number): PlanDay {
+  return {
+    index,
+    kind: "train",
+    title: `${d.day} · ${d.focus}`,
+    sessions: [
+      {
+        entries: d.exercises.map(([name, sets, reps], i) => ({
+          label: name,
+          detail: `${sets} × ${reps}`,
+          ...(i === 0 ? { note: "Main lift — progressive overload" } : {}),
+        })),
+      },
+    ],
+  };
+}
+
+const BB_DAYS: BBDay[] = [
+  {
+    day: "Mon",
+    focus: "Push (Bench)",
+    exercises: [
+      ["Bench Press", "4–5", "6–12 reps"],
+      ["Incline Bench Press", "3–4", "8–12 reps"],
+      ["Overhead Dumbbell Press", "3", "10–15 reps"],
+      ["Skull Crushers", "3", "10–15 reps"],
+      ["Lateral Raises", "3", "12–15 reps"],
+    ],
+  },
+  {
+    day: "Tue",
+    focus: "Pull (Chin-Up)",
+    exercises: [
+      ["Chin-Up", "4–5", "6–12 reps"],
+      ["Seated Cable Row", "4–5", "8–12 reps"],
+      ["Lat Pulldown", "4", "10–15 reps"],
+      ["Lying Biceps Curl", "3", "10–15 reps"],
+      ["Forearm Curl", "3", "12–15 reps"],
+    ],
+  },
+  {
+    day: "Wed",
+    focus: "Legs (Squat)",
+    exercises: [
+      ["Squat", "3–4", "6–10 reps"],
+      ["Romanian Deadlift", "2–3", "8–12 reps"],
+      ["Leg Extension", "3", "10–15 reps"],
+      ["Hamstring Curl", "3", "10–15 reps"],
+      ["Standing Calf Raise", "3", "12–15 reps"],
+    ],
+  },
+  {
+    day: "Thu",
+    focus: "Push (Overhead Press)",
+    exercises: [
+      ["Overhead Press", "4–5", "6–10 reps"],
+      ["Dips", "4–5", "AMRAP"],
+      ["Chest Fly", "3", "10–15 reps"],
+      ["Overhead Extensions", "3", "10–15 reps"],
+      ["Lateral Raises", "3", "12–15 reps"],
+    ],
+  },
+  {
+    day: "Fri",
+    focus: "Pull (Pull-Up)",
+    exercises: [
+      ["Pull-Up", "4–5", "AMRAP"],
+      ["T-Bar Row", "4–5", "8–12 reps"],
+      ["Pullover", "3", "10–15 reps"],
+      ["Dumbbell Curl", "3", "10–15 reps"],
+      ["Hammer Curl", "3", "10–15 reps"],
+    ],
+  },
+  {
+    day: "Sat",
+    focus: "Legs (Deadlift)",
+    exercises: [
+      ["Deadlift", "3–5", "6–12 reps"],
+      ["Leg Press", "3–5", "8–12 reps"],
+      ["Back Extensions", "3", "10–15 reps"],
+      ["Reverse Crunches", "3", "AMRAP"],
+    ],
+  },
+];
+
+export const BB_PPL_6DAY: PlanProgram = {
+  id: "bb-ppl-6day",
+  discipline: "hypertrophy",
+  inputsTitle: "Your working weights (kg) — optional, jot what you lifted last time",
+  inputs: [
+    { key: "bench", label: "Bench Press", kind: "number" },
+    { key: "ohp", label: "Overhead Press", kind: "number" },
+    { key: "squat", label: "Squat", kind: "number" },
+    { key: "deadlift", label: "Deadlift", kind: "number" },
+  ],
+  progression:
+    "A 6-day Push/Pull/Legs split built on progressive overload. Each day opens with a big compound (the MAIN LIFT) " +
+    "and fills in with complementary work. Run this week on repeat. PROGRESSION: fight to outlift yourself every " +
+    "session, especially on the first exercise — if you hit your rep targets, add a little weight; if not, beat last " +
+    "time's total reps (e.g. 9/8/7/6 = 30 → aim for 31+). VOLUME: 4–5 exercises per day is the default; for a " +
+    "minimalist day keep the main lift + 1–2 more. REST: 3 min between sets on the first exercise, 2 min after that, " +
+    "1 min on the final exercise. EFFORT (RIR): 0–1 in reserve on the main lift (don't fail the last rep), 0–2 on the " +
+    "rest, last exercise to failure. SWAPS: pick variations that suit you (dips for bench, front squats for high-bar, " +
+    "pulldowns for pull-ups). DIET: eat enough to fuel growth — lean trainees need to gain weight.",
+  source: "6-day Push/Pull/Legs bodybuilding split.",
+  weeks: [{ index: 1, days: [...BB_DAYS.map((d, i) => buildBBDay(d, i + 1)), { index: 7, kind: "rest", title: "Sun · Rest", sessions: [] }] }],
+};
+
 // ---- registry ----------------------------------------------------------------
 
 /** Every encoded program, keyed by the GoalPlan id that surfaces it. */
 export const PLAN_PROGRAMS: Record<string, PlanProgram> = {
   [SOVIET_OWL_8WK.id]: SOVIET_OWL_8WK,
   [RUN_5K_BEGINNER_9WK.id]: RUN_5K_BEGINNER_9WK,
+  [BB_PPL_6DAY.id]: BB_PPL_6DAY,
 };
 
 /** The rich, discipline-shaped program behind a plan id (null when the plan uses

@@ -10,7 +10,7 @@ import {
   planProgramView,
   type PlanLift,
 } from "./plan-program";
-import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, programFor, PLAN_PROGRAMS } from "./plan-programs";
+import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
 describe("parsePercentSteps", () => {
   it("parses ramped (pct/reps)sets terms", () => {
@@ -187,5 +187,32 @@ describe("endurance (running) program — same model, prose workouts", () => {
     expect(v.inputs.every((i) => i.kind === "text")).toBe(true);
     expect(v.inputs.map((i) => i.key)).toContain("gp");
     expect(v.inputsTitle.toLowerCase()).toContain("pace");
+  });
+});
+
+describe("hypertrophy (bodybuilding) program — same model, sets × reps", () => {
+  it("is a registered single-week 6-day split (no peak)", () => {
+    expect(programFor("bb-ppl-6day")).toBe(BB_PPL_6DAY);
+    expect(BB_PPL_6DAY.discipline).toBe("hypertrophy");
+    expect(BB_PPL_6DAY.weeks).toHaveLength(1);
+    expect(BB_PPL_6DAY.anchor).toBeUndefined();
+  });
+
+  it("renders exercise rows and counts exercises (not lifts) as volume", () => {
+    const v = planProgramView(BB_PPL_6DAY, { week: 1 });
+    expect(v.weeks).toEqual([1]); // one repeating week → renderers hide the selector
+    expect(v.peakNote).toBeNull();
+
+    // Monday = Push (Bench), first row is the main lift with its sets×reps.
+    const mon = v.days[0]!;
+    expect(mon.title).toBe("Mon · Push (Bench)");
+    expect(mon.volume).toBe("5 exercises");
+    const bench = mon.sessions[0]!.lifts[0]!;
+    expect(bench).toMatchObject({ name: "Bench Press", prescription: "4–5 × 6–12 reps", note: "Main lift — progressive overload" });
+
+    // Sunday is a rest day with no volume chip.
+    const sun = v.days[6]!;
+    expect(sun.kindLabel).toBe("Rest");
+    expect(sun.volume).toBeNull();
   });
 });

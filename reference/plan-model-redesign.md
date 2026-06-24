@@ -78,14 +78,16 @@ renderers consume it. What differs by discipline is data, not layout:
 
 ## Status / follow-ups
 - Built: the model, parser, NL, kg resolver, the generalized view model + the one
-  shared program view on both clients. Two programs shipped:
-  - **Soviet 8-week OWL** (`strength-percent`) on Olympic Weightlifting.
-  - **Hansons 5K Beginner 9-week** (`endurance`) on Running — a Mon–Sun weekday
-    grid of prose workouts, goal paces, race-day taper, NO gym. Proves the same
-    model + UI carry a completely different plan format.
-- Other goals stay empty until authored in their own shape: Bodybuilding
-  (`hypertrophy`: sets×reps×load), more Cycling/Swim/Triathlon (`endurance`),
-  Hyrox/CrossFit/Fat-Loss (`conditioning`). Tracked under `plans-lib`.
+  shared program view on both clients. Three programs shipped, three formats:
+  - **Soviet 8-week OWL** (`strength-percent`) on Olympic Weightlifting — % of
+    1RM, ramped sets, complexes, AM/PM, NL volume, peak to competition.
+  - **Hansons 5K Beginner 9-week** (`endurance`) on Running — Mon–Sun grid of
+    prose workouts, goal paces, race-day taper, NO gym.
+  - **6-day Push/Pull/Legs** (`hypertrophy`) on Bodybuilding — one repeating
+    week of exercises with sets×reps ranges, exercise-count volume, no peak.
+- Other goals stay empty until authored in their own shape: more
+  Cycling/Swim/Triathlon (`endurance`), Hyrox/CrossFit/Fat-Loss (`conditioning`),
+  Powerlifting/Strongman (`strength-percent`). Tracked under `plans-lib`.
 - "Today"/enroll wiring: enrolling a percent-program still falls back to the
   engine's prescription for the daily card (legacy `planToday` reads the old
   `PLAN_DETAIL`). Wiring percent-programs into `planToday`/macrocycles is the

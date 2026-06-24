@@ -93,7 +93,9 @@ export const GOAL_TREE: GoalNode[] = [
     plans: [] },
   // ---- Physique ----
   { id: "bb", name: "Bodybuilding", icon: "■", color: VIOLET, category: "Physique", blurb: "Maximize muscle. Train splits, chase volume and progressive overload.",
-    plans: [] },
+    plans: [
+      { id: "bb-ppl-6day", name: "6-Day Push/Pull/Legs", weeks: 1, sessions: 6, tag: "Repeat weekly", desc: "The modern bodybuilding split: two push, two pull and two leg days, each built on a big compound you progressively overload. Run the week on repeat, adding weight or reps every cycle.", focus: ["Hypertrophy", "Strength"], hot: true },
+    ] },
   { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
     plans: [] },
   // ---- Endurance ----

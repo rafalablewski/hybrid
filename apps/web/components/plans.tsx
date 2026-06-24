@@ -309,7 +309,7 @@ function PercentProgramView({
       <BackLink onClick={back} label={goal.name} />
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }}>
-        {plan.weeks} weeks · {plan.sessions}×/week · {plan.tag}
+        {plan.weeks} week{plan.weeks === 1 ? "" : "s"} · {plan.sessions}×/week · {plan.tag}
         {view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
       </Mono>
 
@@ -335,23 +335,26 @@ function PercentProgramView({
         </div>
       </Card>
 
-      {/* Week selector + week volume. */}
-      <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-        {view.weeks.map((w) => (
-          <button
-            key={w}
-            onClick={() => setWeek(w)}
-            style={{ ...mono, fontSize: fs.caption, color: w === view.week ? ON_ACCENT : CHALK, background: w === view.week ? LIME : INK2, border: `1px solid ${w === view.week ? LIME : LINE}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}
-          >
-            Wk {w}
-          </button>
-        ))}
-        {view.weekVolume && (
-          <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={ASH}>
-            {view.weekVolume} this week
-          </Mono>
-        )}
-      </div>
+      {/* Week selector (hidden for a single-week plan) + week volume. */}
+      {(view.weeks.length > 1 || view.weekVolume) && (
+        <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          {view.weeks.length > 1 &&
+            view.weeks.map((w) => (
+              <button
+                key={w}
+                onClick={() => setWeek(w)}
+                style={{ ...mono, fontSize: fs.caption, color: w === view.week ? ON_ACCENT : CHALK, background: w === view.week ? LIME : INK2, border: `1px solid ${w === view.week ? LIME : LINE}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}
+              >
+                Wk {w}
+              </button>
+            ))}
+          {view.weekVolume && (
+            <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={ASH}>
+              {view.weekVolume} this week
+            </Mono>
+          )}
+        </div>
+      )}
 
       {view.days.map((day, di) => (
         <Card key={di} style={{ marginBottom: 12 }}>

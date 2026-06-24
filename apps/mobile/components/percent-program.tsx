@@ -51,7 +51,7 @@ export default function PercentProgram({
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginBottom: 14 }}>
-        {plan.weeks} wks · {plan.sessions}×/wk · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
+        {plan.weeks} wk{plan.weeks === 1 ? "" : "s"} · {plan.sessions}×/wk · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
       </Text>
 
       {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
@@ -74,17 +74,20 @@ export default function PercentProgram({
         </View>
       </View>
 
-      {/* Week selector + week volume. */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 12 }}>
-        {view.weeks.map((w) => (
-          <Pressable key={w} onPress={() => setWeek(w)}>
-            <View style={{ backgroundColor: w === view.week ? C.lime : C.ink2, borderWidth: 1, borderColor: w === view.week ? C.lime : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.ink : C.chalk }}>Wk {w}</Text>
-            </View>
-          </Pressable>
-        ))}
-        {!!view.weekVolume && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: "auto" }}>{view.weekVolume}</Text>}
-      </View>
+      {/* Week selector (hidden for a single-week plan) + week volume. */}
+      {(view.weeks.length > 1 || !!view.weekVolume) && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 12 }}>
+          {view.weeks.length > 1 &&
+            view.weeks.map((w) => (
+              <Pressable key={w} onPress={() => setWeek(w)}>
+                <View style={{ backgroundColor: w === view.week ? C.lime : C.ink2, borderWidth: 1, borderColor: w === view.week ? C.lime : C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: w === view.week ? C.ink : C.chalk }}>Wk {w}</Text>
+                </View>
+              </Pressable>
+            ))}
+          {!!view.weekVolume && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: "auto" }}>{view.weekVolume}</Text>}
+        </View>
+      )}
 
       {view.days.map((day, di) => (
         <View key={di} style={card}>

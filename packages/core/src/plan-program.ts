@@ -241,11 +241,17 @@ function kindLabelFor(program: PlanProgram, kind: PlanDayKind): string | null {
 }
 
 // Volume is discipline-specific: the Soviet plan counts NL (number of lifts);
-// endurance/conditioning have no comparable per-day count, so no label is shown
-// (the layout stays identical — the counter chip is simply absent).
-function volumeLabel(program: PlanProgram, nl: number): string | null {
-  if (program.discipline === "strength-percent" && nl > 0) return `${nl} lifts`;
+// hypertrophy counts exercises; endurance/conditioning have no comparable count,
+// so no label is shown (the layout stays identical — the chip is simply absent).
+function volumeLabel(program: PlanProgram, nl: number, items: number): string | null {
+  if (program.discipline === "strength-percent") return nl > 0 ? `${nl} lifts` : null;
+  if (program.discipline === "hypertrophy") return items > 0 ? `${items} exercise${items === 1 ? "" : "s"}` : null;
   return null;
+}
+
+/** Count of prescribed items (lifts + prose entries) in a session. */
+function sessionItems(s: PlanSession): number {
+  return (s.lifts?.length ?? 0) + (s.entries?.length ?? 0);
 }
 
 /**
@@ -265,11 +271,12 @@ export function planProgramView(
 
   const days: ProgramDayView[] = week.days.map((d) => {
     const nl = dayNL(d);
+    const dItems = d.sessions.reduce((n, s) => n + sessionItems(s), 0);
     return {
       title: d.title,
       kindLabel: kindLabelFor(program, d.kind),
       nl,
-      volume: volumeLabel(program, nl),
+      volume: volumeLabel(program, nl, dItems),
       sessions: d.sessions.map((s) => {
         const snl = sessionNL(s);
         const lifts: ProgramLiftView[] = [
@@ -286,17 +293,18 @@ export function planProgramView(
             note: e.note ?? null,
           })),
         ];
-        return { label: s.label ?? null, nl: snl, volume: volumeLabel(program, snl), lifts };
+        return { label: s.label ?? null, nl: snl, volume: volumeLabel(program, snl, sessionItems(s)), lifts };
       }),
     };
   });
 
   const wnl = weekNL(week);
+  const wItems = week.days.reduce((n, d) => n + d.sessions.reduce((m, s) => m + sessionItems(s), 0), 0);
   return {
     weeks,
     week: week.index,
     weekNL: wnl,
-    weekVolume: volumeLabel(program, wnl),
+    weekVolume: volumeLabel(program, wnl, wItems),
     peakNote: program.anchor === "competition" ? `Peaks to ${(program.peakLabel ?? "competition").toLowerCase()}` : null,
     inputs: program.inputs,
     inputsTitle: program.inputsTitle,

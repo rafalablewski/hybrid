@@ -146,7 +146,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {backLink(back, goal.name)}
       <h2 style={{ fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }}>{plan.weeks} {t("w.train.plans.weeks")} · {plan.sessions}{t("w.train.plans.perWeek")} · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }}>{plan.weeks === 1 ? "1 week" : `${plan.weeks} ${t("w.train.plans.weeks")}`} · {plan.sessions}{t("w.train.plans.perWeek")} · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}</div>
 
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{view.inputsTitle}</div>
@@ -160,12 +160,14 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-        {view.weeks.map((w) => (
-          <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>Wk {w}</button>
-        ))}
-        {view.weekVolume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekVolume} this week</span>}
-      </div>
+      {(view.weeks.length > 1 || view.weekVolume) && (
+        <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          {view.weeks.length > 1 && view.weeks.map((w) => (
+            <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>Wk {w}</button>
+          ))}
+          {view.weekVolume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekVolume} this week</span>}
+        </div>
+      )}
 
       {view.days.map((day, di) => (
         <div key={di} style={{ ...card, marginBottom: 12 }}>
