@@ -3,14 +3,15 @@ import { plansForGoal, GOAL_TREE, PLAN_DETAIL } from "./plans";
 
 describe("plansForGoal", () => {
   // The old gym plans were retired; plans are being rebuilt goal-shaped. Olympic
-  // Weightlifting now carries the first one (the Soviet 8-week %-of-1RM block);
-  // every other goal is still empty until authored in its own shape.
-  it("carries the Soviet plan for Olympic Weightlifting, nothing elsewhere", () => {
-    const oly = plansForGoal("Olympic Weightlifting");
-    expect(oly.map((p) => p.id)).toEqual(["oly-soviet-8wk"]);
+  // Weightlifting carries the Soviet %-of-1RM block and Running carries the 5K
+  // pace plan; every other goal is still empty until authored in its own shape.
+  it("carries the authored plans per goal, nothing elsewhere", () => {
+    const authored: Record<string, string[]> = {
+      oly: ["oly-soviet-8wk"],
+      run: ["run-5k-beginner-9wk"],
+    };
     for (const node of GOAL_TREE) {
-      if (node.id === "oly") continue;
-      expect(plansForGoal(node.name)).toEqual([]);
+      expect(plansForGoal(node.name).map((p) => p.id)).toEqual(authored[node.id] ?? []);
     }
   });
 

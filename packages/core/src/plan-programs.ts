@@ -505,12 +505,14 @@ export const SOVIET_OWL_8WK: PlanProgram = buildProgram(
     id: "oly-soviet-8wk",
     discipline: "strength-percent",
     anchor: "competition",
-    refLifts: [
-      { key: "snatch", label: "Snatch" },
-      { key: "cleanjerk", label: "Clean & Jerk" },
-      { key: "frontSquat", label: "Front Squat" },
-      { key: "backSquat", label: "Back Squat" },
-      { key: "press", label: "Press" },
+    peakLabel: "Competition",
+    inputsTitle: "Your maxes (kg) — optional, to see working weights",
+    inputs: [
+      { key: "snatch", label: "Snatch", kind: "number", derives: true },
+      { key: "cleanjerk", label: "Clean & Jerk", kind: "number", derives: true },
+      { key: "frontSquat", label: "Front Squat", kind: "number", derives: true },
+      { key: "backSquat", label: "Back Squat", kind: "number", derives: true },
+      { key: "press", label: "Press", kind: "number", derives: true },
     ],
     progression:
       "An 8-week peaking block driven by % of 1RM, not reps to failure. Volume is " +
@@ -524,11 +526,158 @@ export const SOVIET_OWL_8WK: PlanProgram = buildProgram(
   SOVIET_WEEKS,
 );
 
+// ============================================================
+//  ENDURANCE — the running shape: weekday grid, prose workouts, goal paces.
+//  Same PlanProgram model + planProgramView as the OWL block, so it renders in
+//  the identical HYBRID plan UI — just paces instead of %, miles/min instead of
+//  lifts. Source: Hansons 5K Beginner 9-week plan (miles).
+// ============================================================
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// A weekday cell: a list of [label, detail, note?] workouts, or a rest/race day.
+type RunEntry = [string, string] | [string, string, string];
+type RunCell = "off" | "race" | RunEntry[];
+
+/** Rest-or-cross-train cell (Mon/Wed/some Sun). */
+const ct = (min: number): RunCell => [["Rest / cross-train", `Rest, or ${min}' cross-train`]];
+
+function buildRunDay(cell: RunCell, index: number): PlanDay {
+  const title = WEEKDAYS[index - 1] ?? `Day ${index}`;
+  if (cell === "off") return { index, kind: "rest", title, sessions: [] };
+  if (cell === "race") return { index, kind: "competition", title, sessions: [] };
+  return {
+    index,
+    kind: "train",
+    title,
+    sessions: [{ entries: cell.map(([label, detail, note]) => ({ label, detail, ...(note ? { note } : {}) })) }],
+  };
+}
+
+function buildRunProgram(meta: Omit<PlanProgram, "weeks">, weeks: RunCell[][]): PlanProgram {
+  return {
+    ...meta,
+    weeks: weeks.map((cells, wi) => ({ index: wi + 1, days: cells.map((c, di) => buildRunDay(c, di + 1)) })),
+  };
+}
+
+// Mon, Tue, Wed, Thu, Fri, Sat, Sun
+const RUN_WEEKS: RunCell[][] = [
+  [
+    ct(30),
+    [["Hills", "5 × 1' hills", "Jog down for recovery"]],
+    ct(30),
+    [["Tempo", "3 'up/down' miles", "Alternate: up miles at tempo pace, down miles at moderate effort. Or 30' cross-train"]],
+    [["Easy", "3 miles", "or 30' cross-train"]],
+    [["Easy", "30' easy"]],
+    "off",
+  ],
+  [
+    ct(30),
+    [["Intervals", "3 × 1' hard / 1' easy", "or 3 × 1' hills"]],
+    ct(35),
+    [["Tempo", "3 × 1-mile tempo", "2' recovery"]],
+    [["Easy", "3 miles easy"]],
+    [["Long run", "35'"]],
+    "off",
+  ],
+  [
+    ct(30),
+    [["Intervals", "3 × 2' hard / 1' easy", "or 3 × 1' hills"]],
+    ct(30),
+    [["Progressive tempo", "3-mile progressive tempo", "Start moderate and cut down 5\" each mile"]],
+    [["Easy", "3 miles easy"]],
+    [["Long run", "40'"]],
+    "off",
+  ],
+  [
+    ct(35),
+    [["Intervals", "3 × 3' hard / 90\" off", "or 3 × 45\" hills"]],
+    ct(35),
+    [["Aerobic tempo", "3-mile aerobic tempo at tempo pace + 20\"", "Then 3 × 100m hard with 3' recovery"]],
+    [["Easy", "3 miles easy", "or 30' cross-train"]],
+    [["Long run", "35'"]],
+    "off",
+  ],
+  [
+    ct(35),
+    [["Intervals", "4 × 600m at Goal Pace", "with equal rest"]],
+    ct(35),
+    [["Hills", "3/2/1' hills", "Increasing effort as the intervals get shorter. Or 30' cross-train"]],
+    [["Easy", "4 miles easy", "or 30' cross-train"]],
+    [["Long run", "40'"]],
+    "off",
+  ],
+  [
+    ct(35),
+    [["Intervals", "3 × 1k at 10k pace +5\", 2' rest", "Then 4 × 400m at 5k pace, 90\" rest"]],
+    ct(35),
+    [["Tempo", "2 × 2-mile tempo, 3' rest between", "Then 3 × 100m hard, 4' recovery. Or 30' cross-train"]],
+    [["Easy", "3 miles easy", "or 30' cross-train"]],
+    [["Long run", "45'"]],
+    "off",
+  ],
+  [
+    ct(35),
+    [["Intervals", "3 × 800m at 5k pace, then 250m even faster", "1' recovery after 800, 4' recovery after 250"]],
+    ct(40),
+    [["Progressive tempo", "4-mile progressive tempo", "Start moderate and cut down 5\" each mile. Or 35' cross-train"]],
+    [["Easy", "4 miles easy", "or 35' cross-train"]],
+    [["Long run", "50'"]],
+    [["Rest / cross-train", "Rest, or easy cross-train"]],
+  ],
+  [
+    ct(35),
+    [["Fartlek", "40' run as you feel", "Then 5 × 100m quick"]],
+    ct(40),
+    [["Intervals", "1200 / 800 / 400 / 200m", "Rest 3'/2'/2'/2'. Pace: GP+2\" / 5k / 5k−3\" / hard. Or 35' cross-train"]],
+    [["Easy", "4 miles easy", "or 35' cross-train"]],
+    [["Long run", "45'"]],
+    "off",
+  ],
+  [
+    ct(35),
+    [["Tempo", "2-mile tempo", "4' recovery"]],
+    ct(30),
+    [["Intervals", "3 × 400m at GP", "60\" rest"]],
+    [["Easy", "Rest, or 3 miles easy"]],
+    [["Pre-race shakeout", "3 miles + 3 × 150m at GP"]],
+    "race",
+  ],
+];
+
+export const RUN_5K_BEGINNER_9WK: PlanProgram = buildRunProgram(
+  {
+    id: "run-5k-beginner-9wk",
+    discipline: "endurance",
+    anchor: "competition",
+    peakLabel: "Race day",
+    inputsTitle: "Your goal paces — optional, for reference (use a pace calculator)",
+    inputs: [
+      { key: "goal", label: "Goal finish", kind: "text", placeholder: "25:00" },
+      { key: "gp", label: "Goal pace (GP)", kind: "text", placeholder: "min/mi" },
+      { key: "long", label: "Long run", kind: "text", placeholder: "min/mi" },
+      { key: "tenk", label: "10k pace", kind: "text", placeholder: "min/mi" },
+    ],
+    progression:
+      "A 9-week build to a 5K. Tuesday is the hard interval/hills session and Thursday is the tempo session — " +
+      "include a 1-mile warm-up and 1-mile cool-down on BOTH. Friday is easy miles (or cross-train), Saturday is " +
+      "the long run, and Monday/Wednesday/Sunday are rest or cross-train. PACES: tempo = hard to hold a " +
+      "conversation but sustainable ~45–60 min; recovery = easy jog between intervals; cross-train = any non-running " +
+      "activity (weights, yoga, cycling). NOTATION: ' = minutes, \" = seconds (3' = 3 min, 45\" = 45 sec). Volume " +
+      "waves up to weeks 7–8, then tapers into race week. Fill in your goal paces above from a pace calculator and " +
+      "run each workout at the right effort.",
+    source: "Hansons 5K Beginner 9-week training plan (miles).",
+  },
+  RUN_WEEKS,
+);
+
 // ---- registry ----------------------------------------------------------------
 
 /** Every encoded program, keyed by the GoalPlan id that surfaces it. */
 export const PLAN_PROGRAMS: Record<string, PlanProgram> = {
   [SOVIET_OWL_8WK.id]: SOVIET_OWL_8WK,
+  [RUN_5K_BEGINNER_9WK.id]: RUN_5K_BEGINNER_9WK,
 };
 
 /** The rich, discipline-shaped program behind a plan id (null when the plan uses

@@ -259,11 +259,11 @@ function PlanDetailView({
   );
 }
 
-// Discipline-shaped (% of 1RM) program view — the Olympic-weightlifting shape:
-// a week selector, NL (number-of-lifts) volume, AM/PM days, complexes, tempo, and
-// the percentage prescription KEPT as written (with the working kg shown next to
-// it once you enter your maxes). Reads the shared planProgramView from core, so
-// web + mobile render the same thing.
+// Discipline-shaped program view — renders ANY PlanProgram (Olympic-weightlifting
+// % blocks, endurance pace plans, …) through the SAME shared planProgramView, so
+// every plan comes out in one consistent HYBRID layout: a week selector, the
+// discipline's volume label, AM/PM or weekday cards, the prescription KEPT as
+// written, and a "fill in your numbers" panel (strength maxes → kg, or goal paces).
 function PercentProgramView({
   goal,
   plan,
@@ -278,8 +278,14 @@ function PercentProgramView({
   onEnrolled?: () => void;
 }) {
   const [week, setWeek] = useState(1);
-  const [maxes, setMaxes] = useState<Record<string, number>>({});
+  const [vals, setVals] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const maxes: Record<string, number> = {};
+  for (const i of program.inputs) {
+    if (i.kind !== "number") continue;
+    const n = parseFloat(vals[i.key] ?? "");
+    if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
+  }
   const view = planProgramView(program, { week, maxes });
 
   const enroll = async () => {
@@ -304,32 +310,25 @@ function PercentProgramView({
       <h2 style={{ ...disp, fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }}>
         {plan.weeks} weeks · {plan.sessions}×/week · {plan.tag}
-        {view.anchored ? " · peaks to competition" : ""}
+        {view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
       </Mono>
 
-      {/* Maxes — turn the % into working kg. Optional; % stays either way. */}
+      {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
       <Card style={{ marginBottom: 16 }}>
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
-          Your maxes (kg) — optional, to see working weights
+          {view.inputsTitle}
         </Mono>
         <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
-          {view.refLifts.map((rl) => (
-            <label key={rl.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <Mono s={{ fontSize: fs.nano }} c={ASH}>{rl.label}</Mono>
+          {view.inputs.map((inp) => (
+            <label key={inp.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Mono s={{ fontSize: fs.nano }} c={ASH}>{inp.label}</Mono>
               <input
-                type="number"
-                inputMode="numeric"
-                value={maxes[rl.key] ?? ""}
-                onChange={(e) => {
-                  const n = parseFloat(e.target.value);
-                  setMaxes((m) => {
-                    const next = { ...m };
-                    if (Number.isFinite(n) && n > 0) next[rl.key] = n;
-                    else delete next[rl.key];
-                    return next;
-                  });
-                }}
-                style={{ ...mono, width: 78, fontSize: fs.body, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 9px", outline: "none" }}
+                type={inp.kind === "number" ? "number" : "text"}
+                inputMode={inp.kind === "number" ? "numeric" : undefined}
+                placeholder={inp.placeholder ?? ""}
+                value={vals[inp.key] ?? ""}
+                onChange={(e) => setVals((v) => ({ ...v, [inp.key]: e.target.value }))}
+                style={{ ...mono, width: inp.kind === "number" ? 78 : 116, fontSize: fs.body, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 9px", outline: "none" }}
               />
             </label>
           ))}
@@ -347,9 +346,11 @@ function PercentProgramView({
             Wk {w}
           </button>
         ))}
-        <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={ASH}>
-          {view.weekNL} lifts this week
-        </Mono>
+        {view.weekVolume && (
+          <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={ASH}>
+            {view.weekVolume} this week
+          </Mono>
+        )}
       </div>
 
       {view.days.map((day, di) => (
@@ -359,13 +360,13 @@ function PercentProgramView({
               {day.title}
               {day.kindLabel ? ` — ${day.kindLabel}` : ""}
             </Mono>
-            {day.nl > 0 && <Mono s={{ fontSize: fs.nano }} c={ASH}>{day.nl} lifts</Mono>}
+            {day.volume && <Mono s={{ fontSize: fs.nano }} c={ASH}>{day.volume}</Mono>}
           </div>
           {day.sessions.map((s, si) => (
             <div key={si} style={{ marginTop: 10 }}>
-              {s.label && (
+              {(s.label || s.volume) && (
                 <Mono s={{ fontSize: fs.nano, letterSpacing: ".1em" }} c={LIME}>
-                  {s.label} · {s.nl} lifts
+                  {[s.label, s.volume].filter(Boolean).join(" · ")}
                 </Mono>
               )}
               {s.lifts.map((l, li) => (

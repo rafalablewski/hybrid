@@ -64,14 +64,28 @@ own running totals in tests.
 four renderers (web classic/aurora, mobile classic/aurora) consume the SAME
 view model, so the logic lives once in `@hybrid/core`.
 
+## Consistency (the rule)
+However differently a source plan is worded, it must come out in ONE identical
+HYBRID layout. `planProgramView()` is that single render shape; all four
+renderers consume it. What differs by discipline is data, not layout:
+- **Inputs panel** — `program.inputs` with `kind` (`number` → strength maxes that
+  derive kg; `text` → endurance goal paces), titled by `inputsTitle`.
+- **Volume label** — discipline-aware string ("N lifts" for strength; none for
+  endurance). When null the counter chip is simply absent; layout unchanged.
+- **Peak label** — `program.peakLabel` ("Competition" / "Race day").
+- **Day content** — a session carries `lifts` (% steps) OR `entries` (prose
+  workouts); both compile to the same prescription/note rows.
+
 ## Status / follow-ups
-- Built: the model, parser, NL, kg resolver, the Soviet 8-week program wired to
-  the **Olympic Weightlifting** goal, and the percent-program view on both
-  clients. (`plan-program.ts`, `plan-programs.ts`, encoded program + tests.)
-- Other goals stay empty until authored in the shape that fits them:
-  Bodybuilding (`hypertrophy`: sets×reps×load), Running/Cycling/Swim
-  (`endurance`: distance/pace/mileage, no gym), Hyrox/CrossFit/Fat-Loss
-  (`conditioning`). Tracked under `plans-lib` in capabilities.
+- Built: the model, parser, NL, kg resolver, the generalized view model + the one
+  shared program view on both clients. Two programs shipped:
+  - **Soviet 8-week OWL** (`strength-percent`) on Olympic Weightlifting.
+  - **Hansons 5K Beginner 9-week** (`endurance`) on Running — a Mon–Sun weekday
+    grid of prose workouts, goal paces, race-day taper, NO gym. Proves the same
+    model + UI carry a completely different plan format.
+- Other goals stay empty until authored in their own shape: Bodybuilding
+  (`hypertrophy`: sets×reps×load), more Cycling/Swim/Triathlon (`endurance`),
+  Hyrox/CrossFit/Fat-Loss (`conditioning`). Tracked under `plans-lib`.
 - "Today"/enroll wiring: enrolling a percent-program still falls back to the
   engine's prescription for the daily card (legacy `planToday` reads the old
   `PLAN_DETAIL`). Wiring percent-programs into `planToday`/macrocycles is the

@@ -126,33 +126,35 @@ function Info({ label, value }: { label: string; value: string }) {
   return <div style={card}><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div><p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 6, color: C("chalk") }}>{value}</p></div>;
 }
 
-// Aurora rendering of a discipline-shaped (% of 1RM) program — same shared
-// planProgramView as the classic web + mobile, in the rounded Aurora skin.
+// Aurora rendering of a discipline-shaped program (OWL % blocks, endurance pace
+// plans, …) — same shared planProgramView as the classic web + mobile, in the
+// rounded Aurora skin.
 function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNode; plan: GoalPlan; program: PlanProgram; back: () => void; onEnrolled?: () => void }) {
   const { t } = useLang();
   const [week, setWeek] = useState(1);
-  const [maxes, setMaxes] = useState<Record<string, number>>({});
+  const [vals, setVals] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const maxes: Record<string, number> = {};
+  for (const i of program.inputs) { if (i.kind !== "number") continue; const n = parseFloat(vals[i.key] ?? ""); if (Number.isFinite(n) && n > 0) maxes[i.key] = n; }
   const view = planProgramView(program, { week, maxes });
   const enroll = async () => {
     setState("busy");
     try { const res = await fetch("/api/macrocycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: goal.name, planId: plan.id }) }); if (!res.ok) return setState("error"); setState("done"); onEnrolled?.(); }
     catch { setState("error"); }
   };
-  const setMax = (key: string, raw: string) => setMaxes((m) => { const n = parseFloat(raw); const next = { ...m }; if (Number.isFinite(n) && n > 0) next[key] = n; else delete next[key]; return next; });
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {backLink(back, goal.name)}
       <h2 style={{ fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }}>{plan.weeks} {t("w.train.plans.weeks")} · {plan.sessions}{t("w.train.plans.perWeek")} · {plan.tag}{view.anchored ? " · peaks to competition" : ""}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 14 }}>{plan.weeks} {t("w.train.plans.weeks")} · {plan.sessions}{t("w.train.plans.perWeek")} · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}</div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Your maxes (kg) — optional, to see working weights</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{view.inputsTitle}</div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
-          {view.refLifts.map((rl) => (
-            <label key={rl.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{rl.label}</span>
-              <input type="number" inputMode="numeric" value={maxes[rl.key] ?? ""} onChange={(e) => setMax(rl.key, e.target.value)} style={{ fontFamily: "var(--font-mono)", width: 78, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 10px", outline: "none" }} />
+          {view.inputs.map((inp) => (
+            <label key={inp.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{inp.label}</span>
+              <input type={inp.kind === "number" ? "number" : "text"} inputMode={inp.kind === "number" ? "numeric" : undefined} placeholder={inp.placeholder ?? ""} value={vals[inp.key] ?? ""} onChange={(e) => setVals((v) => ({ ...v, [inp.key]: e.target.value }))} style={{ fontFamily: "var(--font-mono)", width: inp.kind === "number" ? 78 : 116, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 10px", outline: "none" }} />
             </label>
           ))}
         </div>
@@ -162,18 +164,18 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         {view.weeks.map((w) => (
           <button key={w} onClick={() => setWeek(w)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: w === view.week ? C("ink") : C("chalk"), background: w === view.week ? C("lime") : C("ink"), border: `1px solid ${w === view.week ? C("lime") : C("line")}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>Wk {w}</button>
         ))}
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekNL} lifts this week</span>
+        {view.weekVolume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginLeft: "auto" }}>{view.weekVolume} this week</span>}
       </div>
 
       {view.days.map((day, di) => (
         <div key={di} style={{ ...card, marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("amber") }}>{day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}</div>
-            {day.nl > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{day.nl} lifts</span>}
+            {day.volume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{day.volume}</span>}
           </div>
           {day.sessions.map((s, si) => (
             <div key={si} style={{ marginTop: 10 }}>
-              {s.label && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", color: C("lime") }}>{s.label} · {s.nl} lifts</div>}
+              {(s.label || s.volume) && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", color: C("lime") }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</div>}
               {s.lifts.map((l, li) => (
                 <div key={li} style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
                   <div style={{ minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>{l.note && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{l.note}</div>}</div>

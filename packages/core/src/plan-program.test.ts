@@ -10,7 +10,7 @@ import {
   planProgramView,
   type PlanLift,
 } from "./plan-program";
-import { SOVIET_OWL_8WK, programFor, PLAN_PROGRAMS } from "./plan-programs";
+import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
 describe("parsePercentSteps", () => {
   it("parses ramped (pct/reps)sets terms", () => {
@@ -126,10 +126,12 @@ describe("planProgramView", () => {
     expect(v.weeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(v.week).toBe(1);
     expect(v.weekNL).toBeGreaterThan(0);
-    expect(v.anchored).toBe(true);
+    expect(v.weekVolume).toBe(`${v.weekNL} lifts`);
+    expect(v.peakNote).toBe("Peaks to competition");
 
     const day1 = v.days[0]!;
     expect(day1.nl).toBe(160);
+    expect(day1.volume).toBe("160 lifts");
     expect(day1.sessions[0]!.label).toBe("AM");
     expect(day1.sessions[0]!.lifts[0]!.prescription).toBe("60%×4×3 · 70%×4×2");
 
@@ -147,5 +149,43 @@ describe("planProgramView", () => {
 
   it("clamps an out-of-range week to a real one", () => {
     expect(planProgramView(SOVIET_OWL_8WK, { week: 99 }).week).toBe(1);
+  });
+});
+
+describe("endurance (running) program — same model, prose workouts", () => {
+  it("is a registered 9-week endurance plan peaking to a race", () => {
+    expect(programFor("run-5k-beginner-9wk")).toBe(RUN_5K_BEGINNER_9WK);
+    expect(RUN_5K_BEGINNER_9WK.discipline).toBe("endurance");
+    expect(RUN_5K_BEGINNER_9WK.weeks).toHaveLength(9);
+    expect(RUN_5K_BEGINNER_9WK.peakLabel).toBe("Race day");
+    const lastDay = RUN_5K_BEGINNER_9WK.weeks[8]!.days.at(-1)!;
+    expect(lastDay.kind).toBe("competition");
+  });
+
+  it("renders weekday cards with prose prescriptions and NO lift counter", () => {
+    const v = planProgramView(RUN_5K_BEGINNER_9WK, { week: 1 });
+    expect(v.weeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(v.peakNote).toBe("Peaks to race day");
+    // endurance has no NL-style volume label — the counter chip is simply absent.
+    expect(v.weekVolume).toBeNull();
+    expect(v.days.map((d) => d.title)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    expect(v.days.every((d) => d.volume === null)).toBe(true);
+
+    // Tuesday week 1 = hills, written as prose, with its recovery note.
+    const tue = v.days[1]!;
+    expect(tue.sessions[0]!.lifts[0]).toMatchObject({
+      name: "Hills",
+      prescription: "5 × 1' hills",
+      note: "Jog down for recovery",
+    });
+    // Sunday is a rest day.
+    expect(v.days[6]!.kindLabel).toBe("Rest");
+  });
+
+  it("surfaces goal-pace text inputs instead of numeric maxes", () => {
+    const v = planProgramView(RUN_5K_BEGINNER_9WK);
+    expect(v.inputs.every((i) => i.kind === "text")).toBe(true);
+    expect(v.inputs.map((i) => i.key)).toContain("gp");
+    expect(v.inputsTitle.toLowerCase()).toContain("pace");
   });
 });

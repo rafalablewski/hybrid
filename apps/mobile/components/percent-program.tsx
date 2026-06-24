@@ -6,11 +6,12 @@ import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
 
 /**
- * Discipline-shaped (% of 1RM) program — the Olympic-weightlifting shape: a week
- * selector, NL (number-of-lifts) volume, AM/PM days, complexes, tempo, and the
- * percentage prescription KEPT as written (the working kg appears next to it once
- * you enter your maxes). Reads the shared planProgramView from core, so it renders
- * the SAME content as the web. The caller supplies the screen wrapper (classic
+ * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
+ * blocks, endurance pace plans, …) through the shared planProgramView, so every
+ * plan comes out in ONE consistent layout: a week selector, the discipline's
+ * volume label, AM/PM or weekday cards, the prescription KEPT as written, and a
+ * "fill in your numbers" panel (strength maxes → kg, or goal paces). Renders the
+ * SAME content as the web. The caller supplies the screen wrapper (classic
  * <Screen> or Aurora <AuroraScreen>) so both templates reuse this one component.
  */
 export default function PercentProgram({
@@ -26,22 +27,20 @@ export default function PercentProgram({
 }) {
   const C = useTheme().palette;
   const [week, setWeek] = useState(1);
-  const [maxes, setMaxes] = useState<Record<string, number>>({});
+  const [vals, setVals] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const maxes: Record<string, number> = {};
+  for (const i of program.inputs) {
+    if (i.kind !== "number") continue;
+    const n = parseFloat(vals[i.key] ?? "");
+    if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
+  }
   const view = planProgramView(program, { week, maxes });
 
   const enroll = async () => {
     setState("busy");
     setState((await enrollPlan(goal.name, plan.id)) ? "done" : "error");
   };
-  const setMax = (key: string, raw: string) =>
-    setMaxes((m) => {
-      const n = parseFloat(raw);
-      const next = { ...m };
-      if (Number.isFinite(n) && n > 0) next[key] = n;
-      else delete next[key];
-      return next;
-    });
 
   const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14, marginBottom: 12 } as const;
 
@@ -52,21 +51,23 @@ export default function PercentProgram({
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, marginVertical: 6 }}>{plan.name}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginBottom: 14 }}>
-        {plan.weeks} wks · {plan.sessions}×/wk · {plan.tag}{view.anchored ? " · peaks to competition" : ""}
+        {plan.weeks} wks · {plan.sessions}×/wk · {plan.tag}{view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
       </Text>
 
-      {/* Maxes — optional; the % stays either way, kg appears when filled. */}
+      {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
       <View style={card}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.lime }}>Your maxes (kg) — optional</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.lime }}>{view.inputsTitle}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-          {view.refLifts.map((rl) => (
-            <View key={rl.key} style={{ gap: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{rl.label}</Text>
+          {view.inputs.map((inp) => (
+            <View key={inp.key} style={{ gap: 4 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{inp.label}</Text>
               <TextInput
-                keyboardType="numeric"
-                value={maxes[rl.key] ? String(maxes[rl.key]) : ""}
-                onChangeText={(v) => setMax(rl.key, v)}
-                style={{ fontFamily: F.mono, width: 72, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 7 }}
+                keyboardType={inp.kind === "number" ? "numeric" : "default"}
+                placeholder={inp.placeholder ?? ""}
+                placeholderTextColor={C.ash}
+                value={vals[inp.key] ?? ""}
+                onChangeText={(v) => setVals((m) => ({ ...m, [inp.key]: v }))}
+                style={{ fontFamily: F.mono, width: inp.kind === "number" ? 72 : 104, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 7 }}
               />
             </View>
           ))}
@@ -82,7 +83,7 @@ export default function PercentProgram({
             </View>
           </Pressable>
         ))}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: "auto" }}>{view.weekNL} lifts</Text>
+        {!!view.weekVolume && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: "auto" }}>{view.weekVolume}</Text>}
       </View>
 
       {view.days.map((day, di) => (
@@ -91,11 +92,11 @@ export default function PercentProgram({
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>
               {day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}
             </Text>
-            {day.nl > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{day.nl} lifts</Text>}
+            {!!day.volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{day.volume}</Text>}
           </View>
           {day.sessions.map((s, si) => (
             <View key={si} style={{ marginTop: 10 }}>
-              {!!s.label && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{s.label} · {s.nl} lifts</Text>}
+              {(!!s.label || !!s.volume) && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</Text>}
               {s.lifts.map((l, li) => (
                 <View key={li} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingVertical: 8, borderTopWidth: li || s.label ? 1 : 0, borderTopColor: C.line }}>
                   <View style={{ flex: 1 }}>

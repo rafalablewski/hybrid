@@ -100,7 +100,9 @@ export const GOAL_TREE: GoalNode[] = [
   { id: "tri", name: "Triathlon", icon: "◆", color: BLUE, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
     plans: [] },
   { id: "run", name: "Running", icon: "▶", color: BLUE, category: "Endurance", blurb: "Get faster over 5k, 10k, half or full. Build the aerobic engine and durable legs.",
-    plans: [] },
+    plans: [
+      { id: "run-5k-beginner-9wk", name: "5K Beginner — 9 Weeks", weeks: 9, sessions: 4, tag: "Pace-based", desc: "A 9-week build to your first or fastest 5K: a weekly interval/hills day, a tempo day, easy miles and a long run, all run to your goal paces. Waves up the volume, then tapers into race week.", focus: ["Endurance", "Speed"], hot: true },
+    ] },
   { id: "cycling", name: "Cycling", icon: "◉", color: LIME, category: "Endurance", blurb: "More power on the bike — road, gravel, or indoor. Strength that drives the pedal stroke.",
     plans: [] },
   { id: "swim", name: "Swimming", icon: "◑", color: BLUE, category: "Endurance", blurb: "Faster in the water — dryland strength, mobility, and shoulder durability.",

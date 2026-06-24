@@ -42,12 +42,27 @@ export interface PlanLift {
   note?: string;
 }
 
+/** A prose workout item — the endurance/conditioning analogue of a PlanLift.
+ *  No % or sets; the prescription is written text (e.g. "5 × 1' hills",
+ *  "3 miles easy", "Long run: 35'"). */
+export interface PlanEntry {
+  /** workout type, e.g. "Tempo", "Intervals", "Long run", "Rest / cross-train". */
+  label: string;
+  /** the prescription as written, e.g. "3 × 1-mile tempo, 2' recovery". */
+  detail: string;
+  /** an alternative or cue, e.g. "or 30' cross-train", "jog down for recovery". */
+  note?: string;
+}
+
 export type PlanDayKind = "train" | "active-rest" | "rest" | "competition";
 
 export interface PlanSession {
   /** "AM" / "PM" — omitted for a single daily session. */
   label?: "AM" | "PM";
-  lifts: PlanLift[];
+  /** strength-percent content (% of 1RM lifts). */
+  lifts?: PlanLift[];
+  /** endurance / conditioning content (prose workouts). */
+  entries?: PlanEntry[];
 }
 
 export interface PlanDay {
@@ -65,18 +80,29 @@ export interface PlanWeek {
   note?: string;
 }
 
-export interface RefLift {
+/** A "fill in your numbers" field — the strength maxes (numeric, derive kg) or the
+ *  endurance goal paces (text, reference only). Generalizes the OWL maxes panel so
+ *  every discipline shows the same worksheet, appropriately typed. */
+export interface ProgramInput {
   key: string;
   label: string;
+  kind: "number" | "text";
+  /** numeric inputs that derive working load (the strength maxes). */
+  derives?: boolean;
+  placeholder?: string;
 }
 
 export interface PlanProgram {
   id: string;
   discipline: PlanDiscipline;
-  /** The lifts the athlete needs a 1RM for, to convert % → kg. */
-  refLifts: RefLift[];
-  /** "competition" → the plan peaks toward a meet on the final day. */
+  /** The athlete's reference inputs (strength maxes → kg, or goal paces). */
+  inputs: ProgramInput[];
+  /** Heading for the inputs panel. */
+  inputsTitle: string;
+  /** "competition" → the plan peaks toward a meet/race on the final day. */
   anchor?: "competition";
+  /** Word for the peak day + the "peaks to …" note (e.g. "Competition", "Race day"). */
+  peakLabel?: string;
   weeks: PlanWeek[];
   progression: string;
   source?: string;
@@ -123,7 +149,7 @@ export function liftNL(lift: PlanLift): number {
   return lift.steps.reduce((n, s) => n + (s.reps + (s.plus ?? 0)) * s.sets, 0);
 }
 export function sessionNL(s: PlanSession): number {
-  return s.lifts.reduce((n, l) => n + liftNL(l), 0);
+  return (s.lifts ?? []).reduce((n, l) => n + liftNL(l), 0);
 }
 export function dayNL(d: PlanDay): number {
   return d.sessions.reduce((n, s) => n + sessionNL(s), 0);
@@ -163,22 +189,18 @@ export function formatLift(lift: PlanLift, maxes?: Record<string, number>): stri
 //  View model — one render-ready shape for ALL clients
 // ============================================================
 
-const KIND_LABEL: Record<Exclude<PlanDayKind, "train">, string> = {
-  "active-rest": "Active rest",
-  rest: "Rest",
-  competition: "Competition",
-};
-
 export interface ProgramLiftView {
   name: string;
   prescription: string;
   nl: number;
-  /** complex / tempo annotation, or null. */
+  /** complex / tempo / alternative annotation, or null. */
   note: string | null;
 }
 export interface ProgramSessionView {
   label: string | null;
   nl: number;
+  /** discipline-aware volume label (e.g. "71 lifts"), or null. */
+  volume: string | null;
   lifts: ProgramLiftView[];
 }
 export interface ProgramDayView {
@@ -186,6 +208,7 @@ export interface ProgramDayView {
   /** null for an ordinary training day; the label for rest/active-rest/competition. */
   kindLabel: string | null;
   nl: number;
+  volume: string | null;
   sessions: ProgramSessionView[];
 }
 export interface ProgramView {
@@ -193,8 +216,12 @@ export interface ProgramView {
   weeks: number[];
   week: number;
   weekNL: number;
-  anchored: boolean;
-  refLifts: RefLift[];
+  /** discipline-aware weekly volume label (e.g. "988 lifts"), or null. */
+  weekVolume: string | null;
+  /** "Peaks to competition" / "Peaks to race day", or null. */
+  peakNote: string | null;
+  inputs: ProgramInput[];
+  inputsTitle: string;
   days: ProgramDayView[];
   progression: string;
 }
@@ -206,10 +233,26 @@ function liftNote(lift: PlanLift): string | null {
   return bits.length ? bits.join(" · ") : null;
 }
 
+function kindLabelFor(program: PlanProgram, kind: PlanDayKind): string | null {
+  if (kind === "train") return null;
+  if (kind === "active-rest") return "Active rest";
+  if (kind === "rest") return "Rest";
+  return program.peakLabel ?? "Competition"; // competition
+}
+
+// Volume is discipline-specific: the Soviet plan counts NL (number of lifts);
+// endurance/conditioning have no comparable per-day count, so no label is shown
+// (the layout stays identical — the counter chip is simply absent).
+function volumeLabel(program: PlanProgram, nl: number): string | null {
+  if (program.discipline === "strength-percent" && nl > 0) return `${nl} lifts`;
+  return null;
+}
+
 /**
- * Build the render-ready view for one week of a program. `maxes` (athlete 1RMs
- * keyed by RefLift.key) is optional — when absent, prescriptions show the % only;
- * when present, each step also shows the derived kg. Clamps the week into range.
+ * Build the render-ready view for one week of a program — the SAME shape for every
+ * discipline, so all clients render any plan identically. `maxes` (numeric inputs
+ * keyed by ProgramInput.key) is optional: when present, strength prescriptions also
+ * show the derived kg. Clamps the week into range.
  */
 export function planProgramView(
   program: PlanProgram,
@@ -220,28 +263,43 @@ export function planProgramView(
   const week = program.weeks.find((w) => w.index === wanted) ?? program.weeks[0]!;
   const maxes = opts.maxes;
 
-  const days: ProgramDayView[] = week.days.map((d) => ({
-    title: d.title,
-    kindLabel: d.kind === "train" ? null : KIND_LABEL[d.kind],
-    nl: dayNL(d),
-    sessions: d.sessions.map((s) => ({
-      label: s.label ?? null,
-      nl: sessionNL(s),
-      lifts: s.lifts.map((l) => ({
-        name: l.name,
-        prescription: formatLift(l, maxes),
-        nl: liftNL(l),
-        note: liftNote(l),
-      })),
-    })),
-  }));
+  const days: ProgramDayView[] = week.days.map((d) => {
+    const nl = dayNL(d);
+    return {
+      title: d.title,
+      kindLabel: kindLabelFor(program, d.kind),
+      nl,
+      volume: volumeLabel(program, nl),
+      sessions: d.sessions.map((s) => {
+        const snl = sessionNL(s);
+        const lifts: ProgramLiftView[] = [
+          ...(s.lifts ?? []).map((l) => ({
+            name: l.name,
+            prescription: formatLift(l, maxes),
+            nl: liftNL(l),
+            note: liftNote(l),
+          })),
+          ...(s.entries ?? []).map((e) => ({
+            name: e.label,
+            prescription: e.detail,
+            nl: 0,
+            note: e.note ?? null,
+          })),
+        ];
+        return { label: s.label ?? null, nl: snl, volume: volumeLabel(program, snl), lifts };
+      }),
+    };
+  });
 
+  const wnl = weekNL(week);
   return {
     weeks,
     week: week.index,
-    weekNL: weekNL(week),
-    anchored: program.anchor === "competition",
-    refLifts: program.refLifts,
+    weekNL: wnl,
+    weekVolume: volumeLabel(program, wnl),
+    peakNote: program.anchor === "competition" ? `Peaks to ${(program.peakLabel ?? "competition").toLowerCase()}` : null,
+    inputs: program.inputs,
+    inputsTitle: program.inputsTitle,
     days,
     progression: program.progression,
   };
