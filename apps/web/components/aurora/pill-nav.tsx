@@ -16,13 +16,14 @@ import { AuroraIcon } from "./icons";
  * gates to Aurora (renders null in Classic). Glyphs are the uploaded design-kit
  * line icons only. "More" opens a sheet with the full persona-filtered nav.
  */
-// PRIMARY pills sit either side of the elevated center Train action. The bar
-// reads Today · History · [Train] · Plans · More. Profile (You) left the bar —
-// it's now in the Today header + the More sheet's Account group — so Plans (the
-// core "follow a program" loop) takes the slot; Cockpit stays in the More sheet.
+// PRIMARY pills sit to the LEFT of the elevated center Train action; History ·
+// More sit to the right. The bar reads Today · Plans · [Train] · History · More.
+// Profile (You) left the bar — it's now in the Today header + the More sheet's
+// Account group — so Plans (the core "follow a program" loop) takes a slot;
+// Cockpit stays in the More sheet.
 const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
   { id: "today", icon: "village", label: "Today" },
-  { id: "history", icon: "copy", label: "History" },
+  { id: "plans", icon: "bookmark", label: "Plans" },
 ];
 
 const C = (v: string) => `var(--color-${v})`;
@@ -42,10 +43,11 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 
   const tabs = PRIMARY;
   // "More" lights only when the active screen isn't one of the bar slots
-  // (Today, History, Train/log, Plans) and the sheet isn't explicitly open.
-  // Profile is no longer a bar slot (it's in the Today header + the More sheet's
-  // Account group), so landing on it lights "More".
-  const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "plans"]);
+  // (Today, Plans, Train/log, History) and the sheet isn't explicitly open.
+  // History sits outside `tabs` (it's the standalone pill right of Train), so
+  // add it explicitly. Profile is no longer a bar slot (it's in the Today header
+  // + the More sheet's Account group), so landing on it lights "More".
+  const barIds = new Set<string>([...tabs.map((t) => t.id), "log", "history"]);
   const moreActive = moreOpen || (activeId != null && !barIds.has(activeId));
   const groups = groupedNav(navForPersona(persona, undefined, access))
     .map((g) => ({ ...g, items: g.items.filter((it) => isEnabled(`nav.${it.id}`)) }))
@@ -104,12 +106,12 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             than the classic .liquid-glass (translucent tint + a top rim highlight,
             no grain/sheen). */}
         <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
-          {/* Today · History | [Train] | Plans · More */}
+          {/* Today · Plans | [Train] | History · More */}
           {tabs.map((tab) => (
             <PillButton key={tab.id} icon={tab.icon} label={label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
-          <PillButton icon="bookmark" label={label("plans", "Plans")} active={activeId === "plans"} onClick={() => go("plans")} />
+          <PillButton icon="copy" label={label("history", "History")} active={activeId === "history"} onClick={() => go("history")} />
           <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
         </div>
       </div>

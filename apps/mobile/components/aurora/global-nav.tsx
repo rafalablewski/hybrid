@@ -14,19 +14,19 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
-// The bottom nav: Today · History · [Train FAB] · Plans · More. Train is the
+// The bottom nav: Today · Plans · [Train FAB] · History · More. Train is the
 // elevated centre action (a raised lime FAB that punches up through the bar).
 // Profile (You) is no longer on the bar — it now lives in the Today header and
-// the More hub — so this slot carries PLANS (the core "follow a program" loop,
-// previously buried in More). Cockpit stays reachable from the More hub. Side
-// glyphs are design-kit line icons only (no custom-drawn marks).
+// the More hub — so PLANS (the core "follow a program" loop, previously buried
+// in More) sits beside Today, with History · More on the right and Cockpit still
+// reachable from the More hub. Side glyphs are design-kit line icons only.
 type Side = { id: string; glyph: AuroraIconName; labelKey?: string; label?: string; href: Href; seg: string };
 const LEFT: Side[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", href: "/(tabs)", seg: "index" },
-  { id: "history", glyph: "copy", labelKey: "nav.history", href: "/(tabs)/history", seg: "history" },
+  { id: "plans", glyph: "bookmark", labelKey: "nav.plans", href: "/(tabs)/plans", seg: "plans" },
 ];
 const RIGHT: Side[] = [
-  { id: "plans", glyph: "bookmark", labelKey: "nav.plans", href: "/(tabs)/plans", seg: "plans" },
+  { id: "history", glyph: "copy", labelKey: "nav.history", href: "/(tabs)/history", seg: "history" },
   { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
 ];
 // The centre Train action starts logging RIGHT NOW: it drops straight into the
