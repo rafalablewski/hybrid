@@ -44,14 +44,32 @@ export interface PlanLift {
 
 /** A prose workout item — the endurance/conditioning analogue of a PlanLift.
  *  No % or sets; the prescription is written text (e.g. "5 × 1' hills",
- *  "3 miles easy", "Long run: 35'"). */
+ *  "3 miles easy", "Long run: 35'").
+ *
+ *  For hypertrophy exercises, supply the structured fields (`sets`, `reps`,
+ *  `rpe`, `weightRef`) instead of writing prescription text into `detail` —
+ *  `planProgramView` will derive the formatted prescription automatically and
+ *  substitute the athlete's working weight when provided. */
 export interface PlanEntry {
   /** workout type, e.g. "Tempo", "Intervals", "Long run", "Rest / cross-train". */
   label: string;
-  /** the prescription as written, e.g. "3 × 1-mile tempo, 2' recovery". */
+  /** the prescription as written, e.g. "3 × 1-mile tempo, 2' recovery".
+   *  Ignored when `sets` is present — the prescription is computed instead. */
   detail: string;
   /** an alternative or cue, e.g. "or 30' cross-train", "jog down for recovery". */
   note?: string;
+
+  // ── hypertrophy structured fields ───────────────────────────────────────
+  /** Fixed set count. When present, `detail` is ignored and the prescription
+   *  is derived from these fields. */
+  sets?: number;
+  /** Fixed rep target, or "AMRAP" for all-out sets. */
+  reps?: number | "AMRAP";
+  /** Target RPE (1–10). */
+  rpe?: number;
+  /** Key into the athlete's `maxes` / program inputs — when the athlete
+   *  fills in a weight for this key, it appears in the prescription. */
+  weightRef?: string;
 }
 
 export type PlanDayKind = "train" | "active-rest" | "rest" | "competition";
@@ -226,6 +244,19 @@ export interface ProgramView {
   progression: string;
 }
 
+/** Format a hypertrophy (or prose) entry's prescription.
+ *  Structured hypo entries → "4×6 · 80 kg · @9" (or without kg when unknown).
+ *  Prose entries (endurance / conditioning) → detail string unchanged. */
+function formatEntry(e: PlanEntry, maxes?: Record<string, number>): string {
+  if (e.sets == null) return e.detail;
+  const reps = e.reps === "AMRAP" ? "AMRAP" : `${e.reps ?? ""}`;
+  const parts: string[] = [`${e.sets}×${reps}`];
+  const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;
+  if (kg) parts.push(`${kg} kg`);
+  if (e.rpe != null) parts.push(`@${e.rpe}`);
+  return parts.join(" · ");
+}
+
 function liftNote(lift: PlanLift): string | null {
   const bits: string[] = [];
   if (lift.complexWith) bits.push(`+ ${lift.complexWith}`);
@@ -288,7 +319,7 @@ export function planProgramView(
           })),
           ...(s.entries ?? []).map((e) => ({
             name: e.label,
-            prescription: e.detail,
+            prescription: formatEntry(e, maxes),
             nl: 0,
             note: e.note ?? null,
           })),

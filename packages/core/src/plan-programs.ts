@@ -680,8 +680,16 @@ export const RUN_5K_BEGINNER_9WK: PlanProgram = buildRunProgram(
 //  like, adding weight/reps each cycle). Source: a 6-day Push/Pull/Legs split.
 // ============================================================
 
-// An exercise row: [name, sets, reps] (sets/reps are ranges, e.g. "4–5", "6–12").
-type BBExercise = [string, string, string];
+// A structured exercise: fixed sets, fixed reps (or AMRAP), target RPE, and an
+// optional weight reference key (maps to a program input so the athlete's
+// working weight appears in the prescription).
+interface BBExercise {
+  name: string;
+  sets: number;
+  reps: number | "AMRAP";
+  rpe: number;
+  weightRef?: string;
+}
 // A focused training day: a weekday + a focus label + its exercises.
 interface BBDay {
   day: string;
@@ -696,9 +704,13 @@ function buildBBDay(d: BBDay, index: number): PlanDay {
     title: `${d.day} · ${d.focus}`,
     sessions: [
       {
-        entries: d.exercises.map(([name, sets, reps], i) => ({
-          label: name,
-          detail: `${sets} × ${reps}`,
+        entries: d.exercises.map((ex, i) => ({
+          label: ex.name,
+          detail: `${ex.sets}×${ex.reps === "AMRAP" ? "AMRAP" : ex.reps}`,
+          sets: ex.sets,
+          reps: ex.reps,
+          rpe: ex.rpe,
+          ...(ex.weightRef ? { weightRef: ex.weightRef } : {}),
           ...(i === 0 ? { note: "Main lift — progressive overload" } : {}),
         })),
       },
@@ -706,70 +718,74 @@ function buildBBDay(d: BBDay, index: number): PlanDay {
   };
 }
 
+// RPE guide (from the progression note):
+//   Main lift (index 0): RPE 9 — 1 rep in reserve; don't grind the last rep.
+//   Accessory work:      RPE 8 — 2 reps in reserve; controlled effort.
+//   Final exercise:      RPE 10 — push to technical failure on the last set.
 const BB_DAYS: BBDay[] = [
   {
     day: "Mon",
     focus: "Push (Bench)",
     exercises: [
-      ["Bench Press", "4–5", "6–12 reps"],
-      ["Incline Bench Press", "3–4", "8–12 reps"],
-      ["Overhead Dumbbell Press", "3", "10–15 reps"],
-      ["Skull Crushers", "3", "10–15 reps"],
-      ["Lateral Raises", "3", "12–15 reps"],
+      { name: "Bench Press",             sets: 4, reps: 6,       rpe: 9, weightRef: "bench" },
+      { name: "Incline Bench Press",     sets: 3, reps: 8,       rpe: 8 },
+      { name: "Overhead Dumbbell Press", sets: 3, reps: 10,      rpe: 8 },
+      { name: "Skull Crushers",          sets: 3, reps: 10,      rpe: 8 },
+      { name: "Lateral Raises",          sets: 3, reps: 12,      rpe: 10 },
     ],
   },
   {
     day: "Tue",
     focus: "Pull (Chin-Up)",
     exercises: [
-      ["Chin-Up", "4–5", "6–12 reps"],
-      ["Seated Cable Row", "4–5", "8–12 reps"],
-      ["Lat Pulldown", "4", "10–15 reps"],
-      ["Lying Biceps Curl", "3", "10–15 reps"],
-      ["Forearm Curl", "3", "12–15 reps"],
+      { name: "Chin-Up",           sets: 4, reps: 6,       rpe: 9 },
+      { name: "Seated Cable Row",  sets: 4, reps: 8,       rpe: 8 },
+      { name: "Lat Pulldown",      sets: 4, reps: 10,      rpe: 8 },
+      { name: "Lying Biceps Curl", sets: 3, reps: 10,      rpe: 8 },
+      { name: "Forearm Curl",      sets: 3, reps: 12,      rpe: 10 },
     ],
   },
   {
     day: "Wed",
     focus: "Legs (Squat)",
     exercises: [
-      ["Squat", "3–4", "6–10 reps"],
-      ["Romanian Deadlift", "2–3", "8–12 reps"],
-      ["Leg Extension", "3", "10–15 reps"],
-      ["Hamstring Curl", "3", "10–15 reps"],
-      ["Standing Calf Raise", "3", "12–15 reps"],
+      { name: "Squat",               sets: 3, reps: 6,  rpe: 9, weightRef: "squat" },
+      { name: "Romanian Deadlift",   sets: 2, reps: 8,  rpe: 8 },
+      { name: "Leg Extension",       sets: 3, reps: 10, rpe: 8 },
+      { name: "Hamstring Curl",      sets: 3, reps: 10, rpe: 8 },
+      { name: "Standing Calf Raise", sets: 3, reps: 12, rpe: 10 },
     ],
   },
   {
     day: "Thu",
     focus: "Push (Overhead Press)",
     exercises: [
-      ["Overhead Press", "4–5", "6–10 reps"],
-      ["Dips", "4–5", "AMRAP"],
-      ["Chest Fly", "3", "10–15 reps"],
-      ["Overhead Extensions", "3", "10–15 reps"],
-      ["Lateral Raises", "3", "12–15 reps"],
+      { name: "Overhead Press",      sets: 4, reps: 6,       rpe: 9, weightRef: "ohp" },
+      { name: "Dips",                sets: 4, reps: "AMRAP", rpe: 10 },
+      { name: "Chest Fly",           sets: 3, reps: 10,      rpe: 8 },
+      { name: "Overhead Extensions", sets: 3, reps: 10,      rpe: 8 },
+      { name: "Lateral Raises",      sets: 3, reps: 12,      rpe: 10 },
     ],
   },
   {
     day: "Fri",
     focus: "Pull (Pull-Up)",
     exercises: [
-      ["Pull-Up", "4–5", "AMRAP"],
-      ["T-Bar Row", "4–5", "8–12 reps"],
-      ["Pullover", "3", "10–15 reps"],
-      ["Dumbbell Curl", "3", "10–15 reps"],
-      ["Hammer Curl", "3", "10–15 reps"],
+      { name: "Pull-Up",       sets: 4, reps: "AMRAP", rpe: 10 },
+      { name: "T-Bar Row",     sets: 4, reps: 8,       rpe: 8 },
+      { name: "Pullover",      sets: 3, reps: 10,      rpe: 8 },
+      { name: "Dumbbell Curl", sets: 3, reps: 10,      rpe: 8 },
+      { name: "Hammer Curl",   sets: 3, reps: 10,      rpe: 10 },
     ],
   },
   {
     day: "Sat",
     focus: "Legs (Deadlift)",
     exercises: [
-      ["Deadlift", "3–5", "6–12 reps"],
-      ["Leg Press", "3–5", "8–12 reps"],
-      ["Back Extensions", "3", "10–15 reps"],
-      ["Reverse Crunches", "3", "AMRAP"],
+      { name: "Deadlift",          sets: 3, reps: 6,       rpe: 9, weightRef: "deadlift" },
+      { name: "Leg Press",         sets: 3, reps: 8,       rpe: 8 },
+      { name: "Back Extensions",   sets: 3, reps: 10,      rpe: 8 },
+      { name: "Reverse Crunches",  sets: 3, reps: "AMRAP", rpe: 10 },
     ],
   },
 ];
@@ -777,12 +793,12 @@ const BB_DAYS: BBDay[] = [
 export const BB_PPL_6DAY: PlanProgram = {
   id: "bb-ppl-6day",
   discipline: "hypertrophy",
-  inputsTitle: "Your working weights (kg) — optional, jot what you lifted last time",
+  inputsTitle: "Your working weights (kg) — fills into the prescription",
   inputs: [
-    { key: "bench", label: "Bench Press", kind: "number" },
-    { key: "ohp", label: "Overhead Press", kind: "number" },
-    { key: "squat", label: "Squat", kind: "number" },
-    { key: "deadlift", label: "Deadlift", kind: "number" },
+    { key: "bench",    label: "Bench Press",      kind: "number", derives: true },
+    { key: "ohp",      label: "Overhead Press",   kind: "number", derives: true },
+    { key: "squat",    label: "Squat",             kind: "number", derives: true },
+    { key: "deadlift", label: "Deadlift",          kind: "number", derives: true },
   ],
   progression:
     "A 6-day Push/Pull/Legs split built on progressive overload. Each day opens with a big compound (the MAIN LIFT) " +
