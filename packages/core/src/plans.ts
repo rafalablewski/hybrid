@@ -107,7 +107,7 @@ export const GOAL_TREE: GoalNode[] = [
     ] },
   { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
     plans: [
-      { id: "fatloss-4day", name: "4-Day Lower / Upper", weeks: 10, sessions: 4, tag: "Lower/Upper", desc: "The most effective setup for the average person — 4 days lifting (two lower, two upper) plus 10–12k steps a day, each session capped with a conditioning finisher.", focus: ["Strength", "Conditioning"], hot: true },
+      { id: "fatloss-4day", name: "4-Day Upper / Lower", weeks: 10, sessions: 4, tag: "Upper/Lower", desc: "The most effective setup for the average person — 4 days lifting (two upper, two lower) plus 10–12k steps a day, each session capped with a conditioning finisher.", focus: ["Strength", "Conditioning"], hot: true },
       { id: "fatloss-3day", name: "3-Day Full Body", weeks: 8, sessions: 3, tag: "Full Body", desc: "The beginner-friendly, time-efficient option. Full-body strength three times a week plus conditioning and core — hold onto muscle while the fat comes off.", focus: ["Strength", "Conditioning"] },
       { id: "fatloss-5day", name: "5-Day Strength + Conditioning", weeks: 8, sessions: 5, tag: "5 Days", desc: "For serious lifters getting lean: two strength days, two hypertrophy days, and a dedicated conditioning circuit for the highest weekly burn.", focus: ["Hypertrophy", "Conditioning"] },
     ] },
@@ -695,20 +695,13 @@ export const PLAN_DETAIL: Record<string, PlanDetail> = {
   },
   "fatloss-4day": {
     level: "Intermediate",
-    forWho: "Lifters in a deficit who can train 4 days/week — the most effective setup for the average person: 4 days lifting (Lower/Upper × 2) plus 10–12k steps a day.",
+    forWho: "Lifters in a deficit who can train 4 days/week — the most effective setup for the average person: 4 days lifting (Upper/Lower × 2) plus 10–12k steps a day.",
     outcome: "Fat off, muscle and strength kept — two lower and two upper days that defend the big lifts, each capped with a short conditioning finisher.",
     sessionLength: "60–75 min",
     equipment: "Full gym (barbell, dumbbells, cables, machines, sled, assault bike/rower/treadmill)",
-    split: ["Lower", "Upper", "Rest", "Lower", "Upper", "Rest", "Rest"],
+    split: ["Upper", "Lower", "Rest", "Upper", "Lower", "Rest", "Rest"],
     days: [
-      { day: "Day 1 — Lower", items: [
-        { name: "Back Squat", sr: "4 × 6", rest: "2:30", rpe: "8" },
-        { name: "Romanian Deadlift", sr: "4 × 8", rest: "2:00", rpe: "8" },
-        { name: "Walking Lunge", sr: "3 × 12 / leg", rest: "1:30", rpe: "8" },
-        { name: "Leg Curl", sr: "3 × 15", rest: "1:00", rpe: "9" },
-        { name: "Sled Push (finisher)", sr: "1 × 10 min", rest: "—", rpe: "8" },
-      ] },
-      { day: "Day 2 — Upper", items: [
+      { day: "Day 1 — Upper", items: [
         { name: "Bench Press", sr: "4 × 6", rest: "2:30", rpe: "8" },
         { name: "Barbell Row", sr: "4 × 8", rest: "2:00", rpe: "8" },
         { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
@@ -716,14 +709,14 @@ export const PLAN_DETAIL: Record<string, PlanDetail> = {
         { name: "Face Pull", sr: "3 × 15", rest: "1:00", rpe: "9" },
         { name: "Assault Bike Intervals (finisher)", sr: "1 × 10 min", rest: "—", rpe: "9" },
       ] },
-      { day: "Day 3 — Lower", items: [
-        { name: "Deadlift", sr: "4 × 4", rest: "2:30", rpe: "8" },
-        { name: "Front Squat", sr: "4 × 6", rest: "2:30", rpe: "8" },
-        { name: "Bulgarian Split Squat", sr: "3 × 10", rest: "1:30", rpe: "8" },
-        { name: "Standing Calf Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
-        { name: "Incline Walk (finisher)", sr: "1 × 20 min", rest: "—", rpe: "6" },
+      { day: "Day 2 — Lower", items: [
+        { name: "Back Squat", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Walking Lunge", sr: "3 × 12 / leg", rest: "1:30", rpe: "8" },
+        { name: "Leg Curl", sr: "3 × 15", rest: "1:00", rpe: "9" },
+        { name: "Sled Push (finisher)", sr: "1 × 10 min", rest: "—", rpe: "8" },
       ] },
-      { day: "Day 4 — Upper", items: [
+      { day: "Day 3 — Upper", items: [
         { name: "Overhead Press", sr: "4 × 6", rest: "2:30", rpe: "8" },
         { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
         { name: "Dumbbell Bench Press", sr: "3 × 10", rest: "1:30", rpe: "8" },
@@ -731,6 +724,13 @@ export const PLAN_DETAIL: Record<string, PlanDetail> = {
         { name: "Biceps Curl (superset)", sr: "3 × 12", rest: "1:00", rpe: "9" },
         { name: "Triceps Pushdown (superset)", sr: "3 × 12", rest: "1:00", rpe: "9" },
         { name: "Rowing Machine (finisher)", sr: "1 × 15 min", rest: "—", rpe: "8" },
+      ] },
+      { day: "Day 4 — Lower", items: [
+        { name: "Deadlift", sr: "4 × 4", rest: "2:30", rpe: "8" },
+        { name: "Front Squat", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Bulgarian Split Squat", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Standing Calf Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Incline Walk (finisher)", sr: "1 × 20 min", rest: "—", rpe: "6" },
       ] },
     ],
     progression: "The deficit drives the fat loss; this split defends your muscle and strength, so aim to MATCH last week's loads on the main lifts rather than chase PRs. Sustainable weekly layout: Mon Upper, Tue Lower, Wed walk, Thu Upper, Fri Lower, Sat long walk/cardio, Sun rest. Step targets: 10–12k/day good, 12–15k/day for an aggressive cut (plus 2–5 cardio sessions/week). When weight loss stalls for 2 weeks, make ONE change at a time — +2,000 daily steps, OR +10 min cardio per session, OR −150–200 kcal/day.",
