@@ -90,27 +90,63 @@ export default function PercentProgram({
       )}
 
       {view.days.map((day, di) => (
-        <View key={di} style={card}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+        <View key={di} style={{ ...card, padding: 0 }}>
+          {/* Day header */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>
               {day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}
             </Text>
             {!!day.volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{day.volume}</Text>}
           </View>
-          {day.sessions.map((s, si) => (
-            <View key={si} style={{ marginTop: 10 }}>
-              {(!!s.label || !!s.volume) && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</Text>}
-              {s.lifts.map((l, li) => (
-                <View key={li} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingVertical: 8, borderTopWidth: li || s.label ? 1 : 0, borderTopColor: C.line }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{l.name}</Text>
-                    {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
+
+          {day.sessions.map((s, si) => {
+            const isHypo = s.lifts.some((l) => l.rpe != null);
+            return (
+              <View key={si}>
+                {/* Session sub-label (AM / PM) */}
+                {(!!s.label || !!s.volume) && (
+                  <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</Text>
                   </View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right" }}>{l.prescription}</Text>
+                )}
+
+                {/* Column headers */}
+                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
+                  {isHypo ? (
+                    <>
+                      <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets</Text>
+                      <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Wt</Text>
+                      <Text style={{ width: 38, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
+                    </>
+                  ) : (
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Prescription</Text>
+                  )}
                 </View>
-              ))}
-            </View>
-          ))}
+
+                {/* Rows */}
+                {s.lifts.map((l, li) => (
+                  <View key={li} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: li > 0 ? 1 : 0, borderTopColor: C.line }}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{l.name}</Text>
+                      {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
+                    </View>
+                    {isHypo ? (
+                      <>
+                        <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{l.setsReps ?? "—"}</Text>
+                        <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.body, color: C.ash, textAlign: "right" }}>{l.weight ?? "—"}</Text>
+                        <View style={{ width: 38, alignItems: "flex-end" }}>
+                          {l.rpe != null && <MobileRpeBadge rpe={l.rpe} C={C} />}
+                        </View>
+                      </>
+                    ) : (
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            );
+          })}
         </View>
       ))}
 
@@ -125,6 +161,16 @@ export default function PercentProgram({
         </Text>
       </Pressable>
       {state === "error" && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
+    </View>
+  );
+}
+
+function MobileRpeBadge({ rpe, C }: { rpe: number; C: ReturnType<typeof useTheme>["palette"] }) {
+  const color  = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : C.ash;
+  const border = rpe >= 10 ? "rgba(232,168,56,.35)" : rpe >= 9 ? "rgba(94,160,224,.3)" : "rgba(80,80,80,.25)";
+  return (
+    <View style={{ borderWidth: 1, borderColor: border, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2, alignItems: "center" }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "bold" as const, color }}>@{rpe}</Text>
     </View>
   );
 }

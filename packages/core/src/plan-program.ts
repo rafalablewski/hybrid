@@ -209,10 +209,19 @@ export function formatLift(lift: PlanLift, maxes?: Record<string, number>): stri
 
 export interface ProgramLiftView {
   name: string;
+  /** Combined prescription string — always set; used as the single-column
+   *  fallback for strength-percent and endurance entries. */
   prescription: string;
   nl: number;
   /** complex / tempo / alternative annotation, or null. */
   note: string | null;
+  // ── hypertrophy structured fields (present when the entry has sets/rpe) ──
+  /** "4×6" or "4×AMRAP" — split from prescription for tabular display. */
+  setsReps?: string;
+  /** "80 kg" when the athlete's weight is known, null otherwise. */
+  weight?: string | null;
+  /** Target RPE (8 / 9 / 10). Presence signals that tabular columns apply. */
+  rpe?: number;
 }
 export interface ProgramSessionView {
   label: string | null;
@@ -317,12 +326,22 @@ export function planProgramView(
             nl: liftNL(l),
             note: liftNote(l),
           })),
-          ...(s.entries ?? []).map((e) => ({
-            name: e.label,
-            prescription: formatEntry(e, maxes),
-            nl: 0,
-            note: e.note ?? null,
-          })),
+          ...(s.entries ?? []).map((e) => {
+            const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;
+            const setsReps =
+              e.sets != null
+                ? `${e.sets}×${e.reps === "AMRAP" ? "AMRAP" : (e.reps ?? "")}`
+                : undefined;
+            return {
+              name: e.label,
+              prescription: formatEntry(e, maxes),
+              nl: 0,
+              note: e.note ?? null,
+              ...(setsReps != null ? { setsReps } : {}),
+              ...(setsReps != null ? { weight: kg ? `${kg} kg` : null } : {}),
+              ...(e.rpe != null ? { rpe: e.rpe } : {}),
+            };
+          }),
         ];
         return { label: s.label ?? null, nl: snl, volume: volumeLabel(program, snl, sessionItems(s)), lifts };
       }),
