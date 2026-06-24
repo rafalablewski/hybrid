@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
@@ -13,8 +13,12 @@ export default function PlansScreen({ onEnrolled }: { onEnrolled?: () => void })
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
-  if (plan && goal)
+  if (plan && goal) {
+    const program = programFor(plan.id);
+    if (program)
+      return <PercentProgramView goal={goal} plan={plan} program={program} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
     return <PlanDetailView goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+  }
   if (goal)
     return (
       <PlanList
@@ -245,6 +249,153 @@ function PlanDetailView({
           : state === "done"
             ? "✓ Enrolled — see Periodize"
             : `Enroll in ${plan.name} →`}
+      </button>
+      {state === "error" && (
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={AMBER}>
+          Couldn&apos;t enroll — sign in (real auth) and try again.
+        </Mono>
+      )}
+    </div>
+  );
+}
+
+// Discipline-shaped program view — renders ANY PlanProgram (Olympic-weightlifting
+// % blocks, endurance pace plans, …) through the SAME shared planProgramView, so
+// every plan comes out in one consistent HYBRID layout: a week selector, the
+// discipline's volume label, AM/PM or weekday cards, the prescription KEPT as
+// written, and a "fill in your numbers" panel (strength maxes → kg, or goal paces).
+function PercentProgramView({
+  goal,
+  plan,
+  program,
+  back,
+  onEnrolled,
+}: {
+  goal: GoalNode;
+  plan: GoalPlan;
+  program: PlanProgram;
+  back: () => void;
+  onEnrolled?: () => void;
+}) {
+  const [week, setWeek] = useState(1);
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const maxes: Record<string, number> = {};
+  for (const i of program.inputs) {
+    if (i.kind !== "number") continue;
+    const n = parseFloat(vals[i.key] ?? "");
+    if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
+  }
+  const view = planProgramView(program, { week, maxes });
+
+  const enroll = async () => {
+    setState("busy");
+    try {
+      const res = await fetch("/api/macrocycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: goal.name, planId: plan.id }),
+      });
+      if (!res.ok) return setState("error");
+      setState("done");
+      onEnrolled?.();
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 860 }}>
+      <BackLink onClick={back} label={goal.name} />
+      <h2 style={{ ...disp, fontWeight: 900, fontSize: 28, margin: "6px 0 4px" }}>{plan.name}</h2>
+      <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }}>
+        {plan.weeks} week{plan.weeks === 1 ? "" : "s"} · {plan.sessions}×/week · {plan.tag}
+        {view.peakNote ? ` · ${view.peakNote.toLowerCase()}` : ""}
+      </Mono>
+
+      {/* Inputs — strength maxes (→ kg) or goal paces. Optional; the plan reads the same either way. */}
+      <Card style={{ marginBottom: 16 }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+          {view.inputsTitle}
+        </Mono>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
+          {view.inputs.map((inp) => (
+            <label key={inp.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Mono s={{ fontSize: fs.nano }} c={ASH}>{inp.label}</Mono>
+              <input
+                type={inp.kind === "number" ? "number" : "text"}
+                inputMode={inp.kind === "number" ? "numeric" : undefined}
+                placeholder={inp.placeholder ?? ""}
+                value={vals[inp.key] ?? ""}
+                onChange={(e) => setVals((v) => ({ ...v, [inp.key]: e.target.value }))}
+                style={{ ...mono, width: inp.kind === "number" ? 78 : 116, fontSize: fs.body, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 9px", outline: "none" }}
+              />
+            </label>
+          ))}
+        </div>
+      </Card>
+
+      {/* Week selector (hidden for a single-week plan) + week volume. */}
+      {(view.weeks.length > 1 || view.weekVolume) && (
+        <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          {view.weeks.length > 1 &&
+            view.weeks.map((w) => (
+              <button
+                key={w}
+                onClick={() => setWeek(w)}
+                style={{ ...mono, fontSize: fs.caption, color: w === view.week ? ON_ACCENT : CHALK, background: w === view.week ? LIME : INK2, border: `1px solid ${w === view.week ? LIME : LINE}`, borderRadius: 8, padding: "7px 12px", cursor: "pointer" }}
+              >
+                Wk {w}
+              </button>
+            ))}
+          {view.weekVolume && (
+            <Mono s={{ fontSize: fs.caption, marginLeft: "auto" }} c={ASH}>
+              {view.weekVolume} this week
+            </Mono>
+          )}
+        </div>
+      )}
+
+      {view.days.map((day, di) => (
+        <Card key={di} style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+              {day.title}
+              {day.kindLabel ? ` — ${day.kindLabel}` : ""}
+            </Mono>
+            {day.volume && <Mono s={{ fontSize: fs.nano }} c={ASH}>{day.volume}</Mono>}
+          </div>
+          {day.sessions.map((s, si) => (
+            <div key={si} style={{ marginTop: 10 }}>
+              {(s.label || s.volume) && (
+                <Mono s={{ fontSize: fs.nano, letterSpacing: ".1em" }} c={LIME}>
+                  {[s.label, s.volume].filter(Boolean).join(" · ")}
+                </Mono>
+              )}
+              {s.lifts.map((l, li) => (
+                <div key={li} style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>
+                    {l.note && <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 2 }} c={ASH}>{l.note}</Mono>}
+                  </div>
+                  <Mono s={{ fontSize: fs.caption, textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }} c={CHALK}>
+                    {l.prescription}
+                  </Mono>
+                </div>
+              ))}
+            </div>
+          ))}
+        </Card>
+      ))}
+
+      <Info label="How it progresses" value={view.progression} />
+
+      <button
+        onClick={enroll}
+        disabled={state === "busy" || state === "done"}
+        style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: state === "done" ? INK2 : LIME, color: state === "done" ? LIME : ON_ACCENT, border: state === "done" ? `1px solid ${LIME}` : "none", borderRadius: 12, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}
+      >
+        {state === "busy" ? "Enrolling…" : state === "done" ? "✓ Enrolled — see Periodize" : `Enroll in ${plan.name} →`}
       </button>
       {state === "error" && (
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={AMBER}>

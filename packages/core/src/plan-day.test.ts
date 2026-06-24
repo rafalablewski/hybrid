@@ -8,32 +8,24 @@ describe("planToday", () => {
     expect(planToday("does-not-exist", 0)).toBeNull();
   });
 
-  it("returns the real Bodybuilding plan's day, cycling by sessions logged", () => {
-    const day0 = planToday("bb-fb4", 0);
-    expect(day0).not.toBeNull();
-    expect(day0!.planName).toBe("4-Day Full Body");
-    expect(day0!.dayIndex).toBe(0);
-    expect(day0!.totalDays).toBe(4);
-    expect(day0!.items.length).toBeGreaterThan(0);
-
-    // each logged session advances one day; it cycles at the end
-    expect(planToday("bb-fb4", 1)!.dayIndex).toBe(1);
-    expect(planToday("bb-fb4", 3)!.dayIndex).toBe(3);
-    expect(planToday("bb-fb4", 4)!.dayIndex).toBe(0);
-    expect(planToday("bb-fb4", 9)!.dayIndex).toBe(1);
+  // All saved plans have been retired — no plan id resolves to plan detail, so
+  // planToday always falls back to null (the engine's prescription stays default).
+  it("returns null even for a once-real plan id (library empty)", () => {
+    expect(planToday("bb-fb4", 0)).toBeNull();
+    expect(planToday("pl-4day", 2)).toBeNull();
   });
 
-  it("finds a plan across the goal library", () => {
-    expect(findGoalPlan("bb-fb4")?.name).toBe("4-Day Full Body");
+  it("finds no plan across the empty goal library", () => {
+    expect(findGoalPlan("bb-fb4")).toBeNull();
     expect(findGoalPlan("nope")).toBeNull();
   });
 });
 
 describe("planDayToBlocks", () => {
   it("converts plan items into strength blocks with blank load + parsed sets", () => {
-    const today = planToday("bb-fb4", 0)!;
-    const blocks = planDayToBlocks(today.items);
-    expect(blocks.length).toBe(today.items.length);
+    const items = [{ name: "Back Squat", sr: "5 × 3–5", rest: "3:00", rpe: "8" }];
+    const blocks = planDayToBlocks(items);
+    expect(blocks.length).toBe(items.length);
     const first = blocks[0]!;
     expect(first.kind).toBe("strength");
     if (first.kind === "strength") {

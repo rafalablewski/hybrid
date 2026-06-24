@@ -2,22 +2,17 @@ import { describe, it, expect } from "vitest";
 import { plansForGoal, GOAL_TREE, PLAN_DETAIL } from "./plans";
 
 describe("plansForGoal", () => {
-  it("returns the named plans for a goal that has them", () => {
-    const bb = plansForGoal("Bodybuilding");
-    expect(bb.length).toBeGreaterThan(0);
-    expect(bb.map((p) => p.id)).toContain("bb-fb4");
-
-    const power = plansForGoal("Powerlifting");
-    expect(power.length).toBeGreaterThan(0);
-    expect(power.map((p) => p.id)).toContain("pl-4day");
-
-    const oly = plansForGoal("Olympic Weightlifting");
-    expect(oly.length).toBeGreaterThan(0);
-    expect(oly.map((p) => p.id)).toContain("oly-4day");
-
-    const fatloss = plansForGoal("Fat Loss");
-    expect(fatloss.length).toBeGreaterThan(0);
-    expect(fatloss.map((p) => p.id)).toContain("fatloss-4day");
+  // The old gym plans were retired; plans are being rebuilt goal-shaped. Each
+  // authored goal carries the plan in the shape that fits it; the rest are empty.
+  it("carries the authored plans per goal, nothing elsewhere", () => {
+    const authored: Record<string, string[]> = {
+      oly: ["oly-soviet-8wk"],
+      run: ["run-5k-beginner-9wk"],
+      bb: ["bb-ppl-6day"],
+    };
+    for (const node of GOAL_TREE) {
+      expect(plansForGoal(node.name).map((p) => p.id)).toEqual(authored[node.id] ?? []);
+    }
   });
 
   it("is empty for a goal with no uploaded plans yet", () => {

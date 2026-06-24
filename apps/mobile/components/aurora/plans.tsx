@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import PercentProgram from "../percent-program";
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
@@ -18,7 +19,16 @@ export default function AuroraPlans() {
   const goal = GOAL_TREE.find((g) => g.id === goalId) ?? null;
   const plan = goal?.plans.find((p) => p.id === planId) ?? null;
 
-  if (goal && plan) return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} />;
+  if (goal && plan) {
+    const program = programFor(plan.id);
+    if (program)
+      return (
+        <AuroraScreen>
+          <PercentProgram goal={goal} plan={plan} program={program} back={() => setPlanId(null)} />
+        </AuroraScreen>
+      );
+    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} />;
+  }
   if (goal) return <PlanList goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
 
   return (
