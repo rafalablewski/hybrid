@@ -394,39 +394,42 @@ function PercentProgramView({
                     </tr>
                   </thead>
                   <tbody>
-                    {s.lifts.map((l, li) => (
+                    {s.lifts.map((l, li) => {
+                      const isLast = li === s.lifts.length - 1;
+                      const rowTd = { ...tdStyle, ...(isLast ? { borderBottom: "none" } : {}) };
+                      return (
                       <tr key={li}>
-                        <td style={{ ...tdStyle, borderTop: `1px solid ${LINE}` }}>
-                          <div style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>
+                        <td style={rowTd}>
+                          <div style={{ ...disp, fontWeight: 600, fontSize: 14, color: "#ececec" }}>{l.name}</div>
                           {l.note && <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 2 }} c={ASH}>{l.note}</Mono>}
                         </td>
                         {l.rpe != null ? (
                           // Structured gym row — 3 right cells
                           <>
-                            <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
+                            <td style={{ ...rowTd, ...numCell }}>
                               <Mono s={{ fontSize: fs.body }} c={CHALK}>{l.setsReps ?? "—"}</Mono>
                             </td>
-                            <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
+                            <td style={{ ...rowTd, ...numCell }}>
                               <Mono s={{ fontSize: fs.body }} c={ASH}>{l.weight ?? "—"}</Mono>
                             </td>
-                            <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
+                            <td style={{ ...rowTd, ...numCell }}>
                               <RpeBadge rpe={l.rpe} />
                             </td>
                           </>
                         ) : hasStructured ? (
                           // Prose/strength row inside a mixed session — span all 3 right cols.
-                          // No numCell here: width:1 + nowrap on a colspan breaks wrapping.
-                          <td colSpan={3} style={{ ...tdStyle, textAlign: "right", borderTop: `1px solid ${LINE}` }}>
+                          <td colSpan={3} style={{ ...rowTd, textAlign: "right" }}>
                             <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
                           </td>
                         ) : (
                           // Pure prose/strength session — single prescription cell
-                          <td style={{ ...tdStyle, textAlign: "right", borderTop: `1px solid ${LINE}` }}>
+                          <td style={{ ...rowTd, textAlign: "right" }}>
                             <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
                           </td>
                         )}
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -457,19 +460,21 @@ function PercentProgramView({
 
 const thStyle: React.CSSProperties = {
   fontFamily: "monospace",
-  fontSize: fs.nano,
+  fontSize: 9,
   color: ASH,
   textTransform: "uppercase" as const,
   letterSpacing: ".1em",
   textAlign: "left" as const,
-  padding: "6px 14px 5px",
+  padding: "7px 13px 5px",
   fontWeight: "normal",
   borderBottom: `1px solid ${LINE}`,
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "9px 14px",
+  padding: "9px 13px",
   verticalAlign: "middle" as const,
+  borderBottom: `1px solid ${LINE}`,
+  fontSize: 13,
 };
 
 const numCell: React.CSSProperties = {
@@ -479,12 +484,11 @@ const numCell: React.CSSProperties = {
 };
 
 function RpeBadge({ rpe }: { rpe: number }) {
-  const color = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : ASH;
-  const bg    = rpe >= 10 ? "rgba(232,168,56,.12)" : rpe >= 9 ? "rgba(94,160,224,.1)" : "rgba(80,80,80,.1)";
-  const border= rpe >= 10 ? "rgba(232,168,56,.3)"  : rpe >= 9 ? "rgba(94,160,224,.25)" : "rgba(80,80,80,.2)";
+  const dotColor = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : "#4a4a4a";
   return (
-    <span style={{ fontFamily: "monospace", fontSize: fs.nano, fontWeight: "bold", color, background: bg, border: `1px solid ${border}`, borderRadius: 6, padding: "3px 7px", display: "inline-block", minWidth: 32, textAlign: "center" }}>
-      @{rpe}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
+      <span style={{ fontFamily: "monospace", fontSize: 11, color: ASH }}>{rpe}</span>
     </span>
   );
 }

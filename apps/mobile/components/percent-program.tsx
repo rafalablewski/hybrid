@@ -171,11 +171,11 @@ export default function PercentProgram({
 }
 
 function MobileRpeBadge({ rpe, C }: { rpe: number; C: ReturnType<typeof useTheme>["palette"] }) {
-  const color  = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : C.ash;
-  const border = rpe >= 10 ? "rgba(232,168,56,.35)" : rpe >= 9 ? "rgba(94,160,224,.3)" : "rgba(80,80,80,.25)";
+  const dotColor = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : "#4a4a4a";
   return (
-    <View style={{ borderWidth: 1, borderColor: border, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "bold" as const, color }}>@{rpe}</Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+      <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: dotColor }} />
+      <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{rpe}</Text>
     </View>
   );
 }
