@@ -14,9 +14,11 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { F } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
-// The bottom nav: Today · History · [Train FAB] · More · You. Train is the
-// elevated centre action (a raised lime FAB that punches up through the bar);
-// Cockpit is no longer on the bar (it stays reachable from the More hub). Side
+// The bottom nav: Today · History · [Train FAB] · Plans · More. Train is the
+// elevated centre action (a raised lime FAB that punches up through the bar).
+// Profile (You) is no longer on the bar — it now lives in the Today header and
+// the More hub — so this slot carries PLANS (the core "follow a program" loop,
+// previously buried in More). Cockpit stays reachable from the More hub. Side
 // glyphs are design-kit line icons only (no custom-drawn marks).
 type Side = { id: string; glyph: AuroraIconName; labelKey?: string; label?: string; href: Href; seg: string };
 const LEFT: Side[] = [
@@ -24,8 +26,8 @@ const LEFT: Side[] = [
   { id: "history", glyph: "copy", labelKey: "nav.history", href: "/(tabs)/history", seg: "history" },
 ];
 const RIGHT: Side[] = [
+  { id: "plans", glyph: "bookmark", labelKey: "nav.plans", href: "/(tabs)/plans", seg: "plans" },
   { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
-  { id: "you", glyph: "user-circle", labelKey: "nav.you", href: "/(tabs)/you", seg: "you" },
 ];
 // The centre Train action starts logging RIGHT NOW: it drops straight into the
 // live workout with an empty session and the get-ready count-in (so the timer

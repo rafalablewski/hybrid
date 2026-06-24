@@ -107,7 +107,8 @@ export default function More() {
   // radius, CTAs → pills) so the More hub isn't a classic island in Aurora.
   const aurora = useTemplate().template === "aurora";
   const rCard = aurora ? 22 : 14;
-  const { signOut, role, entitlement } = useSession();
+  const { signOut, role, entitlement, name } = useSession();
+  const initials = ((name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
   const persona = usePersona();
   const choice = useClientPersonaChoice();
   const access = useNavAccess();
@@ -151,6 +152,24 @@ export default function More() {
       <Kicker>{t("nav.more")}</Kicker>
       <H1>{t("more.title")}</H1>
       <Mono style={{ marginTop: 6 }}>{t("more.intro")}</Mono>
+
+      {/* PROFILE (You) — pinned at the TOP. Profile left the bottom bar (it's in
+          the Today header now), so the hub carries the global way in: the Today
+          header avatar only shows on Today, but the bar — and this hub — are on
+          every screen. */}
+      <Pressable
+        onPress={() => router.push("/(tabs)/you")}
+        style={{ marginTop: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: rCard, padding: 16, flexDirection: "row", alignItems: "center", gap: 14 }}
+      >
+        <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{name || t("nav.you")}</Text>
+          <Mono style={{ marginTop: 3, fontSize: fs.micro }}>{role === "coach" ? t("w.account.profile.role-coach") : t("w.account.profile.role-athlete")}</Mono>
+        </View>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.ash }}>→</Text>
+      </Pressable>
 
       {/* SETTINGS — pinned to the TOP of the hub. The bottom-nav glyph is a cog,
           so users tap "More" expecting Settings; lead with it (and the account
