@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fitness Wrapped — Forge of Fire</title>
+<style>
+  :root{
+    --coal:#0c0805; --ash:#1a120b; --ink:#f6ead8; --dim:#a8927a;
+    --ember:#ff5a1f; --gold:#ffc14d; --blood:#c01515; --steel:#cfd6df;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"Georgia",Garamond,serif;background:#000;color:var(--ink);overflow:hidden;display:grid;place-items:center}
+  .stage{position:relative;width:min(440px,100vw);height:min(950px,100vh);overflow:hidden;user-select:none;
+    background:radial-gradient(140% 100% at 50% 115%, #ff5a1f 0%, #8a1f06 24%, #2a1208 52%, #0c0805 80%)}
+  /* heat shimmer + embers */
+  .heat{position:absolute;inset:0;background:radial-gradient(60% 40% at 50% 100%,rgba(255,160,60,.35),transparent 70%);animation:breathe 3.4s ease-in-out infinite;pointer-events:none}
+  @keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
+  .embers{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .ember{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--ember);animation:rise linear infinite}
+  @keyframes rise{to{transform:translateY(-110vh) translateX(var(--dx,20px));opacity:0}}
+
+  .bars{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:6px;z-index:40}
+  .bar{flex:1;height:2px;background:rgba(255,255,255,.2)}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--ember));box-shadow:0 0 8px var(--ember)}
+  .bar.done>i{width:100%}.bar.active>i{animation:fill 6s linear forwards}
+  @keyframes fill{to{width:100%}}
+
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:64px 36px 96px;opacity:0;transform:translateY(14px);transition:opacity .5s,transform .5s;pointer-events:none;z-index:10}
+  .slide.on{opacity:1;transform:none;pointer-events:auto}
+  .kicker{font-family:"Helvetica Neue",sans-serif;font-size:11px;letter-spacing:.5em;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+  h1{font-size:clamp(40px,11vw,62px);line-height:.96;font-weight:400;letter-spacing:.01em}
+  h1 em{font-style:italic;background:linear-gradient(180deg,var(--gold),var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent}
+  p.lead{font-family:"Helvetica Neue",sans-serif;margin-top:18px;color:var(--dim);font-size:15px;line-height:1.65;max-width:34ch}
+
+  .num{font-family:"Helvetica Neue",sans-serif;font-weight:200;font-variant-numeric:tabular-nums;line-height:.85;letter-spacing:-.03em}
+  .num.xl{font-size:clamp(80px,26vw,150px);background:linear-gradient(180deg,#fff,var(--gold) 45%,var(--ember) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 60px rgba(255,90,31,.4)}
+  .unit{font-family:"Helvetica Neue",sans-serif;font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--dim);margin-top:16px}
+
+  /* molten ingot for volume */
+  .ingot{position:relative;height:120px;margin:18px 0;border-radius:8px;
+    background:linear-gradient(180deg,#fff2c0,var(--gold) 30%,var(--ember) 65%,var(--blood) 100%);
+    box-shadow:0 0 50px rgba(255,90,31,.6),inset 0 2px 8px rgba(255,255,255,.6);
+    display:grid;place-items:center;overflow:hidden}
+  .ingot::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.7) 50%,transparent 70%);transform:translateX(-120%);animation:shine 3s ease-in-out infinite 1s}
+  @keyframes shine{to{transform:translateX(120%)}}
+  .ingot b{position:relative;font-family:"Helvetica Neue",sans-serif;font-weight:800;color:#3a0d00;font-size:26px;letter-spacing:.05em}
+
+  /* anvil strikes for exercises */
+  .strikes{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;max-width:300px}
+  .strikes i{width:9px;height:9px;background:var(--ember);box-shadow:0 0 6px var(--ember);transform:rotate(45deg);opacity:0}
+  .on .strikes i{animation:spark .4s forwards}
+
+  /* muscle = forged temperature gauges */
+  .gauge{margin-top:18px}
+  .gauge .g{display:flex;align-items:center;gap:14px;margin:16px 0}
+  .gauge .lbl{font-family:"Helvetica Neue",sans-serif;width:88px;font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .gauge .meter{flex:1;height:18px;border-radius:99px;background:rgba(0,0,0,.4);border:1px solid rgba(255,193,77,.3);overflow:hidden}
+  .gauge .lava{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--blood),var(--ember),var(--gold));box-shadow:0 0 14px var(--ember);transition:width 1.1s cubic-bezier(.2,.9,.2,1)}
+  .on .gauge .lava{width:var(--w)}
+  .gauge .deg{font-family:"Helvetica Neue",sans-serif;width:54px;text-align:right;color:var(--gold);font-size:13px;font-weight:700}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px;font-family:"Helvetica Neue",sans-serif}
+  .stone{padding:16px;border-radius:14px;background:rgba(20,12,6,.6);border:1px solid rgba(255,193,77,.18)}
+  .stone .n{font-weight:800;font-size:26px;color:var(--gold)}
+  .stone .l{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+  .cta{font-family:"Helvetica Neue",sans-serif;margin-top:28px;align-self:flex-start;background:linear-gradient(180deg,var(--gold),var(--ember));color:#2a0a00;font-weight:800;border:0;padding:16px 32px;border-radius:99px;font-size:15px;letter-spacing:.04em;box-shadow:0 0 30px rgba(255,90,31,.5)}
+  .foot{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:"Helvetica Neue",sans-serif;font-size:10px;letter-spacing:.45em;text-transform:uppercase;color:var(--dim);z-index:30}
+  .nav{position:absolute;inset:0;display:flex;z-index:35}.nav>div{flex:1}
+  .reveal{opacity:0;transform:translateY(20px)}.on .reveal{animation:rise2 .7s cubic-bezier(.2,.8,.2,1) forwards}
+  .on .reveal:nth-child(2){animation-delay:.1s}.on .reveal:nth-child(3){animation-delay:.2s}.on .reveal:nth-child(4){animation-delay:.3s}
+  @keyframes rise2{to{opacity:1;transform:none}}
+  @keyframes spark{from{opacity:0;transform:rotate(45deg) scale(.4)}to{opacity:1;transform:rotate(45deg) scale(1)}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="heat"></div>
+  <div class="embers" id="embers"></div>
+  <div class="bars" id="bars"></div>
+
+  <section class="slide">
+    <div class="kicker reveal">Hybrid · Forged in 2026</div>
+    <h1 class="reveal">Steel doesn't<br>ask. It <em>endures.</em></h1>
+    <p class="lead reveal">This year you were the hammer and the iron both. Step to the forge.</p>
+    <div class="unit reveal" style="margin-top:26px">— tap to ignite —</div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker reveal">Hours in the heat</div>
+    <div class="num xl reveal" data-count="1560">0</div>
+    <div class="unit reveal">minutes under fire</div>
+    <p class="lead reveal">26 hours of controlled burn. Discipline, tempered.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker reveal">Hammer strikes</div>
+    <div class="num xl reveal" data-count="198">0</div>
+    <div class="unit reveal">exercises forged</div>
+    <div class="strikes reveal" id="strikes"></div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker reveal">Iron moved</div>
+    <div class="ingot reveal"><b id="vol">73,200 KG</b></div>
+    <div class="unit reveal">total volume — a molten ingot of effort</div>
+    <p class="lead reveal">Heavier than a fully loaded fire truck. You moved it rep by rep.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker reveal">Where the heat ran hottest</div>
+    <h1 class="reveal" style="font-size:32px">Forged muscle</h1>
+    <div class="gauge reveal">
+      <div class="g"><span class="lbl">Legs</span><span class="meter"><i class="lava" style="--w:94%"></i></span><span class="deg">1480°</span></div>
+      <div class="g"><span class="lbl">Back</span><span class="meter"><i class="lava" style="--w:80%"></i></span><span class="deg">1260°</span></div>
+      <div class="g"><span class="lbl">Glutes</span><span class="meter"><i class="lava" style="--w:66%"></i></span><span class="deg">1040°</span></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker reveal">Forge of Fire · 2026</div>
+    <h1 class="reveal">Tempered. <em>Unbreakable.</em></h1>
+    <div class="grid2 reveal">
+      <div class="stone"><div class="n">1,560</div><div class="l">minutes</div></div>
+      <div class="stone"><div class="n">198</div><div class="l">exercises</div></div>
+      <div class="stone"><div class="n">73,200</div><div class="l">kg moved</div></div>
+      <div class="stone"><div class="n">Legs</div><div class="l">hottest zone</div></div>
+    </div>
+    <button class="cta reveal">Share the forge 🔥</button>
+  </section>
+
+  <div class="nav" id="nav"><div data-dir="-1"></div><div data-dir="1"></div></div>
+  <div class="foot">HYBRID · FORGE OF FIRE</div>
+</div>
+<script>
+const stage=document.getElementById('stage'),slides=[...stage.querySelectorAll('.slide')],bars=document.getElementById('bars');
+slides.forEach(()=>{const b=document.createElement('div');b.className='bar';b.innerHTML='<i></i>';bars.appendChild(b);});
+const seg=[...bars.children];let i=0;
+const em=document.getElementById('embers');for(let k=0;k<26;k++){const e=document.createElement('div');e.className='ember';e.style.left=(Math.random()*100)+'%';e.style.setProperty('--dx',(Math.random()*60-30)+'px');e.style.animationDuration=(4+Math.random()*5)+'s';e.style.animationDelay=(Math.random()*5)+'s';e.style.opacity=.4+Math.random()*.6;em.appendChild(e);}
+const st=document.getElementById('strikes');for(let k=0;k<40;k++){const x=document.createElement('i');x.style.animationDelay=(k*0.025)+'s';st.appendChild(x);}
+function countUp(el){const t=+el.dataset.count;if(!t)return;const s=performance.now();(function f(n){const p=Math.min((n-s)/1300,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(t*e).toLocaleString('en-US');p<1?requestAnimationFrame(f):el.textContent=t.toLocaleString('en-US');})(s);}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('on',k===i));seg.forEach((b,k)=>{b.classList.toggle('done',k<i);b.classList.toggle('active',k===i);});slides[i].querySelectorAll('[data-count]').forEach(countUp);}
+document.getElementById('nav').addEventListener('click',e=>{const d=e.target.closest('[data-dir]');if(d)show(i+ +d.dataset.dir);});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1);});
+show(0);
+</script>
+</body>
+</html>

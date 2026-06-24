@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fitness Wrapped — Cosmic Gains</title>
+<style>
+  :root{
+    --ink:#eaf0ff; --dim:#9aa6d6;
+    --void:#05060f; --deep:#0a0b22;
+    --violet:#7b5cff; --magenta:#ff4ecd; --cyan:#36e6ff; --gold:#ffd36e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"Helvetica Neue",Inter,system-ui,sans-serif;
+    background:var(--void); color:var(--ink); overflow:hidden;
+    display:grid; place-items:center;
+  }
+  /* phone frame */
+  .stage{
+    position:relative; width:min(440px,100vw); height:min(950px,100vh);
+    overflow:hidden; background:radial-gradient(120% 90% at 50% 0%, #1a1640 0%, #0a0b22 45%, #05060f 100%);
+    user-select:none;
+  }
+  /* starfield */
+  .stars,.stars::before,.stars::after{
+    position:absolute; inset:0; content:""; pointer-events:none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 70% 60%, #cfe, transparent),
+      radial-gradient(1.5px 1.5px at 40% 80%, #fff, transparent),
+      radial-gradient(1px 1px at 85% 25%, #fff, transparent),
+      radial-gradient(1px 1px at 55% 15%, #bcd, transparent),
+      radial-gradient(1.5px 1.5px at 10% 70%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 85%, #fff, transparent);
+    background-repeat:no-repeat; opacity:.9; animation:twinkle 4s ease-in-out infinite;
+  }
+  .stars::before{transform:scale(1.8) rotate(20deg); opacity:.5; animation-delay:1.5s}
+  .stars::after{transform:scale(2.6) rotate(-15deg); opacity:.3; animation-delay:.7s}
+  @keyframes twinkle{0%,100%{opacity:.35}50%{opacity:1}}
+
+  /* progress bars */
+  .bars{position:absolute; top:14px; left:14px; right:14px; display:flex; gap:6px; z-index:40}
+  .bar{flex:1; height:3px; border-radius:99px; background:rgba(255,255,255,.18); overflow:hidden}
+  .bar>i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--cyan),var(--magenta)); border-radius:99px}
+  .bar.done>i{width:100%}
+  .bar.active>i{animation:fill 6s linear forwards}
+  @keyframes fill{from{width:0}to{width:100%}}
+
+  /* slides */
+  .slide{
+    position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center;
+    padding:64px 34px 96px; opacity:0; transform:scale(1.06); transition:opacity .5s, transform .5s;
+    pointer-events:none;
+  }
+  .slide.on{opacity:1; transform:scale(1); pointer-events:auto}
+  .kicker{font-size:12px; letter-spacing:.42em; text-transform:uppercase; color:var(--cyan); margin-bottom:18px}
+  h1{font-size:clamp(34px,9vw,52px); line-height:.98; font-weight:800; letter-spacing:-.02em}
+  h1 .glow{background:linear-gradient(120deg,var(--cyan),var(--violet),var(--magenta)); -webkit-background-clip:text; background-clip:text; color:transparent}
+  p.lead{margin-top:18px; color:var(--dim); font-size:16px; line-height:1.55; max-width:34ch}
+
+  /* big number */
+  .stat{font-variant-numeric:tabular-nums; font-weight:800; letter-spacing:-.03em; line-height:.9}
+  .stat.huge{font-size:clamp(64px,22vw,128px)}
+  .unit{font-size:18px; letter-spacing:.3em; text-transform:uppercase; color:var(--dim); margin-top:10px}
+
+  /* orbit (exercises) */
+  .orbit{position:relative; width:260px; height:260px; margin:8px auto 0}
+  .orbit .ring{position:absolute; inset:0; border-radius:50%; border:1px solid rgba(123,92,255,.35)}
+  .orbit .ring.r2{inset:34px; border-color:rgba(54,230,255,.3)}
+  .orbit .ring.r3{inset:70px; border-color:rgba(255,78,205,.25)}
+  .orbit .sun{position:absolute; inset:96px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff, var(--gold) 40%, #ff7a3c 75%, #b23 100%);
+    box-shadow:0 0 50px var(--gold),0 0 120px rgba(255,122,60,.6); display:grid; place-items:center}
+  .orbit .sun b{font-size:34px; font-weight:800; color:#1a0d05}
+  .orbit .planet{position:absolute; width:14px; height:14px; border-radius:50%; top:50%; left:50%; margin:-7px;
+    background:var(--cyan); box-shadow:0 0 14px var(--cyan)}
+  .spin{animation:spin var(--s,16s) linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .p-orbit{position:absolute; inset:0}
+  .p-orbit .planet{top:0; left:50%}
+
+  /* constellation muscles */
+  .const{position:relative; height:300px; margin-top:18px}
+  .node{position:absolute; display:flex; flex-direction:column; align-items:center; gap:6px}
+  .node .dot{width:var(--d,18px); height:var(--d,18px); border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,var(--magenta)); box-shadow:0 0 18px var(--magenta)}
+  .node .lbl{font-size:13px; font-weight:700}
+  .node .pct{font-size:11px; color:var(--cyan)}
+  svg.lines{position:absolute; inset:0; width:100%; height:100%; overflow:visible}
+  svg.lines line{stroke:rgba(54,230,255,.45); stroke-width:1; stroke-dasharray:4 5}
+
+  .grid2{display:flex; gap:14px; margin-top:26px}
+  .chip{flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px}
+  .chip .n{font-size:30px; font-weight:800; letter-spacing:-.02em}
+  .chip .l{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); margin-top:4px}
+
+  .badge{display:inline-block; padding:8px 16px; border:1px solid rgba(255,255,255,.25); border-radius:99px; font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--dim)}
+  .cta{margin-top:30px; align-self:flex-start; background:linear-gradient(120deg,var(--cyan),var(--magenta)); color:#06061a; font-weight:800; border:0; padding:16px 30px; border-radius:99px; font-size:15px; letter-spacing:.02em}
+  .foot{position:absolute; bottom:26px; left:0; right:0; text-align:center; font-size:11px; letter-spacing:.35em; text-transform:uppercase; color:var(--dim); z-index:30}
+
+  .reveal{opacity:0; transform:translateY(22px)}
+  .on .reveal{animation:rise .7s cubic-bezier(.2,.8,.2,1) forwards}
+  .on .reveal:nth-child(2){animation-delay:.08s}
+  .on .reveal:nth-child(3){animation-delay:.16s}
+  .on .reveal:nth-child(4){animation-delay:.24s}
+  .on .reveal:nth-child(5){animation-delay:.32s}
+  @keyframes rise{to{opacity:1; transform:none}}
+
+  .nav{position:absolute; inset:0; display:flex; z-index:35}
+  .nav>div{flex:1}
+  .hint{position:absolute; bottom:60px; right:20px; font-size:11px; color:var(--dim); letter-spacing:.2em; z-index:30; opacity:.7}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="stars"></div>
+  <div class="bars" id="bars"></div>
+
+  <!-- 0 intro -->
+  <section class="slide">
+    <div class="kicker reveal">Hybrid · 2026 Recap</div>
+    <h1 class="reveal">Your year was<br><span class="glow">astronomical.</span></h1>
+    <p class="lead reveal">You crossed galaxies of sweat. Let's chart the orbit you carved this season.</p>
+    <span class="badge reveal" style="margin-top:28px">Tap to launch ✦</span>
+  </section>
+
+  <!-- 1 minutes -->
+  <section class="slide">
+    <div class="kicker reveal">Time in the cosmos</div>
+    <div class="stat huge reveal" data-count="1840">0</div>
+    <div class="unit reveal">minutes of training</div>
+    <p class="lead reveal">That's <b style="color:var(--cyan)">30.6 hours</b> in the void — enough to orbit your own discipline 14 times over.</p>
+  </section>
+
+  <!-- 2 exercises orbit -->
+  <section class="slide">
+    <div class="kicker reveal">A solar system of effort</div>
+    <div class="orbit reveal">
+      <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <div class="sun"><b id="exNum">247</b></div>
+      <div class="p-orbit spin" style="--s:9s"><span class="planet"></span></div>
+      <div class="p-orbit spin" style="--s:14s; inset:34px"><span class="planet" style="background:var(--magenta); box-shadow:0 0 14px var(--magenta)"></span></div>
+      <div class="p-orbit spin" style="--s:20s; inset:70px"><span class="planet" style="background:var(--gold); box-shadow:0 0 14px var(--gold)"></span></div>
+    </div>
+    <div class="unit reveal" style="text-align:center">247 exercises completed</div>
+    <p class="lead reveal" style="margin-inline:auto; text-align:center">Every rep a planet pulled into your gravity.</p>
+  </section>
+
+  <!-- 3 volume -->
+  <section class="slide">
+    <div class="kicker reveal">Mass moved through space</div>
+    <div class="stat huge reveal" data-count="48920" data-suffix="">0</div>
+    <div class="unit reveal">kilograms lifted</div>
+    <div class="grid2">
+      <div class="chip reveal"><div class="n">≈ 7</div><div class="l">London buses</div></div>
+      <div class="chip reveal"><div class="n">≈ 24</div><div class="l">grand pianos</div></div>
+    </div>
+  </section>
+
+  <!-- 4 muscles constellation -->
+  <section class="slide">
+    <div class="kicker reveal">Your constellation</div>
+    <h1 class="reveal" style="font-size:30px">Top muscle groups</h1>
+    <div class="const reveal">
+      <svg class="lines"><line x1="22%" y1="22%" x2="70%" y2="42%"/><line x1="70%" y1="42%" x2="40%" y2="78%"/></svg>
+      <div class="node" style="top:14%; left:14%; --d:30px"><span class="dot"></span><span class="lbl">Chest</span><span class="pct">38%</span></div>
+      <div class="node" style="top:36%; left:62%; --d:24px"><span class="dot"></span><span class="lbl">Back</span><span class="pct">33%</span></div>
+      <div class="node" style="top:72%; left:32%; --d:20px"><span class="dot"></span><span class="lbl">Quads</span><span class="pct">29%</span></div>
+    </div>
+  </section>
+
+  <!-- 5 summary -->
+  <section class="slide">
+    <div class="kicker reveal">Cosmic Gains · 2026</div>
+    <h1 class="reveal">You're a <span class="glow">supernova.</span></h1>
+    <div class="grid2 reveal" style="flex-wrap:wrap">
+      <div class="chip"><div class="n">1,840</div><div class="l">minutes</div></div>
+      <div class="chip"><div class="n">247</div><div class="l">exercises</div></div>
+    </div>
+    <div class="grid2 reveal">
+      <div class="chip"><div class="n">48,920</div><div class="l">kg lifted</div></div>
+      <div class="chip"><div class="n">Chest</div><div class="l">top group</div></div>
+    </div>
+    <button class="cta reveal">Share my orbit ✦</button>
+  </section>
+
+  <div class="nav" id="nav"><div data-dir="-1"></div><div data-dir="1"></div></div>
+  <div class="hint">tap →</div>
+  <div class="foot">HYBRID · COSMIC GAINS</div>
+</div>
+
+<script>
+const stage=document.getElementById('stage');
+const slides=[...stage.querySelectorAll('.slide')];
+const bars=document.getElementById('bars');
+slides.forEach(()=>{const b=document.createElement('div');b.className='bar';b.innerHTML='<i></i>';bars.appendChild(b);});
+const seg=[...bars.children];
+let i=0;
+function countUp(el){
+  const t=+el.dataset.count; if(!t)return;
+  const start=performance.now(), dur=1300;
+  (function tick(now){
+    const p=Math.min((now-start)/dur,1);
+    const e=1-Math.pow(1-p,3);
+    el.textContent=Math.floor(t*e).toLocaleString('en-US');
+    if(p<1)requestAnimationFrame(tick);else el.textContent=t.toLocaleString('en-US');
+  })(start);
+}
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('on',k===i));
+  seg.forEach((b,k)=>{b.classList.toggle('done',k<i);b.classList.toggle('active',k===i);});
+  slides[i].querySelectorAll('[data-count]').forEach(countUp);
+}
+document.getElementById('nav').addEventListener('click',e=>{
+  const d=e.target.closest('[data-dir]'); if(!d)return; show(i+ +d.dataset.dir);
+});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1);});
+show(0);
+</script>
+</body>
+</html>

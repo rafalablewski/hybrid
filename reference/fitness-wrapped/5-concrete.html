@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fitness Wrapped — Concrete</title>
+<style>
+  :root{
+    --paper:#f3f1ea; --ink:#0a0a0a; --acid:#e6ff00; --red:#ff2e00;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"Helvetica Neue",Arial,sans-serif;background:#111;color:var(--ink);overflow:hidden;display:grid;place-items:center}
+  .stage{position:relative;width:min(440px,100vw);height:min(950px,100vh);overflow:hidden;user-select:none;background:var(--paper)}
+  .bars{position:absolute;top:0;left:0;right:0;display:flex;z-index:40}
+  .bar{flex:1;height:7px;background:var(--paper);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  .bar:last-child{border-right:0}
+  .bar>i{display:block;height:100%;width:0;background:var(--ink)}
+  .bar.done>i{width:100%}.bar.active>i{animation:fill 6s linear forwards}
+  @keyframes fill{to{width:100%}}
+
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:50px 28px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:10}
+  .slide.on{opacity:1;pointer-events:auto}
+  /* hard mono labels */
+  .label{font-size:11px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;border:2px solid var(--ink);display:inline-block;padding:5px 9px;align-self:flex-start;background:var(--ink);color:var(--paper)}
+  .label.acid{background:var(--acid);color:var(--ink);border-color:var(--ink)}
+  .label.red{background:var(--red);color:var(--paper)}
+
+  h1{font-weight:800;font-size:clamp(46px,15vw,86px);line-height:.84;letter-spacing:-.045em;text-transform:uppercase;margin-top:18px}
+  .underline{display:inline-block;background:var(--acid);box-shadow:0 0 0 2px var(--ink)}
+
+  .meganum{font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(96px,34vw,200px);line-height:.78;letter-spacing:-.06em;margin-top:8px;word-break:break-word}
+  .rule{height:4px;background:var(--ink);margin:16px 0 10px}
+  .meta{display:flex;justify-content:space-between;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  p.note{margin-top:18px;font-size:15px;font-weight:600;line-height:1.45;max-width:30ch}
+
+  /* exercises = tally grid */
+  .tally{display:grid;grid-template-columns:repeat(10,1fr);gap:0;margin-top:18px;border:3px solid var(--ink)}
+  .tally i{aspect-ratio:1;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);background:var(--paper);transition:background .02s}
+  .tally i.f{background:var(--ink)}
+  .tally i.hot{background:var(--red)}
+
+  /* muscle = bold bar chart */
+  .chart{margin-top:20px;border-top:3px solid var(--ink)}
+  .chart .b{display:flex;align-items:center;border-bottom:3px solid var(--ink);height:64px}
+  .chart .name{width:120px;font-weight:800;font-size:18px;text-transform:uppercase}
+  .chart .barwrap{flex:1;height:100%;position:relative;overflow:hidden}
+  .chart .barfill{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .9s cubic-bezier(.2,.9,.1,1)}
+  .on .chart .barfill{width:var(--w)}
+  .chart .b:nth-child(1) .barfill{background:var(--ink)}
+  .chart .b:nth-child(2) .barfill{background:var(--red)}
+  .chart .b:nth-child(3) .barfill{background:var(--acid)}
+  .chart .v{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-weight:800;font-size:15px;mix-blend-mode:difference;color:#fff}
+
+  /* summary table */
+  .table{margin-top:18px;border:3px solid var(--ink)}
+  .table .r{display:flex;justify-content:space-between;border-bottom:2px solid var(--ink);padding:14px 14px}
+  .table .r:last-child{border-bottom:0}
+  .table .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;align-self:center}
+  .table .vv{font-weight:800;font-size:28px;letter-spacing:-.02em}
+  .table .r:nth-child(2){background:var(--acid)}
+  .cta{margin-top:22px;align-self:flex-start;background:var(--ink);color:var(--paper);font-weight:800;border:0;padding:16px 28px;font-size:15px;text-transform:uppercase;letter-spacing:.05em;border:3px solid var(--ink)}
+  .cta:active{background:var(--acid);color:var(--ink)}
+  .foot{position:absolute;bottom:16px;left:28px;right:28px;display:flex;justify-content:space-between;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;z-index:30}
+  .nav{position:absolute;inset:0;display:flex;z-index:35}.nav>div{flex:1}
+  /* hard cut, no easing — brutalist */
+  .reveal{opacity:0}.on .reveal{animation:cut .01s forwards}
+  .on .reveal:nth-child(2){animation-delay:.12s}.on .reveal:nth-child(3){animation-delay:.24s}.on .reveal:nth-child(4){animation-delay:.36s}.on .reveal:nth-child(5){animation-delay:.48s}
+  @keyframes cut{to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="bars" id="bars"></div>
+
+  <section class="slide">
+    <span class="label reveal">Hybrid / 2026 / Recap</span>
+    <h1 class="reveal">No<br>filter.<br><span class="underline">Just<br>work.</span></h1>
+    <p class="note reveal">The numbers don't lie. Tap →</p>
+  </section>
+
+  <section class="slide">
+    <span class="label acid reveal">01 — Minutes</span>
+    <div class="meganum reveal" data-count="1975">0</div>
+    <div class="rule reveal"></div>
+    <div class="meta reveal"><span>32.9 Hours</span><span>≈ 38 / Week</span></div>
+  </section>
+
+  <section class="slide">
+    <span class="label reveal">02 — Exercises</span>
+    <div class="meganum reveal" data-count="263">0</div>
+    <div class="tally reveal" id="tally"></div>
+  </section>
+
+  <section class="slide">
+    <span class="label red reveal">03 — Volume</span>
+    <div class="meganum reveal" data-count="55310">0</div>
+    <div class="rule reveal"></div>
+    <div class="meta reveal"><span>Kilograms</span><span>≈ 8 Cars</span></div>
+  </section>
+
+  <section class="slide">
+    <span class="label reveal">04 — Muscle Groups</span>
+    <div class="chart reveal">
+      <div class="b"><span class="name">Chest</span><span class="barwrap"><span class="barfill" style="--w:90%"></span><span class="v">37%</span></span></div>
+      <div class="b"><span class="name">Shldr</span><span class="barwrap"><span class="barfill" style="--w:72%"></span><span class="v">30%</span></span></div>
+      <div class="b"><span class="name">Back</span><span class="barwrap"><span class="barfill" style="--w:58%"></span><span class="v">24%</span></span></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <span class="label acid reveal">Summary / 2026</span>
+    <div class="table reveal">
+      <div class="r"><span class="k">Minutes</span><span class="vv">1,975</span></div>
+      <div class="r"><span class="k">Exercises</span><span class="vv">263</span></div>
+      <div class="r"><span class="k">Kg Lifted</span><span class="vv">55,310</span></div>
+      <div class="r"><span class="k">Top Group</span><span class="vv">Chest</span></div>
+    </div>
+    <button class="cta reveal">Export PNG ▢</button>
+  </section>
+
+  <div class="nav" id="nav"><div data-dir="-1"></div><div data-dir="1"></div></div>
+  <div class="foot"><span>HYBRID</span><span>CONCRETE</span><span>EST. 2026</span></div>
+</div>
+<script>
+const stage=document.getElementById('stage'),slides=[...stage.querySelectorAll('.slide')],bars=document.getElementById('bars');
+slides.forEach(()=>{const b=document.createElement('div');b.className='bar';b.innerHTML='<i></i>';bars.appendChild(b);});
+const seg=[...bars.children];let i=0;
+const ta=document.getElementById('tally');for(let k=0;k<100;k++){ta.appendChild(document.createElement('i'));}
+function fillTally(){const cells=[...ta.children];
+  // 263 exercises -> stamp in cells sequentially; ~63 emphasised red, rest ink ticks.
+  cells.forEach((c,k)=>{c.className='';setTimeout(()=>{c.className=k<63?'hot':(k%3===0?'f':'');},k*6);});}
+function countUp(el){const t=+el.dataset.count;if(!t)return;const s=performance.now();(function f(n){const p=Math.min((n-s)/1100,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(t*e).toLocaleString('en-US');p<1?requestAnimationFrame(f):el.textContent=t.toLocaleString('en-US');})(s);}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('on',k===i));seg.forEach((b,k)=>{b.classList.toggle('done',k<i);b.classList.toggle('active',k===i);});slides[i].querySelectorAll('[data-count]').forEach(countUp);if(i===2)fillTally();}
+document.getElementById('nav').addEventListener('click',e=>{const d=e.target.closest('[data-dir]');if(d)show(i+ +d.dataset.dir);});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1);});
+show(0);
+</script>
+</body>
+</html>

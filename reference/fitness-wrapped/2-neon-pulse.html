@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fitness Wrapped — Neon Pulse</title>
+<style>
+  :root{
+    --bg:#05010d; --ink:#f2f4ff; --dim:#8b8fb5;
+    --cyan:#00f0ff; --magenta:#ff007a; --lime:#c6ff00; --violet:#9d4bff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"Courier New",ui-monospace,monospace; background:#000; color:var(--ink); overflow:hidden; display:grid; place-items:center}
+  .stage{position:relative; width:min(440px,100vw); height:min(950px,100vh); overflow:hidden; background:var(--bg); user-select:none}
+  /* animated neon grid floor */
+  .grid{position:absolute; inset:0; background:
+      linear-gradient(transparent 0%, rgba(255,0,122,.07) 100%),
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(0,240,255,.10) 38px 39px),
+      repeating-linear-gradient(0deg, transparent 0 38px, rgba(0,240,255,.10) 38px 39px);
+    transform:perspective(420px) rotateX(58deg) translateY(28%); transform-origin:bottom; animation:floor 6s linear infinite}
+  @keyframes floor{to{background-position:0 0,0 38px,0 38px}}
+  .scan{position:absolute; inset:0; background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 2px,transparent 2px 4px); mix-blend-mode:overlay; pointer-events:none}
+  .blob{position:absolute; border-radius:50%; filter:blur(70px); opacity:.55; pointer-events:none}
+  .b1{width:300px;height:300px;background:var(--magenta);top:-60px;left:-60px}
+  .b2{width:260px;height:260px;background:var(--cyan);bottom:-40px;right:-50px}
+
+  .bars{position:absolute; top:14px; left:14px; right:14px; display:flex; gap:5px; z-index:40}
+  .bar{flex:1; height:4px; background:rgba(255,255,255,.15); overflow:hidden; transform:skewX(-20deg)}
+  .bar>i{display:block;height:100%;width:0;background:var(--lime);box-shadow:0 0 12px var(--lime)}
+  .bar.done>i{width:100%}
+  .bar.active>i{animation:fill 6s linear forwards}
+  @keyframes fill{to{width:100%}}
+
+  .slide{position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:56px 30px 90px; opacity:0; transition:opacity .35s; pointer-events:none; z-index:10}
+  .slide.on{opacity:1; pointer-events:auto}
+
+  .tag{font-size:11px; letter-spacing:.4em; color:var(--cyan); text-transform:uppercase; margin-bottom:14px}
+  .tag::before{content:"// "}
+  h1{font-family:"Arial Black",Inter,sans-serif; font-weight:900; font-size:clamp(38px,11vw,60px); line-height:.92; letter-spacing:-.03em; text-transform:uppercase; font-style:italic}
+  .glitch{position:relative; color:var(--ink)}
+  .glitch::before,.glitch::after{content:attr(data-t); position:absolute; left:0; top:0; width:100%}
+  .glitch::before{color:var(--magenta); animation:gl 2.4s infinite; clip-path:inset(0 0 60% 0)}
+  .glitch::after{color:var(--cyan); animation:gl 3.1s infinite reverse; clip-path:inset(60% 0 0 0)}
+  @keyframes gl{0%,92%,100%{transform:none}94%{transform:translate(-3px,1px)}96%{transform:translate(3px,-1px)}}
+
+  .num{font-family:"Arial Black",sans-serif; font-weight:900; font-style:italic; font-variant-numeric:tabular-nums; line-height:.82; letter-spacing:-.04em}
+  .num.xl{font-size:clamp(78px,26vw,150px); color:var(--lime); text-shadow:0 0 22px rgba(198,255,0,.55), 4px 4px 0 var(--magenta)}
+  .num.cy{color:var(--cyan); text-shadow:0 0 22px rgba(0,240,255,.55), 4px 4px 0 var(--violet)}
+  .unit{font-size:13px; letter-spacing:.35em; text-transform:uppercase; color:var(--dim); margin-top:14px}
+  p.lead{margin-top:16px; color:var(--dim); font-size:14px; line-height:1.6; max-width:36ch}
+  b.hot{color:var(--magenta)}
+
+  /* exercises = equalizer bars */
+  .eq{display:flex; align-items:flex-end; gap:6px; height:200px; margin-top:8px}
+  .eq span{flex:1; background:linear-gradient(var(--cyan),var(--magenta)); border-radius:3px 3px 0 0; box-shadow:0 0 12px rgba(0,240,255,.5); animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
+
+  /* muscle = horizontal data bars */
+  .mbar{margin-top:14px}
+  .mbar .row{margin:14px 0}
+  .mbar .top{display:flex; justify-content:space-between; font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase}
+  .mbar .track{height:14px; margin-top:7px; background:rgba(255,255,255,.08); transform:skewX(-18deg); overflow:hidden}
+  .mbar .fill{height:100%; width:0; transition:width 1s cubic-bezier(.2,.9,.2,1)}
+  .on .mbar .fill{width:var(--w)}
+  .f1{background:linear-gradient(90deg,var(--cyan),var(--lime))}
+  .f2{background:linear-gradient(90deg,var(--magenta),var(--violet))}
+  .f3{background:linear-gradient(90deg,var(--violet),var(--cyan))}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:22px}
+  .card{border:1px solid rgba(0,240,255,.3); background:rgba(0,240,255,.04); padding:14px; transform:skewX(-4deg)}
+  .card>div{transform:skewX(4deg)}
+  .card .n{font-family:"Arial Black",sans-serif; font-size:26px; color:var(--lime)}
+  .card .l{font-size:10px; letter-spacing:.2em; color:var(--dim); text-transform:uppercase; margin-top:3px}
+  .cta{margin-top:26px; align-self:flex-start; background:var(--lime); color:#000; font-family:"Arial Black",sans-serif; font-style:italic; border:0; padding:16px 28px; font-size:15px; text-transform:uppercase; letter-spacing:.04em; transform:skewX(-8deg); box-shadow:6px 6px 0 var(--magenta)}
+
+  .foot{position:absolute; bottom:24px; left:0; right:0; text-align:center; font-size:10px; letter-spacing:.4em; color:var(--dim); text-transform:uppercase; z-index:30}
+  .nav{position:absolute; inset:0; display:flex; z-index:35}.nav>div{flex:1}
+  .reveal{opacity:0; transform:translateX(-26px)}
+  .on .reveal{animation:slin .5s cubic-bezier(.2,.9,.2,1) forwards}
+  .on .reveal:nth-child(2){animation-delay:.06s}.on .reveal:nth-child(3){animation-delay:.12s}.on .reveal:nth-child(4){animation-delay:.18s}.on .reveal:nth-child(5){animation-delay:.24s}
+  @keyframes slin{to{opacity:1; transform:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="grid"></div><div class="scan"></div>
+  <div class="bars" id="bars"></div>
+
+  <section class="slide">
+    <div class="tag reveal">SYSTEM ONLINE · 2026</div>
+    <h1 class="reveal"><span class="glitch" data-t="NEON">NEON</span><br><span class="glitch" data-t="PULSE">PULSE</span></h1>
+    <p class="lead reveal">You didn't train. You <b class="hot">overclocked.</b> Boot the recap.</p>
+    <div class="unit reveal" style="margin-top:24px">▶ tap to run</div>
+  </section>
+
+  <section class="slide">
+    <div class="tag reveal">UPTIME LOG</div>
+    <div class="num xl reveal" data-count="2210">0</div>
+    <div class="unit reveal">minutes online</div>
+    <p class="lead reveal"><b class="hot">36.8 hrs</b> at full throttle. The machine never blinked.</p>
+  </section>
+
+  <section class="slide">
+    <div class="tag reveal">REP FREQUENCY</div>
+    <div class="num xl cy reveal" data-count="312">0</div>
+    <div class="unit reveal">exercises executed</div>
+    <div class="eq reveal" id="eq"></div>
+  </section>
+
+  <section class="slide">
+    <div class="tag reveal">LOAD OUTPUT</div>
+    <div class="num xl reveal" data-count="61450">0</div>
+    <div class="unit reveal">total kg moved</div>
+    <div class="grid2 reveal">
+      <div class="card"><div><div class="n">≈ 9</div><div class="l">elephants</div></div></div>
+      <div class="card"><div><div class="n">198/wk</div><div class="l">avg reps</div></div></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="tag reveal">POWER ROUTING</div>
+    <h1 class="reveal" style="font-size:30px">TARGET ZONES</h1>
+    <div class="mbar reveal">
+      <div class="row"><div class="top"><span>Shoulders</span><span>41%</span></div><div class="track"><div class="fill f1" style="--w:92%"></div></div></div>
+      <div class="row"><div class="top"><span>Arms</span><span>35%</span></div><div class="track"><div class="fill f2" style="--w:78%"></div></div></div>
+      <div class="row"><div class="top"><span>Core</span><span>24%</span></div><div class="track"><div class="fill f3" style="--w:54%"></div></div></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="tag reveal">FULL DUMP · 2026</div>
+    <h1 class="reveal" style="font-size:34px">MAX <span class="glitch" data-t="OVERDRIVE" style="color:var(--lime)">OVERDRIVE</span></h1>
+    <div class="grid2 reveal">
+      <div class="card"><div><div class="n">2,210</div><div class="l">minutes</div></div></div>
+      <div class="card"><div><div class="n">312</div><div class="l">exercises</div></div></div>
+      <div class="card"><div><div class="n">61,450</div><div class="l">kg</div></div></div>
+      <div class="card"><div><div class="n">Shoulders</div><div class="l">top zone</div></div></div>
+    </div>
+    <button class="cta reveal">EXPORT ▶</button>
+  </section>
+
+  <div class="nav" id="nav"><div data-dir="-1"></div><div data-dir="1"></div></div>
+  <div class="foot">HYBRID // NEON PULSE</div>
+</div>
+<script>
+const stage=document.getElementById('stage'),slides=[...stage.querySelectorAll('.slide')],bars=document.getElementById('bars');
+slides.forEach(()=>{const b=document.createElement('div');b.className='bar';b.innerHTML='<i></i>';bars.appendChild(b);});
+const seg=[...bars.children];let i=0;
+const eq=document.getElementById('eq');for(let k=0;k<14;k++){const s=document.createElement('span');s.style.animationDelay=(k*0.08)+'s';s.style.animationDuration=(0.8+Math.random()*0.8)+'s';eq.appendChild(s);}
+function countUp(el){const t=+el.dataset.count;if(!t)return;const s=performance.now();(function f(n){const p=Math.min((n-s)/1200,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(t*e).toLocaleString('en-US');p<1?requestAnimationFrame(f):el.textContent=t.toLocaleString('en-US');})(s);}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('on',k===i));seg.forEach((b,k)=>{b.classList.toggle('done',k<i);b.classList.toggle('active',k===i);});slides[i].querySelectorAll('[data-count]').forEach(countUp);}
+document.getElementById('nav').addEventListener('click',e=>{const d=e.target.closest('[data-dir]');if(d)show(i+ +d.dataset.dir);});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1);});
+show(0);
+</script>
+</body>
+</html>

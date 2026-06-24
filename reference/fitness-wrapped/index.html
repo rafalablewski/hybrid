@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fitness Wrapped — 5 Concepts</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Helvetica Neue",system-ui,sans-serif;background:#0a0a0f;color:#f2f4ff;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:56px 22px 90px}
+  header h1{font-size:clamp(34px,7vw,56px);font-weight:800;letter-spacing:-.03em;line-height:1}
+  header h1 span{background:linear-gradient(120deg,#36e6ff,#ff4ecd,#ffd36e);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header p{margin-top:14px;color:#9aa6d6;font-size:17px;max-width:64ch}
+  .hint{margin-top:14px;font-size:13px;color:#6b75a0}
+  .grid{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+  .card{position:relative;border-radius:22px;overflow:hidden;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.08);min-height:300px;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;transition:transform .25s,box-shadow .25s}
+  .card:hover{transform:translateY(-5px);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .card .no{position:absolute;top:18px;left:20px;font-size:13px;font-weight:700;letter-spacing:.2em;opacity:.8}
+  .card h2{font-size:30px;font-weight:800;letter-spacing:-.02em;position:relative;z-index:2}
+  .card .pal{position:absolute;top:18px;right:18px;display:flex;gap:5px;z-index:2}
+  .card .pal i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.3)}
+  .card p{margin-top:8px;font-size:13px;opacity:.92;position:relative;z-index:2}
+  .card .data{margin-top:12px;font-size:12px;font-weight:600;opacity:.85;position:relative;z-index:2;font-variant-numeric:tabular-nums}
+  .c1{background:radial-gradient(120% 90% at 50% 0%,#1a1640,#0a0b22 60%,#05060f)}
+  .c2{background:linear-gradient(160deg,#1a0030,#05010d);}
+  .c3{background:radial-gradient(140% 100% at 50% 120%,#ff5a1f,#8a1f06 30%,#0c0805 78%)}
+  .c4{background:linear-gradient(180deg,#fff8ee,#cfeede);color:#1f3d2b}
+  .c4 .data,.c4 p{opacity:.8}
+  .c5{background:#f3f1ea;color:#0a0a0a}
+  .c5 h2{text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}
+  td{border-bottom:1px solid rgba(255,255,255,.08);padding:9px 10px;vertical-align:top}
+  td:first-child{color:#9aa6d6;white-space:nowrap;width:130px}
+  section.spec{margin-top:60px}
+  section.spec h3{font-size:22px;margin-bottom:6px}
+  .tag{display:inline-block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#36e6ff;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Hybrid · Concept Deck</span>
+    <h1>Fitness <span>Wrapped</span></h1>
+    <p>Five cinematic, full-screen recap stories users swipe through after a training block. Each is a standalone prototype — open one, then <b>tap the right side</b> (or press →) to advance through the slides.</p>
+    <p class="hint">Best viewed on a phone-sized window. Click a card to launch.</p>
+  </header>
+
+  <div class="grid">
+    <a class="card c1" href="1-cosmic-gains.html">
+      <span class="no">01</span>
+      <span class="pal"><i style="background:#36e6ff"></i><i style="background:#7b5cff"></i><i style="background:#ff4ecd"></i><i style="background:#ffd36e"></i></span>
+      <h2>Cosmic Gains</h2>
+      <p>Deep-space premium. Orbits, constellations, a molten sun of effort.</p>
+      <div class="data">1,840 min · 247 ex · 48,920 kg · Chest/Back/Quads</div>
+    </a>
+    <a class="card c2" href="2-neon-pulse.html">
+      <span class="no">02</span>
+      <span class="pal"><i style="background:#00f0ff"></i><i style="background:#ff007a"></i><i style="background:#c6ff00"></i><i style="background:#9d4bff"></i></span>
+      <h2>Neon Pulse</h2>
+      <p>Cyberpunk maximalism. Glitch, equalizers, skewed HUD energy.</p>
+      <div class="data">2,210 min · 312 ex · 61,450 kg · Shoulders/Arms/Core</div>
+    </a>
+    <a class="card c3" href="3-forge-of-fire.html">
+      <span class="no">03</span>
+      <span class="pal"><i style="background:#ffc14d"></i><i style="background:#ff5a1f"></i><i style="background:#c01515"></i><i style="background:#cfd6df"></i></span>
+      <h2>Forge of Fire</h2>
+      <p>Dark luxury &amp; molten metal. Embers, glowing ingot, heat gauges.</p>
+      <div class="data">1,560 min · 198 ex · 73,200 kg · Legs/Back/Glutes</div>
+    </a>
+    <a class="card c4" href="4-wild-bloom.html">
+      <span class="no">04</span>
+      <span class="pal"><i style="background:#2fa86a"></i><i style="background:#ff7a59"></i><i style="background:#ffd24c"></i><i style="background:#7ed0e0"></i></span>
+      <h2>Wild Bloom</h2>
+      <p>Bright, playful nature. A growing tree, blooming flower charts.</p>
+      <div class="data">1,320 min · 176 ex · 412 km · Quads/Calves/Core</div>
+    </a>
+    <a class="card c5" href="5-concrete.html">
+      <span class="no">05</span>
+      <span class="pal"><i style="background:#0a0a0a"></i><i style="background:#e6ff00"></i><i style="background:#ff2e00"></i><i style="background:#f3f1ea"></i></span>
+      <h2>Concrete</h2>
+      <p>Brutalist &amp; ultra-minimal. Mega-type, tally grids, hard rules.</p>
+      <div class="data">1,975 min · 263 ex · 55,310 kg · Chest/Shoulders/Back</div>
+    </a>
+  </div>
+
+  <section class="spec">
+    <h3>01 · Cosmic Gains</h3>
+    <table>
+      <tr><td>Palette</td><td>Void black & midnight indigo, electric cyan, violet, magenta, solar gold.</td></tr>
+      <tr><td>Hero metaphor</td><td>The universe. Effort as a solar system; muscles as a constellation.</td></tr>
+      <tr><td>Stats</td><td>Minutes = huge gradient counter over a twinkling starfield. Exercises = a count at the core of a spinning solar system, planets orbiting it. Volume (kg) = mega number + "relatable mass" chips (buses, pianos). Muscles = constellation of glowing nodes sized by share, joined by dotted star-lines.</td></tr>
+      <tr><td>Motion</td><td>Slow zoom-out reveals, parallax starfield drift, planets in continuous orbit, count-ups, dotted constellation lines drawing in.</td></tr>
+      <tr><td>Sample</td><td>1,840 min · 247 exercises · 48,920 kg · Top: Chest, Back, Quads</td></tr>
+      <tr><td>Mood</td><td>Awe, vastness, premium, "you are limitless."</td></tr>
+    </table>
+
+    <h3 style="margin-top:34px">02 · Neon Pulse</h3>
+    <table>
+      <tr><td>Palette</td><td>Near-black base, electric cyan, hot magenta/pink, acid lime, violet.</td></tr>
+      <tr><td>Hero metaphor</td><td>An overclocked machine / arcade HUD. You as a system running at max.</td></tr>
+      <tr><td>Stats</td><td>Minutes = "uptime" glitch counter. Exercises = a live audio-equalizer bar field pulsing. Volume = "load output" number + skewed HUD cards. Muscles = skewed neon data bars ("power routing / target zones").</td></tr>
+      <tr><td>Motion</td><td>Glitch/RGB-split on titles, scanlines, perspective grid floor scrolling, equalizer pulse, hard 0.35s cuts, slide-in from left.</td></tr>
+      <tr><td>Sample</td><td>2,210 min · 312 exercises · 61,450 kg · Top: Shoulders, Arms, Core</td></tr>
+      <tr><td>Mood</td><td>High-octane, rebellious, "viral on social," adrenaline.</td></tr>
+    </table>
+
+    <h3 style="margin-top:34px">03 · Forge of Fire</h3>
+    <table>
+      <tr><td>Palette</td><td>Coal & ash black, ember orange, molten gold, blood red, cool steel accent.</td></tr>
+      <tr><td>Hero metaphor</td><td>A blacksmith's forge. You are iron being tempered; reps are hammer strikes.</td></tr>
+      <tr><td>Stats</td><td>Minutes = glowing thin-weight number "under fire." Exercises = number + a grid of igniting spark marks (hammer strikes). Volume = a glowing molten ingot with a moving shine, value cast into it. Muscles = molten "temperature gauges" with lava fills and °heat readouts.</td></tr>
+      <tr><td>Motion</td><td>Rising embers, heat-shimmer breathing glow, ingot shine sweep, sparks popping in sequence, lava bars filling.</td></tr>
+      <tr><td>Sample</td><td>1,560 min · 198 exercises · 73,200 kg · Top: Legs, Back, Glutes</td></tr>
+      <tr><td>Mood</td><td>Intense, gritty, earned, "forged through fire," prestige.</td></tr>
+    </table>
+
+    <h3 style="margin-top:34px">04 · Wild Bloom</h3>
+    <table>
+      <tr><td>Palette</td><td>Cream & soft greens, coral, sunshine yellow, sky blue, berry pink.</td></tr>
+      <tr><td>Hero metaphor</td><td>A garden growing through a season. Sessions are seeds; progress blooms.</td></tr>
+      <tr><td>Stats</td><td>Minutes = "time in the sun" green counter. Exercises = a tree that literally grows a canopy on slide entry. Distance (km) = counter + flower-petal stat cards (relatable journeys). Muscles = blooming flowers sized by share, with stems + sun centers.</td></tr>
+      <tr><td>Motion</td><td>Drifting falling leaves, breathing sun halo, trunk + canopy growth, petals popping with spring easing, gentle scale-in.</td></tr>
+      <tr><td>Sample</td><td>1,320 min · 176 exercises · 412 km · Top: Quads, Calves, Core</td></tr>
+      <tr><td>Mood</td><td>Joyful, optimistic, wholesome, "you grew," shareable & warm.</td></tr>
+    </table>
+
+    <h3 style="margin-top:34px">05 · Concrete</h3>
+    <table>
+      <tr><td>Palette</td><td>Off-white paper, near-black ink, one acid-yellow + one red accent. No gradients.</td></tr>
+      <tr><td>Hero metaphor</td><td>A brutalist data sheet / risograph poster. The raw, honest record.</td></tr>
+      <tr><td>Stats</td><td>Minutes & Volume = colossal edge-to-edge numerals with hard rules. Exercises = a stark 10×10 tally grid filling in. Muscles = heavy outlined bar chart with mix-blend value labels. Final = a bordered summary table, one acid row.</td></tr>
+      <tr><td>Motion</td><td>No easing — hard cuts and instant fills, sequential reveals, tally cells stamping in. Deliberately anti-slick.</td></tr>
+      <tr><td>Sample</td><td>1,975 min · 263 exercises · 55,310 kg · Top: Chest, Shoulders, Back</td></tr>
+      <tr><td>Mood</td><td>Confident, no-nonsense, editorial, "the numbers speak," design-forward.</td></tr>
+    </table>
+  </section>
+</div>
+</body>
+</html>
