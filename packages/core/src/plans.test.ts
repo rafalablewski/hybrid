@@ -6,10 +6,14 @@ describe("plansForGoal", () => {
     const bb = plansForGoal("Bodybuilding");
     expect(bb.length).toBeGreaterThan(0);
     expect(bb.map((p) => p.id)).toContain("bb-fb4");
+
+    const power = plansForGoal("Powerlifting");
+    expect(power.length).toBeGreaterThan(0);
+    expect(power.map((p) => p.id)).toContain("pl-4day");
   });
 
   it("is empty for a goal with no uploaded plans yet", () => {
-    expect(plansForGoal("Powerlifting")).toEqual([]);
+    expect(plansForGoal("Olympic Weightlifting")).toEqual([]);
   });
 
   it("is empty for an unknown goal (never throws)", () => {
