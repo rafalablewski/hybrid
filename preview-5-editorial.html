@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design 5 — Editorial / magazine, number-dominant</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink:   #090909;
+    --ink2:  #101010;
+    --line:  #1c1c1c;
+    --ash:   #444;
+    --chalk: #b8b8b8;
+    --lime:  #aee03e;
+    --amber: #d99a30;
+    --white: #e8e8e8;
+  }
+  body { background: var(--ink); color: var(--chalk); font-family: 'Courier New', monospace; padding: 40px 24px; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 11px; color: var(--ash); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 32px; }
+
+  /* Plan header — large, editorial */
+  .plan-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: var(--lime); margin-bottom: 8px; }
+  .plan-title { font-family: Georgia, serif; font-weight: 900; font-size: 32px; color: var(--white); line-height: 1.1; margin-bottom: 6px; }
+  .plan-meta  { font-size: 11px; color: var(--ash); margin-bottom: 28px; }
+
+  /* Inputs */
+  .inputs-card { border-top: 2px solid var(--lime); padding: 14px 0 18px; margin-bottom: 28px; }
+  .inputs-label { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--lime); margin-bottom: 12px; display: block; }
+  .inputs-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .input-group label { font-size: 9px; color: var(--ash); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .08em; }
+  .input-group input { background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--white); font-family: inherit; font-size: 18px; font-weight: bold; padding: 2px 0; width: 70px; outline: none; }
+  .input-group input:focus { border-bottom-color: var(--lime); }
+
+  /* Day — large day number, flush rule */
+  .day-section { margin-bottom: 32px; }
+  .day-rule { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .day-num { font-family: Georgia, serif; font-size: 40px; font-weight: 900; color: var(--amber); line-height: 1; }
+  .day-info { flex: 1; }
+  .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--white); margin-bottom: 2px; }
+  .day-vol  { font-size: 10px; color: var(--ash); }
+  .rule { height: 1px; background: var(--line); margin-bottom: 12px; }
+
+  /* Session sub-header */
+  .session-lbl { font-size: 9px; letter-spacing: .1em; color: var(--lime); margin-bottom: 8px; }
+
+  /* Lift row — big prescription number, name secondary */
+  .lift-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .lift-row:last-child { border-bottom: none; }
+  .lift-name { font-family: Georgia, serif; font-weight: 700; font-size: 16px; color: var(--white); }
+  .lift-note { font-size: 9px; color: var(--ash); margin-top: 3px; letter-spacing: .04em; }
+  .lift-right { text-align: right; }
+  .lift-presc { font-size: 14px; color: var(--chalk); white-space: nowrap; }
+
+  /* Hypo: big number emphasis */
+  .hypo-nums { display: flex; align-items: baseline; gap: 4px; justify-content: flex-end; margin-bottom: 2px; }
+  .hypo-sets { font-family: Georgia, serif; font-size: 22px; font-weight: 900; color: var(--white); line-height: 1; }
+  .hypo-x    { font-size: 13px; color: var(--ash); margin: 0 1px; }
+  .hypo-reps { font-family: Georgia, serif; font-size: 22px; font-weight: 900; color: var(--white); line-height: 1; }
+  .hypo-kg   { font-size: 10px; color: var(--ash); }
+  .hypo-rpe  { font-size: 10px; color: var(--amber); letter-spacing: .04em; }
+
+  /* Running plan */
+  .run-row { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .run-row:last-child { border-bottom: none; }
+  .run-name  { font-family: Georgia, serif; font-weight: 700; font-size: 15px; color: var(--white); }
+  .run-note  { font-size: 9px; color: var(--ash); margin-top: 3px; }
+  .run-presc { font-size: 13px; color: var(--chalk); text-align: right; }
+</style>
+</head>
+<body>
+
+<h1>Design 5 — Editorial / magazine, numbers lead</h1>
+
+<!-- OWL -->
+<div class="plan-eyebrow">Strength · 8 weeks</div>
+<div class="plan-title">Soviet 8-Week OWL</div>
+<div class="plan-meta">5 sessions/week · % of 1RM · peaks to competition</div>
+
+<div class="inputs-card">
+  <span class="inputs-label">Your maxes (kg)</span>
+  <div class="inputs-row">
+    <div class="input-group"><label>Snatch</label><input value="90"></div>
+    <div class="input-group"><label>C&amp;J</label><input value="110"></div>
+    <div class="input-group"><label>Front Sq.</label><input value="120"></div>
+    <div class="input-group"><label>Back Sq.</label><input value="140"></div>
+    <div class="input-group"><label>Press</label><input value="70"></div>
+  </div>
+</div>
+
+<div class="day-section">
+  <div class="day-rule">
+    <div class="day-num">1</div>
+    <div class="day-info">
+      <div class="day-name">Training Day</div>
+      <div class="day-vol">160 lifts total</div>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <div class="session-lbl">AM · 71 lifts</div>
+  <div class="lift-row"><div><div class="lift-name">Press</div></div><div class="lift-right"><div class="lift-presc">60%×4×3 · 70%×4×2</div></div></div>
+  <div class="lift-row"><div><div class="lift-name">Snatch</div></div><div class="lift-right"><div class="lift-presc">60%×3×2 · 70%×3×3 · 75%×2×3</div></div></div>
+  <div class="lift-row"><div><div class="lift-name">Front Squat</div></div><div class="lift-right"><div class="lift-presc">60%×5×3 · 70%×5×3</div></div></div>
+  <div style="height:12px"></div>
+  <div class="session-lbl">PM · 89 lifts</div>
+  <div class="lift-row"><div><div class="lift-name">Power Clean &amp; Jerk</div><div class="lift-note">+ jerk</div></div><div class="lift-right"><div class="lift-presc">60%×4+1×4 · 70%×3+1×4</div></div></div>
+  <div class="lift-row"><div><div class="lift-name">Clean Extension</div></div><div class="lift-right"><div class="lift-presc">60%×5 · 70%×4×2 · 80%×4×2</div></div></div>
+  <div class="lift-row"><div><div class="lift-name">Good Morning</div></div><div class="lift-right"><div class="lift-presc">BW×8×4</div></div></div>
+</div>
+
+<div style="height:8px"></div>
+
+<!-- Running -->
+<div class="plan-eyebrow" style="margin-top:32px">Endurance · 9 weeks</div>
+<div class="plan-title">Hansons 5K Beginner</div>
+<div class="plan-meta">5 sessions/week · distance/pace · peaks to race day</div>
+
+<div class="inputs-card">
+  <span class="inputs-label">Your goal paces</span>
+  <div class="inputs-row">
+    <div class="input-group"><label>Goal finish</label><input value="25:00" style="width:84px"></div>
+    <div class="input-group"><label>Goal pace</label><input value="8:00/mi" style="width:84px"></div>
+    <div class="input-group"><label>Long run</label><input value="9:00/mi" style="width:84px"></div>
+  </div>
+</div>
+
+<div class="day-section">
+  <div class="day-rule">
+    <div class="day-num" style="color:var(--lime)">1</div>
+    <div class="day-info">
+      <div class="day-name">Week 1</div>
+      <div class="day-vol">Mon–Sun</div>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <div class="run-row"><div><div class="run-name">Rest / cross-train</div></div><div class="run-presc">Rest, or 30' cross-train</div></div>
+  <div class="run-row"><div><div class="run-name">Hills</div><div class="run-note">Jog down for recovery</div></div><div class="run-presc">5 × 1' hills</div></div>
+  <div class="run-row"><div><div class="run-name">Rest / cross-train</div></div><div class="run-presc">Rest, or 30' cross-train</div></div>
+  <div class="run-row"><div><div class="run-name">Tempo</div><div class="run-note">up = tempo pace, down = moderate effort</div></div><div class="run-presc">3 'up/down' miles</div></div>
+  <div class="run-row"><div><div class="run-name">Easy</div></div><div class="run-presc">3 miles</div></div>
+  <div class="run-row"><div><div class="run-name">Easy</div></div><div class="run-presc">30' easy</div></div>
+</div>
+
+<div style="margin-top:8px"></div>
+
+<!-- BB -->
+<div class="plan-eyebrow" style="margin-top:32px">Hypertrophy · repeating</div>
+<div class="plan-title">6-Day Push / Pull / Legs</div>
+<div class="plan-meta">6 sessions/week · progressive overload</div>
+
+<div class="inputs-card">
+  <span class="inputs-label">Your working weights (kg)</span>
+  <div class="inputs-row">
+    <div class="input-group"><label>Bench</label><input value="80"></div>
+    <div class="input-group"><label>OHP</label><input value="60"></div>
+    <div class="input-group"><label>Squat</label><input value="100"></div>
+    <div class="input-group"><label>Deadlift</label><input value="120"></div>
+  </div>
+</div>
+
+<div class="day-section">
+  <div class="day-rule">
+    <div class="day-num">M</div>
+    <div class="day-info">
+      <div class="day-name">Push (Bench)</div>
+      <div class="day-vol">5 exercises</div>
+    </div>
+  </div>
+  <div class="rule"></div>
+
+  <div class="lift-row">
+    <div>
+      <div class="lift-name">Bench Press</div>
+      <div class="lift-note">Main lift — progressive overload</div>
+    </div>
+    <div class="lift-right">
+      <div class="hypo-nums">
+        <span class="hypo-sets">4</span>
+        <span class="hypo-x">×</span>
+        <span class="hypo-reps">6</span>
+      </div>
+      <div class="hypo-kg">80 kg</div>
+      <div class="hypo-rpe">RPE 9</div>
+    </div>
+  </div>
+  <div class="lift-row">
+    <div><div class="lift-name">Incline Bench Press</div></div>
+    <div class="lift-right">
+      <div class="hypo-nums"><span class="hypo-sets">3</span><span class="hypo-x">×</span><span class="hypo-reps">8</span></div>
+      <div class="hypo-rpe">RPE 8</div>
+    </div>
+  </div>
+  <div class="lift-row">
+    <div><div class="lift-name">Overhead Dumbbell Press</div></div>
+    <div class="lift-right">
+      <div class="hypo-nums"><span class="hypo-sets">3</span><span class="hypo-x">×</span><span class="hypo-reps">10</span></div>
+      <div class="hypo-rpe">RPE 8</div>
+    </div>
+  </div>
+  <div class="lift-row">
+    <div><div class="lift-name">Skull Crushers</div></div>
+    <div class="lift-right">
+      <div class="hypo-nums"><span class="hypo-sets">3</span><span class="hypo-x">×</span><span class="hypo-reps">10</span></div>
+      <div class="hypo-rpe">RPE 8</div>
+    </div>
+  </div>
+  <div class="lift-row">
+    <div><div class="lift-name">Lateral Raises</div></div>
+    <div class="lift-right">
+      <div class="hypo-nums"><span class="hypo-sets">3</span><span class="hypo-x">×</span><span class="hypo-reps">12</span></div>
+      <div class="hypo-rpe" style="color:var(--amber)">RPE 10</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
