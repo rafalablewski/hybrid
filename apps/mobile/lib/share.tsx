@@ -1,9 +1,9 @@
-import { forwardRef } from "react";
-import { View, Text, Share } from "react-native";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import { View, Text, Share, Animated, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
 import { C, F, Kicker } from "./ui";
 
 const MUSCLE_LABEL: Record<string, string> = {
@@ -125,18 +125,36 @@ WorkoutStoryCard.displayName = "WorkoutStoryCard";
 
 export type SlideData =
   | { kind: "overview"; eyebrow: string; stats: ShareStats; firstEver?: boolean }
+  | { kind: "stat"; eyebrow: string; value: string; unit: string; caption?: string }
   | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
   | { kind: "fun"; eyebrow: string; emoji: string; text: string };
 
 // Style-aware stat cell for the story card (colours come from the chosen style).
-function StoryStat({ label, value, st, width }: { label: string; value: string; st: StoryStyle; width: number }) {
+// `run` ticks the value up from 0 (overview slide); CountUpText rests on the
+// exact original string so the captured PNG stays correct.
+function StoryStat({ label, value, st, width, run = false }: { label: string; value: string; st: StoryStyle; width: number; run?: boolean }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: width * 0.092, color: st.text }}>{value}</Text>
+      <CountUpText value={value} run={run} style={{ fontFamily: F.black, fontSize: width * 0.092, color: st.text }} />
       <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.muted, letterSpacing: 1, marginTop: width * 0.01 }}>{label}</Text>
     </View>
   );
+}
+
+// A muscle bar that grows from 0 → its share width when `run` flips true, then
+// rests full (the visible card is the capture node, so a later share is right).
+function MuscleBarFill({ pct, run, color, delay }: { pct: number; run: boolean; color: string; delay: number }) {
+  const v = useRef(new Animated.Value(run ? 0 : 1)).current;
+  const started = useRef(false);
+  useEffect(() => {
+    if (!run || started.current) return;
+    started.current = true;
+    v.setValue(0);
+    Animated.timing(v, { toValue: 1, duration: 800, delay: delay * 80, useNativeDriver: false }).start();
+  }, [run, v]);
+  const w = v.interpolate({ inputRange: [0, 1], outputRange: ["0%", `${Math.max(4, pct)}%`] });
+  return <Animated.View style={{ width: w, height: "100%", backgroundColor: color }} />;
 }
 
 const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; st: StoryStyle; children: React.ReactNode }>(
@@ -194,8 +212,37 @@ const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: s
 );
 StoryShell.displayName = "StoryShell";
 
-export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; styleId?: StoryStyleId }>(
-  ({ slide, t, units = "kg", width, styleId }, ref) => {
+// A number that ticks up from 0 → final when `run` flips true, then settles on
+// the EXACT original string. The visible carousel card IS the capture node, so
+// it must rest on the true value; the animation runs once on first view and a
+// share is always a later, deliberate tap.
+function CountUpText({ value, run, style }: { value: string; run: boolean; style: TextStyle }) {
+  const [disp, setDisp] = useState(value);
+  const done = useRef(false);
+  useEffect(() => { done.current = false; setDisp(value); }, [value]);
+  useEffect(() => {
+    if (!run || done.current) return;
+    const { target, format } = statCountUp(value);
+    if (!target) return;
+    done.current = true;
+    const dur = 900;
+    const t0 = Date.now();
+    let raf: ReturnType<typeof requestAnimationFrame>;
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      if (p < 1) { setDisp(format(target * e)); raf = requestAnimationFrame(tick); }
+      else setDisp(value);
+    };
+    setDisp(format(0));
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [run, value]);
+  return <Text style={style}>{disp}</Text>;
+}
+
+export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; styleId?: StoryStyleId; animate?: boolean }>(
+  ({ slide, t, units = "kg", width, styleId, animate = false }, ref) => {
     const tracked = t("share.tracked");
     const st = storyStyle(styleId);
     if (slide.kind === "overview") {
@@ -206,10 +253,19 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
             {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} />
-            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} />
-            <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} />
+            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} run={animate} />
           </View>
+        </StoryShell>
+      );
+    }
+    if (slide.kind === "stat") {
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
+          <CountUpText value={slide.value} run={animate} style={{ fontFamily: F.black, fontSize: width * 0.3, color: st.text, lineHeight: width * 0.28, letterSpacing: -1 }} />
+          <Text style={{ fontFamily: F.mono, fontSize: width * 0.036, color: st.muted, letterSpacing: 2, marginTop: width * 0.03 }}>{slide.unit.toUpperCase()}</Text>
+          {slide.caption ? <Text style={{ fontFamily: F.bold, fontSize: width * 0.05, color: st.text, marginTop: width * 0.04, lineHeight: width * 0.06 }}>{slide.caption}</Text> : null}
         </StoryShell>
       );
     }
@@ -236,7 +292,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
                 <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: st.muted }}>{b.value}</Text>
               </View>
               <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: st.barTrack, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: st.barFill }} />
+                <MuscleBarFill pct={b.pct} run={animate} color={st.barFill} delay={i} />
               </View>
             </View>
           ))}

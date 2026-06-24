@@ -144,6 +144,7 @@ export function drawStoryCard(stats: ShareStats, units: WeightUnit, t: (k: strin
 
 export type StorySlide =
   | { kind: "overview"; eyebrow: string; stats: ShareStats }
+  | { kind: "stat"; eyebrow: string; value: string; unit: string; caption?: string }
   | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
   | { kind: "fun"; eyebrow: string; emoji: string; text: string };
@@ -256,6 +257,20 @@ export function drawSlideStory(slide: StorySlide, units: WeightUnit, t: (k: stri
       ctx.fillText(c.label, cx, 932);
     });
     ctx.textAlign = "left";
+  } else if (slide.kind === "stat") {
+    // A single hero stat — the cinematic spotlight (Minutes / Total load).
+    ctx.textAlign = "left";
+    ctx.font = font(DISPLAY, 300);
+    ctx.fillStyle = st.text;
+    ctx.fillText(slide.value, SPAD, 820);
+    ctx.font = font(MONO, 40);
+    ctx.fillStyle = st.muted;
+    ctx.fillText(slide.unit.toUpperCase(), SPAD, 900);
+    if (slide.caption) {
+      ctx.font = font(DISPLAY, 50);
+      ctx.fillStyle = st.text;
+      wrapText(ctx, slide.caption, SPAD, 1010, SW - SPAD * 2, 66);
+    }
   } else if (slide.kind === "prs") {
     ctx.font = font(DISPLAY, 64);
     ctx.fillStyle = st.barFill;

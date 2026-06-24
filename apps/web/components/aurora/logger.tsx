@@ -15,6 +15,7 @@ import { fs, space,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   storyStyle,
+  statCountUp,
   type StoryStyle,
   type StoryStyleId,
   blockBestE1rm,
@@ -564,7 +565,35 @@ export default function AuroraLogger({
 /** The real 9:16 story card, rendered in the DOM so the on-screen preview is
  *  exactly what gets shared (the PNG is painted from the same StoryStyle). `w`
  *  is the on-screen width; everything scales from the 1080-wide design grid. */
-function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StoryStyle; w: number; t: (k: string) => string; units: WeightUnit }) {
+/** A number that ticks up from 0 to its final value when `run` flips true, then
+ *  settles on the EXACT original string (so it matches the shared canvas PNG).
+ *  Preview-only — the web share image is painted separately on a <canvas>. */
+function CountUp({ value, run, style }: { value: string; run: boolean; style?: React.CSSProperties }) {
+  const [disp, setDisp] = useState(value);
+  const done = useRef(false);
+  useEffect(() => { done.current = false; setDisp(value); }, [value]);
+  useEffect(() => {
+    if (!run || done.current || typeof requestAnimationFrame === "undefined") return;
+    const { target, format } = statCountUp(value);
+    if (!target) return;
+    done.current = true;
+    const dur = 900;
+    const t0 = Date.now();
+    let raf = 0;
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      if (p < 1) { setDisp(format(target * e)); raf = requestAnimationFrame(tick); }
+      else setDisp(value); // settle to the exact original (== the shared PNG)
+    };
+    setDisp(format(0));
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [run, value]);
+  return <span style={style}>{disp}</span>;
+}
+
+function StoryCard({ slide, st, w, t, units, active = false }: { slide: StorySlide; st: StoryStyle; w: number; t: (k: string) => string; units: WeightUnit; active?: boolean }) {
   const h = (w * 16) / 9;
   const k = w / 1080; // design grid → on-screen scale
   const px = (n: number) => `${n * k}px`;
@@ -584,7 +613,7 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
           <div style={{ display: "flex", marginTop: px(80) }}>
             {stat.map((c, i) => (
               <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(86), color: st.text }}>{c.value}</div>
+                <CountUp value={c.value} run={active} style={{ display: "block", fontFamily: D, fontWeight: 900, fontSize: px(86), color: st.text }} />
                 <div style={{ fontFamily: M, fontSize: px(28), color: st.muted, letterSpacing: ".1em", marginTop: px(8) }}>{c.label}</div>
               </div>
             ))}
@@ -592,6 +621,14 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
         </>
       );
     }
+    if (slide.kind === "stat")
+      return (
+        <div>
+          <CountUp value={slide.value} run={active} style={{ display: "block", fontFamily: D, fontWeight: 900, fontSize: px(280), color: st.text, lineHeight: 0.9, letterSpacing: "-0.04em" }} />
+          <div style={{ fontFamily: M, fontSize: px(38), color: st.muted, letterSpacing: ".2em", marginTop: px(24) }}>{slide.unit.toUpperCase()}</div>
+          {slide.caption && <div style={{ fontFamily: D, fontWeight: 700, fontSize: px(48), color: st.text, marginTop: px(30), lineHeight: 1.2 }}>{slide.caption}</div>}
+        </div>
+      );
     if (slide.kind === "prs")
       return (
         <>
@@ -616,7 +653,7 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
                 <span style={{ fontFamily: M, fontSize: px(34), color: st.muted }}>{b.value}</span>
               </div>
               <div style={{ height: px(22), borderRadius: px(11), background: st.barTrack, overflow: "hidden" }}>
-                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: st.barFill }} />
+                <div style={{ width: active ? `${Math.max(4, b.pct)}%` : "0%", height: "100%", background: st.barFill, borderRadius: px(11), transition: "width .8s cubic-bezier(.2,.9,.2,1)", transitionDelay: `${i * 0.08}s` }} />
               </div>
             </div>
           ))}
@@ -713,6 +750,8 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       : t("summary.todaysBests");
   const slides: StorySlide[] = [
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes, sets, volume, bests, firstEver } },
+    { kind: "stat", eyebrow: t("summary.slide.time"), value: String(minutes), unit: t("summary.minutes") },
+    { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(volume, units), unit: t("summary.volumeMoved") },
     { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
     ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as StorySlide] : []),
     ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as StorySlide] : []),
@@ -762,7 +801,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       >
         {slides.map((s, i) => (
           <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center", boxSizing: "border-box" }}>
-            <StoryCard slide={s} st={st} w={previewW} t={t} units={units} />
+            <StoryCard slide={s} st={st} w={previewW} t={t} units={units} active={i === activeIdx} />
           </div>
         ))}
       </div>
