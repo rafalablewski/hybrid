@@ -130,7 +130,7 @@ const ta=document.getElementById('tally');for(let k=0;k<100;k++){ta.appendChild(
 function fillTally(){const cells=[...ta.children];
   // 263 exercises -> stamp in cells sequentially; ~63 emphasised red, rest ink ticks.
   cells.forEach((c,k)=>{c.className='';setTimeout(()=>{c.className=k<63?'hot':(k%3===0?'f':'');},k*6);});}
-function countUp(el){const t=+el.dataset.count;if(!t)return;const s=performance.now();(function f(n){const p=Math.min((n-s)/1100,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(t*e).toLocaleString('en-US');p<1?requestAnimationFrame(f):el.textContent=t.toLocaleString('en-US');})(s);}
+function countUp(el){const t=+el.dataset.count;if(!t)return;let s=null;const dur=1100;function f(n){if(!s)s=n;const p=Math.min((n-s)/dur,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(t*e).toLocaleString('en-US');p<1?requestAnimationFrame(f):el.textContent=t.toLocaleString('en-US');}requestAnimationFrame(f);}
 function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('on',k===i));seg.forEach((b,k)=>{b.classList.toggle('done',k<i);b.classList.toggle('active',k===i);});slides[i].querySelectorAll('[data-count]').forEach(countUp);if(i===2)fillTally();}
 document.getElementById('nav').addEventListener('click',e=>{const d=e.target.closest('[data-dir]');if(d)show(i+ +d.dataset.dir);});
 document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1);});

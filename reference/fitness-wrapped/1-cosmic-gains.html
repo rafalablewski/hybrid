@@ -139,7 +139,7 @@
     <div class="kicker reveal">A solar system of effort</div>
     <div class="orbit reveal">
       <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
-      <div class="sun"><b id="exNum">247</b></div>
+      <div class="sun"><b id="exNum" data-count="247">0</b></div>
       <div class="p-orbit spin" style="--s:9s"><span class="planet"></span></div>
       <div class="p-orbit spin" style="--s:14s; inset:34px"><span class="planet" style="background:var(--magenta); box-shadow:0 0 14px var(--magenta)"></span></div>
       <div class="p-orbit spin" style="--s:20s; inset:70px"><span class="planet" style="background:var(--gold); box-shadow:0 0 14px var(--gold)"></span></div>
@@ -200,13 +200,15 @@ const seg=[...bars.children];
 let i=0;
 function countUp(el){
   const t=+el.dataset.count; if(!t)return;
-  const start=performance.now(), dur=1300;
-  (function tick(now){
+  let start=null; const dur=1300;
+  function tick(now){
+    if(!start)start=now;
     const p=Math.min((now-start)/dur,1);
     const e=1-Math.pow(1-p,3);
     el.textContent=Math.floor(t*e).toLocaleString('en-US');
     if(p<1)requestAnimationFrame(tick);else el.textContent=t.toLocaleString('en-US');
-  })(start);
+  }
+  requestAnimationFrame(tick);
 }
 function show(n){
   i=Math.max(0,Math.min(slides.length-1,n));
