@@ -14,6 +14,10 @@ describe("plansForGoal", () => {
     const oly = plansForGoal("Olympic Weightlifting");
     expect(oly.length).toBeGreaterThan(0);
     expect(oly.map((p) => p.id)).toContain("oly-4day");
+
+    const fatloss = plansForGoal("Fat Loss");
+    expect(fatloss.length).toBeGreaterThan(0);
+    expect(fatloss.map((p) => p.id)).toContain("fatloss-4day");
   });
 
   it("is empty for a goal with no uploaded plans yet", () => {
