@@ -2,22 +2,12 @@ import { describe, it, expect } from "vitest";
 import { plansForGoal, GOAL_TREE, PLAN_DETAIL } from "./plans";
 
 describe("plansForGoal", () => {
-  it("returns the named plans for a goal that has them", () => {
-    const bb = plansForGoal("Bodybuilding");
-    expect(bb.length).toBeGreaterThan(0);
-    expect(bb.map((p) => p.id)).toContain("bb-fb4");
-
-    const power = plansForGoal("Powerlifting");
-    expect(power.length).toBeGreaterThan(0);
-    expect(power.map((p) => p.id)).toContain("pl-4day");
-
-    const oly = plansForGoal("Olympic Weightlifting");
-    expect(oly.length).toBeGreaterThan(0);
-    expect(oly.map((p) => p.id)).toContain("oly-4day");
-
-    const fatloss = plansForGoal("Fat Loss");
-    expect(fatloss.length).toBeGreaterThan(0);
-    expect(fatloss.map((p) => p.id)).toContain("fatloss-4day");
+  // All saved plans have been retired — every goal now carries 0 plans until
+  // real plans are uploaded. Guards against a plan sneaking back into the tree.
+  it("is empty for every goal in the library", () => {
+    for (const node of GOAL_TREE) {
+      expect(plansForGoal(node.name)).toEqual([]);
+    }
   });
 
   it("is empty for a goal with no uploaded plans yet", () => {
