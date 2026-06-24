@@ -208,11 +208,20 @@ describe("hypertrophy (bodybuilding) program — same model, sets × reps", () =
     expect(mon.title).toBe("Mon · Push (Bench)");
     expect(mon.volume).toBe("5 exercises");
     const bench = mon.sessions[0]!.lifts[0]!;
-    expect(bench).toMatchObject({ name: "Bench Press", prescription: "4–5 × 6–12 reps", note: "Main lift — progressive overload" });
+    expect(bench).toMatchObject({ name: "Bench Press", prescription: "4×6 · @9", note: "Main lift — progressive overload" });
 
     // Sunday is a rest day with no volume chip.
     const sun = v.days[6]!;
     expect(sun.kindLabel).toBe("Rest");
     expect(sun.volume).toBeNull();
+  });
+
+  it("injects working weight into prescription when the athlete supplies it", () => {
+    const v = planProgramView(BB_PPL_6DAY, { week: 1, maxes: { bench: 80 } });
+    const bench = v.days[0]!.sessions[0]!.lifts[0]!;
+    expect(bench.prescription).toBe("4×6 · 80 kg · @9");
+    // Exercises without a weightRef are unaffected.
+    const incline = v.days[0]!.sessions[0]!.lifts[1]!;
+    expect(incline.prescription).toBe("3×8 · @8");
   });
 });

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design 3 — Dense table, side-by-side columns</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink:   #0c0c0c;
+    --ink2:  #141414;
+    --line:  #1f1f1f;
+    --ash:   #484848;
+    --chalk: #bdbdbd;
+    --lime:  #b4ed46;
+    --amber: #e8a838;
+    --white: #ececec;
+  }
+  body { background: var(--ink); color: var(--chalk); font-family: 'Courier New', monospace; padding: 32px 20px; max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 11px; color: var(--ash); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 28px; }
+
+  .plan-title { font-family: Georgia, serif; font-weight: 900; font-size: 24px; color: var(--white); margin-bottom: 3px; }
+  .plan-meta  { font-size: 11px; color: var(--ash); margin-bottom: 16px; }
+
+  .inputs-card { background: var(--ink2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+  .inputs-label { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--lime); margin-bottom: 8px; display: block; }
+  .inputs-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .input-group label { font-size: 9px; color: var(--ash); display: block; margin-bottom: 3px; }
+  .input-group input { background: var(--ink); border: 1px solid var(--line); border-radius: 6px; color: var(--chalk); font-family: inherit; font-size: 12px; padding: 5px 8px; width: 70px; outline: none; }
+
+  .day-card { background: var(--ink2); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+  .day-header { display: flex; justify-content: space-between; align-items: center; padding: 9px 13px; border-bottom: 1px solid var(--line); }
+  .day-title  { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--amber); }
+  .day-vol    { font-size: 10px; color: var(--ash); }
+  .session-header { font-size: 9px; letter-spacing: .1em; color: var(--lime); padding: 7px 13px 4px; border-bottom: 1px solid var(--line); background: rgba(184,240,74,.03); }
+
+  /* Dense table */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--ash); text-align: left; padding: 7px 13px 5px; font-weight: normal; border-bottom: 1px solid var(--line); }
+  th:last-child, td:last-child { text-align: right; padding-right: 13px; }
+  td { padding: 9px 13px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .col-name { font-family: Georgia, serif; font-weight: 600; font-size: 14px; color: var(--white); }
+  .col-name small { display: block; font-family: 'Courier New', monospace; font-size: 9px; color: var(--ash); font-weight: normal; margin-top: 1px; }
+  .col-presc { color: var(--chalk); white-space: nowrap; }
+  .col-kg    { color: var(--ash); white-space: nowrap; }
+
+  /* Tiny RPE dot */
+  .rpe-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .rpe-10 { background: #e8a838; }
+  .rpe-9  { background: #7bb8ec; }
+  .rpe-8  { background: #4a4a4a; }
+  .rpe-val { font-size: 11px; color: var(--ash); }
+</style>
+</head>
+<body>
+
+<h1>Design 3 — Dense table, explicit columns</h1>
+
+<!-- OWL -->
+<div class="plan-title">Soviet 8-Week OWL</div>
+<div class="plan-meta">8 wks · 5×/wk · strength-percent · peaks to competition</div>
+
+<div class="inputs-card">
+  <span class="inputs-label">Your maxes (kg)</span>
+  <div class="inputs-row">
+    <div class="input-group"><label>Snatch</label><input value="90"></div>
+    <div class="input-group"><label>Clean &amp; Jerk</label><input value="110"></div>
+    <div class="input-group"><label>Front Squat</label><input value="120"></div>
+    <div class="input-group"><label>Back Squat</label><input value="140"></div>
+    <div class="input-group"><label>Press</label><input value="70"></div>
+  </div>
+</div>
+
+<div class="day-card">
+  <div class="day-header"><span class="day-title">Day 1</span><span class="day-vol">160 lifts</span></div>
+  <div class="session-header">AM · 71 lifts</div>
+  <table>
+    <thead><tr><th>Exercise</th><th>Prescription</th></tr></thead>
+    <tbody>
+      <tr><td class="col-name">Press</td><td class="col-presc">60%×4×3 · 70%×4×2</td></tr>
+      <tr><td class="col-name">Snatch</td><td class="col-presc">60%×3×2 · 70%×3×3 · 75%×2×3</td></tr>
+      <tr><td class="col-name">Front Squat</td><td class="col-presc">60%×5×3 · 70%×5×3</td></tr>
+    </tbody>
+  </table>
+  <div class="session-header">PM · 89 lifts</div>
+  <table>
+    <tbody>
+      <tr><td class="col-name">Power Clean &amp; Jerk<small>+ jerk</small></td><td class="col-presc">60%×4+1×4 · 70%×3+1×4</td></tr>
+      <tr><td class="col-name">Clean Extension</td><td class="col-presc">60%×5 · 70%×4×2 · 80%×4×2</td></tr>
+      <tr><td class="col-name">Good Morning</td><td class="col-presc">BW×8×4</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="height:28px"></div>
+
+<!-- BB -->
+<div class="plan-title">6-Day Push / Pull / Legs</div>
+<div class="plan-meta">Repeating week · 6×/wk · hypertrophy</div>
+
+<div class="inputs-card">
+  <span class="inputs-label">Your working weights (kg)</span>
+  <div class="inputs-row">
+    <div class="input-group"><label>Bench Press</label><input value="80"></div>
+    <div class="input-group"><label>Overhead Press</label><input value="60"></div>
+    <div class="input-group"><label>Squat</label><input value="100"></div>
+    <div class="input-group"><label>Deadlift</label><input value="120"></div>
+  </div>
+</div>
+
+<div class="day-card">
+  <div class="day-header"><span class="day-title">Mon · Push (Bench)</span><span class="day-vol">5 exercises</span></div>
+  <table>
+    <thead><tr><th>Exercise</th><th>Sets×Reps</th><th>Weight</th><th>RPE</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="col-name">Bench Press<small>Main lift — progressive overload</small></td>
+        <td class="col-presc">4×6</td>
+        <td class="col-kg">80 kg</td>
+        <td class="col-presc"><span class="rpe-dot rpe-9"></span><span class="rpe-val">9</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Incline Bench Press</td>
+        <td class="col-presc">3×8</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-8"></span><span class="rpe-val">8</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Overhead Dumbbell Press</td>
+        <td class="col-presc">3×10</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-8"></span><span class="rpe-val">8</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Skull Crushers</td>
+        <td class="col-presc">3×10</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-8"></span><span class="rpe-val">8</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Lateral Raises</td>
+        <td class="col-presc">3×12</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-10"></span><span class="rpe-val">10</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="day-card">
+  <div class="day-header"><span class="day-title">Sat · Legs (Deadlift)</span><span class="day-vol">4 exercises</span></div>
+  <table>
+    <thead><tr><th>Exercise</th><th>Sets×Reps</th><th>Weight</th><th>RPE</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="col-name">Deadlift<small>Main lift — progressive overload</small></td>
+        <td class="col-presc">3×6</td>
+        <td class="col-kg">120 kg</td>
+        <td class="col-presc"><span class="rpe-dot rpe-9"></span><span class="rpe-val">9</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Leg Press</td>
+        <td class="col-presc">3×8</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-8"></span><span class="rpe-val">8</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Back Extensions</td>
+        <td class="col-presc">3×10</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-8"></span><span class="rpe-val">8</span></td>
+      </tr>
+      <tr>
+        <td class="col-name">Reverse Crunches</td>
+        <td class="col-presc">3×AMRAP</td>
+        <td class="col-kg">—</td>
+        <td class="col-presc"><span class="rpe-dot rpe-10"></span><span class="rpe-val">10</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
