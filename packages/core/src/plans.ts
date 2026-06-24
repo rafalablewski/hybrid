@@ -88,7 +88,11 @@ export const GOAL_TREE: GoalNode[] = [
       { id: "pl-5day", name: "5-Day Powerbuilding", weeks: 12, sessions: 5, tag: "Powerbuilding", desc: "Three heavy main-lift days, a volume day, and a dedicated upper-body day. Maximal strength with the muscle to back it up.", focus: ["Strength", "Hypertrophy"], hot: true },
     ] },
   { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: AMBER, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
-    plans: [] },
+    plans: [
+      { id: "oly-4day", name: "4-Day Intermediate", weeks: 12, sessions: 4, tag: "4 Days", desc: "The strongest balance of progress and recovery. Snatch, clean & jerk, and front and back squat each trained twice a week — ~90% of the results with far less fatigue than elite training.", focus: ["Power", "Strength"], hot: true },
+      { id: "oly-3day", name: "3-Day Beginner", weeks: 8, sessions: 3, tag: "Technique", desc: "Build the lifts and the engine. Percentage-based snatch and clean & jerk practice plus squats and pulls — fitness and technique for the recreational lifter.", focus: ["Technique", "Power"] },
+      { id: "oly-5day", name: "5-Day Advanced", weeks: 12, sessions: 5, tag: "5 Days", desc: "Serious-club volume: heavy singles, dedicated power and volume days, and high squat and pull frequency. For the focused Olympic weightlifter.", focus: ["Power", "Strength"], hot: true },
+    ] },
   { id: "strongman", name: "Strongman", icon: "◤", color: VIOLET, category: "Strength", blurb: "Carry, press, and pull heavy odd objects. Raw, full-body, real-world strength.",
     plans: [] },
   // ---- Physique ----
@@ -102,7 +106,11 @@ export const GOAL_TREE: GoalNode[] = [
       { id: "bb-split5", name: "5-Day Bodybuilding Split", weeks: 8, sessions: 5, tag: "Bro Split", desc: "One muscle group per day. Maximum volume and focus for the dedicated lifter.", focus: ["Hypertrophy"], hot: true },
     ] },
   { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
-    plans: [] },
+    plans: [
+      { id: "fatloss-4day", name: "4-Day Upper / Lower", weeks: 10, sessions: 4, tag: "Upper/Lower", desc: "The most effective setup for the average person — 4 days lifting (two upper, two lower) plus 10–12k steps a day, each session capped with a conditioning finisher.", focus: ["Strength", "Conditioning"], hot: true },
+      { id: "fatloss-3day", name: "3-Day Full Body", weeks: 8, sessions: 3, tag: "Full Body", desc: "The beginner-friendly, time-efficient option. Full-body strength three times a week plus conditioning and core — hold onto muscle while the fat comes off.", focus: ["Strength", "Conditioning"] },
+      { id: "fatloss-5day", name: "5-Day Strength + Conditioning", weeks: 8, sessions: 5, tag: "5 Days", desc: "For serious lifters getting lean: two strength days, two hypertrophy days, and a dedicated conditioning circuit for the highest weekly burn.", focus: ["Hypertrophy", "Conditioning"] },
+    ] },
   // ---- Endurance ----
   { id: "tri", name: "Triathlon", icon: "◆", color: BLUE, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
     plans: [] },
@@ -299,6 +307,123 @@ export const PLAN_DETAIL: Record<string, PlanDetail> = {
       ] },
     ],
     progression: "Warm up every session: 5 min cardio + hip/arm circles + bodyweight squats, then ramp the first main lift (empty bar ×10, 40% ×5, 55% ×5, 70% ×3) into the work sets. Push the heavy main lifts to RPE 8 and add load when all reps move well; keep the volume day around RPE 7 to bank tonnage without burning out. Deload every 6th week: cut volume ~50% and intensity 10–15%.",
+  },
+  // ---- Olympic Weightlifting ----
+  // Intensity column carries the prescription as the sport coaches it: a % of
+  // 1RM where given, a qualitative cue for the classic lifts ("Heavy" = work up
+  // to a heavy single/double, "Volume" = lighter technical tonnage), an RPE for
+  // strength/accessory work, and "—" for skill/AMRAP effort.
+  "oly-3day": {
+    level: "Beginner",
+    forWho: "Recreational lifters who can already snatch and clean & jerk safely and train 3 days/week — learning technique while building a base.",
+    outcome: "A more reliable snatch and clean & jerk plus the squat and pull strength that underpins them, with the athleticism and mobility the sport demands.",
+    sessionLength: "75–90 min",
+    equipment: "Full gym (barbell, bumper plates, platform, squat rack, rings/bar)",
+    split: ["Day 1", "Rest", "Day 2", "Rest", "Day 3", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Snatch", items: [
+        { name: "Snatch", sr: "6 × 2", rest: "2:30", rpe: "65–75%" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "3 × 8", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Plank", sr: "3 × 60 sec", rest: "1:00", rpe: "—" },
+      ] },
+      { day: "Day 2 — Clean & Jerk", items: [
+        { name: "Clean & Jerk", sr: "6 × 2", rest: "2:30", rpe: "65–75%" },
+        { name: "Front Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Push Press", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Chest Supported Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 3 — Power", items: [
+        { name: "Power Snatch", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Power Clean", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "4 × 6", rest: "3:00", rpe: "8" },
+        { name: "Snatch Pull", sr: "4 × 4", rest: "2:00", rpe: "8" },
+        { name: "Back Extension", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min row/bike/rope + ankle & hip mobility, thoracic rotations and PVC pass-throughs, then 2 barbell rounds (muscle snatch, overhead squat, snatch balance, muscle clean, front squat, push press ×5). Keep the classic lifts in the 65–75% technical range and add load only when the bar speed and positions stay crisp. Beginner weekly volume targets: 20–40 reps of snatch variations, 20–40 of clean variations, 8–15 squat sets, 6–10 pull sets.",
+  },
+  "oly-4day": {
+    level: "Intermediate",
+    forWho: "Recreational-to-serious lifters training 4 days/week — the recommended pick: snatch, clean & jerk, and front and back squat each trained twice weekly.",
+    outcome: "Bigger snatch and clean & jerk built on heavy doubles, a strong front/back squat, and the power and consistency to express it — most of the result for far less fatigue than elite training.",
+    sessionLength: "90–105 min",
+    equipment: "Full gym (barbell, bumper plates, platform, squat rack, reverse hyper/GHR, rings/bar)",
+    split: ["Day 1", "Day 2", "Rest", "Day 3", "Day 4", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Snatch Focus", items: [
+        { name: "Snatch — Work to Heavy Double", sr: "Work to 2", rest: "3:00", rpe: "Heavy" },
+        { name: "Snatch Pull", sr: "4 × 3", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 2 — Clean & Jerk Focus", items: [
+        { name: "Clean & Jerk — Work to Heavy Double", sr: "Work to 2", rest: "3:00", rpe: "Heavy" },
+        { name: "Front Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Clean Pull", sr: "4 × 3", rest: "2:30", rpe: "8" },
+        { name: "Push Press", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Reverse Hyper", sr: "3 × 12", rest: "1:30", rpe: "9" },
+      ] },
+      { day: "Day 3 — Power", items: [
+        { name: "Power Snatch", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Power Clean", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Snatch Balance", sr: "5 × 2", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "4 × 5", rest: "3:00", rpe: "8" },
+        { name: "Cable Crunch", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 4 — Strength", items: [
+        { name: "Front Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Clean Pull", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Barbell Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Face Pull", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min row/bike/rope + ankle & hip mobility, thoracic rotations and PVC pass-throughs, then 2 barbell rounds (muscle snatch, overhead squat, snatch balance, muscle clean, front squat, push press ×5). On the focus days work up to a heavy double that still looks fast — when it moves well, nudge the daily heavy up week to week. Intermediate weekly volume targets: 40–70 reps of snatch variations, 40–70 of clean variations, 12–20 squat sets, 8–15 pull sets.",
+  },
+  "oly-5day": {
+    level: "Advanced",
+    forWho: "Focused Olympic weightlifters who can recover from 5 sessions/week — the volume and frequency you'd see in a serious club.",
+    outcome: "Maximal snatch and clean & jerk from heavy singles, technical volume work, and the high squat and pull frequency that drives a competitive total.",
+    sessionLength: "90–120 min",
+    equipment: "Full gym (barbell, bumper plates, platform, squat rack, reverse hyper/GHR, rings/bar)",
+    split: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Snatch", items: [
+        { name: "Snatch — Heavy Singles", sr: "Work to 1", rest: "3:00", rpe: "Heavy" },
+        { name: "Snatch Pull", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Hanging Leg Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 2 — Clean & Jerk", items: [
+        { name: "Clean & Jerk — Heavy Singles", sr: "Work to 1", rest: "3:00", rpe: "Heavy" },
+        { name: "Front Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Push Press", sr: "5 × 5", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+      ] },
+      { day: "Day 3 — Power", items: [
+        { name: "Power Snatch", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Power Clean", sr: "6 × 2", rest: "2:30", rpe: "8" },
+        { name: "Snatch Balance", sr: "5 × 2", rest: "2:30", rpe: "8" },
+        { name: "Back Squat", sr: "4 × 6", rest: "3:00", rpe: "8" },
+      ] },
+      { day: "Day 4 — Volume", items: [
+        { name: "Snatch — Volume Work", sr: "8 × 2", rest: "2:00", rpe: "Volume" },
+        { name: "Clean & Jerk — Volume Work", sr: "6 × 2", rest: "2:30", rpe: "Volume" },
+        { name: "Clean Pull", sr: "5 × 3", rest: "2:30", rpe: "8" },
+        { name: "Cable Crunch", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 5 — Strength", items: [
+        { name: "Front Squat — Heavy", sr: "5 × 2", rest: "3:00", rpe: "Heavy" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Barbell Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min row/bike/rope + ankle & hip mobility, thoracic rotations and PVC pass-throughs, then 2 barbell rounds (muscle snatch, overhead squat, snatch balance, muscle clean, front squat, push press ×5). Take the classic lifts to a heavy single that stays technically sound, then bank lighter, fast technical doubles on the volume day. Advanced weekly volume targets: 70–120 reps of snatch variations, 70–120 of clean variations, 15–25 squat sets, 10–20 pull sets — back the volume off ~50% on a deload week when bar speed or positions start to slip.",
   },
   // ---- Bodybuilding ----
   "bb-fb4": {
@@ -527,6 +652,132 @@ export const PLAN_DETAIL: Record<string, PlanDetail> = {
       ] },
     ],
     progression: "Double progression on every exercise. Aim for the intermediate weekly-volume targets — chest 12–18, back 14–22, quads 10–18, hamstrings 8–16, shoulders 12–20, biceps 8–15, triceps 8–15 sets. Deload every 4th–6th week.",
+  },
+  // ---- Fat Loss ----
+  // The deficit drives the fat loss; the lifting is there to KEEP the muscle, so
+  // loads stay heavy (RPE 8 on the big lifts) while each session pairs strength
+  // with conditioning. Conditioning/finisher work shows its duration or rounds
+  // in the sets×reps column; the Intensity column reads RPE 9 for intervals,
+  // RPE 6 for steady walks, and "—" for AMRAP/timed core.
+  "fatloss-3day": {
+    level: "Beginner",
+    forWho: "Anyone new to lifting in a calorie deficit who can train 3 days/week and wants to lose fat without losing the muscle underneath.",
+    outcome: "Visible fat loss with strength and muscle retained — full-body strength three times a week, each session finished with conditioning and core.",
+    sessionLength: "55–70 min",
+    equipment: "Full gym (barbell, dumbbells, cables, machines, a bike/treadmill)",
+    split: ["Day 1", "Rest", "Day 2", "Rest", "Day 3", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Full Body A", items: [
+        { name: "Goblet Squat", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Dumbbell Bench Press", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Lat Pulldown", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Incline Treadmill Walk", sr: "1 × 20 min", rest: "—", rpe: "6" },
+        { name: "Plank", sr: "3 × 45 sec", rest: "1:00", rpe: "—" },
+      ] },
+      { day: "Day 2 — Full Body B", items: [
+        { name: "Deadlift", sr: "3 × 5", rest: "2:30", rpe: "8" },
+        { name: "Seated Dumbbell Press", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Chest Supported Row", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Walking Lunge", sr: "3 × 12 / leg", rest: "1:30", rpe: "8" },
+        { name: "Bike Intervals (30 s hard / 90 s easy)", sr: "10 × 30 sec", rest: "1:30", rpe: "9" },
+      ] },
+      { day: "Day 3 — Full Body C", items: [
+        { name: "Leg Press", sr: "3 × 12", rest: "1:30", rpe: "8" },
+        { name: "Push-Up", sr: "3 × AMRAP", rest: "1:30", rpe: "—" },
+        { name: "Cable Row", sr: "3 × 12", rest: "1:30", rpe: "8" },
+        { name: "Dumbbell Romanian Deadlift", sr: "3 × 12", rest: "1:30", rpe: "8" },
+        { name: "Fast Walk", sr: "1 × 30 min", rest: "—", rpe: "6" },
+        { name: "Hanging Knee Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up first: 5 min walk/bike, 15 bodyweight squats, 20 arm circles, 10 hip openers. Nutrition does the fat loss — keep a moderate deficit and protein high; the lifting is here to hold onto muscle, so chase the SAME loads week to week rather than adding. Step targets: 8–10k/day minimal, 10–12k/day good. When weight loss stalls for 2 weeks make ONE change at a time — add 2,000 daily steps, OR add 10 min of cardio per session, OR cut 150–200 kcal/day.",
+  },
+  "fatloss-4day": {
+    level: "Intermediate",
+    forWho: "Lifters in a deficit who can train 4 days/week — the most effective setup for the average person: 4 days lifting (Upper/Lower × 2) plus 10–12k steps a day.",
+    outcome: "Fat off, muscle and strength kept — two lower and two upper days that defend the big lifts, each capped with a short conditioning finisher.",
+    sessionLength: "60–75 min",
+    equipment: "Full gym (barbell, dumbbells, cables, machines, sled, assault bike/rower/treadmill)",
+    split: ["Upper", "Lower", "Rest", "Upper", "Lower", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Upper", items: [
+        { name: "Bench Press", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Barbell Row", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Incline Dumbbell Press", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Face Pull", sr: "3 × 15", rest: "1:00", rpe: "9" },
+        { name: "Assault Bike Intervals (finisher)", sr: "1 × 10 min", rest: "—", rpe: "9" },
+      ] },
+      { day: "Day 2 — Lower", items: [
+        { name: "Back Squat", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Walking Lunge", sr: "3 × 12 / leg", rest: "1:30", rpe: "8" },
+        { name: "Leg Curl", sr: "3 × 15", rest: "1:00", rpe: "9" },
+        { name: "Sled Push (finisher)", sr: "1 × 10 min", rest: "—", rpe: "8" },
+      ] },
+      { day: "Day 3 — Upper", items: [
+        { name: "Overhead Press", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Dumbbell Bench Press", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Cable Row", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Biceps Curl (superset)", sr: "3 × 12", rest: "1:00", rpe: "9" },
+        { name: "Triceps Pushdown (superset)", sr: "3 × 12", rest: "1:00", rpe: "9" },
+        { name: "Rowing Machine (finisher)", sr: "1 × 15 min", rest: "—", rpe: "8" },
+      ] },
+      { day: "Day 4 — Lower", items: [
+        { name: "Deadlift", sr: "4 × 4", rest: "2:30", rpe: "8" },
+        { name: "Front Squat", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Bulgarian Split Squat", sr: "3 × 10", rest: "1:30", rpe: "8" },
+        { name: "Standing Calf Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Incline Walk (finisher)", sr: "1 × 20 min", rest: "—", rpe: "6" },
+      ] },
+    ],
+    progression: "The deficit drives the fat loss; this split defends your muscle and strength, so aim to MATCH last week's loads on the main lifts rather than chase PRs. Sustainable weekly layout: Mon Upper, Tue Lower, Wed walk, Thu Upper, Fri Lower, Sat long walk/cardio, Sun rest. Step targets: 10–12k/day good, 12–15k/day for an aggressive cut (plus 2–5 cardio sessions/week). When weight loss stalls for 2 weeks, make ONE change at a time — +2,000 daily steps, OR +10 min cardio per session, OR −150–200 kcal/day.",
+  },
+  "fatloss-5day": {
+    level: "Advanced",
+    forWho: "Experienced lifters who already train seriously and want to get lean while keeping muscle on 5 days/week.",
+    outcome: "Lean recomposition with strength held — two strength days, two hypertrophy days, and a dedicated conditioning circuit for the weekly burn.",
+    sessionLength: "60–75 min",
+    equipment: "Full gym (barbell, dumbbells, cables, machines, kettlebell, rower)",
+    split: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Lower Strength", items: [
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Leg Press", sr: "4 × 12", rest: "1:30", rpe: "9" },
+        { name: "Hanging Leg Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 2 — Upper Strength", items: [
+        { name: "Bench Press", sr: "5 × 5", rest: "3:00", rpe: "8" },
+        { name: "Pull-Up", sr: "5 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Barbell Row", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Triceps Pushdown", sr: "3 × 12", rest: "1:00", rpe: "9" },
+        { name: "Biceps Curl", sr: "3 × 12", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 3 — Conditioning (5 rounds, 2 min rest)", items: [
+        { name: "Kettlebell Swing", sr: "5 × 15", rest: "2:00", rpe: "8" },
+        { name: "Burpee", sr: "5 × 10", rest: "2:00", rpe: "8" },
+        { name: "Rowing Machine", sr: "5 × 250 m", rest: "2:00", rpe: "9" },
+        { name: "Walking Lunge", sr: "5 × 20", rest: "2:00", rpe: "8" },
+      ] },
+      { day: "Day 4 — Lower Hypertrophy", items: [
+        { name: "Front Squat", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Bulgarian Split Squat", sr: "4 × 10", rest: "1:30", rpe: "8" },
+        { name: "Leg Curl", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Standing Calf Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 5 — Upper Hypertrophy", items: [
+        { name: "Incline Bench Press", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Dumbbell Shoulder Press", sr: "4 × 10", rest: "1:30", rpe: "8" },
+        { name: "Cable Row", sr: "4 × 10", rest: "1:30", rpe: "8" },
+        { name: "Biceps Curl (superset)", sr: "3 × 12", rest: "1:00", rpe: "9" },
+        { name: "Triceps Pushdown (superset)", sr: "3 × 12", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Already lifting seriously and cutting — keep the strength-day loads steady (hold strength, don't chase PRs) and let the hypertrophy days, the conditioning circuit, and your steps do the calorie work. For an aggressive cut run 12–15k steps/day plus 3–5 cardio sessions a week. When weight loss stalls for 2 weeks, make ONE change at a time — +2,000 daily steps, OR +10 min cardio per session, OR −150–200 kcal/day. Watch readiness and deload when strength or sleep starts to slide.",
   },
 };
 
