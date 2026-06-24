@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { View, Text, Share, type TextStyle } from "react-native";
+import { View, Text, Share, Animated, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
@@ -131,13 +131,30 @@ export type SlideData =
   | { kind: "fun"; eyebrow: string; emoji: string; text: string };
 
 // Style-aware stat cell for the story card (colours come from the chosen style).
-function StoryStat({ label, value, st, width }: { label: string; value: string; st: StoryStyle; width: number }) {
+// `run` ticks the value up from 0 (overview slide); CountUpText rests on the
+// exact original string so the captured PNG stays correct.
+function StoryStat({ label, value, st, width, run = false }: { label: string; value: string; st: StoryStyle; width: number; run?: boolean }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: width * 0.092, color: st.text }}>{value}</Text>
+      <CountUpText value={value} run={run} style={{ fontFamily: F.black, fontSize: width * 0.092, color: st.text }} />
       <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: st.muted, letterSpacing: 1, marginTop: width * 0.01 }}>{label}</Text>
     </View>
   );
+}
+
+// A muscle bar that grows from 0 → its share width when `run` flips true, then
+// rests full (the visible card is the capture node, so a later share is right).
+function MuscleBarFill({ pct, run, color, delay }: { pct: number; run: boolean; color: string; delay: number }) {
+  const v = useRef(new Animated.Value(run ? 0 : 1)).current;
+  const started = useRef(false);
+  useEffect(() => {
+    if (!run || started.current) return;
+    started.current = true;
+    v.setValue(0);
+    Animated.timing(v, { toValue: 1, duration: 800, delay: delay * 80, useNativeDriver: false }).start();
+  }, [run, v]);
+  const w = v.interpolate({ inputRange: [0, 1], outputRange: ["0%", `${Math.max(4, pct)}%`] });
+  return <Animated.View style={{ width: w, height: "100%", backgroundColor: color }} />;
 }
 
 const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: string; st: StoryStyle; children: React.ReactNode }>(
@@ -236,9 +253,9 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
             {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} />
-            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} />
-            <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} />
+            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} run={animate} />
           </View>
         </StoryShell>
       );
@@ -275,7 +292,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
                 <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: st.muted }}>{b.value}</Text>
               </View>
               <View style={{ height: width * 0.03, borderRadius: width * 0.015, backgroundColor: st.barTrack, overflow: "hidden" }}>
-                <View style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", backgroundColor: st.barFill }} />
+                <MuscleBarFill pct={b.pct} run={animate} color={st.barFill} delay={i} />
               </View>
             </View>
           ))}

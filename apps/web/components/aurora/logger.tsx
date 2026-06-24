@@ -613,7 +613,7 @@ function StoryCard({ slide, st, w, t, units, active = false }: { slide: StorySli
           <div style={{ display: "flex", marginTop: px(80) }}>
             {stat.map((c, i) => (
               <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(86), color: st.text }}>{c.value}</div>
+                <CountUp value={c.value} run={active} style={{ display: "block", fontFamily: D, fontWeight: 900, fontSize: px(86), color: st.text }} />
                 <div style={{ fontFamily: M, fontSize: px(28), color: st.muted, letterSpacing: ".1em", marginTop: px(8) }}>{c.label}</div>
               </div>
             ))}
@@ -653,7 +653,7 @@ function StoryCard({ slide, st, w, t, units, active = false }: { slide: StorySli
                 <span style={{ fontFamily: M, fontSize: px(34), color: st.muted }}>{b.value}</span>
               </div>
               <div style={{ height: px(22), borderRadius: px(11), background: st.barTrack, overflow: "hidden" }}>
-                <div style={{ width: `${Math.max(4, b.pct)}%`, height: "100%", background: st.barFill }} />
+                <div style={{ width: active ? `${Math.max(4, b.pct)}%` : "0%", height: "100%", background: st.barFill, borderRadius: px(11), transition: "width .8s cubic-bezier(.2,.9,.2,1)", transitionDelay: `${i * 0.08}s` }} />
               </div>
             </div>
           ))}
