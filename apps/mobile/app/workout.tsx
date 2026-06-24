@@ -1433,7 +1433,7 @@ function Summary({
           >
             {slides.map((s, i) => (
               <View key={i} style={{ width: slideW, alignItems: "center" }}>
-                <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} />
+                <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} animate={i === activeIdx} />
               </View>
             ))}
           </ScrollView>

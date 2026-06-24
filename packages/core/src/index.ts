@@ -10,6 +10,7 @@
 // templates, icons). See packages/core/src/theme/README.md.
 export * from "./theme";
 export * from "./story-styles";
+export * from "./count-up";
 export * from "./semantic";
 export * from "./engines";
 export * from "./plans";

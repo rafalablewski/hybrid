@@ -1,9 +1,9 @@
-import { forwardRef } from "react";
-import { View, Text, Share } from "react-native";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import { View, Text, Share, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
 import { C, F, Kicker } from "./ui";
 
 const MUSCLE_LABEL: Record<string, string> = {
@@ -195,8 +195,37 @@ const StoryShell = forwardRef<View, { width: number; eyebrow: string; tracked: s
 );
 StoryShell.displayName = "StoryShell";
 
-export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; styleId?: StoryStyleId }>(
-  ({ slide, t, units = "kg", width, styleId }, ref) => {
+// A number that ticks up from 0 → final when `run` flips true, then settles on
+// the EXACT original string. The visible carousel card IS the capture node, so
+// it must rest on the true value; the animation runs once on first view and a
+// share is always a later, deliberate tap.
+function CountUpText({ value, run, style }: { value: string; run: boolean; style: TextStyle }) {
+  const [disp, setDisp] = useState(value);
+  const done = useRef(false);
+  useEffect(() => { done.current = false; setDisp(value); }, [value]);
+  useEffect(() => {
+    if (!run || done.current) return;
+    const { target, format } = statCountUp(value);
+    if (!target) return;
+    done.current = true;
+    const dur = 900;
+    const t0 = Date.now();
+    let raf: ReturnType<typeof requestAnimationFrame>;
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      if (p < 1) { setDisp(format(target * e)); raf = requestAnimationFrame(tick); }
+      else setDisp(value);
+    };
+    setDisp(format(0));
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [run, value]);
+  return <Text style={style}>{disp}</Text>;
+}
+
+export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; styleId?: StoryStyleId; animate?: boolean }>(
+  ({ slide, t, units = "kg", width, styleId, animate = false }, ref) => {
     const tracked = t("share.tracked");
     const st = storyStyle(styleId);
     if (slide.kind === "overview") {
@@ -217,7 +246,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
     if (slide.kind === "stat") {
       return (
         <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
-          <Text style={{ fontFamily: F.black, fontSize: width * 0.3, color: st.text, lineHeight: width * 0.28, letterSpacing: -1 }}>{slide.value}</Text>
+          <CountUpText value={slide.value} run={animate} style={{ fontFamily: F.black, fontSize: width * 0.3, color: st.text, lineHeight: width * 0.28, letterSpacing: -1 }} />
           <Text style={{ fontFamily: F.mono, fontSize: width * 0.036, color: st.muted, letterSpacing: 2, marginTop: width * 0.03 }}>{slide.unit.toUpperCase()}</Text>
           {slide.caption ? <Text style={{ fontFamily: F.bold, fontSize: width * 0.05, color: st.text, marginTop: width * 0.04, lineHeight: width * 0.06 }}>{slide.caption}</Text> : null}
         </StoryShell>
