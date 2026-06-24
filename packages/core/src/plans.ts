@@ -82,7 +82,11 @@ export interface PlanDetail {
 export const GOAL_TREE: GoalNode[] = [
   // ---- Strength ----
   { id: "power", name: "Powerlifting", icon: "▬", color: VIOLET, category: "Strength", blurb: "One goal: a bigger squat, bench, and deadlift total.",
-    plans: [] },
+    plans: [
+      { id: "pl-4day", name: "4-Day Intermediate", weeks: 12, sessions: 4, tag: "4 Days", desc: "The sweet spot for most lifters. A heavy day for each lift plus a volume day — top sets at RPE 8 with percentage back-offs.", focus: ["Strength", "Power"], hot: true },
+      { id: "pl-3day", name: "3-Day Beginner", weeks: 8, sessions: 3, tag: "Full Body", desc: "Squat, bench, and deadlift every week with percentage-based main work and supporting accessories. The simplest way to start building your total.", focus: ["Strength"] },
+      { id: "pl-5day", name: "5-Day Powerbuilding", weeks: 12, sessions: 5, tag: "Powerbuilding", desc: "Three heavy main-lift days, a volume day, and a dedicated upper-body day. Maximal strength with the muscle to back it up.", focus: ["Strength", "Hypertrophy"], hot: true },
+    ] },
   { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: AMBER, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
     plans: [] },
   { id: "strongman", name: "Strongman", icon: "◤", color: VIOLET, category: "Strength", blurb: "Carry, press, and pull heavy odd objects. Raw, full-body, real-world strength.",
@@ -163,6 +167,139 @@ export const GOAL_GROUPS: GoalGroup[] = GOAL_CATEGORIES.map((category) => ({
 // ============================================================
 
 export const PLAN_DETAIL: Record<string, PlanDetail> = {
+  // ---- Powerlifting ----
+  // Intensity column carries the program's prescription: a % of 1RM where the
+  // main work is percentage-based, an RPE target where it's RPE-based, "—" where
+  // the lift is taken to a hard but unprescribed effort (accessories, AMRAP).
+  "pl-3day": {
+    level: "Beginner",
+    forWho: "New-to-intermediate lifters training 3 days/week who want a simple, percentage-based squat/bench/deadlift base.",
+    outcome: "A bigger squat, bench, and deadlift total — each competition lift trained weekly with accessory work to fill the gaps.",
+    sessionLength: "60–75 min",
+    equipment: "Full gym (barbell, power rack, bench, dumbbells, cables)",
+    split: ["Day 1", "Rest", "Day 2", "Rest", "Day 3", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Squat + Bench", items: [
+        { name: "Competition Squat", sr: "5 × 5", rest: "3:00", rpe: "75%" },
+        { name: "Competition Bench", sr: "5 × 5", rest: "3:00", rpe: "75%" },
+        { name: "Romanian Deadlift", sr: "3 × 8", rest: "2:30", rpe: "8" },
+        { name: "Chest Supported Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Walking Lunge", sr: "3 × 12 / leg", rest: "2:00", rpe: "8" },
+        { name: "Plank", sr: "3 × 60 sec", rest: "1:00", rpe: "—" },
+      ] },
+      { day: "Day 2 — Deadlift", items: [
+        { name: "Competition Deadlift", sr: "5 × 3", rest: "3:00", rpe: "80%" },
+        { name: "Pause Squat", sr: "3 × 5", rest: "3:00", rpe: "8" },
+        { name: "Overhead Press", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Hamstring Curl", sr: "3 × 12", rest: "1:30", rpe: "9" },
+        { name: "Hanging Leg Raise", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 3 — Bench Focus", items: [
+        { name: "Competition Bench", sr: "6 × 4", rest: "3:00", rpe: "77%" },
+        { name: "Close-Grip Bench", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Barbell Row", sr: "4 × 8", rest: "2:00", rpe: "8" },
+        { name: "Incline Dumbbell Press", sr: "3 × 10", rest: "2:00", rpe: "8" },
+        { name: "Face Pull", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Cable Crunch", sr: "3 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min cardio + hip/arm circles + bodyweight squats, then ramp the first main lift (empty bar ×10, 40% ×5, 55% ×5, 70% ×3) before the work sets. Percentages are off your current 1RM — add a small load each week when you hit every prescribed rep. Deload every 6th week: cut volume ~50% and intensity 10–15% (e.g. 3 × 5 @ 60–65% in place of 5 × 5 @ 75%).",
+  },
+  "pl-4day": {
+    level: "Intermediate",
+    forWho: "Lifters with a year-plus under the bar who can train 4 days/week — the recommended pick for most powerlifters.",
+    outcome: "Maximal squat, bench, and deadlift strength from a heavy day per lift plus a dedicated volume day, balancing intensity and tonnage.",
+    sessionLength: "75–90 min",
+    equipment: "Full gym (barbell, power rack, bench, dumbbells, cables, machines)",
+    split: ["Day 1", "Day 2", "Rest", "Day 3", "Day 4", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Heavy Squat", items: [
+        { name: "Competition Squat — Top Set", sr: "1 × 5", rest: "3:00", rpe: "8" },
+        { name: "Competition Squat — Back-Off", sr: "4 × 5", rest: "3:00", rpe: "75%" },
+        { name: "Paused Squat", sr: "3 × 4", rest: "2:30", rpe: "8" },
+        { name: "Leg Press", sr: "3 × 12", rest: "2:00", rpe: "8" },
+        { name: "Leg Curl", sr: "4 × 12", rest: "1:30", rpe: "9" },
+        { name: "Calf Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Weighted Plank", sr: "3 × 60 sec", rest: "1:00", rpe: "—" },
+      ] },
+      { day: "Day 2 — Heavy Bench", items: [
+        { name: "Competition Bench — Top Set", sr: "1 × 5", rest: "3:00", rpe: "8" },
+        { name: "Competition Bench — Back-Off", sr: "5 × 5", rest: "3:00", rpe: "7" },
+        { name: "Close-Grip Bench", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Chest Supported Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Lat Pulldown", sr: "4 × 12", rest: "2:00", rpe: "8" },
+        { name: "Triceps Pushdown", sr: "4 × 12", rest: "1:30", rpe: "9" },
+        { name: "Lateral Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 3 — Heavy Deadlift", items: [
+        { name: "Competition Deadlift — Top Set", sr: "1 × 3", rest: "3:00", rpe: "8" },
+        { name: "Competition Deadlift — Back-Off", sr: "4 × 3", rest: "3:00", rpe: "80%" },
+        { name: "Front Squat", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Romanian Deadlift", sr: "3 × 8", rest: "2:00", rpe: "8" },
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Hanging Leg Raise", sr: "4 × 12", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 4 — Volume Bench + Squat", items: [
+        { name: "Bench Press", sr: "6 × 6", rest: "2:30", rpe: "70%" },
+        { name: "Back Squat", sr: "5 × 5", rest: "3:00", rpe: "70%" },
+        { name: "Incline Dumbbell Bench", sr: "3 × 10", rest: "2:00", rpe: "8" },
+        { name: "Row Variation", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Face Pull", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Biceps Curl", sr: "3 × 12", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min cardio + hip/arm circles + bodyweight squats, then ramp the first main lift (empty bar ×10, 40% ×5, 55% ×5, 70% ×3) into the work sets. Drive the top set to the prescribed RPE, then load the back-off sets off your 1RM percentage; nudge the top-set load up when RPE 8 starts feeling easy. Deload every 6th week: cut volume ~50% and intensity 10–15%.",
+  },
+  "pl-5day": {
+    level: "Advanced",
+    forWho: "Experienced lifters who can recover from 5 sessions/week and want maximal strength with added muscle ('powerbuilding').",
+    outcome: "A higher total plus visible size — heavy main-lift work three days a week, a volume day, and a full upper-body day for hypertrophy.",
+    sessionLength: "75–105 min",
+    equipment: "Full gym (barbell, power rack, bench, dumbbells, cables, machines)",
+    split: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Rest", "Rest"],
+    days: [
+      { day: "Day 1 — Heavy Squat", items: [
+        { name: "Back Squat", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Pause Squat", sr: "4 × 4", rest: "2:30", rpe: "8" },
+        { name: "Leg Press", sr: "4 × 12", rest: "2:00", rpe: "9" },
+        { name: "Leg Curl", sr: "4 × 12", rest: "1:30", rpe: "9" },
+        { name: "Calf Raise", sr: "5 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 2 — Heavy Bench", items: [
+        { name: "Bench Press", sr: "5 × 3", rest: "3:00", rpe: "8" },
+        { name: "Spoto Press", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Incline Dumbbell Press", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Barbell Row", sr: "5 × 10", rest: "2:00", rpe: "8" },
+        { name: "Triceps Pushdown", sr: "4 × 12", rest: "1:30", rpe: "9" },
+      ] },
+      { day: "Day 3 — Heavy Deadlift", items: [
+        { name: "Deadlift", sr: "5 × 2", rest: "3:00", rpe: "8" },
+        { name: "Deficit Deadlift", sr: "3 × 5", rest: "3:00", rpe: "8" },
+        { name: "Front Squat", sr: "4 × 5", rest: "2:30", rpe: "8" },
+        { name: "Pull-Up", sr: "5 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Hanging Leg Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 4 — Volume Squat + Bench", items: [
+        { name: "Back Squat", sr: "6 × 5", rest: "2:30", rpe: "7" },
+        { name: "Bench Press", sr: "6 × 6", rest: "2:30", rpe: "7" },
+        { name: "Bulgarian Split Squat", sr: "3 × 10", rest: "2:00", rpe: "8" },
+        { name: "Dumbbell Press", sr: "3 × 12", rest: "2:00", rpe: "8" },
+        { name: "Face Pull", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+      { day: "Day 5 — Upper Body", items: [
+        { name: "Pull-Up", sr: "4 × AMRAP", rest: "2:00", rpe: "—" },
+        { name: "Chest Supported Row", sr: "4 × 10", rest: "2:00", rpe: "8" },
+        { name: "Lat Pulldown", sr: "3 × 12", rest: "2:00", rpe: "8" },
+        { name: "Overhead Press", sr: "4 × 6", rest: "2:30", rpe: "8" },
+        { name: "Lateral Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+        { name: "Barbell Curl", sr: "4 × 10", rest: "1:00", rpe: "9" },
+        { name: "Skullcrusher", sr: "4 × 10", rest: "1:00", rpe: "9" },
+        { name: "Hanging Leg Raise", sr: "4 × 15", rest: "1:00", rpe: "9" },
+      ] },
+    ],
+    progression: "Warm up every session: 5 min cardio + hip/arm circles + bodyweight squats, then ramp the first main lift (empty bar ×10, 40% ×5, 55% ×5, 70% ×3) into the work sets. Push the heavy main lifts to RPE 8 and add load when all reps move well; keep the volume day around RPE 7 to bank tonnage without burning out. Deload every 6th week: cut volume ~50% and intensity 10–15%.",
+  },
   // ---- Bodybuilding ----
   "bb-fb4": {
     level: "Intermediate",
