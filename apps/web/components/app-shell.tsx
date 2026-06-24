@@ -545,21 +545,14 @@ export default function AppShell() {
       <main style={{ flex: 1, padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
+        {/* Desktop-only utility header (Classic shows the app kicker + screen
+            title; theme/lang controls sit on the right). The responsive/mobile
+            web view drops this whole bar entirely — matching the native mobile
+            app, which has no top header: navigation is the bottom pill nav /
+            command orb and theme + language live in Settings. */}
+        {!isMobile && (
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
-          {/* Classic shows the app kicker + screen title here. Aurora screens
-              render their own bespoke header, so we drop this to avoid a doubled
-              page title — but keep the theme/lang controls (right). On mobile a
-              hamburger opens the nav drawer. */}
           <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }}>
-            {isMobile && (
-              <button
-                onClick={() => setDrawerOpen(true)}
-                aria-label="Open menu"
-                style={{ width: 40, height: 40, flexShrink: 0, display: "grid", placeItems: "center", borderRadius: 10, border: `1px solid ${LINE}`, background: INK2, color: CHALK, fontSize: fs.title, cursor: "pointer" }}
-              >
-                ☰
-              </button>
-            )}
             {aurora ? <div /> : (
             <div style={{ minWidth: 0 }}>
               <Mono s={{ fontSize: fs.caption, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
@@ -604,6 +597,7 @@ export default function AppShell() {
             </Select>
           </div>
         </header>
+        )}
 
         {/* Keyed wrapper → a fresh fade/rise entrance each time the screen
             changes (Aurora only). The banners/header above stay put. */}
