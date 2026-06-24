@@ -414,14 +414,15 @@ function PercentProgramView({
                             </td>
                           </>
                         ) : hasStructured ? (
-                          // Prose/strength row inside a mixed session — span all 3 right cols
-                          <td colSpan={3} style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
-                            <Mono s={{ fontSize: fs.caption, whiteSpace: "nowrap" }} c={CHALK}>{l.prescription}</Mono>
+                          // Prose/strength row inside a mixed session — span all 3 right cols.
+                          // No numCell here: width:1 + nowrap on a colspan breaks wrapping.
+                          <td colSpan={3} style={{ ...tdStyle, textAlign: "right", borderTop: `1px solid ${LINE}` }}>
+                            <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
                           </td>
                         ) : (
                           // Pure prose/strength session — single prescription cell
-                          <td style={{ ...tdStyle, ...numCell, borderTop: `1px solid ${LINE}` }}>
-                            <Mono s={{ fontSize: fs.caption, whiteSpace: "nowrap" }} c={CHALK}>{l.prescription}</Mono>
+                          <td style={{ ...tdStyle, textAlign: "right", borderTop: `1px solid ${LINE}` }}>
+                            <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
                           </td>
                         )}
                       </tr>
