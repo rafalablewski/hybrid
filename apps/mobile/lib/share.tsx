@@ -125,6 +125,7 @@ WorkoutStoryCard.displayName = "WorkoutStoryCard";
 
 export type SlideData =
   | { kind: "overview"; eyebrow: string; stats: ShareStats; firstEver?: boolean }
+  | { kind: "stat"; eyebrow: string; value: string; unit: string; caption?: string }
   | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
   | { kind: "fun"; eyebrow: string; emoji: string; text: string };
@@ -210,6 +211,15 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
             <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} />
             <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} />
           </View>
+        </StoryShell>
+      );
+    }
+    if (slide.kind === "stat") {
+      return (
+        <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
+          <Text style={{ fontFamily: F.black, fontSize: width * 0.3, color: st.text, lineHeight: width * 0.28, letterSpacing: -1 }}>{slide.value}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: width * 0.036, color: st.muted, letterSpacing: 2, marginTop: width * 0.03 }}>{slide.unit.toUpperCase()}</Text>
+          {slide.caption ? <Text style={{ fontFamily: F.bold, fontSize: width * 0.05, color: st.text, marginTop: width * 0.04, lineHeight: width * 0.06 }}>{slide.caption}</Text> : null}
         </StoryShell>
       );
     }

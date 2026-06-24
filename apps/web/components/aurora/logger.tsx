@@ -592,6 +592,14 @@ function StoryCard({ slide, st, w, t, units }: { slide: StorySlide; st: StorySty
         </>
       );
     }
+    if (slide.kind === "stat")
+      return (
+        <div>
+          <div style={{ fontFamily: D, fontWeight: 900, fontSize: px(280), color: st.text, lineHeight: 0.9, letterSpacing: "-0.04em" }}>{slide.value}</div>
+          <div style={{ fontFamily: M, fontSize: px(38), color: st.muted, letterSpacing: ".2em", marginTop: px(24) }}>{slide.unit.toUpperCase()}</div>
+          {slide.caption && <div style={{ fontFamily: D, fontWeight: 700, fontSize: px(48), color: st.text, marginTop: px(30), lineHeight: 1.2 }}>{slide.caption}</div>}
+        </div>
+      );
     if (slide.kind === "prs")
       return (
         <>
@@ -713,6 +721,8 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       : t("summary.todaysBests");
   const slides: StorySlide[] = [
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes, sets, volume, bests, firstEver } },
+    { kind: "stat", eyebrow: t("summary.slide.time"), value: String(minutes), unit: t("summary.minutes") },
+    { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(volume, units), unit: t("summary.volumeMoved") },
     { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
     ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as StorySlide] : []),
     ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as StorySlide] : []),
