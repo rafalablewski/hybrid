@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>HYBRID — Workout Wrapped</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ── HYBRID brand tokens (packages/core/src/theme/tokens.ts) ── */
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+    --lime:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+    --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+    /* style-driven (set by JS from story-styles.ts) */
+    --bg:var(--ink); --text:var(--chalk); --muted:var(--ash);
+    --accent:var(--lime); --barTrack:var(--ink2); --barFill:var(--lime);
+    --panel:transparent; --d1:0; --d2:0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"Archivo",system-ui,sans-serif;background:#000;color:var(--text);overflow:hidden;display:grid;place-items:center}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  .stage{position:relative;width:min(440px,100vw);height:min(950px,100vh);overflow:hidden;user-select:none;background:var(--bg);transition:background .5s}
+  /* aurora glow discs */
+  .disc{position:absolute;border-radius:50%;pointer-events:none;filter:blur(8px);transition:opacity .5s,background .5s}
+  #disc1{width:480px;height:480px;top:-80px;right:-120px;background:radial-gradient(circle,rgba(196,240,53,.20),transparent 68%);opacity:var(--d1)}
+  #disc2{width:480px;height:480px;bottom:-120px;left:-120px;background:radial-gradient(circle,rgba(127,212,232,.26),transparent 68%);opacity:var(--d2)}
+  /* liquid-glass slab */
+  #panel{position:absolute;inset:18px;border-radius:26px;background:var(--panel);backdrop-filter:blur(2px);pointer-events:none;transition:background .5s}
+
+  /* top bar: progress + style toggle */
+  .top{position:absolute;top:0;left:0;right:0;z-index:50;padding:14px 16px 0}
+  .bars{display:flex;gap:5px}
+  .bar{flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px}
+  .bar.done>i{width:100%}
+  .bar.active>i{animation:fill 7s linear forwards}
+  @keyframes fill{to{width:100%}}
+  .toggle{display:flex;gap:6px;margin-top:12px;justify-content:flex-end}
+  .toggle button{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:99px;padding:6px 11px;cursor:pointer}
+  .toggle button.on{color:var(--ink);background:var(--accent);border-color:var(--accent);font-weight:700}
+
+  /* slides */
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:96px 32px 90px;opacity:0;transform:translateY(12px);transition:opacity .45s,transform .45s;pointer-events:none;z-index:10}
+  .slide.on{opacity:1;transform:none;pointer-events:auto}
+
+  .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+  h1{font-weight:900;font-size:clamp(34px,9vw,50px);line-height:.98;letter-spacing:-.03em;color:var(--text)}
+  h1 .ac{color:var(--accent)}
+  p.lead{margin-top:16px;color:var(--muted);font-size:15px;line-height:1.6;max-width:34ch;font-weight:500}
+
+  .stat{font-weight:900;font-variant-numeric:tabular-nums;line-height:.86;letter-spacing:-.03em;color:var(--text)}
+  .stat.huge{font-size:clamp(78px,24vw,140px)}
+  .unit{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-top:14px}
+  .sub{margin-top:8px;color:var(--muted);font-size:14px;font-weight:600}
+  .sub b{color:var(--accent)}
+
+  .row2{display:flex;gap:14px;margin-top:8px;align-items:flex-end}
+  .row2 .blk .n{font-weight:900;font-size:clamp(52px,16vw,84px);line-height:.84;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .row2 .blk .l{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .row2 .dot{color:var(--accent);font-weight:900;font-size:40px;padding-bottom:18px}
+
+  .exlist{margin-top:22px;border-top:1px solid var(--line)}
+  .exlist .r{display:flex;justify-content:space-between;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
+  .exlist .nm{font-weight:700;font-size:16px}
+  .exlist .mt{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);letter-spacing:.04em}
+
+  /* muscle bars */
+  .mbars{margin-top:18px}
+  .mbars .m{margin:16px 0}
+  .mbars .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .mbars .lbl{font-weight:700;font-size:16px}
+  .mbars .val{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted)}
+  .mbars .track{height:12px;border-radius:99px;background:var(--barTrack);overflow:hidden}
+  .mbars .fill{height:100%;width:0;border-radius:99px;background:var(--barFill);transition:width 1s cubic-bezier(.2,.9,.2,1)}
+  .on .mbars .fill{width:var(--w)}
+
+  /* PR rows */
+  .prs{margin-top:18px}
+  .prs .r{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+  .prs .nm{font-weight:700;font-size:16px}
+  .prs .nm .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;color:var(--accent);margin-left:8px}
+  .prs .v{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+  .prs .v.hot{color:var(--accent)}
+
+  .fun{text-align:center}
+  .fun .emoji{font-size:96px;line-height:1}
+  .fun h1{margin-top:18px;font-size:clamp(26px,7vw,36px)}
+
+  /* summary card */
+  .card{margin-top:18px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.03);overflow:hidden}
+  .card .grid{display:grid;grid-template-columns:1fr 1fr}
+  .card .cell{padding:18px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .card .cell:nth-child(2n){border-right:0}
+  .card .cell:nth-last-child(-n+2){border-bottom:0}
+  .card .cell .n{font-weight:900;font-size:30px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .card .cell .l{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .wordmark{font-weight:900;font-size:22px;letter-spacing:-.04em;margin-top:22px;color:var(--text)}
+  .wordmark .ac{color:var(--accent)}
+  .cta{margin-top:18px;align-self:flex-start;background:var(--accent);color:var(--ink);font-weight:800;border:0;padding:15px 28px;border-radius:99px;font-size:15px;cursor:pointer}
+
+  .tracked{position:absolute;bottom:22px;left:32px;right:32px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.15em;color:var(--muted);z-index:30;display:flex;justify-content:space-between}
+  .tracked .wm{font-family:"Archivo";font-weight:900;letter-spacing:-.03em;color:var(--text)}
+  .tracked .wm .ac{color:var(--accent)}
+
+  .nav{position:absolute;inset:0;display:flex;z-index:20}.nav>div{flex:1}
+
+  .reveal{opacity:0;transform:translateY(16px)}.on .reveal{animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+  .on .reveal:nth-child(2){animation-delay:.08s}.on .reveal:nth-child(3){animation-delay:.16s}
+  .on .reveal:nth-child(4){animation-delay:.24s}.on .reveal:nth-child(5){animation-delay:.32s}
+  @keyframes rise{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="disc" id="disc1"></div>
+  <div class="disc" id="disc2"></div>
+  <div id="panel"></div>
+
+  <div class="top">
+    <div class="bars" id="bars"></div>
+    <div class="toggle">
+      <button data-style="aurora" class="on">Aurora</button>
+      <button data-style="liquid-glass">Liquid Glass</button>
+    </div>
+  </div>
+
+  <!-- 0 intro -->
+  <section class="slide">
+    <div class="eyebrow reveal">Workout · Wrapped</div>
+    <h1 class="reveal">That session?<br><span class="ac">Logged.</span></h1>
+    <p class="lead reveal" id="introMeta">—</p>
+    <div class="unit reveal" style="margin-top:24px">tap to roll →</div>
+  </section>
+
+  <!-- 1 minutes -->
+  <section class="slide">
+    <div class="eyebrow reveal">Time on the clock</div>
+    <div class="stat huge reveal" data-stat="minutes">0</div>
+    <div class="unit reveal">minutes training</div>
+    <p class="lead reveal" id="minNote">—</p>
+  </section>
+
+  <!-- 2 work: exercises + sets -->
+  <section class="slide">
+    <div class="eyebrow reveal">The work</div>
+    <div class="row2 reveal">
+      <div class="blk"><div class="n" data-stat="exercises">0</div><div class="l">exercises</div></div>
+      <div class="dot">·</div>
+      <div class="blk"><div class="n" data-stat="sets">0</div><div class="l">working sets</div></div>
+    </div>
+    <div class="exlist reveal" id="exList"></div>
+  </section>
+
+  <!-- 3 volume -->
+  <section class="slide">
+    <div class="eyebrow reveal">Total load moved</div>
+    <div class="stat huge reveal" data-stat="volume">0</div>
+    <div class="unit reveal">kilograms · load × reps</div>
+    <p class="lead reveal" id="volNote">—</p>
+  </section>
+
+  <!-- 4 muscle focus -->
+  <section class="slide">
+    <div class="eyebrow reveal">Where it landed</div>
+    <h1 class="reveal" style="font-size:30px">Muscle focus</h1>
+    <div class="mbars reveal" id="mBars"></div>
+  </section>
+
+  <!-- 5 PRs -->
+  <section class="slide">
+    <div class="eyebrow reveal" id="prEyebrow">Today's bests</div>
+    <h1 class="reveal" id="prHeadline">New ground.</h1>
+    <div class="prs reveal" id="prRows"></div>
+  </section>
+
+  <!-- 6 fun -->
+  <section class="slide fun">
+    <div class="emoji reveal" id="funEmoji">🚌</div>
+    <h1 class="reveal" id="funText">—</h1>
+  </section>
+
+  <!-- 7 summary -->
+  <section class="slide">
+    <div class="eyebrow reveal" id="sumEyebrow">Workout · Wrapped</div>
+    <h1 class="reveal">Banked. <span class="ac">Next.</span></h1>
+    <div class="card reveal">
+      <div class="grid">
+        <div class="cell"><div class="n" id="sMin">—</div><div class="l">minutes</div></div>
+        <div class="cell"><div class="n" id="sEx">—</div><div class="l">exercises</div></div>
+        <div class="cell"><div class="n" id="sVol">—</div><div class="l">kg moved</div></div>
+        <div class="cell"><div class="n" id="sTop">—</div><div class="l">top muscle</div></div>
+      </div>
+    </div>
+    <button class="cta reveal" id="shareBtn">Share story</button>
+  </section>
+
+  <div class="nav" id="nav"><div data-dir="-1"></div><div data-dir="1"></div></div>
+  <div class="tracked"><span id="trackedDate" class="mono">—</span><span class="wm">HYBRID<span class="ac">.</span></span></div>
+</div>
+
+<script>
+/* ───────────────────────────────────────────────────────────────────────────
+   A real finished session in HYBRID's LoggedSession shape (packages/core).
+   Every stat below is computed from THIS payload with the same algorithms the
+   core engines use — nothing is hardcoded.
+   ─────────────────────────────────────────────────────────────────────────── */
+const SESSION = {
+  id: "sess_demo",
+  title: "Lower + Push",
+  startedAt:   "2026-06-24T18:02:00.000Z",
+  completedAt: "2026-06-24T19:23:00.000Z",   // 81 min
+  readiness: 78,
+  blocks: [
+    { kind:"strength", name:"Back Squat", sets:[
+      {load:"60",  reps:"5", role:"warmup"}, {load:"90", reps:"5", role:"warmup"},
+      {load:"110", reps:"5"}, {load:"120", reps:"5"}, {load:"130", reps:"3"}, {load:"130", reps:"3"} ]},
+    { kind:"strength", name:"Bench Press", sets:[
+      {load:"60",  reps:"8", role:"warmup"},
+      {load:"85",  reps:"8"}, {load:"90", reps:"6"}, {load:"95", reps:"5"}, {load:"97.5", reps:"4"} ]},
+    { kind:"strength", name:"Deadlift", sets:[
+      {load:"140", reps:"3"}, {load:"155", reps:"2"}, {load:"165", reps:"1"} ]},
+    { kind:"strength", name:"Overhead Press", sets:[
+      {load:"50", reps:"8"}, {load:"55", reps:"6"}, {load:"57.5", reps:"5"} ]},
+    { kind:"cardio", name:"Easy Run", distance:5.2, minutes:27, rpe:5 },
+  ],
+};
+/* Prior all-time bests (rounded e1rm, kg) the athlete walked in with. A lift
+   beats it → 🏆 PR. Mirrors records.ts bestE1rmMap / newPrsInSession. */
+const PRIOR_BESTS = { "Back Squat":138, "Bench Press":101, "Deadlift":172, "Overhead Press":62 };
+
+/* MOVEMENTS muscle map — straight from packages/core/src/engines/movements.ts */
+const MOVEMENTS = {
+  "Back Squat":{muscles:["quads","glutes","back"]},
+  "Front Squat":{muscles:["quads","glutes"]},
+  "Deadlift":{muscles:["posterior","back","glutes"]},
+  "Bench Press":{muscles:["chest","triceps","shoulders"]},
+  "Overhead Press":{muscles:["shoulders","triceps"]},
+};
+const MUSCLE_LABEL = {quads:"Quads",glutes:"Glutes",posterior:"Posterior chain",back:"Back",chest:"Chest",shoulders:"Shoulders",triceps:"Triceps"};
+
+/* ── engine-faithful helpers ── */
+const isWorking = s => s.role !== "warmup" && s.role !== "cooldown";
+const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+
+function sessionVolume(blocks){ // session.ts: load×reps over working strength sets
+  let v=0; for(const b of blocks){ if(b.kind!=="strength") continue;
+    for(const s of b.sets){ if(isWorking(s)) v += num(s.load)*num(s.reps); } }
+  return Math.round(v);
+}
+function volumeByMuscle(blocks){ // records.ts: tonnage attributed to every muscle a movement trains
+  const map={};
+  for(const b of blocks){ if(b.kind!=="strength") continue;
+    const muscles = MOVEMENTS[b.name]?.muscles; if(!muscles) continue;
+    let t=0; for(const s of b.sets){ if(isWorking(s)) t += num(s.load)*num(s.reps); }
+    if(t<=0) continue;
+    for(const m of muscles) map[m]=(map[m]||0)+t;
+  }
+  return Object.entries(map).map(([muscle,volume])=>({muscle,volume:Math.round(volume)})).sort((a,b)=>b.volume-a.volume);
+}
+const e1rm = (load,reps)=> load*(1+reps/30); // Epley
+function bestsForSession(blocks){ // best working-set e1rm per strength lift + PR flag
+  const out=[];
+  for(const b of blocks){ if(b.kind!=="strength") continue;
+    let best=0; for(const s of b.sets){ if(isWorking(s)) best=Math.max(best, e1rm(num(s.load),num(s.reps))); }
+    if(best<=0) continue;
+    const r=Math.round(best), prev=PRIOR_BESTS[b.name];
+    out.push({name:b.name, e1rm:r, pr: prev==null || r>prev});
+  }
+  return out.sort((a,b)=> (b.pr-a.pr) || (b.e1rm-a.e1rm));
+}
+
+/* ── derive the wrapped ── */
+const minutes = Math.max(0, Math.round((Date.parse(SESSION.completedAt)-Date.parse(SESSION.startedAt))/60000));
+const exercises = SESSION.blocks.length;
+const workingSets = SESSION.blocks.reduce((n,b)=> n + (b.kind==="strength" ? b.sets.filter(isWorking).length : 0), 0);
+const volume = sessionVolume(SESSION.blocks);
+const distanceKm = SESSION.blocks.reduce((n,b)=> n + (b.kind==="cardio" ? (b.distance||0) : 0), 0);
+const muscles = volumeByMuscle(SESSION.blocks);
+const bests = bestsForSession(SESSION.blocks);
+const prCount = bests.filter(b=>b.pr).length;
+const topMuscle = muscles[0] ? MUSCLE_LABEL[muscles[0].muscle] : "—";
+
+const STATS = {minutes, exercises, sets:workingSets, volume};
+const fmt = n => n.toLocaleString("en-US");
+const tonnes = (volume/1000).toFixed(1);
+
+/* ── populate slides ── */
+const dt = new Date(SESSION.startedAt);
+const dateStr = dt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+document.getElementById("introMeta").innerHTML = `<b style="color:var(--accent)">${SESSION.title}</b> · ${dateStr} · readiness ${SESSION.readiness}`;
+document.getElementById("trackedDate").textContent = "Tracked with HYBRID";
+document.getElementById("minNote").innerHTML = `That's <b>${(minutes/60).toFixed(1)} hours</b> of focused work${distanceKm?` — plus <b>${distanceKm} km</b> on the run.`:`.`}`;
+document.getElementById("volNote").innerHTML = `≈ <b>${tonnes} tonnes</b>. You moved roughly <b>${Math.round(volume/1300)} grand pianos'</b> worth of iron.`;
+
+// exercise list
+document.getElementById("exList").innerHTML = SESSION.blocks.map(b=>{
+  let meta;
+  if(b.kind==="strength"){ const w=b.sets.filter(isWorking); meta = `${w.length} sets · top ${Math.max(...w.map(s=>num(s.load)))} kg`; }
+  else if(b.kind==="cardio"){ meta = `${b.distance} km · ${b.minutes} min`; }
+  else meta = `${b.rounds||""} rounds`;
+  return `<div class="r"><span class="nm">${b.name}</span><span class="mt">${meta}</span></div>`;
+}).join("");
+
+// muscle bars (top 5)
+const top = muscles.slice(0,5), maxV = top.length?top[0].volume:1;
+document.getElementById("mBars").innerHTML = top.map(m=>`
+  <div class="m"><div class="head"><span class="lbl">${MUSCLE_LABEL[m.muscle]}</span><span class="val">${fmt(m.volume)} kg</span></div>
+  <div class="track"><div class="fill" style="--w:${Math.max(6,Math.round(m.volume/maxV*100))}%"></div></div></div>`).join("");
+
+// PR rows
+document.getElementById("prHeadline").textContent = prCount>0 ? `${prCount} new PR${prCount>1?"s":""}. 🏆` : "Today's bests";
+document.getElementById("prEyebrow").textContent = prCount>0 ? "Records broken" : "Today's bests";
+document.getElementById("prRows").innerHTML = bests.map(b=>`
+  <div class="r"><span class="nm">${b.pr?"🏆 ":""}${b.name}${b.pr?'<span class="tag">PR</span>':""}</span>
+  <span class="v ${b.pr?"hot":""}">${b.e1rm} kg <span class="mono" style="font-size:11px;color:var(--muted)">e1RM</span></span></div>`).join("");
+
+// fun fact
+const buses = (volume/12000); // a London bus ≈ 12 t
+document.getElementById("funEmoji").textContent = "🚌";
+document.getElementById("funText").innerHTML = `You shifted about <span class="ac">${buses.toFixed(1)}×</span> a double-decker bus today.`;
+
+// summary card
+document.getElementById("sMin").textContent = fmt(minutes);
+document.getElementById("sEx").textContent = exercises;
+document.getElementById("sVol").textContent = fmt(volume);
+document.getElementById("sTop").textContent = topMuscle;
+
+/* ── story style toggle (story-styles.ts) ── */
+const STYLES = {
+  aurora:{bg:"#0c0d0c",text:"#f3f4ef",muted:"#8b8f86",accent:"#c4f035",barTrack:"#141614",barFill:"#c4f035",panel:"transparent",d1:1,d2:0},
+  "liquid-glass":{bg:"#0c0d0c",text:"#f3f4ef",muted:"#b6bcb3",accent:"#c4f035",barTrack:"rgba(255,255,255,.12)",barFill:"#c4f035",panel:"rgba(255,255,255,.08)",d1:1,d2:1},
+};
+function applyStyle(id){
+  const s=STYLES[id]||STYLES.aurora, r=document.documentElement.style;
+  r.setProperty("--bg",s.bg); r.setProperty("--text",s.text); r.setProperty("--muted",s.muted);
+  r.setProperty("--accent",s.accent); r.setProperty("--barTrack",s.barTrack); r.setProperty("--barFill",s.barFill);
+  r.setProperty("--panel",s.panel); r.setProperty("--d1",s.d1); r.setProperty("--d2",s.d2);
+  document.querySelectorAll(".toggle button").forEach(b=>b.classList.toggle("on",b.dataset.style===id));
+}
+document.querySelectorAll(".toggle button").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();applyStyle(b.dataset.style);}));
+applyStyle("aurora");
+
+/* ── story controller (tap zones / arrows / progress) ── */
+const stage=document.getElementById("stage"),slides=[...stage.querySelectorAll(".slide")],bars=document.getElementById("bars");
+slides.forEach(()=>{const b=document.createElement("div");b.className="bar";b.innerHTML="<i></i>";bars.appendChild(b);});
+const seg=[...bars.children];let i=0;
+function countUp(el){const t=+el.dataset.target;const s=performance.now();(function f(n){const p=Math.min((n-s)/1200,1),e=1-Math.pow(1-p,3);el.textContent=fmt(Math.floor(t*e));p<1?requestAnimationFrame(f):el.textContent=fmt(t);})(s);}
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle("on",k===i));
+  seg.forEach((b,k)=>{b.classList.toggle("done",k<i);b.classList.toggle("active",k===i);});
+  slides[i].querySelectorAll("[data-stat]").forEach(el=>{el.dataset.target=STATS[el.dataset.stat];countUp(el);});
+}
+document.getElementById("nav").addEventListener("click",e=>{const d=e.target.closest("[data-dir]");if(d)show(i+ +d.dataset.dir);});
+document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")show(i+1);if(e.key==="ArrowLeft")show(i-1);});
+document.getElementById("shareBtn").addEventListener("click",e=>{e.stopPropagation();alert("In-app: exports this slide as a 9:16 PNG (mobile: react-native-view-shot · web: canvas) and opens the share sheet.");});
+show(0);
+</script>
+</body>
+</html>
