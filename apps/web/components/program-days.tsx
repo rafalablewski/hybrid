@@ -190,25 +190,20 @@ function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: numb
   );
 }
 
-// One line in the endurance week card. A run renders dot + name + prose below; a
-// strength accessory gets the SAME Sets×Reps + RPE heat treatment as a
-// bodybuilding row (or a coloured %-ramp), inline on the right.
+// One line in the endurance week card — a uniform dotted row (dot + name +
+// prose detail below) for EVERY item, run or accessory, so the week card stays
+// visually consistent. The detail carries the item's full prescription.
 function WeekRow({ lift, restName, first }: { lift?: ProgramLiftView; restName?: string; first: boolean }) {
   const name = lift?.name ?? restName ?? "—";
   const rest = lift ? /rest/i.test(lift.name) : true;
-  const heat = lift?.rpe != null;
-  const ramp = !heat && !!(lift?.steps && lift.steps.length);
-  const below = !lift ? null : heat || ramp ? lift.note : [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
+  const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") || null : null;
   return (
     <div style={{ marginTop: first ? 0 : 9 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0, background: HEX[lift ? liftColor(lift) : "ash"] }} />
-        <span style={{ flex: 1, minWidth: 0, fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>{name}</span>
-        {heat && <span style={{ fontFamily: mono, fontSize: 13, color: CHALK }}>{lift!.setsReps ?? "—"}</span>}
-        {heat && <HeatMeter rpe={lift!.rpe!} />}
-        {ramp && <span style={{ fontFamily: mono, fontSize: 12, color: ASH, textAlign: "right" }}><RampText lift={lift!} /></span>}
+      <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
+        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[lift ? liftColor(lift) : "ash"] }} />
+        {name}
       </div>
-      {below && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5, marginLeft: 17 }}>{below}</div>}
+      {detail && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5, marginLeft: 14 }}>{detail}</div>}
     </div>
   );
 }

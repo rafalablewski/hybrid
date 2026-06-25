@@ -196,29 +196,20 @@ function SessionBlock({ s, C }: { s: ProgramSessionView; C: Palette }) {
   );
 }
 
-// One line in the endurance week card. A run renders dot + name + prose below; a
-// strength accessory gets the SAME Sets×Reps + RPE heat treatment as a
-// bodybuilding row (or a coloured %-ramp), inline on the right.
+// One line in the endurance week card — a uniform dotted row (dot + name +
+// prose detail below) for EVERY item, run or accessory, so the week card stays
+// visually consistent. The detail carries the item's full prescription.
 function WeekRow({ lift, restName, first, C }: { lift?: ProgramLiftView; restName?: string; first: boolean; C: Palette }) {
   const name = lift?.name ?? restName ?? "—";
   const rest = lift ? /rest/i.test(lift.name) : true;
-  const heat = lift?.rpe != null;
-  const ramp = !heat && !!(lift?.steps && lift.steps.length);
-  const below = !lift ? null : heat || ramp ? lift.note : [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
+  const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") || null : null;
   return (
     <View style={{ marginTop: first ? 0 : 9 }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, lift ? liftColor(lift) : "ash") }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
-        {heat && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginRight: 10 }}>{lift!.setsReps ?? "—"}</Text>}
-        {heat && <HeatMeter rpe={lift!.rpe!} C={C} />}
-        {ramp && (
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", lineHeight: 18 }}>
-            <RampText lift={lift!} C={C} />
-          </Text>
-        )}
       </View>
-      {!!below && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{below}</Text>}
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{detail}</Text>}
     </View>
   );
 }
