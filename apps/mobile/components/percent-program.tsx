@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram, type ProgramLiftView, type LoadColor } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
-import { fs, space, F } from "../lib/ui";
+import { fs, space, F, GlassCard } from "../lib/ui";
+
+type Palette = ReturnType<typeof useTheme>["palette"];
+const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
@@ -89,70 +92,36 @@ export default function PercentProgram({
         </View>
       )}
 
+      {/* Liquid-Glass "Smart Summary" days — each lift collapses to one line
+          (name + "8 sets · 60→90%"); tapping expands the per-set ramp with
+          intensity-coloured load bars. The breakdown drops DOWN, so many sets
+          never squeeze the name. Same shape + behaviour as the web. */}
       {view.days.map((day, di) => (
-        <View key={di} style={{ ...card, padding: 0 }}>
+        <GlassCard key={di} padding={0} accent={C.amber} style={{ borderRadius: 18 }}>
           {/* Day header */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>
               {day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}
             </Text>
             {!!day.volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{day.volume}</Text>}
           </View>
 
-          {day.sessions.map((s, si) => {
-            // Mixed sessions (run + gym) get 4-col headers so gym rows align;
-            // prose/strength rows within that session render a spanning prescription.
-            const hasStructured = s.lifts.some((l) => l.rpe != null);
-            return (
-              <View key={si}>
-                {/* Session sub-label (AM / PM) */}
-                {(!!s.label || !!s.volume) && (
-                  <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</Text>
-                  </View>
-                )}
-
-                {/* Column headers */}
-                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
-                  {hasStructured ? (
-                    <>
-                      <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets</Text>
-                      <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Wt</Text>
-                      <Text style={{ width: 38, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
-                    </>
-                  ) : (
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Prescription</Text>
-                  )}
+          {day.sessions.map((s, si) => (
+            <View key={si}>
+              {/* Session sub-label (AM / PM) */}
+              {(!!s.label || !!s.volume) && (
+                <View style={{ paddingHorizontal: 14, paddingTop: 9, paddingBottom: 3 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: s.label === "PM" ? C.blue : C.lime }}>
+                    {[s.label, s.volume].filter(Boolean).join(" · ")}
+                  </Text>
                 </View>
-
-                {/* Rows */}
-                {s.lifts.map((l, li) => (
-                  <View key={li} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: li > 0 ? 1 : 0, borderTopColor: C.line }}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{l.name}</Text>
-                      {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
-                    </View>
-                    {l.rpe != null ? (
-                      // Structured gym row — 3 fixed-width right cells
-                      <>
-                        <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{l.setsReps ?? "—"}</Text>
-                        <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.body, color: C.ash, textAlign: "right" }}>{l.weight ?? "—"}</Text>
-                        <View style={{ width: 38, alignItems: "flex-end" }}>
-                          <MobileRpeBadge rpe={l.rpe} C={C} />
-                        </View>
-                      </>
-                    ) : (
-                      // Prose/strength row — prescription fills the right side,
-                      // matching the total width of the 3 gym columns when mixed.
-                      <Text style={{ width: hasStructured ? 146 : undefined, maxWidth: hasStructured ? undefined : "60%", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            );
-          })}
-        </View>
+              )}
+              {s.lifts.map((l, li) => (
+                <GlassLiftRow key={li} lift={l} C={C} />
+              ))}
+            </View>
+          ))}
+        </GlassCard>
       ))}
 
       <View style={card}>
@@ -170,12 +139,51 @@ export default function PercentProgram({
   );
 }
 
-function MobileRpeBadge({ rpe, C }: { rpe: number; C: ReturnType<typeof useTheme>["palette"] }) {
-  const dotColor = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : "#4a4a4a";
+// One lift in the Smart-Summary list: a collapsed one-liner that expands to the
+// per-set ramp. Strength lifts (with `steps`) are tappable; prose / hypertrophy
+// entries (no steps) render the flat prescription and don't expand.
+function GlassLiftRow({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
+  const [open, setOpen] = useState(false);
+  const expandable = !!lift.steps && lift.steps.length > 0;
+  const neutralBg = "rgba(255,255,255,0.06)";
+  const neutralBorder = "rgba(255,255,255,0.12)";
+
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-      <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: dotColor }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{rpe}</Text>
+    <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+      <Pressable
+        onPress={() => expandable && setOpen((o) => !o)}
+        style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11 }}
+      >
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{lift.name}</Text>
+          {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{lift.note}</Text>}
+        </View>
+        <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: neutralBg, borderWidth: 1, borderColor: neutralBorder }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{lift.summary ?? lift.prescription}</Text>
+        </View>
+        {expandable && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: open ? C.lime : C.ash, width: 14, textAlign: "center" }}>{open ? "▾" : "▸"}</Text>
+        )}
+      </Pressable>
+
+      {expandable && open && (
+        <View style={{ paddingHorizontal: 14, paddingBottom: 12, gap: 8 }}>
+          {lift.steps!.map((st, i) => {
+            const col = loadHex(C, st.color);
+            return (
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Text style={{ width: 58, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{st.setLabel}</Text>
+                <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: col }}>{st.load}</Text>
+                <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{st.reps}</Text>
+                <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  <View style={{ height: "100%", width: `${st.fill}%`, backgroundColor: col, borderRadius: 3 }} />
+                </View>
+                {!!st.kg && <Text style={{ width: 52, textAlign: "right", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{st.kg}</Text>}
+              </View>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
