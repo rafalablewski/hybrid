@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · OWL %-table drafts</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0c0d0c;--card:#161816;--line:#2a2d2a;--hair:rgba(255,255,255,.05);
+    --lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--ash2:#5a5e56;
+    --blue:#7fd4e8;--amber:#f0b45e;--red:#e0625e;
+    --d:'Archivo',sans-serif;--m:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--d);-webkit-font-smoothing:antialiased;padding:40px 18px 100px}
+  .wrap{max-width:520px;margin:0 auto}
+  .kick{font-family:var(--m);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime)}
+  h1{font-size:24px;font-weight:900;letter-spacing:-.02em;margin:8px 0 10px}
+  .lead{font-family:var(--m);font-size:12.5px;color:var(--ash);line-height:1.65;margin-bottom:8px}
+  .lead b{color:var(--chalk)}
+
+  .cap{display:flex;align-items:baseline;gap:10px;margin:34px 0 9px}
+  .cap .n{font-family:var(--m);font-size:12px;font-weight:700;color:var(--ink);background:var(--lime);border-radius:6px;padding:2px 8px}
+  .cap h2{font-size:18px;font-weight:800}
+  .ds{font-family:var(--m);font-size:11px;color:var(--ash);line-height:1.5;margin:-3px 0 12px}
+  .ds .good{color:var(--lime)}.ds .bad{color:var(--amber)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .dh{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--hair)}
+  .dh .t{font-family:var(--m);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+  .dh .v{font-family:var(--m);font-size:10px;color:var(--ash)}
+  .nm{font-family:var(--d);font-weight:600;font-size:15px;color:var(--chalk)}
+  .nm small{display:block;font-family:var(--m);font-weight:400;font-size:10px;color:var(--ash);margin-top:2px}
+
+  .b{color:var(--blue)}.g{color:var(--lime)}.a{color:var(--amber)}.r{color:var(--red)}.mut{color:var(--ash2)}
+
+  /* 1 · MATRIX */
+  .m1-scroll{overflow-x:auto}
+  .m1{min-width:480px}
+  .m1-head,.m1-row{display:grid;grid-template-columns:128px repeat(4,1fr);gap:8px;align-items:center;padding:11px 16px}
+  .m1-head{background:rgba(255,255,255,.018);border-bottom:1px solid var(--hair)}
+  .m1-row+.m1-row{border-top:1px solid var(--hair)}
+  .m1-head span{font-family:var(--m);font-size:11px;font-weight:700;text-align:center}
+  .m1-head span:first-child{text-align:left;color:var(--ash2);font-weight:400;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+  .m1 .cell{font-family:var(--m);font-size:12px;text-align:center}
+  .m1 .empty{color:#34372f;text-align:center;font-family:var(--m)}
+
+  /* 2 · STEPPED ROWS */
+  .m2-lift{padding:13px 16px}
+  .m2-lift+.m2-lift{border-top:1px solid var(--hair)}
+  .m2-lift .nm{margin-bottom:9px}
+  .m2-step{display:flex;align-items:baseline;gap:14px;padding:3px 0 3px 2px}
+  .m2-step .lo{font-family:var(--m);font-size:13px;font-weight:700;width:42px}
+  .m2-step .sc{font-family:var(--m);font-size:13px;color:var(--chalk)}
+
+  /* 3 · ALIGNED LOAD TABLE */
+  .m3-row{display:grid;grid-template-columns:1fr 46px 1fr;gap:12px;align-items:baseline;padding:8px 16px}
+  .m3-row.first{padding-top:13px}.m3-row.last{padding-bottom:13px}
+  .m3-lift.b1+.m3-lift{border-top:1px solid var(--hair)}
+  .m3-row .lo{font-family:var(--m);font-size:13px;font-weight:700;text-align:right}
+  .m3-row .sc{font-family:var(--m);font-size:13px;color:var(--chalk)}
+
+  /* 4 · NAME-TOP, LEFT WRAP */
+  .m4-lift{padding:13px 16px}
+  .m4-lift+.m4-lift{border-top:1px solid var(--hair)}
+  .m4-ramp{font-family:var(--m);font-size:13px;color:var(--chalk);margin-top:8px;line-height:1.8}
+  .m4-ramp b{font-weight:700}.m4-ramp s{color:var(--ash2);text-decoration:none;margin:0 4px}
+
+  /* 5 · BB-STYLE SUMMARY */
+  .m5-head{display:grid;grid-template-columns:1fr 56px 56px;gap:14px;padding:8px 16px;background:rgba(255,255,255,.018);border-bottom:1px solid var(--hair)}
+  .m5-head span{font-family:var(--m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash2)}
+  .m5-head span:not(:first-child){text-align:right}
+  .m5-row{display:grid;grid-template-columns:1fr 56px 56px;gap:14px;align-items:center;padding:13px 16px}
+  .m5-row+.m5-row{border-top:1px solid var(--hair)}
+  .m5-row .sets{font-family:var(--m);font-size:13px;color:var(--chalk);text-align:right}
+  .m5-row .top{font-family:var(--m);font-size:13px;font-weight:700;text-align:right}
+  .m5-row .rng{font-family:var(--m);font-size:10px;color:var(--ash2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="kick">HYBRID · OWL as a gym table</span>
+  <h1>5 ways to structure the % work</h1>
+  <p class="lead">Same <b>Day 6 · AM</b> in each — the lifts that currently wrap awkwardly. Goal: kill the messy wrapping and give the percentages a cleaner, more <b>bodybuilding-table</b> structure.</p>
+
+  <!-- 1 -->
+  <div class="cap"><span class="n">1</span><h2>Percent Matrix</h2></div>
+  <p class="ds">Loads become fixed columns (60/70/80/90); reps drop into the matching cell. Read straight down a column. <span class="good">never wraps, aligned</span> · <span class="bad">wide — scrolls on a phone</span></p>
+  <div class="card"><div class="dh"><span class="t">Day 6 · AM</span><span class="v">61 lifts</span></div>
+    <div class="m1-scroll"><div class="m1">
+      <div class="m1-head"><span>Exercise</span><span class="b">60%</span><span class="g">70%</span><span class="a">80%</span><span class="r">90%</span></div>
+      <div class="m1-row"><span class="nm">Power Clean &amp; Jerk<small>+ jerk</small></span><span class="cell b">×3+1×2</span><span class="cell g">×3+1×2</span><span class="cell a">×2+1×2</span><span class="empty">·</span></div>
+      <div class="m1-row"><span class="nm">Jerk</span><span class="empty">·</span><span class="cell g">×3</span><span class="cell a">×3×2</span><span class="cell r">×2×2</span></div>
+      <div class="m1-row"><span class="nm">Back Squat</span><span class="empty">·</span><span class="cell g">×5×2</span><span class="cell a">×5×2</span><span class="cell r">×3×2</span></div>
+    </div></div>
+  </div>
+
+  <!-- 2 -->
+  <div class="cap"><span class="n">2</span><h2>Stepped Rows</h2></div>
+  <p class="ds">Each % gets its own line under the lift — like listing sets in a bodybuilding log. <span class="good">clean, never wraps, scannable</span> · <span class="bad">taller — more vertical space</span></p>
+  <div class="card"><div class="dh"><span class="t">Day 6 · AM</span><span class="v">61 lifts</span></div>
+    <div class="m2-lift"><div class="nm">Power Clean &amp; Jerk <small>+ jerk</small></div>
+      <div class="m2-step"><span class="lo b">60%</span><span class="sc">×3+1×2</span></div>
+      <div class="m2-step"><span class="lo g">70%</span><span class="sc">×3+1×2</span></div>
+      <div class="m2-step"><span class="lo a">80%</span><span class="sc">×2+1×2</span></div>
+    </div>
+    <div class="m2-lift"><div class="nm">Jerk</div>
+      <div class="m2-step"><span class="lo g">70%</span><span class="sc">×3</span></div>
+      <div class="m2-step"><span class="lo a">80%</span><span class="sc">×3×2</span></div>
+      <div class="m2-step"><span class="lo r">90%</span><span class="sc">×2×2</span></div>
+    </div>
+    <div class="m2-lift"><div class="nm">Back Squat</div>
+      <div class="m2-step"><span class="lo g">70%</span><span class="sc">×5×2</span></div>
+      <div class="m2-step"><span class="lo a">80%</span><span class="sc">×5×2</span></div>
+      <div class="m2-step"><span class="lo r">90%</span><span class="sc">×3×2</span></div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="cap"><span class="n">3</span><h2>Aligned Load Table</h2></div>
+  <p class="ds">Like #2 but the Load + Scheme columns align across every lift — a true two-column table; the name spans its steps. <span class="good">most tabular, perfectly aligned</span> · <span class="bad">repetitive, tall</span></p>
+  <div class="card"><div class="dh"><span class="t">Day 6 · AM</span><span class="v">61 lifts</span></div>
+    <div class="m3-lift b1">
+      <div class="m3-row first"><span class="nm">Power Clean &amp; Jerk <small>+ jerk</small></span><span class="lo b">60%</span><span class="sc">×3+1×2</span></div>
+      <div class="m3-row"><span></span><span class="lo g">70%</span><span class="sc">×3+1×2</span></div>
+      <div class="m3-row last"><span></span><span class="lo a">80%</span><span class="sc">×2+1×2</span></div>
+    </div>
+    <div class="m3-lift">
+      <div class="m3-row first"><span class="nm">Jerk</span><span class="lo g">70%</span><span class="sc">×3</span></div>
+      <div class="m3-row"><span></span><span class="lo a">80%</span><span class="sc">×3×2</span></div>
+      <div class="m3-row last"><span></span><span class="lo r">90%</span><span class="sc">×2×2</span></div>
+    </div>
+    <div class="m3-lift">
+      <div class="m3-row first"><span class="nm">Back Squat</span><span class="lo g">70%</span><span class="sc">×5×2</span></div>
+      <div class="m3-row"><span></span><span class="lo a">80%</span><span class="sc">×5×2</span></div>
+      <div class="m3-row last"><span></span><span class="lo r">90%</span><span class="sc">×3×2</span></div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="cap"><span class="n">4</span><h2>Name-Top, Left-Wrap</h2></div>
+  <p class="ds">Smallest change: name on its own line, ramp below <b>left-aligned</b> so it wraps like text instead of breaking on the right. <span class="good">compact, familiar, easy build</span> · <span class="bad">still wraps if very long</span></p>
+  <div class="card"><div class="dh"><span class="t">Day 6 · AM</span><span class="v">61 lifts</span></div>
+    <div class="m4-lift"><div class="nm">Power Clean &amp; Jerk <small>+ jerk</small></div>
+      <div class="m4-ramp"><b class="b">60%</b>×3+1×2 <s>·</s> <b class="g">70%</b>×3+1×2 <s>·</s> <b class="a">80%</b>×2+1×2</div></div>
+    <div class="m4-lift"><div class="nm">Jerk</div>
+      <div class="m4-ramp"><b class="g">70%</b>×3 <s>·</s> <b class="a">80%</b>×3×2 <s>·</s> <b class="r">90%</b>×2×2</div></div>
+    <div class="m4-lift"><div class="nm">Back Squat</div>
+      <div class="m4-ramp"><b class="g">70%</b>×5×2 <s>·</s> <b class="a">80%</b>×5×2 <s>·</s> <b class="r">90%</b>×3×2</div></div>
+  </div>
+
+  <!-- 5 -->
+  <div class="cap"><span class="n">5</span><h2>Bodybuilding-style</h2></div>
+  <p class="ds">Your idea, literal: one row per lift like a BB table — total work Sets + Top % (the intensity, coloured like RPE). The ramp range is the muted sub-line. <span class="good">most compact, exactly like the BB rows</span> · <span class="bad">hides the per-step scheme</span></p>
+  <div class="card"><div class="dh"><span class="t">Day 6 · AM</span><span class="v">61 lifts</span></div>
+    <div class="m5-head"><span>Exercise</span><span>Sets</span><span>Top</span></div>
+    <div class="m5-row"><span class="nm">Power Clean &amp; Jerk<small>+ jerk</small></span><span class="sets">6<div class="rng">60→80%</div></span><span class="top a">80%</span></div>
+    <div class="m5-row"><span class="nm">Jerk</span><span class="sets">5<div class="rng">70→90%</div></span><span class="top r">90%</span></div>
+    <div class="m5-row"><span class="nm">Back Squat</span><span class="sets">6<div class="rng">70→90%</div></span><span class="top r">90%</span></div>
+  </div>
+
+  <p class="lead" style="margin-top:34px"><b>My read:</b> <b style="color:var(--lime)">#2 Stepped Rows</b> best matches "treat % like a gym table" without the matrix's phone-width problem — clean, never wraps, reads like a set log. <b style="color:var(--lime)">#4</b> if you want the smallest, most compact change. <b style="color:var(--lime)">#5</b> if you want the tightest BB-style overview (with the scheme on tap later). Tell me a number.</p>
+</div>
+</body>
+</html>
