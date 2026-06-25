@@ -170,7 +170,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         </div>
       )}
 
-      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} discipline={view.discipline} />
+      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
 
       <Info label={t("w.train.plans.progression")} value={view.progression} />
       <button onClick={enroll} disabled={state === "busy" || state === "done"} style={{ fontWeight: 800, fontSize: fs.note, background: state === "done" ? C("ink2") : C("lime"), color: state === "done" ? C("lime") : C("ink"), border: state === "done" ? `1px solid ${C("lime")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}>

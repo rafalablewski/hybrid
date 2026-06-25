@@ -1,33 +1,35 @@
 "use client";
 
 import React from "react";
-import { rpeColor, workoutColor, type PlanDiscipline, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { rpeColor, workoutColor, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { LIME, BLUE, AMBER, RED, ASH, CHALK, LINE, CARD } from "@/lib/ui";
 
-// The HYBRID plan day view — one card+table style that adapts per discipline,
-// rendered identically by BOTH web plan screens (classic + Aurora) and mirrored
-// on mobile. Reads the shared @hybrid/core planProgramView, so all clients stay
-// in lockstep. Three row modes, picked per lift from the data:
-//   • bodybuilding (rpe set)  → Sets×Reps + an intensity-coloured RPE "heat" bar
-//   • weightlifting (steps)   → name + a %-ramp prescription, loads colour-graded
-//   • running (prose)         → the whole week as one card of Day / workout rows
-// Day cards carry an amber header; AM/PM doubles get lime/blue session bands.
+// The HYBRID plan day view — one card+table style that adapts per CONTENT (not
+// per plan label), rendered identically by both web plan screens and mirrored on
+// mobile off the shared planProgramView.
+//
+// Layout is chosen from what the week actually holds:
+//   • all prose (a pure running/endurance week)  → ONE week card of Day rows
+//   • anything with gym work                       → one card per day
+// Within a day card, content is grouped by kind so a hybrid day splits into a
+// RUN block (prose) and a STRENGTH block (the Sets×Reps/RPE or %-ramp table) —
+// each internally consistent, neither forced into the other's format.
 
 const HEX: Record<LoadColor, string> = { blue: BLUE, lime: LIME, amber: AMBER, red: RED, ash: ASH };
 const HAIR = "rgba(255,255,255,0.05)";
 const mono = "var(--font-mono)";
 const disp = "var(--font-display)";
 
-/** Dot / accent colour for a lift: RPE-coloured when it has one, lime for a
- *  loaded strength accessory, else the endurance workout-type colour. */
+// A lift is "gym" if it carries structured loading (a %-ramp, sets×reps, or RPE);
+// otherwise it's a prose workout (a run / cross-train).
+const isGym = (l: ProgramLiftView) => !!(l.steps && l.steps.length) || l.rpe != null || l.setsReps != null;
+const isProse = (l: ProgramLiftView) => !isGym(l);
 const liftColor = (l: ProgramLiftView): LoadColor =>
   l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
 
-export default function ProgramDays({ days, week, peakNote, discipline }: { days: ProgramDayView[]; week: number; peakNote: string | null; discipline: PlanDiscipline }) {
-  // Endurance plans render the whole week as ONE card of Day rows; everything
-  // else is one card per day. Driven by discipline (not "every lift is prose"),
-  // so a strength accessory on a run day can't flip the layout.
-  if (discipline === "endurance") return <WeekCard days={days} week={week} peakNote={peakNote} />;
+export default function ProgramDays({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
+  const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
+  if (allProse) return <WeekCard days={days} week={week} peakNote={peakNote} />;
   return (
     <>
       {days.map((day, di) => (
@@ -37,7 +39,7 @@ export default function ProgramDays({ days, week, peakNote, discipline }: { days
   );
 }
 
-// ── card shell bits ───────────────────────────────────────────────────────────
+// ── shell ─────────────────────────────────────────────────────────────────────
 function Card({ children }: { children: React.ReactNode }) {
   return <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", marginBottom: 12 }}>{children}</div>;
 }
@@ -50,57 +52,94 @@ function DayHeader({ title, right }: { title: string; right: string | null }) {
   );
 }
 
-// ── bodybuilding / weightlifting: one card per day ────────────────────────────
+// ── one card per day (bodybuilding / weightlifting / hybrid) ──────────────────
 function DayCard({ day }: { day: ProgramDayView }) {
+  const all = day.sessions.flatMap((s) => s.lifts);
+  const mixed = all.some(isProse) && all.some(isGym); // a hybrid day → label the blocks
   return (
     <Card>
       <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={day.volume} />
       {day.sessions.map((s, si) => (
-        <SessionBlock key={si} s={s} />
+        <SessionBlock key={si} s={s} si={si} mixed={mixed} />
       ))}
     </Card>
   );
 }
 
-function SessionBlock({ s }: { s: ProgramSessionView }) {
-  const isHeat = s.lifts.some((l) => l.rpe != null);
+type Group = { kind: "run" | "lift"; lifts: ProgramLiftView[] };
+function groupByKind(lifts: ProgramLiftView[]): Group[] {
+  const groups: Group[] = [];
+  for (const l of lifts) {
+    const kind = isProse(l) ? "run" : "lift";
+    const last = groups[groups.length - 1];
+    if (last && last.kind === kind) last.lifts.push(l);
+    else groups.push({ kind, lifts: [l] });
+  }
+  return groups;
+}
+
+function SessionBlock({ s, si, mixed }: { s: ProgramSessionView; si: number; mixed: boolean }) {
+  const groups = groupByKind(s.lifts);
   return (
     <>
-      {s.label && (
-        <div style={{ padding: "8px 16px 5px", borderBottom: `1px solid ${HAIR}`, background: `color-mix(in srgb, ${s.label === "PM" ? BLUE : LIME} 4%, transparent)` }}>
-          <span style={{ fontFamily: mono, fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: s.label === "PM" ? BLUE : LIME }}>
-            {[s.label, s.volume].filter(Boolean).join(" · ")}
-          </span>
-        </div>
-      )}
-      {isHeat && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 60px", gap: 14, padding: "8px 16px", background: "rgba(255,255,255,.018)", borderBottom: `1px solid ${HAIR}` }}>
-          {["Exercise", "Sets × Reps", "RPE"].map((h, i) => (
-            <span key={h} style={{ fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: "#5a5e56", textAlign: i === 2 ? "right" : "left" }}>{h}</span>
-          ))}
-        </div>
-      )}
-      {s.lifts.map((l, li) => {
-        const top = li > 0 ? `1px solid ${HAIR}` : "none";
-        if (l.rpe != null) return <HeatRow key={li} lift={l} borderTop={top} />;
-        if (l.steps && l.steps.length) return <RampRow key={li} lift={l} borderTop={top} />;
-        return <FallbackRow key={li} lift={l} borderTop={top} />;
+      {s.label && <Band label={[s.label, s.volume].filter(Boolean).join(" · ")} color={s.label === "PM" ? BLUE : LIME} topBorder={si > 0} />}
+      {groups.map((g, gi) => {
+        const topBorder = gi > 0 || !!s.label || si > 0;
+        if (g.kind === "run")
+          return (
+            <React.Fragment key={gi}>
+              {mixed && <Band label="Run" color={BLUE} topBorder={topBorder} />}
+              {g.lifts.map((l, i) => (
+                <ProseRow key={i} lift={l} borderTop={i > 0 ? `1px solid ${HAIR}` : "none"} />
+              ))}
+            </React.Fragment>
+          );
+        const hasRpe = g.lifts.some((l) => l.rpe != null);
+        return (
+          <React.Fragment key={gi}>
+            {mixed && <Band label={`Strength · ${g.lifts.length} exercise${g.lifts.length === 1 ? "" : "s"}`} color={LIME} topBorder={topBorder} />}
+            {hasRpe && <ColHeader />}
+            {g.lifts.map((l, i) => {
+              const top = i > 0 ? `1px solid ${HAIR}` : "none";
+              if (l.rpe != null) return <HeatRow key={i} lift={l} borderTop={top} />;
+              if (l.steps && l.steps.length) return <RampRow key={i} lift={l} borderTop={top} />;
+              return <FallbackRow key={i} lift={l} borderTop={top} />;
+            })}
+          </React.Fragment>
+        );
       })}
     </>
   );
 }
 
-function NameCell({ lift, size = 15 }: { lift: ProgramLiftView; size?: number }) {
+function Band({ label, color, topBorder }: { label: string; color: string; topBorder: boolean }) {
+  return (
+    <div style={{ padding: "8px 16px 5px", borderBottom: `1px solid ${HAIR}`, borderTop: topBorder ? `1px solid ${HAIR}` : undefined, background: `color-mix(in srgb, ${color} 4%, transparent)` }}>
+      <span style={{ fontFamily: mono, fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color }}>{label}</span>
+    </div>
+  );
+}
+
+function ColHeader() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr auto 60px", gap: 14, padding: "8px 16px", background: "rgba(255,255,255,.018)", borderBottom: `1px solid ${HAIR}` }}>
+      {["Exercise", "Sets × Reps", "RPE"].map((h, i) => (
+        <span key={h} style={{ fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: "#5a5e56", textAlign: i === 2 ? "right" : "left" }}>{h}</span>
+      ))}
+    </div>
+  );
+}
+
+function NameCell({ lift }: { lift: ProgramLiftView }) {
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ fontFamily: disp, fontWeight: 600, fontSize: size, color: CHALK }}>{lift.name}</div>
+      <div style={{ fontFamily: disp, fontWeight: 600, fontSize: 15, color: CHALK }}>{lift.name}</div>
       {lift.note && <div style={{ fontFamily: mono, fontSize: 10, color: ASH, marginTop: 2 }}>{lift.note}</div>}
     </div>
   );
 }
 
-// RPE "heat" meter — the value + an intensity bar. Shared by the bodybuilding
-// day row and the strength accessory inside the endurance week card.
+// RPE "heat" meter — value + intensity bar.
 function HeatMeter({ rpe }: { rpe: number }) {
   const c = HEX[rpeColor(rpe)];
   return (
@@ -113,8 +152,7 @@ function HeatMeter({ rpe }: { rpe: number }) {
   );
 }
 
-// Coloured %-ramp text — each load tinted by intensity, the rest muted. Shared by
-// the weightlifting day row and a %-based accessory in the week card.
+// Coloured %-ramp text — each load tinted by intensity, the rest muted.
 function RampText({ lift }: { lift: ProgramLiftView }) {
   return (
     <>
@@ -141,7 +179,7 @@ function HeatRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string
   );
 }
 
-// weightlifting row — name + coloured %-ramp prescription
+// weightlifting row — coloured %-ramp prescription
 function RampRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "118px 1fr", gap: 14, padding: "13px 16px", alignItems: "baseline", borderTop }}>
@@ -153,20 +191,32 @@ function RampRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string
   );
 }
 
-// prose fallback (mixed/odd entries inside a day card)
+// loaded accessory with no % and no RPE — just the prescription
 function FallbackRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "118px 1fr", gap: 14, padding: "13px 16px", alignItems: "baseline", borderTop }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 14, padding: "13px 16px", alignItems: "baseline", borderTop }}>
       <NameCell lift={lift} />
-      <div style={{ fontFamily: mono, fontSize: 12, color: CHALK, lineHeight: 1.6, textAlign: "right" }}>{lift.prescription}</div>
+      <div style={{ fontFamily: mono, fontSize: 13, color: CHALK, textAlign: "right" }}>{lift.prescription}</div>
     </div>
   );
 }
 
-// ── endurance: the whole week as one card of Day rows ─────────────────────────
-// Each day shows its weekday label once, then EVERY item that day (the run plus
-// any strength accessory), each on its own line — so nothing is dropped and a
-// mixed day reads run-first, accessory-below.
+// a prose workout line (a run / cross-train) inside a day card
+function ProseRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
+  const rest = /rest/i.test(lift.name);
+  const detail = [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
+  return (
+    <div style={{ padding: "12px 16px", borderTop }}>
+      <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
+        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[liftColor(lift)] }} />
+        {lift.name}
+      </div>
+      {detail && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5, marginLeft: 14 }}>{detail}</div>}
+    </div>
+  );
+}
+
+// ── pure-prose week → one card of Day rows ────────────────────────────────────
 function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
   return (
     <Card>
@@ -190,9 +240,6 @@ function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: numb
   );
 }
 
-// One line in the endurance week card — a uniform dotted row (dot + name +
-// prose detail below) for EVERY item, run or accessory, so the week card stays
-// visually consistent. The detail carries the item's full prescription.
 function WeekRow({ lift, restName, first }: { lift?: ProgramLiftView; restName?: string; first: boolean }) {
   const name = lift?.name ?? restName ?? "—";
   const rest = lift ? /rest/i.test(lift.name) : true;

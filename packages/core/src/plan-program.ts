@@ -288,9 +288,9 @@ export interface ProgramDayView {
   sessions: ProgramSessionView[];
 }
 export interface ProgramView {
-  /** the plan's discipline — drives the layout (endurance → one week card of
-   *  Day rows; everything else → one card per day). Carried explicitly so the
-   *  choice can't be mis-inferred from "every lift happens to be prose". */
+  /** the plan's discipline — informational (the renderer now chooses its layout
+   *  from CONTENT: an all-prose week → one week card; any gym work → per-day
+   *  cards, hybrid days split into Run/Strength blocks). */
   discipline: PlanDiscipline;
   /** every week number, for the selector. */
   weeks: number[];

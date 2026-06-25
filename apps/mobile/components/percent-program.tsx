@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, rpeColor, workoutColor, type GoalNode, type GoalPlan, type PlanProgram, type PlanDiscipline, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { planProgramView, rpeColor, workoutColor, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
@@ -9,8 +9,24 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
 const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
 const HAIR = "rgba(255,255,255,0.05)";
+// A lift is "gym" if it carries structured loading (a %-ramp, sets×reps, RPE);
+// otherwise it's a prose workout (a run / cross-train).
+const isGym = (l: ProgramLiftView) => !!(l.steps && l.steps.length) || l.rpe != null || l.setsReps != null;
+const isProse = (l: ProgramLiftView) => !isGym(l);
 const liftColor = (l: ProgramLiftView): LoadColor =>
   l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
+
+type Group = { kind: "run" | "lift"; lifts: ProgramLiftView[] };
+function groupByKind(lifts: ProgramLiftView[]): Group[] {
+  const groups: Group[] = [];
+  for (const l of lifts) {
+    const kind = isProse(l) ? "run" : "lift";
+    const last = groups[groups.length - 1];
+    if (last && last.kind === kind) last.lifts.push(l);
+    else groups.push({ kind, lifts: [l] });
+  }
+  return groups;
+}
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
@@ -96,7 +112,7 @@ export default function PercentProgram({
         </View>
       )}
 
-      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} discipline={view.discipline} C={C} />
+      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
 
       <View style={card}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
@@ -113,16 +129,16 @@ export default function PercentProgram({
   );
 }
 
-// The HYBRID plan day view (mobile) — one card+table style that adapts per
-// discipline, mirroring the web `program-days.tsx` 1:1 off the SAME shared
-// planProgramView. Three row modes picked per lift: bodybuilding (RPE heat),
-// weightlifting (coloured %-ramp), running (whole week as Day rows).
-function ProgramDays({ days, week, peakNote, discipline, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; discipline: PlanDiscipline; C: Palette }) {
+// The HYBRID plan day view (mobile) — mirrors web `program-days.tsx` 1:1 off the
+// SAME shared planProgramView. Layout is chosen from CONTENT: an all-prose week
+// (pure running) → ONE week card of Day rows; anything with gym work → one card
+// per day, and a hybrid day splits into a RUN block (prose) + a STRENGTH block
+// (the Sets×Reps/RPE or %-ramp table).
+function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette }) {
   const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" as const, marginBottom: 12 };
+  const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
 
-  // Endurance → the whole week as ONE card; each day shows EVERY item (the run
-  // plus any strength accessory), so nothing is dropped. Driven by discipline.
-  if (discipline === "endurance") {
+  if (allProse) {
     return (
       <View style={card}>
         <DayHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
@@ -147,14 +163,18 @@ function ProgramDays({ days, week, peakNote, discipline, C }: { days: ProgramDay
 
   return (
     <>
-      {days.map((day, di) => (
-        <View key={di} style={card}>
-          <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={day.volume} C={C} />
-          {day.sessions.map((s, si) => (
-            <SessionBlock key={si} s={s} C={C} />
-          ))}
-        </View>
-      ))}
+      {days.map((day, di) => {
+        const all = day.sessions.flatMap((s) => s.lifts);
+        const mixed = all.some(isProse) && all.some(isGym);
+        return (
+          <View key={di} style={card}>
+            <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={day.volume} C={C} />
+            {day.sessions.map((s, si) => (
+              <SessionBlock key={si} s={s} si={si} mixed={mixed} C={C} />
+            ))}
+          </View>
+        );
+      })}
     </>
   );
 }
@@ -168,30 +188,69 @@ function DayHeader({ title, right, C }: { title: string; right: string | null; C
   );
 }
 
-function SessionBlock({ s, C }: { s: ProgramSessionView; C: Palette }) {
-  const isHeat = s.lifts.some((l) => l.rpe != null);
+function Band({ label, color, topBorder, C }: { label: string; color: string; topBorder: boolean; C: Palette }) {
+  return (
+    <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR, borderTopWidth: topBorder ? 1 : 0, borderTopColor: HAIR, backgroundColor: tint(color, 0.04) }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color }}>{label}</Text>
+    </View>
+  );
+}
+
+function ColHeader({ C }: { C: Palette }) {
+  return (
+    <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+      <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
+      <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets×Reps</Text>
+      <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
+    </View>
+  );
+}
+
+function SessionBlock({ s, si, mixed, C }: { s: ProgramSessionView; si: number; mixed: boolean; C: Palette }) {
+  const groups = groupByKind(s.lifts);
   return (
     <View>
-      {!!s.label && (
-        <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR, backgroundColor: tint(s.label === "PM" ? C.blue : C.lime, 0.04) }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: s.label === "PM" ? C.blue : C.lime }}>
-            {[s.label, s.volume].filter(Boolean).join(" · ")}
-          </Text>
-        </View>
-      )}
-      {isHeat && (
-        <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
-          <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets×Reps</Text>
-          <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
-        </View>
-      )}
-      {s.lifts.map((l, li) => {
-        const top = li > 0;
-        if (l.rpe != null) return <HeatRow key={li} lift={l} top={top} C={C} />;
-        if (l.steps && l.steps.length) return <RampRow key={li} lift={l} top={top} C={C} />;
-        return <FallbackRow key={li} lift={l} top={top} C={C} />;
+      {!!s.label && <Band label={[s.label, s.volume].filter(Boolean).join(" · ")} color={s.label === "PM" ? C.blue : C.lime} topBorder={si > 0} C={C} />}
+      {groups.map((g, gi) => {
+        const topBorder = gi > 0 || !!s.label || si > 0;
+        if (g.kind === "run")
+          return (
+            <View key={gi}>
+              {mixed && <Band label="Run" color={C.blue} topBorder={topBorder} C={C} />}
+              {g.lifts.map((l, i) => (
+                <ProseRow key={i} lift={l} top={i > 0} C={C} />
+              ))}
+            </View>
+          );
+        const hasRpe = g.lifts.some((l) => l.rpe != null);
+        return (
+          <View key={gi}>
+            {mixed && <Band label={`Strength · ${g.lifts.length} exercise${g.lifts.length === 1 ? "" : "s"}`} color={C.lime} topBorder={topBorder} C={C} />}
+            {hasRpe && <ColHeader C={C} />}
+            {g.lifts.map((l, i) => {
+              const top = i > 0;
+              if (l.rpe != null) return <HeatRow key={i} lift={l} top={top} C={C} />;
+              if (l.steps && l.steps.length) return <RampRow key={i} lift={l} top={top} C={C} />;
+              return <FallbackRow key={i} lift={l} top={top} C={C} />;
+            })}
+          </View>
+        );
       })}
+    </View>
+  );
+}
+
+// a prose workout line (a run / cross-train) inside a day card
+function ProseRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
+  const rest = /rest/i.test(lift.name);
+  const detail = [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
+  return (
+    <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, liftColor(lift)) }} />
+        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{lift.name}</Text>
+      </View>
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{detail}</Text>}
     </View>
   );
 }
