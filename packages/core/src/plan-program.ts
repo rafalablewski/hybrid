@@ -250,6 +250,8 @@ export function workoutColor(label: string): LoadColor {
 export interface ProgramStepView {
   /** "60%" or "BW". */
   load: string;
+  /** the % number (null for bodyweight) — used to order the matrix columns. */
+  pct: number | null;
   /** intensity colour for the load token. */
   color: LoadColor;
   /** the reps×sets tail, e.g. "×4×3", "×4+1×4" (complex kept). */
@@ -363,6 +365,7 @@ function liftStepViews(lift: PlanLift, maxes?: Record<string, number>): ProgramS
     const kg = stepKg(s, oneRm);
     return {
       load: s.pct == null ? "BW" : `${s.pct}%`,
+      pct: s.pct,
       color: loadColor(s.pct),
       detail: `×${reps}${s.sets > 1 ? `×${s.sets}` : ""}`,
       kg: kg != null ? `${kg}kg` : null,

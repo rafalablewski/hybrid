@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor, type LiftKind } from "@hybrid/core";
+import { rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { LIME, BLUE, AMBER, RED, ASH, CHALK, LINE, CARD } from "@/lib/ui";
 
 // The HYBRID plan day view — one card+table style that adapts per CONTENT (not
@@ -97,17 +97,17 @@ function SessionBlock({ s, si }: { s: ProgramSessionView; si: number }) {
         return (
           <React.Fragment key={gi}>
             {mixed && <Band label={band.label} color={band.color} topBorder={topBorder} />}
-            {g.kind === "rpe" && g.lifts.some((l) => l.rpe != null) && <ColHeader />}
-            {g.lifts.map((l, i) =>
-              g.kind === "run" ? (
-                <ProseRow key={i} lift={l} borderTop={rowTop(i)} />
-              ) : g.kind === "percent" ? (
-                <RampRow key={i} lift={l} borderTop={rowTop(i)} />
-              ) : l.rpe != null ? (
-                <HeatRow key={i} lift={l} borderTop={rowTop(i)} />
-              ) : (
-                <FallbackRow key={i} lift={l} borderTop={rowTop(i)} />
-              ),
+            {g.kind === "percent" ? (
+              <PercentMatrix lifts={g.lifts} />
+            ) : g.kind === "run" ? (
+              g.lifts.map((l, i) => <ProseRow key={i} lift={l} borderTop={rowTop(i)} />)
+            ) : (
+              <>
+                {g.lifts.some((l) => l.rpe != null) && <ColHeader />}
+                {g.lifts.map((l, i) =>
+                  l.rpe != null ? <HeatRow key={i} lift={l} borderTop={rowTop(i)} /> : <FallbackRow key={i} lift={l} borderTop={rowTop(i)} />,
+                )}
+              </>
             )}
           </React.Fragment>
         );
@@ -143,19 +143,42 @@ function NameCell({ lift }: { lift: ProgramLiftView }) {
   );
 }
 
-// Coloured %-ramp text — each load tinted by intensity, the rest muted.
-function RampText({ lift }: { lift: ProgramLiftView }) {
+// Olympic / % work — the Percentage Matrix: loads are fixed columns (ordered by
+// %, bodyweight last); each lift's reps drop into the matching cell. Scrolls
+// sideways when there are many distinct loads.
+function PercentMatrix({ lifts }: { lifts: ProgramLiftView[] }) {
+  const colMap = new Map<string, ProgramStepView>();
+  for (const l of lifts) for (const st of l.steps ?? []) if (!colMap.has(st.load)) colMap.set(st.load, st);
+  const cols = [...colMap.values()].sort((a, b) => (a.pct ?? 1e9) - (b.pct ?? 1e9));
+  const grid = `132px repeat(${cols.length}, minmax(62px, 1fr))`;
+  const head: React.CSSProperties = { fontFamily: mono, fontSize: 10, letterSpacing: ".08em", fontWeight: 700, textAlign: "center" };
   return (
-    <>
-      {lift.steps!.map((st, i) => (
-        <React.Fragment key={i}>
-          {i > 0 && <span style={{ color: "#5a5e56", margin: "0 3px" }}> · </span>}
-          <span style={{ color: HEX[st.color], fontWeight: 700 }}>{st.load}</span>
-          {st.detail}
-          {st.kg && <span style={{ color: "#5a5e56" }}> · {st.kg}</span>}
-        </React.Fragment>
-      ))}
-    </>
+    <div style={{ overflowX: "auto" }}>
+      <div style={{ minWidth: 132 + cols.length * 62 }}>
+        <div style={{ display: "grid", gridTemplateColumns: grid, gap: 8, padding: "8px 16px", background: "rgba(255,255,255,.018)", borderBottom: `1px solid ${HAIR}` }}>
+          <span style={{ ...head, textAlign: "left", color: "#5a5e56", fontWeight: 400, fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em" }}>Exercise</span>
+          {cols.map((c) => (
+            <span key={c.load} style={{ ...head, color: HEX[c.color] }}>{c.load}</span>
+          ))}
+        </div>
+        {lifts.map((l, i) => {
+          const byLoad = new Map((l.steps ?? []).map((st) => [st.load, st]));
+          return (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: grid, gap: 8, alignItems: "center", padding: "12px 16px", borderTop: i > 0 ? `1px solid ${HAIR}` : undefined }}>
+              <NameCell lift={l} />
+              {cols.map((c) => {
+                const st = byLoad.get(c.load);
+                return st ? (
+                  <span key={c.load} style={{ fontFamily: mono, fontSize: 12, textAlign: "center", color: HEX[c.color] }}>{st.detail}</span>
+                ) : (
+                  <span key={c.load} style={{ fontFamily: mono, fontSize: 12, textAlign: "center", color: "#34372f" }}>·</span>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -170,17 +193,6 @@ function HeatRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string
   );
 }
 
-// weightlifting row — coloured %-ramp prescription
-function RampRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "118px 1fr", gap: 14, padding: "13px 16px", alignItems: "baseline", borderTop }}>
-      <NameCell lift={lift} />
-      <div style={{ fontFamily: mono, fontSize: 12, color: ASH, lineHeight: 1.7, textAlign: "right" }}>
-        <RampText lift={lift} />
-      </div>
-    </div>
-  );
-}
 
 // loaded accessory with no % and no RPE — just the prescription
 function FallbackRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {

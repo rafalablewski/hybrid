@@ -120,7 +120,7 @@ describe("the Soviet 8-week program", () => {
     const pm = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.sessions[1]!; // Day 1 PM
     const acc = pm.lifts.filter((l) => liftKind(l) === "rpe");
     expect(acc.map((l) => l.name)).toEqual(["Clean Pull", "Snatch Balance", "Push Press", "Front Squat", "Chinese Plank"]);
-    expect(acc[0]).toMatchObject({ setsReps: "3–5 × 3–5", prescription: "3–5 × 3–5", note: "pulling power · @ 90–110% of clean" });
+    expect(acc[0]).toMatchObject({ setsReps: "5×3", rpe: 8, prescription: "5×3 · @8", note: "pulling power · @ 90–110% of clean" });
     // they don't count toward NL, so the day total is unchanged
     expect(planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.nl).toBe(160);
     // and they vanish in later weeks

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor, type LiftKind } from "@hybrid/core";
+import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
@@ -221,17 +221,17 @@ function SessionBlock({ s, si, C }: { s: ProgramSessionView; si: number; C: Pale
         return (
           <View key={gi}>
             {mixed && <Band label={band.label} color={band.color} topBorder={topBorder} C={C} />}
-            {g.kind === "rpe" && g.lifts.some((l) => l.rpe != null) && <ColHeader C={C} />}
-            {g.lifts.map((l, i) =>
-              g.kind === "run" ? (
-                <ProseRow key={i} lift={l} top={i > 0} C={C} />
-              ) : g.kind === "percent" ? (
-                <RampRow key={i} lift={l} top={i > 0} C={C} />
-              ) : l.rpe != null ? (
-                <HeatRow key={i} lift={l} top={i > 0} C={C} />
-              ) : (
-                <FallbackRow key={i} lift={l} top={i > 0} C={C} />
-              ),
+            {g.kind === "percent" ? (
+              <PercentMatrix lifts={g.lifts} C={C} />
+            ) : g.kind === "run" ? (
+              g.lifts.map((l, i) => <ProseRow key={i} lift={l} top={i > 0} C={C} />)
+            ) : (
+              <>
+                {g.lifts.some((l) => l.rpe != null) && <ColHeader C={C} />}
+                {g.lifts.map((l, i) =>
+                  l.rpe != null ? <HeatRow key={i} lift={l} top={i > 0} C={C} /> : <FallbackRow key={i} lift={l} top={i > 0} C={C} />,
+                )}
+              </>
             )}
           </View>
         );
@@ -282,20 +282,45 @@ function NameCell({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
   );
 }
 
-// Coloured %-ramp text (nested <Text> runs). Shared by the weightlifting row and
-// a %-based accessory in the week card.
-function RampText({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
+// Olympic / % work — the Percentage Matrix: loads are fixed columns (ordered by
+// %, bodyweight last); reps drop into the matching cell. Horizontal-scrolls when
+// there are many distinct loads.
+const MX_NAME = 132;
+const MX_COL = 64;
+function PercentMatrix({ lifts, C }: { lifts: ProgramLiftView[]; C: Palette }) {
+  const colMap = new Map<string, ProgramStepView>();
+  for (const l of lifts) for (const st of l.steps ?? []) if (!colMap.has(st.load)) colMap.set(st.load, st);
+  const cols = [...colMap.values()].sort((a, b) => (a.pct ?? 1e9) - (b.pct ?? 1e9));
   return (
-    <>
-      {lift.steps!.map((st, i) => (
-        <Text key={i}>
-          {i > 0 ? <Text style={{ color: "#5a5e56" }}> · </Text> : null}
-          <Text style={{ color: loadHex(C, st.color), fontFamily: F.bold }}>{st.load}</Text>
-          <Text style={{ color: C.ash }}>{st.detail}</Text>
-          {st.kg ? <Text style={{ color: "#5a5e56" }}> · {st.kg}</Text> : null}
-        </Text>
-      ))}
-    </>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View>
+        <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+          <Text style={{ width: MX_NAME, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
+          {cols.map((c) => (
+            <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: 10, fontWeight: "700", textAlign: "center", color: loadHex(C, c.color) }}>{c.load}</Text>
+          ))}
+        </View>
+        {lifts.map((l, i) => {
+          const byLoad = new Map((l.steps ?? []).map((st) => [st.load, st]));
+          return (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 11, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: HAIR }}>
+              <View style={{ width: MX_NAME, paddingRight: 8 }}>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{l.name}</Text>
+                {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
+              </View>
+              {cols.map((c) => {
+                const st = byLoad.get(c.load);
+                return (
+                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.caption, textAlign: "center", color: st ? loadHex(C, c.color) : "#34372f" }}>
+                    {st ? st.detail : "·"}
+                  </Text>
+                );
+              })}
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -306,18 +331,6 @@ function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pal
       <NameCell lift={lift} C={C} />
       <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right", marginRight: 10 }}>{lift.setsReps ?? "—"}</Text>
       <Text style={{ width: 54, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: loadHex(C, rpeColor(lift.rpe!)) }}>@{lift.rpe}</Text>
-    </View>
-  );
-}
-
-// weightlifting — coloured %-ramp prescription
-function RampRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
-      <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", lineHeight: 19 }}>
-        <RampText lift={lift} C={C} />
-      </Text>
     </View>
   );
 }

@@ -24,8 +24,8 @@ import {
 
 // A lift is [name, notation] or [name, notation, tempo].
 type RawLift = [string, string] | [string, string, string];
-// An accessory: a name + a free-text scheme (range/time volume) + a "best for" note.
-type RawAcc = { name: string; scheme: string; note?: string };
+// An accessory: a name + a fixed sets×reps scheme + target RPE + a "best for" note.
+type RawAcc = { name: string; scheme: string; rpe?: number; note?: string };
 interface RawSession {
   label?: "AM" | "PM";
   lifts: RawLift[];
@@ -62,7 +62,7 @@ function buildLift([name, notation, tempo]: RawLift): PlanLift {
 }
 
 function buildAcc(a: RawAcc): PlanEntry {
-  return { label: a.name, detail: "", scheme: a.scheme, ...(a.note ? { note: a.note } : {}) };
+  return { label: a.name, detail: "", scheme: a.scheme, ...(a.rpe != null ? { rpe: a.rpe } : {}), ...(a.note ? { note: a.note } : {}) };
 }
 
 function buildDay(raw: RawDay, index: number): PlanDay {
@@ -97,11 +97,11 @@ const GM: RawLift = ["Good Morning", "(X/8)4"];
 // Week-1-only accessory block (the "Accessory Selection Matrix") — rendered in
 // its own Accessories block, separate from the % barbell work.
 const WEEK1_ACC: RawAcc[] = [
-  { name: "Clean Pull", scheme: "3–5 × 3–5", note: "pulling power · @ 90–110% of clean" },
-  { name: "Snatch Balance", scheme: "3–4 × 1–3", note: "speed under bar" },
-  { name: "Push Press", scheme: "3–5 × 3–5", note: "jerk drive" },
-  { name: "Front Squat", scheme: "4–6 × 2–4", note: "clean recovery" },
-  { name: "Chinese Plank", scheme: "3 × 30–60 s", note: "core endurance" },
+  { name: "Clean Pull", scheme: "5×3", rpe: 8, note: "pulling power · @ 90–110% of clean" },
+  { name: "Snatch Balance", scheme: "4×2", rpe: 7, note: "speed under bar" },
+  { name: "Push Press", scheme: "5×5", rpe: 8, note: "jerk drive" },
+  { name: "Front Squat", scheme: "5×3", rpe: 8, note: "clean recovery" },
+  { name: "Chinese Plank", scheme: "3×45 s", rpe: 8, note: "core endurance" },
 ];
 
 const SOVIET_WEEKS: RawDay[][] = [
