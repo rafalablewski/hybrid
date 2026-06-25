@@ -17,6 +17,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
   const [body, setBody] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
   const load = () => getCoach(handle).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
   const c = data?.coach;
@@ -53,7 +54,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" · ")}</Text>
                       </View>
                       {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</Text>
-                        : data.isMe ? null : <SButton label="Start" small onPress={async () => { const r: any = await enrollProgram(p.id); if (r.error) alert(r.error); load(); }} />}
+                        : data.isMe ? null : <SButton label={enrolling === p.id ? "Starting…" : "Start"} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r: any = await enrollProgram(p.id); setEnrolling(null); if (r.error) { alert(r.error); return; } load(); }} />}
                     </View>
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
                     {Array.isArray(p.preview) && p.preview.length > 0 && (

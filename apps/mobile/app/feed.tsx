@@ -57,7 +57,7 @@ export default function FeedScreen() {
     setPosting(true);
     const r: any = await createPost({ text, attachPr });
     setPosting(false);
-    if (r.error) return;
+    if (r.error) { alert(r.error); return; }
     setText(""); setAttachPr(false); load();
   };
   const del = async (item: any) => { await deletePost(item.subjectId); load(); };

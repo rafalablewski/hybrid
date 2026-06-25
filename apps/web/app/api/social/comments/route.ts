@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { tableMissing, authorCards } from "@/lib/social";
+import { tableMissing, authorCards, blockedIdsFor } from "@/lib/social";
 
 // Comments on a feed subject (same (subjectType, subjectId) anchoring as kudos).
 
@@ -22,8 +22,12 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "asc" },
       take: 100,
     });
-    const cards = await authorCards(rows.map((r) => r.userId));
-    const comments = rows.map((r) => ({
+    // Mutual-invisibility: hide comments from anyone I've blocked or who has
+    // blocked me (matches the feed/leaderboard block gate).
+    const blocked = await blockedIdsFor(me.id);
+    const visible = rows.filter((r) => !blocked.has(r.userId));
+    const cards = await authorCards(visible.map((r) => r.userId));
+    const comments = visible.map((r) => ({
       id: r.id,
       body: r.body,
       at: r.createdAt.getTime(),

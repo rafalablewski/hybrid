@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buildSocialNotifications, type SocialNotifEvent } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, authorCards } from "@/lib/social";
+import { tableMissing, authorCards, blockedIdsFor } from "@/lib/social";
 
 // Social + coaching events addressed to me: new followers, follow requests,
 // kudos/comments on my items, enrolment requests (as a coach) and enrolment
@@ -34,14 +34,17 @@ export async function GET(request: Request) {
     enrollReqs.forEach((e) => ids.add(e.clientId));
     myEnrolls.forEach((e) => ids.add(e.coachId));
     const cards = await authorCards([...ids]);
+    // Mutual-invisibility: drop any event whose actor I've blocked or who has
+    // blocked me, so a blocked user never surfaces in my notifications.
+    const blocked = await blockedIdsFor(me.id);
 
     const events: SocialNotifEvent[] = [
-      ...followers.map((f): SocialNotifEvent => ({ kind: "follow", at: f.createdAt.getTime(), actor: cards.get(f.followerId), handle: cards.get(f.followerId)?.handle })),
-      ...requests.map((f): SocialNotifEvent => ({ kind: "follow_request", at: f.createdAt.getTime(), actor: cards.get(f.followerId), handle: cards.get(f.followerId)?.handle, followerId: f.followerId })),
-      ...kudos.map((k): SocialNotifEvent => ({ kind: "kudos", at: k.createdAt.getTime(), actor: cards.get(k.userId), handle: cards.get(k.userId)?.handle, text: k.subjectType === "pr" ? "PR" : "workout" })),
-      ...comments.map((c): SocialNotifEvent => ({ kind: "comment", at: c.createdAt.getTime(), actor: cards.get(c.userId), handle: cards.get(c.userId)?.handle, text: c.body })),
-      ...enrollReqs.map((e): SocialNotifEvent => ({ kind: "enroll_request", at: e.createdAt.getTime(), actor: cards.get(e.clientId), handle: cards.get(e.clientId)?.handle, text: e.program.name, enrollmentId: e.id })),
-      ...myEnrolls.map((e): SocialNotifEvent => ({ kind: e.status === "active" ? "enroll_active" : "enroll_declined", at: (e.startedAt ?? e.createdAt).getTime(), actor: cards.get(e.coachId), handle: cards.get(e.coachId)?.handle, text: e.program.name })),
+      ...followers.filter((f) => !blocked.has(f.followerId)).map((f): SocialNotifEvent => ({ kind: "follow", at: f.createdAt.getTime(), actor: cards.get(f.followerId), handle: cards.get(f.followerId)?.handle })),
+      ...requests.filter((f) => !blocked.has(f.followerId)).map((f): SocialNotifEvent => ({ kind: "follow_request", at: f.createdAt.getTime(), actor: cards.get(f.followerId), handle: cards.get(f.followerId)?.handle, followerId: f.followerId })),
+      ...kudos.filter((k) => !blocked.has(k.userId)).map((k): SocialNotifEvent => ({ kind: "kudos", at: k.createdAt.getTime(), actor: cards.get(k.userId), handle: cards.get(k.userId)?.handle, text: k.subjectType === "pr" ? "PR" : "workout" })),
+      ...comments.filter((c) => !blocked.has(c.userId)).map((c): SocialNotifEvent => ({ kind: "comment", at: c.createdAt.getTime(), actor: cards.get(c.userId), handle: cards.get(c.userId)?.handle, text: c.body })),
+      ...enrollReqs.filter((e) => !blocked.has(e.clientId)).map((e): SocialNotifEvent => ({ kind: "enroll_request", at: e.createdAt.getTime(), actor: cards.get(e.clientId), handle: cards.get(e.clientId)?.handle, text: e.program.name, enrollmentId: e.id })),
+      ...myEnrolls.filter((e) => !blocked.has(e.coachId)).map((e): SocialNotifEvent => ({ kind: e.status === "active" ? "enroll_active" : "enroll_declined", at: (e.startedAt ?? e.createdAt).getTime(), actor: cards.get(e.coachId), handle: cards.get(e.coachId)?.handle, text: e.program.name })),
     ];
 
     const notifications = buildSocialNotifications(events);
