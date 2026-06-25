@@ -75,7 +75,16 @@ export interface PlanEntry {
    *  structured gym accessory: it shows in the Sets×Reps column / prescription
    *  and groups with the strength work, not the prose runs. */
   scheme?: string;
+  /** Conditioning effort tier — the discipline's intensity signal (a circuit has
+   *  no % or RPE), mapped to the shared intensity colour (conditioningColor). Lets
+   *  a circuit show the same load/effort wave the % and RPE plans do: a warm-up
+   *  reads cool, the work blocks build, the finisher peaks. */
+  effort?: ConditioningEffort;
 }
+
+/** Conditioning intensity tiers, low→high — the circuit analogue of a % band or
+ *  an RPE. Authored per block (warm-up = easy … finisher = max). */
+export type ConditioningEffort = "recover" | "easy" | "moderate" | "hard" | "max";
 
 export type PlanDayKind = "train" | "active-rest" | "rest" | "competition";
 
@@ -245,6 +254,19 @@ export function workoutColor(label: string): LoadColor {
   return "blue";
 }
 
+/** Map a conditioning effort tier to its intensity colour — the circuit's wave,
+ *  on the SAME blue→lime→amber→red scale the % loads ride, with recover → ash.
+ *  Thresholds live here (not per-client) so the wave can't drift. */
+export function conditioningColor(effort: ConditioningEffort): LoadColor {
+  switch (effort) {
+    case "recover": return "ash";
+    case "easy": return "blue";
+    case "moderate": return "lime";
+    case "hard": return "amber";
+    case "max": return "red";
+  }
+}
+
 /** One step of a strength-percent lift's ramp, render-ready for the coloured
  *  prescription (the load is coloured by intensity; the rest stays muted). */
 export interface ProgramStepView {
@@ -278,6 +300,10 @@ export interface ProgramLiftView {
   weight?: string | null;
   /** Target RPE (8 / 9 / 10). Presence signals that tabular columns apply. */
   rpe?: number;
+  /** Conditioning intensity colour (from the entry's effort tier) — the circuit's
+   *  load-wave equivalent. Present only on conditioning entries; the renderer
+   *  colours the prescription / dot with it, the way % loads and RPE are coloured. */
+  intensity?: LoadColor;
 }
 export interface ProgramSessionView {
   label: string | null;
@@ -388,11 +414,13 @@ function kindLabelFor(program: PlanProgram, kind: PlanDayKind): string | null {
 }
 
 // Volume is discipline-specific: the Soviet plan counts NL (number of lifts);
-// hypertrophy counts exercises; endurance/conditioning have no comparable count,
-// so no label is shown (the layout stays identical — the chip is simply absent).
+// hypertrophy AND conditioning count movements/exercises (a circuit's natural
+// unit); endurance has no comparable count, so no label is shown (the layout
+// stays identical — the chip is simply absent).
 function volumeLabel(program: PlanProgram, nl: number, items: number): string | null {
   if (program.discipline === "strength-percent") return nl > 0 ? `${nl} lifts` : null;
-  if (program.discipline === "hypertrophy") return items > 0 ? `${items} exercise${items === 1 ? "" : "s"}` : null;
+  if (program.discipline === "hypertrophy" || program.discipline === "conditioning")
+    return items > 0 ? `${items} exercise${items === 1 ? "" : "s"}` : null;
   return null;
 }
 
@@ -450,6 +478,7 @@ export function planProgramView(
               ...(setsReps != null ? { setsReps } : {}),
               ...(setsReps != null ? { weight: kg ? `${kg} kg` : null } : {}),
               ...(e.rpe != null ? { rpe: e.rpe } : {}),
+              ...(e.effort ? { intensity: conditioningColor(e.effort) } : {}),
             };
           }),
         ];

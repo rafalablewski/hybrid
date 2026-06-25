@@ -11,6 +11,7 @@ import {
   loadColor,
   rpeColor,
   workoutColor,
+  conditioningColor,
   isGymLift,
   isProseLift,
   liftKind,
@@ -252,7 +253,7 @@ describe("mixed endurance day — strength accessory on a run day", () => {
 });
 
 describe("conditioning (kettlebell circuit) program — same model, blocks as cards", () => {
-  it("is a registered single-week conditioning plan with no peak and no volume counter", () => {
+  it("is a registered single-week conditioning plan with no peak, counting exercises as volume", () => {
     expect(programFor("fatloss-kb-saturday")).toBe(FATLOSS_KB_SATURDAY);
     expect(Object.keys(PLAN_PROGRAMS)).toContain("fatloss-kb-saturday");
     expect(FATLOSS_KB_SATURDAY.discipline).toBe("conditioning");
@@ -262,8 +263,10 @@ describe("conditioning (kettlebell circuit) program — same model, blocks as ca
     const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
     expect(v.weeks).toEqual([1]); // one repeating session → renderers hide the week selector
     expect(v.peakNote).toBeNull();
-    expect(v.weekVolume).toBeNull(); // conditioning has no NL/exercise counter
-    expect(v.days.every((d) => d.volume === null)).toBe(true);
+    // conditioning counts movements like hypertrophy → a real volume chip, never "runs"
+    expect(v.weekVolume).toBe("24 exercises");
+    expect(v.days[0]!.volume).toBe("5 exercises"); // warm-up
+    expect(dayContentSummary(v.days.at(-1)!)).toBe("4 exercises"); // cool-down: NOT "4 runs"
   });
 
   it("renders each block as its own card, with the round count in the title", () => {
@@ -290,12 +293,34 @@ describe("conditioning (kettlebell circuit) program — same model, blocks as ca
     expect(lunge).toMatchObject({ name: "Walking Lunges", setsReps: "3 × 10/leg", note: "Bodyweight or with KB" });
   });
 
+  it("rides the shared intensity wave: warm-up cool → finisher peaks red → cool-down ash", () => {
+    const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
+    const color = (d: number) => v.days[d]!.sessions[0]!.lifts[0]!.intensity;
+    expect(color(0)).toBe("blue"); // Warm-Up — easy
+    expect(color(1)).toBe("lime"); // Core & Stability — moderate
+    expect(color(2)).toBe("amber"); // Leg + Glutes — hard
+    expect(color(5)).toBe("red"); // Finisher — max
+    expect(color(6)).toBe("ash"); // Cool-Down — recover
+    // every exercise in a block shares its block's tier
+    expect(v.days[5]!.sessions[0]!.lifts.every((l) => l.intensity === "red")).toBe(true);
+  });
+
   it("renders the cool-down stretches as prose rows (no sets×reps scheme)", () => {
     const cooldown = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days.at(-1)!;
     const fold = cooldown.sessions[0]!.lifts[0]!;
-    expect(fold).toMatchObject({ name: "Forward Fold", prescription: "Hamstring stretch" });
+    expect(fold).toMatchObject({ name: "Forward Fold", prescription: "Hamstring stretch", intensity: "ash" });
     expect(isProseLift(fold)).toBe(true);
     expect(liftKind(fold)).toBe("run");
+  });
+});
+
+describe("conditioningColor — the circuit intensity wave", () => {
+  it("maps effort tiers onto the shared load-colour scale", () => {
+    expect(conditioningColor("recover")).toBe("ash");
+    expect(conditioningColor("easy")).toBe("blue");
+    expect(conditioningColor("moderate")).toBe("lime");
+    expect(conditioningColor("hard")).toBe("amber");
+    expect(conditioningColor("max")).toBe("red");
   });
 });
 

@@ -18,6 +18,7 @@ import {
   type PlanLift,
   type PlanEntry,
   type PlanSession,
+  type ConditioningEffort,
 } from "./plan-program";
 
 // ---- builder: terse raw data → structured PlanProgram ------------------------
@@ -867,11 +868,13 @@ export const BB_PPL_6DAY: PlanProgram = {
 // A circuit exercise: [name, prescription] or [name, prescription, note], where
 // the prescription is a sets×reps scheme ("3 × 10") or a duration/hold ("30s").
 type CircuitItem = [string, string] | [string, string, string];
-// A block of the session: a titled card of exercises. `prose` blocks (the
+// A block of the session: a titled card of exercises with one effort tier (the
+// circuit's intensity signal → the shared colour wave). `prose` blocks (the
 // cool-down stretches) render as plain prose rows; the rest are structured
 // circuit items (the scheme shows in the prescription column).
 interface CircuitBlock {
   title: string;
+  effort: ConditioningEffort;
   prose?: boolean;
   items: CircuitItem[];
 }
@@ -886,6 +889,7 @@ function buildCircuitBlock(b: CircuitBlock, index: number): PlanDay {
         entries: b.items.map(([name, presc, note]) => ({
           label: name,
           detail: b.prose ? presc : "",
+          effort: b.effort,
           ...(b.prose ? {} : { scheme: presc }),
           ...(note ? { note } : {}),
         })),
@@ -898,9 +902,14 @@ function buildCircuitProgram(meta: Omit<PlanProgram, "weeks">, blocks: CircuitBl
   return { ...meta, weeks: [{ index: 1, days: blocks.map((b, i) => buildCircuitBlock(b, i + 1)) }] };
 }
 
+// Effort tiers ride the shared colour wave (easy→blue, moderate→lime, hard→amber,
+// max→red, recover→ash): the session warms up cool, the work blocks build, the
+// no-rest finisher peaks red, and the cool-down flushes out — the conditioning
+// analogue of the OWL %-wave and the bodybuilding RPE heat.
 const FATLOSS_BLOCKS: CircuitBlock[] = [
   {
     title: "Warm-Up · 10 min",
+    effort: "easy",
     items: [
       ["Jumping Jacks", "2 min"],
       ["Hip Circles", "1 min/side"],
@@ -911,6 +920,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
   },
   {
     title: "Block 1 · Core & Stability · 2 rounds",
+    effort: "moderate",
     items: [
       ["Kettlebell Halo", "2 × 12"],
       ["Kettlebell Figure 8", "2 × 12"],
@@ -919,6 +929,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
   },
   {
     title: "Block 2 · Leg + Glutes · 3 rounds",
+    effort: "hard",
     items: [
       ["Goblet Squat", "3 × 10"],
       ["Kettlebell Swing", "3 × 15"],
@@ -927,6 +938,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
   },
   {
     title: "Block 3 · Push & Pull · 3 rounds",
+    effort: "moderate",
     items: [
       ["Single-Arm Floor Press", "3 × 12/side"],
       ["Kettlebell Row", "3 × 12/side"],
@@ -935,6 +947,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
   },
   {
     title: "Block 4 · Balance & Core Burn · 2 rounds",
+    effort: "hard",
     items: [
       ["Single-Leg Deadlift", "2 × 10/side"],
       ["Kettlebell Slingshot", "2 × 12"],
@@ -943,6 +956,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
   },
   {
     title: "Block 5 · Finisher · 2–3 rounds, no rest between",
+    effort: "max",
     items: [
       ["Goblet Squat Hold", "20s"],
       ["Kettlebell Swing", "20s"],
@@ -951,6 +965,7 @@ const FATLOSS_BLOCKS: CircuitBlock[] = [
   },
   {
     title: "Cool-Down · 10 min",
+    effort: "recover",
     prose: true,
     items: [
       ["Forward Fold", "Hamstring stretch"],
