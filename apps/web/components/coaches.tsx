@@ -15,6 +15,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
+  const [preview, setPreview] = useState<string | null>(null);
   const busy = useBusy();
 
   const load = () => jget(`/api/coaches/${handle}`).then(setData);
@@ -78,6 +79,28 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                   )}
                 </div>
                 {p.summary && <p style={{ color: C("chalk"), fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{p.summary}</p>}
+                {Array.isArray(p.preview) && p.preview.length > 0 && (
+                  <>
+                    <button onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: C("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
+                      {preview === p.id ? "Hide preview ▲" : "Preview the plan ▼"}
+                    </button>
+                    {preview === p.id && (
+                      <div style={{ marginTop: 8 }}>
+                        {p.preview.map((w: any, wi: number) => (
+                          <div key={wi} style={{ marginBottom: 8 }}>
+                            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: C("ash") }}>Week {wi + 1}</div>
+                            {w.days.map((d: any, di: number) => (
+                              <div key={di} style={{ marginTop: 4 }}>
+                                <div style={{ color: C("chalk"), fontSize: 12.5, fontWeight: 600 }}>{d.day || `Day ${di + 1}`}</div>
+                                <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: any) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             ))}
 

@@ -16,6 +16,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
   const load = () => getCoach(handle).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
   const c = data?.coach;
@@ -55,6 +56,26 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         : data.isMe ? null : <SButton label="Start" small onPress={async () => { const r: any = await enrollProgram(p.id); if (r.error) alert(r.error); load(); }} />}
                     </View>
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
+                    {Array.isArray(p.preview) && p.preview.length > 0 && (
+                      <>
+                        <Pressable onPress={() => setPreview(preview === p.id ? null : p.id)}><Text style={{ color: C.lime, fontSize: 12, fontFamily: F.bold, marginTop: 8 }}>{preview === p.id ? "Hide preview ▲" : "Preview the plan ▼"}</Text></Pressable>
+                        {preview === p.id && (
+                          <View style={{ marginTop: 8 }}>
+                            {p.preview.map((w: any, wi: number) => (
+                              <View key={wi} style={{ marginBottom: 8 }}>
+                                <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }}>Week {wi + 1}</Text>
+                                {w.days.map((d: any, di: number) => (
+                                  <View key={di} style={{ marginTop: 4 }}>
+                                    <Text style={{ color: C.chalk, fontSize: 12.5, fontFamily: F.bold }}>{d.day || `Day ${di + 1}`}</Text>
+                                    <Text style={{ color: C.ash, fontSize: 12 }}>{d.items.map((it: any) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" · ") || "—"}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </>
+                    )}
                   </View>
                 ))}
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { tableMissing, authorCards } from "@/lib/social";
+import { sanitizeProgramWeeks } from "@/lib/coach-program";
 
 // A coach's public storefront by @handle: their profile, published programs,
 // reviews + average rating, and the viewer's own link/enrolment state.
@@ -52,15 +53,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
         priceNote: coachProfile.priceNote,
         coachVerified: user?.coachVerified ?? false,
       },
-      programs: programs.map((p) => ({
-        id: p.id,
-        name: p.name,
-        goal: p.goal,
-        summary: p.summary,
-        level: p.level,
-        weeks: Array.isArray(p.weeks) ? (p.weeks as unknown[]).length : 0,
-        enrollmentStatus: enrollBy.get(p.id) ?? null,
-      })),
+      programs: programs.map((p) => {
+        // A compact preview of the structure so a client can see what they're
+        // starting BEFORE they enrol — capped to bound the payload.
+        const weeks = sanitizeProgramWeeks(p.weeks);
+        const preview = weeks.slice(0, 8).map((w) => ({
+          days: w.days.slice(0, 7).map((d) => ({
+            day: d.day,
+            items: d.items.slice(0, 10).map((it) => ({ name: it.name, sr: it.sr, rpe: it.rpe })),
+          })),
+        }));
+        return {
+          id: p.id,
+          name: p.name,
+          goal: p.goal,
+          summary: p.summary,
+          level: p.level,
+          weeks: weeks.length,
+          preview,
+          enrollmentStatus: enrollBy.get(p.id) ?? null,
+        };
+      }),
       reviews,
       rating: avg,
       isMyCoach: link?.status === "ACTIVE",
