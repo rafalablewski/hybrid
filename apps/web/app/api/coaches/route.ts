@@ -15,23 +15,18 @@ export async function GET(request: Request) {
   const sport = (url.searchParams.get("sport") || "").trim();
 
   try {
+    // Fetch the public directory (sport tag filtered in DB), then match the free
+    // text q in JS so it's CASE-INSENSITIVE + PARTIAL across headline/bio/name/
+    // handle AND the specialties/sports arrays (Prisma's array `has` is exact, so
+    // "olympic" used to miss "Olympic lifting"). The directory is small, so a
+    // 120-row scan + filter is cheap and far better quality.
     const profiles = await prisma.coachProfile.findMany({
       where: {
         visibility: "public",
         ...(sport ? { sports: { has: sport } } : {}),
-        ...(q
-          ? {
-              OR: [
-                { headline: { contains: q, mode: "insensitive" } },
-                { bio: { contains: q, mode: "insensitive" } },
-                { specialties: { has: q } },
-                { user: { name: { contains: q, mode: "insensitive" } } },
-              ],
-            }
-          : {}),
       },
       include: { user: { select: { id: true, name: true, coachVerified: true } } },
-      take: 60,
+      take: 120,
     });
     const ids = profiles.map((p) => p.userId);
     const [socials, programCounts, reviews] = await Promise.all([
@@ -43,9 +38,20 @@ export async function GET(request: Request) {
     const progBy = new Map(programCounts.map((p) => [p.coachId, p._count._all]));
     const revBy = new Map(reviews.map((r) => [r.coachId, { avg: r._avg.rating ?? 0, count: r._count._all }]));
 
-    // Only coaches who have claimed a @handle are addressable in the directory.
+    // Only coaches who have claimed a @handle are addressable in the directory;
+    // when q is present, keep those whose text/arrays partially match it.
+    const matchesQ = (p: (typeof profiles)[number]) => {
+      if (!q) return true;
+      const s = socialBy.get(p.userId);
+      const hay = [p.headline, p.bio, p.user.name, s?.handle, s?.displayName, ...(p.specialties ?? []), ...(p.sports ?? [])]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    };
     const coaches = profiles
-      .filter((p) => socialBy.has(p.userId))
+      .filter((p) => socialBy.has(p.userId) && matchesQ(p))
+      .slice(0, 60)
       .map((p) => {
         const s = socialBy.get(p.userId)!;
         const r = revBy.get(p.userId);
