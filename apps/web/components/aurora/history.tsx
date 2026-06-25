@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, type LoggedSession } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
-import { SessionDetail } from "../screens";
+import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;

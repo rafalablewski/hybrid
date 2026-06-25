@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type Persona, type PersonaAccess, type SessionBlock } from "@hybrid/core";
+import { groupedNav, navForPersona, sanitizePersonaAccess, AURORA_NAV_ICONS, FUNNEL, type SessionBlock } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useSession, type Role } from "@/lib/session";
 import { usePersona } from "@/lib/persona";
@@ -22,29 +22,19 @@ import { fs, space,
   txt,
   disp,
   cond,
-  mono,
   Mono,
-  Card,
   Select,
   GlassField,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useIsMobile } from "@/lib/use-media-query";
-const AthleteAnalytics = dynamic(() => import("./screens").then((m) => ({ default: m.AthleteAnalytics })), { ssr: false });
-const CoachAnalytics = dynamic(() => import("./screens").then((m) => ({ default: m.CoachAnalytics })), { ssr: false });
-const OperatorAnalytics = dynamic(() => import("./screens").then((m) => ({ default: m.OperatorAnalytics })), { ssr: false });
-const PeriodizeScreen = dynamic(() => import("./screens").then((m) => ({ default: m.PeriodizeScreen })), { ssr: false });
-const HistoryScreen = dynamic(() => import("./screens").then((m) => ({ default: m.HistoryScreen })), { ssr: false });
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
-const Logger = dynamic(() => import("./logger"), { ssr: false });
-const PlansScreen = dynamic(() => import("./plans"), { ssr: false });
 const AuroraPlans = dynamic(() => import("./aurora/plans"), { ssr: false });
 const AuroraSport = dynamic(() => import("./aurora/sport"), { ssr: false });
 const AuroraCompetition = dynamic(() => import("./aurora/competition"), { ssr: false });
 const AuroraPeriodize = dynamic(() => import("./aurora/periodize"), { ssr: false });
 const AuroraBuilder = dynamic(() => import("./aurora/builder"), { ssr: false });
 const AuroraLogger = dynamic(() => import("./aurora/logger"), { ssr: false });
-const RunTrack = dynamic(() => import("./run-track"), { ssr: false });
 const AuroraRunTrack = dynamic(() => import("./aurora/run-track"), { ssr: false });
 const AuroraCoach = dynamic(() => import("./aurora/coach"), { ssr: false });
 const AuroraUpgrade = dynamic(() => import("./aurora/upgrade"), { ssr: false });
@@ -56,54 +46,27 @@ const AuroraTalent = dynamic(() => import("./aurora/talent"), { ssr: false });
 const AuroraTactical = dynamic(() => import("./aurora/tactical"), { ssr: false });
 const AuroraTeamCompare = dynamic(() => import("./aurora/team-compare"), { ssr: false });
 const AuroraTeamMonitor = dynamic(() => import("./aurora/team-monitor"), { ssr: false });
-const SportScreen = dynamic(() => import("./sports"), { ssr: false });
-const CoachScreen = dynamic(() => import("./coach"), { ssr: false });
-const Connections = dynamic(() => import("./connections"), { ssr: false });
 const AuroraConnections = dynamic(() => import("./aurora/connections"), { ssr: false });
-const Performance = dynamic(() => import("./performance"), { ssr: false });
 const AuroraPerformance = dynamic(() => import("./aurora/performance"), { ssr: false });
-const Org = dynamic(() => import("./org"), { ssr: false });
-const VideoScreen = dynamic(() => import("./video-screen"), { ssr: false });
 const AuroraVideo = dynamic(() => import("./aurora/video"), { ssr: false });
-const Competition = dynamic(() => import("./competition"), { ssr: false });
-const Talent = dynamic(() => import("./talent"), { ssr: false });
-const Tactical = dynamic(() => import("./tactical"), { ssr: false });
-const Longevity = dynamic(() => import("./longevity"), { ssr: false });
 const AuroraLongevity = dynamic(() => import("./aurora/longevity"), { ssr: false });
-const Velocity = dynamic(() => import("./velocity"), { ssr: false });
 const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false });
-const Running = dynamic(() => import("./running"), { ssr: false });
 const AuroraRunning = dynamic(() => import("./aurora/running"), { ssr: false });
-const Volume = dynamic(() => import("./volume"), { ssr: false });
 const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
-const Exercises = dynamic(() => import("./exercises"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
-const Trends = dynamic(() => import("./trends"), { ssr: false });
 const AuroraTrends = dynamic(() => import("./aurora/trends"), { ssr: false });
-const TeamCompare = dynamic(() => import("./team-compare"), { ssr: false });
-const TeamMonitor = dynamic(() => import("./team-monitor"), { ssr: false });
-const Today = dynamic(() => import("./today"), { ssr: false });
 import { FIRST_RUN_TOUR } from "./tour";
 const Tour = dynamic(() => import("./tour"), { ssr: false });
 import AuroraToday from "./aurora/today";
 const AuroraProfile = dynamic(() => import("./aurora/profile"), { ssr: false });
 import AuroraPillNav from "./aurora/pill-nav";
 import { useTemplate } from "@/lib/use-template";
-const Cockpit = dynamic(() => import("./cockpit"), { ssr: false });
 const AuroraCockpit = dynamic(() => import("./aurora/cockpit"), { ssr: false });
-const Nutrition = dynamic(() => import("./nutrition"), { ssr: false });
 const AuroraNutrition = dynamic(() => import("./aurora/nutrition"), { ssr: false });
-const Onboarding = dynamic(() => import("./onboarding"), { ssr: false });
 const AuroraOnboarding = dynamic(() => import("./aurora/onboarding"), { ssr: false });
-const Upgrade = dynamic(() => import("./upgrade"), { ssr: false });
-const Checkins = dynamic(() => import("./checkins"), { ssr: false });
 const AuroraCheckins = dynamic(() => import("./aurora/checkins"), { ssr: false });
-const Calendar = dynamic(() => import("./calendar"), { ssr: false });
 const AuroraCalendar = dynamic(() => import("./aurora/calendar"), { ssr: false });
-const Builder = dynamic(() => import("./builder"), { ssr: false });
-const ForcePlate = dynamic(() => import("./forceplate"), { ssr: false });
 const AuroraForcePlate = dynamic(() => import("./aurora/forceplate"), { ssr: false });
-const Progress = dynamic(() => import("./progress"), { ssr: false });
 const AuroraProgress = dynamic(() => import("./aurora/progress"), { ssr: false });
 const AccountSettings = dynamic(() => import("./account-settings"), { ssr: false });
 const IntervalTimerScreen = dynamic(() => import("./interval-timer"), { ssr: false });
@@ -556,18 +519,7 @@ export default function AppShell() {
             command orb and theme + language live in Settings. */}
         {!isMobile && (
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }}>
-            {aurora ? <div /> : (
-            <div style={{ minWidth: 0 }}>
-              <Mono s={{ fontSize: fs.caption, letterSpacing: ".1em", textTransform: "uppercase" }} c={LIME}>
-                app.hybrid.app
-              </Mono>
-              <h1 style={{ ...disp, fontWeight: 900, fontSize: isMobile ? 22 : 30, letterSpacing: "-.03em", marginTop: 2, textTransform: "capitalize" }}>
-                {t(`nav.${screen}`) === `nav.${screen}` ? screen : t(`nav.${screen}`)}
-              </h1>
-            </div>
-            )}
-          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }} />
           <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
             <button
               onClick={toggle}
@@ -671,18 +623,14 @@ export default function AppShell() {
                 </div>
               );
             })()}
-            {scope === "athlete" && (aurora ? <AuroraAthleteAnalytics sessions={sessions} /> : <AthleteAnalytics sessions={sessions} />)}
-            {scope === "coach" && (aurora ? <AuroraCoachAnalytics roster={roster} /> : <CoachAnalytics roster={roster} />)}
-            {scope === "operator" && (aurora ? <AuroraOperatorAnalytics /> : <OperatorAnalytics />)}
+            {scope === "athlete" && <AuroraAthleteAnalytics sessions={sessions} />}
+            {scope === "coach" && <AuroraCoachAnalytics roster={roster} />}
+            {scope === "operator" && <AuroraOperatorAnalytics />}
           </>
         )}
 
         {screen === "today" && (
-          aurora ? (
-            <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} loading={sessionsLoading} />
-          ) : (
-            <Today sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} loading={sessionsLoading} />
-          )
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} onStart={(planBlocks) => { setPendingBlocks(planBlocks); setScreen("log"); }} onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} onSaved={refresh} loading={sessionsLoading} />
         )}
 
         {screen === "profile" && (
@@ -695,128 +643,103 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "upgrade" && (aurora ? <AuroraUpgrade onUpgraded={() => setScreen("today")} /> : <Upgrade onUpgraded={() => setScreen("today")} />)}
+        {screen === "upgrade" && <AuroraUpgrade onUpgraded={() => setScreen("today")} />}
 
         {screen === "cockpit" && (
-          aurora
-            ? <AuroraCockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
-            : <Cockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          <AuroraCockpit sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} setScreen={setScreen} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
-          aurora
-            ? <AuroraOnboarding onEnrolled={finishOnboarding} />
-            : <Onboarding onEnrolled={finishOnboarding} />
+          <AuroraOnboarding onEnrolled={finishOnboarding} />
         )}
 
-        {screen === "performance" && (aurora ? <AuroraPerformance sessions={sessions} bio={bio} /> : <Performance sessions={sessions} bio={bio} />)}
+        {screen === "performance" && <AuroraPerformance sessions={sessions} bio={bio} />}
 
-        {screen === "velocity" && (aurora ? <AuroraVelocity sessions={sessions} /> : <Velocity sessions={sessions} />)}
+        {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 
-        {screen === "running" && (aurora ? <AuroraRunning sessions={sessions} /> : <Running sessions={sessions} />)}
+        {screen === "running" && <AuroraRunning sessions={sessions} />}
 
-        {screen === "volume" && (aurora ? <AuroraVolume sessions={sessions} /> : <Volume sessions={sessions} />)}
+        {screen === "volume" && <AuroraVolume sessions={sessions} />}
 
-        {screen === "exercises" && (aurora ? <AuroraExercises sessions={sessions} focus={exerciseFocus} /> : <Exercises sessions={sessions} focus={exerciseFocus} />)}
+        {screen === "exercises" && <AuroraExercises sessions={sessions} focus={exerciseFocus} />}
 
-        {screen === "trends" && (aurora ? <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} /> : <Trends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />)}
+        {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercise} onOpenVolume={() => setScreen("volume")} />}
 
-        {screen === "forceplate" && (aurora ? <AuroraForcePlate /> : <ForcePlate />)}
+        {screen === "forceplate" && <AuroraForcePlate />}
 
-        {screen === "nutrition" && (aurora ? <AuroraNutrition /> : <Nutrition />)}
+        {screen === "nutrition" && <AuroraNutrition />}
 
-        {screen === "progress" && (aurora ? <AuroraProgress /> : <Progress />)}
+        {screen === "progress" && <AuroraProgress />}
 
-        {screen === "checkin" && (aurora ? <AuroraCheckins sessions={sessions} /> : <Checkins sessions={sessions} />)}
+        {screen === "checkin" && <AuroraCheckins sessions={sessions} />}
 
-        {screen === "calendar" && (aurora ? <AuroraCalendar sessions={sessions} /> : <Calendar sessions={sessions} />)}
+        {screen === "calendar" && <AuroraCalendar sessions={sessions} />}
 
-        {screen === "builder" && (aurora ? <AuroraBuilder /> : <Builder />)}
+        {screen === "builder" && <AuroraBuilder />}
 
-        {screen === "squad" && (aurora ? <AuroraTeamMonitor /> : <TeamMonitor />)}
+        {screen === "squad" && <AuroraTeamMonitor />}
 
-        {screen === "teamcompare" && (aurora ? <AuroraTeamCompare /> : <TeamCompare />)}
+        {screen === "teamcompare" && <AuroraTeamCompare />}
 
         {/* Periodization is a Full feature. Free (casual) users never have it in
             nav and aren't redirected here after enrolling (they get the season
             BRIEF on Today instead); if one still lands here, show the upgrade. */}
         {screen === "periodize" && (
           persona === "casual"
-            ? (aurora ? <AuroraUpgrade onUpgraded={() => setScreen("today")} /> : <Upgrade onUpgraded={() => setScreen("today")} />)
-            : (aurora ? <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} /> : <PeriodizeScreen macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />))}
+            ? <AuroraUpgrade onUpgraded={() => setScreen("today")} />
+            : <AuroraPeriodize macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio ?? undefined} />)}
 
-        {screen === "competition" && (aurora ? <AuroraCompetition /> : <Competition />)}
+        {screen === "competition" && <AuroraCompetition />}
 
-        {screen === "plans" &&
-          (aurora ? (
-            <AuroraPlans
-              onEnrolled={() => {
-                refreshMacro();
-                // Free users land back on Today (their season brief lives there);
-                // only paid athletes go to the full Periodize screen. (#5)
-                setScreen(persona === "casual" ? "today" : "periodize");
-              }}
-            />
-          ) : (
-            <PlansScreen
-              onEnrolled={() => {
-                refreshMacro();
-                setScreen(persona === "casual" ? "today" : "periodize");
-              }}
-            />
-          ))}
-
-        {screen === "sport" && (
-          aurora
-            ? <AuroraSport onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
-            : <SportScreen onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
+        {screen === "plans" && (
+          <AuroraPlans
+            onEnrolled={() => {
+              refreshMacro();
+              // Free users land back on Today (their season brief lives there);
+              // only paid athletes go to the full Periodize screen. (#5)
+              setScreen(persona === "casual" ? "today" : "periodize");
+            }}
+          />
         )}
 
-        {screen === "runtrack" && (aurora ? <AuroraRunTrack onSaved={refresh} /> : <RunTrack onSaved={refresh} />)}
+        {screen === "sport" && (
+          <AuroraSport onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
+        )}
 
-        {screen === "video" && (aurora ? <AuroraVideo /> : <VideoScreen />)}
+        {screen === "runtrack" && <AuroraRunTrack onSaved={refresh} />}
 
-        {screen === "log" &&
-          (aurora ? (
-            <AuroraLogger
-              sessions={sessions}
-              initialBlocks={pendingBlocks}
-              onSaved={() => {
-                setPendingBlocks(undefined);
-                refresh();
-                setScreen("history");
-              }}
-              onHome={() => {
-                setPendingBlocks(undefined);
-                refresh();
-                setScreen("today");
-              }}
-            />
-          ) : (
-            <Logger
-              sessions={sessions}
-              initialBlocks={pendingBlocks}
-              onSaved={() => {
-                setPendingBlocks(undefined);
-                refresh();
-                setScreen("history");
-              }}
-            />
-          ))}
+        {screen === "video" && <AuroraVideo />}
 
-        {screen === "history" && (aurora ? <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} /> : <HistoryScreen sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />)}
+        {screen === "log" && (
+          <AuroraLogger
+            sessions={sessions}
+            initialBlocks={pendingBlocks}
+            onSaved={() => {
+              setPendingBlocks(undefined);
+              refresh();
+              setScreen("history");
+            }}
+            onHome={() => {
+              setPendingBlocks(undefined);
+              refresh();
+              setScreen("today");
+            }}
+          />
+        )}
 
-        {screen === "coach" && (aurora ? <AuroraCoach /> : <CoachScreen />)}
+        {screen === "history" && <AuroraHistory sessions={sessions} onOpenExercise={openExercise} onChanged={refresh} />}
 
-        {screen === "connections" && (aurora ? <AuroraConnections /> : <Connections />)}
+        {screen === "coach" && <AuroraCoach />}
 
-        {screen === "org" && (aurora ? <AuroraOrg /> : <Org />)}
+        {screen === "connections" && <AuroraConnections />}
 
-        {screen === "talent" && (aurora ? <AuroraTalent /> : <Talent />)}
+        {screen === "org" && <AuroraOrg />}
 
-        {screen === "tactical" && (aurora ? <AuroraTactical /> : <Tactical />)}
+        {screen === "talent" && <AuroraTalent />}
 
-        {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
+        {screen === "tactical" && <AuroraTactical />}
+
+        {screen === "longevity" && <AuroraLongevity />}
 
         {/* Social + coach marketplace — template-aware single components (radii
             soften under Aurora), like the tools below. Everyone (casual+). */}
@@ -835,13 +758,8 @@ export default function AppShell() {
         </div>
       </main>
 
-      {/* Aurora: the floating pill bottom nav (coexists with the sidebar) — the
-          ⌘K orb is Classic-only. */}
-      {aurora ? (
-        <AuroraPillNav activeId={screen} onSelect={(id) => { setPendingBlocks(undefined); setScreen(id); }} />
-      ) : (
-        <CommandMenu screen={screen} setScreen={setScreen} isEnabled={isEnabled} persona={persona} access={navAccess} t={t} />
-      )}
+      {/* The floating pill bottom nav (coexists with the sidebar). */}
+      <AuroraPillNav activeId={screen} onSelect={(id) => { setPendingBlocks(undefined); setScreen(id); }} />
 
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
@@ -849,102 +767,3 @@ export default function AppShell() {
   );
 }
 
-// Central "control center" command menu: a floating orb (bottom-centre) and a
-// ⌘K / Ctrl-K bloom hub that mirrors the sidebar nav (same NAV_GROUPS, same
-// per-item flag gating). Liquid Glass treatment lives in globals.css (.cmd-*).
-function CommandMenu({
-  screen,
-  setScreen,
-  isEnabled,
-  persona,
-  access,
-  t,
-}: {
-  screen: string;
-  setScreen: (id: string) => void;
-  isEnabled: (flag: string) => boolean;
-  persona: Persona;
-  access: PersonaAccess;
-  t: (key: string) => string;
-}) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((o) => !o);
-      } else if (e.key === "Escape") {
-        setOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // Flatten the shared canonical nav into persona-shaped, flag-enabled tiles.
-  const tiles = groupedNav(navForPersona(persona, undefined, access)).flatMap(({ group, items }) =>
-    items.filter((it) => isEnabled(`nav.${it.id}`)).map((it) => ({ ...it, group })),
-  );
-
-  const label = (id: string, fallback: string) =>
-    t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`);
-  const groupLabel = (g: string) =>
-    t(`nav.group.${g}`) === `nav.group.${g}` ? g : t(`nav.group.${g}`);
-  // Force monochrome (text) rendering on single-unit symbol glyphs so they
-  // never fall back to dark emoji presentation; true emoji are left alone.
-  const glyph = (ic: string) => (Array.from(ic).length === 1 ? `${ic}︎` : ic);
-
-  return (
-    <>
-      <button className="cmd-orb liquid-glass" aria-label="Open menu (⌘K)" onClick={() => setOpen(true)}>
-        <span className="lg-sheen" aria-hidden />
-        <span className="cmd-dot" />
-      </button>
-
-      <div
-        className={`cmd-scrim${open ? " is-open" : ""}`}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) setOpen(false);
-        }}
-      >
-        <div className="cmd-hub liquid-glass lg-thick" role="dialog" aria-modal="true" aria-label="Quick menu">
-          <span className="lg-sheen" aria-hidden />
-          <div className="cmd-head">
-            <div>
-              <Mono s={{ fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase" }} c={ASH}>
-                app.hybrid.app
-              </Mono>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 2 }}>Jump to…</div>
-            </div>
-            <button className="cmd-close" aria-label="Close" onClick={() => setOpen(false)}>
-              ✕
-            </button>
-          </div>
-          <div className="cmd-tiles">
-            {tiles.map((tile, i) => (
-              <button
-                key={tile.id}
-                className={`cmd-tile liquid-glass${screen === tile.id ? " is-active" : ""}`}
-                style={{ ["--i" as string]: i }}
-                onClick={() => {
-                  setScreen(tile.id);
-                  setOpen(false);
-                }}
-              >
-                <span className="lg-sheen" aria-hidden />
-                <span className="cmd-ic">{glyph(tile.icon)}</span>
-                <span className="cmd-lb" style={disp}>
-                  {label(tile.id, tile.label)}
-                </span>
-                <span className="cmd-gp" style={mono}>
-                  {groupLabel(tile.group)}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
