@@ -12,6 +12,7 @@ import type { AuroraIconName } from "./theme/icons";
 /** A settings category — one expandable/navigable row in the hub. */
 export type SettingsCategoryId =
   | "account"
+  | "social"
   | "preferences"
   | "logger"
   | "notifications"
@@ -56,6 +57,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: "reach",
     label: "Who can see & reach you",
     categories: [
+      { id: "social", icon: "user-circle", title: "Public profile", subtitle: "Handle, bio, photo, who can see your results" },
       { id: "privacy", icon: "eye", title: "Privacy", subtitle: "Sharing, discoverability, analytics" },
       { id: "coaching", icon: "user-add", title: "Coaching & access", subtitle: "Become a coach, request access" },
     ],

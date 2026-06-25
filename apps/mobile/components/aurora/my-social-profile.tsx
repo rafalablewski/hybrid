@@ -6,25 +6,25 @@ import { useTheme } from "../../lib/theme";
 import { getMyProfile, putMyProfile, getConnections, respondFollow, setCloseFriend, follow } from "../../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton, SPill } from "../social-kit";
 
-// The user's PUBLIC social profile (handle, privacy, stats, connections) as an
-// embeddable section — lives inside the account Profile ("You") screen so there
-// is ONE profile, not two. No screen wrapper / back button of its own.
-export default function MySocialProfile() {
+// The user's PUBLIC social profile, split into a read-only VIEW (shown on the
+// account Profile "You" screen — card + stats + followers/following) and an
+// EDIT form (handle/bio/photo/visibility — lives in Settings + a dedicated
+// edit route). So there is ONE profile, edited in one place.
+
+const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 14 } as const);
+
+export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const C = useTheme().palette;
   const [data, setData] = useState<any>(null);
-  const [conns, setConns] = useState<any>(null);
-  const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
-  const [tab, setTab] = useState<"friends" | "following" | "followers" | "requests">("friends");
-  const [drawer, setDrawer] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const load = async () => {
     const d: any = await getMyProfile();
     setData(d);
     if (d.profile) setForm({ handle: d.profile.handle, displayName: d.profile.displayName ?? "", bio: d.profile.bio ?? "", visibility: d.profile.visibility, avatarUrl: d.profile.avatarUrl ?? "" });
     else setForm((f: any) => ({ ...f, handle: d.suggestedHandle ?? "" }));
-    setConns(await getConnections());
   };
   useEffect(() => { load(); }, []);
 
@@ -34,43 +34,66 @@ export default function MySocialProfile() {
     if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return; }
     const r: any = await putMyProfile({ ...form, handle: h });
     if (r.error) { setErr(r.error); return; }
-    setEditing(false); load();
+    if (onDone) onDone();
+    else { setSaved(true); setTimeout(() => setSaved(false), 1500); }
   };
 
   if (!data) return <Loading />;
   const claimed = !!data.profile;
+  const inp = inpStyle(C);
+  return (
+    <Card>
+      {!claimed && <Text style={{ color: C.ash, fontSize: 13, marginBottom: 10 }}>Claim a handle so friends can find and follow you.</Text>}
+      <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Handle</Text>
+      <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder="handle" placeholderTextColor={C.ash} autoCapitalize="none" style={{ ...inp, marginBottom: 12 }} />
+      <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Display name</Text>
+      <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder="Optional" placeholderTextColor={C.ash} style={{ ...inp, marginBottom: 12 }} />
+      <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Bio</Text>
+      <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder="Hybrid athlete · runner · lifter…" placeholderTextColor={C.ash} style={{ ...inp, minHeight: 64, marginBottom: 12 }} />
+      <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Avatar image URL</Text>
+      <TextInput value={form.avatarUrl} onChangeText={(v) => setForm({ ...form, avatarUrl: v })} autoCapitalize="none" placeholder="https://…  (upload coming soon)" placeholderTextColor={C.ash} style={{ ...inp, marginBottom: 12 }} />
+      <Text style={{ color: C.ash, fontSize: 12, marginBottom: 6 }}>Who can see your results</Text>
+      <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+        {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
+      </View>
+      {err && <Text style={{ color: C.red, fontSize: 13, marginBottom: 8 }}>{err}</Text>}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <SButton label={saved ? "Saved ✓" : claimed ? "Save" : "Claim handle"} onPress={save} />
+        {onDone && <SButton label={claimed ? "Done" : "Back"} ghost onPress={onDone} />}
+      </View>
+    </Card>
+  );
+}
+
+export function MySocialProfileView({ onEdit }: { onEdit?: () => void }) {
+  const C = useTheme().palette;
+  const [data, setData] = useState<any>(null);
+  const [conns, setConns] = useState<any>(null);
+  const [tab, setTab] = useState<"followers" | "following" | "friends" | "requests">("followers");
+  const [drawer, setDrawer] = useState<string | null>(null);
+
+  const load = async () => {
+    setData(await getMyProfile());
+    setConns(await getConnections());
+  };
+  useEffect(() => { load(); }, []);
+
+  if (!data) return <Loading />;
+  const claimed = !!data.profile;
   const p = data.profile;
-  const showForm = !claimed || editing;
-  const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 14 } as const;
   const connList: any[] = conns ? (tab === "friends" ? conns.friends : tab === "following" ? conns.following : tab === "followers" ? conns.followers : conns.requests) ?? [] : [];
 
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase" }}>Public profile</Text>
-        {claimed && !editing && <SButton label="Edit" ghost small onPress={() => setEditing(true)} />}
+        <SButton label={claimed ? "Edit profile" : "Set up"} ghost small onPress={onEdit} />
       </View>
 
-      {showForm ? (
+      {!claimed ? (
         <Card>
-          {!claimed && <Text style={{ color: C.ash, fontSize: 13, marginBottom: 10 }}>Claim a handle so friends can find and follow you.</Text>}
-          <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Handle</Text>
-          <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder="handle" placeholderTextColor={C.ash} autoCapitalize="none" style={{ ...inp, marginBottom: 12 }} />
-          <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Display name</Text>
-          <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder="Optional" placeholderTextColor={C.ash} style={{ ...inp, marginBottom: 12 }} />
-          <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Bio</Text>
-          <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder="Hybrid athlete · runner · lifter…" placeholderTextColor={C.ash} style={{ ...inp, minHeight: 64, marginBottom: 12 }} />
-          <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Avatar image URL</Text>
-          <TextInput value={form.avatarUrl} onChangeText={(v) => setForm({ ...form, avatarUrl: v })} autoCapitalize="none" placeholder="https://…  (upload coming soon)" placeholderTextColor={C.ash} style={{ ...inp, marginBottom: 12 }} />
-          <Text style={{ color: C.ash, fontSize: 12, marginBottom: 6 }}>Who can see your results</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
-            {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
-          </View>
-          {err && <Text style={{ color: C.red, fontSize: 13, marginBottom: 8 }}>{err}</Text>}
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <SButton label={claimed ? "Save" : "Claim handle"} onPress={save} />
-            {claimed && <SButton label="Cancel" ghost onPress={() => { setEditing(false); setErr(null); }} />}
-          </View>
+          <Text style={{ color: C.ash, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>Claim a handle so friends can find and follow you — set it up in Settings.</Text>
+          <SButton label="Set up your profile" onPress={onEdit} />
         </Card>
       ) : (
         <Card>
@@ -97,7 +120,7 @@ export default function MySocialProfile() {
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 18, paddingBottom: 12 }}>
-        {(["friends", "following", "followers", "requests"] as const).map((tb) => (
+        {(["followers", "following", "friends", "requests"] as const).map((tb) => (
           <SPill key={tb} label={tb[0]!.toUpperCase() + tb.slice(1)} active={tab === tb} onPress={() => setTab(tb)} count={conns ? (conns[tb]?.length || undefined) : undefined} />
         ))}
       </ScrollView>

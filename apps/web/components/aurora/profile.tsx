@@ -26,7 +26,7 @@ import { useHasActiveCoach } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
-import SocialProfile from "../social-profile";
+import { SocialProfileView } from "../social-profile";
 
 /**
  * AURORA Profile · "You" (web) — the Apple-ID / Tesla-account membership screen.
@@ -349,10 +349,10 @@ export default function AuroraProfile({
         <Tile icon="user" k={t("w.account.profile.tile-coach")} sm={coached ? t("w.account.profile.coach-active") : t("w.account.profile.find-coach")} onClick={go("coach", "/coach")} />
       </div>
 
-      {/* PUBLIC PROFILE — your social @handle, privacy + circle, merged into the
-          one Profile screen (no separate "My profile"). */}
+      {/* PUBLIC PROFILE — read-only social card + followers/following; editing
+          (handle/bio/avatar/privacy) lives in Settings via onEdit. */}
       <div style={{ marginTop: 28 }}>
-        <SocialProfile embedded />
+        <SocialProfileView onEdit={() => go("settings", "/settings")()} />
       </div>
     </div>
   );

@@ -122,18 +122,15 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
   );
 }
 
-// ----- The public-profile section (handle, privacy, stats, connections).
-// `embedded` renders it as a section inside the account Profile screen (the
-// merged home for everything "you"); standalone keeps the full screen header.
-export default function SocialProfile({ embedded = false }: { embedded?: boolean } = {}) {
+// ----- The EDIT form (handle · name · bio · avatar · privacy/visibility).
+// Lives in Settings AND the dedicated Edit-profile surface — NOT inline on the
+// Profile screen. `onDone` (when provided) shows a Back/Cancel + fires on save.
+export function SocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<any>(null);
-  const [conns, setConns] = useState<any>(null);
-  const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
-  const [tab, setTab] = useState<"friends" | "following" | "followers" | "requests">("friends");
-  const [drawer, setDrawer] = useState<string | null>(null);
+  const [savedMsg, setSavedMsg] = useState(false);
   const busy = useBusy();
 
   const load = async () => {
@@ -141,7 +138,6 @@ export default function SocialProfile({ embedded = false }: { embedded?: boolean
     setData(d);
     if (d.profile) setForm({ handle: d.profile.handle, displayName: d.profile.displayName ?? "", bio: d.profile.bio ?? "", visibility: d.profile.visibility, avatarUrl: d.profile.avatarUrl ?? "" });
     else setForm((f) => ({ ...f, handle: d.suggestedHandle ?? "" }));
-    setConns(await jget("/api/social/connections"));
   };
   useEffect(() => { load(); }, []);
 
@@ -151,14 +147,12 @@ export default function SocialProfile({ embedded = false }: { embedded?: boolean
     if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return; }
     const r: any = await jsend("/api/social/profile", "PUT", { ...form, handle: h });
     if (r.error) { setErr(r.error); return; }
-    setEditing(false);
-    await load();
+    if (onDone) onDone();
+    else { setSavedMsg(true); setTimeout(() => setSavedMsg(false), 1500); }
   });
 
   if (!data) return <EmptyState title="Loading…" />;
   const claimed = !!data.profile;
-  const p = data.profile;
-
   const field = (label: string, node: React.ReactNode) => (
     <label style={{ display: "block", marginBottom: 12 }}>
       <span style={{ display: "block", fontSize: 12, color: C("ash"), marginBottom: 4 }}>{label}</span>
@@ -167,45 +161,69 @@ export default function SocialProfile({ embedded = false }: { embedded?: boolean
   );
   const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: aurora ? 14 : 8, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 14 } as const;
 
-  const showForm = !claimed || editing;
+  return (
+    <div style={{ maxWidth: 460 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>Public profile</div>
+      <div style={card(aurora)}>
+        {!claimed && <p style={{ color: C("ash"), fontSize: 13, marginTop: 0 }}>Claim a handle so friends can find and follow you.</p>}
+        {field("Handle", <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>)}
+        {field("Display name", <input style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />)}
+        {field("Bio", <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />)}
+        {field("Avatar image URL", (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={40} />
+            <input style={inputStyle} value={form.avatarUrl ?? ""} onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })} placeholder="https://…  (upload coming soon)" />
+          </div>
+        ))}
+        {field("Who can see your results", (
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["public", "followers", "private"] as const).map((v) => (
+              <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
+            ))}
+          </div>
+        ))}
+        {err && <div style={{ color: C("red"), fontSize: 13, marginBottom: 8 }}>{err}</div>}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <Btn onClick={save} disabled={busy.is("save")}>{busy.is("save") ? "Saving…" : savedMsg ? "Saved ✓" : claimed ? "Save" : "Claim handle"}</Btn>
+          {onDone && <Btn ghost onClick={onDone}>{claimed ? "Done" : "Back"}</Btn>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
+// ----- The READ-ONLY public profile + followers/following, shown on the account
+// Profile ("You") screen. Editing happens in Settings (onEdit navigates there).
+export function SocialProfileView({ onEdit }: { onEdit?: () => void }) {
+  const { aurora } = useSocialTheme();
+  const [data, setData] = useState<any>(null);
+  const [conns, setConns] = useState<any>(null);
+  const [tab, setTab] = useState<"followers" | "following" | "friends" | "requests">("followers");
+  const [drawer, setDrawer] = useState<string | null>(null);
+  const busy = useBusy();
+
+  const load = async () => {
+    setData(await jget("/api/social/profile"));
+    setConns(await jget("/api/social/connections"));
+  };
+  useEffect(() => { load(); }, []);
+
+  if (!data) return <EmptyState title="Loading…" />;
+  const claimed = !!data.profile;
+  const p = data.profile;
   const connList: any[] = conns ? (tab === "friends" ? conns.friends : tab === "following" ? conns.following : tab === "followers" ? conns.followers : conns.requests) ?? [] : [];
 
   return (
     <div>
-      {embedded ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>Public profile</div>
-          {claimed && !editing && <Btn ghost small onClick={() => setEditing(true)}>Edit</Btn>}
-        </div>
-      ) : (
-        <ScreenHead title="My profile" sub="Your public @handle, privacy and your circle." right={claimed && !editing ? <Btn ghost small onClick={() => setEditing(true)}>Edit</Btn> : undefined} />
-      )}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>Public profile</div>
+        <Btn ghost small onClick={onEdit}>{claimed ? "Edit profile" : "Set up"}</Btn>
+      </div>
 
-      {showForm ? (
+      {!claimed ? (
         <div style={card(aurora, { maxWidth: 460 })}>
-          {!claimed && <p style={{ color: C("ash"), fontSize: 13, marginTop: 0 }}>Claim a handle so friends can find and follow you.</p>}
-          {field("Handle", <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>)}
-          {field("Display name", <input style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />)}
-          {field("Bio", <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />)}
-          {field("Avatar image URL", (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={40} />
-              <input style={inputStyle} value={form.avatarUrl ?? ""} onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })} placeholder="https://…  (upload coming soon)" />
-            </div>
-          ))}
-          {field("Who can see your results", (
-            <div style={{ display: "flex", gap: 8 }}>
-              {(["public", "followers", "private"] as const).map((v) => (
-                <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? "Public" : v === "followers" ? "Followers" : "Private"}</Pill>
-              ))}
-            </div>
-          ))}
-          {err && <div style={{ color: C("red"), fontSize: 13, marginBottom: 8 }}>{err}</div>}
-          <div style={{ display: "flex", gap: 8 }}>
-            <Btn onClick={save} disabled={busy.is("save")}>{busy.is("save") ? "Saving…" : claimed ? "Save" : "Claim handle"}</Btn>
-            {claimed && <Btn ghost onClick={() => { setEditing(false); setErr(null); }}>Cancel</Btn>}
-          </div>
+          <p style={{ color: C("ash"), fontSize: 13, marginTop: 0, lineHeight: 1.5 }}>Claim a handle so friends can find and follow you — set it up in Settings.</p>
+          <Btn onClick={onEdit}>Set up your profile</Btn>
         </div>
       ) : (
         <div style={card(aurora, { maxWidth: 460 })}>
@@ -222,7 +240,7 @@ export default function SocialProfile({ embedded = false }: { embedded?: boolean
         </div>
       )}
 
-      {/* Connections */}
+      {/* Connections — followers & following are visible right here. */}
       <div style={{ marginTop: 24, maxWidth: 560 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           {(["friends", "following", "followers", "requests"] as const).map((tb) => (

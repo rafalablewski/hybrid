@@ -14,13 +14,14 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
+import { SocialProfileEdit } from "./social-profile";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type CoachStatus = "pending" | "approved" | "denied";
 
 // Per-category accent — the icon-tile tint, matching the V1 mockup + mobile.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME, preferences: BLUE, logger: AMBER, notifications: VIOLET,
+  account: LIME, social: LIME, preferences: BLUE, logger: AMBER, notifications: VIOLET,
   privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME,
   data: ASH, danger: RED,
 };
@@ -270,6 +271,8 @@ export default function AccountSettings() {
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </>
         );
+      case "social":
+        return <SocialProfileEdit />;
       case "preferences":
         return (
           <>

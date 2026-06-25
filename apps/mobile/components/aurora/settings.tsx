@@ -35,7 +35,7 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 
 /** Per-category accent — the icon-tile tint, matching the V1 mockup. */
 const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
-  account: "lime", preferences: "blue", logger: "amber", notifications: "violet",
+  account: "lime", social: "lime", preferences: "blue", logger: "amber", notifications: "violet",
   privacy: "blue", coaching: "violet", security: "blue", subscription: "lime",
   data: "ash", danger: "red",
 };
@@ -189,6 +189,7 @@ export default function AuroraSettings() {
 
   // Rows that navigate to a dedicated screen instead of expanding.
   const ROUTES: Partial<Record<SettingsCategoryId, string>> = {
+    social: "/profile-edit",
     logger: "/logger-settings",
     coaching: "/coach-apply",
     subscription: "/upgrade",
