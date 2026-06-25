@@ -116,6 +116,17 @@ describe("the Soviet 8-week program", () => {
     expect(SOVIET_OWL_8WK.weeks[0]!.days[2]!.kind).toBe("active-rest");
   });
 
+  it("carries the week-1 accessory block as RPE-kind gym entries (not % lifts)", () => {
+    const pm = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.sessions[1]!; // Day 1 PM
+    const acc = pm.lifts.filter((l) => liftKind(l) === "rpe");
+    expect(acc.map((l) => l.name)).toEqual(["Clean Pull", "Snatch Balance", "Push Press", "Front Squat", "Chinese Plank"]);
+    expect(acc[0]).toMatchObject({ setsReps: "3–5 × 3–5", prescription: "3–5 × 3–5", note: "pulling power · @ 90–110% of clean" });
+    // they don't count toward NL, so the day total is unchanged
+    expect(planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.nl).toBe(160);
+    // and they vanish in later weeks
+    expect(planProgramView(SOVIET_OWL_8WK, { week: 2 }).days[0]!.sessions.every((s) => s.lifts.every((l) => liftKind(l) !== "rpe"))).toBe(true);
+  });
+
   it("references squat % off the squat max (so >100% is valid)", () => {
     // Week 4 PM day 4: Back Squat ramps to 110%.
     const allSteps = SOVIET_OWL_8WK.weeks

@@ -16,6 +16,7 @@ import {
   type PlanDay,
   type PlanDayKind,
   type PlanLift,
+  type PlanEntry,
   type PlanSession,
 } from "./plan-program";
 
@@ -23,9 +24,13 @@ import {
 
 // A lift is [name, notation] or [name, notation, tempo].
 type RawLift = [string, string] | [string, string, string];
+// An accessory: a name + a free-text scheme (range/time volume) + a "best for" note.
+type RawAcc = { name: string; scheme: string; note?: string };
 interface RawSession {
   label?: "AM" | "PM";
   lifts: RawLift[];
+  /** classic gym accessories (sets×reps×…), rendered in their own block. */
+  acc?: RawAcc[];
 }
 // A training day is an array of sessions; a non-training day is its kind.
 type RawDay = RawSession[] | Exclude<PlanDayKind, "train">;
@@ -56,12 +61,17 @@ function buildLift([name, notation, tempo]: RawLift): PlanLift {
   };
 }
 
+function buildAcc(a: RawAcc): PlanEntry {
+  return { label: a.name, detail: "", scheme: a.scheme, ...(a.note ? { note: a.note } : {}) };
+}
+
 function buildDay(raw: RawDay, index: number): PlanDay {
   const title = `Day ${index}`;
   if (typeof raw === "string") return { index, kind: raw, title, sessions: [] };
   const sessions: PlanSession[] = raw.map((s) => ({
     ...(s.label ? { label: s.label } : {}),
     lifts: s.lifts.map(buildLift),
+    ...(s.acc ? { entries: s.acc.map(buildAcc) } : {}),
   }));
   return { index, kind: "train", title, sessions };
 }
@@ -80,9 +90,19 @@ function buildProgram(meta: Omit<PlanProgram, "weeks">, weeks: RawDay[][]): Plan
 
 // AM/PM helpers keep the data readable.
 const am = (lifts: RawLift[]): RawSession => ({ label: "AM", lifts });
-const pm = (lifts: RawLift[]): RawSession => ({ label: "PM", lifts });
+const pm = (lifts: RawLift[], acc?: RawAcc[]): RawSession => ({ label: "PM", lifts, ...(acc ? { acc } : {}) });
 const one = (lifts: RawLift[]): RawSession => ({ lifts }); // single daily session
 const GM: RawLift = ["Good Morning", "(X/8)4"];
+
+// Week-1-only accessory block (the "Accessory Selection Matrix") — rendered in
+// its own Accessories block, separate from the % barbell work.
+const WEEK1_ACC: RawAcc[] = [
+  { name: "Clean Pull", scheme: "3–5 × 3–5", note: "pulling power · @ 90–110% of clean" },
+  { name: "Snatch Balance", scheme: "3–4 × 1–3", note: "speed under bar" },
+  { name: "Push Press", scheme: "3–5 × 3–5", note: "jerk drive" },
+  { name: "Front Squat", scheme: "4–6 × 2–4", note: "clean recovery" },
+  { name: "Chinese Plank", scheme: "3 × 30–60 s", note: "core endurance" },
+];
 
 const SOVIET_WEEKS: RawDay[][] = [
   // ---------------- WEEK 1 ----------------
@@ -97,7 +117,7 @@ const SOVIET_WEEKS: RawDay[][] = [
         ["Power Clean & Jerk", "(60%/4+1)4, (70%/3+1)4"],
         ["Clean Extension", "60%/5, (70%/4)2, (80%/4)2"],
         GM,
-      ]),
+      ], WEEK1_ACC),
     ],
     [
       one([

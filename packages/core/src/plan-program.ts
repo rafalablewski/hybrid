@@ -70,6 +70,11 @@ export interface PlanEntry {
   /** Key into the athlete's `maxes` / program inputs — when the athlete
    *  fills in a weight for this key, it appears in the prescription. */
   weightRef?: string;
+  /** Free-text sets×reps scheme for an accessory whose volume is a RANGE or
+   *  time (e.g. "3–5 × 3–5", "3 × 30–60 s"). When present the entry is a
+   *  structured gym accessory: it shows in the Sets×Reps column / prescription
+   *  and groups with the strength work, not the prose runs. */
+  scheme?: string;
 }
 
 export type PlanDayKind = "train" | "active-rest" | "rest" | "competition";
@@ -339,6 +344,7 @@ export function dayContentSummary(day: ProgramDayView): string | null {
  *  Structured hypo entries → "4×6 · 80 kg · @9" (or without kg when unknown).
  *  Prose entries (endurance / conditioning) → detail string unchanged. */
 function formatEntry(e: PlanEntry, maxes?: Record<string, number>): string {
+  if (e.scheme != null) return e.rpe != null ? `${e.scheme} · @${e.rpe}` : e.scheme;
   if (e.sets == null) return e.detail;
   const reps = e.reps === "AMRAP" ? "AMRAP" : `${e.reps ?? ""}`;
   const parts: string[] = [`${e.sets}×${reps}`];
@@ -428,9 +434,11 @@ export function planProgramView(
           ...(s.entries ?? []).map((e) => {
             const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;
             const setsReps =
-              e.sets != null
-                ? `${e.sets}×${e.reps === "AMRAP" ? "AMRAP" : (e.reps ?? "")}`
-                : undefined;
+              e.scheme != null
+                ? e.scheme
+                : e.sets != null
+                  ? `${e.sets}×${e.reps === "AMRAP" ? "AMRAP" : (e.reps ?? "")}`
+                  : undefined;
             return {
               name: e.label,
               prescription: formatEntry(e, maxes),
