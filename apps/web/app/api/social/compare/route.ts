@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { compareAthletes, relationTo, canViewResults, type Visibility } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, edgesFor, allSessionsFor, authorCards } from "@/lib/social";
+import { tableMissing, edgesFor, allSessionsFor, authorCards, blockedIdsFor } from "@/lib/social";
 
 // Head-to-head comparison between me and another athlete (by @handle). Gated by
 // the same privacy rule as the feed: I must be allowed to see their results.
@@ -17,6 +17,9 @@ export async function GET(request: Request) {
     const profile = await prisma.socialProfile.findUnique({ where: { handle }, select: { userId: true, handle: true, displayName: true, visibility: true } });
     if (!profile) return NextResponse.json({ error: "not found" }, { status: 404 });
     if (profile.userId === me.id) return NextResponse.json({ error: "Pick someone else to compare." }, { status: 400 });
+
+    const blocked = await blockedIdsFor(me.id);
+    if (blocked.has(profile.userId)) return NextResponse.json({ error: "not found" }, { status: 404 });
 
     const edges = await edgesFor(me.id);
     const relation = relationTo(me.id, profile.userId, edges);

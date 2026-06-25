@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useTheme } from "../lib/theme";
 import { F } from "../lib/ui";
-import { getProfile, follow, unfollow, getCompare } from "../lib/social-api";
+import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -74,6 +74,15 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   const rel: string = data?.relation ?? "none";
   const following = rel === "following" || rel === "friend" || rel === "close";
 
+  const doBlock = () => Alert.alert("Block", `Block @${handle}? You'll disappear from each other's feeds, search and leaderboards.`, [
+    { text: "Cancel", style: "cancel" },
+    { text: "Block", style: "destructive", onPress: async () => { await blockUser({ handle }); onClose(); } },
+  ]);
+  const doReport = () => { if (!p?.userId) return; Alert.alert("Report", `Report @${handle} to the moderators?`, [
+    { text: "Cancel", style: "cancel" },
+    { text: "Report", style: "destructive", onPress: async () => { await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); Alert.alert("Thanks", "Reported to the moderators."); } },
+  ]); };
+
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,.6)", justifyContent: "flex-end" }}>
@@ -112,6 +121,12 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 ) : (
                   <View style={{ marginTop: 14, backgroundColor: C.ink2, borderRadius: 12, padding: 14 }}>
                     <Text style={{ color: C.ash, fontSize: 13 }}>🔒 Their results are private. {rel === "requested" ? "Request pending." : "Follow to see their training."}</Text>
+                  </View>
+                )}
+                {rel !== "self" && (
+                  <View style={{ flexDirection: "row", gap: 18, marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
+                    <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: 12, fontFamily: F.bold }}>⚐ Report</Text></Pressable>
+                    <Pressable onPress={doBlock}><Text style={{ color: C.red, fontSize: 12, fontFamily: F.bold }}>⊘ Block</Text></Pressable>
                   </View>
                 )}
                 {cmp && (

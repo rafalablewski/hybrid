@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buildSocialFeed, type FeedSubjectInput } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, recentSessionsByUsers, authorCards } from "@/lib/social";
+import { tableMissing, recentSessionsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
 
 // The activity feed: my active followees' recent sessions + PRs, built by the
 // core engine, enriched with kudos/comment counts and whether I've cheered each
@@ -20,8 +20,10 @@ export async function GET(request: Request) {
       where: { followerId: me.id, status: "active" },
       select: { followeeId: true, closeFriend: true },
     });
-    // Include my OWN activity in the feed too (like Strava's "you").
-    const ids = [me.id, ...follows.map((f) => f.followeeId)];
+    // Include my OWN activity in the feed too (like Strava's "you"), minus
+    // anyone in a block relationship with me.
+    const blocked = await blockedIdsFor(me.id);
+    const ids = [me.id, ...follows.map((f) => f.followeeId).filter((id) => !blocked.has(id))];
     const closeSet = new Set(follows.filter((f) => f.closeFriend).map((f) => f.followeeId));
 
     const sinceMs = Date.now() - WINDOW_DAYS * 86_400_000;

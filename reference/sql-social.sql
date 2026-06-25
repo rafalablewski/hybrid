@@ -110,6 +110,27 @@ create policy comment_author on "Comment" for all
 drop policy if exists comment_owner_read on "Comment";
 create policy comment_owner_read on "Comment" for select using ("ownerId" = public.app_user_id());
 
+-- ============================ Blocks (safety) ============================
+create table if not exists "Block" (
+  "id"        text primary key default gen_random_uuid()::text,
+  "blockerId" text not null references "User"("id") on delete cascade,
+  "blockedId" text not null references "User"("id") on delete cascade,
+  "createdAt" timestamp(3) not null default now(),
+  unique ("blockerId", "blockedId")
+);
+create index if not exists "Block_blockerId_idx" on "Block" ("blockerId");
+create index if not exists "Block_blockedId_idx" on "Block" ("blockedId");
+
+alter table "Block" enable row level security;
+-- a user reads/writes only their own blocks (each party can see a block they're in)
+drop policy if exists block_party_read on "Block";
+create policy block_party_read on "Block" for select
+  using ("blockerId" = public.app_user_id() or "blockedId" = public.app_user_id());
+drop policy if exists block_owner_write on "Block";
+create policy block_owner_write on "Block" for all
+  using ("blockerId" = public.app_user_id())
+  with check ("blockerId" = public.app_user_id());
+
 -- ============================ Coach marketplace ============================
 create table if not exists "CoachProfile" (
   "userId"           text primary key references "User"("id") on delete cascade,

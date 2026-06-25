@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { relationTo, canViewResults, profileStats, type Visibility } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, edgesFor, allSessionsFor } from "@/lib/social";
+import { tableMissing, edgesFor, allSessionsFor, blockedIdsFor } from "@/lib/social";
 
 // A user's PUBLIC profile by @handle. The card (handle/name/bio) is always
 // returned; RESULTS (stats) are gated by the privacy visibility × relation.
@@ -19,6 +19,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
       include: { user: { select: { id: true, name: true, coachVerified: true, role: true } } },
     });
     if (!profile) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+    // A block relationship hides the profile entirely (either direction).
+    const blocked = await blockedIdsFor(me.id);
+    if (blocked.has(profile.userId)) return NextResponse.json({ error: "not found" }, { status: 404 });
 
     const edges = await edgesFor(me.id);
     const relation = relationTo(me.id, profile.userId, edges);

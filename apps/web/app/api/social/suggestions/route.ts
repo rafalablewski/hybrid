@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, authorCards } from "@/lib/social";
+import { tableMissing, authorCards, blockedIdsFor } from "@/lib/social";
 
 // "People you may know": friends-of-friends and people who share a coach with
 // me, minus anyone I already follow. Each carries a short reason.
@@ -11,8 +11,11 @@ export async function GET(request: Request) {
   if (!me) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   try {
-    const myFollows = await prisma.follow.findMany({ where: { followerId: me.id }, select: { followeeId: true } });
-    const exclude = new Set<string>([me.id, ...myFollows.map((f) => f.followeeId)]);
+    const [myFollows, blocked] = await Promise.all([
+      prisma.follow.findMany({ where: { followerId: me.id }, select: { followeeId: true } }),
+      blockedIdsFor(me.id),
+    ]);
+    const exclude = new Set<string>([me.id, ...myFollows.map((f) => f.followeeId), ...blocked]);
     const reason = new Map<string, string>();
 
     // friends-of-friends: people my followees follow

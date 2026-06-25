@@ -36,6 +36,23 @@ export async function deliverProgramAssignments(
   return rows.length;
 }
 
+/** Ids the user has blocked OR who have blocked them — mutual invisibility.
+ *  Excluded from feed/search/suggestions/leaderboard and barred from following.
+ *  Soft-degrades to an empty set if the Block table isn't migrated yet. */
+export async function blockedIdsFor(userId: string): Promise<Set<string>> {
+  try {
+    const rows = await prisma.block.findMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    const out = new Set<string>();
+    for (const r of rows) out.add(r.blockerId === userId ? r.blockedId : r.blockerId);
+    return out;
+  } catch {
+    return new Set();
+  }
+}
+
 /** All follow edges this user is a party to (either side), for relation maths. */
 export async function edgesFor(userId: string): Promise<FollowEdge[]> {
   const rows = await prisma.follow.findMany({

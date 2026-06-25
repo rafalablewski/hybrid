@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, edgesFor } from "@/lib/social";
+import { tableMissing, edgesFor, blockedIdsFor } from "@/lib/social";
 import { relationTo } from "@hybrid/core";
 
 // Find people by @handle, display name or real name. Returns profile cards +
@@ -26,8 +26,8 @@ export async function GET(request: Request) {
       include: { user: { select: { name: true, coachVerified: true, role: true } } },
       take: 20,
     });
-    const edges = await edgesFor(me.id);
-    const results = profiles.map((p) => ({
+    const [edges, blocked] = await Promise.all([edgesFor(me.id), blockedIdsFor(me.id)]);
+    const results = profiles.filter((p) => !blocked.has(p.userId)).map((p) => ({
       userId: p.userId,
       handle: p.handle,
       displayName: p.displayName ?? p.user.name,

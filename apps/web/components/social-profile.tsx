@@ -44,6 +44,8 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
   const doFollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "POST", { handle }); await load(); });
   const doUnfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { handle }); await load(); });
   const runCompare = () => busy.run("c", async () => { const r: any = await jget(`/api/social/compare?handle=${handle}`); setCompare(r.compare ?? null); });
+  const doBlock = () => { if (!window.confirm(`Block @${handle}? You'll disappear from each other's feeds, search and leaderboards.`)) return; busy.run("b", async () => { await jsend("/api/social/block", "POST", { handle }); onClose(); }); };
+  const doReport = () => { if (!p?.userId) return; if (!window.confirm(`Report @${handle} to the moderators?`)) return; busy.run("r", async () => { await jsend("/api/reports", "POST", { targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); alert("Thanks — reported to the moderators."); }); };
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
@@ -89,6 +91,13 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
                     <span style={{ fontFamily: "var(--font-mono)", color: C("lime") }}>{l.e1rm} kg</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {relation !== "self" && (
+              <div style={{ display: "flex", gap: 16, marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
+                <button onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ Report</button>
+                <button onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: C("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ Block</button>
               </div>
             )}
 

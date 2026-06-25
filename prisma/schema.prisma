@@ -92,6 +92,8 @@ model User {
   kudosReceived    Kudos[]             @relation("kudosOwner")
   commentsAuthored Comment[]           @relation("commentAuthor")
   commentsReceived Comment[]           @relation("commentOwner")
+  blocksMade       Block[]             @relation("blocker")
+  blocksReceived   Block[]             @relation("blocked")
   enrollments      ProgramEnrollment[] @relation("enrollClient")  // programs I started
   coachEnrollments ProgramEnrollment[] @relation("enrollCoach")   // enrolments into my programs
   reviewsReceived  CoachReview[]       @relation("reviewCoach")    // reviews of me as a coach
@@ -275,6 +277,22 @@ model Comment {
 
   @@index([ownerId, subjectType, subjectId])
   @@index([userId])
+}
+
+// A user blocking another — mutual invisibility: blocked pairs never see each
+// other in the feed, search, suggestions, leaderboards or compare, and can't
+// follow. Creating a block also tears down any follow edges between them.
+model Block {
+  id        String   @id @default(cuid())
+  blocker   User     @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockerId String
+  blocked   User     @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  blockedId String
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }
 
 // ---- Coach marketplace (storefront · enrolment · reviews) ----------------

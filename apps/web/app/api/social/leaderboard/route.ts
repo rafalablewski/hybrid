@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { friendLeaderboard, type LeaderboardMetric, type LeaderEntry } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, friendIds, recentSessionsByUsers, authorCards } from "@/lib/social";
+import { tableMissing, friendIds, recentSessionsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
 
 // This week's leaderboard across my FRIENDS (mutual follows) + me. Ranked by the
 // requested metric (volume/sessions/distance/activeDays/streak/prs).
@@ -17,8 +17,8 @@ export async function GET(request: Request) {
   const metric = (METRICS.has(raw) ? raw : "volume") as LeaderboardMetric;
 
   try {
-    const friends = await friendIds(me.id);
-    const ids = [me.id, ...friends];
+    const [friends, blocked] = await Promise.all([friendIds(me.id), blockedIdsFor(me.id)]);
+    const ids = [me.id, ...friends.filter((id) => !blocked.has(id))];
     const sinceMs = Date.now() - WINDOW_DAYS * 86_400_000;
     const [sessionsByUser, cards] = await Promise.all([
       recentSessionsByUsers(ids, sinceMs),

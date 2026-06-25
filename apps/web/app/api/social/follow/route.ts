@@ -3,7 +3,7 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { tableMissing } from "@/lib/social";
+import { tableMissing, blockedIdsFor } from "@/lib/social";
 
 // Follow / unfollow. A follow of a PRIVATE profile lands PENDING (the target
 // approves via /api/social/follow/respond); otherwise it's ACTIVE immediately.
@@ -32,6 +32,9 @@ export async function POST(request: Request) {
     const target = await resolveTarget(b);
     if (!target) return NextResponse.json({ error: "user not found" }, { status: 404 });
     if (target.id === me.id) return NextResponse.json({ error: "You can't follow yourself." }, { status: 400 });
+
+    const blocked = await blockedIdsFor(me.id);
+    if (blocked.has(target.id)) return NextResponse.json({ error: "Unavailable." }, { status: 403 });
 
     const profile = await prisma.socialProfile.findUnique({ where: { userId: target.id }, select: { visibility: true } });
     const status = profile?.visibility === "private" ? "pending" : "active";

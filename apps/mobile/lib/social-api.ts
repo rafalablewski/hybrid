@@ -40,6 +40,9 @@ export const postComment = (b: unknown) => sapi("/api/social/comments", "POST", 
 export const getLeaderboard = (metric: string) => sapi(`/api/social/leaderboard?metric=${metric}`);
 export const getCompare = (handle: string) => sapi(`/api/social/compare?handle=${handle}`);
 export const getSuggestions = () => sapi("/api/social/suggestions");
+export const blockUser = (b: unknown) => sapi("/api/social/block", "POST", b);
+export const unblockUser = (b: unknown) => sapi("/api/social/block", "DELETE", b);
+export const reportTarget = (b: unknown) => sapi("/api/reports", "POST", b);
 
 // ---- marketplace
 export const getCoaches = (q?: string) => sapi(`/api/coaches${q ? `?q=${encodeURIComponent(q)}` : ""}`);
