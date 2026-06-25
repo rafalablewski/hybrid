@@ -312,6 +312,16 @@ export interface ProgramView {
 export const isGymLift = (l: ProgramLiftView): boolean => !!(l.steps && l.steps.length) || l.rpe != null || l.setsReps != null;
 export const isProseLift = (l: ProgramLiftView): boolean => !isGymLift(l);
 
+/** The three content kinds a day can mix, each rendered in its own block so the
+ *  formats never collide: `percent` (%-of-1RM barbell work — the %-ramp), `rpe`
+ *  (classic sets×reps×RPE accessory — the heat table), `run` (prose workout). */
+export type LiftKind = "run" | "percent" | "rpe";
+export function liftKind(l: ProgramLiftView): LiftKind {
+  if (l.steps && l.steps.length) return "percent";
+  if (l.rpe != null || l.setsReps != null) return "rpe";
+  return "run";
+}
+
 /** Day-header summary: the discipline volume when present ("160 lifts",
  *  "5 exercises"), else a run/lift breakdown for a hybrid day ("1 run · 3 lifts"). */
 export function dayContentSummary(day: ProgramDayView): string | null {

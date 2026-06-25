@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, rpeColor, workoutColor, isGymLift, isProseLift, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
@@ -9,22 +9,29 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
 const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
 const HAIR = "rgba(255,255,255,0.05)";
-// content classification (isGymLift / isProseLift) is shared from @hybrid/core.
-const isGym = isGymLift;
+// content classification (isProseLift / liftKind) is shared from @hybrid/core.
 const isProse = isProseLift;
 const liftColor = (l: ProgramLiftView): LoadColor =>
   l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
 
-type Group = { kind: "run" | "lift"; lifts: ProgramLiftView[] };
+type Group = { kind: LiftKind; lifts: ProgramLiftView[] };
 function groupByKind(lifts: ProgramLiftView[]): Group[] {
   const groups: Group[] = [];
   for (const l of lifts) {
-    const kind = isProse(l) ? "run" : "lift";
+    const kind = liftKind(l);
     const last = groups[groups.length - 1];
     if (last && last.kind === kind) last.lifts.push(l);
     else groups.push({ kind, lifts: [l] });
   }
   return groups;
+}
+// Block label for a content group (% barbell = "Main"; rpe = "Accessories" when
+// barbell is present, else "Strength"). Returns the palette colour too.
+function bandFor(kind: LiftKind, n: number, hasPercent: boolean, C: Palette): { label: string; color: string } {
+  const ex = `${n} exercise${n === 1 ? "" : "s"}`;
+  if (kind === "run") return { label: "Run", color: C.blue };
+  if (kind === "percent") return { label: `Main · ${ex}`, color: C.amber };
+  return { label: `${hasPercent ? "Accessories" : "Strength"} · ${ex}`, color: C.lime };
 }
 
 /**
@@ -162,18 +169,14 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
 
   return (
     <>
-      {days.map((day, di) => {
-        const all = day.sessions.flatMap((s) => s.lifts);
-        const mixed = all.some(isProse) && all.some(isGym);
-        return (
-          <View key={di} style={card}>
-            <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} C={C} />
-            {day.sessions.map((s, si) => (
-              <SessionBlock key={si} s={s} si={si} mixed={mixed} C={C} />
-            ))}
-          </View>
-        );
-      })}
+      {days.map((day, di) => (
+        <View key={di} style={card}>
+          <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} C={C} />
+          {day.sessions.map((s, si) => (
+            <SessionBlock key={si} s={s} si={si} C={C} />
+          ))}
+        </View>
+      ))}
     </>
   );
 }
@@ -205,33 +208,31 @@ function ColHeader({ C }: { C: Palette }) {
   );
 }
 
-function SessionBlock({ s, si, mixed, C }: { s: ProgramSessionView; si: number; mixed: boolean; C: Palette }) {
+function SessionBlock({ s, si, C }: { s: ProgramSessionView; si: number; C: Palette }) {
   const groups = groupByKind(s.lifts);
+  const mixed = groups.length > 1;
+  const hasPercent = groups.some((g) => g.kind === "percent");
   return (
     <View>
       {!!s.label && <Band label={[s.label, s.volume].filter(Boolean).join(" · ")} color={s.label === "PM" ? C.blue : C.lime} topBorder={si > 0} C={C} />}
       {groups.map((g, gi) => {
         const topBorder = gi > 0 || !!s.label || si > 0;
-        if (g.kind === "run")
-          return (
-            <View key={gi}>
-              {mixed && <Band label="Run" color={C.blue} topBorder={topBorder} C={C} />}
-              {g.lifts.map((l, i) => (
-                <ProseRow key={i} lift={l} top={i > 0} C={C} />
-              ))}
-            </View>
-          );
-        const hasRpe = g.lifts.some((l) => l.rpe != null);
+        const band = bandFor(g.kind, g.lifts.length, hasPercent, C);
         return (
           <View key={gi}>
-            {mixed && <Band label={`Strength · ${g.lifts.length} exercise${g.lifts.length === 1 ? "" : "s"}`} color={C.lime} topBorder={topBorder} C={C} />}
-            {hasRpe && <ColHeader C={C} />}
-            {g.lifts.map((l, i) => {
-              const top = i > 0;
-              if (l.rpe != null) return <HeatRow key={i} lift={l} top={top} C={C} />;
-              if (l.steps && l.steps.length) return <RampRow key={i} lift={l} top={top} C={C} />;
-              return <FallbackRow key={i} lift={l} top={top} C={C} />;
-            })}
+            {mixed && <Band label={band.label} color={band.color} topBorder={topBorder} C={C} />}
+            {g.kind === "rpe" && g.lifts.some((l) => l.rpe != null) && <ColHeader C={C} />}
+            {g.lifts.map((l, i) =>
+              g.kind === "run" ? (
+                <ProseRow key={i} lift={l} top={i > 0} C={C} />
+              ) : g.kind === "percent" ? (
+                <RampRow key={i} lift={l} top={i > 0} C={C} />
+              ) : l.rpe != null ? (
+                <HeatRow key={i} lift={l} top={i > 0} C={C} />
+              ) : (
+                <FallbackRow key={i} lift={l} top={i > 0} C={C} />
+              ),
+            )}
           </View>
         );
       })}

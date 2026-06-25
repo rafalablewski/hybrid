@@ -13,6 +13,7 @@ import {
   workoutColor,
   isGymLift,
   isProseLift,
+  liftKind,
   dayContentSummary,
   type PlanLift,
   type PlanProgram,
@@ -222,6 +223,15 @@ describe("mixed endurance day — strength accessory on a run day", () => {
     expect(isGymLift(accessory!)).toBe(true);
     // endurance day has no NL volume → a run/lift breakdown instead
     expect(dayContentSummary(day)).toBe("1 run · 1 lift");
+  });
+
+  it("liftKind separates %-barbell, RPE-accessory and prose", () => {
+    const owl = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!.sessions[0]!.lifts[0]!; // % steps
+    const ppl = planProgramView(BB_PPL_6DAY, { week: 1 }).days[0]!.sessions[0]!.lifts[0]!; // rpe
+    const run = planProgramView(MIXED, { week: 1 }).days[0]!.sessions[0]!.lifts[0]!; // prose
+    expect(liftKind(owl)).toBe("percent");
+    expect(liftKind(ppl)).toBe("rpe");
+    expect(liftKind(run)).toBe("run");
   });
 
   it("falls back to the discipline volume when present", () => {

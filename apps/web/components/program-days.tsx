@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { rpeColor, workoutColor, isGymLift, isProseLift, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { LIME, BLUE, AMBER, RED, ASH, CHALK, LINE, CARD } from "@/lib/ui";
 
 // The HYBRID plan day view — one card+table style that adapts per CONTENT (not
@@ -20,8 +20,7 @@ const HAIR = "rgba(255,255,255,0.05)";
 const mono = "var(--font-mono)";
 const disp = "var(--font-display)";
 
-// content classification (isGymLift / isProseLift) is shared from @hybrid/core.
-const isGym = isGymLift;
+// content classification (isProseLift / liftKind) is shared from @hybrid/core.
 const isProse = isProseLift;
 const liftColor = (l: ProgramLiftView): LoadColor =>
   l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
@@ -53,23 +52,21 @@ function DayHeader({ title, right }: { title: string; right: string | null }) {
 
 // ── one card per day (bodybuilding / weightlifting / hybrid) ──────────────────
 function DayCard({ day }: { day: ProgramDayView }) {
-  const all = day.sessions.flatMap((s) => s.lifts);
-  const mixed = all.some(isProse) && all.some(isGym); // a hybrid day → label the blocks
   return (
     <Card>
       <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} />
       {day.sessions.map((s, si) => (
-        <SessionBlock key={si} s={s} si={si} mixed={mixed} />
+        <SessionBlock key={si} s={s} si={si} />
       ))}
     </Card>
   );
 }
 
-type Group = { kind: "run" | "lift"; lifts: ProgramLiftView[] };
+type Group = { kind: LiftKind; lifts: ProgramLiftView[] };
 function groupByKind(lifts: ProgramLiftView[]): Group[] {
   const groups: Group[] = [];
   for (const l of lifts) {
-    const kind = isProse(l) ? "run" : "lift";
+    const kind = liftKind(l);
     const last = groups[groups.length - 1];
     if (last && last.kind === kind) last.lifts.push(l);
     else groups.push({ kind, lifts: [l] });
@@ -77,33 +74,41 @@ function groupByKind(lifts: ProgramLiftView[]): Group[] {
   return groups;
 }
 
-function SessionBlock({ s, si, mixed }: { s: ProgramSessionView; si: number; mixed: boolean }) {
+// Block label for a content group. `percent` (% barbell) is the "Main" work; an
+// `rpe` block is "Accessories" when there's also barbell work, else "Strength".
+function bandFor(kind: LiftKind, n: number, hasPercent: boolean): { label: string; color: string } {
+  const ex = `${n} exercise${n === 1 ? "" : "s"}`;
+  if (kind === "run") return { label: "Run", color: BLUE };
+  if (kind === "percent") return { label: `Main · ${ex}`, color: AMBER };
+  return { label: `${hasPercent ? "Accessories" : "Strength"} · ${ex}`, color: LIME };
+}
+
+function SessionBlock({ s, si }: { s: ProgramSessionView; si: number }) {
   const groups = groupByKind(s.lifts);
+  const mixed = groups.length > 1; // ≥2 content kinds in this session → label blocks
+  const hasPercent = groups.some((g) => g.kind === "percent");
   return (
     <>
       {s.label && <Band label={[s.label, s.volume].filter(Boolean).join(" · ")} color={s.label === "PM" ? BLUE : LIME} topBorder={si > 0} />}
       {groups.map((g, gi) => {
         const topBorder = gi > 0 || !!s.label || si > 0;
-        if (g.kind === "run")
-          return (
-            <React.Fragment key={gi}>
-              {mixed && <Band label="Run" color={BLUE} topBorder={topBorder} />}
-              {g.lifts.map((l, i) => (
-                <ProseRow key={i} lift={l} borderTop={i > 0 ? `1px solid ${HAIR}` : "none"} />
-              ))}
-            </React.Fragment>
-          );
-        const hasRpe = g.lifts.some((l) => l.rpe != null);
+        const band = bandFor(g.kind, g.lifts.length, hasPercent);
+        const rowTop = (i: number) => (i > 0 ? `1px solid ${HAIR}` : "none");
         return (
           <React.Fragment key={gi}>
-            {mixed && <Band label={`Strength · ${g.lifts.length} exercise${g.lifts.length === 1 ? "" : "s"}`} color={LIME} topBorder={topBorder} />}
-            {hasRpe && <ColHeader />}
-            {g.lifts.map((l, i) => {
-              const top = i > 0 ? `1px solid ${HAIR}` : "none";
-              if (l.rpe != null) return <HeatRow key={i} lift={l} borderTop={top} />;
-              if (l.steps && l.steps.length) return <RampRow key={i} lift={l} borderTop={top} />;
-              return <FallbackRow key={i} lift={l} borderTop={top} />;
-            })}
+            {mixed && <Band label={band.label} color={band.color} topBorder={topBorder} />}
+            {g.kind === "rpe" && g.lifts.some((l) => l.rpe != null) && <ColHeader />}
+            {g.lifts.map((l, i) =>
+              g.kind === "run" ? (
+                <ProseRow key={i} lift={l} borderTop={rowTop(i)} />
+              ) : g.kind === "percent" ? (
+                <RampRow key={i} lift={l} borderTop={rowTop(i)} />
+              ) : l.rpe != null ? (
+                <HeatRow key={i} lift={l} borderTop={rowTop(i)} />
+              ) : (
+                <FallbackRow key={i} lift={l} borderTop={rowTop(i)} />
+              ),
+            )}
           </React.Fragment>
         );
       })}
