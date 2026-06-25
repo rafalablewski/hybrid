@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Plan view — the direction</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0a0b0a;--ink2:#121312;--surf:#141614;--line:#212421;--hair:#1b1d1b;
+    --lime:#c4f035;--chalk:#f3f4ef;--ash:#82867d;--ash2:#5a5e56;
+    --blue:#7fd4e8;--amber:#f0b45e;--red:#e0625e;
+    --d:'Archivo',sans-serif;--m:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--d);-webkit-font-smoothing:antialiased;padding:44px 18px 120px}
+  .wrap{max-width:560px;margin:0 auto}
+  .kick{font-family:var(--m);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime)}
+  h1{font-size:30px;font-weight:900;letter-spacing:-.025em;margin:10px 0 12px}
+  .lead{font-family:var(--m);font-size:13px;color:var(--ash);line-height:1.7;margin-bottom:36px}
+  .lead b{color:var(--chalk)}
+
+  /* ── day card ── */
+  .day{background:linear-gradient(180deg,var(--surf),var(--ink2));border:1px solid var(--line);border-radius:24px;padding:6px 4px 10px;margin-bottom:22px;box-shadow:0 20px 50px -30px rgba(0,0,0,.9)}
+  .day-hd{display:flex;justify-content:space-between;align-items:flex-end;padding:20px 22px 16px}
+  .day-hd .l .ovr{font-family:var(--m);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ash2)}
+  .day-hd .l .ttl{font-size:23px;font-weight:900;letter-spacing:-.02em;margin-top:5px}
+  .day-hd .r{text-align:right;font-family:var(--m);font-size:11px;color:var(--ash)}
+  .day-hd .r b{display:block;color:var(--lime);font-size:20px;font-weight:600;letter-spacing:-.02em}
+
+  .sess{font-family:var(--m);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);padding:14px 22px 6px;display:flex;align-items:center;gap:10px}
+  .sess::after{content:"";flex:1;height:1px;background:var(--hair)}
+  .sess.am{color:var(--lime)} .sess.pm{color:var(--blue)}
+
+  /* ── exercise block ── */
+  .ex{padding:16px 22px;position:relative}
+  .ex + .ex{border-top:1px solid var(--hair)}
+  .ex-top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .ex-ovr{font-family:var(--m);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);margin-bottom:3px}
+  .ex-name{font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.05}
+  .ex-flag{margin-left:auto;align-self:center;font-family:var(--m);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+  .ex-flag b{color:var(--chalk)}
+
+  /* the columns: big numbers, evenly spread, no borders/chips */
+  .cols{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
+  .cols::-webkit-scrollbar{display:none}
+  .col{flex:1 0 auto;min-width:64px;text-align:center;padding:6px 4px;position:relative}
+  .col + .col::before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;background:var(--hair)}
+  .col .v{font-family:var(--m);font-size:21px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .col .r{font-family:var(--m);font-size:11px;color:var(--ash);margin-top:6px}
+  .col .k{font-family:var(--m);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash2);margin-bottom:7px}
+  .v.blue{color:var(--blue)} .v.lime{color:var(--lime)} .v.amber{color:var(--amber)} .v.red{color:var(--red)} .v.chalk{color:var(--chalk)} .v.ash{color:var(--ash)}
+  /* subtle intensity underline under each load number */
+  .col .bar{height:2px;border-radius:2px;margin:9px auto 0;width:60%;opacity:.5}
+  .bar.blue{background:var(--blue)} .bar.lime{background:var(--lime)} .bar.amber{background:var(--amber)} .bar.red{background:var(--red)}
+
+  .foot{font-family:var(--m);font-size:12px;color:var(--ash);line-height:1.7;margin-top:30px;border-top:1px solid var(--line);padding-top:20px}
+  .foot b{color:var(--chalk)} .foot .li{color:var(--lime)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="kick">HYBRID · The plan view</span>
+  <h1>One direction: the numbers are the design</h1>
+  <p class="lead">No chips, no name-left/data-right table. Each exercise is an <b>airy block</b>; the prescription is laid out as <b>evenly-spaced columns of big mono numbers</b> that fill the width — a <b>set</b> per column for hypertrophy, a <b>load</b> per column for the OWL ramp. Single-prescription lifts fill the row just as well as a 4-block clean. Intensity colours the loads; everything else stays quiet. Shown phone-width.</p>
+
+  <!-- PPL PUSH -->
+  <div class="day">
+    <div class="day-hd">
+      <div class="l"><div class="ovr">Thursday · Push</div><div class="ttl">Overhead Press</div></div>
+      <div class="r"><b>5</b>exercises</div>
+    </div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-ovr">Main lift · progressive overload</div><div class="ex-name">Overhead Press</div></div><div class="ex-flag"><b>@9</b> RPE</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">Set 1</div><div class="v chalk">6</div><div class="r">~80kg</div></div>
+        <div class="col"><div class="k">Set 2</div><div class="v chalk">6</div><div class="r">~80kg</div></div>
+        <div class="col"><div class="k">Set 3</div><div class="v chalk">6</div><div class="r">~80kg</div></div>
+        <div class="col"><div class="k">Set 4</div><div class="v chalk">6</div><div class="r">~80kg</div></div>
+      </div>
+    </div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-name">Dips</div></div><div class="ex-flag"><b>@10</b> RPE</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">Set 1</div><div class="v chalk">AMRAP</div></div>
+        <div class="col"><div class="k">Set 2</div><div class="v chalk">AMRAP</div></div>
+        <div class="col"><div class="k">Set 3</div><div class="v chalk">AMRAP</div></div>
+        <div class="col"><div class="k">Set 4</div><div class="v chalk">AMRAP</div></div>
+      </div>
+    </div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-name">Chest Fly</div></div><div class="ex-flag"><b>@8</b> RPE</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">Set 1</div><div class="v chalk">10</div></div>
+        <div class="col"><div class="k">Set 2</div><div class="v chalk">10</div></div>
+        <div class="col"><div class="k">Set 3</div><div class="v chalk">10</div></div>
+      </div>
+    </div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-name">Lateral Raises</div></div><div class="ex-flag"><b>@10</b> RPE</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">Set 1</div><div class="v chalk">12</div></div>
+        <div class="col"><div class="k">Set 2</div><div class="v chalk">12</div></div>
+        <div class="col"><div class="k">Set 3</div><div class="v chalk">12</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OWL DAY 1 -->
+  <div class="day">
+    <div class="day-hd">
+      <div class="l"><div class="ovr">Soviet block · Day 1</div><div class="ttl">Double session</div></div>
+      <div class="r"><b>132</b>lifts</div>
+    </div>
+
+    <div class="sess am">AM · 53 lifts</div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-name">Snatch</div></div><div class="ex-flag">60 → 80%</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">×3</div><div class="v blue">60%</div><div class="bar blue"></div></div>
+        <div class="col"><div class="k">×3 ×2</div><div class="v lime">70%</div><div class="bar lime"></div></div>
+        <div class="col"><div class="k">×2 ×2</div><div class="v amber">80%</div><div class="bar amber"></div></div>
+      </div>
+    </div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-name">Back Squat</div></div><div class="ex-flag">70 → 90%</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">×5 ×2</div><div class="v lime">70%</div><div class="bar lime"></div></div>
+        <div class="col"><div class="k">×4 ×2</div><div class="v amber">80%</div><div class="bar amber"></div></div>
+        <div class="col"><div class="k">×3 ×2</div><div class="v red">90%</div><div class="bar red"></div></div>
+      </div>
+    </div>
+
+    <div class="sess pm">PM · 79 lifts</div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-ovr">+ jerk complex</div><div class="ex-name">Power Clean &amp; Jerk</div></div><div class="ex-flag">60 → 90%</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">3+1 ×2</div><div class="v blue">60%</div><div class="bar blue"></div></div>
+        <div class="col"><div class="k">3+1 ×2</div><div class="v lime">70%</div><div class="bar lime"></div></div>
+        <div class="col"><div class="k">2+1 ×2</div><div class="v amber">80%</div><div class="bar amber"></div></div>
+        <div class="col"><div class="k">2+1 ×2</div><div class="v red">90%</div><div class="bar red"></div></div>
+      </div>
+    </div>
+
+    <div class="ex">
+      <div class="ex-top"><div><div class="ex-name">Good Morning</div></div><div class="ex-flag">bodyweight</div></div>
+      <div class="cols">
+        <div class="col"><div class="k">×8 ×4</div><div class="v ash">BW</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>Why this works:</b> the column treatment fills the width with <span class="li">one set per column</span> (hypertrophy) or <span class="li">one load per column</span> (OWL) — so a single-prescription lift never looks empty, and a 4-block clean never gets cramped. No bordered chips. Big confident mono numbers + lots of black = premium, not spreadsheet.<br><br>
+    A lone single-set exercise (e.g. <b>BW ×8×4</b>) sits left as one bold figure — intentional, not broken. Many columns scroll sideways. <b>If you like it, I'll build exactly this across web + mobile.</b>
+  </div>
+</div>
+</body>
+</html>
