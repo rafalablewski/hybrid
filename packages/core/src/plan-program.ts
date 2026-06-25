@@ -207,41 +207,6 @@ export function formatLift(lift: PlanLift, maxes?: Record<string, number>): stri
 //  View model — one render-ready shape for ALL clients
 // ============================================================
 
-/** A brand colour token keyed to lift intensity, shared so every client colours
- *  loads identically (web hex/CSS-var, mobile palette). */
-export type LoadColor = "blue" | "lime" | "amber" | "red" | "ash";
-
-/** Map a working % to its intensity colour token. Bodyweight (`null`) → ash.
- *  Thresholds live here (not per-client) so the colour wave can't drift. */
-export function loadColor(pct: number | null): LoadColor {
-  if (pct == null) return "ash";
-  if (pct < 65) return "blue";
-  if (pct < 75) return "lime";
-  if (pct < 85) return "amber";
-  return "red";
-}
-
-/** One step of a lift's ramp, render-ready for the expandable per-set breakdown
- *  (the "Smart Summary" Liquid-Glass plan view). */
-export interface ProgramStepView {
-  /** "60%" or "BW". */
-  load: string;
-  /** the % number (null for bodyweight) — kept for any client-side logic. */
-  pct: number | null;
-  /** intensity colour token for the load badge + bar. */
-  color: LoadColor;
-  /** load-bar fill, 0–100 (the % clamped; a small fixed fill for bodyweight). */
-  fill: number;
-  /** rep scheme for ONE set, e.g. "×4", "×3+1" (complex add-on kept). */
-  reps: string;
-  /** how many work sets sit at this load. */
-  sets: number;
-  /** cumulative position label across the lift, e.g. "set 1", "set 2–3". */
-  setLabel: string;
-  /** derived working weight ("95 kg") when a 1RM is known, else null. */
-  kg: string | null;
-}
-
 export interface ProgramLiftView {
   name: string;
   /** Combined prescription string — always set; used as the single-column
@@ -250,12 +215,6 @@ export interface ProgramLiftView {
   nl: number;
   /** complex / tempo / alternative annotation, or null. */
   note: string | null;
-  /** Per-step ramp for the expandable Smart-Summary view. Present for
-   *  strength-percent lifts; absent for prose / hypertrophy entries. */
-  steps?: ProgramStepView[];
-  /** Collapsed one-line summary of the ramp, e.g. "8 sets · 60→90%" or
-   *  "4 sets · bodyweight". Present whenever `steps` is. */
-  summary?: string;
   // ── hypertrophy structured fields (present when the entry has sets/rpe) ──
   /** "4×6" or "4×AMRAP" — split from prescription for tabular display. */
   setsReps?: string;
@@ -305,48 +264,6 @@ function formatEntry(e: PlanEntry, maxes?: Record<string, number>): string {
   if (kg) parts.push(`${kg} kg`);
   if (e.rpe != null) parts.push(`@${e.rpe}`);
   return parts.join(" · ");
-}
-
-/** Reps for one set of a step: "×4", "×3+1" (complex add-on kept). */
-function stepReps(s: PercentStep): string {
-  return `×${s.plus ? `${s.reps}+${s.plus}` : s.reps}`;
-}
-
-/** "set 3" for a single set, "set 3–4" for a run of them. */
-function setRangeLabel(start: number, count: number): string {
-  return count <= 1 ? `set ${start}` : `set ${start}–${start + count - 1}`;
-}
-
-/** Render-ready per-step breakdown for a strength-percent lift. */
-function liftStepViews(lift: PlanLift, maxes?: Record<string, number>): ProgramStepView[] {
-  const oneRm = lift.ref ? maxes?.[lift.ref] : undefined;
-  let cursor = 1;
-  return lift.steps.map((s) => {
-    const setLabel = setRangeLabel(cursor, s.sets);
-    cursor += s.sets;
-    const kg = stepKg(s, oneRm);
-    return {
-      load: s.pct == null ? "BW" : `${s.pct}%`,
-      pct: s.pct,
-      color: loadColor(s.pct),
-      fill: s.pct == null ? 42 : Math.max(8, Math.min(100, s.pct)),
-      reps: stepReps(s),
-      sets: s.sets,
-      setLabel,
-      kg: kg != null ? `${kg} kg` : null,
-    };
-  });
-}
-
-/** Collapsed summary: total work sets + the % range (or "bodyweight"). */
-function liftSummary(lift: PlanLift): string {
-  const totalSets = lift.steps.reduce((n, s) => n + s.sets, 0);
-  const setWord = `${totalSets} set${totalSets === 1 ? "" : "s"}`;
-  const pcts = lift.steps.map((s) => s.pct).filter((p): p is number => p != null);
-  if (pcts.length === 0) return `${setWord} · bodyweight`;
-  const min = Math.min(...pcts);
-  const max = Math.max(...pcts);
-  return `${setWord} · ${min === max ? `${min}%` : `${min}→${max}%`}`;
 }
 
 function liftNote(lift: PlanLift): string | null {
@@ -408,8 +325,6 @@ export function planProgramView(
             prescription: formatLift(l, maxes),
             nl: liftNL(l),
             note: liftNote(l),
-            steps: liftStepViews(l, maxes),
-            summary: liftSummary(l),
           })),
           ...(s.entries ?? []).map((e) => {
             const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;

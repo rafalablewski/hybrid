@@ -1,31 +1,9 @@
 import { useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram, type ProgramLiftView, type ProgramStepView, type LoadColor } from "@hybrid/core";
+import { View, Text, Pressable, TextInput } from "react-native";
+import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
-
-type Palette = ReturnType<typeof useTheme>["palette"];
-const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
-const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
-
-type RailChip = { top: string; sub: string | null; color: LoadColor };
-
-// Strength-percent lifts → one chip per ramped step. Prose / hypertrophy entries
-// (no steps) → a single chip from the flat prescription. Mirrors the web.
-function chipsFor(lift: ProgramLiftView): RailChip[] {
-  if (lift.steps && lift.steps.length) return lift.steps.map(stepChip);
-  if (lift.setsReps) {
-    const sub = [lift.weight, lift.rpe != null ? `@${lift.rpe}` : null].filter(Boolean).join(" · ");
-    return [{ top: lift.setsReps, sub: sub || null, color: "lime" }];
-  }
-  return [{ top: lift.prescription, sub: null, color: "ash" }];
-}
-function stepChip(st: ProgramStepView): RailChip {
-  const sets = st.sets > 1 ? `×${st.sets}` : "";
-  return { top: st.load, sub: `${st.reps}${sets}${st.kg ? ` · ${st.kg}` : ""}`, color: st.color };
-}
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
@@ -111,35 +89,69 @@ export default function PercentProgram({
         </View>
       )}
 
-      {/* "Swipe Rail" days — the exercise name is PINNED in a left column and the
-          set chips scroll horizontally, so a lift with many percentage blocks
-          scrolls sideways instead of widening the row or squeezing the name.
-          Same shape + behaviour as the web. */}
       {view.days.map((day, di) => (
-        <View key={di} style={{ ...card, padding: 0, overflow: "hidden" }}>
+        <View key={di} style={{ ...card, padding: 0 }}>
           {/* Day header */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>
               {day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}
             </Text>
             {!!day.volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{day.volume}</Text>}
           </View>
 
-          {day.sessions.map((s, si) => (
-            <View key={si}>
-              {/* Session sub-label (AM / PM) */}
-              {(!!s.label || !!s.volume) && (
-                <View style={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: tint(s.label === "PM" ? C.blue : C.lime, 0.04) }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: s.label === "PM" ? C.blue : C.lime }}>
-                    {[s.label, s.volume].filter(Boolean).join(" · ")}
-                  </Text>
+          {day.sessions.map((s, si) => {
+            // Mixed sessions (run + gym) get 4-col headers so gym rows align;
+            // prose/strength rows within that session render a spanning prescription.
+            const hasStructured = s.lifts.some((l) => l.rpe != null);
+            return (
+              <View key={si}>
+                {/* Session sub-label (AM / PM) */}
+                {(!!s.label || !!s.volume) && (
+                  <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</Text>
+                  </View>
+                )}
+
+                {/* Column headers */}
+                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
+                  {hasStructured ? (
+                    <>
+                      <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets</Text>
+                      <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Wt</Text>
+                      <Text style={{ width: 38, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
+                    </>
+                  ) : (
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Prescription</Text>
+                  )}
                 </View>
-              )}
-              {s.lifts.map((l, li) => (
-                <RailRow key={li} lift={l} C={C} last={li === s.lifts.length - 1} />
-              ))}
-            </View>
-          ))}
+
+                {/* Rows */}
+                {s.lifts.map((l, li) => (
+                  <View key={li} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: li > 0 ? 1 : 0, borderTopColor: C.line }}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{l.name}</Text>
+                      {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
+                    </View>
+                    {l.rpe != null ? (
+                      // Structured gym row — 3 fixed-width right cells
+                      <>
+                        <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{l.setsReps ?? "—"}</Text>
+                        <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.body, color: C.ash, textAlign: "right" }}>{l.weight ?? "—"}</Text>
+                        <View style={{ width: 38, alignItems: "flex-end" }}>
+                          <MobileRpeBadge rpe={l.rpe} C={C} />
+                        </View>
+                      </>
+                    ) : (
+                      // Prose/strength row — prescription fills the right side,
+                      // matching the total width of the 3 gym columns when mixed.
+                      <Text style={{ width: hasStructured ? 146 : undefined, maxWidth: hasStructured ? undefined : "60%", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            );
+          })}
         </View>
       ))}
 
@@ -158,40 +170,12 @@ export default function PercentProgram({
   );
 }
 
-// One lift row: the name is PINNED in a fixed left column; the set chips live in
-// a horizontally-scrollable rail with a right edge-fade. Any number of sets fits
-// at constant row height — the name never gets squeezed.
-function RailRow({ lift, C, last }: { lift: ProgramLiftView; C: Palette; last: boolean }) {
+function MobileRpeBadge({ rpe, C }: { rpe: number; C: ReturnType<typeof useTheme>["palette"] }) {
+  const dotColor = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : "#4a4a4a";
   return (
-    <View style={{ flexDirection: "row", borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
-      {/* Pinned name column */}
-      <View style={{ width: 132, paddingHorizontal: 14, paddingVertical: 13, borderRightWidth: 1, borderRightColor: C.line, justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{lift.name}</Text>
-        {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{lift.note}</Text>}
-      </View>
-
-      {/* Scrollable set chips */}
-      <View style={{ flex: 1, position: "relative" }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 14, paddingVertical: 12 }}>
-          {chipsFor(lift).map((c, i) => {
-            const col = loadHex(C, c.color);
-            return (
-              <View key={i} style={{ borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8, backgroundColor: tint(col, 0.12), borderWidth: 1, borderColor: tint(col, 0.3), alignItems: "center" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: col }}>{c.top}</Text>
-                {!!c.sub && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{c.sub}</Text>}
-              </View>
-            );
-          })}
-        </ScrollView>
-        {/* right edge-fade hinting "more →" */}
-        <LinearGradient
-          pointerEvents="none"
-          colors={[tint(C.ink2, 0), C.ink2]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 28 }}
-        />
-      </View>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+      <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: dotColor }} />
+      <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{rpe}</Text>
     </View>
   );
 }

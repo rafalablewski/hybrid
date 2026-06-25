@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import ProgramDaysRail from "../percent-program-days";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18 } as const;
@@ -170,7 +169,25 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         </div>
       )}
 
-      <ProgramDaysRail days={view.days} />
+      {view.days.map((day, di) => (
+        <div key={di} style={{ ...card, marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("amber") }}>{day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}</div>
+            {day.volume && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{day.volume}</span>}
+          </div>
+          {day.sessions.map((s, si) => (
+            <div key={si} style={{ marginTop: 10 }}>
+              {(s.label || s.volume) && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", color: C("lime") }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</div>}
+              {s.lifts.map((l, li) => (
+                <div key={li} style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
+                  <div style={{ minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{l.name}</div>{l.note && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{l.note}</div>}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>{l.prescription}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
 
       <Info label={t("w.train.plans.progression")} value={view.progression} />
       <button onClick={enroll} disabled={state === "busy" || state === "done"} style={{ fontWeight: 800, fontSize: fs.note, background: state === "done" ? C("ink2") : C("lime"), color: state === "done" ? C("lime") : C("ink"), border: state === "done" ? `1px solid ${C("lime")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}>

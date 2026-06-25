@@ -8,7 +8,6 @@ import {
   formatStep,
   formatLift,
   planProgramView,
-  loadColor,
   type PlanLift,
 } from "./plan-program";
 import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
@@ -150,35 +149,6 @@ describe("planProgramView", () => {
 
   it("clamps an out-of-range week to a real one", () => {
     expect(planProgramView(SOVIET_OWL_8WK, { week: 99 }).week).toBe(1);
-  });
-
-  it("exposes a per-step breakdown + collapsed summary for each strength lift", () => {
-    const v = planProgramView(SOVIET_OWL_8WK, { week: 1 });
-    const lift = v.days[0]!.sessions[0]!.lifts[0]!; // 60%×4×3 · 70%×4×2
-    expect(lift.steps).toHaveLength(2);
-    // step 1: 60% × 4 reps × 3 sets → "set 1–3", blue intensity
-    expect(lift.steps![0]).toMatchObject({ load: "60%", reps: "×4", sets: 3, setLabel: "set 1–3", color: "blue" });
-    // step 2: 70% × 4 × 2 → starts after the first three sets → "set 4–5"
-    expect(lift.steps![1]).toMatchObject({ load: "70%", sets: 2, setLabel: "set 4–5", color: "lime" });
-    // summary = total work sets (3+2) · % range
-    expect(lift.summary).toBe("5 sets · 60→70%");
-  });
-
-  it("carries the derived kg into each step when a max is given", () => {
-    const v = planProgramView(SOVIET_OWL_8WK, { week: 1, maxes: { snatch: 100 } });
-    const snatch = v.days[0]!.sessions[0]!.lifts[1]!;
-    expect(snatch.steps!.some((s) => s.kg?.endsWith("kg"))).toBe(true);
-  });
-});
-
-describe("loadColor", () => {
-  it("maps intensity to the brand colour wave (blue→lime→amber→red, BW→ash)", () => {
-    expect(loadColor(null)).toBe("ash");
-    expect(loadColor(60)).toBe("blue");
-    expect(loadColor(70)).toBe("lime");
-    expect(loadColor(80)).toBe("amber");
-    expect(loadColor(90)).toBe("red");
-    expect(loadColor(100)).toBe("red");
   });
 });
 
