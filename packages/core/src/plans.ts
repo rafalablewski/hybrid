@@ -98,7 +98,7 @@ export const GOAL_TREE: GoalNode[] = [
     ] },
   { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
     plans: [
-      { id: "fatloss-kb-saturday", name: "Saturday Kettlebell Burn", weeks: 1, sessions: 1, tag: "Circuit", desc: "A single ~90-minute kettlebell circuit for fat loss, core tightening and full-body conditioning — a warm-up, five work blocks (legs, push/pull, core, balance), a no-rest finisher and a cool-down. Run it once a week, ideally fasted, and rotate the emphasis (form → speed → volume → heavier) each week.", focus: ["Fat Loss", "Conditioning"], hot: true },
+      { id: "fatloss-kb-saturday", name: "Saturday Kettlebell Burn", weeks: 1, sessions: 1, tag: "Circuit", desc: "A single ~90-minute kettlebell circuit for fat loss, core tightening and full-body conditioning — a warm-up, five work blocks (legs, push/pull, core, balance), a no-rest finisher and a cool-down. Run it once a week, ideally fasted, and rotate the emphasis (form → speed → volume → heavier) each week.", focus: ["Conditioning", "Core"], hot: true },
     ] },
   // ---- Endurance ----
   { id: "tri", name: "Triathlon", icon: "◆", color: BLUE, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
