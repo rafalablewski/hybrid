@@ -44,7 +44,7 @@ const MOBILE_NAV_IDS = new Set([
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "settings", "onboarding",
   "statistics", "timer", "notifications", "profile",
-  "feed", "discover", "leaderboard", "coaches", "myprofile",
+  "feed", "discover", "leaderboard", "coaches",
 ]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
@@ -94,7 +94,6 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "discover", labelKey: "nav.discover", sub: "search · follow", href: "/discover", color: C.blue },
       { id: "leaderboard", labelKey: "nav.leaderboard", sub: "weekly · friends", href: "/leaderboard", color: C.amber },
       { id: "coaches", labelKey: "nav.coaches", sub: "marketplace · start a program", href: "/coaches", color: C.violet },
-      { id: "myprofile", labelKey: "nav.myprofile", sub: "@handle · privacy · circle", href: "/myprofile", color: C.lime },
     ],
   },
   {

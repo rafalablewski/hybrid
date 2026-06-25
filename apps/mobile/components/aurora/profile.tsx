@@ -38,6 +38,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
+import MySocialProfile from "./my-social-profile";
 import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -329,6 +330,11 @@ export default function AuroraProfile() {
         <Tile C={C} icon="swap" k={t("w.account.profile.tile-devices")} sm={device ? `${device.label} · ${device.status}` : t("w.account.profile.connect-device")} onPress={() => router.push("/connections")} />
         <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · ${t("w.account.profile.coach-active-suffix")}` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
       </View>
+
+      {/* PUBLIC PROFILE — social @handle, privacy + circle, merged into the one
+          Profile screen (no separate "My profile" route). */}
+      <View style={{ height: 1, backgroundColor: C.line, marginVertical: 22 }} />
+      <MySocialProfile />
 
       <View style={{ height: 8 }} />
     </AuroraScreen>

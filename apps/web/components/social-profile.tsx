@@ -122,8 +122,10 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
   );
 }
 
-// ----- The "My profile" screen (nav id: myprofile).
-export default function SocialProfile() {
+// ----- The public-profile section (handle, privacy, stats, connections).
+// `embedded` renders it as a section inside the account Profile screen (the
+// merged home for everything "you"); standalone keeps the full screen header.
+export default function SocialProfile({ embedded = false }: { embedded?: boolean } = {}) {
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<any>(null);
   const [conns, setConns] = useState<any>(null);
@@ -171,7 +173,14 @@ export default function SocialProfile() {
 
   return (
     <div>
-      <ScreenHead title="My profile" sub="Your public @handle, privacy and your circle." right={claimed && !editing ? <Btn ghost small onClick={() => setEditing(true)}>Edit</Btn> : undefined} />
+      {embedded ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>Public profile</div>
+          {claimed && !editing && <Btn ghost small onClick={() => setEditing(true)}>Edit</Btn>}
+        </div>
+      ) : (
+        <ScreenHead title="My profile" sub="Your public @handle, privacy and your circle." right={claimed && !editing ? <Btn ghost small onClick={() => setEditing(true)}>Edit</Btn> : undefined} />
+      )}
 
       {showForm ? (
         <div style={card(aurora, { maxWidth: 460 })}>

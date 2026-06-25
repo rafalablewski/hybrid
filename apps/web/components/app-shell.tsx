@@ -112,7 +112,6 @@ const StatisticsScreen = dynamic(() => import("./statistics"), { ssr: false });
 const SocialFeed = dynamic(() => import("./social-feed"), { ssr: false });
 const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
-const SocialProfile = dynamic(() => import("./social-profile"), { ssr: false });
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
@@ -825,7 +824,6 @@ export default function AppShell() {
         {screen === "discover" && <SocialDiscover />}
         {screen === "leaderboard" && <SocialLeaderboard />}
         {screen === "coaches" && <CoachesScreen />}
-        {screen === "myprofile" && <SocialProfile />}
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}

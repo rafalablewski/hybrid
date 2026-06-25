@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
 import { normalizeHandle, isValidHandle } from "@hybrid/core";
-import { Screen, Card, Loading, F } from "../lib/ui";
-import { useTheme } from "../lib/theme";
-import { getMyProfile, putMyProfile, getConnections, respondFollow, setCloseFriend, follow } from "../lib/social-api";
-import { Avatar, Empty, ProfileModal, SButton, SPill } from "../components/social-kit";
+import { Card, Loading, F } from "../../lib/ui";
+import { useTheme } from "../../lib/theme";
+import { getMyProfile, putMyProfile, getConnections, respondFollow, setCloseFriend, follow } from "../../lib/social-api";
+import { Avatar, Empty, ProfileModal, SButton, SPill } from "../social-kit";
 
-export default function MyProfileScreen() {
+// The user's PUBLIC social profile (handle, privacy, stats, connections) as an
+// embeddable section — lives inside the account Profile ("You") screen so there
+// is ONE profile, not two. No screen wrapper / back button of its own.
+export default function MySocialProfile() {
   const C = useTheme().palette;
-  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [conns, setConns] = useState<any>(null);
   const [editing, setEditing] = useState(false);
@@ -36,7 +37,7 @@ export default function MyProfileScreen() {
     setEditing(false); load();
   };
 
-  if (!data) return <Screen><Loading /></Screen>;
+  if (!data) return <Loading />;
   const claimed = !!data.profile;
   const p = data.profile;
   const showForm = !claimed || editing;
@@ -44,10 +45,9 @@ export default function MyProfileScreen() {
   const connList: any[] = conns ? (tab === "friends" ? conns.friends : tab === "following" ? conns.following : tab === "followers" ? conns.followers : conns.requests) ?? [] : [];
 
   return (
-    <Screen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.chalk, fontSize: 18 }}>‹</Text></Pressable>
-        <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>My profile</Text><Text style={{ color: C.ash, fontSize: 13 }}>Your @handle, privacy and circle.</Text></View>
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase" }}>Public profile</Text>
         {claimed && !editing && <SButton label="Edit" ghost small onPress={() => setEditing(true)} />}
       </View>
 
@@ -126,6 +126,6 @@ export default function MyProfileScreen() {
       </Card>
 
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
-    </Screen>
+    </View>
   );
 }
