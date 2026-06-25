@@ -99,19 +99,44 @@ function NameCell({ lift, size = 15 }: { lift: ProgramLiftView; size?: number })
   );
 }
 
+// RPE "heat" meter — the value + an intensity bar. Shared by the bodybuilding
+// day row and the strength accessory inside the endurance week card.
+function HeatMeter({ rpe }: { rpe: number }) {
+  const c = HEX[rpeColor(rpe)];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+      <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 600, color: c }}>@{rpe}</span>
+      <span style={{ width: 46, height: 3, borderRadius: 2, background: HAIR, overflow: "hidden" }}>
+        <span style={{ display: "block", height: "100%", width: `${Math.min(100, rpe * 10)}%`, borderRadius: 2, background: c }} />
+      </span>
+    </div>
+  );
+}
+
+// Coloured %-ramp text — each load tinted by intensity, the rest muted. Shared by
+// the weightlifting day row and a %-based accessory in the week card.
+function RampText({ lift }: { lift: ProgramLiftView }) {
+  return (
+    <>
+      {lift.steps!.map((st, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span style={{ color: "#5a5e56", margin: "0 3px" }}> · </span>}
+          <span style={{ color: HEX[st.color], fontWeight: 700 }}>{st.load}</span>
+          {st.detail}
+          {st.kg && <span style={{ color: "#5a5e56" }}> · {st.kg}</span>}
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
 // bodybuilding row — Sets×Reps + RPE heat bar
 function HeatRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
-  const c = HEX[rpeColor(lift.rpe!)];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr auto 60px", alignItems: "center", gap: 14, padding: "13px 16px", borderTop }}>
       <NameCell lift={lift} />
       <span style={{ fontFamily: mono, fontSize: 13, color: CHALK }}>{lift.setsReps ?? "—"}</span>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
-        <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 600, color: c }}>@{lift.rpe}</span>
-        <span style={{ width: 46, height: 3, borderRadius: 2, background: HAIR, overflow: "hidden" }}>
-          <span style={{ display: "block", height: "100%", width: `${Math.min(100, lift.rpe! * 10)}%`, borderRadius: 2, background: c }} />
-        </span>
-      </div>
+      <HeatMeter rpe={lift.rpe!} />
     </div>
   );
 }
@@ -122,14 +147,7 @@ function RampRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string
     <div style={{ display: "grid", gridTemplateColumns: "118px 1fr", gap: 14, padding: "13px 16px", alignItems: "baseline", borderTop }}>
       <NameCell lift={lift} />
       <div style={{ fontFamily: mono, fontSize: 12, color: ASH, lineHeight: 1.7, textAlign: "right" }}>
-        {lift.steps!.map((st, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && <span style={{ color: "#5a5e56", margin: "0 3px" }}> · </span>}
-            <span style={{ color: HEX[st.color], fontWeight: 700 }}>{st.load}</span>
-            {st.detail}
-            {st.kg && <span style={{ color: "#5a5e56" }}> · {st.kg}</span>}
-          </React.Fragment>
-        ))}
+        <RampText lift={lift} />
       </div>
     </div>
   );
@@ -160,18 +178,9 @@ function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: numb
             <span style={{ fontFamily: mono, fontSize: 11, color: "#5a5e56", textTransform: "uppercase", letterSpacing: ".06em" }}>{day.title}</span>
             <div>
               {lifts.length === 0 ? (
-                <WeekLine name={day.kindLabel ?? "—"} detail={null} color="ash" rest first />
+                <WeekRow restName={day.kindLabel ?? "—"} first />
               ) : (
-                lifts.map((l, i) => (
-                  <WeekLine
-                    key={i}
-                    name={l.name}
-                    detail={[l.prescription, l.note].filter(Boolean).join(" · ") || null}
-                    color={liftColor(l)}
-                    rest={/rest/i.test(l.name)}
-                    first={i === 0}
-                  />
-                ))
+                lifts.map((l, i) => <WeekRow key={i} lift={l} first={i === 0} />)
               )}
             </div>
           </div>
@@ -181,14 +190,25 @@ function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: numb
   );
 }
 
-function WeekLine({ name, detail, color, rest, first }: { name: string; detail: string | null; color: LoadColor; rest: boolean; first: boolean }) {
+// One line in the endurance week card. A run renders dot + name + prose below; a
+// strength accessory gets the SAME Sets×Reps + RPE heat treatment as a
+// bodybuilding row (or a coloured %-ramp), inline on the right.
+function WeekRow({ lift, restName, first }: { lift?: ProgramLiftView; restName?: string; first: boolean }) {
+  const name = lift?.name ?? restName ?? "—";
+  const rest = lift ? /rest/i.test(lift.name) : true;
+  const heat = lift?.rpe != null;
+  const ramp = !heat && !!(lift?.steps && lift.steps.length);
+  const below = !lift ? null : heat || ramp ? lift.note : [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
   return (
     <div style={{ marginTop: first ? 0 : 9 }}>
-      <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
-        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[color] }} />
-        {name}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0, background: HEX[lift ? liftColor(lift) : "ash"] }} />
+        <span style={{ flex: 1, minWidth: 0, fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>{name}</span>
+        {heat && <span style={{ fontFamily: mono, fontSize: 13, color: CHALK }}>{lift!.setsReps ?? "—"}</span>}
+        {heat && <HeatMeter rpe={lift!.rpe!} />}
+        {ramp && <span style={{ fontFamily: mono, fontSize: 12, color: ASH, textAlign: "right" }}><RampText lift={lift!} /></span>}
       </div>
-      {detail && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5 }}>{detail}</div>}
+      {below && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5, marginLeft: 17 }}>{below}</div>}
     </div>
   );
 }

@@ -133,19 +133,9 @@ function ProgramDays({ days, week, peakNote, discipline, C }: { days: ProgramDay
               <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: "#5a5e56", textTransform: "uppercase" }}>{day.title}</Text>
               <View style={{ flex: 1 }}>
                 {lifts.length === 0 ? (
-                  <WeekLine name={day.kindLabel ?? "—"} detail={null} color="ash" rest first C={C} />
+                  <WeekRow restName={day.kindLabel ?? "—"} first C={C} />
                 ) : (
-                  lifts.map((l, i) => (
-                    <WeekLine
-                      key={i}
-                      name={l.name}
-                      detail={[l.prescription, l.note].filter(Boolean).join(" · ") || null}
-                      color={liftColor(l)}
-                      rest={/rest/i.test(l.name)}
-                      first={i === 0}
-                      C={C}
-                    />
-                  ))
+                  lifts.map((l, i) => <WeekRow key={i} lift={l} first={i === 0} C={C} />)
                 )}
               </View>
             </View>
@@ -206,15 +196,29 @@ function SessionBlock({ s, C }: { s: ProgramSessionView; C: Palette }) {
   );
 }
 
-// one line in the endurance week card (a run, or a strength accessory)
-function WeekLine({ name, detail, color, rest, first, C }: { name: string; detail: string | null; color: LoadColor; rest: boolean; first: boolean; C: Palette }) {
+// One line in the endurance week card. A run renders dot + name + prose below; a
+// strength accessory gets the SAME Sets×Reps + RPE heat treatment as a
+// bodybuilding row (or a coloured %-ramp), inline on the right.
+function WeekRow({ lift, restName, first, C }: { lift?: ProgramLiftView; restName?: string; first: boolean; C: Palette }) {
+  const name = lift?.name ?? restName ?? "—";
+  const rest = lift ? /rest/i.test(lift.name) : true;
+  const heat = lift?.rpe != null;
+  const ramp = !heat && !!(lift?.steps && lift.steps.length);
+  const below = !lift ? null : heat || ramp ? lift.note : [lift.prescription, lift.note].filter(Boolean).join(" · ") || null;
   return (
     <View style={{ marginTop: first ? 0 : 9 }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, color) }} />
-        <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
+        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, lift ? liftColor(lift) : "ash") }} />
+        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
+        {heat && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginRight: 10 }}>{lift!.setsReps ?? "—"}</Text>}
+        {heat && <HeatMeter rpe={lift!.rpe!} C={C} />}
+        {ramp && (
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", lineHeight: 18 }}>
+            <RampText lift={lift!} C={C} />
+          </Text>
+        )}
       </View>
-      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17 }}>{detail}</Text>}
+      {!!below && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{below}</Text>}
     </View>
   );
 }
@@ -228,19 +232,44 @@ function NameCell({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
   );
 }
 
+// RPE "heat" meter — value + intensity bar. Shared by the bodybuilding row and
+// a strength accessory inside the endurance week card.
+function HeatMeter({ rpe, C }: { rpe: number; C: Palette }) {
+  const col = loadHex(C, rpeColor(rpe));
+  return (
+    <View style={{ width: 54, alignItems: "flex-end" }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: col }}>@{rpe}</Text>
+      <View style={{ width: 44, height: 3, borderRadius: 2, marginTop: 5, backgroundColor: HAIR, overflow: "hidden" }}>
+        <View style={{ height: "100%", width: `${Math.min(100, rpe * 10)}%`, borderRadius: 2, backgroundColor: col }} />
+      </View>
+    </View>
+  );
+}
+
+// Coloured %-ramp text (nested <Text> runs). Shared by the weightlifting row and
+// a %-based accessory in the week card.
+function RampText({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
+  return (
+    <>
+      {lift.steps!.map((st, i) => (
+        <Text key={i}>
+          {i > 0 ? <Text style={{ color: "#5a5e56" }}> · </Text> : null}
+          <Text style={{ color: loadHex(C, st.color), fontFamily: F.bold }}>{st.load}</Text>
+          <Text style={{ color: C.ash }}>{st.detail}</Text>
+          {st.kg ? <Text style={{ color: "#5a5e56" }}> · {st.kg}</Text> : null}
+        </Text>
+      ))}
+    </>
+  );
+}
+
 // bodybuilding — Sets×Reps + RPE heat bar
 function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
-  const col = loadHex(C, rpeColor(lift.rpe!));
   return (
     <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{lift.setsReps ?? "—"}</Text>
-      <View style={{ width: 54, alignItems: "flex-end" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: col }}>@{lift.rpe}</Text>
-        <View style={{ width: 44, height: 3, borderRadius: 2, marginTop: 5, backgroundColor: HAIR, overflow: "hidden" }}>
-          <View style={{ height: "100%", width: `${Math.min(100, lift.rpe! * 10)}%`, borderRadius: 2, backgroundColor: col }} />
-        </View>
-      </View>
+      <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right", marginRight: 10 }}>{lift.setsReps ?? "—"}</Text>
+      <HeatMeter rpe={lift.rpe!} C={C} />
     </View>
   );
 }
@@ -251,14 +280,7 @@ function RampRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pal
     <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", lineHeight: 19 }}>
-        {lift.steps!.map((st, i) => (
-          <Text key={i}>
-            {i > 0 ? <Text style={{ color: "#5a5e56" }}> · </Text> : null}
-            <Text style={{ color: loadHex(C, st.color), fontFamily: F.bold }}>{st.load}</Text>
-            <Text style={{ color: C.ash }}>{st.detail}</Text>
-            {st.kg ? <Text style={{ color: "#5a5e56" }}> · {st.kg}</Text> : null}
-          </Text>
-        ))}
+        <RampText lift={lift} C={C} />
       </Text>
     </View>
   );
