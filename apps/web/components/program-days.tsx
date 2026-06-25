@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { rpeColor, workoutColor, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { rpeColor, workoutColor, isGymLift, isProseLift, dayContentSummary, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { LIME, BLUE, AMBER, RED, ASH, CHALK, LINE, CARD } from "@/lib/ui";
 
 // The HYBRID plan day view — one card+table style that adapts per CONTENT (not
@@ -20,10 +20,9 @@ const HAIR = "rgba(255,255,255,0.05)";
 const mono = "var(--font-mono)";
 const disp = "var(--font-display)";
 
-// A lift is "gym" if it carries structured loading (a %-ramp, sets×reps, or RPE);
-// otherwise it's a prose workout (a run / cross-train).
-const isGym = (l: ProgramLiftView) => !!(l.steps && l.steps.length) || l.rpe != null || l.setsReps != null;
-const isProse = (l: ProgramLiftView) => !isGym(l);
+// content classification (isGymLift / isProseLift) is shared from @hybrid/core.
+const isGym = isGymLift;
+const isProse = isProseLift;
 const liftColor = (l: ProgramLiftView): LoadColor =>
   l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
 
@@ -58,7 +57,7 @@ function DayCard({ day }: { day: ProgramDayView }) {
   const mixed = all.some(isProse) && all.some(isGym); // a hybrid day → label the blocks
   return (
     <Card>
-      <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={day.volume} />
+      <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} />
       {day.sessions.map((s, si) => (
         <SessionBlock key={si} s={s} si={si} mixed={mixed} />
       ))}

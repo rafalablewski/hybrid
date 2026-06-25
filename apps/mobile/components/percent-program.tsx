@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, rpeColor, workoutColor, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { planProgramView, rpeColor, workoutColor, isGymLift, isProseLift, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
@@ -9,10 +9,9 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
 const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
 const HAIR = "rgba(255,255,255,0.05)";
-// A lift is "gym" if it carries structured loading (a %-ramp, sets×reps, RPE);
-// otherwise it's a prose workout (a run / cross-train).
-const isGym = (l: ProgramLiftView) => !!(l.steps && l.steps.length) || l.rpe != null || l.setsReps != null;
-const isProse = (l: ProgramLiftView) => !isGym(l);
+// content classification (isGymLift / isProseLift) is shared from @hybrid/core.
+const isGym = isGymLift;
+const isProse = isProseLift;
 const liftColor = (l: ProgramLiftView): LoadColor =>
   l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
 
@@ -168,7 +167,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
         const mixed = all.some(isProse) && all.some(isGym);
         return (
           <View key={di} style={card}>
-            <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={day.volume} C={C} />
+            <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={dayContentSummary(day)} C={C} />
             {day.sessions.map((s, si) => (
               <SessionBlock key={si} s={s} si={si} mixed={mixed} C={C} />
             ))}

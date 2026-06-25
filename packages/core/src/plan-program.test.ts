@@ -11,6 +11,9 @@ import {
   loadColor,
   rpeColor,
   workoutColor,
+  isGymLift,
+  isProseLift,
+  dayContentSummary,
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
@@ -210,6 +213,20 @@ describe("mixed endurance day — strength accessory on a run day", () => {
     // the run is prose (no sets/rpe); the accessory carries structured fields
     expect(lifts[0]!.rpe).toBeUndefined();
     expect(lifts[1]!).toMatchObject({ setsReps: "5×12", rpe: 8 });
+  });
+
+  it("classifies content and summarises a hybrid day", () => {
+    const day = planProgramView(MIXED, { week: 1 }).days[0]!;
+    const [run, accessory] = day.sessions[0]!.lifts;
+    expect(isProseLift(run!)).toBe(true);
+    expect(isGymLift(accessory!)).toBe(true);
+    // endurance day has no NL volume → a run/lift breakdown instead
+    expect(dayContentSummary(day)).toBe("1 run · 1 lift");
+  });
+
+  it("falls back to the discipline volume when present", () => {
+    const owlDay = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!;
+    expect(dayContentSummary(owlDay)).toBe("160 lifts");
   });
 });
 

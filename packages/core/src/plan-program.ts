@@ -306,6 +306,25 @@ export interface ProgramView {
   progression: string;
 }
 
+/** A lift is "gym" when it carries structured loading (a %-ramp, sets×reps, or
+ *  RPE); otherwise it's a prose workout (a run / cross-train). Shared so every
+ *  client groups a day's content identically. */
+export const isGymLift = (l: ProgramLiftView): boolean => !!(l.steps && l.steps.length) || l.rpe != null || l.setsReps != null;
+export const isProseLift = (l: ProgramLiftView): boolean => !isGymLift(l);
+
+/** Day-header summary: the discipline volume when present ("160 lifts",
+ *  "5 exercises"), else a run/lift breakdown for a hybrid day ("1 run · 3 lifts"). */
+export function dayContentSummary(day: ProgramDayView): string | null {
+  if (day.volume) return day.volume;
+  const lifts = day.sessions.flatMap((s) => s.lifts);
+  const runs = lifts.filter(isProseLift).length;
+  const gym = lifts.filter(isGymLift).length;
+  const parts: string[] = [];
+  if (runs) parts.push(`${runs} run${runs === 1 ? "" : "s"}`);
+  if (gym) parts.push(`${gym} lift${gym === 1 ? "" : "s"}`);
+  return parts.join(" · ") || null;
+}
+
 /** Format a hypertrophy (or prose) entry's prescription.
  *  Structured hypo entries → "4×6 · 80 kg · @9" (or without kg when unknown).
  *  Prose entries (endurance / conditioning) → detail string unchanged. */
