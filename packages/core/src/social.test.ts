@@ -88,6 +88,34 @@ describe("relations + privacy gate", () => {
   });
 });
 
+describe("privacy gate — the full visibility × relation contract", () => {
+  // The feed/leaderboard/compare cross-user reads rely ENTIRELY on this gate
+  // (the server role bypasses RLS), so pin every combination explicitly.
+  const relations = ["self", "none", "following", "follower", "friend", "close"] as const;
+  const expected: Record<string, Record<(typeof relations)[number], boolean>> = {
+    public:    { self: true, none: true,  following: true,  follower: true,  friend: true, close: true },
+    followers: { self: true, none: false, following: true,  follower: true,  friend: true, close: true },
+    private:   { self: true, none: false, following: false, follower: false, friend: false, close: false },
+  };
+  for (const vis of ["public", "followers", "private"] as const) {
+    for (const rel of relations) {
+      it(`${vis} × ${rel} → ${expected[vis]![rel]}`, () => {
+        expect(canViewResults(vis, rel)).toBe(expected[vis]![rel]);
+      });
+    }
+  }
+  it("a PENDING follow never counts as an active relation (no early access to a private profile)", () => {
+    const edges: FollowEdge[] = [{ followerId: "me", followeeId: "ghost", status: "pending" }];
+    const rel = relationTo("me", "ghost", edges);
+    expect(rel).toBe("none");
+    expect(canViewResults("private", rel)).toBe(false);
+    expect(canViewResults("followers", rel)).toBe(false);
+  });
+  it("unfollowing (edge removed) drops a former follower back to no access", () => {
+    expect(canViewResults("followers", relationTo("me", "x", []))).toBe(false);
+  });
+});
+
 describe("activity feed", () => {
   it("emits session + PR items, newest first, PR above its session", () => {
     const feed = buildSocialFeed(
