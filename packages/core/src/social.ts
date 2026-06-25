@@ -402,6 +402,77 @@ export function profileStats(sessions: LoggedSession[], now = Date.now()): Profi
   };
 }
 
+// ------------------------------------------------ social notifications ------
+export type SocialNotifKind =
+  | "follow" // someone followed me
+  | "follow_request" // someone asked to follow my private profile (actionable)
+  | "kudos" // someone cheered my workout/PR
+  | "comment" // someone commented on my item
+  | "enroll_request" // a client wants to start my program (coach, actionable)
+  | "enroll_active" // my coach accepted my enrolment
+  | "enroll_declined"; // my coach declined my enrolment
+
+export interface SocialNotifActor {
+  handle?: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+}
+
+export interface SocialNotifEvent {
+  kind: SocialNotifKind;
+  at: number; // epoch ms
+  actor?: SocialNotifActor;
+  /** program name, comment snippet, or "PR"/"workout" for kudos. */
+  text?: string;
+  /** route target (a profile/coach @handle). */
+  handle?: string;
+  /** present + actionable: approve/deny a follow request. */
+  followerId?: string;
+  /** present + actionable: accept/decline an enrolment request. */
+  enrollmentId?: string;
+}
+
+export interface SocialNotifItem extends SocialNotifEvent {
+  id: string;
+  title: string;
+  when: string;
+  accent: FeedAccent;
+  actionable: boolean;
+}
+
+function notifActorName(a?: SocialNotifActor): string {
+  return a?.displayName || (a?.handle ? `@${a.handle}` : "Someone");
+}
+
+/** Format + sort social/coaching events into a notification list (newest first).
+ *  Pure — the API gathers the raw events from the DB and hands them in. */
+export function buildSocialNotifications(events: SocialNotifEvent[], now = Date.now()): SocialNotifItem[] {
+  const items = events.map((e): SocialNotifItem => {
+    const who = notifActorName(e.actor);
+    let title = "";
+    let accent: FeedAccent = "blue";
+    let actionable = false;
+    switch (e.kind) {
+      case "follow": title = `${who} followed you`; accent = "blue"; break;
+      case "follow_request": title = `${who} requested to follow you`; accent = "blue"; actionable = true; break;
+      case "kudos": title = `${who} cheered your ${e.text || "workout"}`; accent = "lime"; break;
+      case "comment": title = `${who} commented: "${(e.text || "").slice(0, 80)}"`; accent = "violet"; break;
+      case "enroll_request": title = `${who} wants to start ${e.text || "your program"}`; accent = "amber"; actionable = true; break;
+      case "enroll_active": title = `${who} accepted your enrolment in ${e.text || "the program"}`; accent = "lime"; break;
+      case "enroll_declined": title = `${who} declined your enrolment in ${e.text || "the program"}`; accent = "amber"; break;
+    }
+    return {
+      ...e,
+      id: `${e.kind}-${e.followerId ?? e.enrollmentId ?? e.handle ?? e.at}`,
+      title,
+      when: relativeTime(e.at, now),
+      accent,
+      actionable,
+    };
+  });
+  return items.sort((a, b) => b.at - a.at);
+}
+
 // ------------------------------------------------- coach discovery rail ------
 export type CoachAccent = "lime" | "blue" | "violet" | "amber";
 

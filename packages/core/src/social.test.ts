@@ -12,6 +12,8 @@ import {
   profileStats,
   coachRailItems,
   PLACEHOLDER_COACHES,
+  buildSocialNotifications,
+  type SocialNotifEvent,
   type FollowEdge,
   type LoggedSession,
 } from "./index";
@@ -164,6 +166,24 @@ describe("coach discovery rail", () => {
     expect(items[0]!.verified).toBe(true);
     expect(items[0]!.placeholder).toBe(false);
     expect(items[0]!.headline).toContain("Strength"); // derived from specialties when no headline
+  });
+});
+
+describe("social notifications", () => {
+  it("formats + sorts events newest first and flags the actionable ones", () => {
+    const events: SocialNotifEvent[] = [
+      { kind: "follow", at: 1000, actor: { handle: "maya", displayName: "Maya K." } },
+      { kind: "follow_request", at: 3000, actor: { handle: "dev" }, followerId: "u_dev" },
+      { kind: "enroll_request", at: 2000, actor: { handle: "alex", displayName: "Alex" }, text: "8-Week Block", enrollmentId: "e1" },
+      { kind: "kudos", at: 500, actor: { handle: "jon" }, text: "PR" },
+    ];
+    const items = buildSocialNotifications(events, 4000);
+    expect(items.map((i) => i.kind)).toEqual(["follow_request", "enroll_request", "follow", "kudos"]);
+    expect(items[0]!.title).toContain("requested to follow");
+    expect(items.find((i) => i.kind === "enroll_request")!.actionable).toBe(true);
+    expect(items.find((i) => i.kind === "enroll_request")!.title).toContain("8-Week Block");
+    expect(items.find((i) => i.kind === "follow")!.actionable).toBe(false);
+    expect(items.find((i) => i.kind === "kudos")!.title).toContain("cheered your PR");
   });
 });
 
