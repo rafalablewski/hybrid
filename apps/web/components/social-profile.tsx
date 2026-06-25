@@ -179,6 +179,12 @@ export default function SocialProfile() {
           {field("Handle", <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder="handle" /></div>)}
           {field("Display name", <input style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Optional" />)}
           {field("Bio", <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder="Hybrid athlete · runner · lifter…" />)}
+          {field("Avatar image URL", (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Avatar url={form.avatarUrl} name={form.displayName || form.handle} handle={form.handle} size={40} />
+              <input style={inputStyle} value={form.avatarUrl ?? ""} onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })} placeholder="https://…  (upload coming soon)" />
+            </div>
+          ))}
           {field("Who can see your results", (
             <div style={{ display: "flex", gap: 8 }}>
               {(["public", "followers", "private"] as const).map((v) => (

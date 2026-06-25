@@ -13,7 +13,7 @@ export default function MyProfileScreen() {
   const [data, setData] = useState<any>(null);
   const [conns, setConns] = useState<any>(null);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<any>({ handle: "", displayName: "", bio: "", visibility: "followers" });
+  const [form, setForm] = useState<any>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<"friends" | "following" | "followers" | "requests">("friends");
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export default function MyProfileScreen() {
   const load = async () => {
     const d: any = await getMyProfile();
     setData(d);
-    if (d.profile) setForm({ handle: d.profile.handle, displayName: d.profile.displayName ?? "", bio: d.profile.bio ?? "", visibility: d.profile.visibility });
+    if (d.profile) setForm({ handle: d.profile.handle, displayName: d.profile.displayName ?? "", bio: d.profile.bio ?? "", visibility: d.profile.visibility, avatarUrl: d.profile.avatarUrl ?? "" });
     else setForm((f: any) => ({ ...f, handle: d.suggestedHandle ?? "" }));
     setConns(await getConnections());
   };
@@ -60,6 +60,8 @@ export default function MyProfileScreen() {
           <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder="Optional" placeholderTextColor={C.ash} style={{ ...inp, marginBottom: 12 }} />
           <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Bio</Text>
           <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder="Hybrid athlete · runner · lifter…" placeholderTextColor={C.ash} style={{ ...inp, minHeight: 64, marginBottom: 12 }} />
+          <Text style={{ color: C.ash, fontSize: 12, marginBottom: 4 }}>Avatar image URL</Text>
+          <TextInput value={form.avatarUrl} onChangeText={(v) => setForm({ ...form, avatarUrl: v })} autoCapitalize="none" placeholder="https://…  (upload coming soon)" placeholderTextColor={C.ash} style={{ ...inp, marginBottom: 12 }} />
           <Text style={{ color: C.ash, fontSize: 12, marginBottom: 6 }}>Who can see your results</Text>
           <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
             {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
