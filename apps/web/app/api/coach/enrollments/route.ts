@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { tableMissing, authorCards } from "@/lib/social";
+import { tableMissing, authorCards, deliverProgramAssignments } from "@/lib/social";
 
 // Program enrolments. GET returns both sides: requests INTO my programs (as a
 // coach) and programs I've started (as a client). POST lets the COACH
@@ -50,15 +50,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "not found" }, { status: 404 });
 
     if (action === "accept") {
-      const updated = await prisma.$transaction(async (tx) => {
+      const start = new Date();
+      const result = await prisma.$transaction(async (tx) => {
         await tx.coachLink.upsert({
           where: { coachId_clientId: { coachId: me.id, clientId: enrollment.clientId } },
           update: { status: "ACTIVE" },
           create: { coachId: me.id, clientId: enrollment.clientId, status: "ACTIVE" },
         });
-        return tx.programEnrollment.update({ where: { id: enrollmentId }, data: { status: "active", startedAt: new Date() } });
+        const updated = await tx.programEnrollment.update({ where: { id: enrollmentId }, data: { status: "active", startedAt: start } });
+        // Deliver the program: materialize its weeks into dated Assignments so
+        // the client actually sees the workouts on their Today/Calendar.
+        const assignments = await deliverProgramAssignments(tx, enrollment.programId, enrollment.clientId, me.id, start);
+        return { updated, assignments };
       });
-      return NextResponse.json({ enrollment: updated });
+      return NextResponse.json({ enrollment: result.updated, assignments: result.assignments });
     }
     const status = action === "end" ? "ended" : "declined";
     const updated = await prisma.programEnrollment.update({ where: { id: enrollmentId }, data: { status } });

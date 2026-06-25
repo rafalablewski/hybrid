@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { tableMissing } from "@/lib/social";
+import { tableMissing, deliverProgramAssignments } from "@/lib/social";
 
 // Start an online program with a coach (client-initiated). Opens a CoachLink
 // (PENDING, or ACTIVE when the coach set autoAccept) and a ProgramEnrollment.
@@ -51,6 +51,9 @@ export async function POST(request: Request) {
           startedAt: auto ? new Date() : null,
         },
       });
+      // Auto-accepted? deliver the program now (materialize its weeks into the
+      // client's Assignments). For a request, delivery happens on coach accept.
+      if (auto) await deliverProgramAssignments(tx, programId, me.id, program.coachId);
       return { link, enrollment };
     });
 

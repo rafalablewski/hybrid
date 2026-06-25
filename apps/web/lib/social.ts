@@ -1,12 +1,40 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { migrateBlocks, type FollowEdge, type LoggedSession } from "@hybrid/core";
+import { sanitizeProgramWeeks, programAssignments } from "@/lib/coach-program";
 
 /** A social/marketplace table hasn't been migrated yet (run reference/sql-social.sql). */
 export const tableMissing = (e: unknown) => {
   const code = (e as { code?: string })?.code;
   return code === "P2021" || code === "P2010";
 };
+
+/** Materialize a coach program's weeks into dated Assignments for one client —
+ *  the "deliver the program" step shared by accepting a ProgramEnrollment AND
+ *  accepting a CoachLink that originated from an enrolment. Idempotent: clears
+ *  exactly the (date, name) slots it's about to write, so a re-accept/retry
+ *  never duplicates the calendar. Runs inside the caller's transaction. Returns
+ *  the number of Assignment rows written. */
+export async function deliverProgramAssignments(
+  tx: Prisma.TransactionClient,
+  programId: string,
+  clientId: string,
+  coachId: string,
+  start: Date = new Date(),
+): Promise<number> {
+  const program = await tx.coachProgram.findUnique({ where: { id: programId } });
+  if (!program) return 0;
+  const weeks = sanitizeProgramWeeks(program.weeks);
+  const rows = programAssignments(weeks, clientId, coachId, start);
+  if (rows.length === 0) return 0;
+  const dates = [...new Set(rows.map((r) => +new Date(r.date as Date)))].map((t) => new Date(t));
+  const names = [...new Set(rows.map((r) => r.name))];
+  await tx.assignment.deleteMany({
+    where: { assignedById: coachId, athleteId: clientId, date: { in: dates }, name: { in: names } },
+  });
+  await tx.assignment.createMany({ data: rows });
+  return rows.length;
+}
 
 /** All follow edges this user is a party to (either side), for relation maths. */
 export async function edgesFor(userId: string): Promise<FollowEdge[]> {
