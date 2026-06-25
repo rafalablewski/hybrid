@@ -207,6 +207,52 @@ export function formatLift(lift: PlanLift, maxes?: Record<string, number>): stri
 //  View model — one render-ready shape for ALL clients
 // ============================================================
 
+/** Brand colour token keyed to lift intensity, shared so every client colours
+ *  loads / RPE identically (web hex/CSS-var, mobile palette). */
+export type LoadColor = "blue" | "lime" | "amber" | "red" | "ash";
+
+/** Map a working % to its intensity colour. Bodyweight (`null`) → ash. Thresholds
+ *  live here (not per-client) so the colour wave can't drift. */
+export function loadColor(pct: number | null): LoadColor {
+  if (pct == null) return "ash";
+  if (pct < 65) return "blue";
+  if (pct < 75) return "lime";
+  if (pct < 85) return "amber";
+  return "red";
+}
+
+/** Map a target RPE to its intensity colour (the bodybuilding heat column). */
+export function rpeColor(rpe: number): LoadColor {
+  if (rpe >= 10) return "red";
+  if (rpe >= 9) return "amber";
+  if (rpe >= 8) return "blue";
+  return "ash";
+}
+
+/** Map an endurance workout label to a type colour (the running type-dot):
+ *  rest → ash, long run → red, hard (tempo/intervals/hills/speed) → amber,
+ *  everything else (easy/recovery) → blue. */
+export function workoutColor(label: string): LoadColor {
+  const s = label.toLowerCase();
+  if (s.includes("rest")) return "ash";
+  if (s.includes("long")) return "red";
+  if (/tempo|interval|hill|speed|race|threshold|fartlek/.test(s)) return "amber";
+  return "blue";
+}
+
+/** One step of a strength-percent lift's ramp, render-ready for the coloured
+ *  prescription (the load is coloured by intensity; the rest stays muted). */
+export interface ProgramStepView {
+  /** "60%" or "BW". */
+  load: string;
+  /** intensity colour for the load token. */
+  color: LoadColor;
+  /** the reps×sets tail, e.g. "×4×3", "×4+1×4" (complex kept). */
+  detail: string;
+  /** derived working weight ("95kg") when a 1RM is known, else null. */
+  kg: string | null;
+}
+
 export interface ProgramLiftView {
   name: string;
   /** Combined prescription string — always set; used as the single-column
@@ -215,6 +261,9 @@ export interface ProgramLiftView {
   nl: number;
   /** complex / tempo / alternative annotation, or null. */
   note: string | null;
+  /** Per-step ramp for strength-percent lifts (coloured loads). Absent for
+   *  prose / hypertrophy entries. */
+  steps?: ProgramStepView[];
   // ── hypertrophy structured fields (present when the entry has sets/rpe) ──
   /** "4×6" or "4×AMRAP" — split from prescription for tabular display. */
   setsReps?: string;
@@ -264,6 +313,22 @@ function formatEntry(e: PlanEntry, maxes?: Record<string, number>): string {
   if (kg) parts.push(`${kg} kg`);
   if (e.rpe != null) parts.push(`@${e.rpe}`);
   return parts.join(" · ");
+}
+
+/** Render-ready per-step breakdown for a strength-percent lift — the load token
+ *  carries its intensity colour; the reps×sets tail + derived kg stay separate. */
+function liftStepViews(lift: PlanLift, maxes?: Record<string, number>): ProgramStepView[] {
+  const oneRm = lift.ref ? maxes?.[lift.ref] : undefined;
+  return lift.steps.map((s) => {
+    const reps = s.plus ? `${s.reps}+${s.plus}` : `${s.reps}`;
+    const kg = stepKg(s, oneRm);
+    return {
+      load: s.pct == null ? "BW" : `${s.pct}%`,
+      color: loadColor(s.pct),
+      detail: `×${reps}${s.sets > 1 ? `×${s.sets}` : ""}`,
+      kg: kg != null ? `${kg}kg` : null,
+    };
+  });
 }
 
 function liftNote(lift: PlanLift): string | null {
@@ -325,6 +390,7 @@ export function planProgramView(
             prescription: formatLift(l, maxes),
             nl: liftNL(l),
             note: liftNote(l),
+            steps: liftStepViews(l, maxes),
           })),
           ...(s.entries ?? []).map((e) => {
             const kg = e.weightRef ? maxes?.[e.weightRef] : undefined;

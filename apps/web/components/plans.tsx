@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import ProgramDays from "./program-days";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
 // the exact same source the mobile app renders. Goal → plans → full detail.
@@ -356,87 +357,7 @@ function PercentProgramView({
         </div>
       )}
 
-      {view.days.map((day, di) => (
-        <Card key={di} style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 14px", borderBottom: `1px solid ${LINE}` }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
-              {day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}
-            </Mono>
-            {day.volume && <Mono s={{ fontSize: fs.nano }} c={ASH}>{day.volume}</Mono>}
-          </div>
-          {day.sessions.map((s, si) => {
-            // A session may mix run/prose rows (no rpe) with gym rows (rpe set).
-            // When any row has rpe, we open 4 columns so gym rows align properly;
-            // prose/strength rows span those 3 right cols with their prescription.
-            const hasStructured = s.lifts.some((l) => l.rpe != null);
-            return (
-              <div key={si}>
-                {(s.label || s.volume) && (
-                  <div style={{ padding: "6px 14px 2px", borderBottom: `1px solid ${LINE}`, background: "rgba(184,240,74,.03)" }}>
-                    <Mono s={{ fontSize: fs.nano, letterSpacing: ".1em" }} c={LIME}>
-                      {[s.label, s.volume].filter(Boolean).join(" · ")}
-                    </Mono>
-                  </div>
-                )}
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...thStyle }}>Exercise</th>
-                      {hasStructured ? (
-                        <>
-                          <th style={{ ...thStyle, textAlign: "right" }}>Sets × Reps</th>
-                          <th style={{ ...thStyle, textAlign: "right" }}>Weight</th>
-                          <th style={{ ...thStyle, textAlign: "right" }}>RPE</th>
-                        </>
-                      ) : (
-                        <th style={{ ...thStyle, textAlign: "right" }}>Prescription</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.lifts.map((l, li) => {
-                      const isLast = li === s.lifts.length - 1;
-                      const rowTd = { ...tdStyle, ...(isLast ? { borderBottom: "none" } : {}) };
-                      return (
-                      <tr key={li}>
-                        <td style={rowTd}>
-                          <div style={{ ...disp, fontWeight: 600, fontSize: 14, color: "#ececec" }}>{l.name}</div>
-                          {l.note && <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 2 }} c={ASH}>{l.note}</Mono>}
-                        </td>
-                        {l.rpe != null ? (
-                          // Structured gym row — 3 right cells
-                          <>
-                            <td style={{ ...rowTd, ...numCell }}>
-                              <Mono s={{ fontSize: fs.body }} c={CHALK}>{l.setsReps ?? "—"}</Mono>
-                            </td>
-                            <td style={{ ...rowTd, ...numCell }}>
-                              <Mono s={{ fontSize: fs.body }} c={ASH}>{l.weight ?? "—"}</Mono>
-                            </td>
-                            <td style={{ ...rowTd, ...numCell }}>
-                              <RpeBadge rpe={l.rpe} />
-                            </td>
-                          </>
-                        ) : hasStructured ? (
-                          // Prose/strength row inside a mixed session — span all 3 right cols.
-                          <td colSpan={3} style={{ ...rowTd, textAlign: "right" }}>
-                            <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
-                          </td>
-                        ) : (
-                          // Pure prose/strength session — single prescription cell
-                          <td style={{ ...rowTd, textAlign: "right" }}>
-                            <Mono s={{ fontSize: fs.caption }} c={CHALK}>{l.prescription}</Mono>
-                          </td>
-                        )}
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-        </Card>
-      ))}
+      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
 
       <Info label="How it progresses" value={view.progression} />
 
@@ -453,43 +374,6 @@ function PercentProgramView({
         </Mono>
       )}
     </div>
-  );
-}
-
-// ── Table helpers ─────────────────────────────────────────────────────────────
-
-const thStyle: React.CSSProperties = {
-  fontFamily: "monospace",
-  fontSize: 9,
-  color: ASH,
-  textTransform: "uppercase" as const,
-  letterSpacing: ".1em",
-  textAlign: "left" as const,
-  padding: "7px 13px 5px",
-  fontWeight: "normal",
-  borderBottom: `1px solid ${LINE}`,
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "9px 13px",
-  verticalAlign: "middle" as const,
-  borderBottom: `1px solid ${LINE}`,
-  fontSize: 13,
-};
-
-const numCell: React.CSSProperties = {
-  textAlign: "right" as const,
-  whiteSpace: "nowrap" as const,
-  width: 1, // shrink-wrap
-};
-
-function RpeBadge({ rpe }: { rpe: number }) {
-  const dotColor = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : "#4a4a4a";
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-      <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-      <span style={{ fontFamily: "monospace", fontSize: 11, color: ASH }}>{rpe}</span>
-    </span>
   );
 }
 

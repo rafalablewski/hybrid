@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { planProgramView, rpeColor, workoutColor, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
+
+type Palette = ReturnType<typeof useTheme>["palette"];
+const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
+const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
+const HAIR = "rgba(255,255,255,0.05)";
+const isProse = (l: ProgramLiftView) => !(l.steps && l.steps.length) && l.rpe == null;
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
@@ -89,71 +95,7 @@ export default function PercentProgram({
         </View>
       )}
 
-      {view.days.map((day, di) => (
-        <View key={di} style={{ ...card, padding: 0 }}>
-          {/* Day header */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>
-              {day.title}{day.kindLabel ? ` — ${day.kindLabel}` : ""}
-            </Text>
-            {!!day.volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{day.volume}</Text>}
-          </View>
-
-          {day.sessions.map((s, si) => {
-            // Mixed sessions (run + gym) get 4-col headers so gym rows align;
-            // prose/strength rows within that session render a spanning prescription.
-            const hasStructured = s.lifts.some((l) => l.rpe != null);
-            return (
-              <View key={si}>
-                {/* Session sub-label (AM / PM) */}
-                {(!!s.label || !!s.volume) && (
-                  <View style={{ paddingHorizontal: 12, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, color: C.lime }}>{[s.label, s.volume].filter(Boolean).join(" · ")}</Text>
-                  </View>
-                )}
-
-                {/* Column headers */}
-                <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
-                  {hasStructured ? (
-                    <>
-                      <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets</Text>
-                      <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Wt</Text>
-                      <Text style={{ width: 38, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
-                    </>
-                  ) : (
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Prescription</Text>
-                  )}
-                </View>
-
-                {/* Rows */}
-                {s.lifts.map((l, li) => (
-                  <View key={li} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: li > 0 ? 1 : 0, borderTopColor: C.line }}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{l.name}</Text>
-                      {!!l.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.note}</Text>}
-                    </View>
-                    {l.rpe != null ? (
-                      // Structured gym row — 3 fixed-width right cells
-                      <>
-                        <Text style={{ width: 52, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{l.setsReps ?? "—"}</Text>
-                        <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.body, color: C.ash, textAlign: "right" }}>{l.weight ?? "—"}</Text>
-                        <View style={{ width: 38, alignItems: "flex-end" }}>
-                          <MobileRpeBadge rpe={l.rpe} C={C} />
-                        </View>
-                      </>
-                    ) : (
-                      // Prose/strength row — prescription fills the right side,
-                      // matching the total width of the 3 gym columns when mixed.
-                      <Text style={{ width: hasStructured ? 146 : undefined, maxWidth: hasStructured ? undefined : "60%", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", flexShrink: 1 }}>{l.prescription}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            );
-          })}
-        </View>
-      ))}
+      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
 
       <View style={card}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
@@ -170,12 +112,142 @@ export default function PercentProgram({
   );
 }
 
-function MobileRpeBadge({ rpe, C }: { rpe: number; C: ReturnType<typeof useTheme>["palette"] }) {
-  const dotColor = rpe >= 10 ? "#e8a838" : rpe >= 9 ? "#7bb8ec" : "#4a4a4a";
+// The HYBRID plan day view (mobile) — one card+table style that adapts per
+// discipline, mirroring the web `program-days.tsx` 1:1 off the SAME shared
+// planProgramView. Three row modes picked per lift: bodybuilding (RPE heat),
+// weightlifting (coloured %-ramp), running (whole week as Day rows).
+function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette }) {
+  const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" as const, marginBottom: 12 };
+  const proseWeek = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
+
+  if (proseWeek) {
+    return (
+      <View style={card}>
+        <DayHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
+        {days.map((day, di) => {
+          const lift = day.sessions[0]?.lifts[0];
+          const name = lift?.name ?? day.kindLabel ?? "—";
+          const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") : null;
+          const rest = !lift || /rest/i.test(name);
+          return (
+            <View key={di} style={{ flexDirection: "row", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: di > 0 ? 1 : 0, borderTopColor: HAIR }}>
+              <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: "#5a5e56", textTransform: "uppercase" }}>{day.title}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, workoutColor(name)) }} />
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
+                </View>
+                {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17 }}>{detail}</Text>}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-      <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: dotColor }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{rpe}</Text>
+    <>
+      {days.map((day, di) => (
+        <View key={di} style={card}>
+          <DayHeader title={day.title + (day.kindLabel ? ` — ${day.kindLabel}` : "")} right={day.volume} C={C} />
+          {day.sessions.map((s, si) => (
+            <SessionBlock key={si} s={s} C={C} />
+          ))}
+        </View>
+      ))}
+    </>
+  );
+}
+
+function DayHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>{title}</Text>
+      {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
+    </View>
+  );
+}
+
+function SessionBlock({ s, C }: { s: ProgramSessionView; C: Palette }) {
+  const isHeat = s.lifts.some((l) => l.rpe != null);
+  return (
+    <View>
+      {!!s.label && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR, backgroundColor: tint(s.label === "PM" ? C.blue : C.lime, 0.04) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: s.label === "PM" ? C.blue : C.lime }}>
+            {[s.label, s.volume].filter(Boolean).join(" · ")}
+          </Text>
+        </View>
+      )}
+      {isHeat && (
+        <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: HAIR }}>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textTransform: "uppercase", letterSpacing: 1 }}>Exercise</Text>
+          <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>Sets×Reps</Text>
+          <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: "#5a5e56", textAlign: "right", textTransform: "uppercase", letterSpacing: 1 }}>RPE</Text>
+        </View>
+      )}
+      {s.lifts.map((l, li) => {
+        const top = li > 0;
+        if (l.rpe != null) return <HeatRow key={li} lift={l} top={top} C={C} />;
+        if (l.steps && l.steps.length) return <RampRow key={li} lift={l} top={top} C={C} />;
+        return <FallbackRow key={li} lift={l} top={top} C={C} />;
+      })}
+    </View>
+  );
+}
+
+function NameCell({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
+  return (
+    <View style={{ flex: 1, marginRight: 8 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{lift.name}</Text>
+      {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{lift.note}</Text>}
+    </View>
+  );
+}
+
+// bodybuilding — Sets×Reps + RPE heat bar
+function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
+  const col = loadHex(C, rpeColor(lift.rpe!));
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+      <NameCell lift={lift} C={C} />
+      <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right" }}>{lift.setsReps ?? "—"}</Text>
+      <View style={{ width: 54, alignItems: "flex-end" }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: col }}>@{lift.rpe}</Text>
+        <View style={{ width: 44, height: 3, borderRadius: 2, marginTop: 5, backgroundColor: HAIR, overflow: "hidden" }}>
+          <View style={{ height: "100%", width: `${Math.min(100, lift.rpe! * 10)}%`, borderRadius: 2, backgroundColor: col }} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// weightlifting — coloured %-ramp prescription
+function RampRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+      <NameCell lift={lift} C={C} />
+      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", lineHeight: 19 }}>
+        {lift.steps!.map((st, i) => (
+          <Text key={i}>
+            {i > 0 ? <Text style={{ color: "#5a5e56" }}> · </Text> : null}
+            <Text style={{ color: loadHex(C, st.color), fontFamily: F.bold }}>{st.load}</Text>
+            <Text style={{ color: C.ash }}>{st.detail}</Text>
+            {st.kg ? <Text style={{ color: "#5a5e56" }}> · {st.kg}</Text> : null}
+          </Text>
+        ))}
+      </Text>
+    </View>
+  );
+}
+
+// prose fallback (mixed/odd entries inside a day card)
+function FallbackRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
+      <NameCell lift={lift} C={C} />
+      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
     </View>
   );
 }

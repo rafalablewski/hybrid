@@ -8,6 +8,9 @@ import {
   formatStep,
   formatLift,
   planProgramView,
+  loadColor,
+  rpeColor,
+  workoutColor,
   type PlanLift,
 } from "./plan-program";
 import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
@@ -149,6 +152,42 @@ describe("planProgramView", () => {
 
   it("clamps an out-of-range week to a real one", () => {
     expect(planProgramView(SOVIET_OWL_8WK, { week: 99 }).week).toBe(1);
+  });
+
+  it("exposes coloured per-step views for strength lifts (load split from tail)", () => {
+    const v = planProgramView(SOVIET_OWL_8WK, { week: 1 });
+    const press = v.days[0]!.sessions[0]!.lifts[0]!; // 60%×4×3 · 70%×4×2
+    expect(press.steps).toHaveLength(2);
+    expect(press.steps![0]).toMatchObject({ load: "60%", color: "blue", detail: "×4×3", kg: null });
+    expect(press.steps![1]).toMatchObject({ load: "70%", color: "lime", detail: "×4×2" });
+  });
+
+  it("carries the derived kg into each step when a max is given", () => {
+    const v = planProgramView(SOVIET_OWL_8WK, { week: 1, maxes: { snatch: 100 } });
+    const snatch = v.days[0]!.sessions[0]!.lifts[1]!;
+    expect(snatch.steps!.some((s) => s.kg?.endsWith("kg"))).toBe(true);
+  });
+});
+
+describe("intensity colour helpers", () => {
+  it("loadColor maps the % wave (blue→lime→amber→red, BW→ash)", () => {
+    expect(loadColor(null)).toBe("ash");
+    expect(loadColor(60)).toBe("blue");
+    expect(loadColor(70)).toBe("lime");
+    expect(loadColor(80)).toBe("amber");
+    expect(loadColor(90)).toBe("red");
+  });
+  it("rpeColor maps the bodybuilding heat column", () => {
+    expect(rpeColor(8)).toBe("blue");
+    expect(rpeColor(9)).toBe("amber");
+    expect(rpeColor(10)).toBe("red");
+  });
+  it("workoutColor maps endurance workout types", () => {
+    expect(workoutColor("Rest / cross-train")).toBe("ash");
+    expect(workoutColor("Long run")).toBe("red");
+    expect(workoutColor("Tempo")).toBe("amber");
+    expect(workoutColor("Hills")).toBe("amber");
+    expect(workoutColor("Easy")).toBe("blue");
   });
 });
 
