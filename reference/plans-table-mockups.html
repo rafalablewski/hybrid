@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Plan table — 10 mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0a0b0a;--ink2:#121312;--card:#151715;--line:#262926;--hair:#1d1f1d;
+    --lime:#c4f035;--chalk:#f3f4ef;--ash:#83877e;--ash2:#5a5e56;
+    --blue:#7fd4e8;--amber:#f0b45e;--red:#e0625e;
+    --d:'Archivo',sans-serif;--m:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--chalk);font-family:var(--d);-webkit-font-smoothing:antialiased;padding:40px 18px 100px}
+  .wrap{max-width:1040px;margin:0 auto}
+  .kick{font-family:var(--m);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--lime)}
+  h1{font-size:28px;font-weight:900;letter-spacing:-.02em;margin:8px 0 10px}
+  .lead{font-family:var(--m);font-size:13px;color:var(--ash);line-height:1.65;max-width:660px;margin-bottom:30px}
+  .lead b{color:var(--chalk)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:30px}
+  @media(max-width:480px){.grid{grid-template-columns:1fr}}
+  .mock .cap{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+  .mock .cap .n{font-family:var(--m);font-size:11px;font-weight:700;color:var(--ink);background:var(--lime);border-radius:6px;padding:2px 7px}
+  .mock .cap .ti{font-size:15px;font-weight:800}
+  .mock .cap .ds{font-family:var(--m);font-size:11px;color:var(--ash);margin-left:auto;text-align:right}
+
+  /* shared card + header */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .dh{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--hair)}
+  .dh .t{font-family:var(--m);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+  .dh .v{font-family:var(--m);font-size:10px;color:var(--ash)}
+  .nm{font-weight:600}
+  .sub{font-family:var(--m);font-size:10px;color:var(--ash);margin-top:2px}
+  .sr{font-family:var(--m)} .rp{font-family:var(--m)}
+  /* rpe colours */
+  .e8{color:var(--blue)} .e9{color:var(--amber)} .e10{color:var(--red)}
+
+  /* base 3-col row */
+  .row{display:grid;grid-template-columns:1fr auto 56px;align-items:center;gap:14px;padding:14px 16px}
+
+  /* 1 hairline */
+  .v-hairline .row+.row{border-top:1px solid var(--hair)}
+  .v-hairline .nm{font-size:15px}.v-hairline .sr{font-size:13px;color:var(--chalk)}.v-hairline .rp{font-size:13px;text-align:right}
+
+  /* 2 zebra */
+  .v-zebra .row:nth-child(even){background:rgba(255,255,255,.022)}
+  .v-zebra .nm{font-size:15px}.v-zebra .sr{font-size:13px;color:var(--chalk)}.v-zebra .rp{font-size:13px;text-align:right}
+
+  /* 3 indexed */
+  .v-indexed .row{grid-template-columns:24px 1fr auto 56px}
+  .v-indexed .row+.row{border-top:1px solid var(--hair)}
+  .v-indexed .ix{font-family:var(--m);font-size:11px;color:var(--ash2)}
+  .v-indexed .nm{font-size:15px}.v-indexed .sr{font-size:13px;color:var(--chalk)}.v-indexed .rp{font-size:13px;text-align:right}
+
+  /* 4 editorial */
+  .v-ed .erow{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;padding:16px}
+  .v-ed .erow+.erow{border-top:1px solid var(--hair)}
+  .v-ed .nm{font-size:19px;font-weight:800;letter-spacing:-.01em}
+  .v-ed .big{font-family:var(--m);font-size:17px;font-weight:600;color:var(--chalk)}
+  .v-ed .rp{font-size:12px;text-align:right;margin-top:3px}
+
+  /* 5 rpe heat */
+  .v-heat .row+.row{border-top:1px solid var(--hair)}
+  .v-heat .nm{font-size:15px}.v-heat .sr{font-size:13px;color:var(--chalk)}
+  .v-heat .heat{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .v-heat .heat .rp{font-size:13px;font-weight:600}
+  .v-heat .heat .bar{width:44px;height:3px;border-radius:2px;background:var(--hair);overflow:hidden}
+  .v-heat .heat .bar i{display:block;height:100%;border-radius:2px}
+
+  /* 6 ledger */
+  .v-led .lrow{display:flex;align-items:baseline;gap:8px;padding:12px 16px;font-family:var(--m)}
+  .v-led .lrow+.lrow{border-top:1px solid var(--hair)}
+  .v-led .nm{font-family:var(--m);font-size:13px;font-weight:500;color:var(--chalk)}
+  .v-led .dots{flex:1;border-bottom:1px dotted #34372f;transform:translateY(-3px)}
+  .v-led .val{font-size:12px;color:var(--chalk)}.v-led .val .rp{margin-left:8px}
+
+  /* 7 header band */
+  .v-band .dh{background:color-mix(in srgb,var(--amber) 12%,transparent);border-bottom:1px solid color-mix(in srgb,var(--amber) 24%,transparent)}
+  .v-band .colh{display:grid;grid-template-columns:1fr auto 56px;gap:14px;padding:8px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--hair)}
+  .v-band .colh span{font-family:var(--m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash2)}
+  .v-band .colh span:nth-child(3){text-align:right}
+  .v-band .row+.row{border-top:1px solid var(--hair)}
+  .v-band .nm{font-size:15px}.v-band .sr{font-size:13px;color:var(--chalk)}.v-band .rp{font-size:13px;text-align:right}
+
+  /* 8 boxed grid */
+  .v-grid .gt{width:100%;border-collapse:collapse}
+  .v-grid .gt th{font-family:var(--m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash2);text-align:left;padding:9px 14px;background:rgba(255,255,255,.02);border:1px solid var(--hair)}
+  .v-grid .gt td{padding:12px 14px;border:1px solid var(--hair);font-size:14px}
+  .v-grid .gt td.nm{font-weight:600}.v-grid .gt td.sr{font-family:var(--m);font-size:13px;color:var(--chalk)}.v-grid .gt td.rp{font-family:var(--m);font-size:13px}
+  .v-grid .gt th:nth-child(3),.v-grid .gt td.rp{text-align:right}
+
+  /* 9 compact */
+  .v-compact .row{padding:8px 14px;grid-template-columns:1fr auto 48px}
+  .v-compact .row+.row{border-top:1px solid var(--hair)}
+  .v-compact .nm{font-size:13px}.v-compact .sr{font-size:12px;color:var(--ash)}.v-compact .rp{font-size:12px;text-align:right}
+
+  /* 10 accent rail */
+  .v-accent .arow{display:grid;grid-template-columns:1fr auto 56px;align-items:center;gap:14px;padding:13px 16px 13px 14px;border-left:3px solid var(--c,var(--line))}
+  .v-accent .arow+.arow{border-top:1px solid var(--hair)}
+  .v-accent .nm{font-size:15px}.v-accent .sr{font-size:13px;color:var(--chalk)}.v-accent .rp{font-size:13px;text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="kick">HYBRID · Plan table — 10 treatments</span>
+  <h1>10 mockups · cards + table kept</h1>
+  <p class="lead">Same card, same table, same <b>Thursday Push</b> data in every one — only the visual treatment changes. Ranges from minimal (1) to bold (8/10). Pick one (or mix), e.g. <b>"3 + 5's RPE heat"</b>.</p>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const EX = [
+  { n:"Overhead Press", sr:"4×6", rpe:9, tag:"Main lift — progressive overload" },
+  { n:"Dips", sr:"4×AMRAP", rpe:10 },
+  { n:"Chest Fly", sr:"3×10", rpe:8 },
+  { n:"Overhead Extensions", sr:"3×10", rpe:8 },
+  { n:"Lateral Raises", sr:"3×12", rpe:10 },
+];
+const COL = { 8:"var(--blue)", 9:"var(--amber)", 10:"var(--red)" };
+const ec = r => `e${r}`;
+const header = `<div class="dh"><span class="t">Thu · Push (Overhead Press)</span><span class="v">5 exercises</span></div>`;
+
+const V = [
+  { id:"v-hairline", ti:"Hairline", ds:"minimal · thin rules",
+    body: () => EX.map(e=>`<div class="row"><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div class="sr">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe}</div></div>`).join("") },
+
+  { id:"v-zebra", ti:"Zebra", ds:"alternating rows",
+    body: () => EX.map(e=>`<div class="row"><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div class="sr">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe}</div></div>`).join("") },
+
+  { id:"v-indexed", ti:"Indexed", ds:"numbered rows",
+    body: () => EX.map((e,i)=>`<div class="row"><div class="ix">${String(i+1).padStart(2,"0")}</div><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div class="sr">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe}</div></div>`).join("") },
+
+  { id:"v-ed", ti:"Editorial", ds:"big names, airy",
+    body: () => EX.map(e=>`<div class="erow"><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div style="text-align:right"><div class="big">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe} RPE</div></div></div>`).join("") },
+
+  { id:"v-heat", ti:"RPE heat", ds:"intensity-coloured RPE",
+    body: () => EX.map(e=>`<div class="row"><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div class="sr">${e.sr}</div><div class="heat"><div class="rp ${ec(e.rpe)}">@${e.rpe}</div><div class="bar"><i style="width:${e.rpe*10}%;background:${COL[e.rpe]}"></i></div></div></div>`).join("") },
+
+  { id:"v-led", ti:"Ledger", ds:"mono · dotted leaders",
+    body: () => EX.map(e=>`<div class="lrow"><div class="nm">${e.n}</div><div class="dots"></div><div class="val">${e.sr}<span class="rp ${ec(e.rpe)}">@${e.rpe}</span></div></div>`).join("") },
+
+  { id:"v-band", ti:"Header band", ds:"filled header + col labels",
+    body: () => `<div class="colh"><span>Exercise</span><span>Sets × Reps</span><span>RPE</span></div>` + EX.map(e=>`<div class="row"><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div class="sr">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe}</div></div>`).join("") },
+
+  { id:"v-grid", ti:"Boxed grid", ds:"full gridlines",
+    body: () => `<table class="gt"><thead><tr><th>Exercise</th><th>Sets × Reps</th><th>RPE</th></tr></thead><tbody>${EX.map(e=>`<tr><td class="nm">${e.n}</td><td class="sr">${e.sr}</td><td class="rp ${ec(e.rpe)}">@${e.rpe}</td></tr>`).join("")}</tbody></table>` },
+
+  { id:"v-compact", ti:"Compact", ds:"dense · more per screen",
+    body: () => EX.map(e=>`<div class="row"><div class="nm">${e.n}</div><div class="sr">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe}</div></div>`).join("") },
+
+  { id:"v-accent", ti:"Accent rail", ds:"left edge by RPE",
+    body: () => EX.map(e=>`<div class="arow" style="--c:${COL[e.rpe]}"><div><div class="nm">${e.n}</div>${e.tag?`<div class="sub">${e.tag}</div>`:""}</div><div class="sr">${e.sr}</div><div class="rp ${ec(e.rpe)}">@${e.rpe}</div></div>`).join("") },
+];
+
+document.getElementById("grid").innerHTML = V.map((v,i)=>`
+  <div class="mock">
+    <div class="cap"><span class="n">${String(i+1).padStart(2,"0")}</span><span class="ti">${v.ti}</span><span class="ds">${v.ds}</span></div>
+    <div class="card ${v.id}">${v.id==="v-band"?"":header}${v.id==="v-band"?header+v.body():v.body()}</div>
+  </div>`).join("");
+</script>
+</body>
+</html>
