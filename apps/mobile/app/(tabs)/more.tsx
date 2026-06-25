@@ -44,6 +44,7 @@ const MOBILE_NAV_IDS = new Set([
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "settings", "onboarding",
   "statistics", "timer", "notifications", "profile",
+  "feed", "discover", "leaderboard", "coaches", "myprofile",
 ]);
 
 type Link = { id: string; labelKey: string; sub: string; href: Href; color: string };
@@ -84,6 +85,16 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "tactical", labelKey: "nav.tactical", sub: "deployment readiness", href: "/tactical", color: C.amber },
       { id: "forceplate", labelKey: "nav.forceplate", sub: "import jump CSV", href: "/forceplate", color: C.blue },
       { id: "progress", labelKey: "nav.progress", sub: "body recomposition", href: "/progress", color: C.violet },
+    ],
+  },
+  {
+    titleKey: "more.social",
+    links: [
+      { id: "feed", labelKey: "nav.feed", sub: "friends' workouts & PRs", href: "/feed", color: C.lime },
+      { id: "discover", labelKey: "nav.discover", sub: "search · follow", href: "/discover", color: C.blue },
+      { id: "leaderboard", labelKey: "nav.leaderboard", sub: "weekly · friends", href: "/leaderboard", color: C.amber },
+      { id: "coaches", labelKey: "nav.coaches", sub: "marketplace · start a program", href: "/coaches", color: C.violet },
+      { id: "myprofile", labelKey: "nav.myprofile", sub: "@handle · privacy · circle", href: "/myprofile", color: C.lime },
     ],
   },
   {

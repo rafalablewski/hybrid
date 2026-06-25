@@ -67,9 +67,10 @@ describe("navForPersona", () => {
     // Notifications (activity feed), the Interval timer, Statistics, the user's
     // own Profile, the routine Builder (composing your own workout is free) —
     // and the pre-built Plan library (browse & enroll is free; periodizing it
-    // is paid).
+    // is paid). PLUS the Social surface (everyone): the friends feed, find
+    // friends, the friends leaderboard, the coach marketplace, my public profile.
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["builder", "calendar", "checkin", "history", "log", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "settings", "statistics", "timer", "today"],
+      ["builder", "calendar", "checkin", "coaches", "discover", "feed", "history", "leaderboard", "log", "myprofile", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "settings", "statistics", "timer", "today"],
     );
   });
 

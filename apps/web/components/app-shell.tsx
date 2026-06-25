@@ -109,6 +109,11 @@ const AccountSettings = dynamic(() => import("./account-settings"), { ssr: false
 const IntervalTimerScreen = dynamic(() => import("./interval-timer"), { ssr: false });
 const NotificationsScreen = dynamic(() => import("./notifications"), { ssr: false });
 const StatisticsScreen = dynamic(() => import("./statistics"), { ssr: false });
+const SocialFeed = dynamic(() => import("./social-feed"), { ssr: false });
+const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false });
+const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
+const SocialProfile = dynamic(() => import("./social-profile"), { ssr: false });
+const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
@@ -813,6 +818,14 @@ export default function AppShell() {
         {screen === "tactical" && (aurora ? <AuroraTactical /> : <Tactical />)}
 
         {screen === "longevity" && (aurora ? <AuroraLongevity /> : <Longevity />)}
+
+        {/* Social + coach marketplace — template-aware single components (radii
+            soften under Aurora), like the tools below. Everyone (casual+). */}
+        {screen === "feed" && <SocialFeed />}
+        {screen === "discover" && <SocialDiscover />}
+        {screen === "leaderboard" && <SocialLeaderboard />}
+        {screen === "coaches" && <CoachesScreen />}
+        {screen === "myprofile" && <SocialProfile />}
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}

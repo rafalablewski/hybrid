@@ -88,7 +88,7 @@ function RoleModel() {
 const PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
 const PERSONA_LABEL: Record<Persona, string> = { casual: "Casual", athlete: "Athlete", coach: "Coach", admin: "Admin" };
 const GROUP_LABEL: Record<NavGroup, string> = {
-  home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", teams: "Teams", account: "Account",
+  home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", social: "Social", teams: "Teams", account: "Account",
 };
 const KEY = "access.personaNav";
 

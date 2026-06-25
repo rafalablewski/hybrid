@@ -83,6 +83,20 @@ model User {
   coachDiets    CoachDiet[]     @relation("coachDiets")
   adminAudits   AdminAudit[]    @relation("adminAuditActor")
 
+  // ---- Social layer + coach marketplace ----
+  socialProfile    SocialProfile?
+  coachProfile     CoachProfile?
+  follows          Follow[]            @relation("follower") // people I follow
+  followers        Follow[]            @relation("followee") // people who follow me
+  kudosGiven       Kudos[]             @relation("kudosGiver")
+  kudosReceived    Kudos[]             @relation("kudosOwner")
+  commentsAuthored Comment[]           @relation("commentAuthor")
+  commentsReceived Comment[]           @relation("commentOwner")
+  enrollments      ProgramEnrollment[] @relation("enrollClient")  // programs I started
+  coachEnrollments ProgramEnrollment[] @relation("enrollCoach")   // enrolments into my programs
+  reviewsReceived  CoachReview[]       @relation("reviewCoach")    // reviews of me as a coach
+  reviewsAuthored  CoachReview[]       @relation("reviewAuthor")   // reviews I wrote
+
   // Admin lists order/filter users by recency (admin/users, admin/stats growth).
   @@index([createdAt])
 }
@@ -173,8 +187,150 @@ model CoachProgram {
   name      String
   goal      String?
   weeks     Json     @default("[]")
+  // Marketplace listing: when published, the program appears on the coach's
+  // public storefront and any user can start it (client-initiated enrolment →
+  // ProgramEnrollment + a CoachLink). summary/level are storefront copy.
+  published  Boolean @default(false)
+  summary    String?
+  level      String? // "beginner" | "intermediate" | "advanced" | free text
+  visibility String  @default("public") // public | link (unlisted, link-only)
   createdAt DateTime @default(now())
 
+  enrollments ProgramEnrollment[]
+
+  @@index([coachId])
+  @@index([published])
+}
+
+// ---- Social layer (handles · follow graph · feed reactions) --------------
+// A user's PUBLIC social identity — distinct from the private User row. Holds
+// the @handle, profile copy and the privacy gate for results. 1:1 with User
+// (own its row), same separate-table pattern as TalentProfile/OnboardingState
+// so the hot-path user lookup never depends on it. See reference/sql-social.sql.
+model SocialProfile {
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String   @id
+  handle      String   @unique // public @name; lowercase [a-z0-9_], 3–20
+  displayName String?
+  bio         String?
+  avatarUrl   String?
+  // Who can see this athlete's RESULTS (feed, leaderboard, compare). The profile
+  // card + handle stay searchable regardless; this gates the data behind it.
+  visibility  String   @default("followers") // public | followers | private
+  showcase    Json     @default("{}") // pinned highlight stats (client-curated)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([handle])
+}
+
+// The asymmetric follow edge. A FRIEND is a mutual active follow (derived, no
+// extra table). closeFriend is the follower's curated inner circle — they top
+// the feed and can see a touch more. A follow of a `private` profile lands
+// PENDING until the target approves.
+model Follow {
+  id          String   @id @default(cuid())
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String
+  followee    User     @relation("followee", fields: [followeeId], references: [id], onDelete: Cascade)
+  followeeId  String
+  status      String   @default("active") // active | pending
+  closeFriend Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followeeId])
+  @@index([followerId])
+  @@index([followeeId])
+}
+
+// A kudos (like) on a feed subject. Subjects are derived items keyed by
+// (subjectType, subjectId) — e.g. ("session", sessionId) — so we don't have to
+// materialize a posts table. ownerId is the subject's author (for fan-out +
+// notifications). One kudos per giver per subject.
+model Kudos {
+  id          String   @id @default(cuid())
+  giver       User     @relation("kudosGiver", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  owner       User     @relation("kudosOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  subjectType String // session | pr | recap | badge
+  subjectId   String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, subjectType, subjectId])
+  @@index([ownerId, subjectType, subjectId])
+}
+
+// A comment on a feed subject (same subject anchoring as Kudos).
+model Comment {
+  id          String   @id @default(cuid())
+  author      User     @relation("commentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  owner       User     @relation("commentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  subjectType String
+  subjectId   String
+  body        String
+  createdAt   DateTime @default(now())
+
+  @@index([ownerId, subjectType, subjectId])
+  @@index([userId])
+}
+
+// ---- Coach marketplace (storefront · enrolment · reviews) ----------------
+// A coach's public STOREFRONT — the marketing profile shown in the directory.
+// Separate from SocialProfile (a coach is also an athlete; the shared @handle
+// lives on SocialProfile). 1:1 with User. See reference/sql-social.sql.
+model CoachProfile {
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String   @id
+  headline         String?
+  bio              String?
+  specialties      String[] @default([]) // e.g. ["Olympic lifting", "Fat loss"]
+  sports           String[] @default([])
+  acceptingClients Boolean  @default(true)
+  autoAccept       Boolean  @default(false) // auto-activate enrolment without manual accept
+  priceNote        String? // free-text until billing ships (paid checkout is blocked)
+  visibility       String   @default("public") // public | unlisted
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+}
+
+// A client STARTING an online program with a coach (client-initiated, the
+// inverse of CoachInvite). Creating one opens a CoachLink (PENDING, or ACTIVE
+// when the coach set autoAccept) — the link is the authorization, this row
+// tracks the program enrolment itself.
+model ProgramEnrollment {
+  id        String       @id @default(cuid())
+  program   CoachProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  programId String
+  coach     User         @relation("enrollCoach", fields: [coachId], references: [id], onDelete: Cascade)
+  coachId   String
+  client    User         @relation("enrollClient", fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+  status    String       @default("requested") // requested | active | ended | declined
+  linkId    String? // the CoachLink this enrolment created/uses
+  startedAt DateTime?
+  createdAt DateTime     @default(now())
+
+  @@unique([programId, clientId])
+  @@index([coachId])
+  @@index([clientId])
+}
+
+// A client's rating + review of a coach. Only an athlete with an active/ended
+// CoachLink may review (enforced in the API). One review per coach↔author pair.
+model CoachReview {
+  id        String   @id @default(cuid())
+  coach     User     @relation("reviewCoach", fields: [coachId], references: [id], onDelete: Cascade)
+  coachId   String
+  author    User     @relation("reviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  rating    Int // 1–5
+  body      String?
+  createdAt DateTime @default(now())
+
+  @@unique([coachId, authorId])
   @@index([coachId])
 }
 
