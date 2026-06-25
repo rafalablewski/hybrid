@@ -194,7 +194,7 @@ export function SocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
 // ----- The READ-ONLY public profile + followers/following, shown on the account
 // Profile ("You") screen. Editing happens in Settings (onEdit navigates there).
-export function SocialProfileView({ onEdit }: { onEdit?: () => void }) {
+export function SocialProfileView({ onEdit, compact = false }: { onEdit?: () => void; compact?: boolean }) {
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<any>(null);
   const [conns, setConns] = useState<any>(null);
@@ -215,33 +215,39 @@ export function SocialProfileView({ onEdit }: { onEdit?: () => void }) {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>Public profile</div>
-        <Btn ghost small onClick={onEdit}>{claimed ? "Edit profile" : "Set up"}</Btn>
-      </div>
-
-      {!claimed ? (
-        <div style={card(aurora, { maxWidth: 460 })}>
-          <p style={{ color: C("ash"), fontSize: 13, marginTop: 0, lineHeight: 1.5 }}>Claim a handle so friends can find and follow you — set it up in Settings.</p>
-          <Btn onClick={onEdit}>Set up your profile</Btn>
-        </div>
-      ) : (
-        <div style={card(aurora, { maxWidth: 460 })}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
-            <div>
-              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{p.displayName || `@${p.handle}`}</div>
-              <div style={{ color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 13 }}>@{p.handle}</div>
-              <div style={{ fontSize: 12, color: C("ash"), marginTop: 3, textTransform: "capitalize" }}>🔒 {p.visibility}</div>
-            </div>
+      {/* In compact mode (inside the account Profile) the identity card + setup
+          nudge live elsewhere; show only the connections lists. */}
+      {!compact && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>Public profile</div>
+            <Btn ghost small onClick={onEdit}>{claimed ? "Edit profile" : "Set up"}</Btn>
           </div>
-          {p.bio && <p style={{ color: C("chalk"), fontSize: 14, lineHeight: 1.5, marginTop: 12 }}>{p.bio}</p>}
-          <StatRow stats={data.stats} />
-        </div>
+          {!claimed ? (
+            <div style={card(aurora, { maxWidth: 460 })}>
+              <p style={{ color: C("ash"), fontSize: 13, marginTop: 0, lineHeight: 1.5 }}>Claim a handle so friends can find and follow you — set it up in Settings.</p>
+              <Btn onClick={onEdit}>Set up your profile</Btn>
+            </div>
+          ) : (
+            <div style={card(aurora, { maxWidth: 460 })}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
+                <div>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{p.displayName || `@${p.handle}`}</div>
+                  <div style={{ color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 13 }}>@{p.handle}</div>
+                  <div style={{ fontSize: 12, color: C("ash"), marginTop: 3, textTransform: "capitalize" }}>🔒 {p.visibility}</div>
+                </div>
+              </div>
+              {p.bio && <p style={{ color: C("chalk"), fontSize: 14, lineHeight: 1.5, marginTop: 12 }}>{p.bio}</p>}
+              <StatRow stats={data.stats} />
+            </div>
+          )}
+        </>
       )}
 
-      {/* Connections — followers & following are visible right here. */}
-      <div style={{ marginTop: 24, maxWidth: 560 }}>
+      {/* Connections — followers & following lists. */}
+      <div style={{ marginTop: compact ? 0 : 24, maxWidth: 560 }}>
+        {compact && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 12 }}>Your circle</div>}
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           {(["friends", "following", "followers", "requests"] as const).map((tb) => (
             <Pill key={tb} active={tab === tb} onClick={() => setTab(tb)}>

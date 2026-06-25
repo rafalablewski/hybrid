@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, type ViewStyle } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
@@ -39,6 +39,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { MySocialProfileView } from "./my-social-profile";
+import { getMyProfile, getConnections } from "../../lib/social-api";
 import { AuroraIcon } from "./icons";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -135,8 +136,38 @@ export default function AuroraProfile() {
   const tier = entitlement === "paid" ? "FULL" : "FREE";
   const lime = txt(C, C.lime);
 
+  // Social summary — owner-only "set up your profile" nudge (top) + the
+  // following/followers counts (above the membership card).
+  const [socialP, setSocialP] = useState<any>(null);
+  const [socialConns, setSocialConns] = useState<any>(null);
+  useEffect(() => {
+    let alive = true;
+    getMyProfile().then((d: any) => { if (alive) setSocialP(d); }).catch(() => {});
+    getConnections().then((d: any) => { if (alive) setSocialConns(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const sClaimed = !!socialP?.profile;
+  const sComplete = sClaimed && !!socialP.profile.bio && !!socialP.profile.avatarUrl;
+  const followingN = socialConns?.following?.length ?? 0;
+  const followersN = socialConns?.followers?.length ?? 0;
+
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
+          profile has a photo + bio. (This screen is always your own.) */}
+      {socialP && !sComplete && (
+        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: 20, padding: 16, marginBottom: 18 }}>
+          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontWeight: "800", fontSize: 16, color: C.chalk }}>{sClaimed ? "Complete your profile" : "Set up your public profile"}</Text>
+            <Text style={{ color: C.ash, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{sClaimed ? "Add a photo and bio so friends recognise you." : "Claim a handle, add a photo and bio so friends can find and follow you."}</Text>
+          </View>
+          <Text style={{ color: C.lime, fontFamily: F.bold, fontSize: 18 }}>→</Text>
+        </Pressable>
+      )}
+
       {/* ACCOUNT HERO — centered avatar + Apple-ID identifier */}
       <View style={{ alignItems: "center" }}>
         <View style={{ width: 98, height: 98 }}>
@@ -189,6 +220,16 @@ export default function AuroraProfile() {
       </View>
 
       <View style={{ height: 1, backgroundColor: C.line, marginVertical: 22 }} />
+
+      {/* FOLLOWING / FOLLOWERS — only these two, above the membership card. */}
+      <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginBottom: 18 }}>
+        {[{ n: followingN, k: "Following" }, { n: followersN, k: "Followers" }].map((c, i) => (
+          <View key={c.k} style={{ flex: 1, alignItems: "center", paddingVertical: 14, borderRightWidth: i < 1 ? 1 : 0, borderRightColor: C.line }}>
+            <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{c.n}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, color: C.ash, textTransform: "uppercase", marginTop: 5 }}>{c.k}</Text>
+          </View>
+        ))}
+      </View>
 
       {/* ID CARD — premium membership card */}
       <View style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", borderWidth: 1, borderColor: "#34381f", backgroundColor: "#161814" }}>
@@ -331,10 +372,10 @@ export default function AuroraProfile() {
         <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · ${t("w.account.profile.coach-active-suffix")}` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
       </View>
 
-      {/* PUBLIC PROFILE — read-only social card + followers/following; editing
-          (handle/bio/photo/privacy) lives in Settings → Public profile. */}
+      {/* YOUR CIRCLE — followers/following lists (counts + identity are up top;
+          editing lives in Settings → Public profile). */}
       <View style={{ height: 1, backgroundColor: C.line, marginVertical: 22 }} />
-      <MySocialProfileView onEdit={() => router.push("/profile-edit")} />
+      <MySocialProfileView compact onEdit={() => router.push("/profile-edit")} />
 
       <View style={{ height: 8 }} />
     </AuroraScreen>

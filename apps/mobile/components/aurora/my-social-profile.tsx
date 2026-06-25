@@ -65,7 +65,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   );
 }
 
-export function MySocialProfileView({ onEdit }: { onEdit?: () => void }) {
+export function MySocialProfileView({ onEdit, compact = false }: { onEdit?: () => void; compact?: boolean }) {
   const C = useTheme().palette;
   const [data, setData] = useState<any>(null);
   const [conns, setConns] = useState<any>(null);
@@ -85,41 +85,45 @@ export function MySocialProfileView({ onEdit }: { onEdit?: () => void }) {
 
   return (
     <View>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase" }}>Public profile</Text>
-        <SButton label={claimed ? "Edit profile" : "Set up"} ghost small onPress={onEdit} />
-      </View>
-
-      {!claimed ? (
-        <Card>
-          <Text style={{ color: C.ash, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>Claim a handle so friends can find and follow you — set it up in Settings.</Text>
-          <SButton label="Set up your profile" onPress={onEdit} />
-        </Card>
-      ) : (
-        <Card>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
-            <View>
-              <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`}</Text>
-              <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
-              <Text style={{ color: C.ash, fontSize: 12, marginTop: 2, textTransform: "capitalize" }}>🔒 {p.visibility}</Text>
-            </View>
+      {!compact && (
+        <>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase" }}>Public profile</Text>
+            <SButton label={claimed ? "Edit profile" : "Set up"} ghost small onPress={onEdit} />
           </View>
-          {p.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 21, marginTop: 12 }}>{p.bio}</Text> : null}
-          {data.stats && (
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-              {[{ l: "Sessions", v: data.stats.totalSessions }, { l: "Volume", v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: "Streak", v: `${data.stats.currentStreak}d` }].map((s) => (
-                <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 12, padding: 12, alignItems: "center" }}>
-                  <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 18 }}>{s.v}</Text>
-                  <Text style={{ color: C.ash, fontSize: 11 }}>{s.l}</Text>
+          {!claimed ? (
+            <Card>
+              <Text style={{ color: C.ash, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>Claim a handle so friends can find and follow you — set it up in Settings.</Text>
+              <SButton label="Set up your profile" onPress={onEdit} />
+            </Card>
+          ) : (
+            <Card>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
+                <View>
+                  <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`}</Text>
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
+                  <Text style={{ color: C.ash, fontSize: 12, marginTop: 2, textTransform: "capitalize" }}>🔒 {p.visibility}</Text>
                 </View>
-              ))}
-            </View>
+              </View>
+              {p.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 21, marginTop: 12 }}>{p.bio}</Text> : null}
+              {data.stats && (
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+                  {[{ l: "Sessions", v: data.stats.totalSessions }, { l: "Volume", v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: "Streak", v: `${data.stats.currentStreak}d` }].map((s) => (
+                    <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 12, padding: 12, alignItems: "center" }}>
+                      <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 18 }}>{s.v}</Text>
+                      <Text style={{ color: C.ash, fontSize: 11 }}>{s.l}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </Card>
           )}
-        </Card>
+        </>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 18, paddingBottom: 12 }}>
+      {compact && <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 4 }}>Your circle</Text>}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: compact ? 8 : 18, paddingBottom: 12 }}>
         {(["followers", "following", "friends", "requests"] as const).map((tb) => (
           <SPill key={tb} label={tb[0]!.toUpperCase() + tb.slice(1)} active={tab === tb} onPress={() => setTab(tb)} count={conns ? (conns[tb]?.length || undefined) : undefined} />
         ))}
