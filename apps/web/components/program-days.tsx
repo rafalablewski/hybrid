@@ -138,19 +138,6 @@ function NameCell({ lift }: { lift: ProgramLiftView }) {
   );
 }
 
-// RPE "heat" meter — value + intensity bar.
-function HeatMeter({ rpe }: { rpe: number }) {
-  const c = HEX[rpeColor(rpe)];
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
-      <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 600, color: c }}>@{rpe}</span>
-      <span style={{ width: 46, height: 3, borderRadius: 2, background: HAIR, overflow: "hidden" }}>
-        <span style={{ display: "block", height: "100%", width: `${Math.min(100, rpe * 10)}%`, borderRadius: 2, background: c }} />
-      </span>
-    </div>
-  );
-}
-
 // Coloured %-ramp text — each load tinted by intensity, the rest muted.
 function RampText({ lift }: { lift: ProgramLiftView }) {
   return (
@@ -173,7 +160,7 @@ function HeatRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string
     <div style={{ display: "grid", gridTemplateColumns: "1fr auto 60px", alignItems: "center", gap: 14, padding: "13px 16px", borderTop }}>
       <NameCell lift={lift} />
       <span style={{ fontFamily: mono, fontSize: 13, color: CHALK }}>{lift.setsReps ?? "—"}</span>
-      <HeatMeter rpe={lift.rpe!} />
+      <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 600, color: HEX[rpeColor(lift.rpe!)], textAlign: "right" }}>@{lift.rpe}</span>
     </div>
   );
 }

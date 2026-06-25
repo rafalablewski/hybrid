@@ -281,20 +281,6 @@ function NameCell({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
   );
 }
 
-// RPE "heat" meter — value + intensity bar. Shared by the bodybuilding row and
-// a strength accessory inside the endurance week card.
-function HeatMeter({ rpe, C }: { rpe: number; C: Palette }) {
-  const col = loadHex(C, rpeColor(rpe));
-  return (
-    <View style={{ width: 54, alignItems: "flex-end" }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: col }}>@{rpe}</Text>
-      <View style={{ width: 44, height: 3, borderRadius: 2, marginTop: 5, backgroundColor: HAIR, overflow: "hidden" }}>
-        <View style={{ height: "100%", width: `${Math.min(100, rpe * 10)}%`, borderRadius: 2, backgroundColor: col }} />
-      </View>
-    </View>
-  );
-}
-
 // Coloured %-ramp text (nested <Text> runs). Shared by the weightlifting row and
 // a %-based accessory in the week card.
 function RampText({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
@@ -318,7 +304,7 @@ function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pal
     <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right", marginRight: 10 }}>{lift.setsReps ?? "—"}</Text>
-      <HeatMeter rpe={lift.rpe!} C={C} />
+      <Text style={{ width: 54, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: loadHex(C, rpeColor(lift.rpe!)) }}>@{lift.rpe}</Text>
     </View>
   );
 }
