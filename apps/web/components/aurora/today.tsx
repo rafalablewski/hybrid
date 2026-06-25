@@ -36,6 +36,7 @@ import { readIntake, type Intake } from "@/lib/intake";
 import { track } from "@/lib/track";
 import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
+import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
 import AuroraAskCoach from "./ai-coach";
 
@@ -294,6 +295,10 @@ export default function AuroraToday({
           <span key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, background: activeCard === i ? C("lime") : C("line"), transition: "width .2s" }} />
         ))}
       </div>
+
+      {/* FOLLOW A COACH — swipeable rail of coaches (live marketplace, falling
+          back to placeholder people until coaches publish storefronts). */}
+      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
 
       {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
       <div style={{ marginTop: 18 }}>

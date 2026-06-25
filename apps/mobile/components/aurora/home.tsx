@@ -47,6 +47,7 @@ import { ACard, APill, AuroraField, RADIUS, Ring, Spark } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
+import CoachRail from "./coach-rail";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -409,6 +410,9 @@ export default function AuroraHome() {
             <View key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, backgroundColor: activeCard === i ? C.lime : C.line }} />
           ))}
         </View>
+
+        {/* FOLLOW A COACH — swipeable rail (live marketplace → placeholder people). */}
+        <CoachRail onOpen={() => router.push("/coaches")} />
 
         {/* Start workout */}
         <APill label={hasData ? t("w.home.today.startTodaySession") : t("welcome.start")} onPress={() => router.push("/workout?source=empty")} style={{ marginTop: 18 }} />

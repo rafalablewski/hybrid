@@ -401,3 +401,58 @@ export function profileStats(sessions: LoggedSession[], now = Date.now()): Profi
     topLifts: bestE1rmByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, e1rm: r.e1rm })),
   };
 }
+
+// ------------------------------------------------- coach discovery rail ------
+export type CoachAccent = "lime" | "blue" | "violet" | "amber";
+
+/** A coach card for the "Follow a coach" rail on Today — shared shape for both
+ *  the real marketplace coaches AND the placeholder people shown before any
+ *  coach has published a storefront. */
+export interface DiscoverCoach {
+  /** real coaches: their User id (followable); placeholders: undefined. */
+  userId?: string;
+  handle: string;
+  name: string;
+  headline: string;
+  specialties: string[];
+  rating: number | null;
+  reviews?: number;
+  verified: boolean;
+  accent: CoachAccent;
+  /** true → not a real account; the card routes to the marketplace instead of following. */
+  placeholder?: boolean;
+}
+
+/** Seed people for the Today coach rail until real coaches publish storefronts.
+ *  Deliberately diverse + clearly illustrative; the rail swaps to live coaches
+ *  the moment the marketplace returns any. */
+export const PLACEHOLDER_COACHES: DiscoverCoach[] = [
+  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting · 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true },
+  { handle: "marcus_bell", name: "Marcus Bell", headline: "Hybrid & Hyrox specialist", specialties: ["Hyrox", "Conditioning"], rating: 4.7, reviews: 64, verified: true, accent: "lime", placeholder: true },
+  { handle: "sofia_almeida", name: "Sofia Almeida", headline: "Marathon & 5k coach", specialties: ["Running", "Endurance"], rating: 4.8, reviews: 91, verified: false, accent: "blue", placeholder: true },
+  { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting · raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true },
+  { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "violet", placeholder: true },
+  { handle: "coach_bray", name: "Coach Bray", headline: "Tactical & military prep", specialties: ["Tactical", "Strength"], rating: 4.4, reviews: 37, verified: false, accent: "lime", placeholder: true },
+];
+
+const RAIL_ACCENTS: CoachAccent[] = ["lime", "blue", "violet", "amber"];
+
+/** Map the marketplace API's coach cards into the rail shape; falls back to the
+ *  placeholder people when the marketplace is empty (no coaches yet / schema not
+ *  run). One source of truth shared by web + mobile. */
+export function coachRailItems(apiCoaches?: Array<Record<string, unknown>> | null): DiscoverCoach[] {
+  if (!apiCoaches || apiCoaches.length === 0) return PLACEHOLDER_COACHES;
+  return apiCoaches.slice(0, 12).map((c, i) => ({
+    userId: typeof c.userId === "string" ? c.userId : undefined,
+    handle: String(c.handle ?? ""),
+    name: String(c.name ?? c.handle ?? "Coach"),
+    headline: String(c.headline ?? (Array.isArray(c.specialties) ? (c.specialties as string[]).join(" · ") : "") ?? ""),
+    specialties: Array.isArray(c.specialties) ? (c.specialties as string[]) : [],
+    rating: typeof c.rating === "number" ? c.rating : null,
+    reviews: typeof c.reviews === "number" ? c.reviews : undefined,
+    verified: c.coachVerified === true,
+    accent: RAIL_ACCENTS[i % RAIL_ACCENTS.length]!,
+    placeholder: false,
+  }));
+}
+

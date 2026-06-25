@@ -10,6 +10,8 @@ import {
   friendLeaderboard,
   compareAthletes,
   profileStats,
+  coachRailItems,
+  PLACEHOLDER_COACHES,
   type FollowEdge,
   type LoggedSession,
 } from "./index";
@@ -143,6 +145,25 @@ describe("head-to-head compare", () => {
     const r = compareAthletes(a, b, NOW);
     expect(r.sharedLifts.find((l) => l.lift === "Back Squat")!.leader).toBe("a");
     expect(r.score.a).toBeGreaterThan(0);
+  });
+});
+
+describe("coach discovery rail", () => {
+  it("falls back to placeholder people when the marketplace is empty", () => {
+    expect(coachRailItems([])).toBe(PLACEHOLDER_COACHES);
+    expect(coachRailItems(null)).toBe(PLACEHOLDER_COACHES);
+    expect(coachRailItems(undefined)).toBe(PLACEHOLDER_COACHES);
+    expect(PLACEHOLDER_COACHES.every((c) => c.placeholder && !c.userId)).toBe(true);
+  });
+  it("maps real marketplace coaches into the rail shape", () => {
+    const items = coachRailItems([
+      { userId: "u1", handle: "real_coach", name: "Real Coach", specialties: ["Strength"], coachVerified: true, rating: 4.5, reviews: 3 },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.userId).toBe("u1");
+    expect(items[0]!.verified).toBe(true);
+    expect(items[0]!.placeholder).toBe(false);
+    expect(items[0]!.headline).toContain("Strength"); // derived from specialties when no headline
   });
 });
 
