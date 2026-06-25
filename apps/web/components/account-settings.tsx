@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { TEMPLATES, ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -41,7 +41,7 @@ export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
   const { theme, setTheme } = useTheme();
-  const { template, setTemplate } = useTemplate();
+  const { template } = useTemplate();
   // Aurora rounds everything more. The Card surfaces already adapt via the
   // template skin; here we round the controls (inputs, buttons, choice cards)
   // to match, in place.
@@ -281,14 +281,6 @@ export default function AccountSettings() {
               {(["dark", "light"] as const).map((m) => (
                 <button key={m} onClick={() => setTheme(m)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
                   {m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")}
-                </button>
-              ))}
-            </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.template")}</Mono>
-            <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
-              {TEMPLATES.map((tpl) => (
-                <button key={tpl.id} onClick={() => setTemplate(tpl.id)} title={tpl.description} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: template === tpl.id ? txt(LIME) : txt(ASH), background: template === tpl.id ? `${LIME}1a` : "transparent", border: `1px solid ${template === tpl.id ? LIME : LINE}` }}>
-                  {tpl.label}
                 </button>
               ))}
             </div>

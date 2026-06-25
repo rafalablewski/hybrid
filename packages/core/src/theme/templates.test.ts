@@ -7,28 +7,27 @@ import {
 } from "./templates";
 
 describe("templates registry", () => {
-  it("has both templates with unique ids", () => {
+  it("is Aurora-only (classic was removed)", () => {
     const ids = TEMPLATES.map((t) => t.id);
-    expect(ids).toContain("classic");
-    expect(ids).toContain("aurora");
-    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(["aurora"]);
   });
 
-  it("defaults to aurora — the main HYBRID template on both clients", () => {
+  it("defaults to aurora — the one HYBRID template", () => {
     expect(DEFAULT_TEMPLATE).toBe("aurora");
     expect(TEMPLATES.some((t) => t.id === DEFAULT_TEMPLATE)).toBe(true);
   });
 
-  it("guards persisted values", () => {
+  it("guards persisted values — only aurora is valid", () => {
     expect(isTemplateName("aurora")).toBe(true);
-    expect(isTemplateName("classic")).toBe(true);
+    expect(isTemplateName("classic")).toBe(false);
     expect(isTemplateName("nope")).toBe(false);
     expect(isTemplateName(undefined)).toBe(false);
   });
 
-  it("resolves unknown values to the default", () => {
+  it("resolves every value (incl. a stored 'classic') to aurora", () => {
     expect(resolveTemplate("aurora")).toBe("aurora");
-    expect(resolveTemplate("garbage")).toBe(DEFAULT_TEMPLATE);
-    expect(resolveTemplate(null)).toBe(DEFAULT_TEMPLATE);
+    expect(resolveTemplate("classic")).toBe("aurora");
+    expect(resolveTemplate("garbage")).toBe("aurora");
+    expect(resolveTemplate(null)).toBe("aurora");
   });
 });
