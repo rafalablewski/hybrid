@@ -288,6 +288,10 @@ export interface ProgramDayView {
   sessions: ProgramSessionView[];
 }
 export interface ProgramView {
+  /** the plan's discipline — drives the layout (endurance → one week card of
+   *  Day rows; everything else → one card per day). Carried explicitly so the
+   *  choice can't be mis-inferred from "every lift happens to be prose". */
+  discipline: PlanDiscipline;
   /** every week number, for the selector. */
   weeks: number[];
   week: number;
@@ -417,6 +421,7 @@ export function planProgramView(
   const wnl = weekNL(week);
   const wItems = week.days.reduce((n, d) => n + d.sessions.reduce((m, s) => m + sessionItems(s), 0), 0);
   return {
+    discipline: program.discipline,
     weeks,
     week: week.index,
     weekNL: wnl,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, rpeColor, workoutColor, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { planProgramView, rpeColor, workoutColor, type GoalNode, type GoalPlan, type PlanProgram, type PlanDiscipline, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
@@ -9,7 +9,8 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
 const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
 const HAIR = "rgba(255,255,255,0.05)";
-const isProse = (l: ProgramLiftView) => !(l.steps && l.steps.length) && l.rpe == null;
+const liftColor = (l: ProgramLiftView): LoadColor =>
+  l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
@@ -95,7 +96,7 @@ export default function PercentProgram({
         </View>
       )}
 
-      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
+      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} discipline={view.discipline} C={C} />
 
       <View style={card}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
@@ -116,28 +117,36 @@ export default function PercentProgram({
 // discipline, mirroring the web `program-days.tsx` 1:1 off the SAME shared
 // planProgramView. Three row modes picked per lift: bodybuilding (RPE heat),
 // weightlifting (coloured %-ramp), running (whole week as Day rows).
-function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette }) {
+function ProgramDays({ days, week, peakNote, discipline, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; discipline: PlanDiscipline; C: Palette }) {
   const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" as const, marginBottom: 12 };
-  const proseWeek = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
 
-  if (proseWeek) {
+  // Endurance → the whole week as ONE card; each day shows EVERY item (the run
+  // plus any strength accessory), so nothing is dropped. Driven by discipline.
+  if (discipline === "endurance") {
     return (
       <View style={card}>
         <DayHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
         {days.map((day, di) => {
-          const lift = day.sessions[0]?.lifts[0];
-          const name = lift?.name ?? day.kindLabel ?? "—";
-          const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") : null;
-          const rest = !lift || /rest/i.test(name);
+          const lifts = day.sessions.flatMap((s) => s.lifts);
           return (
             <View key={di} style={{ flexDirection: "row", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: di > 0 ? 1 : 0, borderTopColor: HAIR }}>
               <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: "#5a5e56", textTransform: "uppercase" }}>{day.title}</Text>
               <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, workoutColor(name)) }} />
-                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
-                </View>
-                {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17 }}>{detail}</Text>}
+                {lifts.length === 0 ? (
+                  <WeekLine name={day.kindLabel ?? "—"} detail={null} color="ash" rest first C={C} />
+                ) : (
+                  lifts.map((l, i) => (
+                    <WeekLine
+                      key={i}
+                      name={l.name}
+                      detail={[l.prescription, l.note].filter(Boolean).join(" · ") || null}
+                      color={liftColor(l)}
+                      rest={/rest/i.test(l.name)}
+                      first={i === 0}
+                      C={C}
+                    />
+                  ))
+                )}
               </View>
             </View>
           );
@@ -193,6 +202,19 @@ function SessionBlock({ s, C }: { s: ProgramSessionView; C: Palette }) {
         if (l.steps && l.steps.length) return <RampRow key={li} lift={l} top={top} C={C} />;
         return <FallbackRow key={li} lift={l} top={top} C={C} />;
       })}
+    </View>
+  );
+}
+
+// one line in the endurance week card (a run, or a strength accessory)
+function WeekLine({ name, detail, color, rest, first, C }: { name: string; detail: string | null; color: LoadColor; rest: boolean; first: boolean; C: Palette }) {
+  return (
+    <View style={{ marginTop: first ? 0 : 9 }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, color) }} />
+        <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
+      </View>
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17 }}>{detail}</Text>}
     </View>
   );
 }

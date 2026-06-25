@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { rpeColor, workoutColor, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
+import { rpeColor, workoutColor, type PlanDiscipline, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type LoadColor } from "@hybrid/core";
 import { LIME, BLUE, AMBER, RED, ASH, CHALK, LINE, CARD } from "@/lib/ui";
 
 // The HYBRID plan day view — one card+table style that adapts per discipline,
@@ -18,13 +18,16 @@ const HAIR = "rgba(255,255,255,0.05)";
 const mono = "var(--font-mono)";
 const disp = "var(--font-display)";
 
-const isProse = (l: ProgramLiftView) => !(l.steps && l.steps.length) && l.rpe == null;
+/** Dot / accent colour for a lift: RPE-coloured when it has one, lime for a
+ *  loaded strength accessory, else the endurance workout-type colour. */
+const liftColor = (l: ProgramLiftView): LoadColor =>
+  l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
 
-export default function ProgramDays({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
-  // Endurance plans are a week of single prose workouts — render the whole week
-  // as ONE card of Day rows (the running mock), not seven one-row cards.
-  const proseWeek = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
-  if (proseWeek) return <WeekProseCard days={days} week={week} peakNote={peakNote} />;
+export default function ProgramDays({ days, week, peakNote, discipline }: { days: ProgramDayView[]; week: number; peakNote: string | null; discipline: PlanDiscipline }) {
+  // Endurance plans render the whole week as ONE card of Day rows; everything
+  // else is one card per day. Driven by discipline (not "every lift is prose"),
+  // so a strength accessory on a run day can't flip the layout.
+  if (discipline === "endurance") return <WeekCard days={days} week={week} peakNote={peakNote} />;
   return (
     <>
       {days.map((day, di) => (
@@ -142,29 +145,50 @@ function FallbackRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: st
   );
 }
 
-// ── running: the whole week as one card of Day rows ───────────────────────────
-function WeekProseCard({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
+// ── endurance: the whole week as one card of Day rows ─────────────────────────
+// Each day shows its weekday label once, then EVERY item that day (the run plus
+// any strength accessory), each on its own line — so nothing is dropped and a
+// mixed day reads run-first, accessory-below.
+function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
   return (
     <Card>
       <DayHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} />
       {days.map((day, di) => {
-        const lift = day.sessions[0]?.lifts[0];
-        const name = lift?.name ?? day.kindLabel ?? "—";
-        const detail = lift ? [lift.prescription, lift.note].filter(Boolean).join(" · ") : null;
-        const rest = !lift || /rest/i.test(name);
+        const lifts = day.sessions.flatMap((s) => s.lifts);
         return (
           <div key={di} style={{ display: "grid", gridTemplateColumns: "42px 1fr", gap: 12, padding: "12px 16px", alignItems: "baseline", borderTop: di > 0 ? `1px solid ${HAIR}` : "none" }}>
             <span style={{ fontFamily: mono, fontSize: 11, color: "#5a5e56", textTransform: "uppercase", letterSpacing: ".06em" }}>{day.title}</span>
             <div>
-              <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
-                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[workoutColor(name)] }} />
-                {name}
-              </div>
-              {detail && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5 }}>{detail}</div>}
+              {lifts.length === 0 ? (
+                <WeekLine name={day.kindLabel ?? "—"} detail={null} color="ash" rest first />
+              ) : (
+                lifts.map((l, i) => (
+                  <WeekLine
+                    key={i}
+                    name={l.name}
+                    detail={[l.prescription, l.note].filter(Boolean).join(" · ") || null}
+                    color={liftColor(l)}
+                    rest={/rest/i.test(l.name)}
+                    first={i === 0}
+                  />
+                ))
+              )}
             </div>
           </div>
         );
       })}
     </Card>
+  );
+}
+
+function WeekLine({ name, detail, color, rest, first }: { name: string; detail: string | null; color: LoadColor; rest: boolean; first: boolean }) {
+  return (
+    <div style={{ marginTop: first ? 0 : 9 }}>
+      <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
+        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[color] }} />
+        {name}
+      </div>
+      {detail && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5 }}>{detail}</div>}
+    </div>
   );
 }

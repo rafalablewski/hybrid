@@ -12,6 +12,7 @@ import {
   rpeColor,
   workoutColor,
   type PlanLift,
+  type PlanProgram,
 } from "./plan-program";
 import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
@@ -166,6 +167,49 @@ describe("planProgramView", () => {
     const v = planProgramView(SOVIET_OWL_8WK, { week: 1, maxes: { snatch: 100 } });
     const snatch = v.days[0]!.sessions[0]!.lifts[1]!;
     expect(snatch.steps!.some((s) => s.kg?.endsWith("kg"))).toBe(true);
+  });
+});
+
+describe("mixed endurance day — strength accessory on a run day", () => {
+  // A runner gets Bulgarian split squats (5×12 @8) alongside the run. The view
+  // must keep BOTH items (no drop) and tag the plan endurance so the renderer
+  // chooses the week-card layout from the discipline, not from "all prose".
+  const MIXED: PlanProgram = {
+    id: "test-mixed",
+    discipline: "endurance",
+    inputs: [],
+    inputsTitle: "Goal paces",
+    progression: "—",
+    weeks: [
+      {
+        index: 1,
+        days: [
+          {
+            index: 1,
+            kind: "train",
+            title: "Tue",
+            sessions: [
+              {
+                entries: [
+                  { label: "Tempo", detail: "3 × 1-mile tempo" },
+                  { label: "Bulgarian Split Squat", detail: "", sets: 5, reps: 12, rpe: 8 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("exposes the discipline and keeps every item on the day", () => {
+    const v = planProgramView(MIXED, { week: 1 });
+    expect(v.discipline).toBe("endurance");
+    const lifts = v.days[0]!.sessions[0]!.lifts;
+    expect(lifts.map((l) => l.name)).toEqual(["Tempo", "Bulgarian Split Squat"]);
+    // the run is prose (no sets/rpe); the accessory carries structured fields
+    expect(lifts[0]!.rpe).toBeUndefined();
+    expect(lifts[1]!).toMatchObject({ setsReps: "5×12", rpe: 8 });
   });
 });
 

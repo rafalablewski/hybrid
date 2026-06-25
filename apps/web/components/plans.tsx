@@ -357,7 +357,7 @@ function PercentProgramView({
         </div>
       )}
 
-      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
+      <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} discipline={view.discipline} />
 
       <Info label="How it progresses" value={view.progression} />
 
