@@ -30,31 +30,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This coach isn't accepting new clients right now." }, { status: 409 });
 
     const auto = !!coachProfile?.autoAccept;
-    const linkStatus = auto ? "ACTIVE" : "PENDING";
     const enrollStatus = auto ? "active" : "requested";
 
     const result = await prisma.$transaction(async (tx) => {
-      const link = await tx.coachLink.upsert({
-        where: { coachId_clientId: { coachId: program.coachId, clientId: me.id } },
-        update: {}, // never downgrade an existing ACTIVE link
-        create: { coachId: program.coachId, clientId: me.id, status: linkStatus },
-      });
+      // A request (no auto-accept) creates ONLY the enrolment — NOT a CoachLink.
+      // The coach grants access (the ACTIVE link) when they accept, so a pending
+      // request never shows up as an un-actionable PENDING link in the coach's
+      // roster (that PENDING state is reserved for the coach→client invite flow,
+      // which the client accepts). One request lives in one inbox.
+      let linkId: string | null = null;
+      if (auto) {
+        const link = await tx.coachLink.upsert({
+          where: { coachId_clientId: { coachId: program.coachId, clientId: me.id } },
+          update: { status: "ACTIVE" },
+          create: { coachId: program.coachId, clientId: me.id, status: "ACTIVE" },
+        });
+        linkId = link.id;
+      }
       const enrollment = await tx.programEnrollment.upsert({
         where: { programId_clientId: { programId, clientId: me.id } },
-        update: { status: enrollStatus, linkId: link.id, ...(auto ? { startedAt: new Date() } : {}) },
+        update: { status: enrollStatus, linkId, ...(auto ? { startedAt: new Date() } : {}) },
         create: {
           programId,
           coachId: program.coachId,
           clientId: me.id,
           status: enrollStatus,
-          linkId: link.id,
+          linkId,
           startedAt: auto ? new Date() : null,
         },
       });
       // Auto-accepted? deliver the program now (materialize its weeks into the
       // client's Assignments). For a request, delivery happens on coach accept.
       if (auto) await deliverProgramAssignments(tx, programId, me.id, program.coachId);
-      return { link, enrollment };
+      return { enrollment };
     });
 
     return NextResponse.json({ enrollment: result.enrollment, status: enrollStatus }, { status: 201 });

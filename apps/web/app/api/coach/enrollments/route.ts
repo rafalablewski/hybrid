@@ -52,12 +52,12 @@ export async function POST(request: Request) {
     if (action === "accept") {
       const start = new Date();
       const result = await prisma.$transaction(async (tx) => {
-        await tx.coachLink.upsert({
+        const link = await tx.coachLink.upsert({
           where: { coachId_clientId: { coachId: me.id, clientId: enrollment.clientId } },
           update: { status: "ACTIVE" },
           create: { coachId: me.id, clientId: enrollment.clientId, status: "ACTIVE" },
         });
-        const updated = await tx.programEnrollment.update({ where: { id: enrollmentId }, data: { status: "active", startedAt: start } });
+        const updated = await tx.programEnrollment.update({ where: { id: enrollmentId }, data: { status: "active", startedAt: start, linkId: link.id } });
         // Deliver the program: materialize its weeks into dated Assignments so
         // the client actually sees the workouts on their Today/Calendar.
         const assignments = await deliverProgramAssignments(tx, enrollment.programId, enrollment.clientId, me.id, start);
