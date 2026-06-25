@@ -535,9 +535,13 @@ export const SOVIET_OWL_8WK: PlanProgram = buildProgram(
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// A weekday cell: a list of [label, detail, note?] workouts, or a rest/race day.
-type RunEntry = [string, string] | [string, string, string];
-type RunCell = "off" | "race" | RunEntry[];
+// A weekday cell: a list of workouts, or a rest/race day. A workout is either a
+// prose run ([label, detail, note?]) or a structured gym item ({ gym, sets, … })
+// so a running day can carry a strength block (the hybrid-athlete case).
+type RunProse = [string, string] | [string, string, string];
+type RunGym = { gym: string; sets: number; reps: number | "AMRAP"; rpe: number; note?: string };
+type RunItem = RunProse | RunGym;
+type RunCell = "off" | "race" | RunItem[];
 
 /** Rest-or-cross-train cell (Mon/Wed/some Sun). */
 const ct = (min: number): RunCell => [["Rest / cross-train", `Rest, or ${min}' cross-train`]];
@@ -550,7 +554,15 @@ function buildRunDay(cell: RunCell, index: number): PlanDay {
     index,
     kind: "train",
     title,
-    sessions: [{ entries: cell.map(([label, detail, note]) => ({ label, detail, ...(note ? { note } : {}) })) }],
+    sessions: [
+      {
+        entries: cell.map((it) =>
+          Array.isArray(it)
+            ? { label: it[0], detail: it[1], ...(it[2] ? { note: it[2] } : {}) }
+            : { label: it.gym, detail: "", sets: it.sets, reps: it.reps, rpe: it.rpe, ...(it.note ? { note: it.note } : {}) },
+        ),
+      },
+    ],
   };
 }
 
@@ -568,7 +580,14 @@ const RUN_WEEKS: RunCell[][] = [
     [["Hills", "5 × 1' hills", "Jog down for recovery"]],
     ct(30),
     [["Tempo", "3 'up/down' miles", "Alternate: up miles at tempo pace, down miles at moderate effort. Or 30' cross-train"]],
-    [["Easy", "3 miles", "or 30' cross-train"]],
+    // Fri — an easy run + a runner's strength block (the hybrid day).
+    [
+      ["Easy", "3 miles", "or 30' cross-train"],
+      { gym: "Goblet Squat", sets: 3, reps: 12, rpe: 7 },
+      { gym: "Romanian Deadlift", sets: 3, reps: 10, rpe: 7 },
+      { gym: "Walking Lunge", sets: 3, reps: 10, rpe: 8, note: "per leg" },
+      { gym: "Standing Calf Raise", sets: 3, reps: 15, rpe: 8 },
+    ],
     [["Easy", "30' easy"]],
     "off",
   ],

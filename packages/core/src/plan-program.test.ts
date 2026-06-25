@@ -282,6 +282,20 @@ describe("endurance (running) program — same model, prose workouts", () => {
     expect(v.days[6]!.kindLabel).toBe("Rest");
   });
 
+  it("week 1 Friday is a hybrid day — the easy run plus a strength block", () => {
+    const fri = planProgramView(RUN_5K_BEGINNER_9WK, { week: 1 }).days[4]!;
+    expect(fri.title).toBe("Fri");
+    const lifts = fri.sessions[0]!.lifts;
+    expect(lifts[0]).toMatchObject({ name: "Easy" }); // the run (prose)
+    expect(lifts.filter(isGymLift).map((l) => l.name)).toEqual([
+      "Goblet Squat",
+      "Romanian Deadlift",
+      "Walking Lunge",
+      "Standing Calf Raise",
+    ]);
+    expect(dayContentSummary(fri)).toBe("1 run · 4 lifts");
+  });
+
   it("surfaces goal-pace text inputs instead of numeric maxes", () => {
     const v = planProgramView(RUN_5K_BEGINNER_9WK);
     expect(v.inputs.every((i) => i.kind === "text")).toBe(true);

@@ -317,7 +317,7 @@ export const isProseLift = (l: ProgramLiftView): boolean => !isGymLift(l);
 export function dayContentSummary(day: ProgramDayView): string | null {
   if (day.volume) return day.volume;
   const lifts = day.sessions.flatMap((s) => s.lifts);
-  const runs = lifts.filter(isProseLift).length;
+  const runs = lifts.filter((l) => isProseLift(l) && !/rest/i.test(l.name)).length;
   const gym = lifts.filter(isGymLift).length;
   const parts: string[] = [];
   if (runs) parts.push(`${runs} run${runs === 1 ? "" : "s"}`);
