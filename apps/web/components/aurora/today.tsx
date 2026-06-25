@@ -37,6 +37,7 @@ import { track } from "@/lib/track";
 import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
 import CoachRail from "./coach-rail";
+import FeedPreview from "./feed-preview";
 import { AuroraIcon } from "./icons";
 import AuroraAskCoach from "./ai-coach";
 
@@ -518,6 +519,10 @@ export default function AuroraToday({
           </div>
         </div>
       )}
+
+      {/* FEED STRIP — a few of your circle's latest, like IG Threads at the
+          bottom of the feed. Empty → renders nothing. */}
+      <FeedPreview onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
     </div>
   );
 }

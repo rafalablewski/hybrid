@@ -48,6 +48,7 @@ import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import CoachRail from "./coach-rail";
+import FeedPreview from "./feed-preview";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -693,6 +694,9 @@ export default function AuroraHome() {
             </View>
           </ACard>
         )}
+
+        {/* FEED STRIP — your circle's latest, IG-Threads style, at the bottom. */}
+        <FeedPreview onOpen={() => router.push("/feed")} />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
