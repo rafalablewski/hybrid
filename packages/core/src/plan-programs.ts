@@ -852,6 +852,138 @@ export const BB_PPL_6DAY: PlanProgram = {
   weeks: [{ index: 1, days: [...BB_DAYS.map((d, i) => buildBBDay(d, i + 1)), { index: 7, kind: "rest", title: "Sun · Rest", sessions: [] }] }],
 };
 
+// ============================================================
+//  CONDITIONING — the circuit shape: ONE session broken into blocks (a warm-up,
+//  five work blocks, a finisher and a cool-down), each block its own card of
+//  exercises whose prescription is a sets×reps scheme OR a time/hold, with the
+//  round count carried in the card title. Same PlanProgram model + planProgramView
+//  as the OWL / running / bodybuilding plans, so it renders in the identical
+//  HYBRID plan UI — circuit blocks instead of %-ramps or weekday runs, and NO
+//  volume counter (conditioning has no comparable count). One repeating Saturday
+//  session; the 4-week emphasis rotation + recovery routine live in the
+//  progression note. Source: a Saturday Kettlebell + Fat-Loss program (~90 min).
+// ============================================================
+
+// A circuit exercise: [name, prescription] or [name, prescription, note], where
+// the prescription is a sets×reps scheme ("3 × 10") or a duration/hold ("30s").
+type CircuitItem = [string, string] | [string, string, string];
+// A block of the session: a titled card of exercises. `prose` blocks (the
+// cool-down stretches) render as plain prose rows; the rest are structured
+// circuit items (the scheme shows in the prescription column).
+interface CircuitBlock {
+  title: string;
+  prose?: boolean;
+  items: CircuitItem[];
+}
+
+function buildCircuitBlock(b: CircuitBlock, index: number): PlanDay {
+  return {
+    index,
+    kind: "train",
+    title: b.title,
+    sessions: [
+      {
+        entries: b.items.map(([name, presc, note]) => ({
+          label: name,
+          detail: b.prose ? presc : "",
+          ...(b.prose ? {} : { scheme: presc }),
+          ...(note ? { note } : {}),
+        })),
+      },
+    ],
+  };
+}
+
+function buildCircuitProgram(meta: Omit<PlanProgram, "weeks">, blocks: CircuitBlock[]): PlanProgram {
+  return { ...meta, weeks: [{ index: 1, days: blocks.map((b, i) => buildCircuitBlock(b, i + 1)) }] };
+}
+
+const FATLOSS_BLOCKS: CircuitBlock[] = [
+  {
+    title: "Warm-Up · 10 min",
+    items: [
+      ["Jumping Jacks", "2 min"],
+      ["Hip Circles", "1 min/side"],
+      ["Arm Swings + Shoulder Rolls", "2 min"],
+      ["Bodyweight Squats", "2 × 10"],
+      ["Kettlebell Deadlift", "2 × 8", "Light"],
+    ],
+  },
+  {
+    title: "Block 1 · Core & Stability · 2 rounds",
+    items: [
+      ["Kettlebell Halo", "2 × 12"],
+      ["Kettlebell Figure 8", "2 × 12"],
+      ["Plank", "30s hold"],
+    ],
+  },
+  {
+    title: "Block 2 · Leg + Glutes · 3 rounds",
+    items: [
+      ["Goblet Squat", "3 × 10"],
+      ["Kettlebell Swing", "3 × 15"],
+      ["Walking Lunges", "3 × 10/leg", "Bodyweight or with KB"],
+    ],
+  },
+  {
+    title: "Block 3 · Push & Pull · 3 rounds",
+    items: [
+      ["Single-Arm Floor Press", "3 × 12/side"],
+      ["Kettlebell Row", "3 × 12/side"],
+      ["Push-Up", "3 × 10", "Incline if needed"],
+    ],
+  },
+  {
+    title: "Block 4 · Balance & Core Burn · 2 rounds",
+    items: [
+      ["Single-Leg Deadlift", "2 × 10/side"],
+      ["Kettlebell Slingshot", "2 × 12"],
+      ["Russian Twist", "30s", "With or without KB"],
+    ],
+  },
+  {
+    title: "Block 5 · Finisher · 2–3 rounds, no rest between",
+    items: [
+      ["Goblet Squat Hold", "20s"],
+      ["Kettlebell Swing", "20s"],
+      ["High Knees", "20s", "No KB · then 1 min rest, repeat"],
+    ],
+  },
+  {
+    title: "Cool-Down · 10 min",
+    prose: true,
+    items: [
+      ["Forward Fold", "Hamstring stretch"],
+      ["Child's Pose", "Hold and breathe"],
+      ["Seated Twist", "Each side"],
+      ["Deep Belly Breathing", "3 min"],
+    ],
+  },
+];
+
+export const FATLOSS_KB_SATURDAY: PlanProgram = buildCircuitProgram(
+  {
+    id: "fatloss-kb-saturday",
+    discipline: "conditioning",
+    inputsTitle: "Your kettlebells (kg) — optional, for reference",
+    inputs: [
+      { key: "kb", label: "Working bell", kind: "text", placeholder: "e.g. 16" },
+      { key: "light", label: "Light bell", kind: "text", placeholder: "warm-up" },
+    ],
+    progression:
+      "A single ~90-minute kettlebell session for fat loss, core tightening and full-body conditioning — run it " +
+      "once a week, ideally fasted if you follow 16:8. Work the blocks in order: warm up, then the five work blocks " +
+      "(rest 30–60 s between rounds, keep moving between exercises within a round), then the finisher (no rest between " +
+      "the three moves, 1 min rest, repeat 2–3×) and the cool-down. WEEKLY ROTATION — keep the same session but shift " +
+      "the emphasis each week: Week 1 Strength & Form (controlled reps, perfect technique), Week 2 Speed & Flow (move " +
+      "faster, shorter rests), Week 3 Reps & Volume (add a round or 2–3 reps per set), Week 4 Heavier Kettlebell if " +
+      "ready — then restart the cycle. RECOVERY: hydrate well after the session, break your fast with a high-protein " +
+      "meal (~9 AM), use magnesium spray or a soak for sore muscles, and take a light walk or stretch on Sunday morning.",
+    source: "Saturday Kettlebell + Fat-Loss program (~90 min).",
+  },
+  FATLOSS_BLOCKS,
+);
+
 // ---- registry ----------------------------------------------------------------
 
 /** Every encoded program, keyed by the GoalPlan id that surfaces it. */
@@ -859,6 +991,7 @@ export const PLAN_PROGRAMS: Record<string, PlanProgram> = {
   [SOVIET_OWL_8WK.id]: SOVIET_OWL_8WK,
   [RUN_5K_BEGINNER_9WK.id]: RUN_5K_BEGINNER_9WK,
   [BB_PPL_6DAY.id]: BB_PPL_6DAY,
+  [FATLOSS_KB_SATURDAY.id]: FATLOSS_KB_SATURDAY,
 };
 
 /** The rich, discipline-shaped program behind a plan id (null when the plan uses

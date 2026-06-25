@@ -18,7 +18,7 @@ import {
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
-import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
+import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, FATLOSS_KB_SATURDAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
 describe("parsePercentSteps", () => {
   it("parses ramped (pct/reps)sets terms", () => {
@@ -248,6 +248,54 @@ describe("mixed endurance day — strength accessory on a run day", () => {
   it("falls back to the discipline volume when present", () => {
     const owlDay = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!;
     expect(dayContentSummary(owlDay)).toBe("160 lifts");
+  });
+});
+
+describe("conditioning (kettlebell circuit) program — same model, blocks as cards", () => {
+  it("is a registered single-week conditioning plan with no peak and no volume counter", () => {
+    expect(programFor("fatloss-kb-saturday")).toBe(FATLOSS_KB_SATURDAY);
+    expect(Object.keys(PLAN_PROGRAMS)).toContain("fatloss-kb-saturday");
+    expect(FATLOSS_KB_SATURDAY.discipline).toBe("conditioning");
+    expect(FATLOSS_KB_SATURDAY.anchor).toBeUndefined();
+    expect(FATLOSS_KB_SATURDAY.weeks).toHaveLength(1);
+
+    const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
+    expect(v.weeks).toEqual([1]); // one repeating session → renderers hide the week selector
+    expect(v.peakNote).toBeNull();
+    expect(v.weekVolume).toBeNull(); // conditioning has no NL/exercise counter
+    expect(v.days.every((d) => d.volume === null)).toBe(true);
+  });
+
+  it("renders each block as its own card, with the round count in the title", () => {
+    const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
+    expect(v.days.map((d) => d.title)).toEqual([
+      "Warm-Up · 10 min",
+      "Block 1 · Core & Stability · 2 rounds",
+      "Block 2 · Leg + Glutes · 3 rounds",
+      "Block 3 · Push & Pull · 3 rounds",
+      "Block 4 · Balance & Core Burn · 2 rounds",
+      "Block 5 · Finisher · 2–3 rounds, no rest between",
+      "Cool-Down · 10 min",
+    ]);
+  });
+
+  it("models circuit exercises as scheme (sets×reps / time) entries — never % or paces", () => {
+    const legs = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days[2]!; // Block 2 · Leg + Glutes
+    const swing = legs.sessions[0]!.lifts[1]!;
+    expect(swing).toMatchObject({ name: "Kettlebell Swing", setsReps: "3 × 15", prescription: "3 × 15" });
+    expect(liftKind(swing)).toBe("rpe"); // structured circuit item (sets×reps column), no % ramp
+    expect(swing.rpe).toBeUndefined(); // conditioning is effort-by-feel, not RPE-coded
+    // a timed hold is still a scheme entry
+    const lunge = legs.sessions[0]!.lifts[2]!;
+    expect(lunge).toMatchObject({ name: "Walking Lunges", setsReps: "3 × 10/leg", note: "Bodyweight or with KB" });
+  });
+
+  it("renders the cool-down stretches as prose rows (no sets×reps scheme)", () => {
+    const cooldown = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days.at(-1)!;
+    const fold = cooldown.sessions[0]!.lifts[0]!;
+    expect(fold).toMatchObject({ name: "Forward Fold", prescription: "Hamstring stretch" });
+    expect(isProseLift(fold)).toBe(true);
+    expect(liftKind(fold)).toBe("run");
   });
 });
 

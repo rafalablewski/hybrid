@@ -9,6 +9,7 @@ describe("plansForGoal", () => {
       oly: ["oly-soviet-8wk"],
       run: ["run-5k-beginner-9wk"],
       bb: ["bb-ppl-6day"],
+      fatloss: ["fatloss-kb-saturday"],
     };
     for (const node of GOAL_TREE) {
       expect(plansForGoal(node.name).map((p) => p.id)).toEqual(authored[node.id] ?? []);
