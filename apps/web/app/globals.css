@@ -469,3 +469,17 @@ body {
 @keyframes lgDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7vmax,5vmax,0) scale(1.15); } }
 @keyframes lgDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-6vmax,6vmax,0) scale(1.1); } }
 @keyframes lgDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-5vmax,-5vmax,0) scale(1.2); } }
+
+/* ---- plan "swipe rail": pinned exercise name + horizontally-scrollable set
+   chips, so a lift with many sets scrolls instead of squeezing the name ---- */
+.rx-railwrap { position: relative; overflow: hidden; }
+.rx-railwrap::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 34px;
+  background: linear-gradient(90deg, transparent, var(--color-card));
+  pointer-events: none;
+}
+.rx-rail {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 12px 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.rx-rail::-webkit-scrollbar { display: none; }

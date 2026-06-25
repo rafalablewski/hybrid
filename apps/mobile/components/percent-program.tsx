@@ -1,12 +1,31 @@
 import { useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
-import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram, type ProgramLiftView, type LoadColor } from "@hybrid/core";
+import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { planProgramView, type GoalNode, type GoalPlan, type PlanProgram, type ProgramLiftView, type ProgramStepView, type LoadColor } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import { useTheme } from "../lib/theme";
-import { fs, space, F, GlassCard } from "../lib/ui";
+import { fs, space, F } from "../lib/ui";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
+const tint = (hex: string, a: number) => `${hex}${Math.round(a * 255).toString(16).padStart(2, "0")}`;
+
+type RailChip = { top: string; sub: string | null; color: LoadColor };
+
+// Strength-percent lifts → one chip per ramped step. Prose / hypertrophy entries
+// (no steps) → a single chip from the flat prescription. Mirrors the web.
+function chipsFor(lift: ProgramLiftView): RailChip[] {
+  if (lift.steps && lift.steps.length) return lift.steps.map(stepChip);
+  if (lift.setsReps) {
+    const sub = [lift.weight, lift.rpe != null ? `@${lift.rpe}` : null].filter(Boolean).join(" · ");
+    return [{ top: lift.setsReps, sub: sub || null, color: "lime" }];
+  }
+  return [{ top: lift.prescription, sub: null, color: "ash" }];
+}
+function stepChip(st: ProgramStepView): RailChip {
+  const sets = st.sets > 1 ? `×${st.sets}` : "";
+  return { top: st.load, sub: `${st.reps}${sets}${st.kg ? ` · ${st.kg}` : ""}`, color: st.color };
+}
 
 /**
  * Discipline-shaped program — renders ANY PlanProgram (Olympic-weightlifting %
@@ -92,12 +111,12 @@ export default function PercentProgram({
         </View>
       )}
 
-      {/* Liquid-Glass "Smart Summary" days — each lift collapses to one line
-          (name + "8 sets · 60→90%"); tapping expands the per-set ramp with
-          intensity-coloured load bars. The breakdown drops DOWN, so many sets
-          never squeeze the name. Same shape + behaviour as the web. */}
+      {/* "Swipe Rail" days — the exercise name is PINNED in a left column and the
+          set chips scroll horizontally, so a lift with many percentage blocks
+          scrolls sideways instead of widening the row or squeezing the name.
+          Same shape + behaviour as the web. */}
       {view.days.map((day, di) => (
-        <GlassCard key={di} padding={0} accent={C.amber} style={{ borderRadius: 18 }}>
+        <View key={di} style={{ ...card, padding: 0, overflow: "hidden" }}>
           {/* Day header */}
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.amber }}>
@@ -110,18 +129,18 @@ export default function PercentProgram({
             <View key={si}>
               {/* Session sub-label (AM / PM) */}
               {(!!s.label || !!s.volume) && (
-                <View style={{ paddingHorizontal: 14, paddingTop: 9, paddingBottom: 3 }}>
+                <View style={{ paddingHorizontal: 14, paddingTop: 8, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: tint(s.label === "PM" ? C.blue : C.lime, 0.04) }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: s.label === "PM" ? C.blue : C.lime }}>
                     {[s.label, s.volume].filter(Boolean).join(" · ")}
                   </Text>
                 </View>
               )}
               {s.lifts.map((l, li) => (
-                <GlassLiftRow key={li} lift={l} C={C} />
+                <RailRow key={li} lift={l} C={C} last={li === s.lifts.length - 1} />
               ))}
             </View>
           ))}
-        </GlassCard>
+        </View>
       ))}
 
       <View style={card}>
@@ -139,51 +158,40 @@ export default function PercentProgram({
   );
 }
 
-// One lift in the Smart-Summary list: a collapsed one-liner that expands to the
-// per-set ramp. Strength lifts (with `steps`) are tappable; prose / hypertrophy
-// entries (no steps) render the flat prescription and don't expand.
-function GlassLiftRow({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
-  const [open, setOpen] = useState(false);
-  const expandable = !!lift.steps && lift.steps.length > 0;
-  const neutralBg = "rgba(255,255,255,0.06)";
-  const neutralBorder = "rgba(255,255,255,0.12)";
-
+// One lift row: the name is PINNED in a fixed left column; the set chips live in
+// a horizontally-scrollable rail with a right edge-fade. Any number of sets fits
+// at constant row height — the name never gets squeezed.
+function RailRow({ lift, C, last }: { lift: ProgramLiftView; C: Palette; last: boolean }) {
   return (
-    <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
-      <Pressable
-        onPress={() => expandable && setOpen((o) => !o)}
-        style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11 }}
-      >
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{lift.name}</Text>
-          {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{lift.note}</Text>}
-        </View>
-        <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: neutralBg, borderWidth: 1, borderColor: neutralBorder }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{lift.summary ?? lift.prescription}</Text>
-        </View>
-        {expandable && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: open ? C.lime : C.ash, width: 14, textAlign: "center" }}>{open ? "▾" : "▸"}</Text>
-        )}
-      </Pressable>
+    <View style={{ flexDirection: "row", borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+      {/* Pinned name column */}
+      <View style={{ width: 132, paddingHorizontal: 14, paddingVertical: 13, borderRightWidth: 1, borderRightColor: C.line, justifyContent: "center" }}>
+        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{lift.name}</Text>
+        {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{lift.note}</Text>}
+      </View>
 
-      {expandable && open && (
-        <View style={{ paddingHorizontal: 14, paddingBottom: 12, gap: 8 }}>
-          {lift.steps!.map((st, i) => {
-            const col = loadHex(C, st.color);
+      {/* Scrollable set chips */}
+      <View style={{ flex: 1, position: "relative" }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 14, paddingVertical: 12 }}>
+          {chipsFor(lift).map((c, i) => {
+            const col = loadHex(C, c.color);
             return (
-              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Text style={{ width: 58, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{st.setLabel}</Text>
-                <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: col }}>{st.load}</Text>
-                <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{st.reps}</Text>
-                <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                  <View style={{ height: "100%", width: `${st.fill}%`, backgroundColor: col, borderRadius: 3 }} />
-                </View>
-                {!!st.kg && <Text style={{ width: 52, textAlign: "right", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{st.kg}</Text>}
+              <View key={i} style={{ borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8, backgroundColor: tint(col, 0.12), borderWidth: 1, borderColor: tint(col, 0.3), alignItems: "center" }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: col }}>{c.top}</Text>
+                {!!c.sub && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{c.sub}</Text>}
               </View>
             );
           })}
-        </View>
-      )}
+        </ScrollView>
+        {/* right edge-fade hinting "more →" */}
+        <LinearGradient
+          pointerEvents="none"
+          colors={[tint(C.ink2, 0), C.ink2]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 28 }}
+        />
+      </View>
     </View>
   );
 }

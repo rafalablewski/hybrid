@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import GlassProgramDays from "../percent-program-days";
+import ProgramDaysRail from "../percent-program-days";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18 } as const;
@@ -170,7 +170,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
         </div>
       )}
 
-      <GlassProgramDays days={view.days} />
+      <ProgramDaysRail days={view.days} />
 
       <Info label={t("w.train.plans.progression")} value={view.progression} />
       <button onClick={enroll} disabled={state === "busy" || state === "done"} style={{ fontWeight: 800, fontSize: fs.note, background: state === "done" ? C("ink2") : C("lime"), color: state === "done" ? C("lime") : C("ink"), border: state === "done" ? `1px solid ${C("lime")}` : "none", borderRadius: 999, padding: "14px 28px", cursor: state === "busy" || state === "done" ? "default" : "pointer", marginTop: 18 }}>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { GOAL_TREE, GOAL_GROUPS, planDetail, srSingleReps, programFor, planProgramView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, mono, Mono, Card, Chip } from "@/lib/ui";
-import GlassProgramDays from "./percent-program-days";
+import ProgramDaysRail from "./percent-program-days";
 
 // Plans library — reads the shared GOAL_TREE / PLAN_DETAIL from @hybrid/core,
 // the exact same source the mobile app renders. Goal → plans → full detail.
@@ -357,7 +357,7 @@ function PercentProgramView({
         </div>
       )}
 
-      <GlassProgramDays days={view.days} />
+      <ProgramDaysRail days={view.days} />
 
       <Info label="How it progresses" value={view.progression} />
 
