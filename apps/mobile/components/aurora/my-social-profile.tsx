@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { normalizeHandle, isValidHandle } from "@hybrid/core";
-import { Card, Loading, F } from "../../lib/ui";
+import { Card, Loading } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { getMyProfile, putMyProfile, getConnections, respondFollow, setCloseFriend, follow } from "../../lib/social-api";
-import { Avatar, Empty, ProfileModal, SButton, SPill } from "../social-kit";
+import { getMyProfile, putMyProfile } from "../../lib/social-api";
+import { SButton, SPill } from "../social-kit";
 
-// The user's PUBLIC social profile, split into a read-only VIEW (shown on the
-// account Profile "You" screen — card + stats + followers/following) and an
-// EDIT form (handle/bio/photo/visibility — lives in Settings + a dedicated
-// edit route). So there is ONE profile, edited in one place.
+// The EDIT form for the user's PUBLIC social profile (handle/bio/photo/
+// visibility) — lives in Settings + the dedicated profile-edit route. So there
+// is ONE profile, edited in one place.
 
 const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 14 } as const);
 
@@ -62,97 +61,5 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
         {onDone && <SButton label={claimed ? "Done" : "Back"} ghost onPress={onDone} />}
       </View>
     </Card>
-  );
-}
-
-export function MySocialProfileView({ onEdit, compact = false }: { onEdit?: () => void; compact?: boolean }) {
-  const C = useTheme().palette;
-  const [data, setData] = useState<any>(null);
-  const [conns, setConns] = useState<any>(null);
-  const [tab, setTab] = useState<"followers" | "following" | "friends" | "requests">("followers");
-  const [drawer, setDrawer] = useState<string | null>(null);
-
-  const load = async () => {
-    setData(await getMyProfile());
-    setConns(await getConnections());
-  };
-  useEffect(() => { load(); }, []);
-
-  if (!data) return <Loading />;
-  const claimed = !!data.profile;
-  const p = data.profile;
-  const connList: any[] = conns ? (tab === "friends" ? conns.friends : tab === "following" ? conns.following : tab === "followers" ? conns.followers : conns.requests) ?? [] : [];
-
-  return (
-    <View>
-      {!compact && (
-        <>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase" }}>Public profile</Text>
-            <SButton label={claimed ? "Edit profile" : "Set up"} ghost small onPress={onEdit} />
-          </View>
-          {!claimed ? (
-            <Card>
-              <Text style={{ color: C.ash, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>Claim a handle so friends can find and follow you — set it up in Settings.</Text>
-              <SButton label="Set up your profile" onPress={onEdit} />
-            </Card>
-          ) : (
-            <Card>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-                <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
-                <View>
-                  <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`}</Text>
-                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
-                  <Text style={{ color: C.ash, fontSize: 12, marginTop: 2, textTransform: "capitalize" }}>🔒 {p.visibility}</Text>
-                </View>
-              </View>
-              {p.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 21, marginTop: 12 }}>{p.bio}</Text> : null}
-              {data.stats && (
-                <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-                  {[{ l: "Sessions", v: data.stats.totalSessions }, { l: "Volume", v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: "Streak", v: `${data.stats.currentStreak}d` }].map((s) => (
-                    <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 12, padding: 12, alignItems: "center" }}>
-                      <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 18 }}>{s.v}</Text>
-                      <Text style={{ color: C.ash, fontSize: 11 }}>{s.l}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </Card>
-          )}
-        </>
-      )}
-
-      {compact && <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 4 }}>Your circle</Text>}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: compact ? 8 : 18, paddingBottom: 12 }}>
-        {(["followers", "following", "friends", "requests"] as const).map((tb) => (
-          <SPill key={tb} label={tb[0]!.toUpperCase() + tb.slice(1)} active={tab === tb} onPress={() => setTab(tb)} count={conns ? (conns[tb]?.length || undefined) : undefined} />
-        ))}
-      </ScrollView>
-      <Card>
-        {connList.length === 0 ? <Empty title={tab === "requests" ? "No pending requests" : `No ${tab} yet`} /> : connList.map((u: any) => (
-          <View key={u.id || u.followerId} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-            <Pressable onPress={() => u.handle && setDrawer(u.handle)} style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
-              <Avatar url={u.avatarUrl} name={u.displayName} handle={u.handle} size={40} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "600" }}>{u.displayName || `@${u.handle}`}</Text>
-                <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{u.handle}{u.friend ? " · friend" : u.closeFriend ? " · close" : ""}</Text>
-              </View>
-            </Pressable>
-            {tab === "requests" ? (
-              <View style={{ flexDirection: "row", gap: 6 }}>
-                <SButton label="Accept" small onPress={async () => { await respondFollow({ followerId: u.followerId, action: "approve" }); load(); }} />
-                <SButton label="Deny" ghost small onPress={async () => { await respondFollow({ followerId: u.followerId, action: "deny" }); load(); }} />
-              </View>
-            ) : tab === "following" ? (
-              <SButton label={u.closeFriend ? "★ Close" : "☆ Close"} ghost small tone={u.closeFriend ? C.amber : C.lime} onPress={async () => { await setCloseFriend({ followeeId: u.id, close: !u.closeFriend }); load(); }} />
-            ) : tab === "followers" && !u.friend ? (
-              <SButton label="Follow back" small onPress={async () => { await follow({ followeeId: u.id }); load(); }} />
-            ) : null}
-          </View>
-        ))}
-      </Card>
-
-      {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
-    </View>
   );
 }

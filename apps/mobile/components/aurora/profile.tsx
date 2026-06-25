@@ -38,7 +38,6 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
-import { MySocialProfileView } from "./my-social-profile";
 import { getMyProfile, getConnections } from "../../lib/social-api";
 import { AuroraIcon } from "./icons";
 
@@ -371,11 +370,6 @@ export default function AuroraProfile() {
         <Tile C={C} icon="swap" k={t("w.account.profile.tile-devices")} sm={device ? `${device.label} · ${device.status}` : t("w.account.profile.connect-device")} onPress={() => router.push("/connections")} />
         <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · ${t("w.account.profile.coach-active-suffix")}` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
       </View>
-
-      {/* YOUR CIRCLE — followers/following lists (counts + identity are up top;
-          editing lives in Settings → Public profile). */}
-      <View style={{ height: 1, backgroundColor: C.line, marginVertical: 22 }} />
-      <MySocialProfileView compact onEdit={() => router.push("/profile-edit")} />
 
       <View style={{ height: 8 }} />
     </AuroraScreen>

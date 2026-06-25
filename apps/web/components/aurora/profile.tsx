@@ -26,7 +26,6 @@ import { useHasActiveCoach } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
-import { SocialProfileView } from "../social-profile";
 
 /**
  * AURORA Profile · "You" (web) — the Apple-ID / Tesla-account membership screen.
@@ -390,12 +389,6 @@ export default function AuroraProfile({
         <Tile icon="user-square" k={t("w.account.profile.tile-body")} sm={bodyKg != null ? fmtWeight(bodyKg, units) : t("w.account.profile.log-weigh-in")} onClick={go("checkin", "/checkin")} />
         <Tile icon="swap" k={t("w.account.profile.tile-devices")} sm={bio ? t("w.account.profile.recovery-synced") : t("w.account.profile.connect-device")} onClick={go("connections", "/connections")} />
         <Tile icon="user" k={t("w.account.profile.tile-coach")} sm={coached ? t("w.account.profile.coach-active") : t("w.account.profile.find-coach")} onClick={go("coach", "/coach")} />
-      </div>
-
-      {/* YOUR CIRCLE — followers/following lists (counts + identity are up top;
-          editing lives in Settings). */}
-      <div style={{ marginTop: 28 }}>
-        <SocialProfileView compact onEdit={() => go("settings", "/settings")()} />
       </div>
     </div>
   );
