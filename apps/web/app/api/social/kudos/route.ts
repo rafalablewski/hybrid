@@ -7,7 +7,7 @@ import { tableMissing } from "@/lib/social";
 // Toggle a kudos (like) on a feed subject, anchored by (subjectType, subjectId).
 // ownerId is the item's author (for the count + future notifications).
 
-const TYPES = new Set(["session", "pr", "recap", "badge"]);
+const TYPES = new Set(["session", "pr", "recap", "badge", "post"]);
 
 export async function POST(request: Request) {
   const me = await getOrCreateDbUser(request);

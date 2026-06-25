@@ -34,6 +34,8 @@ export const respondFollow = (b: unknown) => sapi("/api/social/follow/respond", 
 export const setCloseFriend = (b: unknown) => sapi("/api/social/close-friend", "POST", b);
 export const getConnections = () => sapi("/api/social/connections");
 export const getFeed = () => sapi("/api/social/feed");
+export const createPost = (b: unknown) => sapi("/api/social/posts", "POST", b);
+export const deletePost = (id: string) => sapi(`/api/social/posts/${id}`, "DELETE");
 export const toggleKudos = (b: unknown) => sapi("/api/social/kudos", "POST", b);
 export const getComments = (subjectType: string, subjectId: string) => sapi(`/api/social/comments?subjectType=${subjectType}&subjectId=${subjectId}`);
 export const postComment = (b: unknown) => sapi("/api/social/comments", "POST", b);

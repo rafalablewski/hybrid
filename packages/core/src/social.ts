@@ -91,8 +91,17 @@ export function canViewResults(visibility: Visibility, relation: Relation): bool
 }
 
 // ------------------------------------------------------------------- feed ----
-export type FeedKind = "session" | "pr" | "recap";
+export type FeedKind = "session" | "pr" | "recap" | "post";
 export type FeedAccent = "lime" | "blue" | "violet" | "amber";
+
+/** A first-class shared post (status / PR card / workout card) from an author. */
+export interface FeedPostInput {
+  id: string;
+  kind: "status" | "pr" | "workout";
+  text?: string | null;
+  data?: Record<string, unknown>;
+  at: number; // epoch ms
+}
 
 export interface FeedAuthor {
   id: string;
@@ -106,6 +115,8 @@ export interface FeedSubjectInput {
   author: FeedAuthor;
   /** the author's recent logged sessions (already privacy-cleared by the API). */
   sessions: LoggedSession[];
+  /** the author's recent shared posts (status updates / PR & workout cards). */
+  posts?: FeedPostInput[];
 }
 
 export interface FeedItem {
@@ -199,6 +210,47 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         });
       }
     });
+
+    // First-class shared posts (status / PR card / workout card).
+    const nm = author.displayName || "@" + author.handle;
+    for (const post of subj.posts ?? []) {
+      if (!Number.isFinite(post.at) || post.at < now - windowMs || post.at > now + 60_000) continue;
+      const d = post.data ?? {};
+      let title: string;
+      let detail: string;
+      let accent: FeedAccent;
+      let metric: number | undefined;
+      if (post.kind === "pr") {
+        title = `${nm} shared a PR`;
+        detail = `${d.lift ?? "Lift"} — ${d.e1rm ?? "?"} kg e1RM`;
+        accent = "amber";
+        metric = typeof d.e1rm === "number" ? d.e1rm : undefined;
+      } else if (post.kind === "workout") {
+        title = `${nm} shared a workout`;
+        detail = `${d.title ?? "Workout"}${d.volume ? ` · ${Number(d.volume).toLocaleString()} kg` : ""}`;
+        accent = "lime";
+      } else {
+        title = `${nm} posted`;
+        detail = post.text || "";
+        accent = "violet";
+      }
+      // a caption on a card sits in front of the card summary
+      if (post.text && post.kind !== "status") detail = `${post.text} · ${detail}`;
+      items.push({
+        id: `post-${post.id}`,
+        kind: "post",
+        subjectType: "post",
+        subjectId: post.id,
+        author,
+        title,
+        detail,
+        at: post.at,
+        when: relativeTime(post.at, now),
+        metric,
+        accent,
+        _sort: post.at + (author.closeFriend ? boostMs : 0),
+      });
+    }
   }
 
   items.sort((a, b) => b._sort - a._sort);

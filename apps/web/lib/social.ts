@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { migrateBlocks, type FollowEdge, type LoggedSession } from "@hybrid/core";
+import { migrateBlocks, type FollowEdge, type LoggedSession, type FeedPostInput } from "@hybrid/core";
 import { sanitizeProgramWeeks, programAssignments } from "@/lib/coach-program";
 
 /** A social/marketplace table hasn't been migrated yet (run reference/sql-social.sql). */
@@ -115,6 +115,35 @@ export async function recentSessionsByUsers(
     const arr = out.get(r.userId);
     if (arr) arr.push(s);
     else out.set(r.userId, [s]);
+  }
+  return out;
+}
+
+/** Recent shared posts for a set of users, as the core FeedPostInput shape,
+ *  keyed by author id. Soft-degrades to an empty map until Post is migrated. */
+export async function recentPostsByUsers(userIds: string[], sinceMs: number): Promise<Map<string, FeedPostInput[]>> {
+  const out = new Map<string, FeedPostInput[]>();
+  if (!userIds.length) return out;
+  try {
+    const rows = await prisma.post.findMany({
+      where: { authorId: { in: userIds }, createdAt: { gte: new Date(sinceMs) } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    for (const r of rows) {
+      const item: FeedPostInput = {
+        id: r.id,
+        kind: (r.kind as FeedPostInput["kind"]) ?? "status",
+        text: r.text,
+        data: (r.data ?? {}) as Record<string, unknown>,
+        at: r.createdAt.getTime(),
+      };
+      const arr = out.get(r.authorId);
+      if (arr) arr.push(item);
+      else out.set(r.authorId, [item]);
+    }
+  } catch {
+    /* Post table not migrated yet — feed is sessions-only. */
   }
   return out;
 }

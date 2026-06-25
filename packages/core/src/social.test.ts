@@ -138,6 +138,30 @@ describe("activity feed", () => {
     // every item carries an anchor for kudos/comments
     expect(feed.every((f) => f.subjectType && f.subjectId)).toBe(true);
   });
+  it("includes first-class posts (status + PR card) as feed items", () => {
+    const feed = buildSocialFeed(
+      [
+        {
+          author: { id: "alice", handle: "alice", displayName: "Alice" },
+          sessions: [],
+          posts: [
+            { id: "p1", kind: "status", text: "New 5k PB this morning!", at: NOW - 3600_000 },
+            { id: "p2", kind: "pr", text: "finally", data: { lift: "Back Squat", e1rm: 150 }, at: NOW - 1800_000 },
+          ],
+        },
+      ],
+      { now: NOW },
+    );
+    const status = feed.find((f) => f.subjectId === "p1")!;
+    const pr = feed.find((f) => f.subjectId === "p2")!;
+    expect(status.kind).toBe("post");
+    expect(status.detail).toContain("5k PB");
+    expect(pr.title).toContain("shared a PR");
+    expect(pr.detail).toContain("Back Squat");
+    expect(pr.detail).toContain("150");
+    // newest first → the PR (more recent) leads
+    expect(feed[0]!.subjectId).toBe("p2");
+  });
   it("boosts close friends to the top despite older activity", () => {
     const feed = buildSocialFeed(
       [

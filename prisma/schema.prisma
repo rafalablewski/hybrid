@@ -94,6 +94,7 @@ model User {
   commentsReceived Comment[]           @relation("commentOwner")
   blocksMade       Block[]             @relation("blocker")
   blocksReceived   Block[]             @relation("blocked")
+  posts            Post[]
   enrollments      ProgramEnrollment[] @relation("enrollClient")  // programs I started
   coachEnrollments ProgramEnrollment[] @relation("enrollCoach")   // enrolments into my programs
   reviewsReceived  CoachReview[]       @relation("reviewCoach")    // reviews of me as a coach
@@ -277,6 +278,22 @@ model Comment {
 
   @@index([ownerId, subjectType, subjectId])
   @@index([userId])
+}
+
+// A first-class feed POST — a status update or a shared card (a PR, a workout).
+// Distinct from the DERIVED feed items (sessions/PRs): a post is something the
+// user chose to share. Reactions reuse the (subjectType, subjectId) anchoring
+// with subjectType "post". `data` carries the card payload (e.g. { lift, e1rm }).
+model Post {
+  id        String   @id @default(cuid())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  kind      String   @default("status") // status | pr | workout
+  text      String? // caption / status text
+  data      Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([authorId, createdAt])
 }
 
 // A user blocking another — mutual invisibility: blocked pairs never see each

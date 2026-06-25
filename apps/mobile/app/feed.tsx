@@ -3,7 +3,7 @@ import { View, Text, Pressable, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Card, Loading, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
-import { getFeed, toggleKudos, getComments, postComment } from "../lib/social-api";
+import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "../components/social-kit";
 
 function Comments({ item }: { item: any }) {
@@ -40,6 +40,9 @@ export default function FeedScreen() {
   const [open, setOpen] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [text, setText] = useState("");
+  const [attachPr, setAttachPr] = useState(false);
+  const [posting, setPosting] = useState(false);
 
   const load = useCallback(() => getFeed().then((r: any) => setFeed(r.feed ?? [])), []);
   useEffect(() => { load(); }, [load]);
@@ -49,6 +52,15 @@ export default function FeedScreen() {
     const r: any = await toggleKudos({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos, kudosedByMe: r.kudosedByMe } : x)) ?? f);
   };
+  const share = async () => {
+    if (!text.trim() && !attachPr) return;
+    setPosting(true);
+    const r: any = await createPost({ text, attachPr });
+    setPosting(false);
+    if (r.error) return;
+    setText(""); setAttachPr(false); load();
+  };
+  const del = async (item: any) => { await deletePost(item.subjectId); load(); };
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
@@ -60,6 +72,15 @@ export default function FeedScreen() {
         </View>
       </View>
 
+      {/* COMPOSER — share a status or your latest PR card. */}
+      <Card>
+        <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder="Share an update with your followers…" placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: 15, fontFamily: F.reg }} />
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? C.amber : C.ash, fontSize: 13, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} 🏆 Attach my latest PR</Text></Pressable>
+          <SButton label={posting ? "Sharing…" : "Share"} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+        </View>
+      </Card>
+
       {!feed ? <Loading /> : feed.length === 0 ? (
         <Empty title="Your feed is quiet" sub="Follow friends from Find friends — their workouts and PRs show up here." />
       ) : feed.map((item) => (
@@ -70,6 +91,9 @@ export default function FeedScreen() {
               <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{item.kind === "pr" ? "🏆 " : ""}{item.title}</Text>
               <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>{item.when}</Text>
             </View>
+            {item.subjectType === "post" && item.mine && (
+              <Pressable onPress={() => del(item)} hitSlop={8}><Text style={{ color: C.ash, fontSize: 18 }}>×</Text></Pressable>
+            )}
           </View>
           <Text style={{ color: C.chalk, fontSize: 14, marginTop: 10, lineHeight: 21 }}>{item.detail}</Text>
           <View style={{ flexDirection: "row", gap: 18, marginTop: 12 }}>

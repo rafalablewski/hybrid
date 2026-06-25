@@ -6,7 +6,7 @@ import { tableMissing, authorCards } from "@/lib/social";
 
 // Comments on a feed subject (same (subjectType, subjectId) anchoring as kudos).
 
-const TYPES = new Set(["session", "pr", "recap", "badge"]);
+const TYPES = new Set(["session", "pr", "recap", "badge", "post"]);
 
 export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);

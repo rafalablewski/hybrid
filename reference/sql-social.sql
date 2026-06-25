@@ -110,6 +110,25 @@ create policy comment_author on "Comment" for all
 drop policy if exists comment_owner_read on "Comment";
 create policy comment_owner_read on "Comment" for select using ("ownerId" = public.app_user_id());
 
+-- ============================ Feed posts ============================
+create table if not exists "Post" (
+  "id"        text primary key default gen_random_uuid()::text,
+  "authorId"  text not null references "User"("id") on delete cascade,
+  "kind"      text not null default 'status', -- status | pr | workout
+  "text"      text,
+  "data"      jsonb not null default '{}'::jsonb,
+  "createdAt" timestamp(3) not null default now()
+);
+create index if not exists "Post_author_created_idx" on "Post" ("authorId", "createdAt");
+
+alter table "Post" enable row level security;
+-- author controls their own posts; followers' reads are served by the API
+-- (which already enforces the follow/privacy/block gate), like sessions.
+drop policy if exists post_own on "Post";
+create policy post_own on "Post" for all
+  using ("authorId" = public.app_user_id())
+  with check ("authorId" = public.app_user_id());
+
 -- ============================ Blocks (safety) ============================
 create table if not exists "Block" (
   "id"        text primary key default gen_random_uuid()::text,

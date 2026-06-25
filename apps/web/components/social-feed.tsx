@@ -48,6 +48,9 @@ export default function SocialFeed() {
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [text, setText] = useState("");
+  const [attachPr, setAttachPr] = useState(false);
+  const [posting, setPosting] = useState(false);
 
   const load = () => jget("/api/social/feed").then((r: any) => setFeed(r.feed ?? []));
   useEffect(() => { load(); }, []);
@@ -56,12 +59,37 @@ export default function SocialFeed() {
     const r: any = await jsend("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos, kudosedByMe: r.kudosedByMe } : x)) ?? f);
   };
+  const share = async () => {
+    if (!text.trim() && !attachPr) return;
+    setPosting(true);
+    const r: any = await jsend("/api/social/posts", "POST", { text, attachPr });
+    setPosting(false);
+    if (r.error) { alert(r.error); return; }
+    setText(""); setAttachPr(false); load();
+  };
+  const del = async (item: FeedItem) => {
+    if (!window.confirm("Delete this post?")) return;
+    await fetch(`/api/social/posts/${item.subjectId}`, { method: "DELETE" });
+    load();
+  };
 
   if (!feed) return <EmptyState title="Loading…" />;
 
   return (
     <div style={{ maxWidth: 600 }}>
       <ScreenHead title="Feed" sub="What your friends are training." />
+
+      {/* COMPOSER — share a status or your latest PR card with your followers. */}
+      <div style={card(aurora, { marginBottom: 16 })}>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder="Share an update with your followers…" style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? C("amber") : C("ash"), fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> 🏆 Attach my latest PR
+          </label>
+          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? "Sharing…" : "Share"}</Btn>
+        </div>
+      </div>
+
       {feed.length === 0 ? (
         <EmptyState title="Your feed is quiet" sub="Follow some friends on the Find friends tab — their workouts and PRs show up here." />
       ) : (
@@ -78,6 +106,9 @@ export default function SocialFeed() {
                 </div>
                 <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>{item.when}</div>
               </div>
+              {item.subjectType === "post" && item.mine && (
+                <button onClick={() => del(item)} aria-label="Delete post" style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
+              )}
             </div>
             <p style={{ color: C("chalk"), fontSize: 14, margin: "10px 0 0", lineHeight: 1.5 }}>{item.detail}</p>
             <div style={{ display: "flex", gap: 16, marginTop: 12, alignItems: "center" }}>
