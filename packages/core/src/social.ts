@@ -1,0 +1,581 @@
+/**
+ * Social engine — pure, shared by web + mobile. The follow graph's privacy
+ * gate, the activity feed, friend leaderboards and head-to-head comparison, all
+ * built on the EXISTING engines (recap, habits/streak, records/PRs, session
+ * volume) so the social surfaces read the same numbers as the rest of the app.
+ *
+ * Nothing here touches the DB or fabricates data: the API computes each
+ * athlete's real sessions and hands them in; these helpers only shape + rank.
+ */
+import {
+  weeklyRecap,
+  streak,
+  totalVolume,
+  sessionVolume,
+  bestE1rmByLift,
+  newPrsInSession,
+  migrateBlocks,
+  type LoggedSession,
+} from "./engines";
+import { relativeTime } from "./activity";
+
+// ---------------------------------------------------------------- handles ----
+export const HANDLE_MIN = 3;
+export const HANDLE_MAX = 20;
+
+/** Normalize free input to a candidate handle: lowercase, [a-z0-9_], no leading
+ *  digits stripped (kept), collapse runs, trim to HANDLE_MAX. */
+export function normalizeHandle(input: string): string {
+  return (input || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_") // non-alnum → underscore
+    .replace(/_+/g, "_") // collapse runs
+    .replace(/^_+|_+$/g, "") // trim underscores
+    .slice(0, HANDLE_MAX);
+}
+
+export function isValidHandle(input: string): boolean {
+  return /^[a-z0-9_]+$/.test(input) && input.length >= HANDLE_MIN && input.length <= HANDLE_MAX;
+}
+
+/** Derive a starting handle from a name/email local-part. */
+export function suggestHandle(seed: string): string {
+  const base = normalizeHandle(seed.split("@")[0] ?? seed);
+  if (base.length >= HANDLE_MIN) return base;
+  return (base + "_athlete").slice(0, HANDLE_MAX);
+}
+
+// --------------------------------------------------------------- relations ---
+export type Visibility = "public" | "followers" | "private";
+
+/** How the viewer relates to a target, derived from the follow edges between
+ *  them. friend = mutual active follow; close = the viewer marked them close. */
+export type Relation = "self" | "none" | "following" | "follower" | "friend" | "close";
+
+export interface FollowEdge {
+  followerId: string;
+  followeeId: string;
+  status: string; // active | pending
+  closeFriend?: boolean;
+}
+
+export function relationTo(viewerId: string, targetId: string, edges: FollowEdge[]): Relation {
+  if (viewerId === targetId) return "self";
+  const out = edges.find(
+    (e) => e.followerId === viewerId && e.followeeId === targetId && e.status === "active",
+  );
+  const back = edges.find(
+    (e) => e.followerId === targetId && e.followeeId === viewerId && e.status === "active",
+  );
+  if (out && out.closeFriend) return "close";
+  if (out && back) return "friend";
+  if (out) return "following";
+  if (back) return "follower";
+  return "none";
+}
+
+/** A friend is a mutual active follow (close counts as friend). */
+export function isFriend(rel: Relation): boolean {
+  return rel === "friend" || rel === "close";
+}
+
+/** The privacy gate: can `relation` see the target's RESULTS (feed/leaderboard/
+ *  compare)? The profile CARD (handle/name/bio) is always visible; this gates
+ *  the data behind it. */
+export function canViewResults(visibility: Visibility, relation: Relation): boolean {
+  if (relation === "self") return true;
+  if (visibility === "public") return true;
+  if (visibility === "private") return false;
+  // followers-only: any approved follower (or mutual friend) can see results.
+  return relation === "following" || relation === "follower" || relation === "friend" || relation === "close";
+}
+
+// ------------------------------------------------------------------- feed ----
+export type FeedKind = "session" | "pr" | "recap" | "post";
+export type FeedAccent = "lime" | "blue" | "violet" | "amber";
+
+/** A first-class shared post (status / PR card / workout card) from an author. */
+export interface FeedPostInput {
+  id: string;
+  kind: "status" | "pr" | "workout";
+  text?: string | null;
+  data?: Record<string, unknown>;
+  at: number; // epoch ms
+}
+
+export interface FeedAuthor {
+  id: string;
+  handle: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  closeFriend?: boolean;
+}
+
+export interface FeedSubjectInput {
+  author: FeedAuthor;
+  /** the author's recent logged sessions (already privacy-cleared by the API). */
+  sessions: LoggedSession[];
+  /** the author's recent shared posts (status updates / PR & workout cards). */
+  posts?: FeedPostInput[];
+}
+
+export interface FeedItem {
+  /** stable id: `${kind}-${subjectId}` (kudos/comments anchor to subjectType+subjectId). */
+  id: string;
+  kind: FeedKind;
+  subjectType: FeedKind;
+  subjectId: string;
+  author: FeedAuthor;
+  title: string;
+  detail: string;
+  /** epoch ms for sorting + relative-time. */
+  at: number;
+  when: string; // "2h ago"
+  /** optional headline metric (e.g. PR e1RM, session volume kg). */
+  metric?: number;
+  accent: FeedAccent;
+}
+
+export interface FeedOptions {
+  now?: number;
+  /** days back of activity to include (default 14). */
+  windowDays?: number;
+  /** cap on returned items (default 40). */
+  limit?: number;
+  /** close-friends get this many hours of sort boost so they surface first (default 12). */
+  closeBoostHours?: number;
+}
+
+const ms = (iso: string) => new Date(iso).getTime();
+
+/** Build the cross-athlete activity feed from followees' sessions. Emits a
+ *  "completed session" item per session and a "PR" item when that session set a
+ *  new best — both anchored by (subjectType, subjectId) for kudos/comments. */
+export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions = {}): FeedItem[] {
+  const now = opts.now ?? Date.now();
+  const windowMs = (opts.windowDays ?? 14) * 86_400_000;
+  const boostMs = (opts.closeBoostHours ?? 12) * 3_600_000;
+  const items: Array<FeedItem & { _sort: number }> = [];
+
+  for (const subj of subjects) {
+    const author = subj.author;
+    // chronological + blocks migrated once, so PR detection compares against
+    // prior sessions in the same normalized shape.
+    const ordered = [...subj.sessions]
+      .map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }))
+      .sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
+    ordered.forEach((s, idx) => {
+      const at = ms(s.completedAt ?? s.startedAt);
+      if (!Number.isFinite(at) || at < now - windowMs || at > now + 60_000) return;
+      const blocks = s.blocks;
+      const vol = Math.round(sessionVolume(blocks));
+      const moves = blocks.length;
+      const sortAt = at + (author.closeFriend ? boostMs : 0);
+
+      items.push({
+        id: `session-${s.id}`,
+        kind: "session",
+        subjectType: "session",
+        subjectId: s.id,
+        author,
+        title: `${author.displayName || "@" + author.handle} trained`,
+        detail: `${s.title}${moves ? ` · ${moves} ${moves === 1 ? "exercise" : "exercises"}` : ""}${vol ? ` · ${vol.toLocaleString()} kg` : ""}`,
+        at,
+        when: relativeTime(at, now),
+        metric: vol || undefined,
+        accent: "lime",
+        _sort: sortAt,
+      });
+
+      // PRs set in THIS session vs everything the athlete did before it.
+      const prs = newPrsInSession(s, ordered.slice(0, idx));
+      if (prs.length) {
+        const top = prs.reduce((a, b) => (b.e1rm > a.e1rm ? b : a));
+        items.push({
+          id: `pr-${s.id}`,
+          kind: "pr",
+          subjectType: "pr",
+          subjectId: s.id,
+          author,
+          title: `${author.displayName || "@" + author.handle} hit a PR`,
+          detail:
+            prs.length === 1
+              ? `${top.lift} — ${top.e1rm} kg e1RM`
+              : `${prs.length} PRs · top ${top.lift} ${top.e1rm} kg`,
+          at: at + 1, // tie-break above the session card
+          when: relativeTime(at, now),
+          metric: top.e1rm,
+          accent: "amber",
+          _sort: sortAt + 1,
+        });
+      }
+    });
+
+    // First-class shared posts (status / PR card / workout card).
+    const nm = author.displayName || "@" + author.handle;
+    for (const post of subj.posts ?? []) {
+      if (!Number.isFinite(post.at) || post.at < now - windowMs || post.at > now + 60_000) continue;
+      const d = post.data ?? {};
+      let title: string;
+      let detail: string;
+      let accent: FeedAccent;
+      let metric: number | undefined;
+      if (post.kind === "pr") {
+        title = `${nm} shared a PR`;
+        detail = `${d.lift ?? "Lift"} — ${d.e1rm ?? "?"} kg e1RM`;
+        accent = "amber";
+        metric = typeof d.e1rm === "number" ? d.e1rm : undefined;
+      } else if (post.kind === "workout") {
+        title = `${nm} shared a workout`;
+        detail = `${d.title ?? "Workout"}${d.volume ? ` · ${Number(d.volume).toLocaleString()} kg` : ""}`;
+        accent = "lime";
+      } else {
+        title = `${nm} posted`;
+        detail = post.text || "";
+        accent = "violet";
+      }
+      // a caption on a card sits in front of the card summary
+      if (post.text && post.kind !== "status") detail = `${post.text} · ${detail}`;
+      items.push({
+        id: `post-${post.id}`,
+        kind: "post",
+        subjectType: "post",
+        subjectId: post.id,
+        author,
+        title,
+        detail,
+        at: post.at,
+        when: relativeTime(post.at, now),
+        metric,
+        accent,
+        _sort: post.at + (author.closeFriend ? boostMs : 0),
+      });
+    }
+  }
+
+  items.sort((a, b) => b._sort - a._sort);
+  return items.slice(0, opts.limit ?? 40).map(({ _sort, ...rest }) => rest);
+}
+
+// ------------------------------------------------------------ leaderboard ----
+export type LeaderboardMetric =
+  | "volume" // kg lifted this week
+  | "sessions" // workouts this week
+  | "distance" // km run this week
+  | "activeDays" // distinct days trained this week
+  | "streak" // current day-streak
+  | "prs"; // PRs set this week (strength + cardio)
+
+export interface LeaderEntry {
+  id: string;
+  handle: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  sessions: LoggedSession[];
+  isMe?: boolean;
+}
+
+export interface LeaderRow {
+  rank: number;
+  id: string;
+  handle: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  value: number;
+  /** formatted value + unit, e.g. "12,400 kg" / "5 days". */
+  label: string;
+  isMe: boolean;
+}
+
+export const LEADERBOARD_METRICS: { key: LeaderboardMetric; label: string }[] = [
+  { key: "volume", label: "Volume" },
+  { key: "sessions", label: "Sessions" },
+  { key: "distance", label: "Distance" },
+  { key: "activeDays", label: "Active days" },
+  { key: "streak", label: "Streak" },
+  { key: "prs", label: "PRs" },
+];
+
+function metricValue(metric: LeaderboardMetric, sessions: LoggedSession[], now: number): number {
+  const r = weeklyRecap(sessions, now);
+  switch (metric) {
+    case "volume":
+      return Math.round(r.volume);
+    case "sessions":
+      return r.sessions;
+    case "distance":
+      return Math.round(r.distanceKm * 10) / 10;
+    case "activeDays":
+      return r.activeDays;
+    case "streak":
+      return streak(sessions, 1, now).current;
+    case "prs":
+      return r.prs.length + r.cardioPrs.length;
+  }
+}
+
+function metricLabel(metric: LeaderboardMetric, value: number): string {
+  switch (metric) {
+    case "volume":
+      return `${value.toLocaleString()} kg`;
+    case "distance":
+      return `${value} km`;
+    case "sessions":
+      return `${value} ${value === 1 ? "session" : "sessions"}`;
+    case "activeDays":
+      return `${value} ${value === 1 ? "day" : "days"}`;
+    case "streak":
+      return `${value} ${value === 1 ? "day" : "days"}`;
+    case "prs":
+      return `${value} ${value === 1 ? "PR" : "PRs"}`;
+  }
+}
+
+/** Rank friends by a metric (highest first); ties keep input order. Everyone is
+ *  included even at 0 so the viewer always sees their circle. */
+export function friendLeaderboard(
+  entries: LeaderEntry[],
+  metric: LeaderboardMetric,
+  now = Date.now(),
+): LeaderRow[] {
+  return entries
+    .map((e) => ({ e, value: metricValue(metric, e.sessions, now) }))
+    .sort((a, b) => b.value - a.value)
+    .map(({ e, value }, i) => ({
+      rank: i + 1,
+      id: e.id,
+      handle: e.handle,
+      displayName: e.displayName,
+      avatarUrl: e.avatarUrl,
+      value,
+      label: metricLabel(metric, value),
+      isMe: !!e.isMe,
+    }));
+}
+
+// --------------------------------------------------------------- compare -----
+export interface AthleteSnapshot {
+  id: string;
+  handle: string;
+  displayName?: string | null;
+  sessions: LoggedSession[];
+}
+
+export interface CompareLine {
+  key: string;
+  label: string;
+  a: number;
+  b: number;
+  unit: string;
+  /** which side is ahead on this line. */
+  leader: "a" | "b" | "tie";
+}
+
+export interface SharedLift {
+  lift: string;
+  a: number;
+  b: number;
+  unit: "kg";
+  leader: "a" | "b" | "tie";
+}
+
+export interface CompareResult {
+  a: { id: string; handle: string; displayName?: string | null };
+  b: { id: string; handle: string; displayName?: string | null };
+  lines: CompareLine[];
+  sharedLifts: SharedLift[];
+  /** count of lines each side leads (excludes ties) — the headline scoreline. */
+  score: { a: number; b: number };
+}
+
+const lead = (a: number, b: number): "a" | "b" | "tie" => (a > b ? "a" : b > a ? "b" : "tie");
+
+/** Head-to-head comparison between two athletes on the week's training plus
+ *  all-time bests on the lifts they BOTH train. Reuses weeklyRecap/streak/
+ *  bestE1rmByLift so the numbers match every other screen. */
+export function compareAthletes(
+  a: AthleteSnapshot,
+  b: AthleteSnapshot,
+  now = Date.now(),
+): CompareResult {
+  const ra = weeklyRecap(a.sessions, now);
+  const rb = weeklyRecap(b.sessions, now);
+  const sa = streak(a.sessions, 1, now);
+  const sb = streak(b.sessions, 1, now);
+
+  const lines: CompareLine[] = [
+    { key: "volume", label: "Weekly volume", a: Math.round(ra.volume), b: Math.round(rb.volume), unit: "kg", leader: lead(ra.volume, rb.volume) },
+    { key: "sessions", label: "Weekly sessions", a: ra.sessions, b: rb.sessions, unit: "", leader: lead(ra.sessions, rb.sessions) },
+    { key: "distance", label: "Weekly distance", a: Math.round(ra.distanceKm * 10) / 10, b: Math.round(rb.distanceKm * 10) / 10, unit: "km", leader: lead(ra.distanceKm, rb.distanceKm) },
+    { key: "activeDays", label: "Active days", a: ra.activeDays, b: rb.activeDays, unit: "", leader: lead(ra.activeDays, rb.activeDays) },
+    { key: "streak", label: "Current streak", a: sa.current, b: sb.current, unit: "d", leader: lead(sa.current, sb.current) },
+  ];
+
+  // all-time bests on shared lifts
+  const bestA = new Map(bestE1rmByLift(a.sessions).map((r) => [r.lift, r.e1rm]));
+  const bestB = new Map(bestE1rmByLift(b.sessions).map((r) => [r.lift, r.e1rm]));
+  const sharedLifts: SharedLift[] = [];
+  for (const [lift, ea] of bestA) {
+    const eb = bestB.get(lift);
+    if (eb == null) continue;
+    sharedLifts.push({ lift, a: ea, b: eb, unit: "kg", leader: lead(ea, eb) });
+  }
+  sharedLifts.sort((x, y) => Math.max(y.a, y.b) - Math.max(x.a, x.b));
+
+  const all = [...lines, ...sharedLifts];
+  const score = {
+    a: all.filter((l) => l.leader === "a").length,
+    b: all.filter((l) => l.leader === "b").length,
+  };
+
+  return {
+    a: { id: a.id, handle: a.handle, displayName: a.displayName },
+    b: { id: b.id, handle: b.handle, displayName: b.displayName },
+    lines,
+    sharedLifts,
+    score,
+  };
+}
+
+/** Lifetime headline stats for a profile card (cheap, from sessions only). */
+export interface ProfileStats {
+  totalSessions: number;
+  totalVolumeKg: number;
+  currentStreak: number;
+  topLifts: { lift: string; e1rm: number }[];
+}
+
+export function profileStats(sessions: LoggedSession[], now = Date.now()): ProfileStats {
+  return {
+    totalSessions: sessions.length,
+    totalVolumeKg: Math.round(totalVolume(sessions)),
+    currentStreak: streak(sessions, 1, now).current,
+    topLifts: bestE1rmByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, e1rm: r.e1rm })),
+  };
+}
+
+// ------------------------------------------------ social notifications ------
+export type SocialNotifKind =
+  | "follow" // someone followed me
+  | "follow_request" // someone asked to follow my private profile (actionable)
+  | "kudos" // someone cheered my workout/PR
+  | "comment" // someone commented on my item
+  | "enroll_request" // a client wants to start my program (coach, actionable)
+  | "enroll_active" // my coach accepted my enrolment
+  | "enroll_declined"; // my coach declined my enrolment
+
+export interface SocialNotifActor {
+  handle?: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+}
+
+export interface SocialNotifEvent {
+  kind: SocialNotifKind;
+  at: number; // epoch ms
+  actor?: SocialNotifActor;
+  /** program name, comment snippet, or "PR"/"workout" for kudos. */
+  text?: string;
+  /** route target (a profile/coach @handle). */
+  handle?: string;
+  /** present + actionable: approve/deny a follow request. */
+  followerId?: string;
+  /** present + actionable: accept/decline an enrolment request. */
+  enrollmentId?: string;
+}
+
+export interface SocialNotifItem extends SocialNotifEvent {
+  id: string;
+  title: string;
+  when: string;
+  accent: FeedAccent;
+  actionable: boolean;
+}
+
+function notifActorName(a?: SocialNotifActor): string {
+  return a?.displayName || (a?.handle ? `@${a.handle}` : "Someone");
+}
+
+/** Format + sort social/coaching events into a notification list (newest first).
+ *  Pure — the API gathers the raw events from the DB and hands them in. */
+export function buildSocialNotifications(events: SocialNotifEvent[], now = Date.now()): SocialNotifItem[] {
+  const items = events.map((e): SocialNotifItem => {
+    const who = notifActorName(e.actor);
+    let title = "";
+    let accent: FeedAccent = "blue";
+    let actionable = false;
+    switch (e.kind) {
+      case "follow": title = `${who} followed you`; accent = "blue"; break;
+      case "follow_request": title = `${who} requested to follow you`; accent = "blue"; actionable = true; break;
+      case "kudos": title = `${who} cheered your ${e.text || "workout"}`; accent = "lime"; break;
+      case "comment": title = `${who} commented: "${(e.text || "").slice(0, 80)}"`; accent = "violet"; break;
+      case "enroll_request": title = `${who} wants to start ${e.text || "your program"}`; accent = "amber"; actionable = true; break;
+      case "enroll_active": title = `${who} accepted your enrolment in ${e.text || "the program"}`; accent = "lime"; break;
+      case "enroll_declined": title = `${who} declined your enrolment in ${e.text || "the program"}`; accent = "amber"; break;
+    }
+    return {
+      ...e,
+      id: `${e.kind}-${e.followerId ?? e.enrollmentId ?? e.handle ?? e.at}`,
+      title,
+      when: relativeTime(e.at, now),
+      accent,
+      actionable,
+    };
+  });
+  return items.sort((a, b) => b.at - a.at);
+}
+
+// ------------------------------------------------- coach discovery rail ------
+export type CoachAccent = "lime" | "blue" | "violet" | "amber";
+
+/** A coach card for the "Follow a coach" rail on Today — shared shape for both
+ *  the real marketplace coaches AND the placeholder people shown before any
+ *  coach has published a storefront. */
+export interface DiscoverCoach {
+  /** real coaches: their User id (followable); placeholders: undefined. */
+  userId?: string;
+  handle: string;
+  name: string;
+  headline: string;
+  specialties: string[];
+  rating: number | null;
+  reviews?: number;
+  verified: boolean;
+  accent: CoachAccent;
+  /** true → not a real account; the card routes to the marketplace instead of following. */
+  placeholder?: boolean;
+}
+
+/** Seed people for the Today coach rail until real coaches publish storefronts.
+ *  Deliberately diverse + clearly illustrative; the rail swaps to live coaches
+ *  the moment the marketplace returns any. */
+export const PLACEHOLDER_COACHES: DiscoverCoach[] = [
+  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting · 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true },
+  { handle: "marcus_bell", name: "Marcus Bell", headline: "Hybrid & Hyrox specialist", specialties: ["Hyrox", "Conditioning"], rating: 4.7, reviews: 64, verified: true, accent: "lime", placeholder: true },
+  { handle: "sofia_almeida", name: "Sofia Almeida", headline: "Marathon & 5k coach", specialties: ["Running", "Endurance"], rating: 4.8, reviews: 91, verified: false, accent: "blue", placeholder: true },
+  { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting · raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true },
+  { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "violet", placeholder: true },
+  { handle: "coach_bray", name: "Coach Bray", headline: "Tactical & military prep", specialties: ["Tactical", "Strength"], rating: 4.4, reviews: 37, verified: false, accent: "lime", placeholder: true },
+];
+
+const RAIL_ACCENTS: CoachAccent[] = ["lime", "blue", "violet", "amber"];
+
+/** Map the marketplace API's coach cards into the rail shape; falls back to the
+ *  placeholder people when the marketplace is empty (no coaches yet / schema not
+ *  run). One source of truth shared by web + mobile. */
+export function coachRailItems(apiCoaches?: Array<Record<string, unknown>> | null): DiscoverCoach[] {
+  if (!apiCoaches || apiCoaches.length === 0) return PLACEHOLDER_COACHES;
+  return apiCoaches.slice(0, 12).map((c, i) => ({
+    userId: typeof c.userId === "string" ? c.userId : undefined,
+    handle: String(c.handle ?? ""),
+    name: String(c.name ?? c.handle ?? "Coach"),
+    headline: String(c.headline ?? (Array.isArray(c.specialties) ? (c.specialties as string[]).join(" · ") : "") ?? ""),
+    specialties: Array.isArray(c.specialties) ? (c.specialties as string[]) : [],
+    rating: typeof c.rating === "number" ? c.rating : null,
+    reviews: typeof c.reviews === "number" ? c.reviews : undefined,
+    verified: c.coachVerified === true,
+    accent: RAIL_ACCENTS[i % RAIL_ACCENTS.length]!,
+    placeholder: false,
+  }));
+}
+

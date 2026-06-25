@@ -8,7 +8,7 @@
  * screen id — the id IS the screen; mobile: an expo-router href) and may show a
  * subset (filtered by feature flags on web, by available routes on mobile).
  */
-export type NavGroup = "home" | "train" | "analyze" | "recovery" | "teams" | "account";
+export type NavGroup = "home" | "train" | "analyze" | "recovery" | "social" | "teams" | "account";
 
 /**
  * Who the app is shaping itself for. Derived from the auth role plus, for a
@@ -70,7 +70,7 @@ export interface NavItem {
 }
 
 /** Render order of the groups. */
-export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recovery", "teams", "account"];
+export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recovery", "social", "teams", "account"];
 
 // DEFAULT ACCESS POLICY (the "done deal" — an admin can override any of this in
 // Access control). The guiding rule: don't overload retail.
@@ -120,6 +120,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "nutrition", label: "Nutrition", icon: "🍎", group: "recovery" },
   { id: "progress", label: "Progress photos", icon: "📸", group: "recovery" },
   { id: "longevity", label: "Longevity", icon: "❤", group: "recovery", minPersona: "athlete" },
+
+  // ---- Social (everyone) — follow friends, browse results, find a coach ----
+  { id: "feed", label: "Feed", icon: "📣", group: "social" },
+  { id: "discover", label: "Find friends", icon: "🧭", group: "social" },
+  { id: "leaderboard", label: "Leaderboard", icon: "🏆", group: "social" },
+  { id: "coaches", label: "Coaches", icon: "✦", group: "social" },
 
   { id: "coach", label: "Coach", icon: "✦", group: "teams", minPersona: "coach" },
   { id: "squad", label: "Squad monitor", icon: "◫", group: "teams", minPersona: "coach" },

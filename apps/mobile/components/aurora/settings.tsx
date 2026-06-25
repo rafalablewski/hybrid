@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, LayoutAnimation, Platform, UIManager } from "react-native";
 import { useRouter } from "expo-router";
-import { TEMPLATES, type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId } from "@hybrid/core";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
@@ -9,7 +9,6 @@ import { useSession } from "../../lib/session";
 import { useAccountSettings } from "../../lib/account";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
-import { useTemplate } from "../../lib/template";
 import { useLiquidGlass } from "../../lib/liquid-glass";
 import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
@@ -35,7 +34,7 @@ const LANGUAGES: { id: Lang; label: string }[] = [
 
 /** Per-category accent — the icon-tile tint, matching the V1 mockup. */
 const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
-  account: "lime", preferences: "blue", logger: "amber", notifications: "violet",
+  account: "lime", social: "lime", preferences: "blue", logger: "amber", notifications: "violet",
   privacy: "blue", coaching: "violet", security: "blue", subscription: "lime",
   data: "ash", danger: "red",
 };
@@ -53,7 +52,6 @@ export default function AuroraSettings() {
   const { t, lang, setLang } = useLang();
   const { signOut, name, role, entitlement } = useSession();
   const { pref, setPref } = useTheme();
-  const { template, setTemplate } = useTemplate();
   const lg = useLiquidGlass();
   const acct = useAccountSettings();
   const [open, setOpen] = useState<SettingsCategoryId | null>("account");
@@ -105,9 +103,6 @@ export default function AuroraSettings() {
       <>
         <Label color={C.blue}>APPEARANCE</Label>
         <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
-        <Label color={C.blue} top>TEMPLATE</Label>
-        <ASegment options={TEMPLATES.map((tp) => ({ id: tp.id, label: tp.label }))} value={template} onPick={setTemplate} />
-        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 8, lineHeight: 16 }}>{t(`w.account.settings.template-desc-${template}`)}</Text>
         <Label color={C.blue} top>LANGUAGE</Label>
         <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         {lg.supported && (
@@ -189,6 +184,7 @@ export default function AuroraSettings() {
 
   // Rows that navigate to a dedicated screen instead of expanding.
   const ROUTES: Partial<Record<SettingsCategoryId, string>> = {
+    social: "/profile-edit",
     logger: "/logger-settings",
     coaching: "/coach-apply",
     subscription: "/upgrade",

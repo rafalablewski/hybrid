@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { TEMPLATES, ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -14,13 +14,14 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
+import { SocialProfileEdit } from "./social-profile";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type CoachStatus = "pending" | "approved" | "denied";
 
 // Per-category accent — the icon-tile tint, matching the V1 mockup + mobile.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME, preferences: BLUE, logger: AMBER, notifications: VIOLET,
+  account: LIME, social: LIME, preferences: BLUE, logger: AMBER, notifications: VIOLET,
   privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME,
   data: ASH, danger: RED,
 };
@@ -40,7 +41,7 @@ export default function AccountSettings() {
   const { logout, session, entitlement } = useSession();
   const personaChoice = useClientPersonaChoice() ?? "casual";
   const { theme, setTheme } = useTheme();
-  const { template, setTemplate } = useTemplate();
+  const { template } = useTemplate();
   // Aurora rounds everything more. The Card surfaces already adapt via the
   // template skin; here we round the controls (inputs, buttons, choice cards)
   // to match, in place.
@@ -270,6 +271,8 @@ export default function AccountSettings() {
             {!authOn && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.profile-needs-account")}</Mono>}
           </>
         );
+      case "social":
+        return <SocialProfileEdit />;
       case "preferences":
         return (
           <>
@@ -278,14 +281,6 @@ export default function AccountSettings() {
               {(["dark", "light"] as const).map((m) => (
                 <button key={m} onClick={() => setTheme(m)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
                   {m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")}
-                </button>
-              ))}
-            </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.template")}</Mono>
-            <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
-              {TEMPLATES.map((tpl) => (
-                <button key={tpl.id} onClick={() => setTemplate(tpl.id)} title={tpl.description} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: template === tpl.id ? txt(LIME) : txt(ASH), background: template === tpl.id ? `${LIME}1a` : "transparent", border: `1px solid ${template === tpl.id ? LIME : LINE}` }}>
-                  {tpl.label}
                 </button>
               ))}
             </div>

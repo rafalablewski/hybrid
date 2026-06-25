@@ -3,7 +3,7 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
-const TARGET_TYPES = ["talentProfile"];
+const TARGET_TYPES = ["talentProfile", "socialProfile", "comment"];
 const REASONS = ["inappropriate", "fake", "spam", "other"];
 
 // File a content report (flagged content) — any signed-in user. Feeds the admin
@@ -31,6 +31,12 @@ export async function POST(request: Request) {
   // with orphaned rows.
   if (b.targetType === "talentProfile") {
     const exists = await prisma.talentProfile.findUnique({ where: { id: targetId }, select: { id: true } });
+    if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
+  } else if (b.targetType === "socialProfile") {
+    const exists = await prisma.socialProfile.findUnique({ where: { userId: targetId }, select: { userId: true } }).catch(() => null);
+    if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
+  } else if (b.targetType === "comment") {
+    const exists = await prisma.comment.findUnique({ where: { id: targetId }, select: { id: true } }).catch(() => null);
     if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
   }
 

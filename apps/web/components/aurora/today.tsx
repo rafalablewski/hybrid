@@ -36,6 +36,8 @@ import { readIntake, type Intake } from "@/lib/intake";
 import { track } from "@/lib/track";
 import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
+import CoachRail from "./coach-rail";
+import FeedPreview from "./feed-preview";
 import { AuroraIcon } from "./icons";
 import AuroraAskCoach from "./ai-coach";
 
@@ -295,6 +297,10 @@ export default function AuroraToday({
         ))}
       </div>
 
+      {/* FOLLOW A COACH — swipeable rail of coaches (live marketplace, falling
+          back to placeholder people until coaches publish storefronts). */}
+      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
+
       {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
       <div style={{ marginTop: 18 }}>
         <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
@@ -513,6 +519,10 @@ export default function AuroraToday({
           </div>
         </div>
       )}
+
+      {/* FEED STRIP — a few of your circle's latest, like IG Threads at the
+          bottom of the feed. Empty → renders nothing. */}
+      <FeedPreview onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
     </div>
   );
 }

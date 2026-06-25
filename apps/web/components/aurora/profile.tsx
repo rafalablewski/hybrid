@@ -155,6 +155,20 @@ export default function AuroraProfile({
 
   // ----- styles (match the mockup; inline var(--color-…) like sibling Aurora screens) -----
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22 } as const;
+  // Social summary — for the owner-only "set up your profile" nudge (top) and
+  // the following/followers counts (above the membership card).
+  const [socialP, setSocialP] = useState<{ profile?: { handle: string; bio?: string | null; avatarUrl?: string | null } | null } | null>(null);
+  const [socialConns, setSocialConns] = useState<{ followers?: unknown[]; following?: unknown[] } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/social/profile").then((r) => r.json()).then((d) => { if (alive) setSocialP(d); }).catch(() => {});
+    fetch("/api/social/connections").then((r) => r.json()).then((d) => { if (alive) setSocialConns(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const sClaimed = !!socialP?.profile;
+  const sComplete = sClaimed && !!socialP!.profile!.bio && !!socialP!.profile!.avatarUrl;
+  const followingN = socialConns?.following?.length ?? 0;
+  const followersN = socialConns?.followers?.length ?? 0;
   const sectionHead = (title: string, action?: string) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 2px 13px" }}>
       <div style={{ fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
@@ -164,6 +178,25 @@ export default function AuroraProfile({
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)" }}>
+      {/* SET UP YOUR PROFILE — owner-only nudge at the very top; encourages
+          claiming a handle + adding a photo/bio. Hides once the profile is
+          complete. (This screen is always your own, so it's only-you by nature.) */}
+      {socialP && !sComplete && (
+        <button
+          onClick={go("settings", "/settings")}
+          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, rgba(196,240,53,.12), rgba(127,212,232,.05))", borderRadius: 20, padding: 16, display: "flex", alignItems: "center", gap: 14, color: C("chalk") }}
+        >
+          <span style={{ width: 44, height: 44, borderRadius: 14, background: C("lime"), display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <AuroraIcon name="user-circle" size={22} color={C("ink")} />
+          </span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontWeight: 800, fontSize: 16 }}>{sClaimed ? "Complete your profile" : "Set up your public profile"}</span>
+            <span style={{ display: "block", color: C("ash"), fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>{sClaimed ? "Add a photo and bio so friends recognise you." : "Claim a handle, add a photo and bio so friends can find and follow you."}</span>
+          </span>
+          <span style={{ color: C("lime"), fontWeight: 800, fontSize: 18 }}>→</span>
+        </button>
+      )}
+
       {/* ACCOUNT HERO — Apple-ID / Tesla account chrome */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
         <div style={{ position: "relative", width: 98, height: 98 }}>
@@ -228,6 +261,16 @@ export default function AuroraProfile({
       </div>
 
       <div style={{ height: 1, background: C("line"), margin: "22px 0" }} />
+
+      {/* FOLLOWING / FOLLOWERS — only these two, above the membership card. */}
+      <div style={{ display: "flex", border: `1px solid ${C("line")}`, borderRadius: 18, background: C("ink2"), marginBottom: 18 }}>
+        {[{ n: followingN, k: "Following" }, { n: followersN, k: "Followers" }].map((c, i) => (
+          <div key={c.k} style={{ flex: 1, textAlign: "center", padding: "14px 0", borderRight: i < 1 ? `1px solid ${C("line")}` : "none" }}>
+            <div style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-.02em" }}>{c.n}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginTop: 5 }}>{c.k}</div>
+          </div>
+        ))}
+      </div>
 
       {/* ID CARD — premium membership card */}
       <div style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", border: "1px solid #34381f", background: "linear-gradient(160deg,#1a1c14,#0e100d 60%)" }}>

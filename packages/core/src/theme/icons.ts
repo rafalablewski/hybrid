@@ -170,4 +170,10 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   connections: "share",
   settings: "settings",
   upgrade: "offer",
+  // social + marketplace
+  feed: "list-play",
+  discover: "user-add",
+  leaderboard: "arrow-up",
+  coaches: "store",
+  myprofile: "user-circle",
 };

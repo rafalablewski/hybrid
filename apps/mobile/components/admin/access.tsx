@@ -42,7 +42,7 @@ const ROLE_PERMISSIONS = [
 const PERSONAS: Persona[] = ["casual", "athlete", "coach", "admin"];
 const PERSONA_LABEL: Record<Persona, string> = { casual: "Casual", athlete: "Athlete", coach: "Coach", admin: "Admin" };
 const GROUP_LABEL: Record<NavGroup, string> = {
-  home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", teams: "Teams", account: "Account",
+  home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", social: "Social", teams: "Teams", account: "Account",
 };
 const FLAG_KEY = "access.personaNav";
 const navLabel = (id: string) => NAV_ITEMS.find((i) => i.id === id)?.label ?? id;

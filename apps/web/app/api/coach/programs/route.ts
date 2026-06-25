@@ -32,15 +32,22 @@ export async function POST(request: Request) {
   if (me.role !== "COACH" && me.role !== "ADMIN")
     return NextResponse.json({ error: "coach only" }, { status: 403 });
 
-  const { data: b, error } = await readJsonLimited<{ name?: unknown; goal?: unknown; weeks?: unknown }>(request, 128 * 1024);
+  const { data: b, error } = await readJsonLimited<{
+    name?: unknown; goal?: unknown; weeks?: unknown;
+    published?: unknown; summary?: unknown; level?: unknown; visibility?: unknown;
+  }>(request, 128 * 1024);
   if (error) return error;
   const name = typeof b.name === "string" ? b.name.trim().slice(0, 80) : "";
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
   const goal = typeof b.goal === "string" && b.goal.trim() ? b.goal.trim().slice(0, 40) : null;
   const weeks = sanitizeProgramWeeks(b.weeks);
+  const published = b.published === true;
+  const summary = typeof b.summary === "string" && b.summary.trim() ? b.summary.trim().slice(0, 280) : null;
+  const level = typeof b.level === "string" && b.level.trim() ? b.level.trim().slice(0, 30) : null;
+  const visibility = b.visibility === "link" ? "link" : "public";
 
   try {
-    const program = await prisma.coachProgram.create({ data: { coachId: me.id, name, goal, weeks } });
+    const program = await prisma.coachProgram.create({ data: { coachId: me.id, name, goal, weeks, published, summary, level, visibility } });
     return NextResponse.json({ program }, { status: 201 });
   } catch (e) {
     if (tableMissing(e))

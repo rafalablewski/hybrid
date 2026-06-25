@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { fs, space, buildActivityFeed, relativeTime, type ActivityAccent, type ActivityAssignment } from "@hybrid/core";
+import { fs, space, buildActivityFeed, relativeTime, type ActivityAccent, type ActivityAssignment, type SocialNotifItem } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { AuroraIcon } from "@/components/aurora/icons";
 import { useTemplate } from "@/lib/use-template";
@@ -42,6 +42,24 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
     return () => { alive = false; };
   }, []);
 
+  // Social + coaching events (new followers, follow/enrol requests, kudos,
+  // comments) — fetched from the social API and shown above the training feed.
+  const [social, setSocial] = useState<SocialNotifItem[]>([]);
+  const loadSocial = () =>
+    fetch("/api/social/notifications")
+      .then((res) => (res.ok ? res.json() : { notifications: [] }))
+      .then((d: { notifications?: SocialNotifItem[] }) => setSocial(d.notifications ?? []))
+      .catch(() => {});
+  useEffect(() => { loadSocial(); }, []);
+  const respond = async (n: SocialNotifItem, accept: boolean) => {
+    if (n.kind === "follow_request" && n.followerId) {
+      await fetch("/api/social/follow/respond", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ followerId: n.followerId, action: accept ? "approve" : "deny" }) });
+    } else if (n.kind === "enroll_request" && n.enrollmentId) {
+      await fetch("/api/coach/enrollments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enrollmentId: n.enrollmentId, action: accept ? "accept" : "decline" }) });
+    }
+    loadSocial();
+  };
+
   const feed = useMemo(() => buildActivityFeed({ sessions, assignments }), [sessions, assignments]);
   const C = (v: string) => `var(--color-${v})`;
   const accent = (a: ActivityAccent) => C(a);
@@ -59,12 +77,35 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
             </button>
           )}
           <h1 style={{ fontWeight: 900, fontSize: 24, margin: 0 }}>{t("w.account.notifications.title")}</h1>
-          {feed.length > 0 && (
-            <span style={{ marginLeft: "auto", background: C("lime"), color: C("ink"), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{feed.length}</span>
+          {feed.length + social.length > 0 && (
+            <span style={{ marginLeft: "auto", background: C("lime"), color: C("ink"), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{feed.length + social.length}</span>
           )}
         </div>
 
-        {feed.length === 0 ? (
+        {/* SOCIAL — followers, follow/enrol requests, kudos, comments. */}
+        {social.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            {social.map((n) => (
+              <div key={n.id} style={{ display: "flex", gap: space.md, alignItems: "center", marginBottom: 14 }}>
+                <div style={{ width: 46, height: 46, borderRadius: r.field, background: `color-mix(in srgb, ${C(n.accent)} 18%, transparent)`, display: "grid", placeItems: "center", flexShrink: 0, fontFamily: "var(--font-display)", fontWeight: 800, color: C(n.accent) }}>
+                  {(n.actor?.displayName || n.actor?.handle || "·").slice(0, 1).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: fs.bodyLg, lineHeight: 1.3 }}>{n.title}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{n.when}</div>
+                  {n.actionable && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <button onClick={() => respond(n, true)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: C("ink"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Accept" : "Approve"}</button>
+                      <button onClick={() => respond(n, false)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Decline" : "Deny"}</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {feed.length === 0 && social.length === 0 ? (
           <div style={{ marginTop: 22, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: 20, color: C("ash"), fontSize: fs.bodyLg, lineHeight: 1.5 }}>
             {t("w.account.notifications.empty")}
           </div>
