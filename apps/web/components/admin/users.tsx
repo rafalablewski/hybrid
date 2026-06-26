@@ -343,7 +343,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <Mono s={{ fontSize: fs.body }} c={ASH}>Send a verification / welcome email</Mono>
         </label>
 
-        {msg && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono>}
+        {msg && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono></div>}
 
         <button onClick={create} disabled={busy || !email.trim()} style={{ width: "100%", ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: ON_ACCENT, background: busy || !email.trim() ? LINE : AMBER, border: "none", borderRadius: "var(--r-card)", padding: "11px 0", cursor: busy || !email.trim() ? "default" : "pointer" }}>
           {busy ? "Creating…" : "Create account"}
@@ -613,9 +613,11 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               </div>
 
               {msg && (
-                <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
-                  {msg.text}
-                </Mono>
+                <div role="alert">
+                  <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
+                    {msg.text}
+                  </Mono>
+                </div>
               )}
 
               <button

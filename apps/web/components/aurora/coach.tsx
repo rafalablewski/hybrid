@@ -157,9 +157,11 @@ export default function AuroraCoach() {
             <Btn label={t("w.teams.coach.invite")} color={C("lime")} onClick={invite} />
           </div>
           {msg && (
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("amber")}>
-              {msg.text}
-            </Mono>
+            <div role="alert">
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("amber")}>
+                {msg.text}
+              </Mono>
+            </div>
           )}
         </div>
 

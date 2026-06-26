@@ -128,7 +128,7 @@ function Detail({ goal, plan, back }: { goal: GoalNode; plan: GoalPlan; back: ()
         label={enrolled === "done" ? t("common.enrolled") : enrolled === "busy" ? t("common.enrolling") : `${t("common.enroll")} ${plan.name}`}
         onPress={enroll} disabled={enrolled === "busy" || enrolled === "done"} style={{ marginTop: 8 }}
       />
-      {enrolled === "error" && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
+      {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8 }}>Couldn&apos;t enroll — check your connection.</Text>}
     </AuroraScreen>
   );
 }

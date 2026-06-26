@@ -154,9 +154,11 @@ export default function MfaSettings() {
           )}
 
           {msg && (
-            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={msg.ok ? LIME : RED}>
-              {msg.text}
-            </Mono>
+            <div role="alert">
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 12 }} c={msg.ok ? LIME : RED}>
+                {msg.text}
+              </Mono>
+            </div>
           )}
         </div>
       )}

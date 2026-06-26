@@ -135,7 +135,7 @@ export default function AuroraCoach() {
             />
             <APill label={t("common.invite")} variant="primary" onPress={invite} style={{ paddingVertical: 14 }} />
             {msg && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, msg.ok ? C.lime : C.amber), marginTop: 10 }}>
+              <Text accessibilityLiveRegion={msg.ok ? "polite" : "assertive"} accessibilityRole={msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, msg.ok ? C.lime : C.amber), marginTop: 10 }}>
                 {msg.text}
               </Text>
             )}

@@ -191,7 +191,7 @@ export default function AdminMedia() {
         Upload demo clips + images once; copy a URL into an exercise&apos;s demo-video field or an announcement.
       </Mono>
 
-      {err && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }} c={RED}>{err}</Mono>}
+      {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }} c={RED}>{err}</Mono></div>}
       {!supabase && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 14 }}>
           <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block" }} c={CHALK}>

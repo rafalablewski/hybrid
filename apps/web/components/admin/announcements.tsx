@@ -259,9 +259,11 @@ export default function AdminAnnouncements() {
           </label>
 
           {err && (
-            <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
-              {err}
-            </Mono>
+            <div role="alert">
+              <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
+                {err}
+              </Mono>
+            </div>
           )}
 
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
@@ -279,9 +281,11 @@ export default function AdminAnnouncements() {
       )}
 
       {err && editing === null && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
+            {err}
+          </Mono>
+        </div>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>

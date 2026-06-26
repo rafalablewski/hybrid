@@ -65,7 +65,7 @@ export default function InviteClaim() {
         </>
       ) : state === "error" ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.amber, textAlign: "center", marginTop: 12 }}>{msg}</Text>
+          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.amber, textAlign: "center", marginTop: 12 }}>{msg}</Text>
           <Pressable onPress={() => void claim()} style={{ marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, color: C.lime }}>Try again</Text>
           </Pressable>

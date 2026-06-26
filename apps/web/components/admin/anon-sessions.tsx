@@ -60,9 +60,11 @@ export default function AdminAnonSessions() {
       </div>
 
       {err && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
+            {err}
+          </Mono>
+        </div>
       )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>

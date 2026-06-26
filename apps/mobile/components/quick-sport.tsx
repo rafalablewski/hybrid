@@ -211,7 +211,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
       </View>
 
       {(pace || msg) && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg.startsWith("✓") ? txt(C, C.lime) : pace ? txt(C, C.blue) : C.ash }}>
+        <Text accessibilityLiveRegion={msg ? "polite" : "none"} style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg.startsWith("✓") ? txt(C, C.lime) : pace ? txt(C, C.blue) : C.ash }}>
           {msg || `${t("workout.pace")} ${pace}`}
         </Text>
       )}

@@ -118,7 +118,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
           </span>
         </button>
 
-        {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
+        {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
         <button onClick={submit} disabled={saving}
           style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: 16, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")}

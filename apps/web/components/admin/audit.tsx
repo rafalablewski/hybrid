@@ -67,9 +67,11 @@ export default function AdminAuditLog() {
       </div>
 
       {err && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }} c={RED}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 14 }} c={RED}>
+            {err}
+          </Mono>
+        </div>
       )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>

@@ -79,7 +79,7 @@ export default function SaveRoutineCard({
         placeholder={t("w.train.logger.routineNamePh")}
         style={{ marginTop: 11, width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 11, padding: "11px 13px", outline: "none", boxSizing: "border-box" }}
       />
-      {err && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8 }}>{err}</div>}
+      {err && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8 }}>{err}</div>}
       <button
         onClick={save}
         disabled={state === "saving"}

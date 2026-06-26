@@ -461,7 +461,7 @@ export default function AccountSettings() {
               {t("w.account.settings.type")} <b style={{ color: CHALK }}>RESET</b> {t("w.account.settings.to-confirm")}
             </Mono>
             <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="RESET" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armed ? RED : LINE}`, outline: "none" }} />
-            {msg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{msg}</Mono>}
+            {msg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{msg}</Mono></div>}
             <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
               <button onClick={reset} disabled={!armed || busy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
                 {busy ? t("w.account.settings.erasing") : t("w.account.settings.erase-everything")}

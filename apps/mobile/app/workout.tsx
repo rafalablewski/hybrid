@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, PanResponder, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -698,6 +698,7 @@ export default function Workout() {
     const blocks = buildBlocks();
     if (!blocks.length) {
       setError(t("workout.minSet"));
+      AccessibilityInfo.announceForAccessibility(t("workout.minSet"));
       return;
     }
     setSaving(true);
@@ -1219,7 +1220,7 @@ export default function Workout() {
           </Pressable>
         </Modal>
 
-        {!!error && <Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono>}
+        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono></View>}
 
         {exercises.length > 0 && (
           <View style={{ flexDirection: "row", gap: space.ms, marginTop: 18 }}>

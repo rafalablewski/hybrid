@@ -68,7 +68,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
         style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, marginTop: 8 }}
       />
       <View style={{ marginTop: 10 }}><Button label="Save diet" color={C.lime} onPress={save} /></View>
-      {msg !== "" && <Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono>}
+      {msg !== "" && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}
       {unavailable && <Mono color={C.ash} style={{ marginTop: 8 }}>Diet assignment isn&apos;t enabled yet — run reference/sql-coach-diet.sql.</Mono>}
     </Card>
   );

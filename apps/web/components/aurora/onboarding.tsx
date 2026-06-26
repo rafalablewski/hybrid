@@ -81,7 +81,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
             ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>{t("w.account.onboarding.no-plan")}</div>}
           </Step>
         )}
-        {error && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
+        {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
       </div>
 
       <div style={{ display: "flex", gap: space.md, alignItems: "center", marginTop: 24 }}>
