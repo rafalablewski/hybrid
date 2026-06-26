@@ -54,6 +54,7 @@ You usually don't want a full store build for every change:
 | Goal | Command |
 |---|---|
 | Click through the app on your phone (JS only) | `pnpm --filter @hybrid/mobile dev` → scan QR with **Expo Go** |
+| Ship a JS change to an installed/TestFlight build (no new build) | `cd apps/mobile && pnpm update --message "what changed"` |
 | Test camera / share (real native modules) | `npx eas build --profile development --platform ios` then run on device |
 | Headless "does it bundle?" check (no device) | `pnpm --filter @hybrid/mobile export:ios` |
 | Type check | `pnpm --filter @hybrid/mobile typecheck` |
@@ -61,6 +62,47 @@ You usually don't want a full store build for every change:
 > Expo Go can't run the **progress-photo camera** or the **share-image** capture
 > — those need a real build (development profile or production). Everything else
 > works in Expo Go.
+
+## OTA updates (EAS Update) — stop burning build credits
+
+A TestFlight build and a dev/preview build run on the **same EAS Build
+quota** — switching to TestFlight does *not* save build credits. What burns
+them is doing a full native build for every change. EAS Update fixes that: a
+**JS/TS change** (screens, logic, styling — the majority of your work) ships
+**over-the-air, for free**, to an already-installed build instead of a new
+build. This is wired up here:
+
+- `expo-updates` is installed.
+- `app.json` → `updates.url` points at this project's EAS Update endpoint, with
+  `runtimeVersion.policy: "fingerprint"` so an OTA update is **never** delivered
+  to a binary it's incompatible with (the fingerprint changes when native deps
+  change).
+- `eas.json` build profiles each declare a `channel`
+  (`development` / `preview` / `production`; the on-device `device` profile and
+  TestFlight both track `production`).
+
+Day-to-day loop:
+
+```bash
+cd apps/mobile
+
+# JS/TS change only → push it over-the-air (free, ~seconds). The installed
+# app (incl. the TestFlight build) picks it up on its next launch.
+pnpm update --message "tweak the cockpit copy"     # = eas update --branch production
+
+# Native code/deps changed (new Expo module, react-native-iap bump, etc.)
+# → OTA can't carry native changes, so do a real build (consumes a credit):
+npx eas build --profile production --platform ios && npx eas submit --profile production --platform ios
+```
+
+Publishing an OTA update needs Expo auth — run `npx eas login` once, or set an
+`EXPO_TOKEN` robot secret in CI to publish automatically on merge.
+
+> Running out of *this month's* free builds? The free-tier build limit resets
+> monthly. To not wait, build locally (`eas build --local` or
+> `npx expo run:ios` on a Mac — these don't touch Expo's cloud quota), or move
+> to a paid EAS plan. You only need **one** more build to get onto TestFlight;
+> OTA updates carry every JS change after that.
 
 ## Versioning for later updates
 

@@ -10,6 +10,7 @@
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
     "export:ios": "expo export --platform ios --output-dir /tmp/hybrid-ios-bundle",
+    "update": "eas update --branch production --message \"$npm_config_message\"",
     "lint": "echo \"(mobile) no lint yet\" && exit 0",
     "test": "echo \"(mobile) no tests yet\" && exit 0"
   },
@@ -36,6 +37,7 @@
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
+    "expo-updates": "~56.0.19",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
