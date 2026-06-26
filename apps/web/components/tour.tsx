@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, ON_ACCENT, disp, Mono, txt } from "@/lib/ui";
+import { useDialog } from "@/lib/use-dialog";
 
 // ============================================================
 //  Guided coach-marks tour — the first-run "how to use HYBRID"
@@ -38,6 +39,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const step = steps[i];
+  const dialogRef = useDialog<HTMLDivElement>(onDone);
 
   // Re-measure the current target on step change, scroll and resize so the
   // spotlight tracks the live element.
@@ -87,7 +89,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999 }} role="dialog" aria-modal="true" aria-label="App tour">
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999 }}>
       {/* Dimmer — a single overlay with a transparent cut-out ring around the
           target (box-shadow trick) so the highlighted element shows through. */}
       {hole ? (
@@ -109,6 +111,11 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
       )}
 
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="App tour"
+        tabIndex={-1}
         style={{
           ...disp,
           ...tipStyle,
