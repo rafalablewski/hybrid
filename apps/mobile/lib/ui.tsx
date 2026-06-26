@@ -25,6 +25,18 @@ export { fs, space };
 import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 
+// ── Dynamic Type caps ────────────────────────────────────────────────────────
+// RN already scales every <Text> with the OS "Larger Text" / Dynamic Type
+// setting (allowFontScaling defaults true — we never disable it). What we add
+// here is a CEILING so that surface still works at the largest accessibility
+// sizes: reflowable body text keeps growing, but FIXED-HEIGHT chrome (the
+// floating nav pill, count badges, dense table rows) is capped so it can't
+// clip/overflow. Pass `maxFontSizeMultiplier={FIXED_FONT_SCALE}` on text inside
+// a container with a hard height; leave it off (or use MAX_FONT_SCALE) anywhere
+// the layout can grow to fit. See capabilities.ts → `dynamic-type`.
+export const MAX_FONT_SCALE = 1.4; // reflow-safe surfaces — generous headroom
+export const FIXED_FONT_SCALE = 1.15; // fixed-height chrome — must not clip
+
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 export const glassShadow: ViewStyle = {
   shadowColor: "#000",
@@ -278,6 +290,7 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
   const { palette } = useTheme();
   return (
     <Text
+      maxFontSizeMultiplier={FIXED_FONT_SCALE}
       style={{
         fontFamily: F.mono,
         fontSize: fs.micro,
@@ -310,7 +323,7 @@ export function Chip({ children, color = C.lime }: { children: ReactNode; color?
   const aurora = useTemplate().template === "aurora";
   return (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
         {children}
       </Text>
     </View>

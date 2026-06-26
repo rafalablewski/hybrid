@@ -11,7 +11,7 @@ import { useTemplate } from "../../lib/template";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { F } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
 // The bottom nav: Today · Plans · [Train FAB] · History · More. Train is the
@@ -102,7 +102,7 @@ export default function AuroraGlobalNav() {
         <View style={{ width: 44, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: focused ? C.chalk : "transparent" }}>
           <AuroraIcon name={tab.glyph} size={21} color={focused ? C.ink : C.ash} />
         </View>
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
+        <Text numberOfLines={1} maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.2, color: focused ? C.chalk : C.ash }}>
           {label}
         </Text>
       </Pressable>
@@ -186,7 +186,7 @@ export default function AuroraGlobalNav() {
               <View style={{ width: 5, height: 20, borderRadius: 2, backgroundColor: C.ink }} />
             </View>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, color: txt(C, C.lime), marginTop: 3 }}>{t("nav.train")}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 0.5, color: txt(C, C.lime), marginTop: 3 }}>{t("nav.train")}</Text>
         </Pressable>
       </View>
       </View>
