@@ -1,34 +1,27 @@
 name: Mobile — build & TestFlight
 
-# Builds the iOS app on EAS (Expo's CLOUD builders) and submits it to
-# TestFlight — no local clone, no Mac. You trigger it from the browser:
-# GitHub → Actions → "Mobile — build & TestFlight" → Run workflow
-# (or push a tag like `mobile-v1.0.1`). The Ubuntu runner only kicks off the
-# build on Expo's servers and waits — the actual compile + signing happen in
-# the cloud, exactly like the sud-italia apps.
+# Builds the iOS app on a GitHub cloud Mac with APPLE'S OWN tools (Xcode +
+# Fastlane) and uploads it to TestFlight. There is NO Expo build service here:
+# `expo prebuild` is just local code-generation (no Expo account/token), and
+# every credential talks only to Apple. GitHub Actions is free + unlimited on a
+# public repo, so this has no build quota.
 #
-# Note: a cloud build DOES consume the EAS Build free-tier quota (that's the
-# trade-off for not needing a Mac). The quota resets monthly, and OTA updates
-# (eas update) carry JS changes for free in between — so you only spend a build
-# here when native code changes or you cut a new TestFlight release.
+# Trigger: GitHub → Actions → "Mobile — build & TestFlight" → Run workflow
+# (or push a tag like `mobile-v1.0.1`). Build numbers auto-increment from
+# TestFlight — nothing to bump by hand.
 #
 # ── Required repo secrets (Settings → Secrets and variables → Actions) ────────
-#   EXPO_TOKEN                     Expo access token (expo.dev → Account →
-#                                  Settings → Access tokens). Lets EAS build +
-#                                  manage credentials non-interactively.
-#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon/publishable key,
-#                                  embedded at build time so the app signs in.
-#   APPLE_ASC_API_KEY_P8           The FULL CONTENTS of the App Store Connect
-#                                  API key (.p8) file — open AuthKey_XXXX.p8 in
-#                                  a text editor and paste everything (incl. the
-#                                  BEGIN/END PRIVATE KEY lines). No encoding.
-#   APPLE_ASC_KEY_ID               The .p8 Key ID (e.g. RQTCHVF25S).
-#   APPLE_ASC_ISSUER_ID            App Store Connect → Users and Access →
-#                                  Integrations → Keys → Issuer ID.
-#
-# The Admin-role ASC API key lets EAS create the distribution cert /
-# provisioning profile AND the App Store Connect app record on first run, so
-# there is nothing to set up by hand first.
+#   APPLE_DIST_CERT_P12_BASE64   Your Apple Distribution certificate exported
+#                                from Keychain Access as a .p12 (WITH its private
+#                                key), then base64-encoded:
+#                                  base64 -i dist.p12 | pbcopy
+#   APPLE_DIST_CERT_PASSWORD     The password you set when exporting that .p12.
+#   APPLE_ASC_API_KEY_P8         Full contents of the App Store Connect API .p8.
+#   APPLE_ASC_KEY_ID             The .p8 Key ID (ZRWGCS2PUS).
+#   APPLE_ASC_ISSUER_ID          App Store Connect → Integrations → Issuer ID.
+#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon key (baked into the JS
+#                                bundle at build time so sign-in works).
+# (EXPO_TOKEN is no longer used — you can delete it.)
 
 on:
   workflow_dispatch:
@@ -42,8 +35,8 @@ concurrency:
 
 jobs:
   ios:
-    name: Cloud build + TestFlight
-    runs-on: ubuntu-latest
+    name: Build + TestFlight
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
 
@@ -54,57 +47,35 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Install
+      - name: Install JS deps
         run: pnpm install --frozen-lockfile
 
-      - name: Set up EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Generate native iOS project (local expo prebuild — no Expo account)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform ios --clean
 
-      - name: Write App Store Connect API key
+      - name: Decode signing secrets
         working-directory: apps/mobile
         env:
+          DIST_CERT_P12_BASE64: ${{ secrets.APPLE_DIST_CERT_P12_BASE64 }}
           ASC_KEY_P8: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
-        run: printf '%s\n' "$ASC_KEY_P8" > asc-key.p8
-
-      # Inject the ASC submit credentials into eas.json at runtime (jq is
-      # preinstalled on the runner). Keeps the Key ID / Issuer ID out of git —
-      # they come from secrets only. The committed eas.json keeps just the team id.
-      - name: Configure submit credentials
-        working-directory: apps/mobile
         run: |
-          jq --arg keyId "${{ secrets.APPLE_ASC_KEY_ID }}" \
-             --arg issuerId "${{ secrets.APPLE_ASC_ISSUER_ID }}" \
-             '.submit.production.ios += {
-                ascApiKeyPath: "./asc-key.p8",
-                ascApiKeyId: $keyId,
-                ascApiKeyIssuerId: $issuerId
-              }' eas.json > eas.json.tmp && mv eas.json.tmp eas.json
+          mkdir -p fastlane
+          echo "$DIST_CERT_P12_BASE64" | base64 --decode > fastlane/dist.p12
+          printf '%s\n' "$ASC_KEY_P8" > fastlane/asc-key.p8
 
-      # Cloud build on Expo's servers + auto-submit to TestFlight in one step.
-      # EXPO_ASC_* let EAS provision the distribution cert/profile non-interactively.
-      - name: Build (cloud) + submit to TestFlight
+      - name: Build + upload to TestFlight
         working-directory: apps/mobile
         env:
+          DIST_CERT_P12_PATH: ${{ github.workspace }}/apps/mobile/fastlane/dist.p12
+          DIST_CERT_PASSWORD: ${{ secrets.APPLE_DIST_CERT_PASSWORD }}
+          ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ github.workspace }}/apps/mobile/fastlane/asc-key.p8
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-          # ASC API key + Apple Team ID let EAS generate/validate the iOS
-          # distribution cert + provisioning profile non-interactively. The team
-          # id is required — without it EAS can't resolve the cert and fails with
-          # "Distribution Certificate is not validated for non-interactive builds".
-          EXPO_ASC_API_KEY_PATH: ./asc-key.p8
-          EXPO_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
-          EXPO_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
-          EXPO_APPLE_TEAM_ID: T4WC9M8Y3S
-        run: |
-          eas build \
-            --platform ios \
-            --profile production \
-            --non-interactive \
-            --auto-submit
+        run: fastlane ios beta
 
       - name: Clean up secrets
         if: always()
         working-directory: apps/mobile
-        run: rm -f asc-key.p8
+        run: rm -f fastlane/dist.p12 fastlane/asc-key.p8

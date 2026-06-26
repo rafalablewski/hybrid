@@ -23,75 +23,47 @@ own accounts and credentials, so they run **on your computer**, not in CI.
    pnpm install
    ```
 
-## Build + submit — NO clone, NO Mac (recommended)
+## Build + submit — GitHub Actions, NO Expo, NO Mac (recommended)
 
-This is how the sud-italia apps shipped: the build runs on **Expo's cloud
-builders** and uploads straight to TestFlight, so you never clone the repo or
-open a terminal. `.github/workflows/mobile-release.yml` drives it, and you
-trigger it from the browser.
+`.github/workflows/mobile-release.yml` builds the app on a **GitHub cloud Mac
+with Apple's own tools** (Xcode + Fastlane) and uploads it to TestFlight. There
+is **no Expo build service** — `expo prebuild` is only local code-gen (no Expo
+account/token), and every credential talks to Apple directly. Because the repo
+is public, GitHub Actions is **free and unlimited** — no build quota, ever.
 
-**To cut your first TestFlight build:**
+**One-time setup:**
 
-1. Add these five repo secrets (GitHub → **Settings → Secrets and variables →
+1. **Export your Apple Distribution certificate as a `.p12`** (this is the one
+   piece a fresh CI machine can't generate — it needs your signing private key):
+   - Open **Keychain Access** → **login** keychain → **My Certificates**.
+   - Find **"Apple Distribution: Rafal Ablewski"**, expand it (▸) to confirm a
+     private key is nested under it.
+   - Right-click it → **Export** → save as `dist.p12` → set a password.
+   - In Terminal, base64-encode it: `base64 -i dist.p12 | pbcopy`.
+
+2. Add these repo secrets (GitHub → **Settings → Secrets and variables →
    Actions → New repository secret**):
 
    | Secret | What it is |
    |---|---|
-   | `EXPO_TOKEN` | Expo access token — expo.dev → Account → Settings → Access tokens |
+   | `APPLE_DIST_CERT_P12_BASE64` | The base64 from step 1 (paste it) |
+   | `APPLE_DIST_CERT_PASSWORD` | The password you set when exporting the `.p12` |
+   | `APPLE_ASC_API_KEY_P8` | Full contents of your App Store Connect API `.p8` (paste the file, BEGIN/END lines included) |
+   | `APPLE_ASC_KEY_ID` | The `.p8` Key ID — `ZRWGCS2PUS` |
+   | `APPLE_ASC_ISSUER_ID` | App Store Connect → Integrations → Issuer ID |
    | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | The public Supabase anon/publishable key |
-   | `APPLE_ASC_API_KEY_P8` | The **full contents** of your App Store Connect API `.p8` file — open `AuthKey_XXXX.p8` in a text editor, copy everything (including the `-----BEGIN/END PRIVATE KEY-----` lines), and paste. No encoding needed. |
-   | `APPLE_ASC_KEY_ID` | The `.p8` Key ID (e.g. `RQTCHVF25S`) |
-   | `APPLE_ASC_ISSUER_ID` | App Store Connect → Users and Access → Integrations → Keys → Issuer ID |
 
-2. Go to **GitHub → Actions → "Mobile — build & TestFlight" → Run workflow**
-   (or push a tag like `mobile-v1.0.1`). It builds on Expo's servers and
-   auto-submits to TestFlight.
+   (Any old `EXPO_TOKEN` secret is no longer used — delete it.)
 
-### One-time prerequisite: bootstrap the production credentials
+3. Go to **GitHub → Actions → "Mobile — build & TestFlight" → Run workflow**
+   (or push a tag like `mobile-v1.0.1`). It builds with Fastlane on Apple's
+   toolchain, **auto-increments the build number from TestFlight**, and uploads.
+   Normal pushes/PRs are untouched — they stay on `ci.yml`.
 
-A `--non-interactive` CI build can **reuse** iOS signing credentials but will
-**not create them the first time** — it fails with *"Distribution Certificate
-is not validated for non-interactive builds / Credentials are not set up. Run
-this command again in interactive mode"* ([eas-cli #3202](https://github.com/expo/eas-cli/issues/3202)).
-So the very first production build must be run **interactively, once**, to
-generate the Apple Distribution certificate + App Store provisioning profile and
-store them on EAS. After that, the GitHub Actions button above works hands-free
-forever (no terminal again).
-
-Run this once on your Mac (it authenticates to Apple via the **ASC API key**, so
-the hardware-key 2FA that blocks interactive Apple login is never hit):
-
-```bash
-git clone https://github.com/rafalablewski/hybrid.git
-cd hybrid
-pnpm install
-cd apps/mobile
-npx eas login
-```
-
-Then export the Apple credentials (fill in the two real values) and build —
-**don't paste the explanatory lines**, just the commands:
-
-```bash
-export EXPO_ASC_API_KEY_PATH="/full/path/to/AuthKey_RQTCHVF25S.p8"
-export EXPO_ASC_KEY_ID="RQTCHVF25S"
-export EXPO_ASC_ISSUER_ID="<your issuer id>"
-export EXPO_APPLE_TEAM_ID="T4WC9M8Y3S"
-npx eas build --profile production --platform ios --auto-submit
-```
-
-When it asks *"Generate a new Apple Distribution Certificate?"* and *"…
-provisioning profile?"*, answer **Yes**. It creates them on EAS, builds in the
-cloud, and submits to TestFlight. From then on, just use the GitHub button.
-
-A cloud build consumes the EAS Build quota (the trade-off for no Mac) — but you
-only run this for an actual native build/release; JS changes go out free via OTA
-(below). Normal pushes/PRs are untouched — they stay on `ci.yml`.
-
-> Prefer clicking a button on a website over GitHub Actions? The equivalent is
-> the EAS GitHub integration: connect this repo at expo.dev → your project →
-> GitHub, then hit **Build** on the dashboard. Same cloud build, no clone — it
-> just lives on expo.dev instead of in `mobile-release.yml`.
+> CI iOS code-signing is the finicky part: the workflow imports your `.p12` into
+> a throwaway keychain and lets `xcodebuild -allowProvisioningUpdates` fetch the
+> App Store profile via the API key. If the first run fails at signing, the log
+> line will say why — usually a cert/profile mismatch we can fix in one tweak.
 
 ## Optional: build locally on a Mac (free & unlimited)
 

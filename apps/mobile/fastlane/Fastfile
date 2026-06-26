@@ -1,0 +1,56 @@
+default_platform(:ios)
+
+# Builds HYBRID with Apple's own toolchain (Xcode + Fastlane) and uploads to
+# TestFlight. NO Expo build service is involved — the native iOS project is
+# produced by `expo prebuild` (local code-gen, no Expo account), and everything
+# here talks only to Apple (App Store Connect API key for auth + upload).
+platform :ios do
+  desc "Build the iOS app and upload it to TestFlight"
+  lane :beta do
+    # On CI, create a throwaway keychain and import the Apple Distribution
+    # certificate (with its private key) into it — an ephemeral runner has no
+    # signing key otherwise. setup_ci sets MATCH_KEYCHAIN_NAME/PASSWORD.
+    setup_ci
+
+    import_certificate(
+      certificate_path: ENV.fetch("DIST_CERT_P12_PATH"),
+      certificate_password: ENV.fetch("DIST_CERT_PASSWORD"),
+      keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "login.keychain",
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || "",
+    )
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH"),
+    )
+
+    # Build number = TestFlight's latest + 1, so it auto-increments forever
+    # (no manual bumping in Xcode ever again).
+    next_build = latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: "com.hybriddomain.xyz",
+      initial_build_number: 0,
+    ) + 1
+    increment_build_number(
+      build_number: next_build,
+      xcodeproj: "ios/HYBRID.xcodeproj",
+    )
+
+    build_app(
+      workspace: "ios/HYBRID.xcworkspace",
+      scheme: "HYBRID",
+      export_method: "app-store",
+      api_key: api_key,
+      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=T4WC9M8Y3S",
+      output_directory: "build",
+      output_name: "HYBRID.ipa",
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: "com.hybriddomain.xyz",
+      skip_waiting_for_build_processing: true,
+    )
+  end
+end
