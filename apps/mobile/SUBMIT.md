@@ -73,6 +73,28 @@ npx eas submit --profile production --platform ios --path ./build/hybrid.ipa
 > `--local` still needs macOS + Xcode + CocoaPods installed; it just skips
 > Expo's hosted builders (and therefore the metered free-build quota).
 
+### Automated: GitHub Actions → TestFlight
+
+`.github/workflows/mobile-release.yml` does the `eas build --local` + `eas
+submit` above on a **macOS runner** — so CI builds to TestFlight without
+consuming Expo's cloud build quota either. It runs only when you push a tag
+like `mobile-v1.0.1` or trigger it from the Actions tab (never on normal
+pushes — those stay on `ci.yml`).
+
+It needs these repo secrets (Settings → Secrets and variables → Actions):
+
+| Secret | What it is |
+|---|---|
+| `EXPO_TOKEN` | Expo access token (expo.dev → Account → Settings → Access tokens) |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | The public Supabase anon/publishable key |
+| `APPLE_ASC_API_KEY_P8_BASE64` | Your App Store Connect API `.p8`, base64-encoded (`base64 -i AuthKey_XXXX.p8`) |
+| `APPLE_ASC_KEY_ID` | The `.p8` Key ID (e.g. `RQTCHVF25S`) |
+| `APPLE_ASC_ISSUER_ID` | App Store Connect → Users and Access → Integrations → Issuer ID |
+
+One-time prerequisite: run `eas credentials` locally for iOS once so the
+distribution cert + provisioning profile exist on EAS for CI to fetch
+non-interactively (the on-device build already did this).
+
 ## Cloud build (Expo builders) — no Mac, but metered
 
 Only reach for this if you don't have a Mac. It runs on Expo's macOS builders
