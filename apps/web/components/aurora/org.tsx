@@ -226,7 +226,7 @@ export default function AuroraOrg() {
                     <div style={{ minWidth: 0 }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, display: "block", color: m.role === "ATHLETE" && canSeeAthletes ? C("blue") : C("chalk") }}>
                         {m.role === "ATHLETE" && canSeeAthletes ? (
-                          <span style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)}>{m.name} →</span>
+                          <span role="button" tabIndex={0} style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); viewAthlete(m); } }}>{m.name} →</span>
                         ) : (
                           m.name
                         )}
@@ -268,7 +268,7 @@ export default function AuroraOrg() {
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} · {iv.role.toLowerCase()}</span>
-                      <span style={{ cursor: "pointer", color: C("amber"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)}>{t("w.teams.org.revoke")}</span>
+                      <span role="button" tabIndex={0} aria-label={`${t("w.teams.org.revoke")} ${iv.email}`} style={{ cursor: "pointer", color: C("amber"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); revokeInvite(iv.id); } }}>{t("w.teams.org.revoke")}</span>
                     </div>
                   ))}
                 </div>
@@ -280,7 +280,7 @@ export default function AuroraOrg() {
             <div style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={kicker("blue")}>{t("w.teams.org.athleteTwin")} · {athlete.name}</div>
-                <span style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)}>✕</span>
+                <span role="button" tabIndex={0} aria-label="Close" style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAthlete(null); } }}>✕</span>
               </div>
               <div style={{ display: "flex", gap: space.xl, alignItems: "baseline", marginTop: 8 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 40, color: C(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>

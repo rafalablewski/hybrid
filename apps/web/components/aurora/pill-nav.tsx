@@ -7,6 +7,7 @@ import { useFlags } from "@/lib/use-flags";
 import { useLang } from "@/lib/i18n";
 import { useTemplate } from "@/lib/use-template";
 import { track } from "@/lib/track";
+import { useDialog } from "@/lib/use-dialog";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -34,6 +35,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   const { isEnabled, value } = useFlags();
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
+  const dialogRef = useDialog<HTMLDivElement>(() => setMoreOpen(false), moreOpen);
 
   if (!aurora) return null;
 
@@ -57,7 +59,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     <>
       {moreOpen && (
         <div onClick={() => setMoreOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: "20px 20px 110px" }}>
+          <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: "20px 20px 110px" }}>
             <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
 
             {/* Unlock Full — the one accent in the hub (parity with the mobile

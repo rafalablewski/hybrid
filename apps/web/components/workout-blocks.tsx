@@ -6,6 +6,7 @@ import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as tog
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
+import { useDialog } from "../lib/use-dialog";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
 // template Builder (builder.tsx). Both screens edit the SAME SessionBlock[]
@@ -640,6 +641,7 @@ export default function WorkoutBlocks({
  */
 function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
   const { t } = useLang();
+  const dialogRef = useDialog<HTMLDivElement>(onClose);
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const match = (n: string) => !q || n.toLowerCase().includes(q);
@@ -671,8 +673,10 @@ function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPic
   return (
     <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-label={t("w.home.quickSport.choose")}
         onClick={(e) => e.stopPropagation()}
         style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, boxShadow: "0 24px 60px -20px rgba(0,0,0,.8)", overflow: "hidden" }}

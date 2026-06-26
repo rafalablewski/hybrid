@@ -167,7 +167,7 @@ export default function AuroraCoach() {
         <CoachInvite />
 
         {clients.map((l) => (
-          <div key={l.id} onClick={() => setOpenLink(l)} style={{ ...card, cursor: "pointer" }}>
+          <div key={l.id} role="button" tabIndex={0} onClick={() => setOpenLink(l)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenLink(l); } }} style={{ ...card, cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client, t)}</div>

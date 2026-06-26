@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { normalizeHandle, isValidHandle } from "@hybrid/core";
+import { useDialog } from "../lib/use-dialog";
 import {
   C, useSocialTheme, card, Avatar, Btn, Pill, FollowButton, EmptyState, ScreenHead, Stars,
   VerifiedTick, jget, jsend, useBusy,
@@ -34,6 +35,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
   const [data, setData] = useState<any>(null);
   const [compare, setCompare] = useState<any>(null);
   const busy = useBusy();
+  const dialogRef = useDialog<HTMLDivElement>(onClose);
 
   const load = () => jget(`/api/social/profile/${handle}`).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
@@ -49,7 +51,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "min(460px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(460px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
