@@ -40,6 +40,55 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   GLOBAL A11Y BASELINE
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Form controls follow the active theme so the UA paints dark widgets +
+   placeholders on the dark surface (and light on light). Without this the
+   document defaults to color-scheme:light → native placeholders render as a
+   ~#757575 grey that fails AA on the dark INK fields. */
+html {
+  color-scheme: dark light;
+}
+
+/* Placeholders carry real instructional content here ("you@email.com"), so they
+   must meet AA. `ash` is theme-aware (flips with [data-theme]) and clears 4.5:1
+   on both surfaces; opacity:1 stops the UA from fading it back under threshold. */
+::placeholder {
+  color: var(--color-ash);
+  opacity: 1;
+}
+
+/* Visible keyboard-focus ring. ~40 inputs/buttons set `outline:none` inline, so
+   this needs `!important` to win over the inline style — :focus-visible keeps it
+   keyboard-only (mouse/touch clicks don't get the ring). */
+:focus-visible {
+  outline: 2px solid var(--color-lime) !important;
+  outline-offset: 2px;
+}
+
+/* Skip-to-content link: off-screen until focused, then it pins to the top-left
+   so the first Tab press reveals "Skip to content" jumping past the sidebar. */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--color-lime);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
    LIQUID GLASS — reusable material layer (mirrors
    reference/liquid-glass/system.html, contrast-audited to WCAG AA+).
    Surface only: brand colors/typography are unchanged. Default = dark
@@ -433,11 +482,19 @@ body {
 .cmd-tile.is-active .cmd-lb { color: var(--accent-text); }
 
 /* ---- accessibility / fallbacks ---- */
+/* Comprehensive reduced-motion: a global catch-all (not just the glass/command
+   selectors) so EVERY animation/transition is neutralised — the ambient blob
+   field, the conic rim sweep, the Aurora screen-enter, win-pop, hover lifts and
+   any inline-styled transitions — for users who ask for less motion. Near-zero
+   (not 0) keeps animationend/transitionend events firing so JS that waits on
+   them still resolves. The .win-pop / .aurora-enter rules above already set
+   `animation:none`; this backstops everything else. */
 @media (prefers-reduced-motion: reduce) {
-  .liquid-glass, .cmd-orb, .cmd-scrim, .cmd-hub, .cmd-tile, .cmd-ic {
+  *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

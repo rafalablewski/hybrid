@@ -114,7 +114,7 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.upgrade.hero-sub")}</span>
         </div>
         <div style={{ marginTop: 14 }}>{CTA}</div>
-        {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("amber") }}>{msg}</div>}
+        {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("amber") }}>{msg}</div>}
       </div>
 
       {/* flagship — the Cockpit (assembles everything) */}

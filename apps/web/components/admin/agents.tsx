@@ -365,7 +365,7 @@ export default function AdminAgents() {
 
       {err && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
-          <Mono s={{ fontSize: fs.body }} c={AMBER}>{err}</Mono>
+          <div role="alert"><Mono s={{ fontSize: fs.body }} c={AMBER}>{err}</Mono></div>
           <button onClick={() => setErr(null)} style={{ ...mono, fontSize: fs.caption, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "6px 8px", color: txt(ASH), cursor: "pointer" }}>
             Dismiss
           </button>
@@ -667,7 +667,7 @@ export default function AdminAgents() {
                         {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
                       </Mono>
                     </div>
-                    <button style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
+                    <button aria-label="Delete" style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
                   </div>
                 ))}
 

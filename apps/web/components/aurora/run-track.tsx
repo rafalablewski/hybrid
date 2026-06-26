@@ -118,7 +118,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>{t("w.train.runTrack.gpsNote")}</div>
       </div>
 
-      {msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("amber") }}>{msg.text}</div>}
+      {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("amber") }}>{msg.text}</div>}
 
       <button onClick={save} disabled={saving} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
         {saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")}

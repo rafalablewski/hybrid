@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, AccessibilityInfo } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   buildIntervalPlan,
@@ -9,6 +9,7 @@ import {
   type IntervalPhaseKind,
 } from "@hybrid/core";
 import { useTheme, txt } from "../lib/theme";
+import { useLang } from "../lib/i18n";
 import { fs, space, F } from "../lib/ui";
 import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -20,6 +21,7 @@ import { AuroraIcon } from "../components/aurora/icons";
  */
 export default function IntervalTimer() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const params = useLocalSearchParams<{ title?: string }>();
   const title = params.title || "Interval session";
@@ -64,14 +66,32 @@ export default function IntervalTimer() {
   const editable = elapsed === 0 && !running;
 
   const kindColor = kind === "work" ? C.lime : kind === "rest" ? C.blue : kind === "prep" ? C.amber : C.violet;
-  const kindLabel = kind === "work" ? "Work" : kind === "rest" ? "Rest" : kind === "prep" ? "Get ready" : "Done";
+  const kindLabel = kind === "work" ? t("w.train.timer.work") : kind === "rest" ? t("w.train.timer.rest") : kind === "prep" ? t("w.train.timer.getReady") : t("w.train.timer.done");
+
+  // Screen-reader announcer — speak the phase + round at each work/rest
+  // boundary (the per-second clock is never announced; that would be unbearable
+  // for a VoiceOver/TalkBack user). Mirrors the web aria-live region. The ref
+  // dedupes so a given phase is announced once, not on every tick re-render.
+  const lastAnnounce = useRef("");
+  useEffect(() => {
+    if (!running && !pos.done) return;
+    const msg = pos.done
+      ? t("w.train.timer.done")
+      : phase && phase.round > 0
+        ? `${kindLabel} · ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
+        : kindLabel;
+    if (msg !== lastAnnounce.current) {
+      lastAnnounce.current = msg;
+      AccessibilityInfo.announceForAccessibility(msg);
+    }
+  }, [kind, phase?.round, phase?.totalRounds, pos.done, running, kindLabel]);
   const progress = total > 0 ? elapsed / total : 0;
 
   return (
     <AuroraScreen scroll={false}>
       {/* header */}
       <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
-        <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
         <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: space.ms }}>

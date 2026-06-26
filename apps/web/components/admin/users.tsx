@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { NAV_ITEMS } from "@hybrid/core";
 import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { useDialog } from "../../lib/use-dialog";
 
 // Features worth granting a single user beyond their persona (everything that
 // isn't visible to a casual user by default).
@@ -254,6 +255,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [sendVerification, setSendVerification] = useState(true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const dialogRef = useDialog<HTMLDivElement>(onClose);
 
   const create = async () => {
     setBusy(true);
@@ -290,13 +292,13 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 50, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "6vh 16px" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
           <div>
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>New account</Mono>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>Add a user</div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         <label style={{ display: "block", marginBottom: 12 }}>
@@ -341,7 +343,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <Mono s={{ fontSize: fs.body }} c={ASH}>Send a verification / welcome email</Mono>
         </label>
 
-        {msg && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono>}
+        {msg && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono></div>}
 
         <button onClick={create} disabled={busy || !email.trim()} style={{ width: "100%", ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: ON_ACCENT, background: busy || !email.trim() ? LINE : AMBER, border: "none", borderRadius: "var(--r-card)", padding: "11px 0", cursor: busy || !email.trim() ? "default" : "pointer" }}>
           {busy ? "Creating…" : "Create account"}
@@ -493,7 +495,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>{d?.name || "—"}</div>
             <Mono s={{ fontSize: fs.body }} c={ASH}>{d?.email ?? "…"}</Mono>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         {!d ? (
@@ -611,9 +613,11 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               </div>
 
               {msg && (
-                <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
-                  {msg.text}
-                </Mono>
+                <div role="alert">
+                  <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>
+                    {msg.text}
+                  </Mono>
+                </div>
               )}
 
               <button

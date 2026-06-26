@@ -31,6 +31,13 @@ expo-env.d.ts
 !.env.example
 # Apple signing keys (App Store Connect API .p8) — secret, env-var only
 *.p8
+# Apple distribution certificate (.p12) — secret, env-var only
+*.p12
+# Fastlane / native build artifacts
+apps/mobile/build/
+apps/mobile/fastlane/report.xml
+apps/mobile/fastlane/Preview.html
+apps/mobile/fastlane/test_output/
 
 # editor / os
 .DS_Store

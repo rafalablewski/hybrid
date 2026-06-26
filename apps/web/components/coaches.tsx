@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
+import { useDialog } from "../lib/use-dialog";
 
 interface CoachCard {
   userId: string; handle: string; name: string | null; avatarUrl: string | null;
@@ -17,6 +18,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
   const [body, setBody] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const busy = useBusy();
+  const dialogRef = useDialog<HTMLDivElement>(onClose);
 
   const load = () => jget(`/api/coaches/${handle}`).then(setData);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
@@ -36,9 +38,9 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
   const c = data?.coach;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "min(520px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(520px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
+          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
         {!c ? <EmptyState title="Loading…" /> : (
           <>

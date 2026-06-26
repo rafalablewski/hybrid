@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo } from "react-native";
 import { useRouter } from "expo-router";
 import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../../lib/api";
 import { useSession } from "../../lib/session";
@@ -41,7 +41,9 @@ export default function AuroraCoachApply() {
       setSent(true);
       setExisting({ id: "", status: "pending", credentials: credentials.trim(), createdAt: new Date().toISOString() });
     } else {
-      setError(res.error ?? t("w.account.settings.coach-submit-error"));
+      const m = res.error ?? t("w.account.settings.coach-submit-error");
+      setError(m);
+      AccessibilityInfo.announceForAccessibility(m);
     }
   };
 
@@ -96,7 +98,7 @@ export default function AuroraCoachApply() {
                 textAlignVertical="top"
                 style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 120 }}
               />
-              {!!error && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
+              {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}

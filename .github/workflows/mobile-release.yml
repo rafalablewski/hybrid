@@ -1,0 +1,110 @@
+name: Mobile — build & TestFlight
+
+# Builds HYBRID for iOS on a GitHub cloud Mac and uploads it to TestFlight.
+#
+#  • NO Expo build service — `expo prebuild` is only local code-generation
+#    (no Expo account/token).
+#  • NO manual certificate handling — `codemagic-cli-tools` (an open-source
+#    Apple-signing helper, NOT the codemagic.io service) creates and reuses the
+#    Apple Distribution certificate + provisioning profile automatically from
+#    your App Store Connect API key.
+#  • Free + unlimited, because the repo is public (no build quota).
+#
+# Trigger: GitHub → Actions → "Mobile — build & TestFlight" → Run workflow
+# (or push a tag like `mobile-v1.0.1`). Build numbers auto-increment.
+#
+# ── Required repo secrets (Settings → Secrets and variables → Actions) ────────
+#   APPLE_ASC_API_KEY_P8     Full contents of your App Store Connect API .p8.
+#   APPLE_ASC_KEY_ID         The .p8 Key ID — ZRWGCS2PUS.
+#   APPLE_ASC_ISSUER_ID      App Store Connect → Integrations → Issuer ID.
+#   APPLE_CERT_PRIVATE_KEY   A signing key you generate ONCE (no Keychain, no
+#                            .p12):  openssl genrsa 2048 | pbcopy  → paste it.
+#                            The tooling uses it to create + reuse the cert.
+#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon key (baked into bundle).
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "mobile-v*"
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    name: Build + TestFlight
+    runs-on: macos-15
+    env:
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APPLE_ASC_KEY_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.APPLE_CERT_PRIVATE_KEY }}
+      BUNDLE_ID: com.hybriddomain.xyz
+    steps:
+      - uses: actions/checkout@v6
+
+      # Use the newest Xcode on the runner (the default 16.4 is older than the
+      # Xcode the project was prebuilt/verified with, which breaks native pods).
+      - name: Select latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install signing helper (codemagic-cli-tools — not the codemagic.io service)
+        run: pipx install codemagic-cli-tools
+
+      - name: Generate native iOS project (local expo prebuild — no Expo account)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Set up Apple signing automatically (from the API key)
+        run: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          keychain add-certificates
+          cd apps/mobile/ios && xcode-project use-profiles
+
+      - name: Set an always-increasing build number
+        working-directory: apps/mobile/ios
+        run: |
+          # CFBundleVersion must be strictly HIGHER than the last upload or App
+          # Store Connect 409s ("bundle version must be higher than … '2'"). The
+          # old step queried get-latest-testflight-build-number, but that was
+          # returning empty → $((0 + 1)) → build "1" → rejected every run.
+          #
+          # Use a value that always increases ON ITS OWN: whole SECONDS since
+          # 2024-01-01 UTC (~78M today). It's monotonic with the wall clock,
+          # always far above any previously-uploaded build, and needs no API call
+          # or stored state — so a re-run or retry can never reuse a build number.
+          # 1704067200 = 2024-01-01T00:00:00Z. (Same scheme as app.config.js.)
+          BUILD=$(( $(date -u +%s) - 1704067200 ))
+          echo "Setting CFBundleVersion to $BUILD"
+          agvtool new-version -all "$BUILD"
+
+      - name: Build the IPA
+        working-directory: apps/mobile/ios
+        env:
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: xcode-project build-ipa --workspace HYBRID.xcworkspace --scheme HYBRID --disable-xcpretty
+
+      - name: Upload to TestFlight
+        run: |
+          app-store-connect publish \
+            --path "$(find apps/mobile/ios/build -name '*.ipa' | head -n 1)" \
+            --testflight

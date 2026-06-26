@@ -245,7 +245,7 @@ function CampaignsPane({ onChange }: { onChange: () => void }) {
           <Mono s={labelCss} c={ASH}>Body — {"{{name}}"} / {"{{email}}"} merge tags, blank line = paragraph</Mono>
           <textarea value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} rows={10} style={{ ...field, resize: "vertical", lineHeight: 1.5 }} />
         </label>
-        {err && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={RED}>{err}</Mono>}
+        {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={RED}>{err}</Mono></div>}
         <div style={{ display: "flex", gap: space.sm }}>
           <button onClick={save} disabled={busy} style={primaryBtn(!busy)}>{busy ? "Saving…" : "Save"}</button>
           <button onClick={() => setEditing(null)} style={ghostBtn()}>Cancel</button>
@@ -415,7 +415,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
           <Mono s={{ fontSize: fs.body }} c={CHALK}>Active — start enrolling people when the trigger fires</Mono>
         </label>
 
-        {err && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={RED}>{err}</Mono>}
+        {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={RED}>{err}</Mono></div>}
         <div style={{ display: "flex", gap: space.sm }}>
           <button onClick={save} disabled={busy} style={primaryBtn(!busy)}>{busy ? "Saving…" : "Save sequence"}</button>
           <button onClick={() => setEditing(null)} style={ghostBtn()}>Cancel</button>

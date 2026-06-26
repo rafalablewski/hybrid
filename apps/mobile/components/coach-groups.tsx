@@ -81,7 +81,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
         </View>
       </Card>
 
-      {msg && <Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono>}
+      {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono></View>}
 
       {groups.map((g) => (
         <Card key={g.id} style={{ marginTop: 10 }}>

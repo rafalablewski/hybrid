@@ -25,6 +25,11 @@ export function ToggleRow({
       <Pressable
         onPress={onToggle}
         disabled={disabled}
+        accessibilityRole="switch"
+        accessibilityLabel={title}
+        accessibilityHint={desc}
+        accessibilityState={{ checked: on, disabled: !!disabled }}
+        hitSlop={10}
         style={{ width: 46, height: 26, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", opacity: disabled ? 0.5 : 1, justifyContent: "center" }}
       >
         <View style={{ width: 20, height: 20, borderRadius: 10, marginLeft: on ? 24 : 2, backgroundColor: on ? C.onAccent : C.ash }} />

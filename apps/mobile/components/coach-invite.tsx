@@ -78,7 +78,7 @@ export default function CoachInvite() {
         style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
       />
       <View style={{ marginTop: 10 }}><Button label={busy ? "Generating…" : "Generate invite"} color={C.lime} onPress={create} /></View>
-      {msg && <Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono>}
+      {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}
 
       {created && (
         <View style={{ marginTop: 14, alignItems: "center" }}>

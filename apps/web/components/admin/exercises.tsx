@@ -322,7 +322,7 @@ export default function AdminExercises() {
             <input value={draft.videoUrl} onChange={(e) => setDraft({ ...draft, videoUrl: e.target.value })} placeholder="https://…" style={input} />
           </Field>
 
-          {err && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>}
+          {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono></div>}
 
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
             <button disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>Save draft</button>
@@ -333,7 +333,7 @@ export default function AdminExercises() {
       )}
 
       {err && editing === null && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>
+        <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono></div>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>

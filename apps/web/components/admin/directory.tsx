@@ -29,9 +29,11 @@ export default function AdminDirectory() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.xxl }}>
       {err && (
-        <Mono s={{ fontSize: fs.body, display: "block" }} c={RED}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block" }} c={RED}>
+            {err}
+          </Mono>
+        </div>
       )}
       {/* organizations */}
       <section>

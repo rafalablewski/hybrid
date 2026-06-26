@@ -6,6 +6,7 @@ import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as tog
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { useExercises } from "@/lib/use-exercises";
 import { useLang } from "@/lib/i18n";
+import { useDialog } from "../lib/use-dialog";
 
 // The block-by-block workout editor shared by Log Session (logger.tsx) and the
 // template Builder (builder.tsx). Both screens edit the SAME SessionBlock[]
@@ -341,13 +342,13 @@ export default function WorkoutBlocks({
             />
             {reorder && (
               <>
-                <button onClick={() => move(b.uid, -1)} disabled={idx === 0} style={iconBtn(ASH)}>
+                <button aria-label={t("common.moveUp")} onClick={() => move(b.uid, -1)} disabled={idx === 0} style={iconBtn(ASH)}>
                   ↑
                 </button>
-                <button onClick={() => move(b.uid, 1)} disabled={idx === blocks.length - 1} style={iconBtn(ASH)}>
+                <button aria-label={t("common.moveDown")} onClick={() => move(b.uid, 1)} disabled={idx === blocks.length - 1} style={iconBtn(ASH)}>
                   ↓
                 </button>
-                <button onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
+                <button aria-label={t("common.duplicate")} onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
                   ⧉
                 </button>
               </>
@@ -365,7 +366,7 @@ export default function WorkoutBlocks({
                 ⛓ {isSupersettedWithPrev(blocks, idx) ? t("w.train.blocks.joined") : t("w.train.blocks.superset")}
               </button>
             )}
-            <button onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
+            <button aria-label={t("common.delete")} onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
               ✕
             </button>
           </div>
@@ -640,6 +641,7 @@ export default function WorkoutBlocks({
  */
 function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
   const { t } = useLang();
+  const dialogRef = useDialog<HTMLDivElement>(onClose);
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const match = (n: string) => !q || n.toLowerCase().includes(q);
@@ -671,8 +673,10 @@ function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPic
   return (
     <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-label={t("w.home.quickSport.choose")}
         onClick={(e) => e.stopPropagation()}
         style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, boxShadow: "0 24px 60px -20px rgba(0,0,0,.8)", overflow: "hidden" }}
@@ -682,7 +686,7 @@ function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPic
             <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
           </svg>
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.train.blocks.searchExercise")} style={{ ...disp, flex: 1, minWidth: 0, background: "none", border: 0, outline: "none", color: CHALK, fontSize: fs.body }} />
-          <button onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+          <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
         </div>
         <div style={{ overflowY: "auto", flex: 1 }}>
           {exGroups.map((g) => (
@@ -717,7 +721,7 @@ function RpeHelp({ onClose }: { onClose: () => void }) {
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           {t("w.train.blocks.rpeHelpTitle")}
         </Mono>
-        <button onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+        <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
       </div>
       <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
       <div style={{ display: "grid", gridTemplateColumns: "44px 64px 1fr", gap: "4px 10px", alignItems: "baseline" }}>

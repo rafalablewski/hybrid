@@ -122,7 +122,7 @@ export default function AuroraBuilder() {
         </Pressable>
       </Modal>
 
-      {b.msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginTop: 14 }}>{b.msg.text}</Text>}
+      {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginTop: 14 }}>{b.msg.text}</Text>}
 
       <APill
         label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
@@ -167,6 +167,7 @@ function ItemCard({
   onBump: (delta: number) => void;
   fieldStyle: object;
 }) {
+  const { t } = useLang();
   const c = kindColor(x.kind, C);
   return (
     <ACard style={{ marginBottom: 12 }}>
@@ -180,9 +181,9 @@ function ItemCard({
           <View>
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>SETS</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-              <Pressable onPress={() => onBump(-1)} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.ash, fontSize: fs.subtitle }}>−</Text></Pressable>
+              <Pressable onPress={() => onBump(-1)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={{ top: 4, bottom: 4, left: 6, right: 6 }} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.ash, fontSize: fs.subtitle }}>−</Text></Pressable>
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, minWidth: 18, textAlign: "center" }}>{x.sets}</Text>
-              <Pressable onPress={() => onBump(1)} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: txt(C, C.lime), fontSize: fs.subtitle }}>+</Text></Pressable>
+              <Pressable onPress={() => onBump(1)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={{ top: 4, bottom: 4, left: 6, right: 6 }} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: txt(C, C.lime), fontSize: fs.subtitle }}>+</Text></Pressable>
             </View>
           </View>
           <View style={{ flex: 1 }}>

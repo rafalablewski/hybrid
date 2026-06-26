@@ -62,7 +62,7 @@ export default function AuroraCheckin() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.checkins.title")}</AHeading>
@@ -85,6 +85,9 @@ export default function AuroraCheckin() {
                   <Pressable
                     key={n}
                     onPress={() => setForm((s) => ({ ...s, [r.key]: n }))}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`${t(r.labelKey)}: ${n}`}
+                    accessibilityState={{ selected: sel }}
                     style={{ flex: 1, height: 46, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? C.lime : "transparent" }}
                   >
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: sel ? C.onAccent : C.ash }}>{n}</Text>
@@ -112,6 +115,9 @@ export default function AuroraCheckin() {
         <Pressable
           onPress={() => paid && setForm((s) => ({ ...s, sharedWithCoach: !s.sharedWithCoach }))}
           disabled={!paid}
+          accessibilityRole="checkbox"
+          accessibilityLabel={t("w.recovery.checkins.shareCoach")}
+          accessibilityState={{ checked: !!(form.sharedWithCoach && paid), disabled: !paid }}
           style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 14, padding: 14, borderRadius: RADIUS.field, borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.violet : C.line, backgroundColor: form.sharedWithCoach && paid ? `${C.violet}1a` : "transparent", opacity: paid ? 1 : 0.6 }}
         >
           {form.sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.violet)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}

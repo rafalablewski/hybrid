@@ -242,6 +242,11 @@ export default function AppShell() {
         position: "relative",
       }}
     >
+      {/* Skip link — first focusable element, lets keyboard/SR users jump past
+          the sidebar nav straight to the screen content (visually hidden until
+          focused; see .skip-link in globals.css). */}
+      <a href="#main" className="skip-link">{t("nav.skipToContent")}</a>
+
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
       <GlassField />
 
@@ -305,7 +310,7 @@ export default function AppShell() {
           {railCollapsed ? "H" : "HYBRID"}
           <span style={{ color: LIME_T }}>.</span>
         </div>
-        <nav style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+        <nav aria-label={t("nav.primary")} style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {groupedNav(navForPersona(persona, undefined, navAccess)).map(({ group, items }) => {
             const visible = items.filter((it) => isEnabled(`nav.${it.id}`));
             if (visible.length === 0) return null;
@@ -509,7 +514,7 @@ export default function AppShell() {
       </aside>
 
       {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
-      <main style={{ flex: 1, padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      <main id="main" tabIndex={-1} style={{ flex: 1, padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1, outline: "none" }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         {/* Desktop-only utility header (Classic shows the app kicker + screen

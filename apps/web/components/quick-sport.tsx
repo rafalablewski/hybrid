@@ -133,9 +133,11 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
         </button>
       </div>
       {(pace || msg) && (
-        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={msg.startsWith("✓") ? LIME : pace ? BLUE : ASH}>
-          {msg || `${t("w.home.quickSport.pace")} ${pace}`}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={msg.startsWith("✓") ? LIME : pace ? BLUE : ASH}>
+            {msg || `${t("w.home.quickSport.pace")} ${pace}`}
+          </Mono>
+        </div>
       )}
     </>
   );

@@ -7,6 +7,16 @@ export type Lang = "en" | "pl" | "de";
 
 export const LANGS: Record<Lang, string> = { en: "English", pl: "Polski", de: "Deutsch" };
 
+/** Languages that read right-to-left. Empty today — every shipped locale
+ *  (en/pl/de) is LTR — but the clients route layout direction through
+ *  `localeDirection` so that adding an RTL locale (e.g. Arabic/Hebrew) flips the
+ *  document `dir` (web) / `I18nManager` (mobile) from one place. The full
+ *  physical→logical style migration that real RTL needs is tracked separately. */
+export const RTL_LANGS: Lang[] = [];
+
+/** Writing direction for a locale — "ltr" for everything currently shipped. */
+export const localeDirection = (lang: Lang): "ltr" | "rtl" => (RTL_LANGS.includes(lang) ? "rtl" : "ltr");
+
 // Per-domain web-screen string bundles, merged OVER the base dictionary below so
 // the web Aurora screens can be fully localized without bloating this file.
 import { web_home } from "./i18n-web/home";
@@ -80,6 +90,19 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.capabilities": "Capabilities",
     "common.signout": "Sign out",
     "common.back": "Back",
+    "common.close": "Close",
+    "common.duplicate": "Duplicate",
+    "common.moveUp": "Move up",
+    "common.moveDown": "Move down",
+    "common.previous": "Previous",
+    "common.next": "Next",
+    "common.previousMonth": "Previous month",
+    "common.nextMonth": "Next month",
+    "common.decrease": "Decrease",
+    "common.increase": "Increase",
+    "common.reset": "Reset",
+    "common.pause": "Pause",
+    "common.play": "Play",
     "scope.client": "Client",
     "scope.coach": "Coach",
     "scope.admin": "Admin",
@@ -184,6 +207,8 @@ const BASE: Record<Lang, Record<string, string>> = {
     "settings.resetError": "Couldn't reset — check your connection and try again.",
     "nav.train": "Train",
     "nav.more": "More",
+    "nav.primary": "Primary",
+    "nav.skipToContent": "Skip to content",
     "nav.group.home": "Home",
     "nav.group.train": "Train",
     "nav.group.analyze": "Analyze",
@@ -472,6 +497,19 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.capabilities": "Funkcje",
     "common.signout": "Wyloguj",
     "common.back": "Wstecz",
+    "common.close": "Zamknij",
+    "common.duplicate": "Duplikuj",
+    "common.moveUp": "Przenieś w górę",
+    "common.moveDown": "Przenieś w dół",
+    "common.previous": "Poprzedni",
+    "common.next": "Następny",
+    "common.previousMonth": "Poprzedni miesiąc",
+    "common.nextMonth": "Następny miesiąc",
+    "common.decrease": "Zmniejsz",
+    "common.increase": "Zwiększ",
+    "common.reset": "Resetuj",
+    "common.pause": "Pauza",
+    "common.play": "Start",
     "scope.client": "Zawodnik",
     "scope.coach": "Trener",
     "scope.admin": "Admin",
@@ -576,6 +614,8 @@ const BASE: Record<Lang, Record<string, string>> = {
     "settings.resetError": "Nie udało się zresetować — sprawdź połączenie i spróbuj ponownie.",
     "nav.train": "Trenuj",
     "nav.more": "Więcej",
+    "nav.primary": "Główne",
+    "nav.skipToContent": "Przejdź do treści",
     "nav.group.home": "Główna",
     "nav.group.train": "Trenuj",
     "nav.group.analyze": "Analiza",
@@ -859,6 +899,19 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.capabilities": "Funktionen",
     "common.signout": "Abmelden",
     "common.back": "Zurück",
+    "common.close": "Schließen",
+    "common.duplicate": "Duplizieren",
+    "common.moveUp": "Nach oben",
+    "common.moveDown": "Nach unten",
+    "common.previous": "Vorherige",
+    "common.next": "Nächste",
+    "common.previousMonth": "Vorheriger Monat",
+    "common.nextMonth": "Nächster Monat",
+    "common.decrease": "Verringern",
+    "common.increase": "Erhöhen",
+    "common.reset": "Zurücksetzen",
+    "common.pause": "Pause",
+    "common.play": "Start",
     "scope.client": "Athlet",
     "scope.coach": "Coach",
     "scope.admin": "Admin",
@@ -963,6 +1016,8 @@ const BASE: Record<Lang, Record<string, string>> = {
     "settings.resetError": "Zurücksetzen fehlgeschlagen — Verbindung prüfen und erneut versuchen.",
     "nav.train": "Training",
     "nav.more": "Mehr",
+    "nav.primary": "Primär",
+    "nav.skipToContent": "Zum Inhalt springen",
     "nav.group.home": "Start",
     "nav.group.train": "Training",
     "nav.group.analyze": "Analyse",

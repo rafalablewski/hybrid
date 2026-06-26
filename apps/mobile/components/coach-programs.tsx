@@ -100,7 +100,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
           <Button label="+ week" color={C.violet} onPress={() => setWeeks([...draft.weeks, { days: [] }])} />
           <Button label="Close" color={C.ash} onPress={() => setDraft(null)} />
         </View>
-        {msg && <Mono color={C.lime} style={{ marginTop: 8, fontSize: fs.caption }}>{msg}</Mono>}
+        {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8, fontSize: fs.caption }}>{msg}</Mono></View>}
       </Card>
     );
   }
@@ -121,7 +121,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
           <Button label="Create" onPress={create} />
         </View>
       </Card>
-      {msg && <Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono>}
+      {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono></View>}
       {programs.map((p) => (
         <ProgramRow key={p.id} program={p} clients={clients} groups={groups} onEdit={() => setDraft(p)} onDelete={() => del(p.id)} onAssigned={setMsg} />
       ))}

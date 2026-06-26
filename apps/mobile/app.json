@@ -9,6 +9,13 @@
     "newArchEnabled": true,
     "backgroundColor": "#0c0d0c",
     "icon": "./assets/icon.png",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ea345f54-13eb-464b-a7eb-ec916e5b7b30",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hybriddomain.xyz",
