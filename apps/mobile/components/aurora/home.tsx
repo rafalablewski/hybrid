@@ -11,12 +11,8 @@ import {
   trainingDaysPerWeek,
   weekNeedsResync,
   currentPhase,
-  computePerformanceState,
-  performanceTrajectory,
-  computeInjuryRisk,
   computeAccountability,
   habitStrength,
-  weeklyRecap,
   buildActivityFeed,
   planToday,
   srSingleReps,
@@ -25,8 +21,6 @@ import {
   toBiometrics,
   velocityProfiles,
   readinessRole,
-  hpiRole,
-  riskRole,
   accountabilityRole,
   SPORTS,
   LEVELS,
@@ -43,13 +37,13 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, APill, AuroraField, RADIUS, Ring, Spark } from "./kit";
+import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
-import TodayQuickLog from "./today-quick";
+import TodayWidgets from "./today-quick";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -58,22 +52,7 @@ type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
 // semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
 const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
-const hpiColor = (b: string, C: P) => roleColor(C, hpiRole(b));
-const riskColor = (b: string, C: P) => roleColor(C, riskRole(b));
 const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
-const bandLabel = (b: string, t: (k: string) => string) => (b === "new" ? t("w.home.today.gettingStarted") : b);
-const muscleLabel = (m: string, t: (k: string) => string): string => {
-  const map: Record<string, string> = {
-    quads: t("w.home.today.muscle.quads"),
-    glutes: t("w.home.today.muscle.glutes"),
-    posterior: t("w.home.today.muscle.posterior"),
-    back: t("w.home.today.muscle.back"),
-    chest: t("w.home.today.muscle.chest"),
-    shoulders: t("w.home.today.muscle.shoulders"),
-    triceps: t("w.home.today.muscle.triceps"),
-  };
-  return map[m] ?? m;
-};
 
 /**
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at
@@ -156,16 +135,8 @@ export default function AuroraHome() {
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
     [log, sessions, bio, prefExp, prefEquip],
   );
-  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
-  // 14-day HPI trajectory (oldest→today) for the Performance State sparkline.
-  const hpiSeries = useMemo(
-    () => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi),
-    [log],
-  );
-  const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
-  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -178,6 +149,16 @@ export default function AuroraHome() {
     return (parts[0]![0]! + (parts[1]?.[0] ?? "")).toUpperCase();
   }, [name]);
   const notifCount = useMemo(() => buildActivityFeed({ sessions, assignments }).length, [sessions, assignments]);
+
+  // Time-of-day greeting + date for the daily header.
+  const [greeting, setGreeting] = useState("");
+  const [dateStr, setDateStr] = useState("");
+  useEffect(() => {
+    const h = new Date().getHours();
+    setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening"));
+    setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
+  }, [t]);
+  const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
 
   // Reconciled "This week" — macrocycle phase arbitrates daily + sport transfer.
   const sportRx = useMemo(() => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined), [sportSel, sessions]);
@@ -301,6 +282,22 @@ export default function AuroraHome() {
           </Pressable>
         </View>
 
+        {/* GREETING + streak — sets the daily tone */}
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
+          </View>
+          {acc.streak.current > 0 && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.amber}24`, borderWidth: 1, borderColor: `${C.amber}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.amber) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ───── TRAIN ───── */}
+        <Kicker C={C} k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C.lime} />
+
         {/* PLAN TODAY ⇄ AI COACH — horizontal snapping pager + dots */}
         <ScrollView
           horizontal
@@ -413,12 +410,6 @@ export default function AuroraHome() {
           ))}
         </View>
 
-        {/* FOLLOW A COACH — swipeable rail (live marketplace → placeholder people). */}
-        <CoachRail onOpen={() => router.push("/coaches")} />
-
-        {/* Start workout */}
-        <APill label={hasData ? t("w.home.today.startTodaySession") : t("welcome.start")} onPress={() => router.push("/workout?source=empty")} style={{ marginTop: 18 }} />
-
         {/* Assigned by your coach */}
         {upcoming.length > 0 && (
           <View style={{ marginTop: 22 }}>
@@ -459,112 +450,26 @@ export default function AuroraHome() {
         {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
         <QuickSportLog sessions={sessions} onSaved={load} solid />
 
-        {/* SEASON — phase timeline (athlete, or coached read-only) */}
-        {(isAthlete || coached) && macro && phase && (
-          <ACard style={{ marginTop: 18 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>
-              {t("w.home.today.trainingFor")} {macro.goalOrSport} · {phase.block.label} {t("w.home.today.phase")}
-            </Text>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8, marginBottom: 4 }}>
-              {t("w.home.today.week")} {currentWeek} {t("w.home.today.of")} {macro.totalWeeks} · {phase.micro.kind} {t("w.home.today.weekWord")} · {phase.block.focus.toLowerCase()}
-            </Text>
-            <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 12 }}>
-              {macro.blocks.map((b) => (
-                <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === phase.block.key ? b.color : `${b.color}33` }} />
-              ))}
-            </View>
-          </ACard>
-        )}
 
-        {/* SEASON BRIEF (free) — periodization is Full, so an enrolled free user
-            gets only this read-only glimpse here (the one place they can see it),
-            with the full Periodize screen behind the upgrade. (#5 / #7) */}
-        {!isAthlete && macro && phase && (
-          <ACard style={{ marginTop: 18 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet), flex: 1 }}>
-                {t("w.home.today.yourSeason")} {macro.goalOrSport}
-              </Text>
-              <View style={{ backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>{t("w.home.today.badgeFull")}</Text>
-              </View>
-            </View>
-            <Text style={{ fontFamily: F.bold, fontSize: 20, color: C.chalk, marginTop: 8, marginBottom: 4 }}>
-              {phase.block.label} {t("w.home.today.phaseWeek")} {currentWeek}/{macro.totalWeeks}
-            </Text>
-            {/* Professional progress meter — week count + percent above the bar. */}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
-                {t("w.home.today.week")} {currentWeek} / {macro.totalWeeks}
-              </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.violet), fontVariant: ["tabular-nums"] }}>
-                {Math.round((currentWeek / macro.totalWeeks) * 100)}%
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", gap: 3, height: 8, borderRadius: 4, overflow: "hidden", marginTop: 8 }}>
-              {macro.blocks.map((b) => (
-                <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === phase.block.key ? b.color : `${b.color}33` }} />
-              ))}
-            </View>
-            {/* Labelled periodisation timeline — each block over its week range. */}
-            <View style={{ flexDirection: "row", gap: 3, marginTop: 7 }}>
-              {macro.blocks.map((b) => {
-                const cur = b.key === phase.block.key;
-                return (
-                  <View key={b.key} style={{ flex: b.weeks, overflow: "hidden" }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.4, color: cur ? b.color : C.ash }}>{b.label}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: cur ? b.color : C.ash }}>
-                      {b.startWeek === b.endWeek ? `wk ${b.startWeek}` : `wk ${b.startWeek}–${b.endWeek}`}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 17 }}>
-              {t("w.home.today.seasonBriefBody")}
-            </Text>
-            <Pressable onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-season" }); router.push("/upgrade"); }} style={{ marginTop: 14, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.home.today.unlockPeriodization")}</Text>
-            </Pressable>
-          </ACard>
-        )}
+        {/* ───── RECOVER · FEEL ───── */}
+        <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C.blue} />
 
-        {/* SELL FULL — what a free user unlocks: Performance State + the rest of
-            the intelligence layer. The Today upsell (#8). */}
-        {!isAthlete && (
-          <ACard style={{ marginTop: 18 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>{t("w.home.today.unlockWithFull")}</Text>
-            <Text style={{ fontFamily: F.bold, fontSize: 20, color: C.chalk, marginTop: 8 }}>{t("w.home.today.seePerfState")}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 6, lineHeight: 19 }}>
-              {t("w.home.today.sellFullBody")}
-            </Text>
-            {/* Feature tag cloud — HPI highlighted, the rest quiet outlines. */}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
-              {[
-                { label: "HPI", on: true },
-                { label: t("w.home.today.psTag.readiness"), on: false },
-                { label: t("w.home.today.psTag.injury"), on: false },
-                { label: t("w.home.today.psTag.velocity"), on: false },
-                { label: t("w.home.today.psTag.analytics"), on: false },
-                { label: t("w.home.today.aiCoach"), on: false },
-              ].map((tag) => (
-                <View
-                  key={tag.label}
-                  style={{ borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: tag.on ? `${C.blue}73` : C.line, backgroundColor: tag.on ? `${C.blue}1a` : "transparent" }}
-                >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.5, color: tag.on ? txt(C, C.blue) : C.ash }}>{tag.label}</Text>
-                </View>
-              ))}
-            </View>
-            <Pressable
-              onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-perfstate" }); router.push("/upgrade"); }}
-              style={{ marginTop: 18, alignSelf: "flex-start", borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.blue, backgroundColor: "transparent", paddingHorizontal: 16, paddingVertical: 9 }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6, color: txt(C, C.blue) }}>{t("w.home.today.unlockFullBtn")}</Text>
-            </Pressable>
-          </ACard>
-        )}
+        {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: bandColor(acc.band, C) }} />
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.today.onTrackLead")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: "auto" }}>{acc.sessionsLast7}/3 · {t("w.home.today.habit")} {strength}</Text>
+        </View>
 
+        {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
+        <View style={{ marginTop: 12 }}>
+          <TodayWidgets />
+        </View>
+
+        {/* ───── PLAN ───── */}
+        {(isAthlete || coached) && macro ? (
+          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C.amber} />
+        ) : null}
         {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
         {(isAthlete || coached) && macro && reconciledView && (
           <ACard style={{ marginTop: 18 }}>
@@ -615,91 +520,12 @@ export default function AuroraHome() {
           </ACard>
         )}
 
-        {/* ON TRACK? — accountability */}
-        <ACard style={{ marginTop: 18 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, bandColor(acc.band, C)) }}>{t("w.home.today.onTrack")} {bandLabel(acc.band, t)}</Text>
-            <View style={{ backgroundColor: `${bandColor(acc.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, bandColor(acc.band, C)) }}>{acc.streak.current ? `${acc.streak.current}${t("w.home.today.dayStreak")}` : t("w.home.today.noStreak")}</Text>
-            </View>
-          </View>
-          <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 10 }}>{acc.intervention.headline}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 4, lineHeight: 19 }}>{acc.intervention.message}</Text>
-          <View style={{ flexDirection: "row", gap: 18, marginTop: 12 }}>
-            <Metric label={t("w.home.today.risk")} value={`${acc.risk}`} color={txt(C, bandColor(acc.band, C))} C={C} />
-            <Metric label={t("w.home.today.habitStrength")} value={`${strength}`} color={C.chalk} C={C} />
-            <Metric label={t("w.home.today.thisWeek")} value={`${acc.sessionsLast7}/3`} color={C.chalk} C={C} />
-          </View>
-        </ACard>
 
-        {/* YOUR WEEK — recap (tap → Statistics) */}
-        {hasData && (
-          <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 18 }}>
-          <ACard>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>{t("w.home.today.yourWeek")}</Text>
-              <View style={{ flexDirection: "row", gap: space.sm }}>
-                {recap.prs.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><AuroraIcon name="arrow-up" size={11} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{recap.prs.length} PR</Text></View>}
-                {recap.cardioPrs.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${C.blue}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><AuroraIcon name="location" size={11} color={txt(C, C.blue)} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>{recap.cardioPrs.length} PR</Text></View>}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 22, marginTop: 12 }}>
-              <Metric label={t("w.home.today.sessions")} value={`${recap.sessions}`} color={C.chalk} C={C} />
-              <Metric label={t("w.home.today.volume")} value={`${recap.volume.toLocaleString()} kg`} color={txt(C, C.lime)} C={C} />
-              <Metric label={t("w.home.today.sets")} value={`${recap.sets}`} color={C.chalk} C={C} />
-              {recap.distanceKm > 0 && <Metric label={t("w.home.today.distance")} value={`${recap.distanceKm} km`} color={txt(C, C.blue)} C={C} />}
-              <Metric label={t("w.home.today.activeDays")} value={`${recap.activeDays}`} color={C.chalk} C={C} />
-              {recap.topMuscle && <Metric label={t("w.home.today.topMuscle")} value={muscleLabel(recap.topMuscle.muscle, t)} color={txt(C, C.blue)} C={C} />}
-            </View>
-            {recap.prs.length > 0 && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 8 }}>
-                {recap.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? ` (${t("w.home.today.first")})` : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
-              </Text>
-            )}
-          </ACard>
-          </Pressable>
-        )}
+        {/* ───── CONNECT ───── */}
+        <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C.violet} />
 
-        {/* PERFORMANCE STATE + injury risk */}
-        {isAthlete && hasData && (
-          <ACard style={{ marginTop: 18 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>{t("w.home.today.perfState")}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 6 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 36, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 4 }}>HPI · {state.hpi.band} · {t("w.home.today.limiter")} {state.hpi.limiter}</Text>
-                {/* 14-day trend — direction at a glance, not just today's number. */}
-                <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", gap: space.lg, marginTop: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>END {state.hpi.components.endurance}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Text>
-            </View>
-            <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.today.injuryRisk")}</Text>
-              {risk.flagged.length === 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 6 }}>{t("w.home.today.noTissues")} {risk.overall}/100 ({risk.band})</Text>
-              ) : (
-                <View style={{ marginTop: 8, gap: space.xs }}>
-                  {risk.flagged.map((t) => (
-                    <View key={t.tissue} style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
-                      <View style={{ backgroundColor: `${riskColor(t.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 2 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, riskColor(t.band, C)) }}>{t.risk}</Text></View>
-                      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{t.tissue}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1 }}>{t.drivers[0]?.label ?? ""}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          </ACard>
-        )}
-
-        {/* QUICK LOG — swipeable check-in + nutrition widgets (two columns), so
-            logging today's readiness or macros is one swipe from Today. */}
-        <TodayQuickLog />
-
+        {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
+        <CoachRail onOpen={() => router.push("/coaches")} />
         {/* FEED STRIP — your circle's latest, IG-Threads style, at the bottom. */}
         <FeedPreview onOpen={() => router.push("/feed")} />
         </Animated.View>
@@ -713,6 +539,17 @@ function Metric({ label, value, color, C }: { label: string; value: string; colo
     <View>
       <Text style={{ fontFamily: F.black, fontSize: 22, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
+    </View>
+  );
+}
+
+// A section kicker — guides the daily flow (Train → Feel → Plan → Connect).
+function Kicker({ C, k, h, color }: { C: P; k: string; h: string; color: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
+      <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, marginLeft: "auto" }}>{h}</Text>
     </View>
   );
 }

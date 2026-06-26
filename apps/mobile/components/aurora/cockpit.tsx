@@ -3,8 +3,9 @@ import { View, Text, Pressable } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  prescribeSession, computePerformanceState, runTotals, toTrainingLog, toBiometrics,
-  velocityProfiles, hpiRole, SPORTS, LEVELS, type LoggedSession, type Macrocycle,
+  prescribeSession, computePerformanceState, computeInjuryRisk, performanceTrajectory, weeklyRecap,
+  runTotals, toTrainingLog, toBiometrics,
+  velocityProfiles, hpiRole, riskRole, readinessRole, SPORTS, LEVELS, type LoggedSession, type Macrocycle,
 } from "@hybrid/core";
 import { fetchSessions, fetchMacrocycle, fetchSignals, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
@@ -12,11 +13,13 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
+const riskColor = (b: string, C: Palette) => roleColor(C, riskRole(b));
+const readyColor = (v: number, C: Palette) => roleColor(C, readinessRole(v));
 
 /** AURORA Athlete Cockpit — same live snapshots (goal/season → route →
  *  performance → sport → velocity → endurance) + freemium teaser as the classic. */
@@ -63,6 +66,9 @@ function Full() {
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
+  const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
+  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
   const totals = useMemo(() => runTotals(sessions), [sessions]);
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
@@ -103,21 +109,81 @@ function Full() {
       <Section C={C} title={t("w.home.cockpit.perfTwin")} color={C.blue} openLabel={t("w.home.cockpit.performance")} onOpen={() => router.push("/performance")}>
         {hasData ? (
           <>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
-              <Text style={{ fontFamily: F.black, fontSize: 32, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+              <Text style={{ fontFamily: F.black, fontSize: 40, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 4 }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
+                <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
+              </View>
             </View>
-            <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
+            <View style={{ flexDirection: "row", gap: 14, marginTop: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>END {state.hpi.components.endurance}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Text>
             </View>
-            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
+            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Ring value={rx.readiness} size={48} color={readyColor(rx.readiness, C)} track={C.line}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
+              </Ring>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>{t("w.home.cockpit.todayReadiness")}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 16 }}>{rx.why}</Text>
+              </View>
+            </View>
           </>
         ) : (
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.twinEmpty")}</Text>
         )}
       </Section>
+
+      {/* READINESS & INJURY RISK — moved here from Today (recovery state lives on the command center). */}
+      {hasData && (
+        <ACard style={{ marginTop: 14 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.home.today.injuryRisk")}</Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 8 }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: txt(C, riskColor(risk.band, C)) }}>{risk.band}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{risk.overall}/100</Text>
+          </View>
+          <View style={{ height: 9, borderRadius: 5, backgroundColor: C.ink, overflow: "hidden", marginTop: 8 }}>
+            <View style={{ width: `${risk.overall}%`, height: 9, backgroundColor: riskColor(risk.band, C) }} />
+          </View>
+          {risk.flagged.length === 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>{t("w.home.today.noTissues")}</Text>
+          ) : (
+            <View style={{ marginTop: 10, gap: space.xs }}>
+              {risk.flagged.map((ti) => (
+                <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+                  <View style={{ backgroundColor: `${riskColor(ti.band, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, riskColor(ti.band, C)) }}>{ti.risk}</Text>
+                  </View>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{ti.tissue}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1 }}>{ti.drivers[0]?.label ?? ""}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </ACard>
+      )}
+
+      {/* YOUR WEEK — weekly recap moved here from Today (tap → Statistics). */}
+      {hasData && (
+        <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 14 }}>
+          <ACard>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.home.today.yourWeek")}</Text>
+              {recap.prs.length > 0 && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{recap.prs.length} PR</Text></View>}
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 22, marginTop: 12 }}>
+              <Stat C={C} label={t("w.home.today.sessions")} value={`${recap.sessions}`} />
+              <Stat C={C} label={t("w.home.today.volume")} value={`${recap.volume.toLocaleString()} kg`} />
+              <Stat C={C} label={t("w.home.today.sets")} value={`${recap.sets}`} />
+              {recap.distanceKm > 0 && <Stat C={C} label={t("w.home.today.distance")} value={`${recap.distanceKm} km`} />}
+              <Stat C={C} label={t("w.home.today.activeDays")} value={`${recap.activeDays}`} />
+            </View>
+          </ACard>
+        </Pressable>
+      )}
 
       <Section C={C} title={t("w.home.cockpit.sportSC")} color={C.amber} openLabel={t("w.home.cockpit.sport")} onOpen={() => router.push("/(tabs)/sport")}>
         {sport ? (

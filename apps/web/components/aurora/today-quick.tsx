@@ -1,161 +1,100 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { fs, space } from "@hybrid/core";
-import { useRevalidate } from "@/lib/use-invalidate";
+import { useEffect, useMemo, useState } from "react";
+import { fs, todayNutrition, adaptiveTargets, type Signal } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 
 const C = (v: string) => `var(--color-${v})`;
 
-const RATINGS: { key: "energy" | "sleep" | "soreness" | "mood"; label: string }[] = [
-  { key: "energy", label: "w.recovery.checkins.energy" },
-  { key: "sleep", label: "w.recovery.checkins.sleep" },
-  { key: "soreness", label: "w.recovery.checkins.soreness" },
-  { key: "mood", label: "w.recovery.checkins.mood" },
-];
-
-type SaveState = "idle" | "saving" | "saved";
+type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
 
 /**
- * AURORA Today quick-log (web) — two swipeable widgets in a horizontal
- * scroll-snapping pager: a daily check-in (the four 1–5 readiness ratings) and a
- * nutrition quick-add (kcal + macros). Logging the day's readiness or food is a
- * single swipe from Today, no full Recovery screen needed. Posts to the SAME
- * /api/checkins + /api/signals endpoints as the full screens and revalidates the
- * shared recovery cache. Mirrored 1:1 on mobile (today-quick.tsx there).
+ * AURORA Today widgets (web) — the daily check-in + nutrition as two SQUARE,
+ * iPhone-home-screen-style widgets side by side. Each shows a glanceable state
+ * (have you checked in today? today's calories vs target) and opens the full
+ * Check-in / Nutrition screen on tap — the logging itself lives on those
+ * screens, so the widgets stay small and scannable. Mirrored on mobile
+ * (today-quick.tsx there).
  */
-export default function TodayQuickLog({ onNavigate }: { onNavigate?: (screen: string) => void }) {
+export default function TodayWidgets({ onNavigate }: { onNavigate?: (screen: string) => void }) {
   const { t } = useLang();
-  const revalidate = useRevalidate();
+  const [signals, setSignals] = useState<Signal[]>([]);
+  // null = still loading; true/false once /api/checkins returns.
+  const [checkedToday, setCheckedToday] = useState<boolean | null>(null);
 
-  // Pager — track the active card so the dots signal the second widget.
-  const pagerRef = useRef<HTMLDivElement>(null);
-  const [activeCard, setActiveCard] = useState(0);
-  const onPagerScroll = () => {
-    const el = pagerRef.current;
-    if (!el) return;
-    setActiveCard(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
-  };
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch("/api/signals");
+        if (r.ok) {
+          const d = (await r.json()) as { signals?: Row[] };
+          if (alive) setSignals((d.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind as Signal["kind"], value: s.value, unit: s.unit, source: s.source, ts: s.ts })));
+        }
+      } catch { /* leave empty */ }
+      try {
+        const r = await fetch("/api/checkins");
+        if (r.ok) {
+          const d = (await r.json()) as { checkins?: { weekOf: string }[] };
+          const today = new Date().toDateString();
+          if (alive) setCheckedToday((d.checkins ?? []).some((c) => new Date(c.weekOf).toDateString() === today));
+        } else if (alive) setCheckedToday(false);
+      } catch { if (alive) setCheckedToday(false); }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-  // — Check-in widget —
-  const [ratings, setRatings] = useState({ energy: 3, sleep: 3, soreness: 3, mood: 3 });
-  const [ciState, setCiState] = useState<SaveState>("idle");
-  const [ciErr, setCiErr] = useState("");
-  const saveCheckin = async () => {
-    setCiState("saving"); setCiErr("");
-    try {
-      const res = await fetch("/api/checkins", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekOf: new Date().toISOString(), ...ratings }),
-      });
-      if (res.status === 401) { setCiErr(t("w.home.today.quick.signIn")); setCiState("idle"); return; }
-      if (!res.ok) { setCiErr(t("w.home.today.quick.error")); setCiState("idle"); return; }
-      setCiState("saved");
-      revalidate.recovery();
-      window.setTimeout(() => setCiState("idle"), 1800);
-    } catch { setCiErr(t("w.home.today.quick.error")); setCiState("idle"); }
-  };
+  const today = useMemo(() => todayNutrition(signals), [signals]);
+  const targets = useMemo(() => adaptiveTargets(signals, { goal: "maintain" }), [signals]);
+  const kcalPct = targets.kcal > 0 ? Math.min(1, today.kcal / targets.kcal) : 0;
+  const hasNutrition = today.kcal > 0;
+  const done = checkedToday === true;
 
-  // — Nutrition widget —
-  const [macros, setMacros] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
-  const [nuState, setNuState] = useState<SaveState>("idle");
-  const [nuErr, setNuErr] = useState("");
-  const addNutrition = async () => {
-    setNuState("saving"); setNuErr("");
-    const entries: [string, string, string][] = [
-      ["energyIntake", macros.kcal, "kcal"], ["protein", macros.protein, "g"], ["carbs", macros.carbs, "g"], ["fat", macros.fat, "g"],
-    ];
-    try {
-      let any = false;
-      for (const [kind, v, unit] of entries) {
-        const n = parseFloat(v);
-        if (!Number.isFinite(n) || n <= 0) continue;
-        any = true;
-        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, value: n, unit, source: "manual" }) });
-        if (res.status === 401) { setNuErr(t("w.home.today.quick.signIn")); setNuState("idle"); return; }
-        if (!res.ok) { setNuErr(t("w.home.today.quick.error")); setNuState("idle"); return; }
-      }
-      if (!any) { setNuErr(t("w.home.today.quick.needMacro")); setNuState("idle"); return; }
-      setMacros({ kcal: "", protein: "", carbs: "", fat: "" });
-      setNuState("saved");
-      revalidate.recovery();
-      window.setTimeout(() => setNuState("idle"), 1800);
-    } catch { setNuErr(t("w.home.today.quick.error")); setNuState("idle"); }
-  };
-
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22, scrollSnapAlign: "start" as const, flex: "0 0 92%", boxSizing: "border-box" as const };
-  const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 64px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
-  const cta = (st: SaveState) => ({ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: st === "saved" ? C("blue") : C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: 13, marginTop: 14, cursor: st === "saving" ? "default" : "pointer", opacity: st === "saving" ? 0.6 : 1 } as const);
-  const openLink = { width: "100%", background: "none", border: "none", cursor: "pointer", marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") } as const;
+  const widget = { aspectRatio: "1 / 1", borderRadius: 26, border: `1px solid ${C("line")}`, background: C("ink2"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, display: "flex", flexDirection: "column" as const, cursor: "pointer", textAlign: "left" as const, color: C("chalk") };
+  const wicon = (bg: string, fg: string) => ({ width: 30, height: 30, borderRadius: 10, display: "grid", placeItems: "center", background: bg, color: fg });
+  const wname = { fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase" as const, color: C("ash"), marginTop: 12 };
+  const tag = { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" as const, color: C("ash") };
 
   return (
-    <div style={{ marginTop: 18 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginBottom: 10 }}>{t("w.home.today.quick.eyebrow")}</div>
-
-      {/* CHECK-IN ⇄ NUTRITION — horizontal, scroll-snapping pager (two columns) */}
-      <div
-        ref={pagerRef}
-        onScroll={onPagerScroll}
-        style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", paddingBottom: 2, alignItems: "flex-start" }}
-      >
-        {/* card 1 — daily check-in */}
-        <div style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.home.today.quick.checkinTitle")}</span>
-            <AuroraIcon name="heart" size={18} color={C("red")} />
-          </div>
-          <div style={{ fontWeight: 800, fontSize: 20, margin: "6px 0 2px" }}>{t("w.home.today.quick.checkinSub")}</div>
-          {RATINGS.map((r) => (
-            <div key={r.key} style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: fs.caption, color: C("ash") }}>{t(r.label)}</div>
-              <div style={{ display: "flex", gap: space.xs, marginTop: 6 }}>
-                {[1, 2, 3, 4, 5].map((n) => {
-                  const sel = ratings[r.key] === n;
-                  return (
-                    <button key={n} onClick={() => setRatings((s) => ({ ...s, [r.key]: n }))}
-                      style={{ flex: 1, height: 38, borderRadius: 999, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: sel ? C("ink") : C("ash"), border: `1px solid ${sel ? C("lime") : C("line")}`, background: sel ? C("lime") : "transparent" }}>
-                      {n}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-          {ciErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{ciErr}</div>}
-          <button onClick={saveCheckin} disabled={ciState === "saving"} style={cta(ciState)}>
-            {ciState === "saving" ? t("w.home.today.quick.saving") : ciState === "saved" ? t("w.home.today.quick.saved") : t("w.home.today.quick.saveCheckin")}
-          </button>
-          <button onClick={() => onNavigate?.("checkin")} style={openLink}>{t("w.home.today.quick.openCheckin")}</button>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      {/* CHECK-IN */}
+      <button onClick={() => onNavigate?.("checkin")} style={widget} aria-label={t("w.home.today.w.checkin")}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={wicon("rgba(224,98,94,.16)", C("red"))}><AuroraIcon name="heart" size={16} color={C("red")} /></span>
+          <span style={tag}>{done ? t("w.home.today.w.done") : t("w.home.today.w.tapLog")}</span>
         </div>
-
-        {/* card 2 — nutrition quick-add */}
-        <div style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>{t("w.home.today.quick.nutritionTitle")}</span>
-            <AuroraIcon name="add" size={18} color={C("violet")} />
-          </div>
-          <div style={{ fontWeight: 800, fontSize: 20, margin: "6px 0 2px" }}>{t("w.home.today.quick.nutritionSub")}</div>
-          <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
-            <input value={macros.kcal} onChange={(e) => setMacros((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={numField} />
-            <input value={macros.protein} onChange={(e) => setMacros((s) => ({ ...s, protein: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.proteinPh")} style={numField} />
-            <input value={macros.carbs} onChange={(e) => setMacros((s) => ({ ...s, carbs: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.carbsPh")} style={numField} />
-            <input value={macros.fat} onChange={(e) => setMacros((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
-          </div>
-          {nuErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{nuErr}</div>}
-          <button onClick={addNutrition} disabled={nuState === "saving"} style={cta(nuState)}>
-            {nuState === "saving" ? t("w.home.today.quick.adding") : nuState === "saved" ? t("w.home.today.quick.added") : t("w.home.today.quick.add")}
-          </button>
-          <button onClick={() => onNavigate?.("nutrition")} style={openLink}>{t("w.home.today.quick.openNutrition")}</button>
+        <div style={wname}>{t("w.home.today.w.checkin")}</div>
+        <div style={{ fontWeight: 800, fontSize: done ? 26 : 21, lineHeight: 1.08, marginTop: 6 }}>
+          {done ? t("w.home.today.w.checkinDone") : t("w.home.today.w.checkinPrompt")}
         </div>
-      </div>
+        <div style={{ marginTop: "auto", borderRadius: 999, textAlign: "center", fontWeight: 700, fontSize: 13, padding: "9px 0", background: done ? "transparent" : C("lime"), color: done ? C("ash") : C("ink"), border: done ? `1px solid ${C("line")}` : "none" }}>
+          {done ? t("w.home.today.w.view") : t("w.home.today.w.checkinCta")}
+        </div>
+      </button>
 
-      {/* pager dots — a clear "there's a second widget to swipe" affordance */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 7, marginTop: 10 }}>
-        {[0, 1].map((i) => (
-          <span key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, background: activeCard === i ? C("lime") : C("line"), transition: "width .2s" }} />
-        ))}
-      </div>
+      {/* NUTRITION */}
+      <button onClick={() => onNavigate?.("nutrition")} style={widget} aria-label={t("w.home.today.w.nutrition")}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={wicon("rgba(196,240,53,.14)", C("lime"))}><AuroraIcon name="heart" size={16} color={C("lime")} /></span>
+          <span style={tag}>{t("w.home.today.w.today")}</span>
+        </div>
+        <div style={wname}>{t("w.home.today.w.nutrition")}</div>
+        <div style={{ fontWeight: 900, fontSize: 28, lineHeight: 1.05, marginTop: 2 }}>
+          {Math.round(today.kcal).toLocaleString()}
+          <span style={{ fontSize: 13, color: C("ash"), fontWeight: 600 }}> / {targets.kcal.toLocaleString()}</span>
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>kcal</div>
+        <div style={{ height: 7, borderRadius: 4, background: C("ink"), overflow: "hidden", marginTop: 10 }}>
+          <div style={{ width: `${kcalPct * 100}%`, height: "100%", background: today.kcal > targets.kcal * 1.05 ? C("red") : C("lime") }} />
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
+          <span>P {Math.round(today.protein)}</span><span>C {Math.round(today.carbs)}</span><span>F {Math.round(today.fat)}</span>
+        </div>
+        <div style={{ marginTop: "auto", borderRadius: 999, textAlign: "center", fontWeight: 700, fontSize: 13, padding: "9px 0", border: `1px solid ${C("line")}`, color: C("chalk") }}>
+          {hasNutrition ? t("w.home.today.w.add") : t("w.home.today.w.addFirst")}
+        </div>
+      </button>
     </div>
   );
 }

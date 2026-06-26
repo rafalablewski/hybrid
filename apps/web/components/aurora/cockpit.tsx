@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fs, space,
-  prescribeSession, computePerformanceState, runTotals, toTrainingLog, velocityProfiles, LEVELS,
-  ROLE_COLOR, hpiRole,
+  prescribeSession, computePerformanceState, computeInjuryRisk, performanceTrajectory, weeklyRecap,
+  runTotals, toTrainingLog, velocityProfiles, LEVELS,
+  ROLE_COLOR, hpiRole, riskRole, readinessRole,
   type Biometrics, type LoggedSession, type Macrocycle,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
@@ -15,6 +16,8 @@ import { AuroraIcon } from "./icons";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
 const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)];
+const riskVar = (b: string) => ROLE_COLOR[riskRole(b)];
+const readyVar = (v: number) => ROLE_COLOR[readinessRole(v)];
 const C = (v: string) => `var(--color-${v})`;
 
 /** AURORA Cockpit (web) — same live snapshots + inline plan setup + freemium
@@ -43,6 +46,9 @@ export default function AuroraCockpit({
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles: velocityProfiles(sessions) }), [log, bio, sessions]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
+  const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
+  const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
   const totals = useMemo(() => runTotals(sessions), [sessions]);
 
   if (persona === "casual") {
@@ -83,19 +89,78 @@ export default function AuroraCockpit({
         <Section title={t("w.home.cockpit.perfTwin")} color="blue" openLabel={t("w.home.cockpit.performance")} onOpen={() => setScreen("performance")}>
           {hasData ? (
             <>
-              <div style={{ display: "flex", alignItems: "baseline", gap: space.md, flexWrap: "wrap" }}>
-                <span style={{ fontWeight: 800, fontSize: 34, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</span>
-                <span style={{ display: "flex", gap: 14, marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
+              <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
+                <span style={{ fontWeight: 800, fontSize: 44, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+                <div style={{ minWidth: 120, flex: 1 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
+                  <div style={{ marginTop: 6, maxWidth: 180 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
+                </div>
+                <span style={{ display: "flex", gap: 12, fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
                   <span style={{ color: C("lime") }}>STR {state.hpi.components.strength}</span>
                   <span style={{ color: C("blue") }}>END {state.hpi.components.endurance}</span>
                   <span style={{ color: C("violet") }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</span>
                 </span>
               </div>
-              {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 6 }}>{state.drivers[0].detail}</div>}
+              {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 10 }}>{state.drivers[0].detail}</div>}
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "center", gap: space.md }}>
+                <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
+                <div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.home.cockpit.todayReadiness")}</div>
+                  <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "32ch" }}>{rx.why}</div>
+                </div>
+              </div>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>}
         </Section>
+
+        {/* READINESS & INJURY RISK — moved here from Today (the command-center home of the recovery state). */}
+        {hasData && (
+          <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>{t("w.home.today.injuryRisk")}</span>
+            <div style={{ display: "flex", alignItems: "baseline", gap: space.sm, marginTop: 8 }}>
+              <span style={{ fontWeight: 800, fontSize: fs.heading, color: C(riskVar(risk.band)) }}>{risk.band}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{risk.overall}/100</span>
+            </div>
+            <div style={{ height: 9, borderRadius: 5, background: C("ink"), overflow: "hidden", marginTop: 8 }}>
+              <div style={{ width: `${risk.overall}%`, height: "100%", background: C(riskVar(risk.band)) }} />
+            </div>
+            {risk.flagged.length === 0 ? (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 10 }}>{t("w.home.today.noTissues")}</div>
+            ) : (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: space.xs }}>
+                {risk.flagged.map((ti) => (
+                  <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C(riskVar(ti.band)), borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
+                    <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0]?.label ?? ""}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* YOUR WEEK — weekly recap moved here from Today (tap → full Statistics). */}
+        {hasData && (
+          <button onClick={() => setScreen("statistics")} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.home.today.yourWeek")}</span>
+              {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 10px" }}>{recap.prs.length} PR</span>}
+            </div>
+            <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>
+              <Stat label={t("w.home.today.sessions")} value={`${recap.sessions}`} />
+              <Stat label={t("w.home.today.volume")} value={`${recap.volume.toLocaleString()} kg`} />
+              <Stat label={t("w.home.today.sets")} value={`${recap.sets}`} />
+              {recap.distanceKm > 0 && <Stat label={t("w.home.today.distance")} value={`${recap.distanceKm} km`} />}
+              <Stat label={t("w.home.today.activeDays")} value={`${recap.activeDays}`} />
+            </div>
+            {recap.prs.length > 0 && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), marginTop: 8 }}>
+                {recap.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? "" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+              </div>
+            )}
+          </button>
+        )}
 
         <Section title={t("w.home.cockpit.sportSC")} color="amber" openLabel={t("w.home.cockpit.sport")} onOpen={() => setScreen("sport")}>
           {sport ? <div style={{ fontWeight: 700, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div> : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>}
@@ -137,6 +202,32 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div>
       <div style={{ fontWeight: 800, fontSize: fs.heading }}>{value}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+    </div>
+  );
+}
+
+/** Readiness dial — conic-gradient ring with the number inside. */
+function Ring({ value, color, size = 48 }: { value: number; color: string; size?: number }) {
+  const pct = Math.max(0, Math.min(100, value));
+  const inner = size - 12;
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: `conic-gradient(${color} ${pct * 3.6}deg, ${C("line")} 0)`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+      <div style={{ width: inner, height: inner, borderRadius: "50%", background: C("ink2"), display: "grid", placeItems: "center", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</div>
+    </div>
+  );
+}
+
+/** Dependency-free sparkline — scaled bars, latest highlighted. */
+function Spark({ series, color, height = 24 }: { series: number[]; color: string; height?: number }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series);
+  const min = Math.min(...series);
+  const range = max - min || 1;
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height }}>
+      {series.map((v, i) => (
+        <div key={i} style={{ flex: 1, height: 4 + ((v - min) / range) * (height - 4), borderRadius: 2, background: i === series.length - 1 ? color : `color-mix(in srgb, ${color} 40%, transparent)` }} />
+      ))}
     </div>
   );
 }
