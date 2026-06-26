@@ -1,33 +1,32 @@
 name: Mobile — build & TestFlight
 
-# Builds the iOS app and uploads it to TestFlight.
+# Builds the iOS app on EAS (Expo's CLOUD builders) and submits it to
+# TestFlight — no local clone, no Mac. You trigger it from the browser:
+# GitHub → Actions → "Mobile — build & TestFlight" → Run workflow
+# (or push a tag like `mobile-v1.0.1`). The Ubuntu runner only kicks off the
+# build on Expo's servers and waits — the actual compile + signing happen in
+# the cloud, exactly like the sud-italia apps.
 #
-# WHY a macOS runner + `eas build --local`: a LOCAL build runs the compile on
-# THIS runner, not Expo's hosted builders, so it does NOT consume the EAS Build
-# free-tier quota (the "ran out of free builds" wall). It's the CI equivalent of
-# building in Xcode on your Mac. (Trade-off: GitHub macOS minutes are metered and
-# bill at 10× — fine for occasional release builds, which is why this only runs
-# on a tag or a manual dispatch, never on every push.)
-#
-# Trigger it by pushing a tag like `mobile-v1.0.1`, or from the Actions tab
-# (Run workflow). Normal pushes/PRs are untouched — those stay on ci.yml.
+# Note: a cloud build DOES consume the EAS Build free-tier quota (that's the
+# trade-off for not needing a Mac). The quota resets monthly, and OTA updates
+# (eas update) carry JS changes for free in between — so you only spend a build
+# here when native code changes or you cut a new TestFlight release.
 #
 # ── Required repo secrets (Settings → Secrets and variables → Actions) ────────
-#   EXPO_TOKEN                   Expo access token (expo.dev → Account →
-#                                Settings → Access tokens). Authenticates the
-#                                EAS CLI and lets it fetch the iOS signing
-#                                credentials it manages — no cloud build is run.
-#   EXPO_PUBLIC_SUPABASE_ANON_KEY  The public Supabase anon/publishable key,
-#                                embedded at build time so the app can sign in.
-#   APPLE_ASC_API_KEY_P8_BASE64  The App Store Connect API key (.p8) you already
-#                                use, base64-encoded:  base64 -i AuthKey_XXXX.p8
-#   APPLE_ASC_KEY_ID             The .p8 Key ID (e.g. RQTCHVF25S).
-#   APPLE_ASC_ISSUER_ID          The App Store Connect Issuer ID (App Store
-#                                Connect → Users and Access → Integrations → Keys).
+#   EXPO_TOKEN                     Expo access token (expo.dev → Account →
+#                                  Settings → Access tokens). Lets EAS build +
+#                                  manage credentials non-interactively.
+#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon/publishable key,
+#                                  embedded at build time so the app signs in.
+#   APPLE_ASC_API_KEY_P8_BASE64    App Store Connect API key (.p8), base64'd:
+#                                    base64 -i AuthKey_XXXX.p8 | pbcopy
+#   APPLE_ASC_KEY_ID               The .p8 Key ID (e.g. RQTCHVF25S).
+#   APPLE_ASC_ISSUER_ID            App Store Connect → Users and Access →
+#                                  Integrations → Keys → Issuer ID.
 #
-# Prerequisite (one-time, run locally): `eas credentials` for iOS so the
-# distribution cert + provisioning profile exist on EAS for the CLI to fetch
-# non-interactively. The on-device build already did this.
+# The Admin-role ASC API key lets EAS create the distribution cert /
+# provisioning profile AND the App Store Connect app record on first run, so
+# there is nothing to set up by hand first.
 
 on:
   workflow_dispatch:
@@ -41,8 +40,8 @@ concurrency:
 
 jobs:
   ios:
-    name: Build (.ipa) + TestFlight
-    runs-on: macos-14
+    name: Cloud build + TestFlight
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -63,37 +62,40 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Write App Store Connect API key
-        run: |
-          mkdir -p "$RUNNER_TEMP/asc"
-          echo "${{ secrets.APPLE_ASC_API_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/asc/key.p8"
+        working-directory: apps/mobile
+        run: echo "${{ secrets.APPLE_ASC_API_KEY_P8_BASE64 }}" | base64 --decode > asc-key.p8
 
-      # Local build — runs on THIS macOS runner, so it doesn't touch Expo's
-      # hosted builders and doesn't burn the EAS Build quota. `eas build`
-      # auto-runs `expo prebuild` first (the repo is CNG; no ios/ committed).
-      - name: Build iOS (.ipa) locally
+      # Inject the ASC submit credentials into eas.json at runtime (jq is
+      # preinstalled on the runner). Keeps the Key ID / Issuer ID out of git —
+      # they come from secrets only. The committed eas.json keeps just the team id.
+      - name: Configure submit credentials
+        working-directory: apps/mobile
+        run: |
+          jq --arg keyId "${{ secrets.APPLE_ASC_KEY_ID }}" \
+             --arg issuerId "${{ secrets.APPLE_ASC_ISSUER_ID }}" \
+             '.submit.production.ios += {
+                ascApiKeyPath: "./asc-key.p8",
+                ascApiKeyId: $keyId,
+                ascApiKeyIssuerId: $issuerId
+              }' eas.json > eas.json.tmp && mv eas.json.tmp eas.json
+
+      # Cloud build on Expo's servers + auto-submit to TestFlight in one step.
+      # EXPO_ASC_* let EAS provision the distribution cert/profile non-interactively.
+      - name: Build (cloud) + submit to TestFlight
         working-directory: apps/mobile
         env:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-        run: |
-          eas build \
-            --local \
-            --profile production \
-            --platform ios \
-            --non-interactive \
-            --output "$RUNNER_TEMP/hybrid.ipa"
-
-      - name: Submit to TestFlight
-        working-directory: apps/mobile
-        env:
-          EXPO_ASC_API_KEY_PATH: ${{ runner.temp }}/asc/key.p8
+          EXPO_ASC_API_KEY_PATH: ./asc-key.p8
           EXPO_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
           EXPO_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
         run: |
-          eas submit \
+          eas build \
             --platform ios \
-            --path "$RUNNER_TEMP/hybrid.ipa" \
-            --non-interactive
+            --profile production \
+            --non-interactive \
+            --auto-submit
 
       - name: Clean up secrets
         if: always()
-        run: rm -rf "$RUNNER_TEMP/asc" "$RUNNER_TEMP/hybrid.ipa"
+        working-directory: apps/mobile
+        run: rm -f asc-key.p8
