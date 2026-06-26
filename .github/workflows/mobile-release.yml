@@ -45,6 +45,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Use the newest Xcode on the runner (the default 16.4 is older than the
+      # Xcode the project was prebuilt/verified with, which breaks native pods).
+      - name: Select latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
@@ -83,7 +90,7 @@ jobs:
         working-directory: apps/mobile/ios
         env:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-        run: xcode-project build-ipa --workspace HYBRID.xcworkspace --scheme HYBRID
+        run: xcode-project build-ipa --workspace HYBRID.xcworkspace --scheme HYBRID --disable-xcpretty
 
       - name: Upload to TestFlight
         run: |
