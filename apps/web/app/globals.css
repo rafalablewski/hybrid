@@ -326,6 +326,13 @@ body {
 .aurora-enter { animation: auroraEnter .26s cubic-bezier(.2,.7,.3,1) both; }
 @media (prefers-reduced-motion: reduce) { .aurora-enter { animation: none; } }
 
+/* Loading-skeleton pulse — a placeholder block gently breathes while its data
+   is in flight, so a section reserves its space and fills in rather than
+   popping in from nothing (e.g. the Today Feed strip). */
+@keyframes skelPulse { 0%, 100% { opacity: .6; } 50% { opacity: .25; } }
+.skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; opacity: .45; } }
+
 .cmd-scrim {
   position: fixed;
   inset: 0;

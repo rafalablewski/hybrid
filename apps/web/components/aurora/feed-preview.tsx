@@ -25,7 +25,33 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
     return () => { alive = false; };
   }, []);
 
-  if (!feed || feed.length === 0) return null;
+  // Still in flight → a skeleton that reserves the Feed's space and gently
+  // pulses, so the strip fills in instead of popping in late from nothing.
+  if (feed === null) {
+    return (
+      <div style={{ marginTop: 22 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px 10px" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17, color: C("chalk") }}>Feed</span>
+          <span style={{ color: C("lime"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>View all →</span>
+        </div>
+        <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, overflow: "hidden" }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 14px", borderTop: i === 0 ? "none" : `1px solid ${C("line")}` }}>
+              <div className="skeleton" style={{ width: 34, height: 34, borderRadius: 999, flexShrink: 0, background: C("line") }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="skeleton" style={{ width: "60%", height: 11, borderRadius: 6, background: C("line") }} />
+                <div className="skeleton" style={{ width: "40%", height: 9, borderRadius: 6, background: C("line"), marginTop: 7 }} />
+              </div>
+              <div className="skeleton" style={{ width: 28, height: 9, borderRadius: 6, background: C("line"), flexShrink: 0 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Loaded + genuinely empty → render nothing so Today stays uncluttered.
+  if (feed.length === 0) return null;
 
   return (
     <div style={{ marginTop: 22 }}>
