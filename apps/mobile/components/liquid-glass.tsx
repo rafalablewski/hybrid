@@ -175,6 +175,9 @@ export function CommandMenu() {
                     </View>
                     <Pressable
                       onPress={() => setOpen(false)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close"
+                      hitSlop={8}
                       style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: neutral(0.16), backgroundColor: neutral(0.07) }}
                     >
                       <Text style={{ color: palette.chalk, fontSize: fs.note }}>✕</Text>

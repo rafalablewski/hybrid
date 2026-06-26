@@ -181,6 +181,7 @@ export default function AuroraProfile() {
             onPress={() => router.push("/settings")}
             accessibilityRole="button"
             accessibilityLabel={t("w.account.profile.edit")}
+            hitSlop={10}
             style={{ position: "absolute", right: -1, bottom: -1, width: 30, height: 30, borderRadius: 15, backgroundColor: C.lime, borderWidth: 3, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}
           >
             <AuroraIcon name="settings" size={15} color={C.onAccent} />

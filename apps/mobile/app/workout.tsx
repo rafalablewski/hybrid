@@ -970,6 +970,7 @@ export default function Workout() {
                         <Pressable
                           onPress={() => cycleType(x.uid, i)}
                           onLongPress={() => removeSet(x.uid, i)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                           style={{ width: 28, height: 30, borderRadius: R.field, alignItems: "center", justifyContent: "center", borderWidth: accent ? 1 : 0, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent" }}
                         >
                           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
