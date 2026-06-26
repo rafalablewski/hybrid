@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { makeTWithOverrides, type Lang, type TranslationOverrides } from "@hybrid/core";
+import { makeTWithOverrides, localeDirection, type Lang, type TranslationOverrides } from "@hybrid/core";
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (key: string) => string };
 const LangCtx = createContext<Ctx | null>(null);
@@ -30,6 +30,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       // ignore
     }
   };
+
+  // Keep the document's language + direction in sync with the active locale.
+  // The server renders <html lang="en"> statically, so a PL/DE user previously
+  // had content mislabelled as English (screen readers pick the wrong voice /
+  // pronunciation rules). `dir` is routed through localeDirection so an RTL
+  // locale would flip the whole document from here (all shipped locales = ltr).
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = localeDirection(lang);
+  }, [lang]);
 
   const t = useMemo(() => makeTWithOverrides(lang, overrides), [lang, overrides]);
 
