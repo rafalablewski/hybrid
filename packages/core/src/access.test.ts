@@ -28,4 +28,11 @@ describe("free-tier access gates", () => {
       expect(canSaveMealsAndProducts(p)).toBe(true);
     }
   });
+
+  it("fails closed on invalid / uninitialised personas", () => {
+    expect(isFullAccess(undefined as unknown as Persona)).toBe(false);
+    expect(isFullAccess(null as unknown as Persona)).toBe(false);
+    expect(isFullAccess("unknown" as unknown as Persona)).toBe(false);
+    expect(canSeeHPI(undefined as unknown as Persona)).toBe(false);
+  });
 });

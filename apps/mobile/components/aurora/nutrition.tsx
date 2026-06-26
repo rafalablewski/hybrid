@@ -159,7 +159,7 @@ export default function AuroraNutrition() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.recovery.nutrition.proSoon")}</Text>
           </View>
         ) : (
-          <Pressable onPress={() => router.push("/upgrade")} style={{ marginTop: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 14 }}>
+          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.proTitle")} style={{ marginTop: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Text style={{ fontSize: 13 }}>🔒</Text>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.proTitle")}</Text>

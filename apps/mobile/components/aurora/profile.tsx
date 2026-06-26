@@ -294,7 +294,7 @@ export default function AuroraProfile() {
             ——<Text style={{ color: C.lime }}>—</Text>
           </Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 20 }}>{t("w.account.profile.hpi-locked-body")}</Text>
-          <Pressable onPress={() => router.push("/upgrade")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
+          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
           </Pressable>
         </View>

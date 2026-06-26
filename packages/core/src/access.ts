@@ -14,7 +14,10 @@ import type { Persona } from "./nav";
  * user is anything other than casual.
  */
 export function isFullAccess(persona: Persona): boolean {
-  return persona !== "casual";
+  // Whitelist the Full personas so the gate FAILS CLOSED — any unexpected /
+  // uninitialised value (undefined, null, a future restricted persona) denies
+  // access rather than accidentally granting it.
+  return persona === "athlete" || persona === "coach" || persona === "admin";
 }
 
 /** Free users cannot SEE the Hybrid Performance Index (HPI) — score, band,
