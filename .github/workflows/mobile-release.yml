@@ -89,9 +89,14 @@ jobs:
         working-directory: apps/mobile
         env:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          # ASC API key + Apple Team ID let EAS generate/validate the iOS
+          # distribution cert + provisioning profile non-interactively. The team
+          # id is required — without it EAS can't resolve the cert and fails with
+          # "Distribution Certificate is not validated for non-interactive builds".
           EXPO_ASC_API_KEY_PATH: ./asc-key.p8
           EXPO_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
           EXPO_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+          EXPO_APPLE_TEAM_ID: T4WC9M8Y3S
         run: |
           eas build \
             --platform ios \
