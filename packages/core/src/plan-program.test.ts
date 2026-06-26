@@ -12,6 +12,7 @@ import {
   rpeColor,
   workoutColor,
   conditioningColor,
+  repZoneColor,
   isGymLift,
   isProseLift,
   liftKind,
@@ -341,10 +342,22 @@ describe("kettlebell (12-week rotating split) program — hypertrophy shape, set
     const bench = push.sessions[0]!.lifts[0]!;
     expect(bench).toMatchObject({ name: "Kettlebell Bench Press", setsReps: "3 × 15-20", prescription: "3 × 15-20" });
     expect(bench.rpe).toBeUndefined(); // the source prescribes sets × reps, not effort
-    expect(bench.intensity).toBeUndefined();
     expect(liftKind(bench)).toBe("rpe"); // structured sets×reps entry (no % ramp)
     // a per-side scheme is kept verbatim
     expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw Kettlebell Press", setsReps: "3 × 10/arm" });
+  });
+
+  it("colours the sets×reps by training zone — the same wave oly/bb ride, derived from the reps", () => {
+    // 15-20 reps → endurance (blue); 10 reps → hypertrophy (lime).
+    const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!;
+    expect(push.sessions[0]!.lifts[0]!.intensity).toBe("blue"); // Bench 3 × 15-20
+    expect(push.sessions[0]!.lifts[2]!.intensity).toBe("lime"); // Seesaw Press 3 × 10/arm
+    // low-rep strength work → amber (Renegade Row 3 × 6/side, wk3 Mon)
+    const upper = planProgramView(KB_12WK_STRONG, { week: 3 }).days[0]!;
+    expect(upper.sessions[0]!.lifts.at(-1)!).toMatchObject({ name: "KB Renegade Row", intensity: "amber" });
+    // a timed hold → endurance (Mountain Climber 4 × 30 s, wk4 Wed)
+    const fb = planProgramView(KB_12WK_STRONG, { week: 4 }).days[1]!;
+    expect(fb.sessions[0]!.lifts[3]!).toMatchObject({ name: "Mountain Climber", intensity: "blue" });
   });
 });
 
@@ -355,6 +368,17 @@ describe("conditioningColor — the circuit intensity wave", () => {
     expect(conditioningColor("moderate")).toBe("lime");
     expect(conditioningColor("hard")).toBe("amber");
     expect(conditioningColor("max")).toBe("red");
+  });
+});
+
+describe("repZoneColor — the sets×reps training-zone wave", () => {
+  it("maps rep ranges onto strength / hypertrophy / endurance colours", () => {
+    expect(repZoneColor(5)).toBe("amber"); // strength
+    expect(repZoneColor(6)).toBe("amber");
+    expect(repZoneColor(8)).toBe("lime"); // hypertrophy
+    expect(repZoneColor(12)).toBe("lime");
+    expect(repZoneColor(15)).toBe("blue"); // endurance
+    expect(repZoneColor(20)).toBe("blue");
   });
 });
 

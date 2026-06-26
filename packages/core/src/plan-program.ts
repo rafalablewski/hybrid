@@ -267,6 +267,36 @@ export function conditioningColor(effort: ConditioningEffort): LoadColor {
   }
 }
 
+/** Colour a sets×reps prescription by its TRAINING ZONE — the hypertrophy /
+ *  kettlebell analogue of loadColor (the %-wave) and rpeColor (the heat bar):
+ *  low reps lean strength, mid is hypertrophy, high reps / timed holds lean
+ *  endurance. Derived from the prescription's OWN rep count — nothing invented —
+ *  so a sets×reps plan rides the same coloured intensity wave the % and RPE plans
+ *  do. Thresholds live here so the wave can't drift across clients. */
+export function repZoneColor(reps: number): LoadColor {
+  if (reps <= 6) return "amber"; // strength
+  if (reps <= 12) return "lime"; // hypertrophy
+  return "blue"; // endurance
+}
+
+/** The rep number a scheme prescribes (the lower bound of a range, e.g. 15 from
+ *  "3 × 15-20"), or "time" for a duration/hold ("4 × 30 s"), or null when none is
+ *  parseable. Reads only the rep side (after the ×), so per-side notes survive. */
+function schemeRepCount(scheme: string): number | "time" | null {
+  const after = scheme.split(/[×x]/i).pop()?.trim() ?? "";
+  if (!after) return null;
+  if (/\d+\s*(s|sec|secs|min|mins)\b/i.test(after)) return "time";
+  const m = after.match(/\d+/);
+  return m ? parseInt(m[0], 10) : null;
+}
+
+/** Training-zone colour for a sets×reps scheme (timed holds → endurance/blue). */
+function schemeZoneColor(scheme: string): LoadColor | undefined {
+  const r = schemeRepCount(scheme);
+  if (r === "time") return "blue";
+  return typeof r === "number" ? repZoneColor(r) : undefined;
+}
+
 /** One step of a strength-percent lift's ramp, render-ready for the coloured
  *  prescription (the load is coloured by intensity; the rest stays muted). */
 export interface ProgramStepView {
@@ -470,6 +500,13 @@ export function planProgramView(
                 : e.sets != null
                   ? `${e.sets}×${e.reps === "AMRAP" ? "AMRAP" : (e.reps ?? "")}`
                   : undefined;
+            // Intensity colour: an explicit conditioning effort tier wins; else a
+            // sets×reps scheme without an RPE rides the training-zone wave.
+            const intensity = e.effort
+              ? conditioningColor(e.effort)
+              : e.rpe == null && e.scheme != null
+                ? schemeZoneColor(e.scheme)
+                : undefined;
             return {
               name: e.label,
               prescription: formatEntry(e, maxes),
@@ -478,7 +515,7 @@ export function planProgramView(
               ...(setsReps != null ? { setsReps } : {}),
               ...(setsReps != null ? { weight: kg ? `${kg} kg` : null } : {}),
               ...(e.rpe != null ? { rpe: e.rpe } : {}),
-              ...(e.effort ? { intensity: conditioningColor(e.effort) } : {}),
+              ...(intensity ? { intensity } : {}),
             };
           }),
         ];
