@@ -80,6 +80,26 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
 
         <div style={{ textAlign: "center", fontWeight: 900, fontSize: 28, marginTop: 18 }}>{pos.done ? t("w.train.timer.doneBang") : t("w.train.timer.go")}</div>
 
+        {/* Screen-reader announcer: the big clock updates every second (announcing
+            that would be unbearable), so instead this visually-hidden assertive
+            region speaks ONLY the phase + round, which changes at work/rest
+            boundaries — so a blind user hears "Work · Round 1/3", "Rest · …",
+            "Done" as the timer progresses. Empty while idle so config edits
+            aren't announced. */}
+        <div
+          aria-live="assertive"
+          aria-atomic="true"
+          style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}
+        >
+          {running || pos.done
+            ? pos.done
+              ? t("w.train.timer.done")
+              : phase && phase.round > 0
+                ? `${kindLabel} · ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
+                : kindLabel
+            : ""}
+        </div>
+
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 10 }}>
           <div style={{ position: "relative", width: 240, height: 240, borderRadius: "50%", border: `12px solid ${C("line")}`, display: "grid", placeItems: "center" }}>
             <div style={{ position: "absolute", inset: -12, borderRadius: "50%", border: `12px solid ${kindColor}`, opacity: 0.3 }} />
