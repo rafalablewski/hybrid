@@ -75,7 +75,7 @@ export default function AdminAudit() {
         <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </View>
 
-      {err ? <Mono color={palette.red} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono> : null}
+      {err ? <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={palette.red} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono></View> : null}
 
       {loading && !data ? <Loading /> : null}
 

@@ -520,7 +520,7 @@ export default function AuroraLogger({
       />
 
       {error && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: C("red") }}>
+        <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: C("red") }}>
           {error}
         </div>
       )}

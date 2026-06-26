@@ -438,7 +438,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
         </div>
         {active.length === 0 && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={AMBER}>No active agents — activate one in “AI agents” first.</Mono>}
         {result && (
-          <div style={{ ...mono, marginTop: 12, fontSize: fs.bodyLg, lineHeight: 1.6, color: txt(result.error ? AMBER : CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>
+          <div role="alert" style={{ ...mono, marginTop: 12, fontSize: fs.bodyLg, lineHeight: 1.6, color: txt(result.error ? AMBER : CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>
             {result.output}
           </div>
         )}
@@ -718,7 +718,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
       <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>
         {items.length} run(s) held for a second operator. You can&apos;t approve your own request.
       </Mono>
-      {err && <Mono s={{ fontSize: fs.body, display: "block" }} c={RED}>{err}</Mono>}
+      {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block" }} c={RED}>{err}</Mono></div>}
       {items.map((a) => (
         <Card key={a.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -843,7 +843,7 @@ function MonthlyCostCard() {
           ))}
         </div>
       )}
-      {sent && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{sent}</Mono>}
+      {sent && <div role="alert"><Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{sent}</Mono></div>}
     </Card>
   );
 }

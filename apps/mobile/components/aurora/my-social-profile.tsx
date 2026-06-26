@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput } from "react-native";
+import { View, Text, TextInput, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle } from "@hybrid/core";
 import { Card, Loading } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
@@ -30,9 +30,9 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const save = async () => {
     setErr(null);
     const h = normalizeHandle(form.handle);
-    if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); return; }
+    if (!isValidHandle(h)) { setErr("Handle must be 3–20 chars: a–z, 0–9, _"); AccessibilityInfo.announceForAccessibility("Handle must be 3–20 chars: a–z, 0–9, _"); return; }
     const r: any = await putMyProfile({ ...form, handle: h });
-    if (r.error) { setErr(r.error); return; }
+    if (r.error) { setErr(r.error); AccessibilityInfo.announceForAccessibility(r.error); return; }
     if (onDone) onDone();
     else { setSaved(true); setTimeout(() => setSaved(false), 1500); }
   };
@@ -55,7 +55,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
       <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
         {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={v[0]!.toUpperCase() + v.slice(1)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
       </View>
-      {err && <Text style={{ color: C.red, fontSize: 13, marginBottom: 8 }}>{err}</Text>}
+      {err && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ color: C.red, fontSize: 13, marginBottom: 8 }}>{err}</Text>}
       <View style={{ flexDirection: "row", gap: 8 }}>
         <SButton label={saved ? "Saved ✓" : claimed ? "Save" : "Claim handle"} onPress={save} />
         {onDone && <SButton label={claimed ? "Done" : "Back"} ghost onPress={onDone} />}

@@ -106,7 +106,7 @@ export default function AuroraUpgrade() {
       ))}
 
       {!!error && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 16, lineHeight: 19 }}>{error}</Text>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 16, lineHeight: 19 }}>{error}</Text>
       )}
 
       <Pressable

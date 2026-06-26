@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, LayoutAnimation, Platform, UIManager } from "react-native";
+import { View, Text, TextInput, Pressable, ActivityIndicator, LayoutAnimation, Platform, UIManager, AccessibilityInfo } from "react-native";
 import { useRouter } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
@@ -70,7 +70,7 @@ export default function AuroraSettings() {
     setBusy(true);
     setError("");
     const ok = await resetAccount();
-    if (!ok) { setError(t("settings.resetError")); setBusy(false); return; }
+    if (!ok) { setError(t("settings.resetError")); AccessibilityInfo.announceForAccessibility(t("settings.resetError")); setBusy(false); return; }
     await Promise.all([clearGuestSessions(), clearDraft()]);
     setBusy(false);
     router.replace("/(tabs)");
@@ -170,7 +170,7 @@ export default function AuroraSettings() {
             autoCapitalize="characters" autoCorrect={false}
             style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, marginTop: 8 }}
           />
-          {!!error && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
+          {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
           <Pressable onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.eraseEverything")}</Text>}
           </Pressable>

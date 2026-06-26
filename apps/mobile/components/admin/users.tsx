@@ -327,9 +327,11 @@ function UserDetail({
         </View>
 
         {msg ? (
-          <Mono color={msg.ok ? palette.lime : palette.red} style={{ marginBottom: 10 }}>
-            {msg.text}
-          </Mono>
+          <View accessibilityLiveRegion={msg.ok ? "polite" : "assertive"} accessibilityRole={msg.ok ? undefined : "alert"}>
+            <Mono color={msg.ok ? palette.lime : palette.red} style={{ marginBottom: 10 }}>
+              {msg.text}
+            </Mono>
+          </View>
         ) : null}
 
         <PillBtn

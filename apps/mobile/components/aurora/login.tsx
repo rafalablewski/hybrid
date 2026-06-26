@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, AccessibilityInfo } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
@@ -37,6 +37,7 @@ export default function AuroraLogin() {
 
   const fail = (m: string) => {
     setError(m);
+    AccessibilityInfo.announceForAccessibility(m);
     setBusy(false);
   };
 
@@ -56,6 +57,7 @@ export default function AuroraLogin() {
       await AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
       if (!data.session) {
         setError(t("w.account.login.signup-notice"));
+        AccessibilityInfo.announceForAccessibility(t("w.account.login.signup-notice"));
         setMode("signin");
         setBusy(false);
         return;
@@ -103,7 +105,7 @@ export default function AuroraLogin() {
         )}
 
         {!!error && (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginBottom: 10 }}>{error}</Text>
+          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginBottom: 10 }}>{error}</Text>
         )}
 
         <APill

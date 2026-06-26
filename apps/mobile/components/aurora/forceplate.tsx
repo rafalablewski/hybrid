@@ -67,7 +67,7 @@ export default function AuroraForcePlate() {
             {parsed.ignored.length > 0 && chip(C.ash, `${t("w.analyze.fp.skipped")} ${parsed.ignored.join(", ")}`)}
           </View>
         )}
-        {msg && <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime), marginTop: 10 }}>{msg}</Text>}
+        {msg && <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime), marginTop: 10 }}>{msg}</Text>}
       </ACard>
 
       {jumps.length > 0 && (

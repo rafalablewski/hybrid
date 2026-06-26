@@ -221,9 +221,11 @@ function ClassicLoginPage() {
               style={{ ...inputStyle, fontSize: fs.heading, letterSpacing: ".3em", textAlign: "center" }}
             />
             {error && (
-              <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
-                {error}
-              </Mono>
+              <div role="alert">
+                <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
+                  {error}
+                </Mono>
+              </div>
             )}
             <button
               disabled={busy || !isValidTotpCode(mfaCode)}
@@ -342,14 +344,18 @@ function ClassicLoginPage() {
         )}
 
         {error && (
-          <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
-            {error}
-          </Mono>
+          <div role="alert">
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
+              {error}
+            </Mono>
+          </div>
         )}
         {notice && (
-          <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={LIME}>
-            {notice}
-          </Mono>
+          <div role="status">
+            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={LIME}>
+              {notice}
+            </Mono>
+          </div>
         )}
 
         <button

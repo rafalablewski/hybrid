@@ -156,7 +156,7 @@ export default function AuroraLogin() {
             <h1 style={{ ...disp, fontWeight: 900, fontSize: 30, letterSpacing: "-.02em", margin: "0 0 8px", lineHeight: 1.1 }}>{t("w.account.login.verify-title")}</h1>
             <Mono s={{ fontSize: fs.bodyLg, display: "block", marginBottom: 20 }} c={ASH}>{t("w.account.login.verify-sub")}</Mono>
             <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus aria-label={t("w.account.login.verify-title")} placeholder="000000" style={{ ...roundField, fontSize: 22, letterSpacing: ".3em", textAlign: "center" }} />
-            {error && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}
+            {error && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono></div>}
             <button disabled={busy || !isValidTotpCode(mfaCode)} onClick={verifyMfa} style={{ ...lightPill, opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1 }}>{busy ? "…" : t("w.account.login.verify")}</button>
             <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={linkBtn}><Mono s={{ fontSize: fs.body }} c={ASH}>← {t("w.account.login.cancel")}</Mono></button>
           </>
@@ -190,8 +190,8 @@ export default function AuroraLogin() {
               </Field>
             )}
 
-            {error && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}
-            {notice && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={LIME}>{notice}</Mono>}
+            {error && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono></div>}
+            {notice && <div role="status"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={LIME}>{notice}</Mono></div>}
 
             <button disabled={busy} onClick={() => (live ? emailSubmit() : demoEnter("email"))} style={{ ...lightPill, opacity: busy ? 0.6 : 1 }}>
               {busy ? "…" : isSignup ? t("w.account.login.register") : t("w.account.login.login")}

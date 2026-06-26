@@ -108,7 +108,7 @@ export default function AdminOnboarding() {
         </Card>
       )}
 
-      {err && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono>}
+      {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono></div>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: space.md, flexWrap: "wrap" }}>
         <Mono s={{ fontSize: fs.caption }} c={ASH}>

@@ -127,9 +127,11 @@ export default function AdminModeration() {
       </div>
 
       {err && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
+            {err}
+          </Mono>
+        </div>
       )}
 
       {tab === "profiles" && (

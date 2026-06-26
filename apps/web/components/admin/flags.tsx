@@ -81,9 +81,11 @@ export default function AdminFlags() {
       )}
 
       {err && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
+            {err}
+          </Mono>
+        </div>
       )}
 
       <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 14 }} c={ASH}>

@@ -119,7 +119,7 @@ export default function InviteClaimPage() {
               <p style={{ color: DIM, marginTop: 18 }}>Checking your session…</p>
             )}
 
-            {state === "error" && <p style={{ color: "#f0795e", marginTop: 14 }}>{msg}</p>}
+            {state === "error" && <p role="alert" style={{ color: "#f0795e", marginTop: 14 }}>{msg}</p>}
           </>
         )}
       </div>

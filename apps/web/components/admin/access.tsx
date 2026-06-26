@@ -213,9 +213,11 @@ export default function AdminAccess() {
       </Mono>
 
       {err && (
-        <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }} c={AMBER}>
-          {err}
-        </Mono>
+        <div role="alert">
+          <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }} c={AMBER}>
+            {err}
+          </Mono>
+        </div>
       )}
 
       <div style={{ display: "grid", gap: space.lg }}>

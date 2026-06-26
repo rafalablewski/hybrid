@@ -184,7 +184,7 @@ export function SocialProfileEdit({ onDone }: { onDone?: () => void }) {
             ))}
           </div>
         ))}
-        {err && <div style={{ color: C("red"), fontSize: 13, marginBottom: 8 }}>{err}</div>}
+        {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginBottom: 8 }}>{err}</div>}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Btn onClick={save} disabled={busy.is("save")}>{busy.is("save") ? "Saving…" : savedMsg ? "Saved ✓" : claimed ? "Save" : "Claim handle"}</Btn>
           {onDone && <Btn ghost onClick={onDone}>{claimed ? "Done" : "Back"}</Btn>}
