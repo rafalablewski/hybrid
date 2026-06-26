@@ -667,7 +667,7 @@ export default function AppShell() {
 
         {screen === "forceplate" && <AuroraForcePlate />}
 
-        {screen === "nutrition" && <AuroraNutrition />}
+        {screen === "nutrition" && <AuroraNutrition onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />}
 
         {screen === "progress" && <AuroraProgress />}
 

@@ -6,12 +6,14 @@ import {
   adaptiveTargets,
   estimateMaintenance,
   dailyNutrition,
+  isFullAccess,
   type NutritionGoal,
 } from "@hybrid/core";
 import { createSignal, getAssignedDiet, type CoreSignal } from "../../lib/api";
 import { useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
+import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS } from "./kit";
@@ -29,6 +31,9 @@ export default function AuroraNutrition() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
+  // Free (casual) users log macros manually; scanning a label and saving
+  // meals/products is a Full feature (see canScanFoodLabel / canSaveMealsAndProducts).
+  const full = isFullAccess(usePersona());
   const { data: signals = [], isFetching: refreshing, refetch } = useSignalsQuery();
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
@@ -141,9 +146,28 @@ export default function AuroraNutrition() {
           <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
         </View>
         <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")} onPress={add} disabled={saving} style={{ marginTop: 14 }} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>
-          {t("w.recovery.nutrition.foodSearchNote")}
-        </Text>
+        {full ? (
+          <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.proTitle")}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
+              {[t("w.recovery.nutrition.proScan"), t("w.recovery.nutrition.proSaveMeals"), t("w.recovery.nutrition.proSaveProducts")].map((l) => (
+                <View key={l} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.recovery.nutrition.proSoon")}</Text>
+          </View>
+        ) : (
+          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.proTitle")} style={{ marginTop: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 14 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={{ fontSize: 13 }}>🔒</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.proTitle")}</Text>
+            </View>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 18 }}>{t("w.recovery.nutrition.proBody")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✦ {t("w.recovery.nutrition.proCta")} →</Text>
+          </Pressable>
+        )}
       </ACard>
 
       {/* Recent */}

@@ -42,6 +42,7 @@ export * from "./social";
 export * from "./stats";
 export * from "./contrast";
 export * from "./nav";
+export * from "./access";
 export * from "./analytics";
 export * from "./units";
 export * from "./plates";

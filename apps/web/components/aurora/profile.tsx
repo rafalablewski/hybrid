@@ -14,6 +14,7 @@ import { fs, space,
   bestE1rmMap,
   fmtWeight,
   athleteId as makeAthleteId,
+  canSeeHPI,
   type Achievement,
   type HeatCell,
   type LoggedSession,
@@ -22,7 +23,7 @@ import { fs, space,
   type AuroraIconName,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
-import { useHasActiveCoach } from "@/lib/persona";
+import { useHasActiveCoach, usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
@@ -57,6 +58,8 @@ export default function AuroraProfile({
   const prefs = useLoggerPrefs();
   const coached = useHasActiveCoach();
   const units = prefs.units;
+  // HPI is a Full feature — free (casual) users see a locked teaser, not the score.
+  const showHpi = canSeeHPI(usePersona());
 
   // Body: the latest logged bodyweight (most recent check-in with a weigh-in),
   // mirroring the mobile profile — the shell's `bio` is recovery-only.
@@ -243,7 +246,7 @@ export default function AuroraProfile({
       {/* SPEC STRIP — hairline-divided metrics */}
       <div style={{ display: "flex", border: `1px solid ${C("line")}`, borderRadius: 18, background: C("ink2"), marginTop: 20 }}>
         {[
-          { n: hasData ? String(state.hpi.score) : "—", k: "HPI" },
+          { n: showHpi ? (hasData ? String(state.hpi.score) : "—") : "🔒", k: "HPI" },
           { n: weekStreak > 0 ? `${weekStreak}w` : "—", k: t("w.account.profile.spec-streak") },
           { n: prCount > 0 ? String(prCount) : "—", k: "PRs" },
         ].map((c, i) => (
@@ -257,7 +260,7 @@ export default function AuroraProfile({
       {/* ACTIONS */}
       <div style={{ display: "flex", gap: space.ms, marginTop: 14 }}>
         <button onClick={go("settings", "/settings")} style={{ flex: 1, textAlign: "center", borderRadius: 14, padding: 13, fontWeight: 700, fontSize: fs.body, background: C("lime"), border: `1px solid ${C("lime")}`, color: C("ink"), cursor: "pointer" }}>{t("w.account.profile.edit")}</button>
-        <ShareCard name={name} hpi={hasData ? state.hpi.score : null} band={state.hpi.band} streak={weekStreak} prs={prCount} memberSince={memberSince} tier={tier} />
+        <ShareCard name={name} hpi={showHpi && hasData ? state.hpi.score : null} band={showHpi ? state.hpi.band : ""} streak={weekStreak} prs={prCount} memberSince={memberSince} tier={tier} />
       </div>
 
       <div style={{ height: 1, background: C("line"), margin: "22px 0" }} />
@@ -285,29 +288,44 @@ export default function AuroraProfile({
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 30, position: "relative" }}>
           <IdMeta label={t("w.account.profile.id-member-since")} value={String(memberSince)} />
           <IdMeta label={t("w.account.profile.id-sessions")} value={hasData ? String(sessions.length) : "—"} />
-          <IdMeta label={t("w.account.profile.id-index")} value={hasData ? String(state.hpi.score) : "—"} lime />
+          <IdMeta label={t("w.account.profile.id-index")} value={showHpi ? (hasData ? String(state.hpi.score) : "—") : "🔒"} lime />
         </div>
       </div>
 
-      {/* HPI HERO */}
-      <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg,#121410,#0d0f0c)" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</div>
-        <BigNumber value={hasData ? state.hpi.score : null} />
-        <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: C("lime-t"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", marginTop: 8, textTransform: "uppercase" }}>
-          {t("w.account.profile.band")} · {hasData ? state.hpi.band : t("w.account.profile.unrated")}
-        </span>
-        {/* 12-bar trace */}
-        <Trace series={hpiTrace} />
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
-          {hasData ? (
-            <>
-              <span style={{ color: C("lime-t") }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
-            </>
-          ) : (
-            t("w.account.profile.hpi-empty")
-          )}
+      {/* HPI HERO — Full only; free (casual) users get a locked upsell. */}
+      {showHpi ? (
+        <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg,#121410,#0d0f0c)" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</div>
+          <BigNumber value={hasData ? state.hpi.score : null} />
+          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: C("lime-t"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", marginTop: 8, textTransform: "uppercase" }}>
+            {t("w.account.profile.band")} · {hasData ? state.hpi.band : t("w.account.profile.unrated")}
+          </span>
+          {/* 12-bar trace */}
+          <Trace series={hpiTrace} />
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
+            {hasData ? (
+              <>
+                <span style={{ color: C("lime-t") }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
+              </>
+            ) : (
+              t("w.account.profile.hpi-empty")
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg,#121410,#0d0f0c)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>
+            <span>🔒</span>{t("w.account.profile.hpi-locked-title")}
+          </div>
+          <div style={{ fontWeight: 900, fontSize: 64, lineHeight: 0.9, letterSpacing: "-.05em", marginTop: 10, color: C("ash"), opacity: 0.5 }}>
+            ——<span style={{ color: C("lime"), opacity: 0.5 }}>—</span>
+          </div>
+          <p style={{ fontSize: fs.body, lineHeight: 1.55, color: C("chalk"), marginTop: 12 }}>{t("w.account.profile.hpi-locked-body")}</p>
+          <button onClick={go("upgrade", "/upgrade")} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8, border: "none", borderRadius: 999, background: C("lime"), padding: "11px 20px", fontWeight: 800, fontSize: fs.body, color: C("ink"), cursor: "pointer" }}>
+            ✦ {t("w.account.profile.hpi-locked-cta")} →
+          </button>
+        </div>
+      )}
 
       {/* TRAINING — year heatmap */}
       {sectionHead(t("w.account.profile.training"), `${sessions.length} ${sessions.length === 1 ? t("w.account.profile.session") : t("w.account.profile.sessions")} →`)}

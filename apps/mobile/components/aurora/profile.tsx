@@ -15,6 +15,7 @@ import {
   fmtWeight,
   hpiRole,
   athleteId,
+  canSeeHPI,
   type LoggedSession,
   type Achievement,
   type HeatCell,
@@ -32,6 +33,7 @@ import {
   type CoachLink,
 } from "../../lib/api";
 import { useSession } from "../../lib/session";
+import { usePersona } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -59,6 +61,8 @@ export default function AuroraProfile() {
   const router = useRouter();
   const { name, email, role, entitlement, createdYear } = useIdentity();
   const prefs = useLoggerPrefs();
+  // HPI is a Full feature — free (casual) users see a locked teaser, not the score.
+  const showHpi = canSeeHPI(usePersona());
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
@@ -203,7 +207,7 @@ export default function AuroraProfile() {
 
       {/* SPEC STRIP — hairline-divided HPI / Streak / PRs */}
       <View style={{ flexDirection: "row", borderWidth: 1, borderColor: C.line, borderRadius: 18, backgroundColor: C.ink2, marginTop: 20 }}>
-        <SpecCol C={C} n={`${hpi.score}`} k="HPI" first />
+        <SpecCol C={C} n={showHpi ? `${hpi.score}` : "🔒"} k="HPI" first />
         <SpecCol C={C} n={`${weekStreakBest}w`} k={t("w.account.profile.spec-streak")} />
         <SpecCol C={C} n={`${prCount}`} k="PRs" />
       </View>
@@ -248,37 +252,53 @@ export default function AuroraProfile() {
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 30 }}>
           <IdMeta C={C} label={t("w.account.profile.id-member-since")} value={`${createdYear}`} />
           <IdMeta C={C} label={t("w.account.profile.id-sessions")} value={`${sessions.length}`} />
-          <IdMeta C={C} label={t("w.account.profile.id-index")} value={`${hpi.score}`} accent />
+          <IdMeta C={C} label={t("w.account.profile.id-index")} value={showHpi ? `${hpi.score}` : "🔒"} accent />
         </View>
       </View>
 
-      {/* HPI HERO */}
-      <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
-        <Text style={{ fontFamily: F.black, fontSize: 80, lineHeight: 80, letterSpacing: -3, color: C.chalk, marginTop: 10 }}>
-          {hpiHead(hpi.score)}<Text style={{ color: C.lime }}>{hpiTail(hpi.score)}</Text>
-        </Text>
-        <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hpi.band}</Text>
+      {/* HPI HERO — Full only; free (casual) users get a locked upsell. */}
+      {showHpi ? (
+        <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 80, lineHeight: 80, letterSpacing: -3, color: C.chalk, marginTop: 10 }}>
+            {hpiHead(hpi.score)}<Text style={{ color: C.lime }}>{hpiTail(hpi.score)}</Text>
+          </Text>
+          <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, marginTop: 10 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, textTransform: "uppercase" }}>{t("w.account.profile.band")} · {hpi.band}</Text>
+          </View>
+          {/* 12-bar HPI trace, latest highlighted lime */}
+          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 34, marginTop: 14 }}>
+            {(() => {
+              const max = Math.max(...hpiTrace, 1);
+              const min = Math.min(...hpiTrace);
+              const range = max - min || 1;
+              return hpiTrace.map((v, i) => (
+                <View
+                  key={i}
+                  style={{ flex: 1, height: 6 + ((v - min) / range) * 28, borderRadius: 2, backgroundColor: i === hpiTrace.length - 1 ? C.lime : "#2c2f27" }}
+                />
+              ));
+            })()}
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9 }}>
+            <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> {t("w.account.profile.vs-first-read")} · {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
+          </Text>
         </View>
-        {/* 12-bar HPI trace, latest highlighted lime */}
-        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, height: 34, marginTop: 14 }}>
-          {(() => {
-            const max = Math.max(...hpiTrace, 1);
-            const min = Math.min(...hpiTrace);
-            const range = max - min || 1;
-            return hpiTrace.map((v, i) => (
-              <View
-                key={i}
-                style={{ flex: 1, height: 6 + ((v - min) / range) * 28, borderRadius: 2, backgroundColor: i === hpiTrace.length - 1 ? C.lime : "#2c2f27" }}
-              />
-            ));
-          })()}
+      ) : (
+        <View style={{ marginTop: 14, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontSize: 11 }}>🔒</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.6, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.hpi-locked-title")}</Text>
+          </View>
+          <Text style={{ fontFamily: F.black, fontSize: 64, lineHeight: 64, letterSpacing: -3, color: C.ash, opacity: 0.5, marginTop: 10 }}>
+            ——<Text style={{ color: C.lime }}>—</Text>
+          </Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 20 }}>{t("w.account.profile.hpi-locked-body")}</Text>
+          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.account.profile.hpi-locked-cta")} style={{ alignSelf: "flex-start", marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 11 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>✦ {t("w.account.profile.hpi-locked-cta")} →</Text>
+          </Pressable>
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 9 }}>
-          <Text style={{ color: lime }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</Text> {t("w.account.profile.vs-first-read")} · {t("w.account.profile.comp-strength")} {hpi.components.strength} · {t("w.account.profile.comp-engine")} {hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {hpi.components.recovery >= 0 ? "+" : ""}{hpi.components.recovery}
-        </Text>
-      </View>
+      )}
 
       {/* TRAINING — 26-week heatmap */}
       <SectionHeader C={C} title={t("w.account.profile.training")} action={`${sessions.length} ${t("w.account.profile.sessions")}`} />
