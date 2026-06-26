@@ -286,7 +286,7 @@ describe("conditioning (kettlebell circuit) program — same model, blocks as ca
   it("models circuit exercises as scheme (sets×reps / time) entries — never % or paces", () => {
     const legs = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days[2]!; // Block 2 · Leg + Glutes
     const swing = legs.sessions[0]!.lifts[1]!;
-    expect(swing).toMatchObject({ name: "Kettlebell Swing", setsReps: "3 × 15", prescription: "3 × 15" });
+    expect(swing).toMatchObject({ name: "KB Swing", setsReps: "3 × 15", prescription: "3 × 15" });
     expect(liftKind(swing)).toBe("rpe"); // structured circuit item (sets×reps column), no % ramp
     expect(swing.rpe).toBeUndefined(); // conditioning is effort-by-feel, not RPE-coded
     // a timed hold is still a scheme entry
@@ -341,11 +341,11 @@ describe("kettlebell (12-week rotating split) program — hypertrophy shape, set
     const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!; // Mon · Push
     const bench = push.sessions[0]!.lifts[0]!;
     // source "15-20" → "20" — no range survives
-    expect(bench).toMatchObject({ name: "Kettlebell Bench Press", setsReps: "3 × 20", prescription: "3 × 20" });
+    expect(bench).toMatchObject({ name: "KB Bench Press", setsReps: "3 × 20", prescription: "3 × 20" });
     expect(bench.rpe).toBeUndefined(); // the source prescribes sets × reps, not effort
     expect(liftKind(bench)).toBe("rpe"); // structured sets×reps entry (no % ramp)
     // a per-side scheme is kept verbatim
-    expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw Kettlebell Press", setsReps: "3 × 10/arm" });
+    expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw KB Press", setsReps: "3 × 10/arm" });
     // belt-and-braces: not one "N-M" range in any scheme across all 12 weeks
     const allReps = KB_12WK_STRONG.weeks.flatMap((w) => w.days).flatMap((d) => d.sessions).flatMap((s) => s.entries ?? []).map((e) => e.scheme ?? "");
     expect(allReps.some((s) => /\d+-\d+/.test(s))).toBe(false);

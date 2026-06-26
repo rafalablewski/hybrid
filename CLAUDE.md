@@ -64,3 +64,10 @@ prescription must be ONE number — never a range. Collapse any source range to
 the **top** of the range: `15-20` → `20`, `10-12` → `12`, `8-10` → `10`. This
 holds for every discipline's schemes and reps (write `3 × 20`, not
 `3 × 15-20`). Per-side / time notations stay as-is (`10/leg`, `30 s`).
+
+## RULE: kettlebell exercise names use the `KB` prefix (always)
+In plan exercise names, abbreviate "Kettlebell" to **`KB`** (`KB Swing`, not
+`Kettlebell Swing`; `Seesaw KB Press`, not `Seesaw Kettlebell Press`) so the
+same lift never appears under two spellings. This is for exercise NAMES only —
+plan titles, goal names, prose and source credits keep the full word
+("12-Week Kettlebell", the Kettlebell goal).
