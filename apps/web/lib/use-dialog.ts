@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 // Elements that can receive keyboard focus inside a dialog.
 const FOCUSABLE =
-  'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  'a[href],button:not([disabled]),textarea:not([disabled]),input:not([type="hidden"]):not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 /**
  * Accessible-dialog plumbing for our modals/drawers. Attach the returned ref to

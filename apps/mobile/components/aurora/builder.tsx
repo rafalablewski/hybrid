@@ -167,6 +167,7 @@ function ItemCard({
   onBump: (delta: number) => void;
   fieldStyle: object;
 }) {
+  const { t } = useLang();
   const c = kindColor(x.kind, C);
   return (
     <ACard style={{ marginBottom: 12 }}>
@@ -180,9 +181,9 @@ function ItemCard({
           <View>
             <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginBottom: 4 }}>SETS</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-              <Pressable onPress={() => onBump(-1)} accessibilityRole="button" accessibilityLabel="Decrease" hitSlop={{ top: 4, bottom: 4, left: 6, right: 6 }} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.ash, fontSize: fs.subtitle }}>−</Text></Pressable>
+              <Pressable onPress={() => onBump(-1)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={{ top: 4, bottom: 4, left: 6, right: 6 }} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: C.ash, fontSize: fs.subtitle }}>−</Text></Pressable>
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, minWidth: 18, textAlign: "center" }}>{x.sets}</Text>
-              <Pressable onPress={() => onBump(1)} accessibilityRole="button" accessibilityLabel="Increase" hitSlop={{ top: 4, bottom: 4, left: 6, right: 6 }} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: txt(C, C.lime), fontSize: fs.subtitle }}>+</Text></Pressable>
+              <Pressable onPress={() => onBump(1)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={{ top: 4, bottom: 4, left: 6, right: 6 }} style={{ width: 32, height: 36, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ color: txt(C, C.lime), fontSize: fs.subtitle }}>+</Text></Pressable>
             </View>
           </View>
           <View style={{ flex: 1 }}>

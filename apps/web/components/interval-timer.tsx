@@ -117,8 +117,8 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
         </div>
 
         <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
-          <button aria-label="Reset" onClick={reset} style={{ width: 56, height: 56, borderRadius: 28, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", fontSize: fs.title }}>↺</button>
-          <button aria-label={running ? "Pause" : pos.done ? "Reset" : "Play"} onClick={() => (pos.done ? reset() : setRunning((r) => !r))} style={{ width: 78, height: 78, borderRadius: 39, background: C("lime"), color: C("ink"), border: "none", cursor: "pointer", fontWeight: 900, fontSize: 24 }}>
+          <button aria-label={t("common.reset")} onClick={reset} style={{ width: 56, height: 56, borderRadius: 28, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", fontSize: fs.title }}>↺</button>
+          <button aria-label={running ? t("common.pause") : pos.done ? t("common.reset") : t("common.play")} onClick={() => (pos.done ? reset() : setRunning((r) => !r))} style={{ width: 78, height: 78, borderRadius: 39, background: C("lime"), color: C("ink"), border: "none", cursor: "pointer", fontWeight: 900, fontSize: 24 }}>
             {running ? "❚❚" : pos.done ? "↺" : "▶"}
           </button>
           <div style={{ width: 56 }} />

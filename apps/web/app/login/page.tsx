@@ -220,13 +220,13 @@ function ClassicLoginPage() {
               placeholder="000000"
               style={{ ...inputStyle, fontSize: fs.heading, letterSpacing: ".3em", textAlign: "center" }}
             />
-            {error && (
-              <div role="alert">
+            <div role="alert">
+              {error && (
                 <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
                   {error}
                 </Mono>
-              </div>
-            )}
+              )}
+            </div>
             <button
               disabled={busy || !isValidTotpCode(mfaCode)}
               onClick={verifyMfa}
@@ -343,20 +343,20 @@ function ClassicLoginPage() {
           />
         )}
 
-        {error && (
-          <div role="alert">
+        <div role="alert">
+          {error && (
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={RED}>
               {error}
             </Mono>
-          </div>
-        )}
-        {notice && (
-          <div role="status">
+          )}
+        </div>
+        <div role="status">
+          {notice && (
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={LIME}>
               {notice}
             </Mono>
-          </div>
-        )}
+          )}
+        </div>
 
         <button
           disabled={busy}

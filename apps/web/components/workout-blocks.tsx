@@ -342,13 +342,13 @@ export default function WorkoutBlocks({
             />
             {reorder && (
               <>
-                <button aria-label="Move up" onClick={() => move(b.uid, -1)} disabled={idx === 0} style={iconBtn(ASH)}>
+                <button aria-label={t("common.moveUp")} onClick={() => move(b.uid, -1)} disabled={idx === 0} style={iconBtn(ASH)}>
                   ↑
                 </button>
-                <button aria-label="Move down" onClick={() => move(b.uid, 1)} disabled={idx === blocks.length - 1} style={iconBtn(ASH)}>
+                <button aria-label={t("common.moveDown")} onClick={() => move(b.uid, 1)} disabled={idx === blocks.length - 1} style={iconBtn(ASH)}>
                   ↓
                 </button>
-                <button aria-label="Duplicate" onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
+                <button aria-label={t("common.duplicate")} onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
                   ⧉
                 </button>
               </>
@@ -366,7 +366,7 @@ export default function WorkoutBlocks({
                 ⛓ {isSupersettedWithPrev(blocks, idx) ? t("w.train.blocks.joined") : t("w.train.blocks.superset")}
               </button>
             )}
-            <button aria-label="Delete" onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
+            <button aria-label={t("common.delete")} onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
               ✕
             </button>
           </div>
@@ -686,7 +686,7 @@ function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPic
             <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
           </svg>
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.train.blocks.searchExercise")} style={{ ...disp, flex: 1, minWidth: 0, background: "none", border: 0, outline: "none", color: CHALK, fontSize: fs.body }} />
-          <button aria-label="Close" onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+          <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
         </div>
         <div style={{ overflowY: "auto", flex: 1 }}>
           {exGroups.map((g) => (
@@ -721,7 +721,7 @@ function RpeHelp({ onClose }: { onClose: () => void }) {
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           {t("w.train.blocks.rpeHelpTitle")}
         </Mono>
-        <button aria-label="Close" onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+        <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
       </div>
       <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
       <div style={{ display: "grid", gridTemplateColumns: "44px 64px 1fr", gap: "4px 10px", alignItems: "baseline" }}>
