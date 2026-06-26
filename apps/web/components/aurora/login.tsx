@@ -155,7 +155,7 @@ export default function AuroraLogin() {
           <>
             <h1 style={{ ...disp, fontWeight: 900, fontSize: 30, letterSpacing: "-.02em", margin: "0 0 8px", lineHeight: 1.1 }}>{t("w.account.login.verify-title")}</h1>
             <Mono s={{ fontSize: fs.bodyLg, display: "block", marginBottom: 20 }} c={ASH}>{t("w.account.login.verify-sub")}</Mono>
-            <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus placeholder="000000" style={{ ...roundField, fontSize: 22, letterSpacing: ".3em", textAlign: "center" }} />
+            <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus aria-label={t("w.account.login.verify-title")} placeholder="000000" style={{ ...roundField, fontSize: 22, letterSpacing: ".3em", textAlign: "center" }} />
             {error && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}
             <button disabled={busy || !isValidTotpCode(mfaCode)} onClick={verifyMfa} style={{ ...lightPill, opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1 }}>{busy ? "…" : t("w.account.login.verify")}</button>
             <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={linkBtn}><Mono s={{ fontSize: fs.body }} c={ASH}>← {t("w.account.login.cancel")}</Mono></button>
@@ -181,12 +181,12 @@ export default function AuroraLogin() {
             )}
 
             {live && isSignup && (
-              <Field icon="user"><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.account.login.username-ph")} style={bareInput} /></Field>
+              <Field icon="user"><input type="text" value={name} onChange={(e) => setName(e.target.value)} aria-label={t("w.account.login.username-ph")} placeholder={t("w.account.login.username-ph")} style={bareInput} /></Field>
             )}
-            <Field icon="mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("w.account.login.email-ph")} style={bareInput} /></Field>
+            <Field icon="mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("w.account.login.email-ph")} placeholder={t("w.account.login.email-ph")} style={bareInput} /></Field>
             {live && (
               <Field icon="lock" trailing="eye" onTrailingClick={() => setShowPassword((v) => !v)} trailingActive={showPassword}>
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("w.account.login.password-ph")} style={bareInput} />
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} aria-label={t("w.account.login.password-ph")} placeholder={t("w.account.login.password-ph")} style={bareInput} />
               </Field>
             )}
 

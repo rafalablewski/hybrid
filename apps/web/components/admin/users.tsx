@@ -296,7 +296,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>New account</Mono>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>Add a user</div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         <label style={{ display: "block", marginBottom: 12 }}>
@@ -493,7 +493,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>{d?.name || "—"}</div>
             <Mono s={{ fontSize: fs.body }} c={ASH}>{d?.email ?? "…"}</Mono>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         {!d ? (

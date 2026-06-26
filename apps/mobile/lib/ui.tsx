@@ -347,6 +347,9 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
       style={{
         backgroundColor: color,
         borderRadius: aurora ? 999 : 12,

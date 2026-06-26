@@ -154,8 +154,8 @@ export default function AdminOnboarding() {
 
                   <div style={{ display: "flex", gap: space.sm, alignItems: "center", flexShrink: 0 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <button disabled={busy || i === 0} onClick={() => move(i, -1)} style={iconBtn} title="Move up">↑</button>
-                      <button disabled={busy || i === (questions.length - 1)} onClick={() => move(i, 1)} style={iconBtn} title="Move down">↓</button>
+                      <button aria-label="Move up" disabled={busy || i === 0} onClick={() => move(i, -1)} style={iconBtn} title="Move up">↑</button>
+                      <button aria-label="Move down" disabled={busy || i === (questions.length - 1)} onClick={() => move(i, 1)} style={iconBtn} title="Move down">↓</button>
                     </div>
                     <button disabled={busy} onClick={() => toggleEnabled(q)} style={toggle(q.enabled)} title={q.enabled ? "Disable" : "Enable"}><span style={knob(q.enabled)} /></button>
                     <button disabled={busy} onClick={() => { setEditing(q.key); setAdding(false); }} style={smallBtn}>edit</button>
@@ -224,7 +224,7 @@ function QuestionEditor({ draft, busy, onSave, onCancel }: { draft: Draft; busy:
               <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <input value={c.label} onChange={(e) => { const n = [...d.choices]; n[i] = { ...n[i]!, label: e.target.value, value: n[i]!.value || slugify(e.target.value) }; set({ choices: n }); }} placeholder="Label" style={{ ...inp, marginBottom: 0, flex: 1 }} />
                 <input value={c.value} onChange={(e) => { const n = [...d.choices]; n[i] = { ...n[i]!, value: e.target.value }; set({ choices: n }); }} placeholder="value" style={{ ...inp, marginBottom: 0, width: 120 }} />
-                <button onClick={() => set({ choices: d.choices.filter((_, j) => j !== i) })} style={iconBtn} title="Remove">×</button>
+                <button aria-label="Remove" onClick={() => set({ choices: d.choices.filter((_, j) => j !== i) })} style={iconBtn} title="Remove">×</button>
               </div>
             ))}
             <button onClick={() => set({ choices: [...d.choices, { value: "", label: "" }] })} style={{ ...smallBtn, alignSelf: "flex-start" }}>+ option</button>

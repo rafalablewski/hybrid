@@ -85,7 +85,7 @@ export default function AuroraOnboarding() {
         </ScrollView>
 
         <View style={{ flexDirection: "row", gap: space.md, alignItems: "center" }}>
-          <Pressable onPress={back} style={{ width: 64, height: 56, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={back} style={{ width: 64, height: 56, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="back" size={20} color={palette.chalk} />
           </Pressable>
           <APill

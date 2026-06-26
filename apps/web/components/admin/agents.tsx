@@ -667,7 +667,7 @@ export default function AdminAgents() {
                         {s.enabled && s.nextRunAt ? ` · next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
                       </Mono>
                     </div>
-                    <button style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
+                    <button aria-label="Delete" style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
                   </div>
                 ))}
 

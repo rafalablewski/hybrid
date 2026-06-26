@@ -46,7 +46,7 @@ export default function Notifications() {
   return (
     <AuroraScreen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
         <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk }}>Notifications</Text>
