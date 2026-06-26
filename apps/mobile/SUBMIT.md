@@ -23,29 +23,69 @@ own accounts and credentials, so they run **on your computer**, not in CI.
    pnpm install
    ```
 
-## Build + submit (run from `apps/mobile`)
+## Build + submit — LOCAL / Xcode (recommended: free, unlimited)
+
+This is the path that doesn't touch Expo's cloud, so **nothing consumes the
+EAS Build free-tier quota** — build as many times as you like. The only
+requirement is a **Mac with Xcode** (HYBRID uses native Expo modules, so it
+can't be built without a macOS toolchain). This is how the `sud-italia` apps
+were shipped.
+
+This repo uses **Continuous Native Generation** — there is no `ios/` folder
+committed; you generate it with `expo prebuild` and it stays git-ignored.
 
 ```bash
 cd apps/mobile
 
-# 1. Sign in to Expo
-npx eas login
+# 0. One-time: set the Supabase anon (publishable) key so the build can sign in.
+#    Copy the example env and fill EXPO_PUBLIC_SUPABASE_ANON_KEY (it's public —
+#    the same publishable key the web app ships). Expo auto-loads .env for
+#    EXPO_PUBLIC_* vars at build time.
+cp .env.example .env && $EDITOR .env
 
-# 2. Store the Supabase key as an EAS secret (used at build time by lib/supabase.ts).
-#    The app reads EXPO_PUBLIC_SUPABASE_ANON_KEY; the URL is already defaulted.
-npx eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <your-anon-key>
+# 1. Generate the native iOS project from app.json + the config plugins.
+pnpm prebuild:ios            # = expo prebuild --platform ios --clean
 
-# 3. Build + sign for iOS. EAS walks you through Apple login and
-#    auto-manages provisioning profiles / signing certs the first time.
-npx eas build --profile production --platform ios
+# 2a. FASTEST loop — build + install on a connected iPhone or the Simulator,
+#     entirely on your Mac (no cloud, no signing ceremony for the Simulator):
+pnpm run:ios                 # = expo run:ios   (add --device to pick a real phone)
 
-# 4. Upload the finished build to App Store Connect / TestFlight.
-npx eas submit --profile production --platform ios
+# 2b. OR open the project in Xcode and Archive → Distribute → TestFlight.
+#     Xcode signs interactively with your Apple ID (Automatically manage
+#     signing), so the hardware-key-2FA / API-key limitation does NOT apply
+#     here — Xcode can provision capabilities the EAS-cloud API-key path can't.
+open ios/HYBRID.xcworkspace
+#   In Xcode: pick a "Any iOS Device" target → Product ▸ Archive →
+#   Distribute App ▸ TestFlight & App Store → Upload.
 ```
 
-`eas build` runs on Expo's macOS builders, so **you don't need a Mac**. When it
-finishes, `eas submit` pushes the `.ipa` to App Store Connect; from there you
-add it to TestFlight or submit it for review in the Apple web console.
+### Alternative: `eas build --local` (signed .ipa without opening Xcode)
+
+Same idea — Expo's build logic, **on your Mac**, no cloud credits — but it
+produces a distributable `.ipa` you can hand to `eas submit` or Transporter:
+
+```bash
+cd apps/mobile
+pnpm build:local             # = eas build --local --profile production --platform ios
+npx eas submit --profile production --platform ios --path ./build/hybrid.ipa
+```
+
+> `--local` still needs macOS + Xcode + CocoaPods installed; it just skips
+> Expo's hosted builders (and therefore the metered free-build quota).
+
+## Cloud build (Expo builders) — no Mac, but metered
+
+Only reach for this if you don't have a Mac. It runs on Expo's macOS builders
+(so the binary builds without your own machine) but **every build consumes the
+EAS Build free-tier quota** — this is the path that "ran out of free builds".
+
+```bash
+cd apps/mobile
+npx eas login
+npx eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <your-anon-key>
+npx eas build --profile production --platform ios
+npx eas submit --profile production --platform ios
+```
 
 ## Faster iteration before submitting
 

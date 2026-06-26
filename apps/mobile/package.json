@@ -10,6 +10,9 @@
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
     "export:ios": "expo export --platform ios --output-dir /tmp/hybrid-ios-bundle",
+    "prebuild:ios": "expo prebuild --platform ios --clean",
+    "run:ios": "expo run:ios",
+    "build:local": "eas build --local --profile production --platform ios --output ./build/hybrid.ipa",
     "update": "eas update --branch production --message \"$npm_config_message\"",
     "lint": "echo \"(mobile) no lint yet\" && exit 0",
     "test": "echo \"(mobile) no tests yet\" && exit 0"
