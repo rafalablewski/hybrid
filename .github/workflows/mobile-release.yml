@@ -1,27 +1,26 @@
 name: Mobile — build & TestFlight
 
-# Builds the iOS app on a GitHub cloud Mac with APPLE'S OWN tools (Xcode +
-# Fastlane) and uploads it to TestFlight. There is NO Expo build service here:
-# `expo prebuild` is just local code-generation (no Expo account/token), and
-# every credential talks only to Apple. GitHub Actions is free + unlimited on a
-# public repo, so this has no build quota.
+# Builds HYBRID for iOS on a GitHub cloud Mac and uploads it to TestFlight.
+#
+#  • NO Expo build service — `expo prebuild` is only local code-generation
+#    (no Expo account/token).
+#  • NO manual certificate handling — `codemagic-cli-tools` (an open-source
+#    Apple-signing helper, NOT the codemagic.io service) creates and reuses the
+#    Apple Distribution certificate + provisioning profile automatically from
+#    your App Store Connect API key.
+#  • Free + unlimited, because the repo is public (no build quota).
 #
 # Trigger: GitHub → Actions → "Mobile — build & TestFlight" → Run workflow
-# (or push a tag like `mobile-v1.0.1`). Build numbers auto-increment from
-# TestFlight — nothing to bump by hand.
+# (or push a tag like `mobile-v1.0.1`). Build numbers auto-increment.
 #
 # ── Required repo secrets (Settings → Secrets and variables → Actions) ────────
-#   APPLE_DIST_CERT_P12_BASE64   Your Apple Distribution certificate exported
-#                                from Keychain Access as a .p12 (WITH its private
-#                                key), then base64-encoded:
-#                                  base64 -i dist.p12 | pbcopy
-#   APPLE_DIST_CERT_PASSWORD     The password you set when exporting that .p12.
-#   APPLE_ASC_API_KEY_P8         Full contents of the App Store Connect API .p8.
-#   APPLE_ASC_KEY_ID             The .p8 Key ID (ZRWGCS2PUS).
-#   APPLE_ASC_ISSUER_ID          App Store Connect → Integrations → Issuer ID.
-#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon key (baked into the JS
-#                                bundle at build time so sign-in works).
-# (EXPO_TOKEN is no longer used — you can delete it.)
+#   APPLE_ASC_API_KEY_P8     Full contents of your App Store Connect API .p8.
+#   APPLE_ASC_KEY_ID         The .p8 Key ID — ZRWGCS2PUS.
+#   APPLE_ASC_ISSUER_ID      App Store Connect → Integrations → Issuer ID.
+#   APPLE_CERT_PRIVATE_KEY   A signing key you generate ONCE (no Keychain, no
+#                            .p12):  openssl genrsa 2048 | pbcopy  → paste it.
+#                            The tooling uses it to create + reuse the cert.
+#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon key (baked into bundle).
 
 on:
   workflow_dispatch:
@@ -37,6 +36,12 @@ jobs:
   ios:
     name: Build + TestFlight
     runs-on: macos-15
+    env:
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APPLE_ASC_KEY_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.APPLE_CERT_PRIVATE_KEY }}
+      BUNDLE_ID: com.hybriddomain.xyz
     steps:
       - uses: actions/checkout@v6
 
@@ -50,32 +55,38 @@ jobs:
       - name: Install JS deps
         run: pnpm install --frozen-lockfile
 
+      - name: Install signing helper (codemagic-cli-tools — not the codemagic.io service)
+        run: pipx install codemagic-cli-tools
+
       - name: Generate native iOS project (local expo prebuild — no Expo account)
         working-directory: apps/mobile
         run: npx expo prebuild --platform ios --clean
 
-      - name: Decode signing secrets
-        working-directory: apps/mobile
-        env:
-          DIST_CERT_P12_BASE64: ${{ secrets.APPLE_DIST_CERT_P12_BASE64 }}
-          ASC_KEY_P8: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
+      - name: Set up Apple signing automatically (from the API key)
         run: |
-          mkdir -p fastlane
-          echo "$DIST_CERT_P12_BASE64" | base64 --decode > fastlane/dist.p12
-          printf '%s\n' "$ASC_KEY_P8" > fastlane/asc-key.p8
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          keychain add-certificates
+          cd apps/mobile/ios && xcode-project use-profiles
 
-      - name: Build + upload to TestFlight
-        working-directory: apps/mobile
+      - name: Auto-increment build number from TestFlight
+        working-directory: apps/mobile/ios
+        run: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" || echo 0)
+          agvtool new-version -all $((LATEST + 1))
+
+      - name: Build the IPA
+        working-directory: apps/mobile/ios
         env:
-          DIST_CERT_P12_PATH: ${{ github.workspace }}/apps/mobile/fastlane/dist.p12
-          DIST_CERT_PASSWORD: ${{ secrets.APPLE_DIST_CERT_PASSWORD }}
-          ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID }}
-          ASC_KEY_PATH: ${{ github.workspace }}/apps/mobile/fastlane/asc-key.p8
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-        run: fastlane ios beta
+        run: xcode-project build-ipa --workspace HYBRID.xcworkspace --scheme HYBRID
 
-      - name: Clean up secrets
-        if: always()
-        working-directory: apps/mobile
-        run: rm -f fastlane/dist.p12 fastlane/asc-key.p8
+      - name: Upload to TestFlight
+        run: |
+          app-store-connect publish \
+            --path "$(find apps/mobile/ios/build -name '*.ipa' | head -n 1)" \
+            --testflight

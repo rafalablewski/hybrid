@@ -31,24 +31,26 @@ is **no Expo build service** — `expo prebuild` is only local code-gen (no Expo
 account/token), and every credential talks to Apple directly. Because the repo
 is public, GitHub Actions is **free and unlimited** — no build quota, ever.
 
+Signing is handled automatically by `codemagic-cli-tools` (open-source, **not**
+the codemagic.io service): it creates and reuses the Apple Distribution cert +
+profile from your App Store Connect API key — no Keychain export, no `.p12`.
+
 **One-time setup:**
 
-1. **Export your Apple Distribution certificate as a `.p12`** (this is the one
-   piece a fresh CI machine can't generate — it needs your signing private key):
-   - Open **Keychain Access** → **login** keychain → **My Certificates**.
-   - Find **"Apple Distribution: Rafal Ablewski"**, expand it (▸) to confirm a
-     private key is nested under it.
-   - Right-click it → **Export** → save as `dist.p12` → set a password.
-   - In Terminal, base64-encode it: `base64 -i dist.p12 | pbcopy`.
+1. **Generate a signing key once** (no Keychain, no Xcode — just one command):
+   ```
+   openssl genrsa 2048 | pbcopy
+   ```
+   That copies a private key to your clipboard. The tooling uses it to create
+   and then reuse the distribution certificate on every run.
 
 2. Add these repo secrets (GitHub → **Settings → Secrets and variables →
    Actions → New repository secret**):
 
    | Secret | What it is |
    |---|---|
-   | `APPLE_DIST_CERT_P12_BASE64` | The base64 from step 1 (paste it) |
-   | `APPLE_DIST_CERT_PASSWORD` | The password you set when exporting the `.p12` |
-   | `APPLE_ASC_API_KEY_P8` | Full contents of your App Store Connect API `.p8` (paste the file, BEGIN/END lines included) |
+   | `APPLE_CERT_PRIVATE_KEY` | **paste** the key from step 1 |
+   | `APPLE_ASC_API_KEY_P8` | Full contents of your App Store Connect API `.p8` (BEGIN/END lines included) |
    | `APPLE_ASC_KEY_ID` | The `.p8` Key ID — `ZRWGCS2PUS` |
    | `APPLE_ASC_ISSUER_ID` | App Store Connect → Integrations → Issuer ID |
    | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | The public Supabase anon/publishable key |
@@ -56,14 +58,15 @@ is public, GitHub Actions is **free and unlimited** — no build quota, ever.
    (Any old `EXPO_TOKEN` secret is no longer used — delete it.)
 
 3. Go to **GitHub → Actions → "Mobile — build & TestFlight" → Run workflow**
-   (or push a tag like `mobile-v1.0.1`). It builds with Fastlane on Apple's
-   toolchain, **auto-increments the build number from TestFlight**, and uploads.
-   Normal pushes/PRs are untouched — they stay on `ci.yml`.
+   (or push a tag like `mobile-v1.0.1`). It auto-increments the build number from
+   TestFlight and uploads. Normal pushes/PRs stay on `ci.yml`.
 
-> CI iOS code-signing is the finicky part: the workflow imports your `.p12` into
-> a throwaway keychain and lets `xcodebuild -allowProvisioningUpdates` fetch the
-> App Store profile via the API key. If the first run fails at signing, the log
-> line will say why — usually a cert/profile mismatch we can fix in one tweak.
+> If the first run fails with an **"already have a Distribution certificate" /
+> certificate-limit** error, you're at Apple's 2-cert cap (from the earlier
+> Expo + Xcode builds). Revoke the old one at
+> [developer.apple.com → Certificates](https://developer.apple.com/account/resources/certificates/list)
+> (the Expo/EAS "iPhone Distribution" one — you don't need it anymore) and re-run.
+> One click, one time.
 
 ## Optional: build locally on a Mac (free & unlimited)
 
