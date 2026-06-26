@@ -348,7 +348,7 @@ describe("kettlebell (12-week rotating split) program — hypertrophy shape, set
     expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw KB Press", setsReps: "3 × 10/arm" });
     // belt-and-braces: not one "N-M" range in any scheme across all 12 weeks
     const allReps = KB_12WK_STRONG.weeks.flatMap((w) => w.days).flatMap((d) => d.sessions).flatMap((s) => s.entries ?? []).map((e) => e.scheme ?? "");
-    expect(allReps.some((s) => /\d+-\d+/.test(s))).toBe(false);
+    expect(allReps.some((s) => /\d+\s*[-–]\s*\d+/.test(s))).toBe(false); // hyphen OR en-dash
   });
 
   it("colours the sets×reps by training zone — the same wave oly/bb ride, derived from the reps", () => {

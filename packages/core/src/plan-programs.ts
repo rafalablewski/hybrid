@@ -1043,30 +1043,30 @@ function buildKBProgram(meta: Omit<PlanProgram, "weeks">, weeks: KBDay[][]): Pla
 }
 
 const KB_WEEKS: KBDay[][] = [
-  // ---------------- WEEK 1 — Full Body (2–3 rounds, reps only) ----------------
+  // ---------------- WEEK 1 — Full Body (run 2–3 rounds; sets shown as the top, 3) ----------------
   [
     { day: "Mon", focus: "Full Body", items: [
-      ["KB Lunges", "2–3 × 10/leg"],
-      ["KB Squat", "2–3 × 15"],
-      ["Deficit Pushup", "2–3 × 10"],
-      ["KB Overhead Press", "2–3 × 10"],
-      ["KB Bent Over Row", "2–3 × 10"],
-      ["Kneeling Low-to-High Chop", "2–3 × 10/side"],
+      ["KB Lunges", "3 × 10/leg"],
+      ["KB Squat", "3 × 15"],
+      ["Deficit Pushup", "3 × 10"],
+      ["KB Overhead Press", "3 × 10"],
+      ["KB Bent Over Row", "3 × 10"],
+      ["Kneeling Low-to-High Chop", "3 × 10/side"],
     ] },
     { day: "Wed", focus: "Full Body", items: [
-      ["KB Farmer's Walk", "2–3 × 30 s"],
-      ["Dual-arm KB Swing", "2–3 × 15"],
-      ["Turkish Get-up", "2–3 × 5/side"],
-      ["KB Deadlift", "2–3 × 10"],
-      ["KB Windmill", "2–3 × 10"],
-      ["Good Morning", "2–3 × 10"],
+      ["KB Farmer's Walk", "3 × 30 s"],
+      ["Dual-arm KB Swing", "3 × 15"],
+      ["Turkish Get-up", "3 × 5/side"],
+      ["KB Deadlift", "3 × 10"],
+      ["KB Windmill", "3 × 10"],
+      ["Good Morning", "3 × 10"],
     ] },
     { day: "Fri", focus: "Full Body", items: [
-      ["KB Floor Press", "2–3 × 15"],
-      ["Crush Grip KB Pushup", "2–3 × 10"],
-      ["KB Clean and Press", "2–3 × 10"],
-      ["KB Lunges to Curl", "2–3 × 10"],
-      ["KB Gorilla Row", "2–3 × 15"],
+      ["KB Floor Press", "3 × 15"],
+      ["Crush Grip KB Pushup", "3 × 10"],
+      ["KB Clean and Press", "3 × 10"],
+      ["KB Lunges to Curl", "3 × 10"],
+      ["KB Gorilla Row", "3 × 15"],
     ] },
   ],
   // ---------------- WEEK 2 — Push / Pull / Leg / Abs ----------------
@@ -1093,7 +1093,7 @@ const KB_WEEKS: KBDay[][] = [
       ["KB Glute Bridge", "3 × 15"],
     ] },
     { day: "Fri", focus: "Abs", items: [
-      ["KB Swings", "3 × 15"],
+      ["KB Swing", "3 × 15"],
       ["KB Lunge Twist", "3 × 10/side"],
       ["Weighted Sit-up", "4 × 15"],
       ["KB Dead Bug", "4 × 5/side"],

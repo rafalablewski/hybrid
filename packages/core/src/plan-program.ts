@@ -279,16 +279,17 @@ export function repZoneColor(reps: number): LoadColor {
   return "blue"; // endurance
 }
 
-/** The rep number a scheme prescribes (e.g. 20 from "3 × 20"; reps are single
- *  numbers, never ranges — see the project rule), or "time" for a duration/hold
- *  ("4 × 30 s"), or null when none is parseable. Reads only the rep side (after
- *  the ×), so per-side notes ("10/leg") survive. */
+/** The rep number a scheme prescribes (e.g. 20 from "3 × 20"; reps should be single
+ *  numbers per the project rule), or "time" for a duration/hold ("4 × 30 s"), or
+ *  null when none is parseable. Reads only the rep side (after the ×), so per-side
+ *  notes ("10/leg") survive. If a range ever slips through, takes the LAST number
+ *  (the top of the range) to honour the collapse-to-top rule. */
 function schemeRepCount(scheme: string): number | "time" | null {
   const after = scheme.split(/[×x]/i).pop()?.trim() ?? "";
   if (!after) return null;
   if (/\d+\s*(s|sec|secs|min|mins)\b/i.test(after)) return "time";
-  const m = after.match(/\d+/);
-  return m ? parseInt(m[0], 10) : null;
+  const m = after.match(/\d+/g);
+  return m ? parseInt(m[m.length - 1]!, 10) : null;
 }
 
 /** Training-zone colour for a sets×reps scheme (timed holds → endurance/blue). */

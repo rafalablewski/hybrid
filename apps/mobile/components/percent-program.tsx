@@ -342,7 +342,7 @@ function FallbackRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C:
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, color: lift.intensity ? loadHex(C, lift.intensity) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
+      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? loadHex(C, lift.intensity) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
     </View>
   );
 }
