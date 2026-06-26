@@ -51,8 +51,8 @@ export default function AuroraCalendar() {
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{label}</Text>
           <View style={{ flexDirection: "row", gap: space.sm }}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => go(-1)} style={navBtn}><AuroraIcon name="back" size={18} color={C.chalk} /></Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => go(1)} style={navBtn}><AuroraIcon name="back" size={18} color={C.chalk} style={{ transform: [{ rotate: "180deg" }] }} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("common.previousMonth")} onPress={() => go(-1)} style={navBtn}><AuroraIcon name="back" size={18} color={C.chalk} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("common.nextMonth")} onPress={() => go(1)} style={navBtn}><AuroraIcon name="back" size={18} color={C.chalk} style={{ transform: [{ rotate: "180deg" }] }} /></Pressable>
           </View>
         </View>
         <View style={{ flexDirection: "row" }}>

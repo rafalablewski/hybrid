@@ -9,6 +9,7 @@ import {
   type IntervalPhaseKind,
 } from "@hybrid/core";
 import { useTheme, txt } from "../lib/theme";
+import { useLang } from "../lib/i18n";
 import { fs, space, F } from "../lib/ui";
 import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -20,6 +21,7 @@ import { AuroraIcon } from "../components/aurora/icons";
  */
 export default function IntervalTimer() {
   const { palette: C } = useTheme();
+  const { t } = useLang();
   const router = useRouter();
   const params = useLocalSearchParams<{ title?: string }>();
   const title = params.title || "Interval session";
@@ -64,7 +66,7 @@ export default function IntervalTimer() {
   const editable = elapsed === 0 && !running;
 
   const kindColor = kind === "work" ? C.lime : kind === "rest" ? C.blue : kind === "prep" ? C.amber : C.violet;
-  const kindLabel = kind === "work" ? "Work" : kind === "rest" ? "Rest" : kind === "prep" ? "Get ready" : "Done";
+  const kindLabel = kind === "work" ? t("w.train.timer.work") : kind === "rest" ? t("w.train.timer.rest") : kind === "prep" ? t("w.train.timer.getReady") : t("w.train.timer.done");
 
   // Screen-reader announcer — speak the phase + round at each work/rest
   // boundary (the per-second clock is never announced; that would be unbearable
@@ -74,9 +76,9 @@ export default function IntervalTimer() {
   useEffect(() => {
     if (!running && !pos.done) return;
     const msg = pos.done
-      ? "Workout complete"
+      ? t("w.train.timer.done")
       : phase && phase.round > 0
-        ? `${kindLabel}, round ${phase.round} of ${phase.totalRounds}`
+        ? `${kindLabel} · ${t("w.train.timer.round")} ${phase.round}/${phase.totalRounds}`
         : kindLabel;
     if (msg !== lastAnnounce.current) {
       lastAnnounce.current = msg;

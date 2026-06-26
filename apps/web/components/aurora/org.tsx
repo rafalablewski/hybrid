@@ -280,7 +280,7 @@ export default function AuroraOrg() {
             <div style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={kicker("blue")}>{t("w.teams.org.athleteTwin")} · {athlete.name}</div>
-                <span role="button" tabIndex={0} aria-label="Close" style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAthlete(null); } }}>✕</span>
+                <span role="button" tabIndex={0} aria-label={t("common.close")} style={{ cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)" }} onClick={() => setAthlete(null)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAthlete(null); } }}>✕</span>
               </div>
               <div style={{ display: "flex", gap: space.xl, alignItems: "baseline", marginTop: 8 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 40, color: C(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>

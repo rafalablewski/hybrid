@@ -176,7 +176,7 @@ export function CommandMenu() {
                     <Pressable
                       onPress={() => setOpen(false)}
                       accessibilityRole="button"
-                      accessibilityLabel="Close"
+                      accessibilityLabel={t("common.close")}
                       hitSlop={8}
                       style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: neutral(0.16), backgroundColor: neutral(0.07) }}
                     >
