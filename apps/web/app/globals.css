@@ -67,6 +67,27 @@ html {
   outline-offset: 2px;
 }
 
+/* Skip-to-content link: off-screen until focused, then it pins to the top-left
+   so the first Tab press reveals "Skip to content" jumping past the sidebar. */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--color-lime);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
 /* ════════════════════════════════════════════════════════════════════
    LIQUID GLASS — reusable material layer (mirrors
    reference/liquid-glass/system.html, contrast-audited to WCAG AA+).

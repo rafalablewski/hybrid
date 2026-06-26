@@ -439,7 +439,7 @@ export function ASegment<T extends string>({
 export function AHeading({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette } = useTheme();
   return (
-    <Text style={[{ fontFamily: F.black, fontSize: 30, color: palette.chalk, lineHeight: 36, letterSpacing: -0.5 }, style]}>
+    <Text accessibilityRole="header" style={[{ fontFamily: F.black, fontSize: 30, color: palette.chalk, lineHeight: 36, letterSpacing: -0.5 }, style]}>
       {children}
     </Text>
   );
