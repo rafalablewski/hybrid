@@ -121,7 +121,9 @@ export const GOAL_TREE: GoalNode[] = [
   { id: "calisthenics", name: "Calisthenics", icon: "◯", color: LIME, category: "Functional & Sport", blurb: "Master your bodyweight — pull-ups, dips, levers, and the big skills.",
     plans: [] },
   { id: "kettlebell", name: "Kettlebell", icon: "◔", color: AMBER, category: "Functional & Sport", blurb: "Swing, snatch, and get-up. One tool, full-body strength and conditioning.",
-    plans: [] },
+    plans: [
+      { id: "kb-12wk-strong", name: "12-Week Kettlebell — Strong & Athletic", weeks: 12, sessions: 4, tag: "Sets × reps", desc: "A complete 12-week kettlebell block that rotates the split every week — full body, then push/pull/legs, then upper/lower — to build strength, muscle, endurance and mobility. 5–7 exercises a day, 3–5 days a week, with one or two bells.", focus: ["Strength", "Muscle"], hot: true },
+    ] },
   { id: "tactical", name: "Tactical & Military", icon: "◣", color: VIOLET, category: "Functional & Sport", blurb: "Ruck, carry, and work capacity under load. Built to pass the test and do the job.",
     plans: [] },
   { id: "sport", name: "Sport Performance", icon: "★", color: VIOLET, category: "Functional & Sport", blurb: "Speed, power, and agility for field- and court-sport athletes.",

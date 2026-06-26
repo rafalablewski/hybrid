@@ -19,7 +19,7 @@ import {
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
-import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, FATLOSS_KB_SATURDAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
+import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, FATLOSS_KB_SATURDAY, KB_12WK_STRONG, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
 describe("parsePercentSteps", () => {
   it("parses ramped (pct/reps)sets terms", () => {
@@ -311,6 +311,40 @@ describe("conditioning (kettlebell circuit) program — same model, blocks as ca
     expect(fold).toMatchObject({ name: "Forward Fold", prescription: "Hamstring stretch", intensity: "ash" });
     expect(isProseLift(fold)).toBe(true);
     expect(liftKind(fold)).toBe("run");
+  });
+});
+
+describe("kettlebell (12-week rotating split) program — hypertrophy shape, sets × reps", () => {
+  it("is a registered 12-week hypertrophy plan with no peak, counting exercises", () => {
+    expect(programFor("kb-12wk-strong")).toBe(KB_12WK_STRONG);
+    expect(Object.keys(PLAN_PROGRAMS)).toContain("kb-12wk-strong");
+    expect(KB_12WK_STRONG.discipline).toBe("hypertrophy");
+    expect(KB_12WK_STRONG.anchor).toBeUndefined();
+    expect(KB_12WK_STRONG.weeks).toHaveLength(12);
+
+    const v = planProgramView(KB_12WK_STRONG, { week: 1 });
+    expect(v.weeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(v.peakNote).toBeNull();
+    expect(v.weekVolume).toBe("17 exercises"); // wk1: 6 + 6 + 5
+  });
+
+  it("rotates the split across weeks via the day titles (full body → PPL → upper/lower)", () => {
+    const wk = (n: number) => planProgramView(KB_12WK_STRONG, { week: n }).days.map((d) => d.title);
+    expect(wk(1)).toEqual(["Mon · Full Body", "Wed · Full Body", "Fri · Full Body"]);
+    expect(wk(2)).toEqual(["Mon · Push", "Wed · Pull", "Thu · Legs", "Fri · Abs"]);
+    expect(wk(3)).toEqual(["Mon · Upper", "Tue · Lower", "Thu · Upper", "Fri · Lower"]);
+    expect(wk(12)[0]).toBe("Mon · Upper");
+  });
+
+  it("keeps reps EXACTLY as written (ranges / per-side / holds) — no invented RPE", () => {
+    const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!; // Mon · Push
+    const bench = push.sessions[0]!.lifts[0]!;
+    expect(bench).toMatchObject({ name: "Kettlebell Bench Press", setsReps: "3 × 15-20", prescription: "3 × 15-20" });
+    expect(bench.rpe).toBeUndefined(); // the source prescribes sets × reps, not effort
+    expect(bench.intensity).toBeUndefined();
+    expect(liftKind(bench)).toBe("rpe"); // structured sets×reps entry (no % ramp)
+    // a per-side scheme is kept verbatim
+    expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw Kettlebell Press", setsReps: "3 × 10/arm" });
   });
 });
 

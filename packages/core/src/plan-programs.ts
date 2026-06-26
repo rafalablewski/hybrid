@@ -999,6 +999,442 @@ export const FATLOSS_KB_SATURDAY: PlanProgram = buildCircuitProgram(
   FATLOSS_BLOCKS,
 );
 
+// ============================================================
+//  KETTLEBELL — a 12-week strength/muscle program (hypertrophy shape): a weekday
+//  split of kettlebell exercises with sets × reps, the split ROTATING every week
+//  — weeks 1/4/7/10 FULL BODY, weeks 2/5/8/11 PUSH/PULL/LEGS (+ a core day),
+//  weeks 3/6/9/12 UPPER/LOWER. Same PlanProgram model + planProgramView as the
+//  bodybuilding split, so it renders in the identical sets×reps table with a
+//  12-week selector and an exercise counter. Reps kept EXACTLY as written (ranges
+//  like "15-20", per-side "10/leg", holds "30-sec") via the free-text scheme — no
+//  RPE is invented (the source prescribes sets × reps + rest, not effort).
+//  Source: thefitnessphantom.com — 12-Week Kettlebell Program (Murshid Akram).
+// ============================================================
+
+// A kettlebell day: a weekday + a focus + its exercises ([name, "sets × reps", note?]).
+type KBItem = [string, string] | [string, string, string];
+interface KBDay {
+  day: string;
+  focus: string;
+  items: KBItem[];
+}
+
+function buildKBDay(d: KBDay, index: number): PlanDay {
+  return {
+    index,
+    kind: "train",
+    title: `${d.day} · ${d.focus}`,
+    sessions: [
+      {
+        entries: d.items.map(([name, scheme, note]) => ({
+          label: name,
+          detail: "",
+          scheme,
+          ...(note ? { note } : {}),
+        })),
+      },
+    ],
+  };
+}
+
+function buildKBProgram(meta: Omit<PlanProgram, "weeks">, weeks: KBDay[][]): PlanProgram {
+  return { ...meta, weeks: weeks.map((days, wi) => ({ index: wi + 1, days: days.map((d, di) => buildKBDay(d, di + 1)) })) };
+}
+
+const KB_WEEKS: KBDay[][] = [
+  // ---------------- WEEK 1 — Full Body (2–3 rounds, reps only) ----------------
+  [
+    { day: "Mon", focus: "Full Body", items: [
+      ["Kettlebell Lunges", "2–3 × 10/leg"],
+      ["Kettlebell Squat", "2–3 × 15"],
+      ["Deficit Pushup", "2–3 × 10"],
+      ["KB Overhead Press", "2–3 × 10"],
+      ["KB Bent Over Row", "2–3 × 10"],
+      ["Kneeling Low-to-High Chop", "2–3 × 10/side"],
+    ] },
+    { day: "Wed", focus: "Full Body", items: [
+      ["KB Farmer's Walk", "2–3 × 30 s"],
+      ["Dual-arm KB Swing", "2–3 × 15"],
+      ["Turkish Get-up", "2–3 × 5/side"],
+      ["Kettlebell Deadlift", "2–3 × 10"],
+      ["Kettlebell Windmill", "2–3 × 10"],
+      ["Good Morning", "2–3 × 10"],
+    ] },
+    { day: "Fri", focus: "Full Body", items: [
+      ["Kettlebell Floor Press", "2–3 × 15"],
+      ["Crush Grip KB Pushup", "2–3 × 10"],
+      ["KB Clean and Press", "2–3 × 10"],
+      ["KB Lunges to Curl", "2–3 × 10"],
+      ["Kettlebell Gorilla Row", "2–3 × 15"],
+    ] },
+  ],
+  // ---------------- WEEK 2 — Push / Pull / Leg / Abs ----------------
+  [
+    { day: "Mon", focus: "Push", items: [
+      ["Kettlebell Bench Press", "3 × 15-20"],
+      ["KB Crush Grip Pushup", "3 × 15-20"],
+      ["Seesaw Kettlebell Press", "3 × 10/arm"],
+      ["Kettlebell Push Press", "3 × 12-15"],
+      ["Sit and Press", "3 × 10-15"],
+    ] },
+    { day: "Wed", focus: "Pull", items: [
+      ["Kettlebell Deadlift", "3 × 10-15"],
+      ["Single-arm Gorilla Row", "3 × 10/side"],
+      ["Kettlebell High Pull", "3 × 15-20"],
+      ["Single-arm Swing", "3 × 10/arm"],
+      ["Single-arm Clean", "3 × 10/arm"],
+    ] },
+    { day: "Thu", focus: "Legs", items: [
+      ["KB Step-up", "3 × 15-20"],
+      ["Kettlebell Lunges", "3 × 10/leg"],
+      ["KB Cossack Squat", "3 × 15-20"],
+      ["Romanian Deadlift", "3 × 10-12"],
+      ["KB Glute Bridge", "3 × 10-15"],
+    ] },
+    { day: "Fri", focus: "Abs", items: [
+      ["Kettlebell Swings", "3 × 15"],
+      ["KB Lunge Twist", "3 × 10/side"],
+      ["Weighted Sit-up", "4 × 10-15"],
+      ["KB Dead Bug", "4 × 5/side"],
+    ] },
+  ],
+  // ---------------- WEEK 3 — Upper / Lower ----------------
+  [
+    { day: "Mon", focus: "Upper", items: [
+      ["Deficit Pushup", "3 × 10-20"],
+      ["Push Press", "3 × 10-15"],
+      ["Single-arm Gorilla Row", "3 × 10/side"],
+      ["Kettlebell Z Press", "3 × 10-15"],
+      ["KB Renegade Row", "3 × 6/side"],
+    ] },
+    { day: "Tue", focus: "Lower", items: [
+      ["Front Squat", "3 × 15-20"],
+      ["Front Racked Lunges", "3 × 10/leg"],
+      ["KB Single-Leg RDL", "3 × 8/leg"],
+      ["Frog Pump", "3 × 10-12"],
+      ["Single-leg Calf Raises", "3 × 10/leg"],
+    ] },
+    { day: "Thu", focus: "Upper", items: [
+      ["Single-arm Swing", "3 × 15/arm"],
+      ["Kettlebell Snatch", "3 × 10/arm"],
+      ["KB Slingshot", "3 × 15-20"],
+      ["Single-arm High Pulls", "3 × 10/side"],
+      ["Kettlebell Bench Press", "3 × 15-20"],
+    ] },
+    { day: "Fri", focus: "Lower", items: [
+      ["Sumo Squat", "3 × 15-20"],
+      ["Reverse Lunges", "3 × 10/leg"],
+      ["Step-up", "3 × 10/leg"],
+      ["Good Morning", "3 × 10-12"],
+      ["Lateral Squat", "3 × 10/leg"],
+    ] },
+  ],
+  // ---------------- WEEK 4 — Full Body ----------------
+  [
+    { day: "Mon", focus: "Full Body", items: [
+      ["Single-arm KB Swing", "3 × 20/arm"],
+      ["KB Turkish Get-up", "3 × 10/side"],
+      ["Kettlebell Z Press", "3 × 15-20"],
+      ["Single-arm Row", "3 × 15/arm"],
+      ["Weighted Sit-up", "3 × 12-15"],
+    ] },
+    { day: "Wed", focus: "Full Body", items: [
+      ["Single-arm Squat to Press", "3 × 10/side"],
+      ["Pushup to Renegade Row", "3 × 8-10"],
+      ["Kettlebell Windmill", "3 × 6/side"],
+      ["Mountain Climber", "4 × 30 s"],
+      ["Half-Kneeling KB Chop", "3 × 10/side"],
+    ] },
+    { day: "Fri", focus: "Full Body", items: [
+      ["KB Deadlift", "3 × 10-15"],
+      ["Seesaw Press", "3 × 10/arm"],
+      ["Lunge with Rotation", "3 × 10/side"],
+      ["KB Swing Changing Hands", "3 × 15-20"],
+      ["Kettlebell Thruster", "3 × 15-20"],
+      ["KB Crunches", "3 × 12-15"],
+    ] },
+  ],
+  // ---------------- WEEK 5 — Push / Pull / Leg / Core ----------------
+  [
+    { day: "Mon", focus: "Push", items: [
+      ["Kettlebell Bench Press", "3 × 15-20"],
+      ["Deficit Push-ups", "3 × 15-20"],
+      ["Seesaw Kettlebell Press", "3 × 15/arm"],
+      ["Close Grip Push-up", "3 × 15-20"],
+      ["KB Overhead Triceps Extension", "3 × 12-15"],
+      ["Kettlebell Dips", "3 × 12-15"],
+    ] },
+    { day: "Tue", focus: "Pull", items: [
+      ["Kettlebell Deadlift", "3 × 15-20"],
+      ["Gorilla Row", "3 × 15/side"],
+      ["Dual-arm Russian Swing", "3 × 15-20"],
+      ["KB Reverse Curl", "3 × 15-20"],
+      ["High Pulls", "3 × 15-20"],
+      ["Superman Pull", "3 × 15-20"],
+    ] },
+    { day: "Thu", focus: "Lower", items: [
+      ["KB Front Squat", "3 × 15-20"],
+      ["Curtsy Lunges", "3 × 10/leg"],
+      ["KB Cossack Squat", "3 × 10/leg"],
+      ["Romanian Deadlift", "3 × 10-12"],
+      ["Glute Bridge", "3 × 15-20"],
+      ["Single-arm Calf Raises", "3 × 15-20"],
+    ] },
+    { day: "Fri", focus: "Core", items: [
+      ["Standing Oblique Chop", "3 × 10/side"],
+      ["Straight-arm Crunches", "3 × 10-15"],
+      ["KB Russian Twist", "3 × 30 s"],
+      ["KB Dead Bug", "3 × 5 s/side"],
+      ["Mountain Climber", "3 × 30 s"],
+    ] },
+  ],
+  // ---------------- WEEK 6 — Upper / Lower ----------------
+  [
+    { day: "Mon", focus: "Upper", items: [
+      ["Deficit Pushup", "4 × 15-20"],
+      ["1-arm Clean and Press", "4 × 10/arm"],
+      ["Single-arm Gorilla Row", "4 × 10/arm"],
+      ["KB Renegade Row", "4 × 10/side"],
+      ["Lateral Kettlebell Swings", "4 × 10/side"],
+    ] },
+    { day: "Tue", focus: "Lower", items: [
+      ["Front Racked Squat", "4 × 15-20"],
+      ["Front Racked Lunges", "3 × 10/leg"],
+      ["KB Single-Leg RDL", "3 × 10/leg"],
+      ["Lateral Squat", "3 × 10/leg"],
+      ["KB Step-up", "3 × 10/leg"],
+    ] },
+    { day: "Thu", focus: "Upper", items: [
+      ["Kettlebell Swing", "4 × 20-25"],
+      ["KB Push Press", "4 × 10-15"],
+      ["KB Slingshot", "4 × 10/side"],
+      ["High Pull", "4 × 10-15"],
+      ["Kettlebell Halo", "4 × 10/side"],
+    ] },
+    { day: "Fri", focus: "Legs", items: [
+      ["Sumo Squat", "4 × 12-15"],
+      ["Reverse Lunges", "3 × 10/side"],
+      ["KB Pistol Squat", "3 × 5/leg"],
+      ["Suitcase Deadlift", "4 × 12-15"],
+      ["KB Calf Raises", "4 × 15/leg"],
+    ] },
+  ],
+  // ---------------- WEEK 7 — Full Body ----------------
+  [
+    { day: "Mon", focus: "Full Body", items: [
+      ["Both-arm KB Swing", "4 × 20-25"],
+      ["Turkish Get-up", "3 × 6/side"],
+      ["Bob and Weave", "3 × 8/side"],
+      ["KB Windmill", "3 × 10/side"],
+      ["Man Maker", "3 × 8-10"],
+    ] },
+    { day: "Tue", focus: "Full Body", items: [
+      ["Front Racked Lunges", "3 × 10/leg"],
+      ["Squat to Overhead Press", "3 × 10-12"],
+      ["Pushup to Renegade Row", "3 × 8/side"],
+      ["Single-arm KB Clean", "3 × 10/side"],
+      ["Gorilla Row", "3 × 12-15"],
+      ["Half-Kneeling KB Chop", "3 × 10/side"],
+    ] },
+    { day: "Thu", focus: "Full Body", items: [
+      ["Side KB Swing", "3 × 10/side"],
+      ["Deficit Pushup", "3 × 10-15"],
+      ["1-arm KB Snatch", "3 × 10/side"],
+      ["Kettlebell High Pull", "3 × 10-15"],
+      ["Romanian Deadlift", "3 × 10-12"],
+      ["Kettlebell Z Press", "3 × 10-12"],
+    ] },
+    { day: "Fri", focus: "Full Body", items: [
+      ["Thruster", "3 × 12-15"],
+      ["Pistol Squat", "4 × 5/leg"],
+      ["Crush Grip Push-up", "3 × 8/side"],
+      ["Bottoms-Up Press", "3 × 10/arm"],
+      ["Overhead Swings", "3 × 12-15"],
+    ] },
+  ],
+  // ---------------- WEEK 8 — Push / Pull / Leg / Core ----------------
+  [
+    { day: "Mon", focus: "Push", items: [
+      ["KB Floor Press", "4 × 10-15"],
+      ["Deficit Pushup", "4 × 10-15"],
+      ["Seesaw Kettlebell Press", "4 × 10/side"],
+      ["Kettlebell Arm Bar", "4 × 5/side"],
+      ["Bridge Press", "4 × 10-15"],
+    ] },
+    { day: "Tue", focus: "Pull", items: [
+      ["Kettlebell Deadlift", "4 × 10-12"],
+      ["Gorilla Row", "4 × 10-12"],
+      ["Kettlebell High Pull", "4 × 10-12"],
+      ["Dual-arm Russian Swing", "4 × 20-25"],
+      ["Kettlebell Curl", "4 × 12-15"],
+    ] },
+    { day: "Thu", focus: "Lower", items: [
+      ["Front Squat", "4 × 15-20"],
+      ["Reverse Lunges", "4 × 10/leg"],
+      ["Cossack Squat", "4 × 10/leg"],
+      ["Single Straight-Leg Deadlift", "4 × 10/leg"],
+      ["Step-up", "4 × 10/leg"],
+    ] },
+    { day: "Fri", focus: "Core", items: [
+      ["Kneeling KB Low-to-High Chop", "4 × 10/side"],
+      ["Straight-arm Crunches", "4 × 10-15"],
+      ["Russian Twist", "4 × 10/side"],
+      ["Side Plank Dips", "4 × 10/side"],
+      ["Kettlebell Dead Bug", "4 × 10/side"],
+    ] },
+  ],
+  // ---------------- WEEK 9 — Upper / Lower ----------------
+  [
+    { day: "Mon", focus: "Upper", items: [
+      ["Deficit Pushup", "4 × 15-20"],
+      ["1-arm Clean and Press", "4 × 10/arm"],
+      ["Single-arm Gorilla Row", "4 × 10/arm"],
+      ["KB Renegade Row", "4 × 10/side"],
+      ["Lateral Kettlebell Swings", "4 × 10/side"],
+    ] },
+    { day: "Tue", focus: "Lower", items: [
+      ["Front Racked Squat", "4 × 15-20"],
+      ["Front Racked Lunges", "3 × 10/leg"],
+      ["KB Single-Leg RDL", "3 × 10/leg"],
+      ["Lateral Squat", "3 × 10/leg"],
+      ["KB Step-up", "3 × 10/leg"],
+    ] },
+    { day: "Thu", focus: "Upper", items: [
+      ["Kettlebell Swing", "4 × 20-25"],
+      ["KB Push Press", "4 × 10-15"],
+      ["KB Slingshot", "4 × 10/side"],
+      ["High Pull", "4 × 10-15"],
+      ["KB Superman", "4 × 10/side"],
+    ] },
+    { day: "Fri", focus: "Legs", items: [
+      ["Sumo Squat", "4 × 12-15"],
+      ["Reverse Lunges", "3 × 10/side"],
+      ["KB Pistol Squat", "3 × 5/leg"],
+      ["Suitcase Deadlift", "4 × 12-15"],
+      ["KB Calf Raises", "4 × 15/leg"],
+    ] },
+  ],
+  // ---------------- WEEK 10 — Full Body ----------------
+  [
+    { day: "Mon", focus: "Full Body", items: [
+      ["KB Swing Gorilla Deadlift", "4 × 10-12"],
+      ["Turkish Get-up", "3 × 6/side"],
+      ["Bob and Weave", "3 × 8/side"],
+      ["Hyperextension", "3 × 10/side"],
+      ["KB Power Maker", "3 × 8-10"],
+    ] },
+    { day: "Tue", focus: "Full Body", items: [
+      ["KB Lunge with Rotation", "3 × 10/side"],
+      ["Squat to Overhead Press", "3 × 10-12"],
+      ["Pushup to Renegade Row", "3 × 8/side"],
+      ["Single-arm KB Clean", "3 × 10/side"],
+      ["Gorilla Row", "3 × 12-15"],
+      ["Half-Kneeling KB Chop", "3 × 10/side"],
+    ] },
+    { day: "Thu", focus: "Full Body", items: [
+      ["Side KB Swing", "3 × 10/side"],
+      ["Deficit Pushup", "3 × 10-15"],
+      ["1-arm KB Snatch", "3 × 10/side"],
+      ["Kettlebell High Pull", "3 × 10-15"],
+      ["Romanian Deadlift", "3 × 10-12"],
+      ["Kettlebell Z Press", "3 × 10-12"],
+    ] },
+    { day: "Fri", focus: "Full Body", items: [
+      ["Thruster", "3 × 12-15"],
+      ["Lying KB T-Raises", "4 × 5/side"],
+      ["Pushup to Renegade Row", "3 × 8/side"],
+      ["Bottoms-Up Press", "3 × 10/arm"],
+      ["Overhead Swings", "3 × 12-15"],
+    ] },
+  ],
+  // ---------------- WEEK 11 — Push / Pull / Leg / Core ----------------
+  [
+    { day: "Mon", focus: "Push", items: [
+      ["Sit and Press", "4 × 10-12"],
+      ["Deficit Pushup", "4 × 10-15"],
+      ["Seesaw Kettlebell Press", "4 × 10/side"],
+      ["Staggered Pushup", "3 × 10/side"],
+      ["Bridge Press", "4 × 10-15"],
+    ] },
+    { day: "Tue", focus: "Pull", items: [
+      ["Kettlebell Deadlift", "4 × 10-12"],
+      ["Gorilla Row", "4 × 10-12"],
+      ["Kettlebell High Pull", "4 × 10-12"],
+      ["Dual-arm Russian Swing", "4 × 20-25"],
+      ["Incline Plank Rowing", "4 × 12-15"],
+    ] },
+    { day: "Thu", focus: "Lower", items: [
+      ["Front Squat", "4 × 15-20"],
+      ["Reverse Lunges", "4 × 10/leg"],
+      ["Cossack Squat", "4 × 10/leg"],
+      ["Single Straight-Leg Deadlift", "4 × 10/leg"],
+      ["Step-up", "4 × 10/leg"],
+    ] },
+    { day: "Fri", focus: "Core", items: [
+      ["Kneeling KB Low-to-High Chop", "4 × 10/side"],
+      ["Kettlebell V-Ups", "4 × 8-12"],
+      ["KB Hollow Body Hold", "4 × 15 s"],
+      ["Side Plank Dips", "4 × 10/side"],
+      ["Kettlebell Dead Bug", "4 × 10/side"],
+    ] },
+  ],
+  // ---------------- WEEK 12 — Upper / Lower ----------------
+  [
+    { day: "Mon", focus: "Upper", items: [
+      ["Kettlebell Spin Press", "3 × 10/side"],
+      ["1-arm Clean and Press", "4 × 10/arm"],
+      ["Single-arm Gorilla Row", "4 × 10/arm"],
+      ["KB Renegade Row", "4 × 10/side"],
+      ["Lateral Kettlebell Swings", "4 × 10/side"],
+    ] },
+    { day: "Tue", focus: "Lower", items: [
+      ["Goblet Curtsy Step-Down", "3 × 10/side"],
+      ["Front Racked Lunges", "3 × 10/leg"],
+      ["KB Single-Leg RDL", "3 × 10/leg"],
+      ["Shrimp Squats", "3 × 10/leg"],
+      ["KB Step-up", "3 × 10/leg"],
+    ] },
+    { day: "Thu", focus: "Upper", items: [
+      ["Kettlebell Swing", "4 × 20-25"],
+      ["KB Push Press", "4 × 10-15"],
+      ["KB Chainsaw Row", "3 × 10/side"],
+      ["High Pull", "4 × 10-15"],
+      ["Kettlebell Halo", "4 × 10/side"],
+    ] },
+    { day: "Fri", focus: "Legs", items: [
+      ["Reverse Lunge to Step-up", "3 × 10/leg"],
+      ["KB Squat Jump", "3 × 10-12"],
+      ["KB Pistol Squat", "3 × 5/leg"],
+      ["Suitcase Deadlift", "4 × 12-15"],
+      ["KB Calf Raises", "4 × 15/leg"],
+    ] },
+  ],
+];
+
+export const KB_12WK_STRONG: PlanProgram = buildKBProgram(
+  {
+    id: "kb-12wk-strong",
+    discipline: "hypertrophy",
+    inputsTitle: "Your kettlebells (kg) — optional, for reference",
+    inputs: [
+      { key: "bell", label: "Your bell", kind: "text", placeholder: "e.g. 16" },
+      { key: "heavy", label: "Heavier bell", kind: "text", placeholder: "e.g. 24" },
+    ],
+    progression:
+      "A 12-week kettlebell program that builds strength, muscle, endurance and mobility by ROTATING the split every " +
+      "week: weeks 1/4/7/10 train the FULL BODY each session, weeks 2/5/8/11 run PUSH / PULL / LEGS (plus a core day), " +
+      "and weeks 3/6/9/12 run an UPPER / LOWER split — so every pattern gets hit from several angles across the block. " +
+      "Do 5–7 exercises a day, 3–5 days a week, resting 30–45 s between sets and 2–3 min between rounds (keep the rests " +
+      "short to push endurance). WARM UP first with a few minutes of light aerobic work. WEEK 1 is round-based — run it " +
+      "as a circuit (one set of each exercise per round) or standard (all sets of a lift before the next), 2 rounds for " +
+      "beginners and 3 if experienced; from week 2 each exercise lists its own sets. HOW IT BUILDS: from fundamentals " +
+      "(wk 1) to more reps & sets (wk 4), shorter rests for endurance (wk 7), heavier load for strength (wk 9), and the " +
+      "heaviest loads at the end (wk 11–12). Pick a bell you can move with good form and add load as the weeks get harder.",
+    source: "thefitnessphantom.com — The Complete 12-Week Kettlebell Program (Murshid Akram).",
+  },
+  KB_WEEKS,
+);
+
 // ---- registry ----------------------------------------------------------------
 
 /** Every encoded program, keyed by the GoalPlan id that surfaces it. */
@@ -1007,6 +1443,7 @@ export const PLAN_PROGRAMS: Record<string, PlanProgram> = {
   [RUN_5K_BEGINNER_9WK.id]: RUN_5K_BEGINNER_9WK,
   [BB_PPL_6DAY.id]: BB_PPL_6DAY,
   [FATLOSS_KB_SATURDAY.id]: FATLOSS_KB_SATURDAY,
+  [KB_12WK_STRONG.id]: KB_12WK_STRONG,
 };
 
 /** The rich, discipline-shaped program behind a plan id (null when the plan uses
