@@ -103,8 +103,11 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: xcode-project build-ipa --workspace HYBRID.xcworkspace --scheme HYBRID --disable-xcpretty
 
+      # Upload only — the build is then available for INTERNAL TestFlight
+      # testing immediately (no beta review). External testers would additionally
+      # need the Beta App Review info filled in App Store Connect + `--testflight`
+      # here to submit for review; not needed for internal testing.
       - name: Upload to TestFlight
         run: |
           app-store-connect publish \
-            --path "$(find apps/mobile/ios/build -name '*.ipa' | head -n 1)" \
-            --testflight
+            --path "$(find apps/mobile/ios/build -name '*.ipa' | head -n 1)"
