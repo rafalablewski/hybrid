@@ -5,10 +5,12 @@ import { useRevalidate } from "@/lib/use-invalidate";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
+  isFullAccess,
   type NutritionGoal, type Signal,
 } from "@hybrid/core";
 import { fs, space, LINE, LIME, ASH, tip, txt } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
 
 const GOALS: { id: NutritionGoal; label: string }[] = [
@@ -18,9 +20,12 @@ type Row = { userId: string; kind: string; value: number; unit: string; source: 
 
 /** AURORA Nutrition (web) — rounded macro tracker, same adaptive-targets engine
  *  + /api/signals logging + bodyweight trend as the classic. */
-export default function AuroraNutrition() {
+export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: string) => void }) {
   const revalidate = useRevalidate();
   const { t } = useLang();
+  // Free (casual) users log macros manually; scanning a label and saving
+  // meals/products is a Full feature (see canScanFoodLabel / canSaveMealsAndProducts).
+  const full = isFullAccess(usePersona());
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -166,9 +171,23 @@ export default function AuroraNutrition() {
         <button onClick={add} disabled={saving} style={{ width: "100%", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")}
         </button>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10, lineHeight: 1.5 }}>
-          {t("w.recovery.nutrition.foodSearchNote")}
-        </div>
+        {full ? (
+          <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.recovery.nutrition.proTitle")}</div>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
+              {[t("w.recovery.nutrition.proScan"), t("w.recovery.nutrition.proSaveMeals"), t("w.recovery.nutrition.proSaveProducts")].map((l) => (
+                <span key={l} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 12px" }}>{l}</span>
+              ))}
+            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10, lineHeight: 1.5 }}>{t("w.recovery.nutrition.proSoon")}</div>
+          </div>
+        ) : (
+          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", textAlign: "left", marginTop: 12, cursor: "pointer", border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, rgba(196,240,53,.12), rgba(127,212,232,.05))", borderRadius: 16, padding: 14, color: C("chalk") }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: fs.body }}><span>🔒</span>{t("w.recovery.nutrition.proTitle")}</div>
+            <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.recovery.nutrition.proBody")}</div>
+            <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: C("lime-t") }}>✦ {t("w.recovery.nutrition.proCta")} →</div>
+          </button>
+        )}
       </div>
 
       <div style={{ ...card, marginTop: 16, padding: 18 }}>
