@@ -454,11 +454,19 @@ html {
 .cmd-tile.is-active .cmd-lb { color: var(--accent-text); }
 
 /* ---- accessibility / fallbacks ---- */
+/* Comprehensive reduced-motion: a global catch-all (not just the glass/command
+   selectors) so EVERY animation/transition is neutralised — the ambient blob
+   field, the conic rim sweep, the Aurora screen-enter, win-pop, hover lifts and
+   any inline-styled transitions — for users who ask for less motion. Near-zero
+   (not 0) keeps animationend/transitionend events firing so JS that waits on
+   them still resolves. The .win-pop / .aurora-enter rules above already set
+   `animation:none`; this backstops everything else. */
 @media (prefers-reduced-motion: reduce) {
-  .liquid-glass, .cmd-orb, .cmd-scrim, .cmd-hub, .cmd-tile, .cmd-ic {
+  *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
