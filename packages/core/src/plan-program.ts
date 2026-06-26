@@ -279,9 +279,10 @@ export function repZoneColor(reps: number): LoadColor {
   return "blue"; // endurance
 }
 
-/** The rep number a scheme prescribes (the lower bound of a range, e.g. 15 from
- *  "3 × 15-20"), or "time" for a duration/hold ("4 × 30 s"), or null when none is
- *  parseable. Reads only the rep side (after the ×), so per-side notes survive. */
+/** The rep number a scheme prescribes (e.g. 20 from "3 × 20"; reps are single
+ *  numbers, never ranges — see the project rule), or "time" for a duration/hold
+ *  ("4 × 30 s"), or null when none is parseable. Reads only the rep side (after
+ *  the ×), so per-side notes ("10/leg") survive. */
 function schemeRepCount(scheme: string): number | "time" | null {
   const after = scheme.split(/[×x]/i).pop()?.trim() ?? "";
   if (!after) return null;

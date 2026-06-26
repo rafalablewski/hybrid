@@ -337,20 +337,24 @@ describe("kettlebell (12-week rotating split) program — hypertrophy shape, set
     expect(wk(12)[0]).toBe("Mon · Upper");
   });
 
-  it("keeps reps EXACTLY as written (ranges / per-side / holds) — no invented RPE", () => {
+  it("prescribes reps as a SINGLE number (ranges collapsed to the top), per-side / holds kept", () => {
     const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!; // Mon · Push
     const bench = push.sessions[0]!.lifts[0]!;
-    expect(bench).toMatchObject({ name: "Kettlebell Bench Press", setsReps: "3 × 15-20", prescription: "3 × 15-20" });
+    // source "15-20" → "20" — no range survives
+    expect(bench).toMatchObject({ name: "Kettlebell Bench Press", setsReps: "3 × 20", prescription: "3 × 20" });
     expect(bench.rpe).toBeUndefined(); // the source prescribes sets × reps, not effort
     expect(liftKind(bench)).toBe("rpe"); // structured sets×reps entry (no % ramp)
     // a per-side scheme is kept verbatim
     expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw Kettlebell Press", setsReps: "3 × 10/arm" });
+    // belt-and-braces: not one "N-M" range in any scheme across all 12 weeks
+    const allReps = KB_12WK_STRONG.weeks.flatMap((w) => w.days).flatMap((d) => d.sessions).flatMap((s) => s.entries ?? []).map((e) => e.scheme ?? "");
+    expect(allReps.some((s) => /\d+-\d+/.test(s))).toBe(false);
   });
 
   it("colours the sets×reps by training zone — the same wave oly/bb ride, derived from the reps", () => {
-    // 15-20 reps → endurance (blue); 10 reps → hypertrophy (lime).
+    // 20 reps → endurance (blue); 10 reps → hypertrophy (lime).
     const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!;
-    expect(push.sessions[0]!.lifts[0]!.intensity).toBe("blue"); // Bench 3 × 15-20
+    expect(push.sessions[0]!.lifts[0]!.intensity).toBe("blue"); // Bench 3 × 20
     expect(push.sessions[0]!.lifts[2]!.intensity).toBe("lime"); // Seesaw Press 3 × 10/arm
     // low-rep strength work → amber (Renegade Row 3 × 6/side, wk3 Mon)
     const upper = planProgramView(KB_12WK_STRONG, { week: 3 }).days[0]!;
