@@ -49,6 +49,7 @@ import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
+import TodayQuickLog from "./today-quick";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -411,6 +412,10 @@ export default function AuroraHome() {
             <View key={i} style={{ width: activeCard === i ? 20 : 7, height: 7, borderRadius: 999, backgroundColor: activeCard === i ? C.lime : C.line }} />
           ))}
         </View>
+
+        {/* QUICK LOG — swipeable check-in + nutrition widgets (two columns), so
+            logging today's readiness or macros is one swipe from Today. */}
+        <TodayQuickLog />
 
         {/* FOLLOW A COACH — swipeable rail (live marketplace → placeholder people). */}
         <CoachRail onOpen={() => router.push("/coaches")} />
