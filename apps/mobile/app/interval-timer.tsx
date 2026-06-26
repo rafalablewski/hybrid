@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, AccessibilityInfo } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   buildIntervalPlan,
@@ -65,6 +65,24 @@ export default function IntervalTimer() {
 
   const kindColor = kind === "work" ? C.lime : kind === "rest" ? C.blue : kind === "prep" ? C.amber : C.violet;
   const kindLabel = kind === "work" ? "Work" : kind === "rest" ? "Rest" : kind === "prep" ? "Get ready" : "Done";
+
+  // Screen-reader announcer — speak the phase + round at each work/rest
+  // boundary (the per-second clock is never announced; that would be unbearable
+  // for a VoiceOver/TalkBack user). Mirrors the web aria-live region. The ref
+  // dedupes so a given phase is announced once, not on every tick re-render.
+  const lastAnnounce = useRef("");
+  useEffect(() => {
+    if (!running && !pos.done) return;
+    const msg = pos.done
+      ? "Workout complete"
+      : phase && phase.round > 0
+        ? `${kindLabel}, round ${phase.round} of ${phase.totalRounds}`
+        : kindLabel;
+    if (msg !== lastAnnounce.current) {
+      lastAnnounce.current = msg;
+      AccessibilityInfo.announceForAccessibility(msg);
+    }
+  }, [kind, phase?.round, phase?.totalRounds, pos.done, running, kindLabel]);
   const progress = total > 0 ? elapsed / total : 0;
 
   return (
