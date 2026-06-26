@@ -298,10 +298,6 @@ export default function AuroraToday({
         ))}
       </div>
 
-      {/* QUICK LOG — swipeable check-in + nutrition widgets (two columns), so
-          logging today's readiness or macros is one swipe from Today. */}
-      <TodayQuickLog onNavigate={onNavigate} />
-
       {/* FOLLOW A COACH — swipeable rail of coaches (live marketplace, falling
           back to placeholder people until coaches publish storefronts). */}
       <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
@@ -524,6 +520,10 @@ export default function AuroraToday({
           </div>
         </div>
       )}
+
+      {/* QUICK LOG — swipeable check-in + nutrition widgets (two columns), so
+          logging today's readiness or macros is one swipe from Today. */}
+      <TodayQuickLog onNavigate={onNavigate} />
 
       {/* FEED STRIP — a few of your circle's latest, like IG Threads at the
           bottom of the feed. Empty → renders nothing. */}

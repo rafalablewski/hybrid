@@ -413,10 +413,6 @@ export default function AuroraHome() {
           ))}
         </View>
 
-        {/* QUICK LOG — swipeable check-in + nutrition widgets (two columns), so
-            logging today's readiness or macros is one swipe from Today. */}
-        <TodayQuickLog />
-
         {/* FOLLOW A COACH — swipeable rail (live marketplace → placeholder people). */}
         <CoachRail onOpen={() => router.push("/coaches")} />
 
@@ -699,6 +695,10 @@ export default function AuroraHome() {
             </View>
           </ACard>
         )}
+
+        {/* QUICK LOG — swipeable check-in + nutrition widgets (two columns), so
+            logging today's readiness or macros is one swipe from Today. */}
+        <TodayQuickLog />
 
         {/* FEED STRIP — your circle's latest, IG-Threads style, at the bottom. */}
         <FeedPreview onOpen={() => router.push("/feed")} />
