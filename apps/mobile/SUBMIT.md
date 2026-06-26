@@ -47,12 +47,46 @@ trigger it from the browser.
    (or push a tag like `mobile-v1.0.1`). It builds on Expo's servers and
    auto-submits to TestFlight.
 
-The Admin-role ASC API key lets EAS create the signing cert/profile **and** the
-App Store Connect app record on the first run, so there's nothing to set up by
-hand first. A cloud build consumes the EAS Build quota (the trade-off for no
-Mac) — but you only run this for an actual native build/release; JS changes go
-out free via OTA (below). Normal pushes/PRs are untouched — they stay on
-`ci.yml`.
+### One-time prerequisite: bootstrap the production credentials
+
+A `--non-interactive` CI build can **reuse** iOS signing credentials but will
+**not create them the first time** — it fails with *"Distribution Certificate
+is not validated for non-interactive builds / Credentials are not set up. Run
+this command again in interactive mode"* ([eas-cli #3202](https://github.com/expo/eas-cli/issues/3202)).
+So the very first production build must be run **interactively, once**, to
+generate the Apple Distribution certificate + App Store provisioning profile and
+store them on EAS. After that, the GitHub Actions button above works hands-free
+forever (no terminal again).
+
+Run this once on your Mac (it authenticates to Apple via the **ASC API key**, so
+the hardware-key 2FA that blocks interactive Apple login is never hit):
+
+```bash
+git clone https://github.com/rafalablewski/hybrid.git
+cd hybrid
+pnpm install
+cd apps/mobile
+npx eas login
+```
+
+Then export the Apple credentials (fill in the two real values) and build —
+**don't paste the explanatory lines**, just the commands:
+
+```bash
+export EXPO_ASC_API_KEY_PATH="/full/path/to/AuthKey_RQTCHVF25S.p8"
+export EXPO_ASC_KEY_ID="RQTCHVF25S"
+export EXPO_ASC_ISSUER_ID="<your issuer id>"
+export EXPO_APPLE_TEAM_ID="T4WC9M8Y3S"
+npx eas build --profile production --platform ios --auto-submit
+```
+
+When it asks *"Generate a new Apple Distribution Certificate?"* and *"…
+provisioning profile?"*, answer **Yes**. It creates them on EAS, builds in the
+cloud, and submits to TestFlight. From then on, just use the GitHub button.
+
+A cloud build consumes the EAS Build quota (the trade-off for no Mac) — but you
+only run this for an actual native build/release; JS changes go out free via OTA
+(below). Normal pushes/PRs are untouched — they stay on `ci.yml`.
 
 > Prefer clicking a button on a website over GitHub Actions? The equivalent is
 > the EAS GitHub integration: connect this repo at expo.dev → your project →
