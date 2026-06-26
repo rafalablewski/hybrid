@@ -39,7 +39,7 @@ trigger it from the browser.
    |---|---|
    | `EXPO_TOKEN` | Expo access token — expo.dev → Account → Settings → Access tokens |
    | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | The public Supabase anon/publishable key |
-   | `APPLE_ASC_API_KEY_P8_BASE64` | Your App Store Connect API `.p8`, base64-encoded (`base64 -i AuthKey_XXXX.p8`) |
+   | `APPLE_ASC_API_KEY_P8` | The **full contents** of your App Store Connect API `.p8` file — open `AuthKey_XXXX.p8` in a text editor, copy everything (including the `-----BEGIN/END PRIVATE KEY-----` lines), and paste. No encoding needed. |
    | `APPLE_ASC_KEY_ID` | The `.p8` Key ID (e.g. `RQTCHVF25S`) |
    | `APPLE_ASC_ISSUER_ID` | App Store Connect → Users and Access → Integrations → Keys → Issuer ID |
 

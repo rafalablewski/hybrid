@@ -18,8 +18,10 @@ name: Mobile — build & TestFlight
 #                                  manage credentials non-interactively.
 #   EXPO_PUBLIC_SUPABASE_ANON_KEY  Public Supabase anon/publishable key,
 #                                  embedded at build time so the app signs in.
-#   APPLE_ASC_API_KEY_P8_BASE64    App Store Connect API key (.p8), base64'd:
-#                                    base64 -i AuthKey_XXXX.p8 | pbcopy
+#   APPLE_ASC_API_KEY_P8           The FULL CONTENTS of the App Store Connect
+#                                  API key (.p8) file — open AuthKey_XXXX.p8 in
+#                                  a text editor and paste everything (incl. the
+#                                  BEGIN/END PRIVATE KEY lines). No encoding.
 #   APPLE_ASC_KEY_ID               The .p8 Key ID (e.g. RQTCHVF25S).
 #   APPLE_ASC_ISSUER_ID            App Store Connect → Users and Access →
 #                                  Integrations → Keys → Issuer ID.
@@ -63,7 +65,9 @@ jobs:
 
       - name: Write App Store Connect API key
         working-directory: apps/mobile
-        run: echo "${{ secrets.APPLE_ASC_API_KEY_P8_BASE64 }}" | base64 --decode > asc-key.p8
+        env:
+          ASC_KEY_P8: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
+        run: printf '%s\n' "$ASC_KEY_P8" > asc-key.p8
 
       # Inject the ASC submit credentials into eas.json at runtime (jq is
       # preinstalled on the runner). Keeps the Key ID / Issuer ID out of git —
