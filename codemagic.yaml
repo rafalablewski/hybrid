@@ -1,0 +1,62 @@
+# Codemagic CI — builds HYBRID for iOS and ships it to TestFlight.
+#
+# NO Expo build service: `expo prebuild` is only local code-generation (no Expo
+# account/token). Codemagic handles ALL Apple code-signing AUTOMATICALLY from
+# your App Store Connect API key — no certificate exporting, no .p12, no Xcode.
+#
+# ── One-time setup in the Codemagic web app (codemagic.io) ───────────────────
+#  1. Sign in with GitHub, add the `rafalablewski/hybrid` repository.
+#  2. Team settings → Integrations → App Store Connect → add your API key
+#     (.p8 + Key ID ZRWGCS2PUS + Issuer ID 654187d8-9306-4753-97f6-c33797648364).
+#     Name it exactly "HYBRID ASC" (referenced below).
+#  3. Add an environment variable group named "hybrid" containing
+#     EXPO_PUBLIC_SUPABASE_ANON_KEY = your public Supabase anon key.
+#  4. Open the app → run the `ios-testflight` workflow. That's it.
+
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: HYBRID ASC
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.hybriddomain.xyz
+      groups:
+        - hybrid
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install JS dependencies
+        script: |
+          npm install -g pnpm
+          pnpm install --frozen-lockfile
+      - name: Generate native iOS project (local expo prebuild)
+        script: |
+          cd apps/mobile
+          npx expo prebuild --platform ios --clean
+      - name: Set up Apple signing (automatic, from the API key)
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files com.hybriddomain.xyz \
+            --type IOS_APP_STORE --create
+          keychain add-certificates
+          cd apps/mobile/ios && xcode-project use-profiles
+      - name: Auto-increment build number from TestFlight
+        script: |
+          cd apps/mobile/ios
+          LATEST=$(app-store-connect get-latest-testflight-build-number com.hybriddomain.xyz || echo 0)
+          agvtool new-version -all $((LATEST + 1))
+      - name: Build the IPA
+        script: |
+          cd apps/mobile/ios
+          xcode-project build-ipa --workspace HYBRID.xcworkspace --scheme HYBRID
+    artifacts:
+      - apps/mobile/ios/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
