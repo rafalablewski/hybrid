@@ -7,6 +7,16 @@ export type Lang = "en" | "pl" | "de";
 
 export const LANGS: Record<Lang, string> = { en: "English", pl: "Polski", de: "Deutsch" };
 
+/** Languages that read right-to-left. Empty today — every shipped locale
+ *  (en/pl/de) is LTR — but the clients route layout direction through
+ *  `localeDirection` so that adding an RTL locale (e.g. Arabic/Hebrew) flips the
+ *  document `dir` (web) / `I18nManager` (mobile) from one place. The full
+ *  physical→logical style migration that real RTL needs is tracked separately. */
+export const RTL_LANGS: Lang[] = [];
+
+/** Writing direction for a locale — "ltr" for everything currently shipped. */
+export const localeDirection = (lang: Lang): "ltr" | "rtl" => (RTL_LANGS.includes(lang) ? "rtl" : "ltr");
+
 // Per-domain web-screen string bundles, merged OVER the base dictionary below so
 // the web Aurora screens can be fully localized without bloating this file.
 import { web_home } from "./i18n-web/home";
