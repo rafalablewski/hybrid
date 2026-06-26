@@ -97,7 +97,9 @@ export const GOAL_TREE: GoalNode[] = [
       { id: "bb-ppl-6day", name: "6-Day Push/Pull/Legs", weeks: 1, sessions: 6, tag: "Repeat weekly", desc: "The modern bodybuilding split: two push, two pull and two leg days, each built on a big compound you progressively overload. Run the week on repeat, adding weight or reps every cycle.", focus: ["Hypertrophy", "Strength"], hot: true },
     ] },
   { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
-    plans: [] },
+    plans: [
+      { id: "fatloss-kb-saturday", name: "Saturday Kettlebell Burn", weeks: 1, sessions: 1, tag: "Circuit", desc: "A single ~90-minute kettlebell circuit for fat loss, core tightening and full-body conditioning — a warm-up, five work blocks (legs, push/pull, core, balance), a no-rest finisher and a cool-down. Run it once a week, ideally fasted, and rotate the emphasis (form → speed → volume → heavier) each week.", focus: ["Conditioning", "Core"], hot: true },
+    ] },
   // ---- Endurance ----
   { id: "tri", name: "Triathlon", icon: "◆", color: BLUE, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
     plans: [] },
@@ -119,7 +121,9 @@ export const GOAL_TREE: GoalNode[] = [
   { id: "calisthenics", name: "Calisthenics", icon: "◯", color: LIME, category: "Functional & Sport", blurb: "Master your bodyweight — pull-ups, dips, levers, and the big skills.",
     plans: [] },
   { id: "kettlebell", name: "Kettlebell", icon: "◔", color: AMBER, category: "Functional & Sport", blurb: "Swing, snatch, and get-up. One tool, full-body strength and conditioning.",
-    plans: [] },
+    plans: [
+      { id: "kb-12wk-strong", name: "12-Week Kettlebell — Strong & Athletic", weeks: 12, sessions: 4, tag: "Sets × reps", desc: "A complete 12-week kettlebell block that rotates the split every week — full body, then push/pull/legs, then upper/lower — to build strength, muscle, endurance and mobility. 5–7 exercises a day, 3–5 days a week, with one or two bells.", focus: ["Strength", "Muscle"], hot: true },
+    ] },
   { id: "tactical", name: "Tactical & Military", icon: "◣", color: VIOLET, category: "Functional & Sport", blurb: "Ruck, carry, and work capacity under load. Built to pass the test and do the job.",
     plans: [] },
   { id: "sport", name: "Sport Performance", icon: "★", color: VIOLET, category: "Functional & Sport", blurb: "Speed, power, and agility for field- and court-sport athletes.",

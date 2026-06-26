@@ -12,7 +12,7 @@ const HAIR = "rgba(255,255,255,0.05)";
 // content classification (isProseLift / liftKind) is shared from @hybrid/core.
 const isProse = isProseLift;
 const liftColor = (l: ProgramLiftView): LoadColor =>
-  l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
+  l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : l.intensity ?? workoutColor(l.name);
 
 type Group = { kind: LiftKind; lifts: ProgramLiftView[] };
 function groupByKind(lifts: ProgramLiftView[]): Group[] {
@@ -335,12 +335,14 @@ function HeatRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Pal
   );
 }
 
-// prose fallback (mixed/odd entries inside a day card)
+// prose fallback (mixed/odd entries inside a day card). For conditioning the
+// prescription carries the effort-tier colour (the circuit's load-wave), mirroring
+// the web FallbackRow; otherwise it stays chalk.
 function FallbackRow({ lift, top, C }: { lift: ProgramLiftView; top: boolean; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: HAIR }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
+      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? loadHex(C, lift.intensity) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
     </View>
   );
 }

@@ -23,7 +23,7 @@ const disp = "var(--font-display)";
 // content classification (isProseLift / liftKind) is shared from @hybrid/core.
 const isProse = isProseLift;
 const liftColor = (l: ProgramLiftView): LoadColor =>
-  l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : workoutColor(l.name);
+  l.rpe != null ? rpeColor(l.rpe) : l.steps && l.steps.length ? "lime" : l.intensity ?? workoutColor(l.name);
 
 export default function ProgramDays({ days, week, peakNote }: { days: ProgramDayView[]; week: number; peakNote: string | null }) {
   const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
@@ -194,12 +194,14 @@ function HeatRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string
 }
 
 
-// loaded accessory with no % and no RPE — just the prescription
+// loaded accessory with no % and no RPE — just the prescription. For conditioning
+// the prescription carries the effort-tier colour (the circuit's load-wave), the
+// way the % matrix colours its loads; otherwise it stays chalk.
 function FallbackRow({ lift, borderTop }: { lift: ProgramLiftView; borderTop: string }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 14, padding: "13px 16px", alignItems: "baseline", borderTop }}>
       <NameCell lift={lift} />
-      <div style={{ fontFamily: mono, fontSize: 13, color: CHALK, textAlign: "right" }}>{lift.prescription}</div>
+      <div style={{ fontFamily: mono, fontSize: 13, fontWeight: lift.intensity ? 600 : 400, color: lift.intensity ? HEX[lift.intensity] : CHALK, textAlign: "right" }}>{lift.prescription}</div>
     </div>
   );
 }

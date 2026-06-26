@@ -11,6 +11,8 @@ import {
   loadColor,
   rpeColor,
   workoutColor,
+  conditioningColor,
+  repZoneColor,
   isGymLift,
   isProseLift,
   liftKind,
@@ -18,7 +20,7 @@ import {
   type PlanLift,
   type PlanProgram,
 } from "./plan-program";
-import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, programFor, PLAN_PROGRAMS } from "./plan-programs";
+import { SOVIET_OWL_8WK, RUN_5K_BEGINNER_9WK, BB_PPL_6DAY, FATLOSS_KB_SATURDAY, KB_12WK_STRONG, programFor, PLAN_PROGRAMS } from "./plan-programs";
 
 describe("parsePercentSteps", () => {
   it("parses ramped (pct/reps)sets terms", () => {
@@ -248,6 +250,139 @@ describe("mixed endurance day — strength accessory on a run day", () => {
   it("falls back to the discipline volume when present", () => {
     const owlDay = planProgramView(SOVIET_OWL_8WK, { week: 1 }).days[0]!;
     expect(dayContentSummary(owlDay)).toBe("160 lifts");
+  });
+});
+
+describe("conditioning (kettlebell circuit) program — same model, blocks as cards", () => {
+  it("is a registered single-week conditioning plan with no peak, counting exercises as volume", () => {
+    expect(programFor("fatloss-kb-saturday")).toBe(FATLOSS_KB_SATURDAY);
+    expect(Object.keys(PLAN_PROGRAMS)).toContain("fatloss-kb-saturday");
+    expect(FATLOSS_KB_SATURDAY.discipline).toBe("conditioning");
+    expect(FATLOSS_KB_SATURDAY.anchor).toBeUndefined();
+    expect(FATLOSS_KB_SATURDAY.weeks).toHaveLength(1);
+
+    const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
+    expect(v.weeks).toEqual([1]); // one repeating session → renderers hide the week selector
+    expect(v.peakNote).toBeNull();
+    // conditioning counts movements like hypertrophy → a real volume chip, never "runs"
+    expect(v.weekVolume).toBe("24 exercises");
+    expect(v.days[0]!.volume).toBe("5 exercises"); // warm-up
+    expect(dayContentSummary(v.days.at(-1)!)).toBe("4 exercises"); // cool-down: NOT "4 runs"
+  });
+
+  it("renders each block as its own card, with the round count in the title", () => {
+    const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
+    expect(v.days.map((d) => d.title)).toEqual([
+      "Warm-Up · 10 min",
+      "Block 1 · Core & Stability · 2 rounds",
+      "Block 2 · Leg + Glutes · 3 rounds",
+      "Block 3 · Push & Pull · 3 rounds",
+      "Block 4 · Balance & Core Burn · 2 rounds",
+      "Block 5 · Finisher · 2–3 rounds, no rest between",
+      "Cool-Down · 10 min",
+    ]);
+  });
+
+  it("models circuit exercises as scheme (sets×reps / time) entries — never % or paces", () => {
+    const legs = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days[2]!; // Block 2 · Leg + Glutes
+    const swing = legs.sessions[0]!.lifts[1]!;
+    expect(swing).toMatchObject({ name: "KB Swing", setsReps: "3 × 15", prescription: "3 × 15" });
+    expect(liftKind(swing)).toBe("rpe"); // structured circuit item (sets×reps column), no % ramp
+    expect(swing.rpe).toBeUndefined(); // conditioning is effort-by-feel, not RPE-coded
+    // a timed hold is still a scheme entry
+    const lunge = legs.sessions[0]!.lifts[2]!;
+    expect(lunge).toMatchObject({ name: "Walking Lunges", setsReps: "3 × 10/leg", note: "Bodyweight or with KB" });
+  });
+
+  it("rides the shared intensity wave: warm-up cool → finisher peaks red → cool-down ash", () => {
+    const v = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 });
+    const color = (d: number) => v.days[d]!.sessions[0]!.lifts[0]!.intensity;
+    expect(color(0)).toBe("blue"); // Warm-Up — easy
+    expect(color(1)).toBe("lime"); // Core & Stability — moderate
+    expect(color(2)).toBe("amber"); // Leg + Glutes — hard
+    expect(color(5)).toBe("red"); // Finisher — max
+    expect(color(6)).toBe("ash"); // Cool-Down — recover
+    // every exercise in a block shares its block's tier
+    expect(v.days[5]!.sessions[0]!.lifts.every((l) => l.intensity === "red")).toBe(true);
+  });
+
+  it("renders the cool-down stretches as prose rows (no sets×reps scheme)", () => {
+    const cooldown = planProgramView(FATLOSS_KB_SATURDAY, { week: 1 }).days.at(-1)!;
+    const fold = cooldown.sessions[0]!.lifts[0]!;
+    expect(fold).toMatchObject({ name: "Forward Fold", prescription: "Hamstring stretch", intensity: "ash" });
+    expect(isProseLift(fold)).toBe(true);
+    expect(liftKind(fold)).toBe("run");
+  });
+});
+
+describe("kettlebell (12-week rotating split) program — hypertrophy shape, sets × reps", () => {
+  it("is a registered 12-week hypertrophy plan with no peak, counting exercises", () => {
+    expect(programFor("kb-12wk-strong")).toBe(KB_12WK_STRONG);
+    expect(Object.keys(PLAN_PROGRAMS)).toContain("kb-12wk-strong");
+    expect(KB_12WK_STRONG.discipline).toBe("hypertrophy");
+    expect(KB_12WK_STRONG.anchor).toBeUndefined();
+    expect(KB_12WK_STRONG.weeks).toHaveLength(12);
+
+    const v = planProgramView(KB_12WK_STRONG, { week: 1 });
+    expect(v.weeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(v.peakNote).toBeNull();
+    expect(v.weekVolume).toBe("17 exercises"); // wk1: 6 + 6 + 5
+  });
+
+  it("rotates the split across weeks via the day titles (full body → PPL → upper/lower)", () => {
+    const wk = (n: number) => planProgramView(KB_12WK_STRONG, { week: n }).days.map((d) => d.title);
+    expect(wk(1)).toEqual(["Mon · Full Body", "Wed · Full Body", "Fri · Full Body"]);
+    expect(wk(2)).toEqual(["Mon · Push", "Wed · Pull", "Thu · Legs", "Fri · Abs"]);
+    expect(wk(3)).toEqual(["Mon · Upper", "Tue · Lower", "Thu · Upper", "Fri · Lower"]);
+    expect(wk(12)[0]).toBe("Mon · Upper");
+  });
+
+  it("prescribes reps as a SINGLE number (ranges collapsed to the top), per-side / holds kept", () => {
+    const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!; // Mon · Push
+    const bench = push.sessions[0]!.lifts[0]!;
+    // source "15-20" → "20" — no range survives
+    expect(bench).toMatchObject({ name: "KB Bench Press", setsReps: "3 × 20", prescription: "3 × 20" });
+    expect(bench.rpe).toBeUndefined(); // the source prescribes sets × reps, not effort
+    expect(liftKind(bench)).toBe("rpe"); // structured sets×reps entry (no % ramp)
+    // a per-side scheme is kept verbatim
+    expect(push.sessions[0]!.lifts[2]).toMatchObject({ name: "Seesaw KB Press", setsReps: "3 × 10/arm" });
+    // belt-and-braces: not one "N-M" range in any scheme across all 12 weeks
+    const allReps = KB_12WK_STRONG.weeks.flatMap((w) => w.days).flatMap((d) => d.sessions).flatMap((s) => s.entries ?? []).map((e) => e.scheme ?? "");
+    expect(allReps.some((s) => /\d+\s*[-–]\s*\d+/.test(s))).toBe(false); // hyphen OR en-dash
+  });
+
+  it("colours the sets×reps by training zone — the same wave oly/bb ride, derived from the reps", () => {
+    // 20 reps → endurance (blue); 10 reps → hypertrophy (lime).
+    const push = planProgramView(KB_12WK_STRONG, { week: 2 }).days[0]!;
+    expect(push.sessions[0]!.lifts[0]!.intensity).toBe("blue"); // Bench 3 × 20
+    expect(push.sessions[0]!.lifts[2]!.intensity).toBe("lime"); // Seesaw Press 3 × 10/arm
+    // low-rep strength work → amber (Renegade Row 3 × 6/side, wk3 Mon)
+    const upper = planProgramView(KB_12WK_STRONG, { week: 3 }).days[0]!;
+    expect(upper.sessions[0]!.lifts.at(-1)!).toMatchObject({ name: "KB Renegade Row", intensity: "amber" });
+    // a timed hold → endurance (Mountain Climber 4 × 30 s, wk4 Wed)
+    const fb = planProgramView(KB_12WK_STRONG, { week: 4 }).days[1]!;
+    expect(fb.sessions[0]!.lifts[3]!).toMatchObject({ name: "Mountain Climber", intensity: "blue" });
+  });
+});
+
+describe("conditioningColor — the circuit intensity wave", () => {
+  it("maps effort tiers onto the shared load-colour scale", () => {
+    expect(conditioningColor("recover")).toBe("ash");
+    expect(conditioningColor("easy")).toBe("blue");
+    expect(conditioningColor("moderate")).toBe("lime");
+    expect(conditioningColor("hard")).toBe("amber");
+    expect(conditioningColor("max")).toBe("red");
+  });
+});
+
+describe("repZoneColor — the sets×reps training-zone wave", () => {
+  it("maps rep ranges onto strength / hypertrophy / endurance colours", () => {
+    expect(repZoneColor(5)).toBe("amber"); // strength
+    expect(repZoneColor(6)).toBe("amber");
+    expect(repZoneColor(8)).toBe("lime"); // hypertrophy
+    expect(repZoneColor(12)).toBe("lime");
+    expect(repZoneColor(15)).toBe("blue"); // endurance
+    expect(repZoneColor(20)).toBe("blue");
   });
 });
 
