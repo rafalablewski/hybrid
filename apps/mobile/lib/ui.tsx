@@ -24,6 +24,7 @@ import { useTheme, txt } from "./theme";
 export { fs, space };
 import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
+import { useReducedMotion } from "./use-reduced-motion";
 
 // ── Dynamic Type caps ────────────────────────────────────────────────────────
 // RN already scales every <Text> with the OS "Larger Text" / Dynamic Type
@@ -135,7 +136,11 @@ function FieldBlob({
   ms: number;
 }) {
   const a = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
+    // Reduce Motion: hold the blob still (a stays 0 → no translate/scale) rather
+    // than running the perpetual drift loop.
+    if (reducedMotion) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(a, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
@@ -144,7 +149,7 @@ function FieldBlob({
     );
     loop.start();
     return () => loop.stop();
-  }, [a, ms]);
+  }, [a, ms, reducedMotion]);
   const translateX = a.interpolate({ inputRange: [0, 1], outputRange: [0, dx] });
   const translateY = a.interpolate({ inputRange: [0, 1], outputRange: [0, dy] });
   const scale = a.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] });

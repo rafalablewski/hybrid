@@ -20,6 +20,7 @@ import { useFocusEffect } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 import { GlassSurface, GlassSegment } from "./swiftui";
@@ -102,13 +103,19 @@ export function AuroraScreen({
   // Subtle entrance — content fades + rises on every screen ENTRY (push or tab
   // switch), so navigation feels like motion, not a hard cut. Re-runs on focus.
   const enter = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
   useFocusEffect(
     useCallback(() => {
+      // Reduce Motion: show the screen at rest (no fade/rise) instead of animating.
+      if (reducedMotion) {
+        enter.setValue(1);
+        return;
+      }
       enter.setValue(0);
       const anim = Animated.timing(enter, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true });
       anim.start();
       return () => anim.stop();
-    }, [enter]),
+    }, [enter, reducedMotion]),
   );
   const enterStyle = {
     opacity: enter,
