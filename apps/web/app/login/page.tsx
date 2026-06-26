@@ -216,6 +216,7 @@ function ClassicLoginPage() {
               onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               inputMode="numeric"
               autoFocus
+              aria-label="Authenticator code"
               placeholder="000000"
               style={{ ...inputStyle, fontSize: fs.heading, letterSpacing: ".3em", textAlign: "center" }}
             />
@@ -316,6 +317,7 @@ function ClassicLoginPage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            aria-label="Name"
             placeholder="name"
             style={inputStyle}
           />
@@ -324,6 +326,7 @@ function ClassicLoginPage() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          aria-label="Email"
           placeholder="you@email.com"
           style={inputStyle}
         />
@@ -332,6 +335,7 @@ function ClassicLoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            aria-label="Password"
             placeholder="password"
             style={inputStyle}
           />

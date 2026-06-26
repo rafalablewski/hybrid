@@ -151,6 +151,7 @@ export function SessionRename({
         style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "8px 12px", outline: "none", textAlign: "center" }}
       />
       <button
+        aria-label="Save"
         onClick={commit}
         disabled={saving}
         style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: C("ink"), background: C("lime"), border: "none", borderRadius: 10, padding: "8px 14px", cursor: "pointer" }}

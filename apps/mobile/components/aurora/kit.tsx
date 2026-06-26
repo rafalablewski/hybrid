@@ -359,6 +359,7 @@ export function AField({
         onChangeText={onChange}
         placeholder={placeholder}
         placeholderTextColor={palette.ash}
+        accessibilityLabel={placeholder}
         secureTextEntry={secure ? !visible : false}
         keyboardType={keyboard ?? "default"}
         autoCapitalize="none"
@@ -407,6 +408,9 @@ export function ASegment<T extends string>({
           <Pressable
             key={o.id}
             onPress={() => onPick(o.id)}
+            accessibilityRole="radio"
+            accessibilityLabel={o.label}
+            accessibilityState={{ selected: on }}
             style={{
               flex: 1,
               alignItems: "center",

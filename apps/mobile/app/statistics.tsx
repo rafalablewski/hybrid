@@ -53,7 +53,7 @@ export default function Statistics() {
     <AuroraScreen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
-          <Pressable onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="back" size={20} color={C.chalk} />
           </Pressable>
           <AHeading style={{ fontSize: fs.display }}>Your{"\n"}Statistics</AHeading>

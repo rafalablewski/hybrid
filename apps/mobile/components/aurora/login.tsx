@@ -77,6 +77,8 @@ export default function AuroraLogin() {
   return (
     <AuroraScreen>
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("common.back")}
         onPress={() => router.back()}
         hitSlop={10}
         style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}

@@ -40,6 +40,34 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   GLOBAL A11Y BASELINE
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Form controls follow the active theme so the UA paints dark widgets +
+   placeholders on the dark surface (and light on light). Without this the
+   document defaults to color-scheme:light → native placeholders render as a
+   ~#757575 grey that fails AA on the dark INK fields. */
+html {
+  color-scheme: dark light;
+}
+
+/* Placeholders carry real instructional content here ("you@email.com"), so they
+   must meet AA. `ash` is theme-aware (flips with [data-theme]) and clears 4.5:1
+   on both surfaces; opacity:1 stops the UA from fading it back under threshold. */
+::placeholder {
+  color: var(--color-ash);
+  opacity: 1;
+}
+
+/* Visible keyboard-focus ring. ~40 inputs/buttons set `outline:none` inline, so
+   this needs `!important` to win over the inline style — :focus-visible keeps it
+   keyboard-only (mouse/touch clicks don't get the ring). */
+:focus-visible {
+  outline: 2px solid var(--color-lime) !important;
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
    LIQUID GLASS — reusable material layer (mirrors
    reference/liquid-glass/system.html, contrast-audited to WCAG AA+).
    Surface only: brand colors/typography are unchanged. Default = dark
