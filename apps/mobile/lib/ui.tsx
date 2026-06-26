@@ -240,10 +240,13 @@ export function Card({
   // RADIUS.card and the /hybrid design). Callers can override via style. Classic
   // radius is untouched.
   const aurora = useTemplate().template === "aurora";
-  if (glass) {
-    const gs: ViewStyle | undefined = aurora ? { borderRadius: 28, ...(style ?? {}) } : style;
+  // Aurora cards are SOLID ink2 surfaces (matching the kit's ACard + the web
+  // Aurora cards). The frosted GlassCard reads as the old "liquid glass" look, so
+  // under Aurora the shared Card renders solid even when `glass` is requested;
+  // GlassCard stays available for deliberate glass (e.g. the shareable summary).
+  if (glass && !aurora) {
     return (
-      <GlassCard style={gs} accent={accent}>
+      <GlassCard style={style} accent={accent}>
         {children}
       </GlassCard>
     );
@@ -252,13 +255,17 @@ export function Card({
     <View
       style={[
         {
-          backgroundColor: palette.card,
+          backgroundColor: aurora ? palette.ink2 : palette.card,
           borderWidth: 1,
           borderColor: palette.line,
           borderRadius: aurora ? 28 : 16,
           padding: space.lg,
           marginBottom: space.md,
+          // soft, low depth — the kit's ACard shadow, not the heavy glass one.
+          ...(aurora ? { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } : {}),
         },
+        // keep the optional left accent rail (used for admin grouping) on the solid card.
+        accent ? { borderLeftWidth: 3, borderLeftColor: accent } : null,
         style,
       ]}
     >
