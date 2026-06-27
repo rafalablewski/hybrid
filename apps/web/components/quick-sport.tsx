@@ -15,6 +15,11 @@ import {
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, ON_ACCENT, disp, mono, Mono } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
+// Carousel cards use punchy short labels (the sheet/log keeps the real sport
+// name) — "Running" → "Run", "Cycling" → "Ride", etc.
+const SHORT: Record<string, string> = { Running: "Run", Cycling: "Ride", Swimming: "Swim", Rowing: "Row", Walking: "Walk", Hiking: "Hike" };
+const shortSport = (name: string) => SHORT[name] ?? name;
+
 const field = {
   ...mono,
   fontSize: fs.bodyLg,
@@ -51,7 +56,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
     <>
       <div style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", margin: "0 -2px", padding: "2px 2px 6px" }}>
         {suggested.map((name) => (
-          <SportCard key={name} icon={olympicSport(name)?.icon ?? "🏃"} label={name} hint={t("w.home.today.w.tapLog")} onClick={() => setSheetSport(name)} />
+          <SportCard key={name} icon={olympicSport(name)?.icon ?? "🏃"} label={shortSport(name)} hint={t("w.home.today.w.tapLog")} onClick={() => setSheetSport(name)} />
         ))}
         {/* Other — opens the searchable picker, then the log sheet */}
         <SportCard icon="＋" label={t("w.home.quickSport.other")} hint={t("w.home.quickSport.search")} onClick={() => setPickerOpen(true)} />

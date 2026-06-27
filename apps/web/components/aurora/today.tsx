@@ -6,6 +6,7 @@ import { fs, space,
   prescribeSession,
   computeAccountability,
   weekAdherence,
+  trainingDaysPerWeek,
   buildActivityFeed,
   currentPhase,
   planToday,
@@ -94,7 +95,8 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  const adherence = useMemo(() => weekAdherence(sessions, 3), [sessions]);
+  // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
+  const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: 3 })), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -343,7 +345,7 @@ function Kicker({ k, h, color }: { k: string; h: string; color: string }) {
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
       <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
-      <span style={{ fontWeight: 800, fontSize: 19, marginLeft: "auto", color: C("chalk") }}>{h}</span>
+      <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 12, letterSpacing: 0, textTransform: "none", marginLeft: "auto", color: C("ash") }}>{h}</span>
     </div>
   );
 }

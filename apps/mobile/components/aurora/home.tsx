@@ -136,7 +136,8 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  const adherence = useMemo(() => weekAdherence(sessions, 3), [sessions]);
+  // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
+  const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 })), [sessions, prefDays]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -562,7 +563,7 @@ function Kicker({ C, k, h, color }: { C: P; k: string; h: string; color: string 
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
       <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, marginLeft: "auto" }}>{h}</Text>
+      <Text style={{ fontFamily: F.semi, fontSize: 12, color: C.ash, marginLeft: "auto" }}>{h}</Text>
     </View>
   );
 }

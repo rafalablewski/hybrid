@@ -26,6 +26,11 @@ import { RADIUS } from "./aurora/kit";
  * so "back from a run → tap → log → done" never leaves Home. Mirrors the web
  * quick-sport.tsx carousel.
  */
+// Carousel cards use punchy short labels (the sheet/log keeps the real sport
+// name) — "Running" → "Run", "Cycling" → "Ride", etc.
+const SHORT: Record<string, string> = { Running: "Run", Cycling: "Ride", Swimming: "Swim", Rowing: "Row", Walking: "Walk", Hiking: "Hike" };
+const shortSport = (name: string) => SHORT[name] ?? name;
+
 export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
   const C = useTheme().palette;
   const { t } = useLang();
@@ -54,7 +59,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         {suggested.map((name) => (
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
             <Text style={{ fontSize: 18 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{name}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{shortSport(name)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
