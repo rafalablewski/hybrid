@@ -9,13 +9,18 @@ export const colors = {
   ink2: "#141614", // raised surface
   card: "#161816", // card surface
   line: "#2a2d2a", // hairline borders
-  lime: "#c4f035", // acid-lime — the primary accent
+  // AURORA SPECTRUM accents — the brand's coolors palette (chartreuse / teal /
+  // sand / terracotta), layered over the unchanged dark surfaces. Each daily
+  // Today section maps onto one accent (see semantic.ts SECTION_COLOR), so the
+  // app reads as a guided gradient rather than one flat lime. Surfaces above are
+  // untouched. (violet has no palette member; it stays for the premium/coach slot.)
+  lime: "#c7ef00", // chartreuse — the primary accent (action / "go" / Train)
   chalk: "#f3f4ef", // primary text
   ash: "#8b8f86", // muted text
-  blue: "#7fd4e8", // conditioning accent
-  violet: "#c9a9f0", // coach accent
-  amber: "#f0b45e", // sport accent
-  red: "#e0625e", // alert / injury
+  blue: "#3c787e", // teal — conditioning / info accent (Feel)
+  violet: "#c9a9f0", // coach / premium accent
+  amber: "#d0cd94", // sand — sport / caution accent (Plan)
+  red: "#d56f3e", // terracotta — alert / injury / streak (Connect)
 } as const;
 
 export type ColorToken = keyof typeof colors;

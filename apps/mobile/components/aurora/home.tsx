@@ -22,6 +22,7 @@ import {
   velocityProfiles,
   readinessRole,
   accountabilityRole,
+  SECTION_COLOR,
   SPORTS,
   LEVELS,
   type LoggedSession,
@@ -289,14 +290,16 @@ export default function AuroraHome() {
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
           </View>
           {acc.streak.current > 0 && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+            // SPECTRUM: the streak wears the warm terracotta accent (Connect) — it
+            // pairs with the 🔥 and keeps chartreuse reserved for the primary action.
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
             </View>
           )}
         </View>
 
         {/* ───── TRAIN ───── */}
-        <Kicker C={C} k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C.lime} />
+        <Kicker C={C} k={t("w.home.today.kTrain")} h={t("w.home.today.kSession")} color={C[SECTION_COLOR.train]} />
 
         {/* PLAN TODAY ⇄ AI COACH — horizontal snapping pager + dots */}
         <ScrollView
@@ -452,7 +455,7 @@ export default function AuroraHome() {
 
 
         {/* ───── RECOVER · FEEL ───── */}
-        <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C.lime} />
+        <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C[SECTION_COLOR.feel]} />
 
         {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}>
@@ -468,7 +471,7 @@ export default function AuroraHome() {
 
         {/* ───── PLAN ───── */}
         {(isAthlete || coached) && macro ? (
-          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C.lime} />
+          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} />
         ) : null}
         {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
         {(isAthlete || coached) && macro && reconciledView && (
@@ -522,7 +525,7 @@ export default function AuroraHome() {
 
 
         {/* ───── CONNECT ───── */}
-        <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C.lime} />
+        <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C[SECTION_COLOR.connect]} />
 
         {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
         <CoachRail onOpen={() => router.push("/coaches")} />

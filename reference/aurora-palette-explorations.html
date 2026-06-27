@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID · Aurora palette explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+/* ───────────────────────────────────────────────────────────────
+   AURORA palette explorations
+   The DARK Aurora surfaces never change — ink/ink2/card/line/chalk/ash
+   stay exactly as shipped. The new coolors palette is layered on ONLY as
+   TEXT, ACCENTS and ORNAMENTS, five different ways. Backgrounds untouched.
+   ─────────────────────────────────────────────────────────────── */
+:root{
+  /* fixed Aurora dark surfaces */
+  --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+  --chalk:#f3f4ef; --ash:#8b8f86;
+  /* the source palette */
+  --p-plum:#241623; --p-sand:#d0cd94; --p-teal:#3c787e;
+  --p-lime:#c7ef00; --p-clay:#d56f3e;
+  /* text-legible lifts of the darker palette members (for use ON dark cards) */
+  --p-teal-t:#6cb6bd; --p-clay-t:#e58a5c;
+  --r:28px;
+  font-family:"Archivo",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#070807;color:var(--chalk);
+  background-image:radial-gradient(120vw 80vh at 50% -10%, #11140f 0%, #070807 60%);}
+
+/* ── page chrome ── */
+.page{max-width:1640px;margin:0 auto;padding:40px 28px 80px}
+.masthead{display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 28px;
+  border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:8px}
+.masthead h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.03em}
+.masthead h1 b{color:var(--p-lime)}
+.masthead p{margin:6px 0 0;max-width:680px;color:var(--ash);font-size:14px;line-height:1.6}
+.swatches{display:flex;gap:8px;margin-left:auto}
+.sw{display:flex;flex-direction:column;gap:6px;align-items:center}
+.sw i{width:46px;height:46px;border-radius:12px;display:block;
+  border:1px solid rgba(255,255,255,.08)}
+.sw span{font:600 9.5px/1 "JetBrains Mono",monospace;color:var(--ash);letter-spacing:.04em}
+
+/* ── gallery ── */
+.gallery{display:flex;gap:30px;overflow-x:auto;padding:34px 4px 14px;scroll-snap-type:x proximity}
+.col{flex:0 0 auto;width:392px;scroll-snap-align:start;display:flex;flex-direction:column;gap:16px}
+.col-head .n{font:700 11px/1 "JetBrains Mono",monospace;color:var(--ash);letter-spacing:.18em}
+.col-head h2{margin:8px 0 4px;font-size:21px;font-weight:900;letter-spacing:-.02em}
+.col-head p{margin:0;font-size:12.5px;line-height:1.55;color:var(--ash);min-height:54px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.legend b{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 "JetBrains Mono",monospace;
+  color:var(--ash);background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:5px 9px}
+.legend b s{width:9px;height:9px;border-radius:3px;text-decoration:none}
+
+/* ── phone ── */
+.phone{position:relative;border-radius:46px;background:var(--ink);
+  border:1px solid #1c1f1c;padding:14px;overflow:hidden;
+  box-shadow:0 40px 80px -40px #000, inset 0 1px 0 rgba(255,255,255,.04)}
+.phone .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:5}
+.screen{position:relative;border-radius:34px;background:var(--ink);padding:46px 17px 20px;
+  height:760px;overflow:hidden}
+/* per-variant ambient ornament (light, never a real background) */
+.amb{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0}
+.screen > *{position:relative;z-index:1}
+
+/* ── shared component styles (all read CSS vars set per-variant) ── */
+.row{display:flex}.between{justify-content:space-between}.center{align-items:center}
+.mono{font-family:"JetBrains Mono",monospace}
+.ash{color:var(--ash)}
+.accent{color:var(--acc-text)}
+.arrow{font-weight:800}
+
+.avatar{position:relative;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+  font-weight:900;font-size:14px;cursor:pointer;
+  background:color-mix(in srgb,var(--acc-fill) 18%,transparent);
+  border:1px solid var(--acc-fill);color:var(--acc-text)}
+.avatar .dot{position:absolute;bottom:-3px;right:-3px;width:11px;height:11px;border-radius:50%;
+  background:var(--acc-fill);border:2.5px solid var(--ink)}
+.brand{display:flex;flex-direction:column;align-items:center;gap:5px}
+.wordmark{font-weight:900;font-size:18px;letter-spacing:-.03em;line-height:1}
+.wordmark s{text-decoration:none;color:var(--acc-text)}
+.brandbar{width:26px;height:3px;border-radius:2px;background:var(--acc-fill)}
+.iconbtn{position:relative;width:42px;height:42px;border-radius:13px;background:var(--ink2);
+  border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;font-size:17px;color:var(--ash)}
+.badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;
+  background:var(--risk);border:2px solid var(--ink);display:grid;place-items:center;
+  font:700 10px/1 "JetBrains Mono",monospace;color:#0c0d0c}
+
+.greet{margin:16px 2px 2px}
+.greet-h{font-weight:800;font-size:15px}
+.greet-d{font-size:11px;color:var(--ash);margin-top:2px}
+.streak{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 11px;
+  font-size:11px;font-weight:600;white-space:nowrap;color:var(--streak);
+  background:color-mix(in srgb,var(--streak) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--streak) 40%,transparent)}
+
+.kicker{display:flex;align-items:center;gap:10px;margin:24px 2px 12px}
+.kdot{width:6px;height:6px;border-radius:999px}
+.klabel{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+.kh{font-weight:800;font-size:17px;margin-left:auto}
+
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:20px;
+  box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+.cap{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ash)}
+.cta{background:var(--acc-fill);color:var(--on-acc);border:none;border-radius:999px;
+  padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer}
+.ring{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;
+  background:conic-gradient(var(--ring) 295deg,var(--line) 0)}
+.ring-in{width:31px;height:31px;border-radius:50%;background:var(--ink2);display:grid;place-items:center;
+  font-weight:800;font-size:13px}
+.plan-title{font-weight:800;font-size:23px;margin:9px 0 2px}
+.plan-sub{font-size:11px;color:var(--ash);margin-bottom:10px}
+.ex{display:flex;flex-direction:column;gap:6px}
+.ex-row{display:flex;justify-content:space-between;gap:12px;padding-top:6px;font-size:14px;font-weight:600}
+.ex-row+.ex-row{border-top:1px solid var(--line)}
+.ex-row span+span{font-size:11px;font-weight:400}
+.upsell{margin-top:13px;width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:999px;cursor:pointer;text-align:left;
+  border:1px solid color-mix(in srgb,var(--acc-fill) 55%,transparent);
+  background:color-mix(in srgb,var(--acc-fill) 13%,transparent);color:var(--chalk)}
+.upsell .mono{font-size:11px}
+
+.dots{display:flex;justify-content:center;gap:7px;margin-top:12px}
+.dots .d{width:7px;height:7px;border-radius:999px;background:var(--line)}
+.dots .d.on{width:20px;background:var(--acc-fill)}
+
+.strip{display:flex;align-items:center;gap:9px;background:var(--ink2);border:1px solid var(--line);
+  border-radius:18px;padding:12px 16px;margin-bottom:12px}
+.strip-dot{width:8px;height:8px;border-radius:999px;background:var(--ok);flex-shrink:0}
+.strip-lead{font-weight:700;font-size:14px}
+.strip .mono{font-size:9px}
+
+.widgets{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.widget{background:var(--ink2);border:1px solid var(--line);border-radius:22px;padding:16px;
+  aspect-ratio:1/.82;display:flex;flex-direction:column}
+.widget .big{font-weight:800;font-size:30px;margin-top:auto;line-height:1}
+.widget .big.feel{color:var(--w-feel)}
+.widget .big.fuel{color:var(--w-fuel)}
+.widget .big .unit{font-size:13px;font-weight:600;color:var(--ash);margin-left:3px}
+.widget .sm{font-size:9.5px;margin-top:5px}
+
+.week{display:flex;gap:7px;background:var(--ink2);border:1px solid var(--line);border-radius:22px;padding:14px 12px}
+.wk-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px}
+.wk-day .mono{font-size:10px}
+.wk-pip{width:13px;height:13px;border-radius:5px;background:var(--line)}
+.wk-pip.done{background:var(--acc-fill)}
+.wk-pip.today{background:transparent;border:2px solid var(--acc-fill)}
+.wk-day.is-today .mono{color:var(--acc-text)}
+
+.coach{display:flex;align-items:center;gap:11px;background:var(--ink2);border:1px solid var(--line);
+  border-radius:22px;padding:14px 16px}
+.coach-av{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-weight:800;font-size:14px;
+  background:color-mix(in srgb,var(--c-connect) 20%,transparent);
+  border:1px solid color-mix(in srgb,var(--c-connect) 50%,transparent);color:var(--c-connect)}
+.coach-name{font-weight:700;font-size:14px}
+.coach .sm{font-size:10px;margin-top:2px}
+
+/* ════════════════════ VARIANT A — AURORA SPECTRUM ════════════════════
+   Single bright action colour (chartreuse), but each daily SECTION is
+   colour-coded across the palette so the Train→Feel→Plan→Connect journey
+   reads as a guided gradient. */
+.v-a{
+  --acc-fill:#c7ef00; --on-acc:#0c0d0c; --acc-text:#c7ef00;
+  --c-train:#c7ef00; --c-feel:#6cb6bd; --c-plan:#d0cd94; --c-connect:#e58a5c;
+  --streak:#e58a5c; --ring:#c7ef00; --risk:#d56f3e; --ok:#6cb6bd;
+  --w-feel:#6cb6bd; --w-fuel:#d0cd94;
+}
+.v-a .kdot.train{background:var(--c-train)} .v-a .kdot.feel{background:var(--c-feel)}
+.v-a .kdot.plan{background:var(--c-plan)} .v-a .kdot.connect{background:var(--c-connect)}
+
+/* ════════════════════ VARIANT B — CHARTREUSE POP ════════════════════
+   Disciplined single accent. The acid-lime is swapped for the punchier
+   chartreuse; terracotta is reserved strictly for risk/alerts. Closest to
+   today, just brighter and warmer at the edges. */
+.v-b{
+  --acc-fill:#c7ef00; --on-acc:#0c0d0c; --acc-text:#c7ef00;
+  --c-train:#c7ef00; --c-feel:#c7ef00; --c-plan:#c7ef00; --c-connect:#c7ef00;
+  --streak:#c7ef00; --ring:#c7ef00; --risk:#d56f3e; --ok:#c7ef00;
+  --w-feel:#f3f4ef; --w-fuel:#f3f4ef;
+}
+.v-b .kdot{background:var(--acc-fill)}
+
+/* ════════════════════ VARIANT C — TERRACOTTA & SAND ════════════════════
+   Warm, earthy. Terracotta is the action colour, sand the muted ornament /
+   secondary, used as text accents and ornaments only. A grounded, gym-floor
+   feel. */
+.v-c{
+  --acc-fill:#d56f3e; --on-acc:#1a0f07; --acc-text:#e58a5c;
+  --c-train:#e58a5c; --c-feel:#d0cd94; --c-plan:#e58a5c; --c-connect:#d0cd94;
+  --streak:#e58a5c; --ring:#d56f3e; --risk:#e0625e; --ok:#d0cd94;
+  --w-feel:#d0cd94; --w-fuel:#e58a5c;
+}
+.v-c .kdot.train{background:var(--c-train)} .v-c .kdot.feel{background:var(--c-feel)}
+.v-c .kdot.plan{background:var(--c-plan)} .v-c .kdot.connect{background:var(--c-connect)}
+
+/* ════════════════════ VARIANT D — TEAL EDITORIAL ════════════════════
+   Cool and composed. Teal is the primary accent text/fill, sand drives the
+   section ornaments, and chartreuse is held back as a SINGLE highlight
+   (the readiness ring + the streak). Calm, premium, data-forward. */
+.v-d{
+  --acc-fill:#3c787e; --on-acc:#eafdff; --acc-text:#6cb6bd;
+  --c-train:#d0cd94; --c-feel:#d0cd94; --c-plan:#d0cd94; --c-connect:#d0cd94;
+  --streak:#c7ef00; --ring:#c7ef00; --risk:#d56f3e; --ok:#6cb6bd;
+  --w-feel:#6cb6bd; --w-fuel:#d0cd94;
+}
+.v-d .kdot{background:var(--c-train)}
+
+/* ════════════════════ VARIANT E — NEON MULTI ════════════════════
+   Maximalist. Chartreuse action with a glow, every accent slot in play,
+   gradient ornaments and accent-tinted card rims. The loudest, most "alive"
+   take — still surfaces stay dark ink. */
+.v-e{
+  --acc-fill:#c7ef00; --on-acc:#0c0d0c; --acc-text:#c7ef00;
+  --c-train:#c7ef00; --c-feel:#6cb6bd; --c-plan:#d0cd94; --c-connect:#e58a5c;
+  --streak:#e58a5c; --ring:#c7ef00; --risk:#d56f3e; --ok:#6cb6bd;
+  --w-feel:#6cb6bd; --w-fuel:#d0cd94;
+}
+.v-e .kdot.train{background:var(--c-train)} .v-e .kdot.feel{background:var(--c-feel)}
+.v-e .kdot.plan{background:var(--c-plan)} .v-e .kdot.connect{background:var(--c-connect)}
+.v-e .amb{opacity:1;
+  background:
+    radial-gradient(38vmax 38vmax at -8% -6%, color-mix(in srgb,#c7ef00 26%,transparent),transparent 60%),
+    radial-gradient(34vmax 34vmax at 110% 18%, color-mix(in srgb,#3c787e 30%,transparent),transparent 60%),
+    radial-gradient(40vmax 40vmax at 50% 116%, color-mix(in srgb,#d56f3e 24%,transparent),transparent 60%);
+  filter:blur(36px)}
+.v-e .card{border-color:color-mix(in srgb,var(--acc-fill) 26%,var(--line));
+  box-shadow:0 6px 30px -14px color-mix(in srgb,var(--acc-fill) 60%,transparent)}
+.v-e .cta{box-shadow:0 0 22px color-mix(in srgb,var(--acc-fill) 55%,transparent)}
+.v-e .wordmark s{text-shadow:0 0 14px color-mix(in srgb,var(--acc-fill) 80%,transparent)}
+.v-e .ring{box-shadow:0 0 18px color-mix(in srgb,var(--ring) 45%,transparent)}
+.v-e .widget{background:linear-gradient(180deg,color-mix(in srgb,var(--c-feel) 7%,var(--ink2)),var(--ink2))}
+.v-e .widget+.widget{background:linear-gradient(180deg,color-mix(in srgb,var(--c-plan) 7%,var(--ink2)),var(--ink2))}
+
+@media (max-width:840px){.swatches{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <h1>HYBRID · Aurora <b>palette</b> explorations</h1>
+      <p>The dark Aurora surfaces stay exactly as shipped — ink, card and hairline
+        borders are untouched. The new palette is layered on <b>only as text,
+        accents and ornaments</b>, five different ways. Each phone is the Today
+        screen. Scroll sideways →</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#241623"></i><span>241623</span></div>
+      <div class="sw"><i style="background:#d0cd94"></i><span>D0CD94</span></div>
+      <div class="sw"><i style="background:#3c787e"></i><span>3C787E</span></div>
+      <div class="sw"><i style="background:#c7ef00"></i><span>C7EF00</span></div>
+      <div class="sw"><i style="background:#d56f3e"></i><span>D56F3E</span></div>
+    </div>
+  </header>
+
+  <div class="gallery">
+  <div class="col">
+    <div class="col-head">
+      <div class="n">RENDER 01</div>
+      <h2>Aurora Spectrum</h2>
+      <p>One bright action colour, but each daily section is colour-coded so Train &rarr; Feel &rarr; Plan &rarr; Connect reads as a guided gradient.</p>
+      <div class="legend"><b><s style="background:#c7ef00"></s>Train / action</b><b><s style="background:#6cb6bd"></s>Feel</b><b><s style="background:#d0cd94"></s>Plan</b><b><s style="background:#e58a5c"></s>Connect / streak</b></div>
+    </div>
+
+    <div class="phone v-a">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="amb"></div>
+
+        <div class="row between center">
+          <button class="avatar">RA<span class="dot"></span></button>
+          <div class="brand">
+            <div class="wordmark">HYBRID<s>.</s></div>
+            <div class="brandbar"></div>
+          </div>
+          <button class="iconbtn">&#128276;<span class="badge">3</span></button>
+        </div>
+
+        <div class="row between center greet">
+          <div>
+            <div class="greet-h">Good morning, Rafal</div>
+            <div class="greet-d mono">Saturday, June 27</div>
+          </div>
+          <span class="streak mono">&#128293; 12 day streak</span>
+        </div>
+
+        <div class="kicker"><span class="kdot train"></span><span class="klabel mono">Train</span><span class="kh">Today's session</span></div>
+
+        <div class="card">
+          <div class="row between center">
+            <span class="cap mono">Your plan today</span>
+            <div class="row center" style="gap:10px">
+              <div class="ring"><div class="ring-in">82</div></div>
+              <button class="cta">Start</button>
+            </div>
+          </div>
+          <div class="plan-title">Soviet OWL</div>
+          <div class="plan-sub mono">Push / Pull / Legs &middot; Day 3/6 &middot; Base &middot; Wk 4/8</div>
+          <div class="ex">
+            <div class="ex-row"><span>Back Squat</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Bench Press</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Barbell Row</span><span class="mono ash">4 &times; 8 &middot; RPE 7</span></div>
+            <div class="ex-row"><span>KB Swing</span><span class="mono ash">3 &times; 20</span></div>
+          </div>
+          <button class="upsell">
+            <span class="mono">Following as written &mdash; <b class="accent">unlock Full</b> to adapt</span>
+            <span class="accent arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="dots"><span class="d on"></span><span class="d"></span></div>
+
+        <div class="kicker"><span class="kdot feel"></span><span class="klabel mono">Recover &middot; Feel</span><span class="kh">How you're tracking</span></div>
+        <div class="strip">
+          <span class="strip-dot"></span><span class="strip-lead">On track this week</span>
+          <span class="mono ash" style="margin-left:auto">3/3 &middot; habit 78</span>
+        </div>
+        <div class="widgets">
+          <div class="widget">
+            <span class="cap mono">Check-in</span>
+            <div class="big feel">7.5<span class="unit">/10</span></div>
+            <div class="mono ash sm">Readiness today</div>
+          </div>
+          <div class="widget">
+            <span class="cap mono">Nutrition</span>
+            <div class="big fuel">1,840<span class="unit">kcal</span></div>
+            <div class="mono ash sm">183p &middot; 156c &middot; 61f</div>
+          </div>
+        </div>
+
+        <div class="kicker"><span class="kdot plan"></span><span class="klabel mono">Plan</span><span class="kh">This week</span></div>
+        <div class="week">
+          <div class="wk-day"><span class="mono ash">M</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">W</span><span class="wk-pip"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">F</span><span class="wk-pip"></span></div>
+          <div class="wk-day is-today"><span class="mono ash">S</span><span class="wk-pip today"></span></div>
+          <div class="wk-day"><span class="mono ash">S</span><span class="wk-pip"></span></div>
+        </div>
+
+        <div class="kicker"><span class="kdot connect"></span><span class="klabel mono">Connect</span><span class="kh">Your circle</span></div>
+        <div class="coach">
+          <div class="coach-av">JS</div>
+          <div>
+            <div class="coach-name">Coached by Jess Stone</div>
+            <div class="mono ash sm">Strength &middot; 4.9 &#9733; &middot; 1.2k athletes</div>
+          </div>
+          <span class="accent arrow" style="margin-left:auto">&rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="col-head">
+      <div class="n">RENDER 02</div>
+      <h2>Chartreuse Pop</h2>
+      <p>Disciplined single accent &mdash; the acid-lime swapped for a punchier chartreuse, terracotta reserved strictly for risk. Closest to today, just louder.</p>
+      <div class="legend"><b><s style="background:#c7ef00"></s>Single accent</b><b><s style="background:#d56f3e"></s>Risk only</b></div>
+    </div>
+
+    <div class="phone v-b">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="amb"></div>
+
+        <div class="row between center">
+          <button class="avatar">RA<span class="dot"></span></button>
+          <div class="brand">
+            <div class="wordmark">HYBRID<s>.</s></div>
+            <div class="brandbar"></div>
+          </div>
+          <button class="iconbtn">&#128276;<span class="badge">3</span></button>
+        </div>
+
+        <div class="row between center greet">
+          <div>
+            <div class="greet-h">Good morning, Rafal</div>
+            <div class="greet-d mono">Saturday, June 27</div>
+          </div>
+          <span class="streak mono">&#128293; 12 day streak</span>
+        </div>
+
+        <div class="kicker"><span class="kdot train"></span><span class="klabel mono">Train</span><span class="kh">Today's session</span></div>
+
+        <div class="card">
+          <div class="row between center">
+            <span class="cap mono">Your plan today</span>
+            <div class="row center" style="gap:10px">
+              <div class="ring"><div class="ring-in">82</div></div>
+              <button class="cta">Start</button>
+            </div>
+          </div>
+          <div class="plan-title">Soviet OWL</div>
+          <div class="plan-sub mono">Push / Pull / Legs &middot; Day 3/6 &middot; Base &middot; Wk 4/8</div>
+          <div class="ex">
+            <div class="ex-row"><span>Back Squat</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Bench Press</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Barbell Row</span><span class="mono ash">4 &times; 8 &middot; RPE 7</span></div>
+            <div class="ex-row"><span>KB Swing</span><span class="mono ash">3 &times; 20</span></div>
+          </div>
+          <button class="upsell">
+            <span class="mono">Following as written &mdash; <b class="accent">unlock Full</b> to adapt</span>
+            <span class="accent arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="dots"><span class="d on"></span><span class="d"></span></div>
+
+        <div class="kicker"><span class="kdot feel"></span><span class="klabel mono">Recover &middot; Feel</span><span class="kh">How you're tracking</span></div>
+        <div class="strip">
+          <span class="strip-dot"></span><span class="strip-lead">On track this week</span>
+          <span class="mono ash" style="margin-left:auto">3/3 &middot; habit 78</span>
+        </div>
+        <div class="widgets">
+          <div class="widget">
+            <span class="cap mono">Check-in</span>
+            <div class="big feel">7.5<span class="unit">/10</span></div>
+            <div class="mono ash sm">Readiness today</div>
+          </div>
+          <div class="widget">
+            <span class="cap mono">Nutrition</span>
+            <div class="big fuel">1,840<span class="unit">kcal</span></div>
+            <div class="mono ash sm">183p &middot; 156c &middot; 61f</div>
+          </div>
+        </div>
+
+        <div class="kicker"><span class="kdot plan"></span><span class="klabel mono">Plan</span><span class="kh">This week</span></div>
+        <div class="week">
+          <div class="wk-day"><span class="mono ash">M</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">W</span><span class="wk-pip"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">F</span><span class="wk-pip"></span></div>
+          <div class="wk-day is-today"><span class="mono ash">S</span><span class="wk-pip today"></span></div>
+          <div class="wk-day"><span class="mono ash">S</span><span class="wk-pip"></span></div>
+        </div>
+
+        <div class="kicker"><span class="kdot connect"></span><span class="klabel mono">Connect</span><span class="kh">Your circle</span></div>
+        <div class="coach">
+          <div class="coach-av">JS</div>
+          <div>
+            <div class="coach-name">Coached by Jess Stone</div>
+            <div class="mono ash sm">Strength &middot; 4.9 &#9733; &middot; 1.2k athletes</div>
+          </div>
+          <span class="accent arrow" style="margin-left:auto">&rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="col-head">
+      <div class="n">RENDER 03</div>
+      <h2>Terracotta &amp; Sand</h2>
+      <p>Warm and earthy. Terracotta is the action colour, sand the muted secondary ornament. A grounded, gym-floor feel.</p>
+      <div class="legend"><b><s style="background:#d56f3e"></s>Action</b><b><s style="background:#e58a5c"></s>Accent text</b><b><s style="background:#d0cd94"></s>Ornament</b></div>
+    </div>
+
+    <div class="phone v-c">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="amb"></div>
+
+        <div class="row between center">
+          <button class="avatar">RA<span class="dot"></span></button>
+          <div class="brand">
+            <div class="wordmark">HYBRID<s>.</s></div>
+            <div class="brandbar"></div>
+          </div>
+          <button class="iconbtn">&#128276;<span class="badge">3</span></button>
+        </div>
+
+        <div class="row between center greet">
+          <div>
+            <div class="greet-h">Good morning, Rafal</div>
+            <div class="greet-d mono">Saturday, June 27</div>
+          </div>
+          <span class="streak mono">&#128293; 12 day streak</span>
+        </div>
+
+        <div class="kicker"><span class="kdot train"></span><span class="klabel mono">Train</span><span class="kh">Today's session</span></div>
+
+        <div class="card">
+          <div class="row between center">
+            <span class="cap mono">Your plan today</span>
+            <div class="row center" style="gap:10px">
+              <div class="ring"><div class="ring-in">82</div></div>
+              <button class="cta">Start</button>
+            </div>
+          </div>
+          <div class="plan-title">Soviet OWL</div>
+          <div class="plan-sub mono">Push / Pull / Legs &middot; Day 3/6 &middot; Base &middot; Wk 4/8</div>
+          <div class="ex">
+            <div class="ex-row"><span>Back Squat</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Bench Press</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Barbell Row</span><span class="mono ash">4 &times; 8 &middot; RPE 7</span></div>
+            <div class="ex-row"><span>KB Swing</span><span class="mono ash">3 &times; 20</span></div>
+          </div>
+          <button class="upsell">
+            <span class="mono">Following as written &mdash; <b class="accent">unlock Full</b> to adapt</span>
+            <span class="accent arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="dots"><span class="d on"></span><span class="d"></span></div>
+
+        <div class="kicker"><span class="kdot feel"></span><span class="klabel mono">Recover &middot; Feel</span><span class="kh">How you're tracking</span></div>
+        <div class="strip">
+          <span class="strip-dot"></span><span class="strip-lead">On track this week</span>
+          <span class="mono ash" style="margin-left:auto">3/3 &middot; habit 78</span>
+        </div>
+        <div class="widgets">
+          <div class="widget">
+            <span class="cap mono">Check-in</span>
+            <div class="big feel">7.5<span class="unit">/10</span></div>
+            <div class="mono ash sm">Readiness today</div>
+          </div>
+          <div class="widget">
+            <span class="cap mono">Nutrition</span>
+            <div class="big fuel">1,840<span class="unit">kcal</span></div>
+            <div class="mono ash sm">183p &middot; 156c &middot; 61f</div>
+          </div>
+        </div>
+
+        <div class="kicker"><span class="kdot plan"></span><span class="klabel mono">Plan</span><span class="kh">This week</span></div>
+        <div class="week">
+          <div class="wk-day"><span class="mono ash">M</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">W</span><span class="wk-pip"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">F</span><span class="wk-pip"></span></div>
+          <div class="wk-day is-today"><span class="mono ash">S</span><span class="wk-pip today"></span></div>
+          <div class="wk-day"><span class="mono ash">S</span><span class="wk-pip"></span></div>
+        </div>
+
+        <div class="kicker"><span class="kdot connect"></span><span class="klabel mono">Connect</span><span class="kh">Your circle</span></div>
+        <div class="coach">
+          <div class="coach-av">JS</div>
+          <div>
+            <div class="coach-name">Coached by Jess Stone</div>
+            <div class="mono ash sm">Strength &middot; 4.9 &#9733; &middot; 1.2k athletes</div>
+          </div>
+          <span class="accent arrow" style="margin-left:auto">&rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="col-head">
+      <div class="n">RENDER 04</div>
+      <h2>Teal Editorial</h2>
+      <p>Cool and composed. Teal leads, sand drives section ornaments, chartreuse held back as a single highlight (ring + streak). Premium, data-forward.</p>
+      <div class="legend"><b><s style="background:#3c787e"></s>Action</b><b><s style="background:#6cb6bd"></s>Accent text</b><b><s style="background:#d0cd94"></s>Ornament</b><b><s style="background:#c7ef00"></s>Highlight</b></div>
+    </div>
+
+    <div class="phone v-d">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="amb"></div>
+
+        <div class="row between center">
+          <button class="avatar">RA<span class="dot"></span></button>
+          <div class="brand">
+            <div class="wordmark">HYBRID<s>.</s></div>
+            <div class="brandbar"></div>
+          </div>
+          <button class="iconbtn">&#128276;<span class="badge">3</span></button>
+        </div>
+
+        <div class="row between center greet">
+          <div>
+            <div class="greet-h">Good morning, Rafal</div>
+            <div class="greet-d mono">Saturday, June 27</div>
+          </div>
+          <span class="streak mono">&#128293; 12 day streak</span>
+        </div>
+
+        <div class="kicker"><span class="kdot train"></span><span class="klabel mono">Train</span><span class="kh">Today's session</span></div>
+
+        <div class="card">
+          <div class="row between center">
+            <span class="cap mono">Your plan today</span>
+            <div class="row center" style="gap:10px">
+              <div class="ring"><div class="ring-in">82</div></div>
+              <button class="cta">Start</button>
+            </div>
+          </div>
+          <div class="plan-title">Soviet OWL</div>
+          <div class="plan-sub mono">Push / Pull / Legs &middot; Day 3/6 &middot; Base &middot; Wk 4/8</div>
+          <div class="ex">
+            <div class="ex-row"><span>Back Squat</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Bench Press</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Barbell Row</span><span class="mono ash">4 &times; 8 &middot; RPE 7</span></div>
+            <div class="ex-row"><span>KB Swing</span><span class="mono ash">3 &times; 20</span></div>
+          </div>
+          <button class="upsell">
+            <span class="mono">Following as written &mdash; <b class="accent">unlock Full</b> to adapt</span>
+            <span class="accent arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="dots"><span class="d on"></span><span class="d"></span></div>
+
+        <div class="kicker"><span class="kdot feel"></span><span class="klabel mono">Recover &middot; Feel</span><span class="kh">How you're tracking</span></div>
+        <div class="strip">
+          <span class="strip-dot"></span><span class="strip-lead">On track this week</span>
+          <span class="mono ash" style="margin-left:auto">3/3 &middot; habit 78</span>
+        </div>
+        <div class="widgets">
+          <div class="widget">
+            <span class="cap mono">Check-in</span>
+            <div class="big feel">7.5<span class="unit">/10</span></div>
+            <div class="mono ash sm">Readiness today</div>
+          </div>
+          <div class="widget">
+            <span class="cap mono">Nutrition</span>
+            <div class="big fuel">1,840<span class="unit">kcal</span></div>
+            <div class="mono ash sm">183p &middot; 156c &middot; 61f</div>
+          </div>
+        </div>
+
+        <div class="kicker"><span class="kdot plan"></span><span class="klabel mono">Plan</span><span class="kh">This week</span></div>
+        <div class="week">
+          <div class="wk-day"><span class="mono ash">M</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">W</span><span class="wk-pip"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">F</span><span class="wk-pip"></span></div>
+          <div class="wk-day is-today"><span class="mono ash">S</span><span class="wk-pip today"></span></div>
+          <div class="wk-day"><span class="mono ash">S</span><span class="wk-pip"></span></div>
+        </div>
+
+        <div class="kicker"><span class="kdot connect"></span><span class="klabel mono">Connect</span><span class="kh">Your circle</span></div>
+        <div class="coach">
+          <div class="coach-av">JS</div>
+          <div>
+            <div class="coach-name">Coached by Jess Stone</div>
+            <div class="mono ash sm">Strength &middot; 4.9 &#9733; &middot; 1.2k athletes</div>
+          </div>
+          <span class="accent arrow" style="margin-left:auto">&rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="col-head">
+      <div class="n">RENDER 05</div>
+      <h2>Neon Multi</h2>
+      <p>Maximalist. Chartreuse action with a glow, every accent in play, gradient ornaments and accent-tinted card rims. The most alive &mdash; surfaces still dark.</p>
+      <div class="legend"><b><s style="background:#c7ef00"></s>Action / glow</b><b><s style="background:#3c787e"></s>Ornament</b><b><s style="background:#d0cd94"></s>Data</b><b><s style="background:#d56f3e"></s>Ornament</b></div>
+    </div>
+
+    <div class="phone v-e">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="amb"></div>
+
+        <div class="row between center">
+          <button class="avatar">RA<span class="dot"></span></button>
+          <div class="brand">
+            <div class="wordmark">HYBRID<s>.</s></div>
+            <div class="brandbar"></div>
+          </div>
+          <button class="iconbtn">&#128276;<span class="badge">3</span></button>
+        </div>
+
+        <div class="row between center greet">
+          <div>
+            <div class="greet-h">Good morning, Rafal</div>
+            <div class="greet-d mono">Saturday, June 27</div>
+          </div>
+          <span class="streak mono">&#128293; 12 day streak</span>
+        </div>
+
+        <div class="kicker"><span class="kdot train"></span><span class="klabel mono">Train</span><span class="kh">Today's session</span></div>
+
+        <div class="card">
+          <div class="row between center">
+            <span class="cap mono">Your plan today</span>
+            <div class="row center" style="gap:10px">
+              <div class="ring"><div class="ring-in">82</div></div>
+              <button class="cta">Start</button>
+            </div>
+          </div>
+          <div class="plan-title">Soviet OWL</div>
+          <div class="plan-sub mono">Push / Pull / Legs &middot; Day 3/6 &middot; Base &middot; Wk 4/8</div>
+          <div class="ex">
+            <div class="ex-row"><span>Back Squat</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Bench Press</span><span class="mono ash">5 &times; 5 &middot; RPE 8</span></div>
+            <div class="ex-row"><span>Barbell Row</span><span class="mono ash">4 &times; 8 &middot; RPE 7</span></div>
+            <div class="ex-row"><span>KB Swing</span><span class="mono ash">3 &times; 20</span></div>
+          </div>
+          <button class="upsell">
+            <span class="mono">Following as written &mdash; <b class="accent">unlock Full</b> to adapt</span>
+            <span class="accent arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="dots"><span class="d on"></span><span class="d"></span></div>
+
+        <div class="kicker"><span class="kdot feel"></span><span class="klabel mono">Recover &middot; Feel</span><span class="kh">How you're tracking</span></div>
+        <div class="strip">
+          <span class="strip-dot"></span><span class="strip-lead">On track this week</span>
+          <span class="mono ash" style="margin-left:auto">3/3 &middot; habit 78</span>
+        </div>
+        <div class="widgets">
+          <div class="widget">
+            <span class="cap mono">Check-in</span>
+            <div class="big feel">7.5<span class="unit">/10</span></div>
+            <div class="mono ash sm">Readiness today</div>
+          </div>
+          <div class="widget">
+            <span class="cap mono">Nutrition</span>
+            <div class="big fuel">1,840<span class="unit">kcal</span></div>
+            <div class="mono ash sm">183p &middot; 156c &middot; 61f</div>
+          </div>
+        </div>
+
+        <div class="kicker"><span class="kdot plan"></span><span class="klabel mono">Plan</span><span class="kh">This week</span></div>
+        <div class="week">
+          <div class="wk-day"><span class="mono ash">M</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">W</span><span class="wk-pip"></span></div>
+          <div class="wk-day"><span class="mono ash">T</span><span class="wk-pip done"></span></div>
+          <div class="wk-day"><span class="mono ash">F</span><span class="wk-pip"></span></div>
+          <div class="wk-day is-today"><span class="mono ash">S</span><span class="wk-pip today"></span></div>
+          <div class="wk-day"><span class="mono ash">S</span><span class="wk-pip"></span></div>
+        </div>
+
+        <div class="kicker"><span class="kdot connect"></span><span class="klabel mono">Connect</span><span class="kh">Your circle</span></div>
+        <div class="coach">
+          <div class="coach-av">JS</div>
+          <div>
+            <div class="coach-name">Coached by Jess Stone</div>
+            <div class="mono ash sm">Strength &middot; 4.9 &#9733; &middot; 1.2k athletes</div>
+          </div>
+          <span class="accent arrow" style="margin-left:auto">&rarr;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+</body>
+</html>

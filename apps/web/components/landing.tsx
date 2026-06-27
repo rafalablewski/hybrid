@@ -105,7 +105,7 @@ function AuroraLanding() {
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
               <div key={f.t} style={{ background: "var(--color-ink2)", border: "1px solid var(--color-line)", borderRadius: 26, padding: 22 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(196,240,53,.12)", display: "grid", placeItems: "center" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: "color-mix(in srgb, var(--color-lime) 12%, transparent)", display: "grid", placeItems: "center" }}>
                   <AuroraIcon name={f.icon} size={24} color={f.c} />
                 </div>
                 <div className="mt-4 font-display text-base font-bold">{f.t}</div>
@@ -118,7 +118,7 @@ function AuroraLanding() {
         {/* CLOSING CTA — single, confident */}
         <section className="mt-20">
           <div style={{ position: "relative", overflow: "hidden", background: "var(--color-ink2)", border: "1px solid var(--color-line)", borderRadius: 30, padding: "40px 28px", textAlign: "center" }}>
-            <span style={{ position: "absolute", top: -70, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle,rgba(196,240,53,.18),transparent 70%)", pointerEvents: "none" }} />
+            <span style={{ position: "absolute", top: -70, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 18%, transparent), transparent 70%)", pointerEvents: "none" }} />
             <h2 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Start your hybrid season.</h2>
             <p className="mx-auto mt-3 max-w-md font-display text-base text-ash">Free to start. Your strength and your engine, finally on one dashboard.</p>
             <div className="mt-7 flex flex-col items-center gap-3">

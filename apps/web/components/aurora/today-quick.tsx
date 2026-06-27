@@ -76,7 +76,7 @@ export default function TodayWidgets({ onNavigate }: { onNavigate?: (screen: str
       {/* NUTRITION */}
       <button onClick={() => onNavigate?.("nutrition")} style={widget} aria-label={t("w.home.today.w.nutrition")}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={wicon("rgba(196,240,53,.14)", C("lime"))}><AuroraIcon name="heart" size={16} color={C("lime")} /></span>
+          <span style={wicon(`color-mix(in srgb, ${C("lime")} 14%, transparent)`, C("lime"))}><AuroraIcon name="heart" size={16} color={C("lime")} /></span>
           <span style={tag}>{t("w.home.today.w.today")}</span>
         </div>
         <div style={wname}>{t("w.home.today.w.nutrition")}</div>

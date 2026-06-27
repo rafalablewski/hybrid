@@ -9,6 +9,12 @@
  * Note: the bright accents in brand.ts (lime/blue/…) are used for fills,
  * borders and chart strokes and stay fixed across themes; `accentText` here is
  * the darkened-on-light variant used when an accent is rendered as TEXT.
+ *
+ * AURORA SPECTRUM: the dark accents are the brand's coolors palette (chartreuse
+ * / teal / sand / terracotta). The raw teal/terracotta fills are a touch dark to
+ * read as small TEXT on the card, so `accentText.blue`/`.red` are lifted variants
+ * that clear WCAG AA (guarded by palette.test.ts); chartreuse/sand are already
+ * bright enough to use verbatim.
  */
 export interface ThemePalette {
   /** page background */
@@ -46,7 +52,9 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     line: "#242724",
     chalk: "#f3f4ef",
     ash: "#8b8f86",
-    accentText: { lime: "#c4f035", blue: "#7fd4e8", violet: "#c9a9f0", amber: "#f0b45e", red: "#e0625e" },
+    // SPECTRUM accent-text: chartreuse + sand read on dark as-is; teal/terracotta
+    // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; violet unchanged.
+    accentText: { lime: "#c7ef00", blue: "#6cb6bd", violet: "#c9a9f0", amber: "#d0cd94", red: "#e58a5c" },
   },
   // JAPANDI — warm minimal (see reference/today-cockpit-design-concepts/04-japandi).
   // Oat-paper surfaces; the brand accent becomes a warm CLAY/terracotta (the
