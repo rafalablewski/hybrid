@@ -65,7 +65,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
         <div style={card}>
           {head("ash", t("w.analyze.vel.aiLoad"))}
           <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "12px 0" }}>
-            <input type="range" min={0.2} max={1.3} step={0.01} value={targetVel} onChange={(e) => setTargetVel(Number(e.target.value))} style={{ flex: 1, accentColor: LIME }} />
+            <input type="range" min={0.2} max={1.3} step={0.01} value={targetVel} onChange={(e) => setTargetVel(Number(e.target.value))} style={{ flex: 1, accentColor: "var(--color-lime)" }} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, fontWeight: 700 }}>{targetVel.toFixed(2)} m/s</span>
           </div>
           {rec ? (

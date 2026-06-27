@@ -30,7 +30,13 @@ const ACCENTS = {
   onAccent: colors.ink,
 };
 
-export const paletteFor = (scheme: ThemeName): Palette => ({ ...THEMES[scheme], ...ACCENTS });
+export const paletteFor = (scheme: ThemeName): Palette =>
+  scheme === "light"
+    ? // JAPANDI: mute the lime FILL to a deep moss-olive (bright acid-lime breaks
+      // the warm palette) and flip on-accent text to light paper so it reads on
+      // the darker fill. Other accents stay (rare, semantic). Aurora keeps raw lime.
+      { ...THEMES.light, ...ACCENTS, lime: "#566312", onAccent: "#faf8f3" }
+    : { ...THEMES[scheme], ...ACCENTS };
 
 /** Map a bright accent (or ash) used as TEXT to its theme-aware colour. */
 export function txt(palette: Palette, c: string): string {

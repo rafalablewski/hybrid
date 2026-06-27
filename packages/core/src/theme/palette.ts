@@ -56,6 +56,6 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     line: "#e4dccd",
     chalk: "#2f2a22",
     ash: "#6b6456",
-    accentText: { lime: "#59640c", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
+    accentText: { lime: "#566312", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
   },
 };

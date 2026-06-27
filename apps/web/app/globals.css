@@ -124,6 +124,7 @@ html {
   --grain-blend: overlay;
   --grain-opacity: 0.05;
   --accent-text: var(--color-lime); /* lime is readable on dark surfaces */
+  --on-accent: #0c0d0c; /* dark text on the bright lime fill (Aurora) */
   /* foreground accent text — bright on dark; the bright accents themselves
      (LIME/BLUE/… in lib/ui) stay for backgrounds/borders/chart strokes */
   --lime-text: #c4f035;
@@ -144,6 +145,10 @@ html {
   --color-line: #e4dccd;
   --color-chalk: #2f2a22;
   --color-ash: #6b6456;
+  /* JAPANDI mutes the lime FILL to a deep moss-olive so bright acid-lime
+     buttons/dots/rings don't break the calm warm palette — and so the existing
+     light on-accent text clears AA on it. Aurora (dark) keeps raw lime. */
+  --color-lime: #566312;
 
   --glass-base: 252, 250, 244;
   --glass-rgb: 252, 250, 244;
@@ -156,9 +161,10 @@ html {
   --lg-bright: 0.98;
   --grain-blend: multiply;
   --grain-opacity: 0.04;
-  --accent-text: #59640c; /* darkened olive-lime — AA on the warm paper */
+  --accent-text: #566312; /* moss-olive — matches the muted lime fill, AA on paper */
+  --on-accent: #faf8f3; /* light text on the deep moss-olive lime fill (Japandi) */
   /* warm, darkened accents that pass AA on the Japandi card surface */
-  --lime-text: #59640c;
+  --lime-text: #566312;
   --blue-text: #2c5d6c;
   --violet-text: #6a4885;
   --amber-text: #875427;

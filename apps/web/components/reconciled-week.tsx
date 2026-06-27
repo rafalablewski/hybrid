@@ -21,7 +21,7 @@ import {
 import { readSportSelection } from "@/lib/sport-store";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
-import { fs, space, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, CHALK, ASH, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
 
 /**
  * The reconciled week — the macrocycle phase arbitrates the daily route + sport
@@ -159,7 +159,7 @@ export default function ReconciledWeek({
     // of the Aurora Today. Classic keeps the glass card.
     <Card
       glass={!aurora}
-      style={{ borderLeft: `3px solid ${LIME}`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
+      style={{ borderLeft: `3px solid var(--color-lime)`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
     >
       {/* Header — the kicker + load/deload chip only. The schedule action used to
           live in this row, which squashed into a circle on narrow widths; it now
@@ -168,20 +168,20 @@ export default function ReconciledWeek({
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
           {t("w.home.recweek.thisWeek")} {reconciled.phase.label} · {t("w.home.recweek.week")} {reconciled.phase.week}
         </Mono>
-        <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
+        <Chip c={reconciled.phase.kind === "recovery" ? AMBER : "var(--color-lime)"}>
           {reconciled.phase.kind === "recovery" ? t("w.home.recweek.deload") : t("w.home.recweek.load")}
         </Chip>
       </div>
       {readOnly ? (
         <div style={{ marginTop: 12 }}>
-          <Chip c={LIME}>{t("w.home.recweek.assignedByCoach")}</Chip>
+          <Chip c={"var(--color-lime)"}>{t("w.home.recweek.assignedByCoach")}</Chip>
         </div>
       ) : (
         <>
           <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
             {scheduling ? t("w.home.recweek.scheduling") : `${t("w.home.recweek.scheduleResync")} ${daysPerWeek}d →`}
           </button>
-          {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={LIME}>{scheduled}</Mono>}
+          {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={"var(--lime-text)"}>{scheduled}</Mono>}
         </>
       )}
       <div style={{ display: "flex", gap: 18, marginTop: 14 }}>
@@ -202,7 +202,7 @@ export default function ReconciledWeek({
                 {b.source === "sport" ? `${t("w.home.recweek.sport")} ${b.demand ?? ""}` : b.kind === "conditioning" ? t("w.home.recweek.conditioning") : t("w.home.recweek.primaryLift")}
               </Mono>
             </div>
-            <Chip c={b.source === "sport" ? AMBER : LIME}>{b.scheme}</Chip>
+            <Chip c={b.source === "sport" ? AMBER : "var(--color-lime)"}>{b.scheme}</Chip>
           </div>
         ))}
       </div>
@@ -239,7 +239,7 @@ function cta(disabled: boolean, aurora = false) {
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
     color: ON_ACCENT,
-    background: LIME,
+    background: "var(--color-lime)",
     border: "none",
     borderRadius: aurora ? 999 : 10,
     padding: aurora ? "11px 18px" : "10px 16px",
