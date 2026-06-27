@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" data-template="aurora"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HYBRID — Concept 1 · Stories &amp; Rings</title>
+<style>
+  :root{--ink:#0c0d0c;--ink2:#141614;--line:#242724;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c7ef00;--blue:#3c787e;--sand:#d0cd94;--terra:#d56f3e;--violet:#c9a9f0;--card:26px;--pill:999px;--max:400px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:30px 16px 100px;display:flex;flex-direction:column;align-items:center;gap:22px}
+  .intro{max-width:880px;width:100%;text-align:center}
+  .intro .tag{font-size:11px;letter-spacing:.22em;color:var(--lime);font-weight:800}
+  .intro h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
+  .intro p{color:var(--ash);font-size:15px;line-height:1.6;margin-top:10px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .nav a{font-size:12px;color:var(--ash);border:1px solid var(--line);border-radius:var(--pill);padding:7px 13px;text-decoration:none}
+  .nav a.cur{background:var(--lime);color:#0c0d0c;border-color:var(--lime);font-weight:700}
+  .stage{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .pagetag{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--ash)}.pagetag b{color:var(--lime)}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);border-radius:44px;padding:13px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9)}
+  .notch{width:110px;height:24px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:800px;overflow-y:auto}.screen::-webkit-scrollbar{width:0}
+  .pad{padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--card);padding:16px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .label{font-size:10px;letter-spacing:.18em;color:var(--ash);font-weight:700}
+  .h{font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .sub{color:var(--ash);font-size:12px;margin-top:2px}
+  /* stories rail */
+  .stories{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:2px}.stories::-webkit-scrollbar{display:none}
+  .story{flex:none;width:64px;text-align:center}
+  .sr{width:64px;height:64px;border-radius:50%;padding:3px;background:conic-gradient(var(--lime),var(--blue),var(--terra),var(--lime))}
+  .sr.dim{background:#2c302c}
+  .sr .in{width:100%;height:100%;border-radius:50%;background:var(--ink2);display:grid;place-items:center;font-size:22px}
+  .story small{display:block;font-size:10px;color:var(--ash);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* apple-style rings hero */
+  .ringhero{display:flex;gap:18px;align-items:center}
+  .rings{width:120px;height:120px;flex:none;position:relative;border-radius:50%}
+  .rings .ar{position:absolute;border-radius:50%}
+  .a1{inset:0;background:conic-gradient(var(--lime) 78%,#23271f 0)}
+  .a2{inset:14px;background:conic-gradient(var(--terra) 64%,#23271f 0)}
+  .a3{inset:28px;background:conic-gradient(var(--blue) 90%,#23271f 0)}
+  .rings .hole{position:absolute;inset:42px;border-radius:50%;background:var(--ink2)}
+  .rlegend{flex:1;display:flex;flex-direction:column;gap:10px}
+  .rl{display:flex;align-items:center;gap:8px;font-size:13px}.rl i{width:9px;height:9px;border-radius:50%}.rl b{margin-left:auto;font-weight:800}
+  .start{margin-top:4px;width:100%;background:var(--lime);color:#0c0d0c;border:none;border-radius:var(--pill);padding:14px;font-size:15px;font-weight:800;cursor:pointer}
+  .items{margin-top:6px}.items .row{display:flex;justify-content:space-between;padding:10px 2px;border-top:1px solid var(--line);font-size:14px}.items .row span:last-child{color:var(--ash);font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mini b{font-size:26px;font-weight:800;display:block}.mini span{font-size:10px;color:var(--ash);letter-spacing:.08em}
+  .post{padding:14px}.post .hd{display:flex;align-items:center;gap:10px}.post .pa{width:30px;height:30px;border-radius:50%;background:#2c302c;display:grid;place-items:center;font-size:12px;font-weight:700}.post .nm{font-size:13px;font-weight:700}.post .tm{font-size:10px;color:var(--ash)}.post .bd{font-size:13px;margin-top:10px;line-height:1.5}
+  .rationale{max-width:880px;width:100%;background:rgba(199,239,0,.05);border:1px dashed rgba(199,239,0,.4);border-radius:18px;padding:18px 20px}
+  .rationale h3{font-size:13px;color:var(--lime);letter-spacing:.06em}
+  .rationale ul{margin:10px 0 0;padding-left:18px;color:#cfd3c8;font-size:13px;line-height:1.8}
+  .rationale ul b{color:var(--chalk)}
+  .foot{color:var(--ash);font-size:12px}.foot a{color:var(--lime)}
+</style></head>
+<body>
+  <div class="intro">
+    <div class="tag">CONCEPT 1 OF 4</div>
+    <h1>Stories &amp; Rings</h1>
+    <p>Leads with an Instagram-style <b>stories rail</b> and an Apple-Fitness-style <b>concentric ring hero</b>. Today opens on your circle's stories + your daily rings; Cockpit turns the HPI into a stacked-ring "completion" object. Most glanceable, most social, fastest emotional read.</p>
+    <div class="nav"><a class="cur" href="concept-1-stories-rings.html">1 · Stories &amp; Rings</a><a href="concept-2-unified-feed.html">2 · Unified Feed</a><a href="concept-3-bento.html">3 · Bento Grid</a><a href="concept-4-focus.html">4 · Focus Mode</a><a href="today-cockpit-combined.html">↩ Base</a></div>
+  </div>
+
+  <div class="stage">
+    <!-- TODAY -->
+    <div class="col"><div class="pagetag">TODAY <b>· stories</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="pad">
+      <div><div class="h">Good morning, Rafal.</div><div class="sub">Saturday · Jun 27 · 🔥 12-day streak</div></div>
+      <div class="stories">
+        <div class="story"><div class="sr"><div class="in">＋</div></div><small>Your story</small></div>
+        <div class="story"><div class="sr"><div class="in">MK</div></div><small>Maja · PR</small></div>
+        <div class="story"><div class="sr"><div class="in">TS</div></div><small>Tom · 10K</small></div>
+        <div class="story"><div class="sr dim"><div class="in">AV</div></div><small>Coach Vera</small></div>
+        <div class="story"><div class="sr dim"><div class="in">JD</div></div><small>Jess</small></div>
+      </div>
+      <div class="card"><div class="label">TODAY'S RINGS</div>
+        <div class="ringhero" style="margin-top:12px">
+          <div class="rings"><div class="ar a1"></div><div class="ar a2"></div><div class="ar a3"></div><div class="hole"></div></div>
+          <div class="rlegend"><div class="rl"><i style="background:var(--lime)"></i>Move <b>78%</b></div><div class="rl"><i style="background:var(--terra)"></i>Train <b>1/1</b></div><div class="rl"><i style="background:var(--blue)"></i>Fuel <b>71%</b></div></div></div>
+        <button class="start" style="margin-top:14px">Start Lower Power →</button>
+        <div class="items"><div class="row"><span>Back Squat</span><span>5 × 3</span></div><div class="row"><span>Deadlift</span><span>3 × 3</span></div><div class="row"><span>KB Swing</span><span>4 × 20</span></div></div></div>
+      <div class="grid2"><div class="card mini"><span class="label">CHECK-IN</span><b style="margin-top:8px;font-size:16px">Tap to log</b></div><div class="card mini"><span class="label">NUTRITION</span><b style="margin-top:8px">1,840</b><span>/ 2,600 kcal</span></div></div>
+      <div class="label" style="margin-left:4px">FROM YOUR CIRCLE</div>
+      <div class="card post"><div class="hd"><div class="pa">MK</div><div style="flex:1"><div class="nm">Maja K.</div><div class="tm">2h · Push day</div></div><span style="color:var(--ash)">♡ 14</span></div><div class="bd">New bench PR 💪 92.5kg, smooth all the way.</div></div>
+      <div class="card post"><div class="hd"><div class="pa">TS</div><div style="flex:1"><div class="nm">Tom S.</div><div class="tm">5h · 10K run</div></div><span style="color:var(--ash)">♡ 8</span></div><div class="bd">Easy zone-2 to keep the streak alive.</div></div>
+    </div></div></div></div>
+
+    <!-- COCKPIT -->
+    <div class="col"><div class="pagetag">COCKPIT <b>· ring index</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="pad">
+      <div><div class="h">Command Center</div><div class="sub">Soviet OWL · Wk 4 of 8 · 🏁 23 days to meet</div></div>
+      <div class="card"><div class="label">PERFORMANCE TWIN · HPI</div>
+        <div class="ringhero" style="margin-top:12px"><div class="rings"><div class="ar a1"></div><div class="ar a2" style="background:conic-gradient(var(--blue) 78%,#23271f 0)"></div><div class="ar a3" style="background:conic-gradient(var(--sand) 84%,#23271f 0)"></div><div class="hole" style="display:grid;place-items:center"><b style="font-size:30px;font-weight:800">87</b></div></div>
+          <div class="rlegend"><div class="rl"><i style="background:var(--lime)"></i>Strength <b>91</b></div><div class="rl"><i style="background:var(--blue)"></i>Endurance <b>78</b></div><div class="rl"><i style="background:var(--sand)"></i>Recovery <b>84</b></div></div></div>
+        <div class="sub" style="margin-top:12px">↑ Rising. Endurance is the limiter — add one zone-2 session.</div></div>
+      <div class="grid2"><div class="card mini"><span class="label">READINESS</span><b style="margin-top:8px">78</b><span>sleep + HRV solid</span></div><div class="card mini"><span class="label" style="color:var(--terra)">INJURY RISK</span><b style="margin-top:8px;color:var(--terra)">46</b><span>2 tissues watched</span></div></div>
+      <div class="card"><div class="label">THIS WEEK</div><div class="grid2" style="margin-top:12px"><div class="mini"><b>4</b><span>SESSIONS</span></div><div class="mini"><b>18.2k</b><span>VOLUME</span></div></div><div class="sub" style="margin-top:10px;color:var(--lime)">🏆 2 PRs · Squat 182 · DL 215</div></div>
+      <div class="card"><div class="label">DISCIPLINES</div><div class="grid2" style="margin-top:12px"><div class="mini"><b>91</b><span>STRENGTH</span></div><div class="mini"><b>78</b><span>ENDURANCE</span></div></div></div>
+      <div class="card"><div class="label">SEASON</div><div class="sub" style="margin-top:8px">Realization phase · Taper &amp; meet in 23 days</div></div>
+    </div></div></div></div>
+  </div>
+
+  <div class="rationale">
+    <h3>WHY THIS CONCEPT</h3>
+    <ul>
+      <li><b>Stories rail first:</b> puts people at the very top — the strongest pull-to-open hook from Instagram. Social isn't buried at the bottom; it greets you.</li>
+      <li><b>Rings as the universal object:</b> Today = daily activity rings (Move/Train/Fuel); Cockpit = HPI sub-scores as concentric rings. One mental model spans both pages.</li>
+      <li><b>Trade-off:</b> highest emotional/glance value, but rings compress detail — power users get less raw data above the fold. Best if engagement &gt; analysis is the goal.</li>
+    </ul>
+  </div>
+  <div class="foot"><a href="today-cockpit-combined.html">← back to combined base</a></div>
+</body></html>

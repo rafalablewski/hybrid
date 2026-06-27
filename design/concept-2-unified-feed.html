@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-template="aurora"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HYBRID — Concept 2 · Unified Feed</title>
+<style>
+  :root{--ink:#0c0d0c;--ink2:#141614;--line:#242724;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c7ef00;--blue:#3c787e;--sand:#d0cd94;--terra:#d56f3e;--violet:#c9a9f0;--card:22px;--pill:999px;--max:400px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:30px 16px 100px;display:flex;flex-direction:column;align-items:center;gap:22px}
+  .intro{max-width:880px;width:100%;text-align:center}
+  .intro .tag{font-size:11px;letter-spacing:.22em;color:var(--lime);font-weight:800}
+  .intro h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
+  .intro p{color:var(--ash);font-size:15px;line-height:1.6;margin-top:10px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .nav a{font-size:12px;color:var(--ash);border:1px solid var(--line);border-radius:var(--pill);padding:7px 13px;text-decoration:none}
+  .nav a.cur{background:var(--lime);color:#0c0d0c;border-color:var(--lime);font-weight:700}
+  .stage{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .pagetag{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--ash)}.pagetag b{color:var(--lime)}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);border-radius:44px;padding:13px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9)}
+  .notch{width:110px;height:24px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:800px;overflow-y:auto}.screen::-webkit-scrollbar{width:0}
+  /* sticky segmented header */
+  .seg{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(12,13,12,.97),rgba(12,13,12,.85));backdrop-filter:blur(12px);padding:14px 14px 10px}
+  .seg .ttl{font-size:18px;font-weight:800}
+  .segtabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}.segtabs::-webkit-scrollbar{display:none}
+  .st{flex:none;font-size:12px;font-weight:700;color:var(--ash);border:1px solid var(--line);border-radius:var(--pill);padding:6px 13px;cursor:pointer}
+  .st.on{background:var(--chalk);color:#0c0d0c;border-color:var(--chalk)}
+  .stream{padding:0 0 40px}
+  /* feed item = timeline row */
+  .it{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .it .gut{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .it .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:15px;flex:none;border:1px solid var(--line);background:var(--ink2)}
+  .it .ln{flex:1;width:2px;background:var(--line)}
+  .it .bd{flex:1;min-width:0}
+  .it .top{display:flex;align-items:center;gap:8px}
+  .it .pri{font-size:9px;font-weight:800;letter-spacing:.1em;padding:2px 7px;border-radius:var(--pill)}
+  .pri.now{background:var(--lime);color:#0c0d0c}.pri.do{background:rgba(199,239,0,.14);color:var(--lime)}
+  .pri.alert{background:rgba(213,111,62,.16);color:var(--terra)}.pri.social{background:rgba(60,120,126,.18);color:#7fc3c9}
+  .it .tm{margin-left:auto;font-size:10px;color:var(--ash)}
+  .it h4{font-size:15px;font-weight:800;margin-top:6px}
+  .it p{font-size:13px;color:var(--ash);margin-top:4px;line-height:1.5}
+  .it .row2{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .pl{background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:11px}.pl b{font-weight:800}
+  .cta{margin-top:10px;background:var(--lime);color:#0c0d0c;border:none;border-radius:var(--pill);padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer}
+  .cta.ghost{background:transparent;border:1px solid var(--line);color:var(--chalk)}
+  .rationale{max-width:880px;width:100%;background:rgba(199,239,0,.05);border:1px dashed rgba(199,239,0,.4);border-radius:18px;padding:18px 20px}
+  .rationale h3{font-size:13px;color:var(--lime);letter-spacing:.06em}
+  .rationale ul{margin:10px 0 0;padding-left:18px;color:#cfd3c8;font-size:13px;line-height:1.8}.rationale ul b{color:var(--chalk)}
+  .foot{color:var(--ash);font-size:12px}.foot a{color:var(--lime)}
+</style></head>
+<body>
+  <div class="intro">
+    <div class="tag">CONCEPT 2 OF 4</div>
+    <h1>Unified Smart Feed</h1>
+    <p>Everything is one <b>priority-sorted timeline</b>, X/Twitter-style. No fixed sections — cards are ranked by urgency (do-now → alerts → recap → social) and tagged with a priority chip. Today and Cockpit become two <b>filters</b> over the same stream ("Act" vs "Analyze"). Most modern, most adaptive.</p>
+    <div class="nav"><a href="concept-1-stories-rings.html">1 · Stories &amp; Rings</a><a class="cur" href="concept-2-unified-feed.html">2 · Unified Feed</a><a href="concept-3-bento.html">3 · Bento Grid</a><a href="concept-4-focus.html">4 · Focus Mode</a><a href="today-cockpit-combined.html">↩ Base</a></div>
+  </div>
+
+  <div class="stage">
+    <!-- TODAY = "Act" filter -->
+    <div class="col"><div class="pagetag">TODAY <b>· Act stream</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="seg"><div class="ttl">Today</div><div class="segtabs"><div class="st on">For you</div><div class="st">Train</div><div class="st">Recover</div><div class="st">Circle</div></div></div>
+      <div class="stream">
+        <div class="it"><div class="gut"><div class="ic" style="border-color:var(--lime)">⚡</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri now">DO NOW</span><span class="tm">9:14 AM</span></div><h4>Lower Power · Day 3</h4><p>Readiness 78 — green light. 5 blocks, ~58 min.</p><div class="row2"><span class="pl"><b>Squat</b> 5×3</span><span class="pl"><b>DL</b> 3×3</span><span class="pl"><b>KB</b> 4×20</span></div><button class="cta">Start session →</button></div></div>
+        <div class="it"><div class="gut"><div class="ic">🍽️</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri do">TODAY</span><span class="tm">due</span></div><h4>Log breakfast &amp; check-in</h4><p>1,840 / 2,600 kcal so far · readiness not logged yet.</p><div class="row2"><button class="cta ghost">Add meal</button><button class="cta ghost">Check in</button></div></div></div>
+        <div class="it"><div class="gut"><div class="ic">🏃</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri do">QUICK</span><span class="tm">anytime</span></div><h4>Back from a run?</h4><p>One-tap log: Run · Ride · Swim · Mobility</p></div></div>
+        <div class="it"><div class="gut"><div class="ic">📅</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri do">WEEK</span><span class="tm">Wk 4</span></div><h4>3 of 5 sessions done</h4><p>On pace for the realization block.</p></div></div>
+        <div class="it"><div class="gut"><div class="ic">MK</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri social">CIRCLE</span><span class="tm">2h</span></div><h4>Maja K. hit a bench PR</h4><p>92.5kg · +2.5 · "smooth all the way up"</p><div class="row2"><span class="pl">♡ 14</span><span class="pl">💬 3</span></div></div></div>
+        <div class="it"><div class="gut"><div class="ic">TS</div></div><div class="bd"><div class="top"><span class="pri social">CIRCLE</span><span class="tm">5h</span></div><h4>Tom S. logged a 10K</h4><p>10.2km · 52:10 · 148bpm avg</p></div></div>
+      </div>
+    </div></div></div>
+
+    <!-- COCKPIT = "Analyze" filter -->
+    <div class="col"><div class="pagetag">COCKPIT <b>· Analyze stream</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="seg"><div class="ttl">Cockpit</div><div class="segtabs"><div class="st on">Overview</div><div class="st">Body</div><div class="st">Strength</div><div class="st">Endurance</div><div class="st">Season</div></div></div>
+      <div class="stream">
+        <div class="it"><div class="gut"><div class="ic" style="border-color:var(--lime)">📊</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri now">HEADLINE</span><span class="tm">live</span></div><h4>HPI 87 · ↑ rising</h4><p>Strength 91 · Endurance 78 · Recovery 84. Endurance is the limiter.</p></div></div>
+        <div class="it"><div class="gut"><div class="ic">🎯</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri do">RIGHT NOW</span><span class="tm">today</span></div><h4>Readiness 78 → Lower Power</h4><p>Volume trimmed 10% to protect the peak.</p></div></div>
+        <div class="it"><div class="gut"><div class="ic" style="border-color:var(--terra)">⚠️</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri alert">ATTENTION</span><span class="tm">flagged</span></div><h4>Injury risk: Moderate · 46</h4><p>Lower back ACWR 1.4 · patellar tendon load spike.</p></div></div>
+        <div class="it"><div class="gut"><div class="ic">🏆</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri do">RECAP</span><span class="tm">this wk</span></div><h4>4 sessions · 2 PRs</h4><p>Squat 182 (+4) · Deadlift 215 (+5) · 18.2k kg volume</p></div></div>
+        <div class="it"><div class="gut"><div class="ic">💪</div><div class="ln"></div></div><div class="bd"><div class="top"><span class="pri social">DRILL</span><span class="tm">trend</span></div><h4>Strength index 91 · +6% 4-wk</h4><p>Tap to expand endurance / sport / velocity.</p></div></div>
+        <div class="it"><div class="gut"><div class="ic">🗺️</div></div><div class="bd"><div class="top"><span class="pri social">HORIZON</span><span class="tm">season</span></div><h4>Realization phase</h4><p>Taper &amp; meet in 23 days · adjust plan</p></div></div>
+      </div>
+    </div></div></div>
+  </div>
+
+  <div class="rationale">
+    <h3>WHY THIS CONCEPT</h3>
+    <ul>
+      <li><b>One ranking engine, two lenses:</b> the same priority model powers both pages — Today filters to "act," Cockpit to "analyze." No duplicated logic, no two layouts to maintain.</li>
+      <li><b>Priority chips do the hierarchy:</b> DO-NOW &gt; alerts &gt; recap &gt; social is encoded per-card, so the order can adapt daily (a flagged injury jumps the queue) without redesigning sections.</li>
+      <li><b>Trade-off:</b> most flexible and scalable, but a uniform timeline can feel less "designed" / less distinct between pages — risks the two screens looking too similar. Needs strong chip + filter cues to stay legible.</li>
+    </ul>
+  </div>
+  <div class="foot"><a href="today-cockpit-combined.html">← back to combined base</a></div>
+<script>document.querySelectorAll('.st').forEach(s=>s.onclick=()=>{const sib=s.parentElement.querySelectorAll('.st');sib.forEach(x=>x.classList.remove('on'));s.classList.add('on');});</script>
+</body></html>

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
   computeAccountability,
-  habitStrength,
+  weekAdherence,
+  trainingDaysPerWeek,
   buildActivityFeed,
   currentPhase,
   planToday,
@@ -16,7 +17,6 @@ import { fs, space,
   ROLE_COLOR,
   SECTION_COLOR,
   readinessRole,
-  accountabilityRole,
   type SemanticRole,
   type LoggedSession,
   type Biometrics,
@@ -32,14 +32,15 @@ import QuickSportLog from "../quick-sport";
 import TodayWidgets from "./today-quick";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
+import Stories from "./stories";
 import { AuroraIcon } from "./icons";
 import AuroraAskCoach from "./ai-coach";
+import { useCollapsible } from "@/lib/use-collapsible";
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
 const roleColor = (role: SemanticRole) => C(ROLE_COLOR[role]);
 const readyColor = (v: number) => roleColor(readinessRole(v));
-const bandColor = (b: string) => roleColor(accountabilityRole(b));
 
 /**
  * AURORA Today (web) — the DAILY GUIDED LOOP. Today answers "what do I do, how do
@@ -94,7 +95,8 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
+  // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
+  const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: 3 })), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -123,6 +125,9 @@ export default function AuroraToday({
     if (!el) return;
     setActiveCard(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
   };
+
+  // THIS WEEK collapse state — persisted so the choice sticks across visits.
+  const week = useCollapsible("hybrid.today.week");
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
@@ -155,8 +160,11 @@ export default function AuroraToday({
         </button>
       </div>
 
-      {/* GREETING + streak — sets the daily tone */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
+      {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
+      <Stories you={initials} youLabel={t("w.home.today.storyYou")} onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
+
+      {/* GREETING + streak — streak sits on the greeting's line, top-right */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>
@@ -278,20 +286,12 @@ export default function AuroraToday({
         ))}
       </div>
 
-      {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
-      <div style={{ marginTop: 16 }}>
-        <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
-      </div>
+      {/* QUICK LOG — back from a run/match? one-tap carousel, log it right here. */}
+      <Kicker k={t("w.home.today.kQuick")} h={t("w.home.today.kQuickH")} color={C(SECTION_COLOR.train)} />
+      <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
 
       {/* ───── RECOVER · FEEL ───── */}
       <Kicker k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C(SECTION_COLOR.feel)} />
-
-      {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
-      <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "12px 16px", marginBottom: 12 }}>
-        <span style={{ width: 8, height: 8, borderRadius: 999, background: bandColor(acc.band), flexShrink: 0 }} />
-        <span style={{ fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk") }}>{t("w.home.today.onTrackLead")}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{acc.sessionsLast7}/3 · {t("w.home.today.habit")} {strength}</span>
-      </div>
 
       {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
       <TodayWidgets onNavigate={onNavigate} />
@@ -299,7 +299,16 @@ export default function AuroraToday({
       {/* ───── PLAN ───── */}
       <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C(SECTION_COLOR.plan)} />
 
-      {/* THIS WEEK — shared reconciled plan; coached clients see it read-only */}
+      {/* WEEK ADHERENCE — glanceable Mon→Sun strip; the one collapsible card */}
+      <WeekStrip
+        title={phase ? `${t("w.home.today.week")} ${currentWeek} · ${phase.block.label}` : t("w.home.today.kWeekH")}
+        doneLabel={`${adherence.done} ${t("w.home.today.of")} ${adherence.target} ${t("w.home.today.w.done")}`}
+        days={adherence.days}
+        open={!week.collapsed}
+        onToggle={week.toggle}
+      />
+
+      {/* THIS WEEK — shared reconciled plan (always shown); coached read-only */}
       {(isAthlete || coached) && macro ? (
         <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} readOnly={!isAthlete} />
       ) : (
@@ -315,16 +324,17 @@ export default function AuroraToday({
         </button>
       )}
 
-      {/* ───── CONNECT ───── */}
+      {/* ───── CONNECT ───── (feed first — your circle's momentum) */}
       <Kicker k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C(SECTION_COLOR.connect)} />
+
+      {/* FEED STRIP — a few of your circle's latest */}
+      <FeedPreview onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
+
+      {/* ───── DISCOVER ───── (coaches last — exploratory, not daily) */}
+      <Kicker k={t("w.home.today.kDiscover")} h={t("w.home.today.kDiscoverH")} color={C(SECTION_COLOR.connect)} />
 
       {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
       <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
-
-      {/* FEED STRIP — a few of your circle's latest */}
-      <div style={{ marginTop: 6 }}>
-        <FeedPreview onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
-      </div>
     </div>
   );
 }
@@ -334,8 +344,8 @@ function Kicker({ k, h, color }: { k: string; h: string; color: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
       <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
-      <span style={{ fontWeight: 800, fontSize: 19, marginLeft: "auto", color: C("chalk") }}>{h}</span>
+      {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k} · {h}</span>
     </div>
   );
 }
@@ -359,13 +369,54 @@ function ChooserRow({ title, sub, badge, color, onClick }: { title: string; sub:
   );
 }
 
-/** Readiness/score dial — a conic-gradient ring with the number in the middle. */
-function Ring({ value, color, size = 44 }: { value: number; color: string; size?: number }) {
+/** Readiness/score dial — a ring of TICK MARKS (lit up to the value) with the
+ *  number in the middle, matching the mobile kit Ring so web + mobile read the
+ *  same. The ticks are the "number effect" from the original Your Plan Today. */
+function Ring({ value, color, size = 44, ticks = 32 }: { value: number; color: string; size?: number; ticks?: number }) {
   const pct = Math.max(0, Math.min(100, value));
-  const inner = size - 12;
+  const lit = Math.round((pct / 100) * ticks);
+  const tickLen = Math.max(4, Math.round(size * 0.16));
+  const tickW = Math.max(2, Math.round(size * 0.045));
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", background: `conic-gradient(${color} ${pct * 3.6}deg, ${C("line")} 0)`, display: "grid", placeItems: "center", flexShrink: 0 }}>
-      <div style={{ width: inner, height: inner, borderRadius: "50%", background: C("ink2"), display: "grid", placeItems: "center", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</div>
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0, display: "grid", placeItems: "center" }}>
+      {Array.from({ length: ticks }).map((_, i) => (
+        <span key={i} style={{ position: "absolute", top: 0, left: "50%", width: tickW, height: size / 2, transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${(i / ticks) * 360}deg)` }}>
+          <span style={{ display: "block", width: tickW, height: tickLen, borderRadius: tickW, background: i < lit ? color : C("line") }} />
+        </span>
+      ))}
+      <span style={{ position: "relative", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</span>
+    </div>
+  );
+}
+
+/** WEEK ADHERENCE strip — a collapsible card with the Mon→Sun day cells (done /
+ *  today / missed / future), summarising the week at a glance. The chevron folds
+ *  just this card; the detailed reconciled plan below stays visible. */
+function WeekStrip({ title, doneLabel, days, open, onToggle }: { title: string; doneLabel: string; days: { label: string; state: "done" | "today" | "future" | "missed" }[]; open: boolean; onToggle: () => void }) {
+  const cell = (s: string) => {
+    const done = s === "done", today = s === "today";
+    return { aspectRatio: "1 / 1.4", borderRadius: 12, border: `1px solid ${done ? "color-mix(in srgb, " + C("lime") + " 40%, transparent)" : today ? C("lime") : C("line")}`, background: done ? `color-mix(in srgb, ${C("lime")} 12%, transparent)` : "transparent", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4, color: C("ash") } as const;
+  };
+  const mark = (s: string) => (s === "done" ? "✓" : s === "today" ? "•" : s === "missed" ? "—" : "—");
+  return (
+    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, marginBottom: 16 }}>
+      <button onClick={onToggle} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "flex-start", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
+        <span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--amber-text)" }}>{title}</span>
+          <span style={{ display: "block", fontWeight: 800, fontSize: 16, marginTop: 4, color: C("chalk") }}>{doneLabel}</span>
+        </span>
+        <span style={{ color: C("ash"), fontSize: 14, transition: "transform .2s", transform: open ? "rotate(180deg)" : "none" }}>⌄</span>
+      </button>
+      {open && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginTop: 14 }}>
+          {days.map((d, i) => (
+            <div key={i} style={cell(d.state)}>
+              <span style={{ fontSize: 10 }}>{d.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: d.state === "done" || d.state === "today" ? C("lime") : C("ash") }}>{mark(d.state)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en" data-template="aurora">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Cockpit page · IA redesign</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724; --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c7ef00; --blue:#3c787e; --sand:#d0cd94; --terra:#d56f3e; --violet:#c9a9f0; --red:#d56f3e;
+    --card:26px; --pill:999px;
+    --max:430px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);
+    font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:32px 16px 120px;display:flex;flex-direction:column;align-items:center;gap:28px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  .intro{max-width:760px;width:100%;text-align:center;padding:8px 4px 0}
+  .intro h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .intro h1 b{color:var(--lime)}
+  .intro p{color:var(--ash);font-size:15px;line-height:1.6;margin-top:10px}
+  .controls{display:flex;gap:10px;align-items:center;margin-top:18px;justify-content:center;flex-wrap:wrap}
+  .btn{cursor:pointer;border:1px solid var(--line);background:var(--ink2);color:var(--chalk);
+    padding:9px 16px;border-radius:var(--pill);font-size:13px;font-weight:600;transition:.15s}
+  .btn:hover{border-color:#3a3e3a}
+  .btn.on{background:var(--lime);color:#0c0d0c;border-color:var(--lime)}
+
+  .stage{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);
+    border-radius:44px;padding:14px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9);position:relative}
+  .notch{width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:860px;overflow-y:auto;scroll-behavior:smooth}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* sticky context header */
+  .chead{position:sticky;top:0;z-index:30;padding:18px 18px 14px;
+    background:linear-gradient(180deg,rgba(12,13,12,.97),rgba(12,13,12,.8) 75%,transparent);backdrop-filter:blur(14px)}
+  .chead .t{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .chead .s{font-size:12px;color:var(--ash);margin-top:2px}
+  .seasonbar{display:flex;align-items:center;gap:8px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+  .seasonbar::-webkit-scrollbar{display:none}
+  .spill{flex:none;background:var(--ink2);border:1px solid var(--line);border-radius:var(--pill);padding:7px 13px;
+    font-size:11px;font-weight:600;display:flex;gap:7px;align-items:center}
+  .spill b{font-weight:800}
+  .spill .g{width:7px;height:7px;border-radius:50%;background:var(--lime)}
+
+  .body{padding:6px 16px 40px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--card);padding:18px;
+    box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .label{font-size:10px;letter-spacing:.18em;color:var(--ash);font-weight:700}
+  .kicker{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--ash);margin:8px 2px 0}
+  .kicker .sub{margin-left:auto;letter-spacing:0;font-weight:500;text-transform:none}
+  .dot{width:9px;height:9px;border-radius:50%}
+
+  /* HPI hero */
+  .twin{display:flex;gap:18px;align-items:center}
+  .hpi{font-size:64px;font-weight:800;letter-spacing:-.04em;line-height:.9}
+  .hpi small{font-size:16px;color:var(--ash);font-weight:600}
+  .twin .meta{flex:1}
+  .band{display:inline-block;background:rgba(199,239,0,.14);color:var(--lime);border-radius:var(--pill);
+    padding:4px 11px;font-size:11px;font-weight:700;letter-spacing:.04em}
+  .spark{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:12px}
+  .spark i{flex:1;background:#2c302c;border-radius:2px}
+  .spark i.h{background:var(--lime)}
+  .comp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .comp div{text-align:center}
+  .comp b{display:block;font-size:22px;font-weight:800}
+  .comp span{font-size:9px;letter-spacing:.14em;color:var(--ash)}
+  .driver{font-size:12px;color:var(--ash);margin-top:12px;line-height:1.5}
+
+  /* readiness + route pair */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ring{--p:78;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;
+    background:conic-gradient(var(--lime) calc(var(--p)*1%),#23271f 0);position:relative;margin-bottom:10px}
+  .ring::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--ink2)}
+  .ring b{position:relative;z-index:1;font-size:16px;font-weight:800}
+  .route .ex{font-size:13px;font-weight:700;margin-top:6px}
+  .route .why{font-size:11px;color:var(--ash);margin-top:6px;line-height:1.5}
+
+  /* injury risk alert */
+  .alert{border-color:rgba(213,111,62,.5);background:linear-gradient(180deg,rgba(213,111,62,.08),transparent)}
+  .risk-top{display:flex;align-items:baseline;justify-content:space-between}
+  .risk-top b{font-size:20px;font-weight:800;color:var(--terra)}
+  .bar{height:8px;border-radius:5px;background:#23271f;overflow:hidden;margin-top:10px}
+  .bar i{display:block;height:100%;background:var(--terra)}
+  .tissue{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px}
+  .tissue .pill{font-size:10px;font-weight:700;color:var(--terra);border:1px solid rgba(213,111,62,.5);
+    border-radius:var(--pill);padding:2px 9px}
+  .tissue small{margin-left:auto;color:var(--ash);font-size:11px}
+
+  /* weekly recap */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+  .stat b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .stat span{font-size:10px;color:var(--ash);letter-spacing:.08em}
+  .prbadge{display:inline-flex;gap:6px;align-items:center;background:rgba(199,239,0,.14);color:var(--lime);
+    border-radius:var(--pill);padding:4px 11px;font-size:11px;font-weight:700;margin-top:14px}
+  .prlist{margin-top:10px}
+  .prlist .r{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid var(--line)}
+  .prlist .r span:last-child{color:var(--lime);font-weight:700}
+
+  /* discipline tabs */
+  .tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;border:1px solid var(--line);background:var(--ink2);color:var(--ash);border-radius:var(--pill);
+    padding:8px 15px;font-size:12px;font-weight:700;cursor:pointer}
+  .tab.on{background:var(--chalk);color:#0c0d0c;border-color:var(--chalk)}
+  .disc{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .disc .stat b{font-size:20px}
+
+  /* timeline */
+  .tl{position:relative;padding-left:18px;margin-top:8px}
+  .tl::before{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .tl .node{position:relative;padding:0 0 16px}
+  .tl .node::before{content:"";position:absolute;left:-18px;top:4px;width:8px;height:8px;border-radius:50%;background:#2c302c}
+  .tl .node.on::before{background:var(--lime)}
+  .tl .node b{font-size:13px;font-weight:700}
+  .tl .node small{display:block;font-size:11px;color:var(--ash);margin-top:2px}
+
+  /* annotations */
+  .anno{display:none}
+  body.show-anno .anno{display:block}
+  .anno{background:rgba(199,239,0,.06);border:1px dashed rgba(199,239,0,.45);border-radius:14px;padding:11px 13px;margin:2px 0 0}
+  .anno .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--lime);
+    color:#0c0d0c;font-weight:800;font-size:11px;margin-right:8px}
+  .anno .t{font-size:12px;font-weight:700;color:var(--lime);letter-spacing:.04em}
+  .anno .why{font-size:12px;color:#cfd3c8;line-height:1.55;margin-top:7px}
+  .anno .pat{font-size:11px;color:var(--ash);margin-top:6px}
+  .anno .pat b{color:var(--sand)}
+  body.show-anno .card,body.show-anno .kicker{outline:1px solid rgba(199,239,0,.12)}
+
+  .foot{max-width:760px;width:100%;color:var(--ash);font-size:13px;line-height:1.7;text-align:center;margin-top:8px}
+  .foot a{color:var(--lime)}
+</style>
+</head>
+<body class="show-anno">
+
+  <div class="intro">
+    <h1>COCKPIT <b>· redesigned</b></h1>
+    <p>A command-center hierarchy: who-am-I-right-now first (one headline metric), then what-acts-on-me (readiness + today + risk alerts), then what-I-did (weekly recap + PRs), then deep-dive breakdowns by discipline, and finally the long-horizon season plan. Insight flows from <i>summary → drill-down → horizon.</i></p>
+    <div class="controls">
+      <button class="btn on" id="toggle">Annotations: ON</button>
+      <span style="color:var(--ash);font-size:12px">Scroll the phone ↓</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+
+        <!-- STICKY CONTEXT HEADER -->
+        <div class="chead">
+          <div class="t">Command Center</div>
+          <div class="s">Soviet OWL · Week 4 of 8</div>
+          <div class="seasonbar">
+            <div class="spill"><span class="g"></span><b>Realization</b> phase</div>
+            <div class="spill">🏁 <b>23 days</b> to meet</div>
+            <div class="spill">📈 Peaking</div>
+          </div>
+        </div>
+
+        <div class="body">
+
+          <div class="anno"><span class="n">1</span><span class="t">STICKY CONTEXT HEADER</span>
+            <div class="why">A command center must always answer "where am I in the bigger plan?" — so goal/phase/countdown is pinned as a thin context bar instead of a tall card that pushes data offscreen. The horizontal season-bar holds plan, phase and event countdown without stealing vertical space.</div>
+            <div class="pat">Pattern: <b>sticky header</b> + horizontal <b>context-pill strip</b>.</div>
+          </div>
+
+          <!-- HPI HERO -->
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>PERFORMANCE TWIN <span class="sub">Hybrid Performance Index</span></div>
+          <div class="card">
+            <div class="twin">
+              <div class="hpi">87<small>/100</small></div>
+              <div class="meta">
+                <span class="band">ATHLETE · ↑ rising</span>
+                <div class="spark">
+                  <i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:62%"></i>
+                  <i style="height:70%"></i><i style="height:66%"></i><i class="h" style="height:82%"></i>
+                </div>
+              </div>
+            </div>
+            <div class="comp">
+              <div><b>91</b><span>STRENGTH</span></div>
+              <div><b>78</b><span>ENDURANCE</span></div>
+              <div><b>84</b><span>RECOVERY</span></div>
+            </div>
+            <div class="driver">↑ Strength driving your index this block; endurance is the limiter — add one zone-2 session to balance.</div>
+          </div>
+
+          <div class="anno"><span class="n">2</span><span class="t">PERFORMANCE TWIN (HPI) — the headline</span>
+            <div class="why">The cockpit's hero is the one number that summarizes everything: a single big HPI with trend, the three sub-scores, and a one-line driver. It's first because a command center should let you read your whole state in two seconds before drilling anywhere.</div>
+            <div class="pat">Pattern: <b>full-width hero card</b> — oversized metric + sparkline + 3-up sub-scores + driver line.</div>
+          </div>
+
+          <!-- READINESS + TODAY pair -->
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>RIGHT NOW <span class="sub">Acts on today</span></div>
+          <div class="pair">
+            <div class="card">
+              <div class="ring" style="--p:78"><b>78</b></div>
+              <div class="label">READINESS</div>
+              <div class="route why">Sleep + HRV solid; slight fatigue from Thu's pulls.</div>
+            </div>
+            <div class="card route">
+              <div class="label">TODAY'S ROUTE</div>
+              <div class="ex">Lower Power · 5 blocks</div>
+              <div class="why">Squat, DL, KB swing. Volume trimmed 10% to protect the peak.</div>
+            </div>
+          </div>
+
+          <div class="anno"><span class="n">3</span><span class="t">RIGHT NOW — readiness + today's route</span>
+            <div class="why">These two are the "actionable now" layer: how recovered you are, and what that prescribes today. Paired side-by-side because they're cause→effect (readiness shapes the route). Sits directly under HPI so the glance flows summary → today's implication.</div>
+            <div class="pat">Pattern: <b>2-column paired cards</b> — readiness ring beside prescription.</div>
+          </div>
+
+          <!-- INJURY RISK alert -->
+          <div class="kicker"><i class="dot" style="background:var(--terra)"></i>ATTENTION <span class="sub">Surfaces only when flagged</span></div>
+          <div class="card alert">
+            <div class="risk-top"><div class="label" style="color:var(--terra)">INJURY RISK</div><b>Moderate · 46</b></div>
+            <div class="bar"><i style="width:46%"></i></div>
+            <div class="tissue"><span class="pill">WATCH</span> Lower back <small>ACWR 1.4 · pull volume ↑</small></div>
+            <div class="tissue"><span class="pill">WATCH</span> Patellar tendon <small>jump load spike</small></div>
+          </div>
+
+          <div class="anno"><span class="n">4</span><span class="t">ATTENTION — injury risk (conditional)</span>
+            <div class="why">Risk is an exception-driven alert: it earns a high slot only when something is flagged, and disappears (or collapses to a thin "all clear" line) when not. Placing it right after "right now" means a warning is seen before you commit to today's session — but it never out-ranks your positive headline state.</div>
+            <div class="pat">Pattern: <b>conditional alert card</b> with accent border; collapses when clear.</div>
+          </div>
+
+          <!-- WEEKLY RECAP -->
+          <div class="kicker"><i class="dot" style="background:var(--sand)"></i>THIS WEEK <span class="sub">What you did</span></div>
+          <div class="card">
+            <div class="stats">
+              <div class="stat"><b>4</b><span>SESSIONS</span></div>
+              <div class="stat"><b>18.2k</b><span>VOLUME KG</span></div>
+              <div class="stat"><b>62</b><span>SETS</span></div>
+            </div>
+            <div class="prbadge">🏆 2 new PRs this week</div>
+            <div class="prlist">
+              <div class="r"><span>Back Squat e1RM</span><span>182kg · +4</span></div>
+              <div class="r"><span>Deadlift e1RM</span><span>215kg · +5</span></div>
+            </div>
+          </div>
+
+          <div class="anno"><span class="n">5</span><span class="t">THIS WEEK — recap &amp; PRs</span>
+            <div class="why">After "now," the cockpit answers "what have I been doing?" Aggregate weekly stats + PRs are retrospective, so they sit below the live layers but above deep breakdowns. PRs get a celebratory badge — the one motivational beat in an otherwise analytical page.</div>
+            <div class="pat">Pattern: <b>3-up stat grid</b> + PR list.</div>
+          </div>
+
+          <!-- DISCIPLINE TABS -->
+          <div class="kicker"><i class="dot" style="background:var(--blue)"></i>BREAKDOWN <span class="sub">By discipline</span></div>
+          <div class="card">
+            <div class="tabs">
+              <div class="tab on">Strength</div>
+              <div class="tab">Endurance</div>
+              <div class="tab">Sport</div>
+              <div class="tab">Velocity</div>
+            </div>
+            <div class="disc">
+              <div class="stat"><b>91</b><span>STR INDEX</span></div>
+              <div class="stat"><b>1,840</b><span>WK TONNAGE</span></div>
+              <div class="stat"><b>+6%</b><span>4-WK TREND</span></div>
+            </div>
+            <div class="driver" style="margin-top:14px">Top lifts trending up; intensity in the RPE 8 band. Velocity capture not connected yet.</div>
+          </div>
+
+          <div class="anno"><span class="n">6</span><span class="t">BREAKDOWN — disciplines (tabbed)</span>
+            <div class="why">The four discipline deep-dives (Strength, Endurance, Sport, Velocity) were four separate stacked sections — that's a lot of scroll for data most users check occasionally. Collapsing them into one tabbed module keeps drill-down available without making everyone scroll past three sections they didn't open.</div>
+            <div class="pat">Pattern: <b>tabbed module</b> — one card, swipeable discipline tabs, consistent stat grid.</div>
+          </div>
+
+          <!-- SEASON TIMELINE -->
+          <div class="kicker"><i class="dot" style="background:var(--sand)"></i>HORIZON <span class="sub">Goal &amp; season</span></div>
+          <div class="card">
+            <div class="label">PERIODIZATION · 8-WEEK BLOCK</div>
+            <div class="tl" style="margin-top:14px">
+              <div class="node"><b>Accumulation</b><small>Wk 1–3 · done</small></div>
+              <div class="node"><b>Intensification</b><small>Wk 3–4 · done</small></div>
+              <div class="node on"><b>Realization</b><small>Wk 4–7 · current</small></div>
+              <div class="node"><b>Taper &amp; meet</b><small>Wk 8 · in 23 days</small></div>
+            </div>
+            <button class="btn" style="width:100%;margin-top:8px">Adjust plan / re-periodize</button>
+          </div>
+
+          <div class="anno"><span class="n">7</span><span class="t">HORIZON — goal &amp; season setup</span>
+            <div class="why">Goal/season setup was at the very top of the old cockpit — but it's the least frequently changed thing. Moved to the bottom as a long-horizon timeline + a single "adjust plan" action. The pinned context bar (#1) keeps the *summary* always visible, so demoting the editor costs nothing day-to-day.</div>
+            <div class="pat">Pattern: <b>vertical timeline</b> of phases + one configuration CTA.</div>
+          </div>
+
+          <div style="height:30px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:300px;min-width:240px;flex:1">
+      <div class="card" style="position:sticky;top:24px">
+        <div class="label" style="color:var(--lime)">NEW TOP-TO-BOTTOM ORDER</div>
+        <ol style="margin:14px 0 0;padding-left:18px;font-size:13px;line-height:2;color:#cfd3c8">
+          <li>Sticky context header (goal/phase/countdown)</li>
+          <li><b style="color:var(--lime)">Performance Twin / HPI</b> hero</li>
+          <li>Right now: readiness + today's route</li>
+          <li>Attention: injury risk (conditional)</li>
+          <li>This week: recap + PRs</li>
+          <li>Breakdown: disciplines (tabbed)</li>
+          <li>Horizon: goal &amp; season timeline</li>
+        </ol>
+        <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px;font-size:12px;color:var(--ash);line-height:1.7">
+          <b style="color:var(--chalk)">Flow logic:</b> one headline state → what acts on today → exceptions/alerts → retrospective → drill-down → long horizon. Frequently-read rises; rarely-edited setup sinks (but stays summarized in the sticky bar).
+        </div>
+        <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px;font-size:12px;color:var(--ash);line-height:1.7">
+          <b style="color:var(--chalk)">Biggest moves:</b> Goal/season top → bottom; 4 stacked discipline sections → 1 tabbed module; injury risk promoted to a conditional alert; HPI promoted to the hero.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Information-architecture mockup · grounded in the live Aurora dark theme &amp; current Cockpit sections.<br>
+    Companion file: <a href="today-redesign.html">today-redesign.html</a>
+  </div>
+
+<script>
+  const b=document.body, t=document.getElementById('toggle');
+  t.onclick=()=>{const on=b.classList.toggle('show-anno');t.classList.toggle('on',on);t.textContent='Annotations: '+(on?'ON':'OFF');};
+  document.querySelectorAll('.tab').forEach(tab=>tab.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));tab.classList.add('on');});
+</script>
+</body>
+</html>

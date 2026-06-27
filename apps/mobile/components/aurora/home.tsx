@@ -12,7 +12,7 @@ import {
   weekNeedsResync,
   currentPhase,
   computeAccountability,
-  habitStrength,
+  weekAdherence,
   buildActivityFeed,
   planToday,
   srSingleReps,
@@ -21,7 +21,6 @@ import {
   toBiometrics,
   velocityProfiles,
   readinessRole,
-  accountabilityRole,
   SECTION_COLOR,
   SPORTS,
   LEVELS,
@@ -44,6 +43,7 @@ import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
+import Stories from "./stories";
 import TodayWidgets from "./today-quick";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
@@ -53,7 +53,6 @@ type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
 // semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
 const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
-const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
 
 /**
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at
@@ -137,7 +136,8 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
+  // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
+  const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 })), [sessions, prefDays]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -206,6 +206,8 @@ export default function AuroraHome() {
   // Plan/AI-coach pager — track the active card so the dots signal the swipe.
   const cardW = width - 48; // 24px screen padding each side
   const [activeCard, setActiveCard] = useState(0);
+  // THIS WEEK collapse — tap the Plan kicker to fold/unfold the reconciled plan.
+  const [weekOpen, setWeekOpen] = useState(true);
   const onPagerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setActiveCard(Math.round(e.nativeEvent.contentOffset.x / Math.max(1, cardW + 12)));
   };
@@ -283,8 +285,11 @@ export default function AuroraHome() {
           </Pressable>
         </View>
 
-        {/* GREETING + streak — sets the daily tone */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
+        {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
+        <Stories name={name} youLabel={t("w.home.today.storyYou")} onOpen={() => router.push("/feed")} />
+
+        {/* GREETING + streak — streak sits on the greeting's line, top-right */}
+        <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
@@ -450,19 +455,13 @@ export default function AuroraHome() {
           </Pressable>
         )}
 
-        {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
+        {/* QUICK LOG — back from a run/match? one-tap carousel, log it right here. */}
+        <Kicker C={C} k={t("w.home.today.kQuick")} h={t("w.home.today.kQuickH")} color={C[SECTION_COLOR.train]} />
         <QuickSportLog sessions={sessions} onSaved={load} solid />
 
 
         {/* ───── RECOVER · FEEL ───── */}
         <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C[SECTION_COLOR.feel]} />
-
-        {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: bandColor(acc.band, C) }} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.today.onTrackLead")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: "auto" }}>{acc.sessionsLast7}/3 · {t("w.home.today.habit")} {strength}</Text>
-        </View>
 
         {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
         <View style={{ marginTop: 12 }}>
@@ -470,10 +469,17 @@ export default function AuroraHome() {
         </View>
 
         {/* ───── PLAN ───── */}
-        {(isAthlete || coached) && macro ? (
-          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} />
-        ) : null}
-        {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
+        <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} />
+        {/* WEEK ADHERENCE — glanceable Mon→Sun strip; the one collapsible card */}
+        <WeekStrip
+          C={C}
+          title={phase ? `${t("w.home.today.week")} ${currentWeek} · ${phase.block.label}` : t("w.home.today.kWeekH")}
+          doneLabel={`${adherence.done} ${t("w.home.today.of")} ${adherence.target} ${t("w.home.today.w.done")}`}
+          days={adherence.days}
+          open={weekOpen}
+          onToggle={() => setWeekOpen((o) => !o)}
+        />
+        {/* THIS WEEK — reconciled plan (always shown); coached read-only */}
         {(isAthlete || coached) && macro && reconciledView && (
           <ACard style={{ marginTop: 18 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
@@ -524,13 +530,17 @@ export default function AuroraHome() {
         )}
 
 
-        {/* ───── CONNECT ───── */}
+        {/* ───── CONNECT ───── (feed first — your circle's momentum) */}
         <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C[SECTION_COLOR.connect]} />
+
+        {/* FEED STRIP — your circle's latest, IG-Threads style. */}
+        <FeedPreview onOpen={() => router.push("/feed")} />
+
+        {/* ───── DISCOVER ───── (coaches last — exploratory, not daily) */}
+        <Kicker C={C} k={t("w.home.today.kDiscover")} h={t("w.home.today.kDiscoverH")} color={C[SECTION_COLOR.connect]} />
 
         {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
         <CoachRail onOpen={() => router.push("/coaches")} />
-        {/* FEED STRIP — your circle's latest, IG-Threads style, at the bottom. */}
-        <FeedPreview onOpen={() => router.push("/feed")} />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -552,8 +562,39 @@ function Kicker({ C, k, h, color }: { C: P; k: string; h: string; color: string 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
       <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, marginLeft: "auto" }}>{h}</Text>
+      {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k} · {h}</Text>
+    </View>
+  );
+}
+
+// WEEK ADHERENCE strip — a collapsible card with the Mon→Sun day cells (done /
+// today / missed / future), summarising the week at a glance. The chevron folds
+// just this card; the detailed reconciled plan below stays visible.
+function WeekStrip({ C, title, doneLabel, days, open, onToggle }: { C: P; title: string; doneLabel: string; days: { label: string; state: "done" | "today" | "future" | "missed" }[]; open: boolean; onToggle: () => void }) {
+  const mark = (s: string) => (s === "done" ? "✓" : s === "today" ? "•" : "—");
+  return (
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18, marginTop: 12 }}>
+      <Pressable onPress={onToggle} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <View>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.amber) }}>{title}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.chalk, marginTop: 4 }}>{doneLabel}</Text>
+        </View>
+        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>⌄</Text>
+      </Pressable>
+      {open && (
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 14 }}>
+          {days.map((d, i) => {
+            const done = d.state === "done", today = d.state === "today";
+            return (
+              <View key={i} style={{ flex: 1, aspectRatio: 1 / 1.4, borderRadius: 12, borderWidth: 1, borderColor: done ? `${C.lime}66` : today ? C.lime : C.line, backgroundColor: done ? `${C.lime}1f` : "transparent", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{d.label}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 11, color: done || today ? txt(C, C.lime) : C.ash }}>{mark(d.state)}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
