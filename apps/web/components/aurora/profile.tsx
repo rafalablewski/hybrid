@@ -187,7 +187,7 @@ export default function AuroraProfile({
       {socialP && !sComplete && (
         <button
           onClick={go("settings", "/settings")}
-          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, rgba(196,240,53,.12), rgba(127,212,232,.05))", borderRadius: 20, padding: 16, display: "flex", alignItems: "center", gap: 14, color: C("chalk") }}
+          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 20, padding: 16, display: "flex", alignItems: "center", gap: 14, color: C("chalk") }}
         >
           <span style={{ width: 44, height: 44, borderRadius: 14, background: C("lime"), display: "grid", placeItems: "center", flexShrink: 0 }}>
             <AuroraIcon name="user-circle" size={22} color={C("ink")} />
@@ -206,9 +206,9 @@ export default function AuroraProfile({
           <div
             style={{
               width: 98, height: 98, borderRadius: "50%",
-              background: "linear-gradient(150deg,#3a3d36,rgba(22,24,20,0))",
-              border: "1px solid #4a4d44", display: "grid", placeItems: "center",
-              fontWeight: 900, fontSize: 34, color: C("lime-t"),
+              background: "linear-gradient(150deg, var(--color-ink2), transparent)",
+              border: "1px solid var(--color-line)", display: "grid", placeItems: "center",
+              fontWeight: 900, fontSize: 34, color: "var(--lime-text)",
               boxShadow: "inset 0 1px 0 rgba(255,255,255,.06)",
             }}
           >
@@ -228,7 +228,7 @@ export default function AuroraProfile({
         </div>
         <div style={{ fontWeight: 900, fontSize: 25, letterSpacing: "-.025em", marginTop: 15, display: "flex", alignItems: "center", gap: 9 }}>
           {name}
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "3px 9px", letterSpacing: ".08em" }}>{tier}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: "var(--lime-text)", borderRadius: 999, padding: "3px 9px", letterSpacing: ".08em" }}>{tier}</span>
         </div>
         {/* ONE identity line — the Hybrid ID. (The membership card no longer
             repeats an "Athlete ID"; the email stays as quiet account contact.) */}
@@ -276,14 +276,14 @@ export default function AuroraProfile({
       </div>
 
       {/* ID CARD — premium membership card */}
-      <div style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", border: "1px solid #34381f", background: "linear-gradient(160deg,#1a1c14,#0e100d 60%)" }}>
+      <div style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", border: "1px solid var(--color-line)", background: "linear-gradient(160deg, var(--color-ink2), var(--color-ink) 60%)" }}>
         {/* faint diagonal etch */}
-        <span style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(115deg,rgba(196,240,53,.05) 0 1px,transparent 1px 14px)", opacity: 0.7, pointerEvents: "none" }} />
-        {/* soft lime corner sheen */}
-        <span style={{ position: "absolute", top: -60, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(196,240,53,.22),transparent 70%)", pointerEvents: "none" }} />
+        <span style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(115deg, color-mix(in srgb, var(--color-lime) 6%, transparent) 0 1px, transparent 1px 14px)", opacity: 0.7, pointerEvents: "none" }} />
+        {/* soft accent corner sheen */}
+        <span style={{ position: "absolute", top: -60, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 22%, transparent), transparent 70%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           <div style={{ fontWeight: 900, fontSize: fs.body, letterSpacing: ".04em" }}>HYBRID<span style={{ color: C("lime") }}>.</span> · {t("w.account.profile.membership")}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: C("lime-t"), borderRadius: 999, padding: "4px 9px", letterSpacing: ".1em" }}>{tier} · {role === "coach" ? t("w.account.profile.coach-upper") : t("w.account.profile.member-upper")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: "var(--lime-text)", borderRadius: 999, padding: "4px 9px", letterSpacing: ".1em" }}>{tier} · {role === "coach" ? t("w.account.profile.coach-upper") : t("w.account.profile.member-upper")}</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 30, position: "relative" }}>
           <IdMeta label={t("w.account.profile.id-member-since")} value={String(memberSince)} />
@@ -294,10 +294,10 @@ export default function AuroraProfile({
 
       {/* HPI HERO — Full only; free (casual) users get a locked upsell. */}
       {showHpi ? (
-        <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg,#121410,#0d0f0c)" }}>
+        <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>{t("w.account.profile.hpi-title")}</div>
           <BigNumber value={hasData ? state.hpi.score : null} />
-          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: C("lime-t"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", marginTop: 8, textTransform: "uppercase" }}>
+          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--lime-text)", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "4px 10px", marginTop: 8, textTransform: "uppercase" }}>
             {t("w.account.profile.band")} · {hasData ? state.hpi.band : t("w.account.profile.unrated")}
           </span>
           {/* 12-bar trace */}
@@ -305,7 +305,7 @@ export default function AuroraProfile({
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9 }}>
             {hasData ? (
               <>
-                <span style={{ color: C("lime-t") }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
+                <span style={{ color: "var(--lime-text)" }}>{hpiDelta >= 0 ? "▲ +" : "▼ "}{hpiDelta}</span> {t("w.account.profile.vs-last-30")} · {t("w.account.profile.comp-strength")} {state.hpi.components.strength} · {t("w.account.profile.comp-engine")} {state.hpi.components.endurance} · {t("w.account.profile.comp-recovery")} {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}
               </>
             ) : (
               t("w.account.profile.hpi-empty")
@@ -313,7 +313,7 @@ export default function AuroraProfile({
           </div>
         </div>
       ) : (
-        <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg,#121410,#0d0f0c)" }}>
+        <div style={{ marginTop: 14, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".18em", color: C("ash"), textTransform: "uppercase" }}>
             <span>🔒</span>{t("w.account.profile.hpi-locked-title")}
           </div>
@@ -329,7 +329,7 @@ export default function AuroraProfile({
 
       {/* TRAINING — year heatmap */}
       {sectionHead(t("w.account.profile.training"), `${sessions.length} ${sessions.length === 1 ? t("w.account.profile.session") : t("w.account.profile.sessions")} →`)}
-      <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, background: "linear-gradient(180deg,#121410,#0d0f0c)", padding: 16 }}>
+      <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))", padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash"), letterSpacing: ".08em", marginBottom: 8, padding: "0 2px" }}>
           {monthLabels.map((m, i) => <span key={i}>{m}</span>)}
         </div>
@@ -345,7 +345,7 @@ export default function AuroraProfile({
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 11, fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash") }}>
-          <span style={{ color: C("lime-t") }}>{weekStreak > 0 ? `${weekStreak}${t("w.account.profile.week-streak-suffix")}` : dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : t("w.account.profile.no-streak")}</span>
+          <span style={{ color: "var(--lime-text)" }}>{weekStreak > 0 ? `${weekStreak}${t("w.account.profile.week-streak-suffix")}` : dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : t("w.account.profile.no-streak")}</span>
           <span style={{ flex: 1 }} />
           {t("w.account.profile.less")}
           {[0, 1, 2, 3, 4].map((l) => (
@@ -364,9 +364,9 @@ export default function AuroraProfile({
               title={a.detail}
               style={{
                 width: 76, height: 76, borderRadius: 20, display: "grid", placeItems: "center", fontSize: 27,
-                border: `1px solid ${a.earned ? "rgba(196,240,53,.45)" : C("line")}`,
-                background: a.earned ? "linear-gradient(160deg,#181a12,#0e100c)" : C("ink2"),
-                boxShadow: a.earned ? "0 0 22px -10px rgba(196,240,53,.6)" : "none",
+                border: `1px solid ${a.earned ? "color-mix(in srgb, var(--color-lime) 45%, transparent)" : C("line")}`,
+                background: a.earned ? "linear-gradient(160deg, color-mix(in srgb, var(--color-lime) 12%, var(--color-ink2)), var(--color-ink))" : C("ink2"),
+                boxShadow: a.earned ? "0 0 22px -10px color-mix(in srgb, var(--color-lime) 60%, transparent)" : "none",
                 color: a.earned ? undefined : C("ash"),
                 opacity: a.earned ? 1 : 0.7,
                 filter: a.earned ? "none" : "grayscale(0.6)",
@@ -391,7 +391,7 @@ export default function AuroraProfile({
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>e1RM</div>
               </div>
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: C("lime-t") }}>{fmtWeight(e1rm, units)}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: "var(--lime-text)" }}>{fmtWeight(e1rm, units)}</div>
           </div>
         ))
       ) : (
@@ -415,12 +415,14 @@ export default function AuroraProfile({
 // ----- helpers -----
 
 function heatBg(level: HeatCell["level"]): string {
+  // Themed accent ramp — lime in Aurora, clay in Japandi; empty cells use the
+  // themed hairline so they're a faint warm cell on light, not a black square.
   switch (level) {
-    case 1: return "rgba(196,240,53,.28)";
-    case 2: return "rgba(196,240,53,.5)";
-    case 3: return "rgba(196,240,53,.74)";
+    case 1: return "color-mix(in srgb, var(--color-lime) 28%, transparent)";
+    case 2: return "color-mix(in srgb, var(--color-lime) 50%, transparent)";
+    case 3: return "color-mix(in srgb, var(--color-lime) 74%, transparent)";
     case 4: return "var(--color-lime)";
-    default: return "#1b1e18";
+    default: return "var(--color-line)";
   }
 }
 
@@ -428,7 +430,7 @@ function IdMeta({ label, value, lime }: { label: string; value: string; lime?: b
   return (
     <div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: lime ? C("lime-t") : C("chalk"), marginTop: 4 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: lime ? "var(--lime-text)" : C("chalk"), marginTop: 4 }}>{value}</div>
     </div>
   );
 }
@@ -456,7 +458,7 @@ function Trace({ series }: { series: number[] }) {
       {bars.map((v, i) => {
         const pct = series.length >= 2 ? 30 + ((v - min) / range) * 64 : 22;
         const isLast = i === bars.length - 1;
-        return <div key={i} style={{ flex: 1, borderRadius: 2, height: `${pct}%`, background: isLast && series.length >= 2 ? C("lime") : "#2c2f27" }} />;
+        return <div key={i} style={{ flex: 1, borderRadius: 2, height: `${pct}%`, background: isLast && series.length >= 2 ? C("lime") : C("line") }} />;
       })}
     </div>
   );
