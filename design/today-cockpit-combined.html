@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" data-template="aurora">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Today + Cockpit · IA redesign (combined)</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724; --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c7ef00; --blue:#3c787e; --sand:#d0cd94; --terra:#d56f3e; --violet:#c9a9f0;
+    --card:26px; --pill:999px; --max:412px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);
+    font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:32px 16px 120px;display:flex;flex-direction:column;align-items:center;gap:24px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .intro{max-width:900px;width:100%;text-align:center}
+  .intro h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .intro h1 b{color:var(--lime)}
+  .intro p{color:var(--ash);font-size:15px;line-height:1.6;margin-top:10px}
+  .controls{display:flex;gap:10px;align-items:center;margin-top:16px;justify-content:center;flex-wrap:wrap}
+  .btn{cursor:pointer;border:1px solid var(--line);background:var(--ink2);color:var(--chalk);
+    padding:9px 16px;border-radius:var(--pill);font-size:13px;font-weight:600;transition:.15s}
+  .btn:hover{border-color:#3a3e3a}
+  .btn.on{background:var(--lime);color:#0c0d0c;border-color:var(--lime)}
+
+  .stage{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .pagetag{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--ash)}
+  .pagetag b{color:var(--lime)}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);
+    border-radius:44px;padding:14px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9)}
+  .notch{width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:820px;overflow-y:auto;scroll-behavior:smooth}
+  .screen::-webkit-scrollbar{width:0}
+
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px 12px;background:linear-gradient(180deg,rgba(12,13,12,.96),rgba(12,13,12,.78) 70%,transparent);backdrop-filter:blur(14px)}
+  .ava{width:38px;height:38px;border-radius:50%;background:var(--lime);color:#0c0d0c;font-weight:800;display:grid;place-items:center;font-size:14px;position:relative}
+  .ava i{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#33d17a;border:2px solid var(--ink)}
+  .wordmark{font-weight:800;letter-spacing:.16em;font-size:14px}.wordmark b{color:var(--lime)}
+  .bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:16px;position:relative}
+  .bell em{position:absolute;top:-3px;right:-3px;background:var(--terra);color:#fff;font-size:9px;font-style:normal;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-weight:700}
+
+  .feed{padding:4px 16px 40px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--card);padding:18px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .label{font-size:10px;letter-spacing:.18em;color:var(--ash);font-weight:700}
+  .kicker{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--ash);margin:6px 2px 0}
+  .kicker .sub{margin-left:auto;letter-spacing:0;font-weight:500;text-transform:none}
+  .dot{width:9px;height:9px;border-radius:50%}
+
+  .hero{padding:6px 4px 0}.hero .hi{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+  .hero .meta{display:flex;align-items:center;gap:10px;margin-top:8px;color:var(--ash);font-size:12px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--pill);padding:5px 11px;font-size:12px;font-weight:600;color:var(--chalk)}
+  .chip.flame{color:var(--terra)}.chip.ready{color:var(--lime)}
+
+  .session .top{display:flex;align-items:flex-start;gap:14px}
+  .ring{--p:78;width:74px;height:74px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--lime) calc(var(--p)*1%),#23271f 0);position:relative}
+  .ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--ink2)}
+  .ring b{position:relative;z-index:1;font-size:18px;font-weight:800}.ring small{position:relative;z-index:1;font-size:8px;color:var(--ash);letter-spacing:.1em}
+  .session h2{font-size:22px;font-weight:800;margin-top:2px}.session .day{font-size:11px;color:var(--ash);margin-top:3px}
+  .items{margin-top:14px;border-top:1px solid var(--line)}
+  .items .row{display:flex;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .items .row span:last-child{color:var(--ash);font-size:12px}
+  .start{margin-top:16px;width:100%;background:var(--lime);color:#0c0d0c;border:none;border-radius:var(--pill);padding:15px;font-size:15px;font-weight:800;cursor:pointer}
+  .pgr{display:flex;gap:6px;justify-content:center;margin-top:12px}.pgr i{width:6px;height:6px;border-radius:50%;background:#2c302c}.pgr i.on{background:var(--lime);width:18px;border-radius:3px}
+
+  .carousel{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}.carousel::-webkit-scrollbar{display:none}
+  .qchip{flex:none;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:12px 14px;min-width:104px;display:flex;flex-direction:column;gap:6px}
+  .qchip b{font-size:13px;font-weight:700}.qchip small{font-size:10px;color:var(--ash)}.qchip .ic{font-size:18px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .widget{aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:space-between}
+  .widget .big{font-size:30px;font-weight:800;letter-spacing:-.02em}.widget .big small{font-size:13px;color:var(--ash);font-weight:600}
+  .bar{height:7px;border-radius:4px;background:#23271f;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;border-radius:4px}
+  .macros{display:flex;gap:8px;margin-top:8px;font-size:10px;color:var(--ash)}.macros b{color:var(--chalk);font-weight:700}
+  .wbtn{margin-top:auto;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:var(--pill);padding:9px;font-size:12px;font-weight:700;cursor:pointer}.wbtn.go{background:var(--blue);border-color:var(--blue);color:#fff}
+
+  .collap summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between}.collap summary::-webkit-details-marker{display:none}
+  .collap summary .arr{color:var(--ash);transition:.2s}.collap[open] summary .arr{transform:rotate(180deg)}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
+  .wd{aspect-ratio:1/1.4;border-radius:12px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;color:var(--ash)}
+  .wd.done{background:rgba(199,239,0,.12);border-color:rgba(199,239,0,.4);color:var(--lime)}.wd.today{border-color:var(--lime)}.wd b{font-size:11px;color:var(--chalk)}
+
+  .post{padding:16px}.post .head{display:flex;align-items:center;gap:10px}
+  .post .pa{width:34px;height:34px;border-radius:50%;background:#2c302c;display:grid;place-items:center;font-size:13px;font-weight:700}
+  .post .nm{font-size:13px;font-weight:700}.post .tm{font-size:11px;color:var(--ash)}.post .body{margin-top:12px;font-size:14px;line-height:1.5}
+  .post .stat{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.pstat{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12px}.pstat b{font-weight:800}
+  .post .acts{display:flex;gap:20px;margin-top:14px;color:var(--ash);font-size:13px;border-top:1px solid var(--line);padding-top:12px}
+
+  .rail{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}.rail::-webkit-scrollbar{display:none}
+  .coach{flex:none;width:150px}.coach .ph{height:90px;border-radius:16px;background:linear-gradient(135deg,#23271f,#2c302c)}.coach b{display:block;font-size:13px;font-weight:700;margin-top:8px}.coach small{font-size:11px;color:var(--ash)}
+
+  /* cockpit */
+  .chead{position:sticky;top:0;z-index:30;padding:18px 18px 14px;background:linear-gradient(180deg,rgba(12,13,12,.97),rgba(12,13,12,.8) 75%,transparent);backdrop-filter:blur(14px)}
+  .chead .t{font-size:22px;font-weight:800;letter-spacing:-.02em}.chead .s{font-size:12px;color:var(--ash);margin-top:2px}
+  .seasonbar{display:flex;align-items:center;gap:8px;margin-top:12px;overflow-x:auto;scrollbar-width:none}.seasonbar::-webkit-scrollbar{display:none}
+  .spill{flex:none;background:var(--ink2);border:1px solid var(--line);border-radius:var(--pill);padding:7px 13px;font-size:11px;font-weight:600;display:flex;gap:7px;align-items:center}.spill b{font-weight:800}.spill .g{width:7px;height:7px;border-radius:50%;background:var(--lime)}
+  .twin{display:flex;gap:18px;align-items:center}.hpi{font-size:64px;font-weight:800;letter-spacing:-.04em;line-height:.9}.hpi small{font-size:16px;color:var(--ash);font-weight:600}.twin .meta{flex:1}
+  .band{display:inline-block;background:rgba(199,239,0,.14);color:var(--lime);border-radius:var(--pill);padding:4px 11px;font-size:11px;font-weight:700}
+  .spark{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:12px}.spark i{flex:1;background:#2c302c;border-radius:2px}.spark i.h{background:var(--lime)}
+  .comp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;border-top:1px solid var(--line);padding-top:14px}.comp div{text-align:center}.comp b{display:block;font-size:22px;font-weight:800}.comp span{font-size:9px;letter-spacing:.14em;color:var(--ash)}
+  .driver{font-size:12px;color:var(--ash);margin-top:12px;line-height:1.5}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ring2{--p:78;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--lime) calc(var(--p)*1%),#23271f 0);position:relative;margin-bottom:10px}.ring2::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--ink2)}.ring2 b{position:relative;z-index:1;font-size:16px;font-weight:800}
+  .route .ex{font-size:13px;font-weight:700;margin-top:6px}.route .why{font-size:11px;color:var(--ash);margin-top:6px;line-height:1.5}
+  .alert{border-color:rgba(213,111,62,.5);background:linear-gradient(180deg,rgba(213,111,62,.08),transparent)}
+  .risk-top{display:flex;align-items:baseline;justify-content:space-between}.risk-top b{font-size:20px;font-weight:800;color:var(--terra)}
+  .rbar{height:8px;border-radius:5px;background:#23271f;overflow:hidden;margin-top:10px}.rbar i{display:block;height:100%;background:var(--terra)}
+  .tissue{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px}.tissue .pill{font-size:10px;font-weight:700;color:var(--terra);border:1px solid rgba(213,111,62,.5);border-radius:var(--pill);padding:2px 9px}.tissue small{margin-left:auto;color:var(--ash);font-size:11px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}.stat b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em}.stat span{font-size:10px;color:var(--ash);letter-spacing:.08em}
+  .prbadge{display:inline-flex;gap:6px;align-items:center;background:rgba(199,239,0,.14);color:var(--lime);border-radius:var(--pill);padding:4px 11px;font-size:11px;font-weight:700;margin-top:14px}
+  .prlist{margin-top:10px}.prlist .r{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid var(--line)}.prlist .r span:last-child{color:var(--lime);font-weight:700}
+  .tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:2px}.tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;border:1px solid var(--line);background:var(--ink2);color:var(--ash);border-radius:var(--pill);padding:8px 15px;font-size:12px;font-weight:700;cursor:pointer}.tab.on{background:var(--chalk);color:#0c0d0c;border-color:var(--chalk)}
+  .disc{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.disc .stat b{font-size:20px}
+  .tl{position:relative;padding-left:18px;margin-top:8px}.tl::before{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .tl .node{position:relative;padding:0 0 16px}.tl .node::before{content:"";position:absolute;left:-18px;top:4px;width:8px;height:8px;border-radius:50%;background:#2c302c}.tl .node.on::before{background:var(--lime)}.tl .node b{font-size:13px;font-weight:700}.tl .node small{display:block;font-size:11px;color:var(--ash);margin-top:2px}
+
+  .anno{display:none}body.show-anno .anno{display:block}
+  .anno{background:rgba(199,239,0,.06);border:1px dashed rgba(199,239,0,.45);border-radius:14px;padding:11px 13px;margin:2px 0 0}
+  .anno .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--lime);color:#0c0d0c;font-weight:800;font-size:11px;margin-right:8px}
+  .anno .t{font-size:12px;font-weight:700;color:var(--lime)}.anno .why{font-size:12px;color:#cfd3c8;line-height:1.55;margin-top:7px}
+  .foot{max-width:900px;width:100%;color:var(--ash);font-size:13px;line-height:1.7;text-align:center}.foot a{color:var(--lime)}
+</style>
+</head>
+<body class="show-anno">
+  <div class="intro">
+    <h1>TODAY + COCKPIT <b>· one file</b></h1>
+    <p>Both redesigned pages side by side. <b>Today</b> = a motivating daily feed (state → action → log → recover → social). <b>Cockpit</b> = a command center (one headline metric → what acts on today → alerts → recap → drill-down → horizon). Toggle the rationale overlay below.</p>
+    <div class="controls"><button class="btn on" id="toggle">Annotations: ON</button></div>
+  </div>
+
+  <div class="stage">
+    <!-- ===================== TODAY ===================== -->
+    <div class="col">
+      <div class="pagetag">TODAY <b>· daily feed</b></div>
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="topbar"><div class="ava">RA<i></i></div><div class="wordmark">HY<b>BR</b>ID</div><div class="bell">🔔<em>3</em></div></div>
+        <div class="feed">
+          <div class="anno"><span class="n">1</span><span class="t">STICKY IDENTITY BAR</span><div class="why">Profile + alerts always one tap away during a long scroll.</div></div>
+          <div class="hero"><div class="hi">Good morning, Rafal.</div>
+            <div class="meta"><span>Saturday · Jun 27</span><span class="chip flame">🔥 12-day streak</span><span class="chip ready">● Ready 78</span></div></div>
+          <div class="anno"><span class="n">2</span><span class="t">GREETING + STATUS</span><div class="why">The feed headline — date, streak and one readiness number give an instant emotional read before any decision.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>TRAIN <span class="sub">Your session</span></div>
+          <div class="card session"><div class="top"><div class="ring" style="--p:78"><b>78</b><small>READY</small></div>
+            <div style="flex:1"><div class="label">YOUR PLAN · DAY 3</div><h2>Lower Power</h2><div class="day">Soviet OWL · Week 4 · Realization</div></div></div>
+            <div class="items"><div class="row"><span>Back Squat</span><span>5 × 3 @ RPE8</span></div><div class="row"><span>Deadlift</span><span>3 × 3 @ RPE8</span></div><div class="row"><span>KB Swing</span><span>4 × 20</span></div></div>
+            <button class="start">Start session →</button></div>
+          <div class="pgr"><i class="on"></i><i></i></div>
+          <div class="anno"><span class="n">3</span><span class="t">TODAY'S SESSION — the one decision</span><div class="why">Biggest visual weight at the first thumb-rest; AI Coach is a sideways swipe so it never competes with the primary CTA.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>QUICK LOG <span class="sub">Already trained?</span></div>
+          <div class="carousel"><div class="qchip"><span class="ic">🏃</span><b>Run</b><small>tap to log</small></div><div class="qchip"><span class="ic">🚴</span><b>Ride</b><small>tap to log</small></div><div class="qchip"><span class="ic">🏊</span><b>Swim</b><small>tap to log</small></div><div class="qchip"><span class="ic">🧘</span><b>Mobility</b><small>tap to log</small></div><div class="qchip"><span class="ic">＋</span><b>Other</b><small>custom</small></div></div>
+          <div class="anno"><span class="n">4</span><span class="t">QUICK LOG (carousel)</span><div class="why">2nd-most-common intent: "I already did something." One swipeable row, never pushes content down.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--blue)"></i>FEEL <span class="sub">Check in &amp; fuel</span></div>
+          <div class="grid2"><div class="card widget"><div><div class="label" style="color:var(--blue)">CHECK-IN</div><div class="big" style="margin-top:6px;font-size:18px">How are you<br>feeling?</div></div><button class="wbtn go">Log readiness</button></div>
+            <div class="card widget"><div><div class="label" style="color:var(--blue)">NUTRITION</div><div class="big" style="margin-top:6px">1,840<small> / 2,600</small></div><div class="bar"><i style="width:71%;background:var(--blue)"></i></div><div class="macros"><span>P <b>142g</b></span><span>C <b>180g</b></span><span>F <b>54g</b></span></div></div><button class="wbtn">Add meal</button></div></div>
+          <div class="anno"><span class="n">5</span><span class="t">RECOVER · FEEL widgets</span><div class="why">Daily recovery glance after the action is settled. Symmetric pair = companions, neither primary.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--sand)"></i>PLAN <span class="sub">This week</span></div>
+          <details class="card collap" open><summary><div><div class="label" style="color:var(--sand)">WEEK 4 · REALIZATION</div><div style="font-size:16px;font-weight:800;margin-top:4px">3 of 5 done</div></div><span class="arr">⌄</span></summary>
+            <div class="week"><div class="wd done"><span>M</span><b>✓</b></div><div class="wd done"><span>T</span><b>✓</b></div><div class="wd"><span>W</span><b>rest</b></div><div class="wd done"><span>T</span><b>✓</b></div><div class="wd today"><span>F</span><b>•</b></div><div class="wd"><span>S</span><b>—</b></div><div class="wd"><span>S</span><b>—</b></div></div></details>
+          <div class="anno"><span class="n">6</span><span class="t">THIS WEEK (collapsible)</span><div class="why">Context, not a daily action → demoted + dismissible. Glance summary satisfies most checks.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--terra)"></i>CONNECT <span class="sub">Your circle</span></div>
+          <div class="card post"><div class="head"><div class="pa">MK</div><div style="flex:1"><div class="nm">Maja K.</div><div class="tm">2h ago · Push day</div></div><div style="color:var(--ash)">···</div></div>
+            <div class="body">New bench PR this morning 💪 felt smooth all the way up.</div><div class="stat"><div class="pstat"><b>92.5kg</b> bench</div><div class="pstat"><b>+2.5</b> PR</div><div class="pstat"><b>RPE 9</b></div></div><div class="acts"><span>♡ 14</span><span>💬 3</span><span>↗ Share</span></div></div>
+          <div class="card post"><div class="head"><div class="pa">TS</div><div style="flex:1"><div class="nm">Tom S.</div><div class="tm">5h ago · 10K run</div></div><div style="color:var(--ash)">···</div></div>
+            <div class="body">Easy zone-2 to keep the streak alive.</div><div class="stat"><div class="pstat"><b>10.2km</b></div><div class="pstat"><b>52:10</b></div><div class="pstat"><b>148bpm</b> avg</div></div><div class="acts"><span>♡ 8</span><span>💬 1</span><span>↗ Share</span></div></div>
+          <div class="anno"><span class="n">7</span><span class="t">FEED — social momentum</span><div class="why">The scroll payoff at the bottom; endless tail keeps the page alive. Same stat-pill grammar as your own cards.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--terra)"></i>DISCOVER <span class="sub">Coaches for you</span></div>
+          <div class="rail"><div class="coach"><div class="ph"></div><b>Coach Vera</b><small>Hybrid · Strength</small></div><div class="coach"><div class="ph"></div><b>Coach Leo</b><small>Endurance</small></div><div class="coach"><div class="ph"></div><b>Coach Ana</b><small>KB · Mobility</small></div></div>
+          <div class="anno"><span class="n">8</span><span class="t">DISCOVER / COACHES</span><div class="why">Exploratory, not daily → tail of the feed.</div></div>
+          <div style="height:20px"></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ===================== COCKPIT ===================== -->
+    <div class="col">
+      <div class="pagetag">COCKPIT <b>· command center</b></div>
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="chead"><div class="t">Command Center</div><div class="s">Soviet OWL · Week 4 of 8</div>
+          <div class="seasonbar"><div class="spill"><span class="g"></span><b>Realization</b> phase</div><div class="spill">🏁 <b>23 days</b> to meet</div><div class="spill">📈 Peaking</div></div></div>
+        <div class="feed">
+          <div class="anno"><span class="n">1</span><span class="t">STICKY CONTEXT HEADER</span><div class="why">Always answers "where am I in the plan?" — pinned context bar, not a tall card.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>PERFORMANCE TWIN <span class="sub">HPI</span></div>
+          <div class="card"><div class="twin"><div class="hpi">87<small>/100</small></div><div class="meta"><span class="band">ATHLETE · ↑ rising</span>
+            <div class="spark"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:62%"></i><i style="height:70%"></i><i style="height:66%"></i><i class="h" style="height:82%"></i></div></div></div>
+            <div class="comp"><div><b>91</b><span>STRENGTH</span></div><div><b>78</b><span>ENDURANCE</span></div><div><b>84</b><span>RECOVERY</span></div></div>
+            <div class="driver">↑ Strength driving your index; endurance is the limiter — add one zone-2 session.</div></div>
+          <div class="anno"><span class="n">2</span><span class="t">PERFORMANCE TWIN — the headline</span><div class="why">One number summarizing everything: read your whole state in 2 seconds before drilling.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>RIGHT NOW <span class="sub">Acts on today</span></div>
+          <div class="pair"><div class="card"><div class="ring2" style="--p:78"><b>78</b></div><div class="label">READINESS</div><div class="route why">Sleep + HRV solid; slight fatigue from Thu's pulls.</div></div>
+            <div class="card route"><div class="label">TODAY'S ROUTE</div><div class="ex">Lower Power · 5 blocks</div><div class="why">Volume trimmed 10% to protect the peak.</div></div></div>
+          <div class="anno"><span class="n">3</span><span class="t">RIGHT NOW — readiness + route</span><div class="why">The "actionable now" layer, paired cause→effect (readiness shapes the route).</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--terra)"></i>ATTENTION <span class="sub">Only when flagged</span></div>
+          <div class="card alert"><div class="risk-top"><div class="label" style="color:var(--terra)">INJURY RISK</div><b>Moderate · 46</b></div><div class="rbar"><i style="width:46%"></i></div>
+            <div class="tissue"><span class="pill">WATCH</span> Lower back <small>ACWR 1.4</small></div><div class="tissue"><span class="pill">WATCH</span> Patellar tendon <small>jump load spike</small></div></div>
+          <div class="anno"><span class="n">4</span><span class="t">ATTENTION — injury risk (conditional)</span><div class="why">Exception-driven: earns a high slot only when flagged; collapses to "all clear" otherwise. Seen before you commit.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--sand)"></i>THIS WEEK <span class="sub">What you did</span></div>
+          <div class="card"><div class="stats"><div class="stat"><b>4</b><span>SESSIONS</span></div><div class="stat"><b>18.2k</b><span>VOLUME KG</span></div><div class="stat"><b>62</b><span>SETS</span></div></div>
+            <div class="prbadge">🏆 2 new PRs this week</div><div class="prlist"><div class="r"><span>Back Squat e1RM</span><span>182kg · +4</span></div><div class="r"><span>Deadlift e1RM</span><span>215kg · +5</span></div></div></div>
+          <div class="anno"><span class="n">5</span><span class="t">THIS WEEK — recap &amp; PRs</span><div class="why">Retrospective layer; PRs get the one celebratory beat on an analytical page.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--blue)"></i>BREAKDOWN <span class="sub">By discipline</span></div>
+          <div class="card"><div class="tabs"><div class="tab on">Strength</div><div class="tab">Endurance</div><div class="tab">Sport</div><div class="tab">Velocity</div></div>
+            <div class="disc"><div class="stat"><b>91</b><span>STR INDEX</span></div><div class="stat"><b>1,840</b><span>WK TONNAGE</span></div><div class="stat"><b>+6%</b><span>4-WK TREND</span></div></div>
+            <div class="driver" style="margin-top:14px">Top lifts trending up; intensity in the RPE 8 band.</div></div>
+          <div class="anno"><span class="n">6</span><span class="t">BREAKDOWN — disciplines (tabbed)</span><div class="why">Four stacked sections → one tabbed module. Drill-down stays available without forcing everyone to scroll past it.</div></div>
+          <div class="kicker"><i class="dot" style="background:var(--sand)"></i>HORIZON <span class="sub">Goal &amp; season</span></div>
+          <div class="card"><div class="label">PERIODIZATION · 8-WEEK BLOCK</div>
+            <div class="tl" style="margin-top:14px"><div class="node"><b>Accumulation</b><small>Wk 1–3 · done</small></div><div class="node"><b>Intensification</b><small>Wk 3–4 · done</small></div><div class="node on"><b>Realization</b><small>Wk 4–7 · current</small></div><div class="node"><b>Taper &amp; meet</b><small>Wk 8 · in 23 days</small></div></div>
+            <button class="btn" style="width:100%;margin-top:8px">Adjust plan / re-periodize</button></div>
+          <div class="anno"><span class="n">7</span><span class="t">HORIZON — goal &amp; season</span><div class="why">Least-edited thing → bottom. The sticky bar keeps the summary always visible, so demoting the editor costs nothing.</div></div>
+          <div style="height:20px"></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="foot">Combined IA mockup · Aurora dark theme. Concept variants: <a href="concept-1-stories-rings.html">Stories &amp; Rings</a> · <a href="concept-2-unified-feed.html">Unified Feed</a> · <a href="concept-3-bento.html">Bento Grid</a> · <a href="concept-4-focus.html">Focus Mode</a></div>
+<script>
+  const b=document.body,t=document.getElementById('toggle');
+  t.onclick=()=>{const on=b.classList.toggle('show-anno');t.classList.toggle('on',on);t.textContent='Annotations: '+(on?'ON':'OFF');};
+  document.querySelectorAll('.tab').forEach(tab=>tab.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));tab.classList.add('on');});
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en" data-template="aurora"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HYBRID — Concept 3 · Bento Grid</title>
+<style>
+  :root{--ink:#0c0d0c;--ink2:#141614;--line:#242724;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c7ef00;--blue:#3c787e;--sand:#d0cd94;--terra:#d56f3e;--violet:#c9a9f0;--card:20px;--pill:999px;--max:400px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:30px 16px 100px;display:flex;flex-direction:column;align-items:center;gap:22px}
+  .intro{max-width:880px;width:100%;text-align:center}
+  .intro .tag{font-size:11px;letter-spacing:.22em;color:var(--lime);font-weight:800}
+  .intro h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
+  .intro p{color:var(--ash);font-size:15px;line-height:1.6;margin-top:10px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .nav a{font-size:12px;color:var(--ash);border:1px solid var(--line);border-radius:var(--pill);padding:7px 13px;text-decoration:none}
+  .nav a.cur{background:var(--lime);color:#0c0d0c;border-color:var(--lime);font-weight:700}
+  .stage{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .pagetag{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--ash)}.pagetag b{color:var(--lime)}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);border-radius:44px;padding:13px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9)}
+  .notch{width:110px;height:24px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:800px;overflow-y:auto}.screen::-webkit-scrollbar{width:0}
+  .pad{padding:16px 14px 40px}
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .hdr .h{font-size:22px;font-weight:800;letter-spacing:-.02em}.hdr .s{font-size:11px;color:var(--ash)}
+  .ava{width:36px;height:36px;border-radius:50%;background:var(--lime);color:#0c0d0c;font-weight:800;display:grid;place-items:center;font-size:13px}
+  /* bento grid */
+  .bento{display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-auto-rows:minmax(96px,auto)}
+  .t{background:var(--ink2);border:1px solid var(--line);border-radius:var(--card);padding:14px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+  .t .lab{font-size:9px;letter-spacing:.16em;color:var(--ash);font-weight:700}
+  .t .big{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .t .big small{font-size:12px;color:var(--ash);font-weight:600}
+  .t .cap{font-size:11px;color:var(--ash);margin-top:4px}
+  .w2{grid-column:span 2}.h2{grid-row:span 2}
+  .accent{background:linear-gradient(150deg,rgba(199,239,0,.16),var(--ink2))}
+  .accent .big{color:var(--lime)}
+  .warn{border-color:rgba(213,111,62,.5);background:linear-gradient(150deg,rgba(213,111,62,.12),var(--ink2))}.warn .big,.warn .lab{color:var(--terra)}
+  .start{background:var(--lime);color:#0c0d0c;border:none;border-radius:var(--pill);padding:11px;font-size:13px;font-weight:800;cursor:pointer;margin-top:8px}
+  .ring{width:56px;height:56px;border-radius:50%;background:conic-gradient(var(--lime) 78%,#23271f 0);position:relative;display:grid;place-items:center}
+  .ring::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--ink2)}
+  .ring b{position:relative;z-index:1;font-size:15px;font-weight:800}
+  .spark{display:flex;align-items:flex-end;gap:2px;height:30px;margin-top:6px}.spark i{flex:1;background:#2c302c;border-radius:1px}.spark i.h{background:var(--lime)}
+  .sectlab{font-size:10px;letter-spacing:.18em;color:var(--ash);font-weight:700;margin:18px 4px 8px}
+  .bar{height:6px;border-radius:3px;background:#23271f;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%}
+  .rationale{max-width:880px;width:100%;background:rgba(199,239,0,.05);border:1px dashed rgba(199,239,0,.4);border-radius:18px;padding:18px 20px}
+  .rationale h3{font-size:13px;color:var(--lime);letter-spacing:.06em}
+  .rationale ul{margin:10px 0 0;padding-left:18px;color:#cfd3c8;font-size:13px;line-height:1.8}.rationale ul b{color:var(--chalk)}
+  .foot{color:var(--ash);font-size:12px}.foot a{color:var(--lime)}
+</style></head>
+<body>
+  <div class="intro">
+    <div class="tag">CONCEPT 3 OF 4</div>
+    <h1>Bento Grid</h1>
+    <p>A modular <b>tile mosaic</b> (Whoop / Apple widgets). Hierarchy is expressed by <b>tile size</b>, not just order — the most important block spans 2 columns or 2 rows. Dense, scannable, highly glanceable; the same tile vocabulary builds both pages, so Today and Cockpit feel like one widget system at different zoom levels.</p>
+    <div class="nav"><a href="concept-1-stories-rings.html">1 · Stories &amp; Rings</a><a href="concept-2-unified-feed.html">2 · Unified Feed</a><a class="cur" href="concept-3-bento.html">3 · Bento Grid</a><a href="concept-4-focus.html">4 · Focus Mode</a><a href="today-cockpit-combined.html">↩ Base</a></div>
+  </div>
+
+  <div class="stage">
+    <!-- TODAY -->
+    <div class="col"><div class="pagetag">TODAY <b>· bento</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="pad">
+      <div class="hdr"><div><div class="h">Good morning</div><div class="s">Sat Jun 27 · 🔥 12-day streak</div></div><div class="ava">RA</div></div>
+      <div class="bento">
+        <div class="t w2 accent"><div><div class="lab">YOUR SESSION · READY 78</div><div class="big" style="font-size:24px;margin-top:6px">Lower Power</div><div class="cap">Squat 5×3 · DL 3×3 · KB 4×20 · ~58 min</div></div><button class="start">Start session →</button></div>
+        <div class="t"><div class="lab">READINESS</div><div class="ring" style="margin:8px auto 0"><b>78</b></div></div>
+        <div class="t"><div class="lab">STREAK</div><div class="big" style="margin-top:6px">12<small> days</small></div><div class="cap">personal best</div></div>
+        <div class="t"><div class="lab">NUTRITION</div><div class="big" style="margin-top:6px">1,840</div><div class="cap">/ 2,600 kcal</div><div class="bar"><i style="width:71%;background:var(--blue)"></i></div></div>
+        <div class="t"><div class="lab">CHECK-IN</div><div class="big" style="font-size:16px;margin-top:8px">How do you<br>feel?</div><div class="cap">tap to log</div></div>
+        <div class="t w2"><div class="lab">THIS WEEK · WK 4</div><div class="big" style="font-size:20px;margin-top:6px">3 of 5 done</div><div class="cap">M✓ T✓ W· T✓ <b style="color:var(--lime)">F•</b> S– S–</div></div>
+        <div class="t"><div class="lab">QUICK LOG</div><div class="big" style="font-size:16px;margin-top:8px">🏃 🚴 🏊</div><div class="cap">one-tap sport</div></div>
+        <div class="t"><div class="lab">CIRCLE</div><div class="big" style="font-size:14px;margin-top:6px">Maja · PR</div><div class="cap">bench 92.5 · ♡14</div></div>
+      </div>
+      <div class="sectlab">FROM YOUR CIRCLE</div>
+      <div class="bento"><div class="t w2"><div style="display:flex;gap:10px;align-items:center"><div class="ava" style="background:#2c302c;color:var(--chalk)">TS</div><div><div style="font-size:13px;font-weight:700">Tom S. · 10K run</div><div class="cap">10.2km · 52:10 · 148bpm</div></div></div></div></div>
+    </div></div></div></div>
+
+    <!-- COCKPIT -->
+    <div class="col"><div class="pagetag">COCKPIT <b>· bento</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="pad">
+      <div class="hdr"><div><div class="h">Command Center</div><div class="s">Soviet OWL · Wk 4/8 · 🏁 23d</div></div><div class="ava">RA</div></div>
+      <div class="bento">
+        <div class="t w2 accent"><div class="lab">PERFORMANCE TWIN · HPI ↑</div><div style="display:flex;align-items:center;gap:14px;margin-top:4px"><div class="big" style="font-size:46px">87</div><div style="flex:1"><div class="spark"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:64%"></i><i style="height:72%"></i><i class="h" style="height:84%"></i></div></div></div><div class="cap">STR 91 · END 78 · REC 84 — endurance is the limiter</div></div>
+        <div class="t"><div class="lab">READINESS</div><div class="ring" style="margin:8px auto 0"><b>78</b></div></div>
+        <div class="t warn"><div class="lab">INJURY RISK</div><div class="big" style="margin-top:6px">46</div><div class="cap">Moderate · 2 watched</div><div class="bar"><i style="width:46%;background:var(--terra)"></i></div></div>
+        <div class="t w2"><div class="lab">TODAY'S ROUTE</div><div class="big" style="font-size:18px;margin-top:6px">Lower Power · 5 blocks</div><div class="cap">volume trimmed 10% to protect the peak</div></div>
+        <div class="t"><div class="lab">SESSIONS</div><div class="big" style="margin-top:6px">4</div><div class="cap">this week</div></div>
+        <div class="t accent"><div class="lab">PRs</div><div class="big" style="margin-top:6px">2</div><div class="cap">Squat 182 · DL 215</div></div>
+        <div class="t"><div class="lab">STRENGTH</div><div class="big" style="margin-top:6px">91</div><div class="cap">+6% 4-wk</div></div>
+        <div class="t"><div class="lab">ENDURANCE</div><div class="big" style="margin-top:6px">78</div><div class="cap">limiter</div></div>
+        <div class="t w2"><div class="lab">SEASON</div><div class="big" style="font-size:16px;margin-top:6px">Realization → Taper</div><div class="cap">meet in 23 days · adjust plan</div></div>
+      </div>
+    </div></div></div></div>
+  </div>
+
+  <div class="rationale">
+    <h3>WHY THIS CONCEPT</h3>
+    <ul>
+      <li><b>Size = priority:</b> the hero spans 2 columns; secondary metrics are 1×1 tiles. Hierarchy survives even when the user reorders or hides tiles — great for a future "customizable dashboard."</li>
+      <li><b>One vocabulary, two zoom levels:</b> Today = action-leaning tiles, Cockpit = metric-leaning tiles, but identical tile grammar — minimal components to build, perfect web↔mobile parity.</li>
+      <li><b>Trade-off:</b> maximum density and scannability, but weaker narrative flow — it's a wall of widgets, not a story. Social/feed content fits awkwardly (long text wants full-width rows, not square tiles).</li>
+    </ul>
+  </div>
+  <div class="foot"><a href="today-cockpit-combined.html">← back to combined base</a></div>
+</body></html>

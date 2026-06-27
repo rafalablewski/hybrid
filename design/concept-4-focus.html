@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" data-template="aurora"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HYBRID — Concept 4 · Focus Mode</title>
+<style>
+  :root{--ink:#0c0d0c;--ink2:#141614;--line:#242724;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c7ef00;--blue:#3c787e;--sand:#d0cd94;--terra:#d56f3e;--violet:#c9a9f0;--card:24px;--pill:999px;--max:400px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:30px 16px 100px;display:flex;flex-direction:column;align-items:center;gap:22px}
+  .intro{max-width:880px;width:100%;text-align:center}
+  .intro .tag{font-size:11px;letter-spacing:.22em;color:var(--lime);font-weight:800}
+  .intro h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
+  .intro p{color:var(--ash);font-size:15px;line-height:1.6;margin-top:10px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .nav a{font-size:12px;color:var(--ash);border:1px solid var(--line);border-radius:var(--pill);padding:7px 13px;text-decoration:none}
+  .nav a.cur{background:var(--lime);color:#0c0d0c;border-color:var(--lime);font-weight:700}
+  .stage{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .pagetag{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--ash)}.pagetag b{color:var(--lime)}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);border-radius:44px;padding:13px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9)}
+  .notch{width:110px;height:24px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:800px;overflow-y:auto}.screen::-webkit-scrollbar{width:0}
+  .pad{padding:26px 22px 40px;display:flex;flex-direction:column;gap:26px}
+  .eyebrow{font-size:11px;letter-spacing:.2em;color:var(--ash);font-weight:700}
+  /* big focal block */
+  .focal .big{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-top:10px}
+  .focal .sub{color:var(--ash);font-size:14px;margin-top:10px;line-height:1.5}
+  .ringbig{width:128px;height:128px;border-radius:50%;background:conic-gradient(var(--lime) 78%,#1c1f1a 0);position:relative;display:grid;place-items:center;margin:18px 0 4px}
+  .ringbig::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--ink)}
+  .ringbig .v{position:relative;z-index:1;text-align:center}.ringbig .v b{font-size:34px;font-weight:800}.ringbig .v span{font-size:10px;color:var(--ash);letter-spacing:.14em;display:block}
+  .start{width:100%;background:var(--lime);color:#0c0d0c;border:none;border-radius:var(--pill);padding:17px;font-size:16px;font-weight:800;cursor:pointer;margin-top:18px}
+  .ghost{width:100%;background:transparent;border:1px solid var(--line);color:var(--chalk);border-radius:var(--pill);padding:14px;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px}
+  .rule{height:1px;background:var(--line)}
+  /* progressive disclosure rows */
+  .disc{border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .disc summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:center;justify-content:space-between}
+  .disc summary::-webkit-details-marker{display:none}
+  .disc .ttl{font-size:14px;font-weight:700}.disc .meta{font-size:12px;color:var(--ash)}
+  .disc .arr{color:var(--ash);margin-left:10px;transition:.2s}.disc[open] .arr{transform:rotate(180deg)}
+  .disc .inner{padding:0 18px 18px;color:var(--ash);font-size:13px;line-height:1.6}
+  .kv{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:13px;color:var(--chalk)}.kv span:last-child{color:var(--ash)}
+  .pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .pill{font-size:11px;border:1px solid var(--line);border-radius:var(--pill);padding:6px 12px;color:var(--chalk)}
+  .pill.warn{color:var(--terra);border-color:rgba(213,111,62,.5)}
+  .rationale{max-width:880px;width:100%;background:rgba(199,239,0,.05);border:1px dashed rgba(199,239,0,.4);border-radius:18px;padding:18px 20px}
+  .rationale h3{font-size:13px;color:var(--lime);letter-spacing:.06em}
+  .rationale ul{margin:10px 0 0;padding-left:18px;color:#cfd3c8;font-size:13px;line-height:1.8}.rationale ul b{color:var(--chalk)}
+  .foot{color:var(--ash);font-size:12px}.foot a{color:var(--lime)}
+</style></head>
+<body>
+  <div class="intro">
+    <div class="tag">CONCEPT 4 OF 4</div>
+    <h1>Focus Mode</h1>
+    <p>Radically minimal, one-thing-at-a-time (Strong / Hevy / Calm). The fold shows a <b>single focal block</b> and one primary action — everything else is <b>progressively disclosed</b> in collapsed rows below. Today focuses on "the one session"; Cockpit focuses on "the one number." Lowest cognitive load, highest whitespace.</p>
+    <div class="nav"><a href="concept-1-stories-rings.html">1 · Stories &amp; Rings</a><a href="concept-2-unified-feed.html">2 · Unified Feed</a><a href="concept-3-bento.html">3 · Bento Grid</a><a class="cur" href="concept-4-focus.html">4 · Focus Mode</a><a href="today-cockpit-combined.html">↩ Base</a></div>
+  </div>
+
+  <div class="stage">
+    <!-- TODAY -->
+    <div class="col"><div class="pagetag">TODAY <b>· focus</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="pad">
+      <div class="focal">
+        <div class="eyebrow">SATURDAY · 🔥 12-DAY STREAK</div>
+        <div class="big">Today is<br>Lower Power.</div>
+        <div class="ringbig"><div class="v"><b>78</b><span>READINESS</span></div></div>
+        <div class="sub">Green light. 5 blocks, ~58 min — Squat 5×3, Deadlift 3×3, KB Swing 4×20.</div>
+        <button class="start">Start session →</button>
+        <button class="ghost">Ask your coach instead</button>
+      </div>
+      <div class="rule"></div>
+      <details class="disc"><summary><div><div class="ttl">Already trained?</div><div class="meta">One-tap log a sport</div></div><span class="arr">⌄</span></summary><div class="inner"><div class="pillrow"><span class="pill">🏃 Run</span><span class="pill">🚴 Ride</span><span class="pill">🏊 Swim</span><span class="pill">🧘 Mobility</span></div></div></details>
+      <details class="disc"><summary><div><div class="ttl">Recover &amp; fuel</div><div class="meta">Check-in pending · 1,840 / 2,600 kcal</div></div><span class="arr">⌄</span></summary><div class="inner"><div class="kv"><span>Calories</span><span>1,840 / 2,600</span></div><div class="kv"><span>Protein</span><span>142 g</span></div><div class="kv"><span>Readiness check-in</span><span>not logged</span></div></div></details>
+      <details class="disc"><summary><div><div class="ttl">This week</div><div class="meta">3 of 5 done · Week 4</div></div><span class="arr">⌄</span></summary><div class="inner">M✓ · T✓ · W rest · T✓ · F today · S — · S —</div></details>
+      <details class="disc"><summary><div><div class="ttl">Your circle</div><div class="meta">Maja hit a PR · Tom ran 10K</div></div><span class="arr">⌄</span></summary><div class="inner"><div class="kv"><span>Maja K. · bench PR</span><span>92.5kg ♡14</span></div><div class="kv"><span>Tom S. · 10K run</span><span>52:10</span></div></div></details>
+    </div></div></div></div>
+
+    <!-- COCKPIT -->
+    <div class="col"><div class="pagetag">COCKPIT <b>· focus</b></div>
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="pad">
+      <div class="focal">
+        <div class="eyebrow">SOVIET OWL · WK 4/8 · 🏁 23 DAYS</div>
+        <div class="big">Your index<br>is rising.</div>
+        <div class="ringbig" style="background:conic-gradient(var(--lime) 87%,#1c1f1a 0)"><div class="v"><b>87</b><span>HPI</span></div></div>
+        <div class="sub">Strength 91 · Endurance 78 · Recovery 84. Endurance is the limiter — add one zone-2 session this week.</div>
+        <button class="ghost" style="margin-top:18px">See today's route →</button>
+      </div>
+      <div class="rule"></div>
+      <details class="disc" open><summary><div><div class="ttl" style="color:var(--terra)">Needs attention</div><div class="meta">Injury risk: Moderate · 46</div></div><span class="arr">⌄</span></summary><div class="inner"><div class="pillrow"><span class="pill warn">Lower back · ACWR 1.4</span><span class="pill warn">Patellar tendon</span></div></div></details>
+      <details class="disc"><summary><div><div class="ttl">Right now</div><div class="meta">Readiness 78 → Lower Power</div></div><span class="arr">⌄</span></summary><div class="inner">Volume trimmed 10% to protect the peak. Sleep + HRV solid, slight fatigue from Thursday's pulls.</div></details>
+      <details class="disc"><summary><div><div class="ttl">This week</div><div class="meta">4 sessions · 2 PRs · 18.2k kg</div></div><span class="arr">⌄</span></summary><div class="inner"><div class="kv"><span>Back Squat e1RM</span><span>182kg · +4</span></div><div class="kv"><span>Deadlift e1RM</span><span>215kg · +5</span></div></div></details>
+      <details class="disc"><summary><div><div class="ttl">Breakdown</div><div class="meta">Strength · Endurance · Sport · Velocity</div></div><span class="arr">⌄</span></summary><div class="inner"><div class="kv"><span>Strength index</span><span>91 · +6%</span></div><div class="kv"><span>Endurance index</span><span>78</span></div></div></details>
+      <details class="disc"><summary><div><div class="ttl">Season</div><div class="meta">Realization → Taper &amp; meet</div></div><span class="arr">⌄</span></summary><div class="inner">Wk 1–3 Accumulation ✓ · Wk 3–4 Intensification ✓ · Wk 4–7 Realization (now) · Wk 8 Taper &amp; meet</div></details>
+    </div></div></div></div>
+  </div>
+
+  <div class="rationale">
+    <h3>WHY THIS CONCEPT</h3>
+    <ul>
+      <li><b>One decision per fold:</b> Today = "start this session"; Cockpit = "your index, and the one thing to fix." Everything secondary is collapsed, so there's zero scroll-anxiety and a single obvious tap.</li>
+      <li><b>Progressive disclosure scales:</b> power users expand rows; casual users never see the depth. The same row component handles recovery, week, social, breakdowns — minimal surface, easy parity.</li>
+      <li><b>Trade-off:</b> calmest and most focused, but the least "alive" — no feed momentum, fewer glanceable numbers up front. Risks feeling under-powered for data-hungry athletes unless the collapsed rows preview enough.</li>
+    </ul>
+  </div>
+  <div class="foot"><a href="today-cockpit-combined.html">← back to combined base</a></div>
+</body></html>
