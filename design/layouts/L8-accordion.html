@@ -5,16 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HYBRID — L8 Accordion (Today ⇄ Cockpit)</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 :root{
-  --color-ink:#0c0d0c;--color-ink2:#141614;--color-card:#161816;--color-line:#2a2d2a;
-  --color-lime:#c4f035;--color-chalk:#f3f4ef;--color-ash:#8b8f86;--color-blue:#7fd4e8;--color-violet:#c9a9f0;--color-amber:#f0b45e;--color-red:#e0625e;
-  --lime-text:#c4f035;--font-display:"Archivo",system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,monospace;
-  --r-card:28px;--shadow:0 6px 22px -12px rgba(0,0,0,.55);
-  --ink:var(--color-ink);--ink2:var(--color-ink2);--line:var(--color-line);--lime:var(--color-lime);--chalk:var(--color-chalk);--ash:var(--color-ash);--blue:var(--color-blue);--violet:var(--color-violet);--amber:var(--color-amber);--red:var(--color-red);--r:var(--r-card);--sh:var(--shadow);
+/* ===== THEME TOKENS — Aurora (disciplined: one accent + neutral ramp) ===== */
+--bg:#0a0b0a;--screen:#0c0d0c;--surface:#151715;--surface2:#1d201d;--line-t:#242724;--text:#f3f4ef;--muted:#8b8f86;
+--accent:#c4f035;--accent-ink:#0c0d0c;--accent-text:#c4f035;--accent-soft:rgba(196,240,53,.12);--accent-line:rgba(196,240,53,.30);
+--ring-track:#242724;--warn:#e0625e;--warn-soft:rgba(224,98,94,.12);--warn-line:rgba(224,98,94,.32);
+--display:'Archivo',system-ui,sans-serif;--bodyfont:'Archivo',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;
+--r-card-t:26px;--shadow-t:0 6px 22px -12px rgba(0,0,0,.55);
+/* ===== ALIASES → tokens (every existing var(--lime)/--ink/… now resolves to the active theme, single accent) ===== */
+--font-display:var(--display);--font-mono:var(--mono);
+--r-card:var(--r-card-t);--r:var(--r-card-t);--shadow:var(--shadow-t);--sh:var(--shadow-t);
+--ink:var(--bg);--ink2:var(--surface);--card:var(--surface);--line:var(--line-t);--chalk:var(--text);--ash:var(--muted);
+--lime:var(--accent);--blue:var(--accent);--violet:var(--accent);--amber:var(--accent);--red:var(--warn);--lime-text:var(--accent-text);
+--color-ink:var(--bg);--color-ink2:var(--surface);--color-card:var(--surface);--color-line:var(--line-t);--color-lime:var(--accent);--color-chalk:var(--text);--color-ash:var(--muted);--color-blue:var(--accent);--color-violet:var(--accent);--color-amber:var(--accent);--color-red:var(--warn);
 }
+/* ===== THEME TOKENS — Japandi (warm minimal: oat paper, clay accent, serif display) ===== */
+html:has(#th-japandi:checked){
+--bg:#efe9df;--screen:#f8f4ec;--surface:#fcfaf4;--surface2:#efe8db;--line-t:#e2d9c9;--text:#3a352c;--muted:#9b9384;
+--accent:#b06a4f;--accent-ink:#fcfaf4;--accent-text:#9a5840;--accent-soft:#f3e7df;--accent-line:#e7d3c7;
+--ring-track:#e7ddcd;--warn:#a98344;--warn-soft:#f3ebda;--warn-line:#e6d6b9;
+--display:'Fraunces',Georgia,serif;--bodyfont:'Inter',system-ui,sans-serif;--mono:'Inter',system-ui,sans-serif;
+--r-card-t:18px;--shadow-t:none;
+}
+/* ===== Theme switch (Aurora ⇄ Japandi) ===== */
+.themebar{display:flex;justify-content:center;margin-bottom:14px}
+.themebar>input{position:absolute;opacity:0;pointer-events:none}
+.seg-theme{display:inline-grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--surface);border:1px solid var(--line-t);border-radius:999px;padding:3px}
+.seg-theme label{padding:7px 18px;border-radius:999px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--muted);cursor:pointer;text-align:center}
+#th-aurora:checked~.seg-theme label[for=th-aurora],#th-japandi:checked~.seg-theme label[for=th-japandi]{background:var(--accent);color:var(--accent-ink)}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--ink);color:var(--chalk);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+html,body{background:var(--ink);color:var(--chalk);font-family:var(--bodyfont);-webkit-font-smoothing:antialiased}
 body{display:flex;justify-content:center;padding:18px 16px 60px;min-height:100vh}
 .app{width:100%;max-width:440px}
 .mono{font-family:var(--font-mono)}
@@ -23,14 +45,14 @@ body{display:flex;justify-content:center;padding:18px 16px 60px;min-height:100vh
 .av .o{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;background:var(--lime);border:2.5px solid var(--ink)}
 .wm{display:flex;flex-direction:column;align-items:center;gap:5px}.wm .t{font-weight:900;font-size:19px;letter-spacing:-.03em;line-height:1}.wm .t b{color:var(--lime-text)}.wm .bar{width:26px;height:3px;border-radius:2px;background:var(--lime)}
 .bell{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:18px}
-.bell .bd{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#fff}
+.bell .bd{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--accent);border:2px solid var(--bg);display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--accent-ink)}
 .note{font-family:var(--font-mono);font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:14px;padding:11px 13px;margin-bottom:14px;line-height:1.55}
 .note b{color:var(--lime-text);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:4px}
 .switch>input{position:absolute;opacity:0;pointer-events:none}
 .toggle{position:sticky;top:8px;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:16px;box-shadow:var(--shadow)}
 .toggle label{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border-radius:999px;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ash);cursor:pointer}
 .toggle label .i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
-#s-today:checked~.toggle label[for=s-today],#s-cockpit:checked~.toggle label[for=s-cockpit]{background:var(--lime);color:var(--ink)}
+#s-today:checked~.toggle label[for=s-today],#s-cockpit:checked~.toggle label[for=s-cockpit]{background:var(--lime);color:var(--accent-ink)}
 .screen{display:none}
 #s-today:checked~.screens .today,#s-cockpit:checked~.screens .cockpit{display:block}
 .foot{margin-top:22px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
@@ -53,7 +75,7 @@ a{color:inherit;text-decoration:none}
 .h2{font-size:18px;font-weight:800;letter-spacing:-.02em}.sub{font-family:var(--font-mono);font-size:10.5px;color:var(--violet);margin-top:5px}
 .bigttl{font-size:17px;font-weight:800;letter-spacing:-.02em}.subttl{font-family:var(--font-mono);font-size:10.5px;color:var(--ash);margin-top:6px}.subttl.v{color:var(--violet)}
 .ex{margin-top:6px;border-top:1px solid var(--line)}.ex .r{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.ex .r:last-child{border-bottom:none}.ex .nm{font-weight:600;font-size:13.5px}.ex .sc{font-family:var(--font-mono);font-size:11px;color:var(--ash)}
-.btn{background:var(--lime);color:var(--ink);border:none;border-radius:999px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;width:100%;margin-top:13px}
+.btn{background:var(--lime);color:var(--accent-ink);border:none;border-radius:999px;padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;width:100%;margin-top:13px}
 .coach{display:flex;align-items:center;gap:11px}.coach .g{width:34px;height:34px;border-radius:11px;flex:none;background:color-mix(in srgb,var(--violet) 18%,transparent);border:1px solid color-mix(in srgb,var(--violet) 38%,transparent);display:grid;place-items:center;color:var(--violet)}.coach .tx{flex:1;font-size:12.5px;color:var(--ash);line-height:1.45}.coach .tx b{color:var(--chalk)}.coach .go{font-family:var(--font-mono);color:var(--violet);font-weight:700;font-size:12px}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:13px}
@@ -78,6 +100,15 @@ a{color:inherit;text-decoration:none}
     <div class="av">RA<span class="o"></span></div>
     <div class="wm"><div class="t">HYBRID<b>.</b></div><div class="bar"></div></div>
     <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="themebar">
+    <input type="radio" name="theme" id="th-aurora" checked>
+    <input type="radio" name="theme" id="th-japandi">
+    <div class="seg-theme">
+      <label for="th-aurora">Aurora</label>
+      <label for="th-japandi">Japandi</label>
+    </div>
   </div>
 
   <div class="note"><b>Layout 8 · Accordion</b>Every section is collapsible — the header always shows a one-line summary value, tap to expand the detail. Open only what you need; the screen stays short. Native &lt;details&gt;, works with JS off. Toggle Today ⇄ Cockpit below.</div>
