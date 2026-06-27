@@ -507,7 +507,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               {d.role === "COACH" && d.coachVerified && <Chip c={BLUE}>✓ verified coach</Chip>}
               <Chip c={planColor(d.entitlement)}>{planLabel(d.entitlement)}</Chip>
               <Chip c={d.linkedAuth ? LIME : ASH}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
-              <Chip c={BLUE}>joined {fmt(d.createdAt)}</Chip>
+              <Chip c={ASH}>joined {fmt(d.createdAt)}</Chip>
               {d.lastActiveAt && <Chip c={CHALK}>last active {fmt(d.lastActiveAt)}</Chip>}
             </div>
 
