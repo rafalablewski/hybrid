@@ -64,7 +64,7 @@ export default function AuroraCockpit({
       <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 8 }}>{t("w.home.cockpit.commandSub")}</p>
 
       <div style={{ display: "grid", gap: 14, marginTop: 16 }}>
-        <Section title={t("w.home.cockpit.goalSeason")} color="violet" openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))}>
+        <Section title={t("w.home.cockpit.goalSeason")} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))}>
           {macro ? (
             <>
               <div style={{ fontWeight: 800, fontSize: fs.heading }}>{macro.goalOrSport}</div>
@@ -73,20 +73,20 @@ export default function AuroraCockpit({
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>{t("w.home.cockpit.setUpChange")}</span>
-              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber"), background: "none", border: "none", cursor: "pointer" }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.setUpChange")}</span>
+              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer" }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
             </div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.home.cockpit.fourQuestions")}</div>
             {setupOpen && <div style={{ marginTop: 16 }}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
           </div>
         </Section>
 
-        <Section title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} color="lime" openLabel={t("w.home.cockpit.logSession")} onOpen={() => setScreen("log")}>
+        <Section title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} openLabel={t("w.home.cockpit.logSession")} onOpen={() => setScreen("log")}>
           <div style={{ fontWeight: 800, fontSize: fs.title }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</div>
           {hasData && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.6 }}>{rx.why}</div>}
         </Section>
 
-        <Section title={t("w.home.cockpit.perfTwin")} color="blue" openLabel={t("w.home.cockpit.performance")} onOpen={() => setScreen("performance")}>
+        <Section title={t("w.home.cockpit.perfTwin")} openLabel={t("w.home.cockpit.performance")} onOpen={() => setScreen("performance")}>
           {hasData ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
@@ -95,17 +95,17 @@ export default function AuroraCockpit({
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
                   <div style={{ marginTop: 6, maxWidth: 180 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
                 </div>
-                <span style={{ display: "flex", gap: 12, fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
-                  <span style={{ color: C("lime") }}>STR {state.hpi.components.strength}</span>
-                  <span style={{ color: C("blue") }}>END {state.hpi.components.endurance}</span>
-                  <span style={{ color: C("violet") }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</span>
+                <span style={{ display: "flex", gap: 12, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
+                  <span><span style={{ color: C("ash") }}>STR</span> <b style={{ color: C("chalk"), fontWeight: 700 }}>{state.hpi.components.strength}</b></span>
+                  <span><span style={{ color: C("ash") }}>END</span> <b style={{ color: C("chalk"), fontWeight: 700 }}>{state.hpi.components.endurance}</b></span>
+                  <span><span style={{ color: C("ash") }}>REC</span> <b style={{ color: C("chalk"), fontWeight: 700 }}>{state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</b></span>
                 </span>
               </div>
               {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 10 }}>{state.drivers[0].detail}</div>}
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "center", gap: space.md }}>
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
                 <div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.home.cockpit.todayReadiness")}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
                   <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "32ch" }}>{rx.why}</div>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export default function AuroraCockpit({
         {hasData && (
           <button onClick={() => setScreen("statistics")} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.home.today.yourWeek")}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.today.yourWeek")}</span>
               {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 10px" }}>{recap.prs.length} PR</span>}
             </div>
             <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>
@@ -162,15 +162,15 @@ export default function AuroraCockpit({
           </button>
         )}
 
-        <Section title={t("w.home.cockpit.sportSC")} color="amber" openLabel={t("w.home.cockpit.sport")} onOpen={() => setScreen("sport")}>
+        <Section title={t("w.home.cockpit.sportSC")} openLabel={t("w.home.cockpit.sport")} onOpen={() => setScreen("sport")}>
           {sport ? <div style={{ fontWeight: 700, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div> : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>}
         </Section>
 
-        <Section title={t("w.home.cockpit.velocityTechnique")} color="blue" openLabel={t("w.home.cockpit.velocity")} onOpen={() => setScreen("velocity")}>
+        <Section title={t("w.home.cockpit.velocityTechnique")} openLabel={t("w.home.cockpit.velocity")} onOpen={() => setScreen("velocity")}>
           <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.velocityBlurb")}</div>
         </Section>
 
-        <Section title={t("w.home.cockpit.endurance")} color="lime" openLabel={t("w.home.cockpit.running")} onOpen={() => setScreen("running")}>
+        <Section title={t("w.home.cockpit.endurance")} openLabel={t("w.home.cockpit.running")} onOpen={() => setScreen("running")}>
           {totals.efforts > 0 ? (
             <div style={{ display: "flex", gap: 22 }}>
               <Stat label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} /><Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} /><Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
@@ -182,15 +182,17 @@ export default function AuroraCockpit({
   );
 }
 
-function Section({ title, color, children, onOpen, openLabel }: { title: string; color: string; children: React.ReactNode; onOpen: () => void; openLabel: string }) {
+// Disciplined section header: a single lime accent (dot + Open link) over a
+// neutral ash kicker — no per-section rainbow. Data colours live in the body.
+function Section({ title, children, onOpen, openLabel }: { title: string; children: React.ReactNode; onOpen: () => void; openLabel: string }) {
   return (
     <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-          <span style={{ width: 9, height: 9, borderRadius: 5, background: C(color) }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) }}>{title}</span>
+          <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{title}</span>
         </span>
-        <button onClick={onOpen} style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: C(color), background: "none", border: "none", cursor: "pointer" }}>{openLabel} →</button>
+        <button onClick={onOpen} style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer" }}>{openLabel} →</button>
       </div>
       {children}
     </div>
@@ -232,13 +234,9 @@ function Spark({ series, color, height = 24 }: { series: number[]; color: string
   );
 }
 
-const TEASE: { key: string; color: string }[] = [
-  { key: "goalSeason", color: "violet" },
-  { key: "todayRoute", color: "lime" },
-  { key: "perfTwin", color: "blue" },
-  { key: "sportSC", color: "amber" },
-  { key: "velocity", color: "blue" },
-  { key: "endurance", color: "lime" },
+const TEASE: { key: string }[] = [
+  { key: "goalSeason" }, { key: "todayRoute" }, { key: "perfTwin" },
+  { key: "sportSC" }, { key: "velocity" }, { key: "endurance" },
 ];
 
 function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
@@ -250,9 +248,9 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
       <div style={{ display: "grid", gap: space.ms, marginTop: 14 }}>
         {TEASE.map((s) => (
           <div key={s.key} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
-            <span style={{ width: 9, height: 9, borderRadius: 5, background: C(s.color) }} />
+            <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(s.color) }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</div>
               <div style={{ fontSize: fs.caption, marginTop: 4, lineHeight: 1.5 }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</div>
             </div>
             <AuroraIcon name="lock" size={18} color={C("ash")} />

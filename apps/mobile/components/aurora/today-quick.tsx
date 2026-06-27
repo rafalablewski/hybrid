@@ -46,8 +46,8 @@ export default function TodayWidgets() {
       {/* CHECK-IN */}
       <Pressable onPress={() => router.push("/checkin")} style={cardStyle}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: `${C.red}29` }}>
-            <AuroraIcon name="heart" size={16} color={txt(C, C.red)} />
+          <View style={{ width: 30, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: `${C.lime}24` }}>
+            <AuroraIcon name="heart" size={16} color={txt(C, C.lime)} />
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{checkedToday ? t("w.home.today.w.done") : t("w.home.today.w.tapLog")}</Text>
         </View>

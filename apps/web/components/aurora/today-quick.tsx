@@ -61,7 +61,7 @@ export default function TodayWidgets({ onNavigate }: { onNavigate?: (screen: str
       {/* CHECK-IN */}
       <button onClick={() => onNavigate?.("checkin")} style={widget} aria-label={t("w.home.today.w.checkin")}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={wicon("rgba(224,98,94,.16)", C("red"))}><AuroraIcon name="heart" size={16} color={C("red")} /></span>
+          <span style={wicon(`color-mix(in srgb, ${C("lime")} 14%, transparent)`, C("lime"))}><AuroraIcon name="heart" size={16} color={C("lime")} /></span>
           <span style={tag}>{done ? t("w.home.today.w.done") : t("w.home.today.w.tapLog")}</span>
         </div>
         <div style={wname}>{t("w.home.today.w.checkin")}</div>

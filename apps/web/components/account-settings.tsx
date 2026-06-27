@@ -279,8 +279,8 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {(["dark", "light"] as const).map((m) => (
-                <button key={m} onClick={() => setTheme(m)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "capitalize", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
-                  {m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")}
+                <button key={m} onClick={() => setTheme(m)} title={m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
+                  {m === "dark" ? "Aurora" : "Japandi"}
                 </button>
               ))}
             </div>

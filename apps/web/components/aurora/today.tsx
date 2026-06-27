@@ -161,7 +161,7 @@ export default function AuroraToday({
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>
         </div>
         {acc.streak.current > 0 && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: `color-mix(in srgb, ${C("amber")} 14%, transparent)`, color: C("amber"), border: `1px solid color-mix(in srgb, ${C("amber")} 40%, transparent)`, borderRadius: 999, padding: "4px 11px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: "var(--lime-text)", border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "4px 11px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
             🔥 {acc.streak.current}{t("w.home.today.dayStreak")}
           </span>
         )}
@@ -179,7 +179,7 @@ export default function AuroraToday({
         {/* card 1 — Your plan today */}
         <div data-tour="today-plan" style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
               {t("w.home.today.yourPlan")}{!(isAthlete && (hasData || plan || phase)) && plan ? t("w.home.today.asWritten") : ""}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
@@ -195,7 +195,7 @@ export default function AuroraToday({
           {plan ? (
             <>
               <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginBottom: 10 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 10 }}>
                 {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
@@ -209,10 +209,10 @@ export default function AuroraToday({
               {!isAthlete && (
                 <button
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
-                  style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: "9px 12px", borderRadius: 999, cursor: "pointer", textAlign: "left", border: `1px solid color-mix(in srgb, ${C("violet")} 55%, transparent)`, background: `color-mix(in srgb, ${C("violet")} 14%, transparent)`, color: C("chalk") }}
+                  style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: "9px 12px", borderRadius: 999, cursor: "pointer", textAlign: "left", border: `1px solid color-mix(in srgb, ${C("lime")} 55%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("chalk") }}
                 >
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>{t("w.home.today.followingAsWritten1")}<span style={{ color: C("violet") }}>{t("w.home.today.unlockFull")}</span>{t("w.home.today.followingAsWritten2")}</span>
-                  <span style={{ fontWeight: 800, fontSize: fs.note, color: C("violet") }}>→</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.4 }}>{t("w.home.today.followingAsWritten1")}<span style={{ color: "var(--lime-text)" }}>{t("w.home.today.unlockFull")}</span>{t("w.home.today.followingAsWritten2")}</span>
+                  <span style={{ fontWeight: 800, fontSize: fs.note, color: "var(--lime-text)" }}>→</span>
                 </button>
               )}
             </>
@@ -222,7 +222,7 @@ export default function AuroraToday({
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
               </div>
               {phase && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("violet"), marginBottom: 4 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginBottom: 4 }}>
                   {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
                 </div>
               )}
@@ -250,7 +250,7 @@ export default function AuroraToday({
 
         {/* card 2 — AI coach */}
         <div style={{ ...card, scrollSnapAlign: "start", flex: "0 0 92%", boxSizing: "border-box" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>{t("w.home.today.aiCoach")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.today.aiCoach")}</span>
           <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.askCoach")}</div>
           <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 6 }}>
             {t("w.home.today.aiCoachBlurb")}
@@ -260,7 +260,7 @@ export default function AuroraToday({
           ) : (
             <button
               onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
-              style={{ marginTop: 6, background: C("violet"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, fontSize: fs.body, cursor: "pointer" }}
+              style={{ marginTop: 6, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, fontSize: fs.body, cursor: "pointer" }}
             >
               {t("w.home.today.unlockFullBtn")}
             </button>
@@ -281,7 +281,7 @@ export default function AuroraToday({
       </div>
 
       {/* ───── RECOVER · FEEL ───── */}
-      <Kicker k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C("blue")} />
+      <Kicker k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C("lime")} />
 
       {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
       <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "12px 16px", marginBottom: 12 }}>
@@ -294,7 +294,7 @@ export default function AuroraToday({
       <TodayWidgets onNavigate={onNavigate} />
 
       {/* ───── PLAN ───── */}
-      <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C("amber")} />
+      <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C("lime")} />
 
       {/* THIS WEEK — shared reconciled plan; coached clients see it read-only */}
       {(isAthlete || coached) && macro ? (
@@ -313,7 +313,7 @@ export default function AuroraToday({
       )}
 
       {/* ───── CONNECT ───── */}
-      <Kicker k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C("violet")} />
+      <Kicker k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C("lime")} />
 
       {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
       <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />

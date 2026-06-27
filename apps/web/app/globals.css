@@ -6,8 +6,8 @@
 @theme {
   --color-ink: #0c0d0c;
   --color-ink2: #141614;
-  --color-card: #161816;
-  --color-line: #2a2d2a;
+  --color-card: #151715;
+  --color-line: #242724;
   --color-lime: #c4f035;
   --color-chalk: #f3f4ef;
   --color-ash: #8b8f86;
@@ -134,34 +134,35 @@ html {
 }
 
 [data-theme="light"] {
-  /* brand surface/text tokens flip; accents (lime/blue/violet/…) stay put.
-     These values MIRROR packages/core/src/theme.ts (THEMES.light), which the
-     contrast test guards at WCAG AA — keep the two in lockstep. */
-  --color-ink: #e9ece6;
-  --color-ink2: #dfe2da;
-  --color-card: #f6f7f3;
-  --color-line: #cdd0c6;
-  --color-chalk: #14160f;
-  --color-ash: #5a5e54;
+  /* JAPANDI — the warm light theme. Oat-paper surfaces, clay/sage foreground
+     accents; the bright fills (lime/…) still stay put. These values MIRROR
+     packages/core/src/theme/palette.ts (THEMES.light), which the contrast test
+     guards at WCAG AA — keep the two in lockstep. */
+  --color-ink: #efe9df;
+  --color-ink2: #f6f1e8;
+  --color-card: #fcfaf4;
+  --color-line: #e4dccd;
+  --color-chalk: #2f2a22;
+  --color-ash: #6b6456;
 
-  --glass-base: 255, 255, 255;
-  --glass-rgb: 255, 255, 255;
-  --text-rgb: 12, 13, 12;
-  --rim-hi: rgba(255, 255, 255, 0.95);
-  --rim-lo: rgba(255, 255, 255, 0.1);
-  --inner-hi: rgba(255, 255, 255, 0.7);
-  --inner-lo: rgba(20, 30, 15, 0.1);
-  --drop: rgba(40, 55, 25, 0.18);
-  --lg-bright: 1;
-  --grain-blend: soft-light;
-  --grain-opacity: 0.06;
-  --accent-text: #4c6606; /* darker lime — AA on white (raw lime fails) */
-  /* darkened accents that pass AA on light surfaces (and on the 12% tint) */
-  --lime-text: #4c6606;
-  --blue-text: #176577;
-  --violet-text: #5f3f93;
-  --amber-text: #8a5a12;
-  --red-text: #a82e2a;
+  --glass-base: 252, 250, 244;
+  --glass-rgb: 252, 250, 244;
+  --text-rgb: 47, 42, 34;
+  --rim-hi: rgba(255, 255, 255, 0.9);
+  --rim-lo: rgba(120, 105, 80, 0.08);
+  --inner-hi: rgba(255, 255, 255, 0.65);
+  --inner-lo: rgba(80, 65, 45, 0.12);
+  --drop: rgba(80, 65, 45, 0.2);
+  --lg-bright: 0.98;
+  --grain-blend: multiply;
+  --grain-opacity: 0.04;
+  --accent-text: #59640c; /* darkened olive-lime — AA on the warm paper */
+  /* warm, darkened accents that pass AA on the Japandi card surface */
+  --lime-text: #59640c;
+  --blue-text: #2c5d6c;
+  --violet-text: #6a4885;
+  --amber-text: #875427;
+  --red-text: #973a30;
 }
 
 /* ════════════════════════════════════════════════════════════════════

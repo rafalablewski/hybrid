@@ -78,7 +78,7 @@ function Full() {
       <AHeading style={{ fontSize: 28 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
       <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.commandSub")}</ASub>
 
-      <Section C={C} title={t("w.home.cockpit.goalSeason")} color={C.violet} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}>
+      <Section C={C} title={t("w.home.cockpit.goalSeason")} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}>
         {macro ? (
           <>
             <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{macro.goalOrSport}</Text>
@@ -94,19 +94,19 @@ function Full() {
           style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.amber) }}>{t("w.home.cockpit.setUpChange")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.cockpit.setUpChange")}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.cockpit.fourQuestions")}</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("w.home.cockpit.openSetup")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.openSetup")}</Text>
         </Pressable>
       </Section>
 
-      <Section C={C} title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} color={C.lime} openLabel={hasData ? t("common.start") : t("w.home.cockpit.startFirstSection")} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
+      <Section C={C} title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} openLabel={hasData ? t("common.start") : t("w.home.cockpit.startFirstSection")} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</Text>
         {hasData && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
       </Section>
 
-      <Section C={C} title={t("w.home.cockpit.perfTwin")} color={C.blue} openLabel={t("w.home.cockpit.performance")} onOpen={() => router.push("/performance")}>
+      <Section C={C} title={t("w.home.cockpit.perfTwin")} openLabel={t("w.home.cockpit.performance")} onOpen={() => router.push("/performance")}>
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
@@ -117,9 +117,9 @@ function Full() {
               </View>
             </View>
             <View style={{ flexDirection: "row", gap: 14, marginTop: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>STR {state.hpi.components.strength}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>END {state.hpi.components.endurance}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>REC {state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>STR <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.components.strength}</Text></Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>END <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.components.endurance}</Text></Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>REC <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</Text></Text>
             </View>
             {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -127,7 +127,7 @@ function Full() {
                 <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
               </Ring>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime) }}>{t("w.home.cockpit.todayReadiness")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 16 }}>{rx.why}</Text>
               </View>
             </View>
@@ -171,7 +171,7 @@ function Full() {
         <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 14 }}>
           <ACard>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.home.today.yourWeek")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.home.today.yourWeek")}</Text>
               {recap.prs.length > 0 && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{recap.prs.length} PR</Text></View>}
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 22, marginTop: 12 }}>
@@ -185,7 +185,7 @@ function Full() {
         </Pressable>
       )}
 
-      <Section C={C} title={t("w.home.cockpit.sportSC")} color={C.amber} openLabel={t("w.home.cockpit.sport")} onOpen={() => router.push("/(tabs)/sport")}>
+      <Section C={C} title={t("w.home.cockpit.sportSC")} openLabel={t("w.home.cockpit.sport")} onOpen={() => router.push("/(tabs)/sport")}>
         {sport ? (
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} · {LEVELS[sport.levelIdx]}</Text>
         ) : (
@@ -193,11 +193,11 @@ function Full() {
         )}
       </Section>
 
-      <Section C={C} title={t("w.home.cockpit.velocityTechnique")} color={C.blue} openLabel={t("w.home.cockpit.velocity")} onOpen={() => router.push("/(tabs)/velocity")}>
+      <Section C={C} title={t("w.home.cockpit.velocityTechnique")} openLabel={t("w.home.cockpit.velocity")} onOpen={() => router.push("/(tabs)/velocity")}>
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.velocityBlurb")}</Text>
       </Section>
 
-      <Section C={C} title={t("w.home.cockpit.endurance")} color={C.lime} openLabel={t("w.home.cockpit.running")} onOpen={() => router.push("/(tabs)/running")}>
+      <Section C={C} title={t("w.home.cockpit.endurance")} openLabel={t("w.home.cockpit.running")} onOpen={() => router.push("/(tabs)/running")}>
         {totals.efforts > 0 ? (
           <View style={{ flexDirection: "row", gap: 18 }}>
             <Stat C={C} label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} />
@@ -212,17 +212,19 @@ function Full() {
   );
 }
 
-function Section({ C, title, color, children, onOpen, openLabel }: { C: Palette; title: string; color: string; children: React.ReactNode; onOpen: () => void; openLabel: string }) {
+// Disciplined section header: a single lime accent (dot + Open link) over a
+// neutral ash kicker — no per-section rainbow. Data colours live in the body.
+function Section({ C, title, children, onOpen, openLabel }: { C: Palette; title: string; children: React.ReactNode; onOpen: () => void; openLabel: string }) {
   return (
     <ACard style={{ marginTop: 14 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-          <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, color) }}>{title}</Text>
+          <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{title}</Text>
         </View>
         <Pressable onPress={onOpen} style={{ flexDirection: "row", alignItems: "center", gap: space.xxs }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, color) }}>{openLabel}</Text>
-          <AuroraIcon name="chevron-down" size={14} color={txt(C, color)} style={{ transform: [{ rotate: "-90deg" }] }} />
+          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime) }}>{openLabel}</Text>
+          <AuroraIcon name="chevron-down" size={14} color={txt(C, C.lime)} style={{ transform: [{ rotate: "-90deg" }] }} />
         </Pressable>
       </View>
       {children}
@@ -239,13 +241,9 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
   );
 }
 
-const TEASE: { key: string; color: (C: Palette) => string }[] = [
-  { key: "goalSeason", color: (C) => C.violet },
-  { key: "todayRoute", color: (C) => C.lime },
-  { key: "perfTwin", color: (C) => C.blue },
-  { key: "sportSC", color: (C) => C.amber },
-  { key: "velocity", color: (C) => C.blue },
-  { key: "endurance", color: (C) => C.lime },
+const TEASE: { key: string }[] = [
+  { key: "goalSeason" }, { key: "todayRoute" }, { key: "perfTwin" },
+  { key: "sportSC" }, { key: "velocity" }, { key: "endurance" },
 ];
 
 function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
@@ -257,9 +255,9 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
       <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
         <ACard key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
-          <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: s.color(C) }} />
+          <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, s.color(C)) }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: 17 }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</Text>
           </View>
           <AuroraIcon name="lock" size={18} color={C.ash} />

@@ -23,8 +23,8 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "system", label: "System" },
-  { id: "light", label: "Light" },
-  { id: "dark", label: "Dark" },
+  { id: "dark", label: "Aurora" },
+  { id: "light", label: "Japandi" },
 ];
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
