@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today — L1 Priority Stack</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--r:18px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:'JetBrains Mono',monospace}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.av{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--lime) 16%,transparent);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--lime);position:relative}
+.av .o{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wm{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center}.wm .p{color:var(--lime)}
+.wm .b{display:block;width:24px;height:2.5px;background:var(--lime);border-radius:2px;margin:4px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
+.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
+.note{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
+.note b{color:var(--lime);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:3px}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.kick{display:flex;align-items:center;gap:8px}
+.kick .d{width:7px;height:7px;border-radius:50%}
+.kick .k{font-family:'JetBrains Mono';font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.ring{width:54px;height:54px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,color-mix(in srgb,var(--line) 80%,transparent) 0);display:grid;place-items:center;position:relative}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2)}
+.ring span{position:relative;z-index:1;font-family:'JetBrains Mono';font-weight:700;font-size:16px}
+.btn{background:var(--lime);color:#10130a;border:none;border-radius:999px;padding:12px 16px;font-family:'Archivo';font-weight:800;font-size:14px;cursor:pointer;width:100%}
+.foot{margin-top:26px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+
+/* L1 — single descending-priority spine */
+.greet{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:18px}
+.greet h1{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.greet .dt{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);margin-top:5px}
+.streak{flex:none;font-family:'JetBrains Mono';font-size:11px;font-weight:600;color:var(--amber);background:color-mix(in srgb,var(--amber) 13%,transparent);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);padding:5px 10px;border-radius:999px}
+.rank{font-family:'JetBrains Mono';font-size:9px;color:var(--ash);letter-spacing:.14em;margin:22px 2px 9px;text-transform:uppercase}
+.rank:first-of-type{margin-top:4px}
+
+/* hero session */
+.hero .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hero h2{font-size:21px;font-weight:800;letter-spacing:-.02em;margin-top:12px}
+.hero .sub{font-family:'JetBrains Mono';font-size:11px;color:var(--violet);margin-top:6px}
+.ex{margin-top:14px;border-top:1px solid var(--line)}
+.ex .r{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+.ex .r:last-child{border-bottom:none}
+.ex .nm{font-weight:600;font-size:14px}
+.ex .sc{font-family:'JetBrains Mono';font-size:11.5px;color:var(--ash)}
+.hero .btn{margin-top:14px}
+
+/* merged status: dedup of on-track + check-in + nutrition into one row */
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.status .s{background:var(--ink2);padding:14px 12px}
+.status .s .sl{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+.status .s .sv{font-family:'JetBrains Mono';font-weight:700;font-size:19px;margin-top:6px}
+.status .s .ss{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash);margin-top:3px}
+.gdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lime);margin-right:5px;vertical-align:middle}
+
+/* slim coach */
+.coach{display:flex;align-items:center;gap:12px}
+.coach .g{width:34px;height:34px;border-radius:10px;flex:none;background:color-mix(in srgb,var(--violet) 18%,transparent);border:1px solid color-mix(in srgb,var(--violet) 38%,transparent);display:grid;place-items:center;color:var(--violet)}
+.coach .tx{flex:1;font-size:13px;color:var(--ash);line-height:1.4}.coach .tx b{color:var(--chalk)}
+.coach .go{font-family:'JetBrains Mono';color:var(--violet);font-weight:700}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{background:var(--ink2);border:1px solid var(--line);border-radius:11px;padding:9px 3px;text-align:center}
+.day .dn{font-family:'JetBrains Mono';font-size:8.5px;color:var(--ash);text-transform:uppercase}
+.day .dd{width:8px;height:8px;border-radius:50%;background:var(--line);margin:8px auto 6px}
+.day .dl{font-family:'JetBrains Mono';font-size:8px;color:var(--ash)}
+.day.lime .dd{background:var(--lime)}.day.blue .dd{background:var(--blue)}.day.amber .dd{background:var(--amber)}
+.day.today{border-color:color-mix(in srgb,var(--lime) 50%,transparent)}
+.day.today .dd{background:conic-gradient(var(--lime) 78%,var(--line) 0)}
+
+/* connect compact */
+.connect{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+.connect::-webkit-scrollbar{display:none}
+.cc{flex:none;width:128px;background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:13px;text-align:center}
+.cc .ca{width:38px;height:38px;border-radius:50%;margin:0 auto 9px;display:grid;place-items:center;font-weight:700;font-size:12px;font-family:'JetBrains Mono';background:color-mix(in srgb,var(--violet) 16%,transparent);border:1px solid color-mix(in srgb,var(--violet) 35%,transparent);color:var(--violet)}
+.cc .cn{font-weight:700;font-size:13px}.cc .cs{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash);margin-top:3px}
+.cc .fl{margin-top:10px;width:100%;border:1px solid var(--violet);background:transparent;color:var(--violet);border-radius:999px;padding:6px;font-weight:700;font-size:11px;cursor:pointer}
+.feed{margin-top:10px}
+.fr{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+.fr:last-child{border-bottom:none}
+.fa{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:'JetBrains Mono';font-weight:700;font-size:11px;background:color-mix(in srgb,var(--lime) 14%,transparent);color:var(--lime)}
+.fr .ft{flex:1;font-size:13px}.fr .ft b{font-weight:700}.fr .ft span{color:var(--ash)}
+.fr .tm{font-family:'JetBrains Mono';font-size:10px;color:var(--ash)}
+.stack > * + *{margin-top:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm">HYBRID<span class="p">.</span><span class="b"></span></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 1 · Priority Stack</b>One focus-first column ordered strictly by importance. Today's session dominates; the old on-track strip + check-in + nutrition are merged into a single status row to remove duplication; everything else shrinks down the spine.</div>
+
+  <div class="greet">
+    <div><h1>Good morning, Rafal</h1><div class="dt">Saturday, June 27</div></div>
+    <span class="streak">🔥 12 day</span>
+  </div>
+
+  <div class="rank">1 · Do now</div>
+  <div class="card hero">
+    <div class="top">
+      <div class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Today's session</span></div>
+      <div class="ring"><span>78</span></div>
+    </div>
+    <h2>Soviet 8-Week OWL</h2>
+    <div class="sub">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+    <div class="ex">
+      <div class="r"><span class="nm">Back Squat</span><span class="sc">5 × 5 · RPE 8</span></div>
+      <div class="r"><span class="nm">Bench Press</span><span class="sc">5 × 5 · RPE 8</span></div>
+      <div class="r"><span class="nm">Barbell Row</span><span class="sc">4 × 8 · RPE 7</span></div>
+      <div class="r"><span class="nm">Weighted Pull-up</span><span class="sc">3 × 6</span></div>
+    </div>
+    <button class="btn">▶ Start session</button>
+  </div>
+
+  <div class="rank">2 · Today status</div>
+  <div class="status">
+    <div class="s"><div class="sl">Readiness</div><div class="sv" style="color:var(--lime)">78</div><div class="ss">primed</div></div>
+    <div class="s"><div class="sl">On track</div><div class="sv"><span class="gdot"></span>3/3</div><div class="ss">habit strong</div></div>
+    <div class="s"><div class="sl">Fuel</div><div class="sv" style="color:var(--amber)">1,840</div><div class="ss">/ 2,400 kcal</div></div>
+  </div>
+
+  <div class="rank">3 · Coach</div>
+  <div class="card coach">
+    <div class="g">✦</div>
+    <div class="tx">Readiness <b>78</b> — squats look primed, push the top set.</div>
+    <a class="go" href="#">Ask →</a>
+  </div>
+
+  <div class="rank">4 · This week</div>
+  <div class="week">
+    <div class="day lime"><div class="dn">M</div><div class="dd"></div><div class="dl">Squat</div></div>
+    <div class="day blue"><div class="dn">T</div><div class="dd"></div><div class="dl">Run</div></div>
+    <div class="day"><div class="dn">W</div><div class="dd"></div><div class="dl">Rest</div></div>
+    <div class="day today"><div class="dn">T</div><div class="dd"></div><div class="dl">Bench</div></div>
+    <div class="day amber"><div class="dn">F</div><div class="dd"></div><div class="dl">Sport</div></div>
+    <div class="day blue"><div class="dn">S</div><div class="dd"></div><div class="dl">Long</div></div>
+    <div class="day"><div class="dn">S</div><div class="dd"></div><div class="dl">Rest</div></div>
+  </div>
+
+  <div class="rank">5 · Connect</div>
+  <div class="stack">
+    <div class="connect">
+      <div class="cc"><div class="ca">CM</div><div class="cn">Coach Mara</div><div class="cs">Strength · 12.4k</div><button class="fl">Follow</button></div>
+      <div class="cc"><div class="ca">DC</div><div class="cn">Devin Cross</div><div class="cs">Hyrox · 8.1k</div><button class="fl">Follow</button></div>
+      <div class="cc"><div class="ca">YT</div><div class="cn">Yuki Tanaka</div><div class="cs">Endur · 5.6k</div><button class="fl">Follow</button></div>
+    </div>
+    <div class="card feed">
+      <div class="fr"><div class="fa">AX</div><div class="ft"><b>Alex</b> <span>PR'd Deadlift 220kg</span></div><div class="tm">2h</div></div>
+      <div class="fr"><div class="fa" style="background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)">SM</div><div class="ft"><b>Sam</b> <span>finished a 10K · 47:32</span></div><div class="tm">5h</div></div>
+    </div>
+  </div>
+
+  <div class="foot">L1 Priority Stack · Today · HYBRID layout study</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockpit — L2 Bento Grid</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--r:18px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:'JetBrains Mono',monospace}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.av{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--lime) 16%,transparent);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--lime);position:relative}
+.av .o{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wm{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center}.wm .p{color:var(--lime)}
+.wm .b{display:block;width:24px;height:2.5px;background:var(--lime);border-radius:2px;margin:4px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
+.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
+.note{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
+.note b{color:var(--lime);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:3px}
+.kick{display:flex;align-items:center;gap:7px}
+.kick .d{width:6px;height:6px;border-radius:50%}
+.kick .k{font-family:'JetBrains Mono';font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+.ring{width:52px;height:52px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,color-mix(in srgb,var(--line) 80%,transparent) 0);display:grid;place-items:center;position:relative}
+.ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ink2)}
+.ring span{position:relative;z-index:1;font-family:'JetBrains Mono';font-weight:700;font-size:16px}
+.foot{margin-top:22px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+
+.title{margin-bottom:14px}.title h1{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.title .sub{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);margin-top:6px}
+
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column}
+.w2{grid-column:span 2}
+.tile .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.open{font-family:'JetBrains Mono';font-size:9.5px;font-weight:600;background:none;border:0;cursor:pointer}
+
+/* readiness square */
+.ready{align-items:center;justify-content:center;text-align:center}
+.ready .big{font-family:'JetBrains Mono';font-weight:700;font-size:40px;line-height:1;color:var(--lime);margin-top:8px}
+.ready .o{font-family:'JetBrains Mono';font-size:11px;color:var(--ash)}
+.ready .lab{font-size:12px;font-weight:600;margin-top:8px}
+
+/* hpi square */
+.hpibox{text-align:center;align-items:center}
+.hpibox .big{font-family:'JetBrains Mono';font-weight:700;font-size:40px;line-height:1;color:var(--blue);margin-top:8px}
+.hpibox .spark{display:flex;align-items:flex-end;gap:2px;height:22px;margin-top:10px;width:100%}
+.hpibox .spark i{flex:1;border-radius:1px;background:color-mix(in srgb,var(--blue) 32%,transparent)}.hpibox .spark i.h{background:var(--blue)}
+.hpibox .comp{display:flex;gap:12px;margin-top:10px;font-family:'JetBrains Mono';font-size:10.5px}
+
+/* injury wide */
+.risk{display:flex;align-items:center;gap:14px}
+.risk .band{font-weight:800;font-size:17px;color:var(--lime)}
+.risk .bar{flex:1;height:8px;border-radius:4px;background:var(--ink);border:1px solid var(--line);overflow:hidden}
+.risk .bar i{display:block;height:100%;width:22%;background:var(--lime)}
+.risk .n{font-family:'JetBrains Mono';font-size:11px;color:var(--ash)}
+.risk-note{font-family:'JetBrains Mono';font-size:10px;color:var(--lime);margin-top:10px}
+
+/* goal wide */
+.goal .v{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.goal .s{font-family:'JetBrains Mono';font-size:10.5px;color:var(--violet);margin-top:6px}
+
+/* week wide */
+.week .pr{font-family:'JetBrains Mono';font-size:9px;font-weight:700;color:#10130a;background:var(--lime);border-radius:999px;padding:3px 9px}
+.week .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:2px}
+.week .stats .s{background:var(--ink2);padding:10px 6px}
+.week .stats .sv{font-family:'JetBrains Mono';font-weight:700;font-size:14px}
+.week .stats .sl{font-family:'JetBrains Mono';font-size:7.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ash);margin-top:4px}
+.week .prl{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash);margin-top:10px;line-height:1.5}.week .prl b{color:var(--chalk)}
+
+/* small modules */
+.mod .v{font-weight:700;font-size:15px;margin-top:auto}
+.mod .s{font-family:'JetBrains Mono';font-size:10px;color:var(--ash);margin-top:4px}
+.mod .stat{display:flex;gap:14px;margin-top:auto}
+.mod .stat .sv{font-family:'JetBrains Mono';font-weight:700;font-size:17px}
+.mod .stat .sl{font-family:'JetBrains Mono';font-size:8px;text-transform:uppercase;color:var(--ash);margin-top:3px;letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm">HYBRID<span class="p">.</span><span class="b"></span></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 2 · Bento Grid</b>The command center as a true dashboard: readiness and HPI are headline squares, risk/goal/week are wide bars, and the read-only modules (sport, velocity, endurance) tuck into small tiles. Read the whole system in one glance, drill in by tapping a tile.</div>
+
+  <div class="title"><h1>Command Center</h1><div class="sub">Your training, read at a glance.</div></div>
+
+  <div class="bento">
+
+    <div class="tile ready">
+      <div class="hd" style="width:100%"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k">Readiness</span></span><button class="open" style="color:var(--lime)">Log</button></div>
+      <div class="big">78</div><div class="o">/ 100</div>
+      <div class="lab">Back Squat + Bench</div>
+    </div>
+
+    <div class="tile hpibox">
+      <div class="hd" style="width:100%"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k">HPI · Twin</span></span><button class="open" style="color:var(--blue)">Open</button></div>
+      <div class="big">72</div>
+      <div class="spark"><i style="height:44%"></i><i style="height:52%"></i><i style="height:48%"></i><i style="height:60%"></i><i style="height:56%"></i><i style="height:70%"></i><i style="height:66%"></i><i class="h" style="height:90%"></i></div>
+      <div class="comp"><span style="color:var(--lime)">80</span><span style="color:var(--blue)">64</span><span style="color:var(--violet)">+5</span></div>
+    </div>
+
+    <div class="tile risk w2">
+      <div class="hd"><span class="kick"><span class="d" style="background:var(--red)"></span><span class="k">Injury Risk</span></span><button class="open" style="color:var(--red)">Open →</button></div>
+      <div class="risk"><span class="band">Low</span><div class="bar"><i></i></div><span class="n">22/100</span></div>
+      <div class="risk-note">No tissues flagged — keep it here.</div>
+    </div>
+
+    <div class="tile goal w2">
+      <div class="hd"><span class="kick"><span class="d" style="background:var(--violet)"></span><span class="k">Goal &amp; Season</span></span><button class="open" style="color:var(--violet)">Open →</button></div>
+      <div class="v">Powerlifting Total</div>
+      <div class="s">Accumulation · Week 4/8 · Event in 6 wk</div>
+    </div>
+
+    <div class="tile week w2">
+      <div class="hd"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k">Your Week</span></span><span class="pr">3 PR</span></div>
+      <div class="stats">
+        <div class="s"><div class="sv">5</div><div class="sl">Sess</div></div>
+        <div class="s"><div class="sv">18.4k</div><div class="sl">Vol</div></div>
+        <div class="s"><div class="sv">64</div><div class="sl">Sets</div></div>
+        <div class="s"><div class="sv">12</div><div class="sl">km</div></div>
+        <div class="s"><div class="sv">5</div><div class="sl">Active</div></div>
+      </div>
+      <div class="prl"><b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)</div>
+    </div>
+
+    <div class="tile mod">
+      <span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k">Sport S&amp;C</span></span>
+      <div class="v">Hyrox</div><div class="s">Intermediate</div>
+    </div>
+
+    <div class="tile mod">
+      <span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k">Velocity</span></span>
+      <div class="s" style="margin-top:auto;line-height:1.4">Bar-speed &amp; lift quality, session over session.</div>
+    </div>
+
+    <div class="tile mod w2">
+      <span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k">Endurance</span></span>
+      <div class="stat">
+        <div><div class="sv">8</div><div class="sl">Efforts</div></div>
+        <div><div class="sv">42</div><div class="sl">KM</div></div>
+        <div><div class="sv">310</div><div class="sl">MIN</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">L2 Bento Grid · Cockpit · HYBRID layout study</div>
+</div>
+</body>
+</html>

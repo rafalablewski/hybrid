@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockpit — L5 Season Timeline</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--r:18px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:'JetBrains Mono',monospace}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.av{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--lime) 16%,transparent);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--lime);position:relative}
+.av .o{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wm{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center}.wm .p{color:var(--lime)}
+.wm .b{display:block;width:24px;height:2.5px;background:var(--lime);border-radius:2px;margin:4px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
+.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
+.note{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
+.note b{color:var(--lime);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:3px}
+.title{margin-bottom:14px}.title h1{font-size:24px;font-weight:800;letter-spacing:-.03em}.title .sub{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);margin-top:6px}
+
+/* season axis */
+.season{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px;margin-bottom:18px}
+.season .lbl{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin-bottom:4px}
+.season .gh{display:flex;align-items:baseline;justify-content:space-between}
+.season h2{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.season .ev{font-family:'JetBrains Mono';font-size:10.5px;color:var(--amber)}
+.phases{display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr;gap:4px;margin-top:14px}
+.ph{height:30px;border-radius:7px;background:var(--ink);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.04em;color:var(--ash);position:relative;overflow:hidden}
+.ph.done{background:color-mix(in srgb,var(--violet) 14%,transparent);color:var(--violet);border-color:color-mix(in srgb,var(--violet) 35%,transparent)}
+.ph.now{background:color-mix(in srgb,var(--lime) 16%,transparent);color:var(--lime);border-color:var(--lime);font-weight:700}
+.phbar{display:flex;justify-content:space-between;margin-top:8px;font-family:'JetBrains Mono';font-size:9px;color:var(--ash)}
+.weekdots{display:flex;gap:3px;margin-top:10px}
+.weekdots i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.weekdots i.done{background:var(--violet)}.weekdots i.now{background:var(--lime)}
+
+/* timeline rail (trajectory) */
+.tl{position:relative;padding-left:30px}
+.tl::before{content:"";position:absolute;left:6px;top:6px;bottom:10px;width:2px;background:var(--line)}
+.node{position:relative;margin-bottom:12px}
+.node .dot{position:absolute;left:-30px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--line)}
+.node.lime .dot{border-color:var(--lime)}.node.blue .dot{border-color:var(--blue)}.node.red .dot{border-color:var(--red)}.node.amber .dot{border-color:var(--amber)}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:15px}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:11px}.kick{display:flex;align-items:center;gap:8px}.kick .d{width:7px;height:7px;border-radius:50%}.kick .k{font-family:'JetBrains Mono';font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.open{font-family:'JetBrains Mono';font-size:10px;font-weight:600;background:none;border:0;cursor:pointer;margin-left:auto}
+.ring{width:50px;height:50px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,color-mix(in srgb,var(--line) 80%,transparent) 0);display:grid;place-items:center;position:relative}.ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ink2)}.ring span{position:relative;z-index:1;font-family:'JetBrains Mono';font-weight:700;font-size:15px}
+.split{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bigttl{font-size:17px;font-weight:800;letter-spacing:-.02em}.subttl{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ash);margin-top:6px}
+.twin{display:flex;align-items:center;gap:14px}.hpi{font-family:'JetBrains Mono';font-weight:700;font-size:40px;line-height:.9;letter-spacing:-.03em;color:var(--blue)}.tmeta{flex:1}.tmeta .l{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash)}
+.spark{display:flex;align-items:flex-end;gap:2px;height:24px;margin-top:8px}.spark i{flex:1;border-radius:1px;background:color-mix(in srgb,var(--blue) 32%,transparent)}.spark i.h{background:var(--blue)}
+.comp{display:flex;gap:16px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}.comp .cv{font-family:'JetBrains Mono';font-weight:700;font-size:16px}.comp .cl{font-family:'JetBrains Mono';font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:3px}
+.risk{display:flex;align-items:center;gap:12px}.risk .band{font-weight:800;font-size:16px;color:var(--lime)}.risk .bar{flex:1;height:7px;border-radius:4px;background:var(--ink);border:1px solid var(--line);overflow:hidden}.risk .bar i{display:block;height:100%;width:22%;background:var(--lime)}.risk .n{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ash)}
+.pr-pill{font-family:'JetBrains Mono';font-size:9px;font-weight:700;color:#10130a;background:var(--lime);border-radius:999px;padding:3px 10px;margin-left:auto}
+.wstats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}.wstats .s{background:var(--ink2);padding:10px 6px}.wstats .sv{font-family:'JetBrains Mono';font-weight:700;font-size:14px}.wstats .sl{font-family:'JetBrains Mono';font-size:7.5px;text-transform:uppercase;color:var(--ash);margin-top:4px}
+.pr-line{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash);margin-top:11px;line-height:1.55}.pr-line b{color:var(--chalk)}
+.mods{display:flex;gap:16px;flex-wrap:wrap}.mods .m .mv{font-weight:700;font-size:13.5px}.mods .m .ml{font-family:'JetBrains Mono';font-size:8.5px;text-transform:uppercase;color:var(--ash);margin-top:3px;letter-spacing:.06em}
+.foot{margin-top:20px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm">HYBRID<span class="p">.</span><span class="b"></span></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 5 · Season Timeline</b>The command center framed by <i>where you are in the season</i>. A periodization axis anchors the top — phases done, the block you're in, the event ahead — then today's state and your trajectory hang off that timeline. Every number is read in the context of when it matters.</div>
+
+  <div class="title"><h1>Command Center</h1><div class="sub">Your training, read at a glance.</div></div>
+
+  <!-- SEASON AXIS -->
+  <div class="season">
+    <div class="lbl">Goal &amp; Season</div>
+    <div class="gh"><h2>Powerlifting Total</h2><span class="ev">Event in 6 wk</span></div>
+    <div class="phases">
+      <div class="ph done">Prep</div>
+      <div class="ph now">Accumulation ▸</div>
+      <div class="ph">Intensify</div>
+      <div class="ph">Peak</div>
+    </div>
+    <div class="phbar"><span>Week 1</span><span style="color:var(--lime)">● Week 4 / 8</span><span>Week 8</span></div>
+    <div class="weekdots"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="tl">
+
+    <div class="node lime">
+      <div class="dot"></div>
+      <div class="card">
+        <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Today · 78 / 100</span></span><button class="open" style="color:var(--lime)">Log →</button></div>
+        <div class="split"><div><div class="bigttl">Back Squat + Bench Press</div><div class="subttl">Primed. Top-set ready; keep accessories crisp.</div></div><div class="ring"><span>78</span></div></div>
+      </div>
+    </div>
+
+    <div class="node blue">
+      <div class="dot"></div>
+      <div class="card">
+        <div class="ch"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k" style="color:var(--blue)">Trajectory · 14 days</span></span><button class="open" style="color:var(--blue)">Open →</button></div>
+        <div class="twin"><div class="hpi">72</div><div class="tmeta"><div class="l">HPI · Strong · Limiter Recovery</div><div class="spark"><i style="height:44%"></i><i style="height:52%"></i><i style="height:48%"></i><i style="height:60%"></i><i style="height:56%"></i><i style="height:68%"></i><i style="height:64%"></i><i style="height:74%"></i><i style="height:70%"></i><i class="h" style="height:90%"></i></div></div></div>
+        <div class="comp"><div><div class="cv" style="color:var(--lime)">80</div><div class="cl">STR</div></div><div><div class="cv" style="color:var(--blue)">64</div><div class="cl">END</div></div><div><div class="cv" style="color:var(--violet)">+5</div><div class="cl">REC</div></div></div>
+        <div class="subttl" style="margin-top:11px">Strength trending up; recovery is the current ceiling.</div>
+      </div>
+    </div>
+
+    <div class="node red">
+      <div class="dot"></div>
+      <div class="card">
+        <div class="ch"><span class="kick"><span class="d" style="background:var(--red)"></span><span class="k" style="color:var(--red)">Injury Risk</span></span><button class="open" style="color:var(--red)">Open →</button></div>
+        <div class="risk"><span class="band">Low</span><div class="bar"><i></i></div><span class="n">22/100</span></div>
+        <div class="subttl" style="color:var(--lime);margin-top:10px">No tissues flagged — keep it here.</div>
+      </div>
+    </div>
+
+    <div class="node lime">
+      <div class="dot"></div>
+      <div class="card">
+        <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">This week so far</span></span><span class="pr-pill">3 PR</span></div>
+        <div class="wstats"><div class="s"><div class="sv">5</div><div class="sl">Sess</div></div><div class="s"><div class="sv">18.4k</div><div class="sl">Vol</div></div><div class="s"><div class="sv">64</div><div class="sl">Sets</div></div><div class="s"><div class="sv">12</div><div class="sl">km</div></div><div class="s"><div class="sv">5</div><div class="sl">Active</div></div></div>
+        <div class="pr-line"><b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)</div>
+      </div>
+    </div>
+
+    <div class="node amber">
+      <div class="dot"></div>
+      <div class="card">
+        <div class="ch"><span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k" style="color:var(--amber)">Supporting work</span></span></div>
+        <div class="mods">
+          <div class="m"><div class="mv">Hyrox · Intermediate</div><div class="ml">Sport S&amp;C</div></div>
+          <div class="m"><div class="mv">8 · 42 km · 310 min</div><div class="ml">Endurance</div></div>
+          <div class="m"><div class="mv mono" style="font-family:'JetBrains Mono';font-size:11.5px;color:var(--ash)">Bar-speed &amp; quality →</div><div class="ml">Velocity</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">L5 Agenda / Timeline · Cockpit · HYBRID layout study</div>
+</div>
+</body>
+</html>

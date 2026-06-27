@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today — L4 Vitals Rail</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--r:18px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:0 0 64px;min-height:100vh}
+.app{width:100%;max-width:440px;padding:0 16px}
+.mono{font-family:'JetBrains Mono',monospace}
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px}
+.av{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--lime) 16%,transparent);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--lime);position:relative}
+.av .o{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wm{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center}.wm .p{color:var(--lime)}
+.wm .b{display:block;width:24px;height:2.5px;background:var(--lime);border-radius:2px;margin:4px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
+.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
+.note{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px;line-height:1.5}
+.note b{color:var(--lime);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:3px}
+
+/* sticky vitals strip — always visible */
+.vitals{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--ink) 90%,transparent);backdrop-filter:blur(12px);padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:16px}
+.vitals .row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.vt{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:9px 8px;text-align:center}
+.vt .v{font-family:'JetBrains Mono';font-weight:700;font-size:18px;line-height:1}
+.vt .l{font-family:'JetBrains Mono';font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:5px}
+.gdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px var(--lime);vertical-align:middle}
+
+.greet{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.greet h1{font-size:20px;font-weight:800;letter-spacing:-.02em}.greet .dt{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ash);margin-top:4px}
+
+.sec{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin:22px 2px 10px;display:flex;align-items:center;gap:8px}
+.sec .d{width:6px;height:6px;border-radius:50%}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.card + .card{margin-top:12px}
+.ring{width:52px;height:52px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,color-mix(in srgb,var(--line) 80%,transparent) 0);display:grid;place-items:center;position:relative}
+.ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ink2)}.ring span{position:relative;z-index:1;font-family:'JetBrains Mono';font-weight:700;font-size:16px}
+.btn{background:var(--lime);color:#10130a;border:none;border-radius:999px;padding:12px 16px;font-family:'Archivo';font-weight:800;font-size:14px;cursor:pointer;width:100%}
+.split{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.h2{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-top:10px}.sub{font-family:'JetBrains Mono';font-size:11px;color:var(--violet);margin-top:6px}
+.ex{margin-top:13px;border-top:1px solid var(--line)}.ex .r{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.ex .r:last-child{border-bottom:none}
+.ex .nm{font-weight:600;font-size:14px}.ex .sc{font-family:'JetBrains Mono';font-size:11.5px;color:var(--ash)}
+.coach{display:flex;align-items:center;gap:12px}.coach .g{width:34px;height:34px;border-radius:10px;flex:none;background:color-mix(in srgb,var(--violet) 18%,transparent);border:1px solid color-mix(in srgb,var(--violet) 38%,transparent);display:grid;place-items:center;color:var(--violet)}
+.coach .tx{flex:1;font-size:13px;color:var(--ash);line-height:1.4}.coach .tx b{color:var(--chalk)}.coach .go{font-family:'JetBrains Mono';color:var(--violet);font-weight:700}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.feel .n{font-family:'JetBrains Mono';font-weight:700;font-size:30px;color:var(--blue)}.feel .o{font-family:'JetBrains Mono';font-size:11px;color:var(--ash)}.feel .q{font-size:12.5px;font-weight:600;margin-top:8px}
+.nut .kc{font-family:'JetBrains Mono';font-weight:700;font-size:16px}.nut .kc small{color:var(--ash);font-size:11px;font-weight:400}.nut .bar{height:6px;border-radius:99px;background:var(--ink);border:1px solid var(--line);overflow:hidden;margin:9px 0}.nut .bar i{display:block;height:100%;width:77%;background:var(--amber)}.nut .m{font-family:'JetBrains Mono';font-size:10px;color:var(--ash)}
+.kick{display:flex;align-items:center;gap:8px;margin-bottom:10px}.kick .d{width:6px;height:6px;border-radius:50%}.kick .k{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);font-weight:600}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.day{text-align:center}.day .dn{font-family:'JetBrains Mono';font-size:8.5px;color:var(--ash)}.day .dd{width:9px;height:9px;border-radius:50%;background:var(--line);margin:8px auto 6px}.day .dl{font-family:'JetBrains Mono';font-size:8px;color:var(--ash)}
+.day.lime .dd{background:var(--lime)}.day.blue .dd{background:var(--blue)}.day.amber .dd{background:var(--amber)}.day.today .dd{background:conic-gradient(var(--lime) 78%,var(--line) 0)}
+.cc{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.cc:last-child{border-bottom:none}
+.cc .ca{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:'JetBrains Mono';font-weight:700;font-size:11px;background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
+.cc .cn{font-weight:700;font-size:13px}.cc .cs{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash);margin-top:2px}.cc .fl{margin-left:auto;border:1px solid var(--violet);background:transparent;color:var(--violet);border-radius:999px;padding:5px 13px;font-weight:700;font-size:11px;cursor:pointer}
+.foot{margin-top:24px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm">HYBRID<span class="p">.</span><span class="b"></span></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 4 · Vitals Rail</b>The four numbers you check every morning are pinned in a strip that stays put while the rest scrolls. At-a-glance vitals on top; the depth — session, recover, plan, connect — flows beneath, so context never scrolls away.</div>
+
+  <!-- pinned vitals -->
+  <div class="vitals">
+    <div class="row">
+      <div class="vt"><div class="v" style="color:var(--lime)">78</div><div class="l">Ready</div></div>
+      <div class="vt"><div class="v" style="color:var(--amber)">🔥12</div><div class="l">Streak</div></div>
+      <div class="vt"><div class="v"><span class="gdot"></span>3/3</div><div class="l">On track</div></div>
+      <div class="vt"><div class="v" style="color:var(--amber)">1.8k</div><div class="l">Kcal</div></div>
+    </div>
+  </div>
+
+  <div class="greet"><div><h1>Good morning, Rafal</h1><div class="dt">Saturday, June 27</div></div></div>
+
+  <div class="sec"><span class="d" style="background:var(--lime)"></span>Train</div>
+  <div class="card">
+    <div class="split">
+      <span class="kick" style="margin:0"><span class="d" style="background:var(--lime)"></span><span class="k">Today's session</span></span>
+      <div class="ring"><span>78</span></div>
+    </div>
+    <div class="h2">Soviet 8-Week OWL</div>
+    <div class="sub">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+    <div class="ex">
+      <div class="r"><span class="nm">Back Squat</span><span class="sc">5 × 5 · RPE 8</span></div>
+      <div class="r"><span class="nm">Bench Press</span><span class="sc">5 × 5 · RPE 8</span></div>
+      <div class="r"><span class="nm">Barbell Row</span><span class="sc">4 × 8 · RPE 7</span></div>
+      <div class="r"><span class="nm">Weighted Pull-up</span><span class="sc">3 × 6</span></div>
+    </div>
+    <button class="btn" style="margin-top:14px">▶ Start session</button>
+  </div>
+  <div class="card coach"><div class="g">✦</div><div class="tx">Readiness <b>78</b> — squats look primed, push the top set.</div><a class="go" href="#">Ask →</a></div>
+
+  <div class="sec"><span class="d" style="background:var(--blue)"></span>Recover · Feel</div>
+  <div class="duo">
+    <div class="card feel"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k">Check-in</span></span><div><span class="n">78</span> <span class="o">/100</span></div><div class="q">How do you feel?</div></div>
+    <div class="card nut"><span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k">Fuel</span></span><div class="kc">1,840 <small>/ 2,400</small></div><div class="bar"><i></i></div><div class="m">P 142 · C 180 · F 60</div></div>
+  </div>
+
+  <div class="sec"><span class="d" style="background:var(--amber)"></span>This week</div>
+  <div class="card">
+    <div class="week">
+      <div class="day lime"><div class="dn">M</div><div class="dd"></div><div class="dl">Squat</div></div>
+      <div class="day blue"><div class="dn">T</div><div class="dd"></div><div class="dl">Run</div></div>
+      <div class="day"><div class="dn">W</div><div class="dd"></div><div class="dl">Rest</div></div>
+      <div class="day today"><div class="dn">T</div><div class="dd"></div><div class="dl">Bench</div></div>
+      <div class="day amber"><div class="dn">F</div><div class="dd"></div><div class="dl">Sport</div></div>
+      <div class="day blue"><div class="dn">S</div><div class="dd"></div><div class="dl">Long</div></div>
+      <div class="day"><div class="dn">S</div><div class="dd"></div><div class="dl">Rest</div></div>
+    </div>
+  </div>
+
+  <div class="sec"><span class="d" style="background:var(--violet)"></span>Connect</div>
+  <div class="card">
+    <div class="cc"><div class="ca">CM</div><div><div class="cn">Coach Mara</div><div class="cs">Strength · 12.4k</div></div><button class="fl">Follow</button></div>
+    <div class="cc"><div class="ca">DC</div><div><div class="cn">Devin Cross</div><div class="cs">Hyrox · 8.1k</div></div><button class="fl">Follow</button></div>
+    <div class="cc"><div class="ca" style="background:color-mix(in srgb,var(--lime) 14%,transparent);color:var(--lime)">AX</div><div><div class="cn">Alex · PR'd Deadlift 220kg</div><div class="cs">2h ago</div></div></div>
+  </div>
+
+  <div class="foot">L4 Vitals Rail · Today · HYBRID layout study</div>
+</div>
+</body>
+</html>

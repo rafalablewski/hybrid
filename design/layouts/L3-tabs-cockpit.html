@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockpit — L3 Segmented Tabs</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--r:18px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:'JetBrains Mono',monospace}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.av{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--lime) 16%,transparent);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--lime);position:relative}
+.av .o{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wm{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center}.wm .p{color:var(--lime)}
+.wm .b{display:block;width:24px;height:2.5px;background:var(--lime);border-radius:2px;margin:4px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
+.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
+.note{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px;line-height:1.5}
+.note b{color:var(--lime);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:3px}
+.title{margin-bottom:14px}.title h1{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.title .sub{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);margin-top:6px}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.card + .card{margin-top:12px}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.kick{display:flex;align-items:center;gap:8px}
+.kick .d{width:7px;height:7px;border-radius:50%}
+.kick .k{font-family:'JetBrains Mono';font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.open{font-family:'JetBrains Mono';font-size:10px;font-weight:600;background:none;border:0;cursor:pointer;margin-left:auto}
+.ring{width:54px;height:54px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,color-mix(in srgb,var(--line) 80%,transparent) 0);display:grid;place-items:center;position:relative}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2)}
+.ring span{position:relative;z-index:1;font-family:'JetBrains Mono';font-weight:700;font-size:16px}
+.foot{margin-top:22px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+.bigttl{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.subttl{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);margin-top:7px}.subttl.v{color:var(--violet)}
+.split{display:flex;align-items:center;justify-content:space-between;gap:14px}
+
+.tabs > input{position:absolute;opacity:0;pointer-events:none}
+.seg{position:sticky;top:8px;z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:16px}
+.seg label{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 6px;border-radius:999px;font-family:'JetBrains Mono';font-size:11px;font-weight:600;color:var(--ash);cursor:pointer}
+.seg label .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+.panel{display:none}
+#c1:checked~.seg label[for=c1],#c2:checked~.seg label[for=c2],#c3:checked~.seg label[for=c3]{background:var(--lime);color:#10130a}
+#c1:checked~.panels .p1,#c2:checked~.panels .p2,#c3:checked~.panels .p3{display:block}
+
+.twin{display:flex;align-items:center;gap:16px}
+.hpi{font-family:'JetBrains Mono';font-weight:700;font-size:46px;line-height:.9;letter-spacing:-.03em;color:var(--blue)}
+.tmeta{flex:1}.tmeta .l{font-family:'JetBrains Mono';font-size:10px;color:var(--ash)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:26px;margin-top:8px}.spark i{flex:1;border-radius:2px;background:color-mix(in srgb,var(--blue) 32%,transparent)}.spark i.h{background:var(--blue)}
+.comp{display:flex;gap:18px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.comp .cv{font-family:'JetBrains Mono';font-weight:700;font-size:18px}.comp .cl{font-family:'JetBrains Mono';font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:3px}
+.driver{font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 84%,transparent);margin-top:13px}
+.risk{display:flex;align-items:center;gap:14px}
+.risk .band{font-weight:800;font-size:18px;color:var(--lime)}.risk .bar{flex:1;height:8px;border-radius:4px;background:var(--ink);border:1px solid var(--line);overflow:hidden}.risk .bar i{display:block;height:100%;width:22%;background:var(--lime)}.risk .n{font-family:'JetBrains Mono';font-size:11px;color:var(--ash)}
+
+.pr-pill{font-family:'JetBrains Mono';font-size:9.5px;font-weight:700;color:#10130a;background:var(--lime);border-radius:999px;padding:4px 11px;margin-left:auto}
+.wstats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.wstats .s{background:var(--ink2);padding:11px 7px}.wstats .sv{font-family:'JetBrains Mono';font-weight:700;font-size:15px}.wstats .sl{font-family:'JetBrains Mono';font-size:8px;text-transform:uppercase;color:var(--ash);margin-top:4px}
+.pr-line{font-family:'JetBrains Mono';font-size:10px;color:var(--ash);margin-top:12px;line-height:1.6}.pr-line b{color:var(--chalk)}
+.stat3{display:flex;gap:22px}.stat3 .sv{font-family:'JetBrains Mono';font-weight:700;font-size:19px}.stat3 .sl{font-family:'JetBrains Mono';font-size:8.5px;text-transform:uppercase;color:var(--ash);margin-top:4px;letter-spacing:.06em}
+.body-line{font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 80%,transparent)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm">HYBRID<span class="p">.</span><span class="b"></span></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 3 · Segmented Tabs</b>Eight modules regrouped into three tabs — Snapshot (where am I), Performance (how am I trending), Training (the detail). No more scrolling past analytics you didn't open the screen for. Pure-CSS tabs, JS-off safe.</div>
+
+  <div class="title"><h1>Command Center</h1><div class="sub">Your training, read at a glance.</div></div>
+
+  <div class="tabs">
+    <input type="radio" name="ct" id="c1" checked>
+    <input type="radio" name="ct" id="c2">
+    <input type="radio" name="ct" id="c3">
+
+    <div class="seg">
+      <label for="c1"><span class="dot" style="color:var(--lime)"></span>Snapshot</label>
+      <label for="c2"><span class="dot" style="color:var(--blue)"></span>Performance</label>
+      <label for="c3"><span class="dot" style="color:var(--amber)"></span>Training</label>
+    </div>
+
+    <div class="panels">
+      <!-- SNAPSHOT -->
+      <div class="panel p1">
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Today · 78 / 100</span></span><button class="open" style="color:var(--lime)">Log →</button></div>
+          <div class="split"><div><div class="bigttl">Back Squat + Bench Press</div><div class="subttl">Primed. Top-set ready; keep accessories crisp.</div></div><div class="ring"><span>78</span></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--violet)"></span><span class="k" style="color:var(--violet)">Goal &amp; Season</span></span><button class="open" style="color:var(--violet)">Open →</button></div>
+          <div class="bigttl">Powerlifting Total</div><div class="subttl v">Accumulation · Week 4/8 · Event in 6 wk</div>
+        </div>
+      </div>
+
+      <!-- PERFORMANCE -->
+      <div class="panel p2">
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k" style="color:var(--blue)">Performance Twin</span></span><button class="open" style="color:var(--blue)">Open →</button></div>
+          <div class="twin">
+            <div class="hpi">72</div>
+            <div class="tmeta"><div class="l">HPI · Strong · Limiter Recovery</div>
+              <div class="spark"><i style="height:44%"></i><i style="height:52%"></i><i style="height:48%"></i><i style="height:60%"></i><i style="height:56%"></i><i style="height:68%"></i><i style="height:64%"></i><i style="height:74%"></i><i style="height:70%"></i><i class="h" style="height:90%"></i></div></div>
+          </div>
+          <div class="comp"><div><div class="cv" style="color:var(--lime)">80</div><div class="cl">STR</div></div><div><div class="cv" style="color:var(--blue)">64</div><div class="cl">END</div></div><div><div class="cv" style="color:var(--violet)">+5</div><div class="cl">REC</div></div></div>
+          <div class="driver">Strength trending up; recovery is the current ceiling.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--red)"></span><span class="k" style="color:var(--red)">Injury Risk</span></span><button class="open" style="color:var(--red)">Open →</button></div>
+          <div class="risk"><span class="band">Low</span><div class="bar"><i></i></div><span class="n">22/100</span></div>
+          <div class="subttl" style="color:var(--lime);margin-top:11px">No tissues flagged — keep it here.</div>
+        </div>
+      </div>
+
+      <!-- TRAINING -->
+      <div class="panel p3">
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Your Week</span></span><span class="pr-pill">3 PR</span></div>
+          <div class="wstats">
+            <div class="s"><div class="sv">5</div><div class="sl">Sess</div></div>
+            <div class="s"><div class="sv">18.4k</div><div class="sl">Vol</div></div>
+            <div class="s"><div class="sv">64</div><div class="sl">Sets</div></div>
+            <div class="s"><div class="sv">12</div><div class="sl">km</div></div>
+            <div class="s"><div class="sv">5</div><div class="sl">Active</div></div>
+          </div>
+          <div class="pr-line"><b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)</div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k" style="color:var(--amber)">Sport S&amp;C</span></span><button class="open" style="color:var(--amber)">Open →</button></div>
+          <div class="bigttl">Hyrox · Intermediate</div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k" style="color:var(--blue)">Velocity &amp; Technique</span></span><button class="open" style="color:var(--blue)">Open →</button></div>
+          <div class="body-line">Bar-speed trends and lift quality, session over session.</div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Endurance</span></span><button class="open" style="color:var(--lime)">Open →</button></div>
+          <div class="stat3"><div><div class="sv">8</div><div class="sl">Efforts</div></div><div><div class="sv">42</div><div class="sl">KM</div></div><div><div class="sv">310</div><div class="sl">MIN</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">L3 Segmented Tabs · Cockpit · HYBRID layout study</div>
+</div>
+</body>
+</html>
