@@ -10,91 +10,37 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--ink);color:var(--chalk);font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;padding:40px 24px 80px;max-width:980px;margin:0 auto}
 h1{font-size:32px;font-weight:900;letter-spacing:-.03em}h1 span{color:var(--lime)}
-.sub{font-family:'JetBrains Mono';font-size:12px;color:var(--ash);margin-top:12px;line-height:1.7}
-.sub b{color:var(--chalk)}
+.sub{font-family:'JetBrains Mono';font-size:12px;color:var(--ash);margin-top:12px;line-height:1.7}.sub b{color:var(--chalk)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:30px}
 .dir{border:1px solid var(--line);border-radius:20px;background:var(--ink2);padding:20px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
 .dir .k{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
 .dir h2{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:8px;display:flex;align-items:center;gap:9px}
 .dot{width:8px;height:8px;border-radius:50%}
 .dir p{font-size:12.5px;color:var(--ash);line-height:1.55;margin-top:10px}
-.links{display:flex;gap:10px;margin-top:16px}
-.links a{flex:1;text-align:center;text-decoration:none;font-family:'JetBrains Mono';font-size:12px;font-weight:600;padding:10px;border-radius:999px;border:1px solid var(--line);color:var(--chalk);background:var(--ink)}
+.links{margin-top:16px}
+.links a{display:block;text-align:center;text-decoration:none;font-family:'JetBrains Mono';font-size:12px;font-weight:600;padding:11px;border-radius:999px;border:1px solid var(--line);color:var(--chalk);background:var(--ink)}
 .links a:hover{border-color:var(--lime);color:var(--lime)}
 .foot{font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase;margin-top:40px}
 </style>
 </head>
 <body>
   <h1>HYBRID<span>.</span> Layout studies</h1>
-  <div class="sub">Five ways to <b>organise</b> Today &amp; Cockpit — same content, same skin, different information architecture.<br>The visual style is held constant on purpose: the only variable here is <b>where things go and how they're grouped</b>.</div>
+  <div class="sub">Ten ways to <b>organise</b> Today &amp; Cockpit — same content, same production skin, different information architecture.<br>
+  Every file is a single page with an in-page <b>Today ⇄ Cockpit toggle</b> (pure-CSS, no JS). The only variable is <b>where things go and how they're grouped</b>.</div>
 
   <div class="grid">
-    <div class="dir">
-      <div class="k">Layout 1</div>
-      <h2><span class="dot" style="background:var(--lime)"></span>Priority Stack</h2>
-      <p>One focus-first column, ranked top-to-bottom by importance. Duplicated bits (on-track / check-in / fuel) merge into a single status row; minor modules collapse to compact rows.</p>
-      <div class="links"><a href="L1-priority-today.html">Today</a><a href="L1-priority-cockpit.html">Cockpit</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 2</div>
-      <h2><span class="dot" style="background:var(--blue)"></span>Bento Grid</h2>
-      <p>A glanceable mosaic — tile size encodes importance, almost nothing below the fold. Read the whole day / whole system at once; tap a tile to drill in.</p>
-      <div class="links"><a href="L2-bento-today.html">Today</a><a href="L2-bento-cockpit.html">Cockpit</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 3</div>
-      <h2><span class="dot" style="background:var(--amber)"></span>Segmented Tabs</h2>
-      <p>A sticky segmented control splits each screen into categories (Train/Recover/Plan/Connect · Snapshot/Performance/Training) so it never out-scrolls one theme. JS-off safe.</p>
-      <div class="links"><a href="L3-tabs-today.html">Today</a><a href="L3-tabs-cockpit.html">Cockpit</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 4</div>
-      <h2><span class="dot" style="background:var(--violet)"></span>Vitals Rail</h2>
-      <p>The numbers you check first are pinned in a strip that stays put while detail scrolls beneath. At-a-glance vitals separated from depth.</p>
-      <div class="links"><a href="L4-vitals-today.html">Today</a><a href="L4-vitals-cockpit.html">Cockpit</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 5</div>
-      <h2><span class="dot" style="background:var(--red)"></span>Agenda / Timeline</h2>
-      <p>Organised by <i>when</i>: Today on a day-clock spine (check-in → session → fuel → evening); Cockpit hung off a season periodization axis (phase done → now → event).</p>
-      <div class="links"><a href="L5-agenda-today.html">Today</a><a href="L5-agenda-cockpit.html">Cockpit</a></div>
-    </div>
+    <div class="dir"><div class="k">Layout 1</div><h2><span class="dot" style="background:var(--lime)"></span>Priority Stack</h2><p>One focus-first column ranked by importance; duplicated bits merged, minor modules collapsed.</p><div class="links"><a href="L1-priority.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 2</div><h2><span class="dot" style="background:var(--blue)"></span>Bento Grid</h2><p>A glanceable mosaic — tile size encodes importance, almost nothing below the fold.</p><div class="links"><a href="L2-bento.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 3</div><h2><span class="dot" style="background:var(--amber)"></span>Segmented Tabs</h2><p>A sticky segmented control splits each screen into categories so it never out-scrolls one theme.</p><div class="links"><a href="L3-tabs.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 4</div><h2><span class="dot" style="background:var(--violet)"></span>Vitals Rail</h2><p>The numbers you check first are pinned on top while detail scrolls beneath.</p><div class="links"><a href="L4-vitals.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 5</div><h2><span class="dot" style="background:var(--red)"></span>Agenda / Timeline</h2><p>Organised by <i>when</i> — Today on a day-clock spine, Cockpit on a season periodization axis.</p><div class="links"><a href="L5-agenda.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 6</div><h2><span class="dot" style="background:var(--lime)"></span>Spotlight Deck</h2><p>Horizontal swipeable cards — one focus at a time, dots track your place.</p><div class="links"><a href="L6-deck.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 7</div><h2><span class="dot" style="background:var(--blue)"></span>Sidebar Console</h2><p>A slim left nav rail + content pane — a desktop console shrunk to phone width.</p><div class="links"><a href="L7-console.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 8</div><h2><span class="dot" style="background:var(--violet)"></span>Accordion</h2><p>Progressive disclosure — each section collapses to a one-line summary; expand what you need.</p><div class="links"><a href="L8-accordion.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 9</div><h2><span class="dot" style="background:var(--amber)"></span>Dense Ledger</h2><p>Pro-tool / terminal density — every module a tight row, mono values flush-right, max data per screen.</p><div class="links"><a href="L9-ledger.html">Open · Today ⇄ Cockpit</a></div></div>
+    <div class="dir"><div class="k">Layout 10</div><h2><span class="dot" style="background:var(--red)"></span>Editorial</h2><p>Magazine cover — one oversized hero number, a feature story, then an asymmetric module grid.</p><div class="links"><a href="L10-editorial.html">Open · Today ⇄ Cockpit</a></div></div>
   </div>
 
-  <div class="sub" style="margin-top:40px"><b>Single-file editions</b> — Today &amp; Cockpit in one file, switch with the in-page toggle. New organising principles, production Aurora skin.</div>
-  <div class="grid">
-    <div class="dir">
-      <div class="k">Layout 6</div>
-      <h2><span class="dot" style="background:var(--lime)"></span>Spotlight Deck</h2>
-      <p>Horizontal swipeable card deck — one focus at a time, dots track your place.</p>
-      <div class="links"><a href="L6-deck.html">Open (toggle)</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 7</div>
-      <h2><span class="dot" style="background:var(--blue)"></span>Sidebar Console</h2>
-      <p>A slim left nav rail + content pane — a desktop console shrunk to phone width.</p>
-      <div class="links"><a href="L7-console.html">Open (toggle)</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 8</div>
-      <h2><span class="dot" style="background:var(--violet)"></span>Accordion</h2>
-      <p>Progressive disclosure — each section collapses to a one-line summary; expand what you need.</p>
-      <div class="links"><a href="L8-accordion.html">Open (toggle)</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 9</div>
-      <h2><span class="dot" style="background:var(--amber)"></span>Dense Ledger</h2>
-      <p>Pro-tool / terminal density — every module a tight row, mono values flush-right, max data per screen.</p>
-      <div class="links"><a href="L9-ledger.html">Open (toggle)</a></div>
-    </div>
-    <div class="dir">
-      <div class="k">Layout 10</div>
-      <h2><span class="dot" style="background:var(--red)"></span>Editorial</h2>
-      <p>Magazine cover — one oversized hero number, a feature story, then an asymmetric module grid.</p>
-      <div class="links"><a href="L10-editorial.html">Open (toggle)</a></div>
-    </div>
-  </div>
-
-  <div class="foot">HYBRID layout studies · same content &amp; skin, different organisation</div>
+  <div class="foot">HYBRID layout studies · 10 single-file layouts · same content &amp; skin, different organisation</div>
 </body>
 </html>
