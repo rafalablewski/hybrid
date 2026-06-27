@@ -105,7 +105,7 @@ function QuestionBody({
   personaChoice: "casual" | "athlete" | null;
   C: (v: string) => string;
 }) {
-  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? "rgba(199,239,0,.08)" : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
+  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? `color-mix(in srgb, ${C("lime")} 8%, transparent)` : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
 
   if (q.kind === "persona") {
     const selected = (answers[q.key] as string) ?? personaChoice;

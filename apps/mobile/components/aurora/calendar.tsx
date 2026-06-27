@@ -66,7 +66,7 @@ export default function AuroraCalendar() {
               const isToday = cell.date === today;
               const isSel = cell.date === selected;
               return (
-                <Pressable key={cell.date} onPress={() => setSelected(cell.date)} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: 12, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: day ? `rgba(199,239,0,${0.1 + inten * 0.5})` : C.ink }}>
+                <Pressable key={cell.date} onPress={() => setSelected(cell.date)} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: 12, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: day ? `${C.lime}${Math.round(Math.min(1, 0.1 + inten * 0.5) * 255).toString(16).padStart(2, "0")}` : C.ink }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
                   {day ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: 9, color: C.onAccent, backgroundColor: C.lime, borderRadius: 4, paddingHorizontal: 3, marginTop: 1 }}>{day.count}</Text> : null}
                 </Pressable>

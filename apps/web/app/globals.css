@@ -139,6 +139,11 @@ html {
   --violet-text: #c9a9f0;
   --amber-text: #d0cd94;
   --red-text: #e58a5c;
+  /* The accent-glow RGB for the Liquid-Glass rim/orb/active-tile shadows, as a
+     bare `r, g, b` triple so it drops into rgba(). Theme-aware: chartreuse on
+     dark, clay on the Japandi light theme (overridden below) — so the glows
+     follow the accent instead of staying lime-green on warm paper. */
+  --glass-glow-rgb: 199, 239, 0;
 }
 
 [data-theme="light"] {
@@ -178,6 +183,7 @@ html {
   --violet-text: #6a4885;
   --amber-text: #875427;
   --red-text: #973a30;
+  --glass-glow-rgb: 165, 87, 60; /* clay #a5573c — matches the Japandi accent fill */
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -276,7 +282,7 @@ html {
     inset 0 0 0 1px rgba(var(--text-rgb), 0.05),
     0 1px 1px rgba(0, 0, 0, 0.25),
     0 calc(14px + var(--lg-lift)) calc(40px + var(--lg-lift)) -18px var(--drop),
-    0 0 calc(40px * var(--lg-glow)) rgba(199, 239, 0, calc(0.55 * var(--lg-glow)));
+    0 0 calc(40px * var(--lg-glow)) rgba(var(--glass-glow-rgb), calc(0.55 * var(--lg-glow)));
   transform: translateZ(0);
   transition:
     --lg-blur 0.5s var(--lg-ease), --lg-opacity 0.5s var(--lg-ease),
@@ -342,8 +348,8 @@ html {
 .lg-vibrant::after {
   background: conic-gradient(
     from var(--lg-angle),
-    rgba(199, 239, 0, 0.9), var(--rim-lo) 22%, rgba(199, 239, 0, 0.4) 45%,
-    var(--rim-lo) 68%, rgba(199, 239, 0, 0.9)
+    rgba(var(--glass-glow-rgb), 0.9), var(--rim-lo) 22%, rgba(var(--glass-glow-rgb), 0.4) 45%,
+    var(--rim-lo) 68%, rgba(var(--glass-glow-rgb), 0.9)
   );
 }
 
@@ -373,7 +379,7 @@ html {
   height: 20px;
   border-radius: 7px;
   background: var(--color-lime);
-  box-shadow: 0 0 18px rgba(199, 239, 0, 0.9);
+  box-shadow: 0 0 18px rgba(var(--glass-glow-rgb), 0.9);
   transition: transform 0.5s var(--lg-spring), border-radius 0.5s var(--lg-spring);
 }
 .cmd-orb:hover .cmd-dot { transform: rotate(45deg) scale(1.05); border-radius: 9px; }
@@ -490,9 +496,9 @@ html {
 .cmd-tile.is-active .cmd-ic {
   transform: scale(1.1) translateY(-2px);
   color: var(--accent-text);
-  background: rgba(199, 239, 0, 0.16);
-  border-color: rgba(199, 239, 0, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 20px rgba(199, 239, 0, 0.45);
+  background: rgba(var(--glass-glow-rgb), 0.16);
+  border-color: rgba(var(--glass-glow-rgb), 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 20px rgba(var(--glass-glow-rgb), 0.45);
 }
 .cmd-tile.is-active { --lg-glow: 1; --lg-opacity: 0.6; }
 .cmd-tile.is-active .cmd-lb { color: var(--accent-text); }

@@ -182,7 +182,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10, lineHeight: 1.5 }}>{t("w.recovery.nutrition.proSoon")}</div>
           </div>
         ) : (
-          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", textAlign: "left", marginTop: 12, cursor: "pointer", border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, rgba(199,239,0,.12), rgba(60,120,126,.05))", borderRadius: 16, padding: 14, color: C("chalk") }}>
+          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", textAlign: "left", marginTop: 12, cursor: "pointer", border: `1px solid ${C("lime")}`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 12%, transparent), color-mix(in srgb, ${C("blue")} 5%, transparent))`, borderRadius: 16, padding: 14, color: C("chalk") }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: fs.body }}><span>🔒</span>{t("w.recovery.nutrition.proTitle")}</div>
             <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.recovery.nutrition.proBody")}</div>
             <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: C("lime-t") }}>✦ {t("w.recovery.nutrition.proCta")} →</div>
