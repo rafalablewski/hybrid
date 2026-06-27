@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>04 · Japandi — HYBRID concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{
+  --page:#efe9df;
+  --screen:#f8f4ec;
+  --card:#fcfaf4;
+  --surface2:#efe8db;
+  --line:#e2d9c9;
+  --text:#3a352c;
+  --muted:#9b9384;
+  --accent:#b06a4f;
+  --accent-ink:#fcfaf4;
+  --accent-text:#9a5840;
+  --accent-soft:#f3e7df;
+  --accent-line:#e7d3c7;
+  --ring-track:#e7ddcd;
+  --warn:#a98344;
+  --warn-soft:#f3ebda;
+  --warn-line:#e6d6b9;
+  --display:'Fraunces',serif;
+  --body:'Inter',sans-serif;
+  --mono:'Inter',sans-serif;
+  --r-screen:30px;
+  --r-card:18px;
+  --r-btn:999px;
+  --r-field:14px;
+  --r-avatar:14px;
+  --frame:1px solid #e2d9c9;
+  --screen-shadow:0 36px 80px -38px rgba(80,68,50,.3);
+  --card-shadow:none;
+  --screen-pad:22px;
+  --head-weight:500;
+  --display-tracking:-.01em;
+  --display-weight:500
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{background:var(--page);color:var(--text);font-family:var(--body);line-height:1.5;padding:48px 24px 80px}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* page header / rationale */
+.crumb{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.crumb a{text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px}
+.ph-tag{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.ph-title{font-family:var(--display);font-size:clamp(34px,6vw,64px);line-height:1;letter-spacing:var(--display-tracking,-.02em);font-weight:var(--display-weight,800);margin-bottom:14px}
+.ph-lede{max-width:680px;color:var(--muted);font-size:17px}
+.rationale{display:flex;flex-wrap:wrap;gap:32px;margin:34px 0 46px;padding:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.sw{width:54px}
+.sw i{display:block;height:54px;border-radius:8px;border:1px solid var(--line)}
+.sw span{font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--muted);display:block;margin-top:6px}
+.principles{flex:1;min-width:280px}
+.principles h4{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.principles ul{list-style:none;display:grid;gap:8px}
+.principles li{font-size:14px;padding-left:18px;position:relative;color:var(--text)}
+.principles li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;background:var(--accent);border-radius:50%}
+.type-spec{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.9}
+.type-spec b{color:var(--text);font-family:var(--display);font-weight:600}
+
+/* stage + devices */
+.stage{display:flex;gap:48px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.device{width:392px;max-width:100%}
+.scr-cap{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:14px}
+.screen{background:var(--screen);border:var(--frame);border-radius:var(--r-screen);padding:var(--screen-pad,20px);box-shadow:var(--screen-shadow);overflow:hidden}
+.screen+.screen{margin-top:0}
+
+/* appbar */
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.avatar{position:relative;width:38px;height:38px;border-radius:var(--r-avatar,11px);background:var(--surface2);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);border:1px solid var(--line)}
+.avatar .dot{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid var(--screen)}
+.wm{font-family:var(--display);font-weight:800;letter-spacing:var(--wm-tracking,-.01em);font-size:17px}
+.wm .acc{color:var(--accent)}
+.bell{position:relative;width:38px;height:38px;border-radius:var(--r-avatar,11px);background:var(--surface2);border:1px solid var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.bell .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:10px;font-weight:700;display:grid;place-items:center;border:2px solid var(--screen)}
+
+/* greeting */
+.greet{margin-bottom:20px}
+.hello{font-family:var(--display);font-size:24px;font-weight:var(--head-weight,700);letter-spacing:var(--display-tracking,-.02em);margin-bottom:2px}
+.date{color:var(--muted);font-size:13px;margin-bottom:12px}
+.streak{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:5px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);border:1px solid var(--accent-line)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:var(--card-pad,17px);margin-bottom:13px;box-shadow:var(--card-shadow,none)}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-top-r{display:flex;align-items:center;gap:12px}
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.kicker.k2{color:var(--accent-text)}
+.title{font-family:var(--display);font-size:22px;font-weight:var(--head-weight,800);letter-spacing:var(--display-tracking,-.02em);margin-bottom:4px}
+.subtitle{font-family:var(--display);font-size:18px;font-weight:var(--head-weight,700);margin:8px 0 6px}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--accent-text);letter-spacing:.02em}
+.meta.sm{color:var(--muted);font-size:10.5px;margin-top:8px}
+.blurb{color:var(--muted);font-size:13px;line-height:1.55;margin:6px 0 14px}
+
+/* buttons */
+.btn{font-family:var(--body);font-weight:600;font-size:13px;border:none;cursor:pointer;padding:9px 15px;border-radius:var(--r-btn,12px);background:var(--accent);color:var(--accent-ink);white-space:nowrap}
+.btn.ghost{background:transparent;border:1px solid var(--accent-line);color:var(--accent-text)}
+.btn.sm{padding:7px 13px;font-size:12px;margin-top:10px}
+.link{font-family:var(--mono);font-size:11px;letter-spacing:.05em;background:none;border:none;color:var(--accent-text);cursor:pointer}
+
+/* readiness ring */
+.ring{width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--ring-track) 0);display:grid;place-items:center;flex:0 0 auto}
+.ring-hole{width:42px;height:42px;border-radius:50%;background:var(--card);display:grid;place-items:center}
+.ring-hole b{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)}
+
+/* exercise list */
+.exlist{margin-top:14px}
+.ex{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line)}
+.exname{font-weight:600;font-size:14px}
+.exmeta{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* duo widgets */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.duo .card{margin-bottom:13px}
+.w-line{font-size:14px;margin:12px 0 4px}
+.kcal{margin:10px 0 8px}
+.kcal b{font-family:var(--display);font-size:22px;font-weight:700}
+.kcal span{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.bar{height:6px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.macros{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px}
+
+/* stats grid */
+.stats{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-field,12px);overflow:hidden;margin-top:4px}
+.stats.wk{grid-template-columns:repeat(4,1fr)}
+.stats.end{grid-template-columns:repeat(3,1fr)}
+.stat{background:var(--card);padding:13px 8px;text-align:center}
+.stat .num{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:-.02em}
+.stat .lab{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.pr{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent-text);border:1px solid var(--accent-line)}
+
+/* cockpit */
+.cpt-head{margin-bottom:20px}
+.cpt-title{font-family:var(--display);font-size:26px;font-weight:var(--head-weight,800);letter-spacing:var(--display-tracking,-.02em)}
+.cpt-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7}
+.sec-big{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:-.01em;margin:4px 0 4px}
+.sec-big.sm{font-size:15px}
+.barseg{display:flex;gap:3px;height:7px;margin:12px 0 6px}
+.barseg i{border-radius:3px}
+.barseg .t1{background:var(--surface2)}
+.barseg .t2{background:var(--accent)}
+.hpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:8px 0 14px}
+.hpi{display:flex;align-items:baseline;gap:7px}
+.hpi-n{font-family:var(--display);font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:.9;color:var(--accent-text)}
+.hpi-l{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--muted)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:40px;flex:1;max-width:170px}
+.spark i{flex:1;background:var(--surface2);border-radius:2px 2px 0 0;min-height:3px}
+.spark i.on{background:var(--accent)}
+.comp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.comp .c{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--surface2);border-radius:var(--r-field,10px)}
+.comp .cl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--muted)}
+.comp .cv{font-family:var(--display);font-size:18px;font-weight:700}
+.comp .cv.up{color:var(--accent-text)}
+.risk-row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.risk-pill{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line)}
+.risk-row .bar{flex:1}
+.risk-row .bar i{background:var(--warn)}
+.risk-n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.perf .blurb{margin-bottom:0}
+
+@media(max-width:560px){.screen{padding:16px}.device{width:100%}}
+
+/* ---- Japandi overrides ---- */
+.kicker{letter-spacing:.2em}.title,.hello,.cpt-title,.sec-big,.subtitle,.hpi-n,.stat .num,.kcal b{font-family:var(--display);font-weight:500}
+    .ph-title{font-weight:500}.wm{font-family:var(--display);font-weight:600;letter-spacing:0}
+    .meta{color:var(--accent-text)}.streak{font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="index.html">← all 10 concepts</a> &nbsp;·&nbsp; 04 / 10 &nbsp;·&nbsp; <a href="03-tesla.html">prev</a> / <a href="05-swiss.html">next</a></div>
+  <div class="ph-tag">Japandi · warm minimal</div>
+  <h1 class="ph-title">Japandi</h1>
+  <p class="ph-lede">Quiet, warm, and tactile. Oat-paper grounds, muted clay accent, a sage secondary, and a serif display that brings a human, editorial calm. Negative space treated as a material.</p>
+
+  <div class="rationale">
+    <div>
+      <div class="swatches"><div class="sw"><i style="background:#efe9df"></i><span>ground</span></div><div class="sw"><i style="background:#fcfaf4"></i><span>surface</span></div><div class="sw"><i style="background:#3a352c"></i><span>ink</span></div><div class="sw"><i style="background:#9b9384"></i><span>muted</span></div><div class="sw"><i style="background:#b06a4f"></i><span>accent</span></div><div class="sw"><i style="background:#e2d9c9"></i><span>line</span></div></div>
+    </div>
+    <div class="principles">
+      <h4>Design principles</h4>
+      <ul><li>Earthy, low-chroma palette — clay & sage</li><li>Serif display against clean sans body</li><li>Warm paper tones, never pure white</li><li>Soft radii, soft shadows, soft contrast</li></ul>
+    </div>
+    <div>
+      <h4 style="font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Type</h4>
+      <div class="type-spec"><b>Fraunces</b> display · <b>Inter</b> text<br>serif warmth, humanist body</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="device">
+      <div class="scr-cap">Today</div>
+      
+  <div class="screen" data-screen="today">
+    <header class="appbar">
+      <div class="avatar">RA<span class="dot"></span></div>
+      <div class="wm">HYBRID<span class="acc">.</span></div>
+      <button class="bell"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge">3</span></button>
+    </header>
+
+    <div class="greet">
+      <div class="hello">Good morning, Rafal</div>
+      <div class="date">Friday, June 27</div>
+      <span class="streak">12-day streak</span>
+    </div>
+
+    <div class="card plan">
+      <div class="card-top">
+        <span class="kicker">Train · today's session</span>
+        <div class="card-top-r">
+          
+  <div class="ring" style="--p:78">
+    <div class="ring-hole"><b>78</b></div>
+  </div>
+          <button class="btn">Start →</button>
+        </div>
+      </div>
+      <h2 class="title">Lower Power + Zone 2</h2>
+      <div class="meta">Push · Day 3/5 · Build wk 4/12</div>
+      <div class="exlist">
+        <div class="ex"><span class="exname">Back Squat</span><span class="exmeta">5×3 · RPE 8</span></div><div class="ex"><span class="exname">Romanian Deadlift</span><span class="exmeta">3×8 · RPE 7</span></div><div class="ex"><span class="exname">Zone 2 Bike</span><span class="exmeta">30:00</span></div>
+      </div>
+    </div>
+
+    <div class="card coach">
+      <span class="kicker k2">AI coach</span>
+      <h3 class="subtitle">Ask your coach</h3>
+      <p class="blurb">Reads your real readiness, fatigue and velocity, then writes today's call — what to push, what to hold back.</p>
+      <button class="btn ghost">Open coach →</button>
+    </div>
+
+    <div class="duo">
+      <div class="card widget">
+        <span class="kicker">Daily check-in</span>
+        <div class="w-line">How do you feel today?</div>
+        <button class="btn sm">Check in</button>
+      </div>
+      <div class="card widget">
+        <span class="kicker">Nutrition</span>
+        <div class="kcal"><b>1,847</b><span> / 2,200 kcal</span></div>
+        <div class="bar"><i style="width:84%"></i></div>
+        <div class="macros">P 156 · C 187 · F 61</div>
+      </div>
+    </div>
+
+    <div class="card week">
+      <div class="card-top">
+        <span class="kicker">Plan · this week</span>
+        <span class="pr">2 PR</span>
+      </div>
+      
+  <div class="stats wk">
+    <div class="stat"><div class="num">3</div><div class="lab">Sessions</div></div><div class="stat"><div class="num">4,250kg</div><div class="lab">Volume</div></div><div class="stat"><div class="num">42</div><div class="lab">Sets</div></div><div class="stat"><div class="num">8.4km</div><div class="lab">Distance</div></div>
+  </div>
+    </div>
+  </div>
+    </div>
+    <div class="device">
+      <div class="scr-cap">Cockpit</div>
+      
+  <div class="screen" data-screen="cockpit">
+    <div class="cpt-head">
+      <h1 class="cpt-title">Your command center</h1>
+      <p class="cpt-sub">Goal → season → today → performance → technique, in one place.</p>
+    </div>
+
+    <div class="card section">
+      <div class="card-top"><span class="kicker k2">Goal &amp; season</span><button class="link">Periodize →</button></div>
+      <div class="sec-big">Hybrid strength-endurance</div>
+      <div class="meta">Build · week 5/16 · event in 11 wk</div>
+      <div class="barseg"><i style="flex:4" class="t1"></i><i style="flex:6" class="t2 cur"></i><i style="flex:4" class="t1"></i><i style="flex:2" class="t1"></i></div>
+      <div class="meta sm">Base · Build · Peak · Taper</div>
+    </div>
+
+    <div class="card section perf">
+      <div class="card-top"><span class="kicker">Performance state · Athlete Twin</span><button class="link">Performance →</button></div>
+      <div class="hpi-row">
+        <div class="hpi"><span class="hpi-n">71</span><span class="hpi-l">HPI</span></div>
+        <div class="spark"><i style="height:60%" class=""></i><i style="height:71%" class=""></i><i style="height:66%" class=""></i><i style="height:82%" class=""></i><i style="height:78%" class=""></i><i style="height:86%" class=""></i><i style="height:81%" class=""></i><i style="height:90%" class=""></i><i style="height:85%" class=""></i><i style="height:96%" class=""></i><i style="height:92%" class=""></i><i style="height:100%" class=""></i><i style="height:95%" class=""></i><i style="height:97%" class="on"></i></div>
+      </div>
+      <div class="comp">
+        <div class="c"><span class="cl">STR</span><span class="cv up">78</span></div>
+        <div class="c"><span class="cl">END</span><span class="cv">61</span></div>
+        <div class="c"><span class="cl">REC</span><span class="cv up">+73</span></div>
+      </div>
+      <p class="blurb">Squat e1RM up 6% over 4 weeks — endurance is the limiter.</p>
+    </div>
+
+    <div class="card section risk">
+      <div class="card-top"><span class="kicker">Injury risk · by tissue</span></div>
+      <div class="risk-row">
+        <span class="risk-pill">Moderate</span>
+        <div class="bar"><i style="width:41%"></i></div>
+        <span class="risk-n">41/100</span>
+      </div>
+      <div class="meta">Patellar tendon · load spike · overall 22/100 (low)</div>
+    </div>
+
+    <div class="card section">
+      <div class="card-top"><span class="kicker">Your week</span><span class="pr">2 PR</span></div>
+      
+  <div class="stats wk">
+    <div class="stat"><div class="num">3</div><div class="lab">Sessions</div></div><div class="stat"><div class="num">4,250kg</div><div class="lab">Volume</div></div><div class="stat"><div class="num">42</div><div class="lab">Sets</div></div><div class="stat"><div class="num">8.4km</div><div class="lab">Distance</div></div>
+  </div>
+      <div class="meta sm">Squat 180kg (+5) · Bench 115kg · Deadlift 220kg</div>
+    </div>
+
+    <div class="card section">
+      <div class="card-top"><span class="kicker k2">Sport S&amp;C</span><button class="link">Sport →</button></div>
+      <div class="sec-big sm">Sprint / 100m · Regional</div>
+    </div>
+
+    <div class="card section">
+      <div class="card-top"><span class="kicker">Endurance</span><button class="link">Running →</button></div>
+      
+  <div class="stats end">
+    <div class="stat"><div class="num">12</div><div class="lab">efforts</div></div><div class="stat"><div class="num">86</div><div class="lab">km</div></div><div class="stat"><div class="num">412</div><div class="lab">min</div></div>
+  </div>
+    </div>
+  </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
