@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID · Today · Pulse</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+  --lime:#c4f035; --lime-t:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+  --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:24px 0 80px}
+.phone{width:430px;max-width:100%;position:relative}
+.mono{font-family:'JetBrains Mono',monospace}
+.kick{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+
+/* ---- top bar ---- */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 14px}
+.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--lime);
+  background:color-mix(in srgb,var(--lime) 18%,transparent);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:13px;color:var(--lime);position:relative;letter-spacing:.02em}
+.avatar .dot{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wordmark{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center;line-height:1}
+.wordmark .u{display:block;width:26px;height:3px;background:var(--lime);border-radius:2px;margin:5px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;background:var(--ink2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:17px;position:relative}
+.bell .badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--red);
+  color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--ink)}
+
+/* ---- HERO ---- */
+.hero{position:relative;margin:4px 12px 0;border-radius:30px;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb,var(--lime) 60%,transparent) 0%, transparent 55%),
+    radial-gradient(130% 110% at 0% 100%, color-mix(in srgb,var(--violet) 50%,transparent) 0%, transparent 50%),
+    linear-gradient(150deg,#1c2410 0%,#0f120c 60%);
+  border:1px solid color-mix(in srgb,var(--lime) 22%,var(--line));
+  box-shadow:0 24px 60px -28px color-mix(in srgb,var(--lime) 50%,#000);padding:22px 22px 20px}
+.hero .greet{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.hero h1{font-size:27px;font-weight:900;letter-spacing:-.03em;line-height:1.05}
+.hero .date{margin-top:7px;font-size:11.5px;letter-spacing:.12em;color:color-mix(in srgb,var(--chalk) 70%,transparent)}
+.streak{flex:none;display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--amber) 20%,transparent);
+  border:1px solid color-mix(in srgb,var(--amber) 45%,transparent);color:var(--amber);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:7px 11px;border-radius:999px;white-space:nowrap}
+
+.readblock{margin-top:20px;display:flex;align-items:center;gap:18px}
+.bignum{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:84px;line-height:.82;letter-spacing:-.04em;
+  color:var(--chalk);text-shadow:0 0 30px color-mix(in srgb,var(--lime) 40%,transparent)}
+.bignum sup{font-size:24px;color:var(--lime);vertical-align:super;font-weight:600}
+.readmeta{flex:1}
+.readmeta .lbl{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:color-mix(in srgb,var(--chalk) 60%,transparent)}
+.readmeta .state{margin-top:4px;font-weight:800;font-size:17px;letter-spacing:-.01em}
+.readmeta .state .pr{color:var(--lime)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:30px;margin-top:12px}
+.spark i{flex:1;background:color-mix(in srgb,var(--lime) 30%,transparent);border-radius:2px;display:block}
+.spark i.hot{background:var(--lime)}
+
+.startrow{margin-top:18px;display:flex;gap:10px}
+.btn-primary{flex:1;background:var(--lime);color:#0c1004;border:none;border-radius:999px;padding:14px 18px;
+  font-family:'Archivo';font-weight:800;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 10px 26px -10px color-mix(in srgb,var(--lime) 80%,#000);cursor:pointer}
+.btn-ghost{flex:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--chalk);
+  border-radius:999px;padding:0 18px;font-weight:700;font-size:14px;cursor:pointer}
+
+/* ---- sections ---- */
+.section{padding:0 20px;margin-top:28px}
+.sechead{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.sechead .dot{width:8px;height:8px;border-radius:50%}
+.sechead .name{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.sechead .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+.panel{background:var(--ink2);border:1px solid var(--line);border-radius:24px;
+  box-shadow:0 6px 22px -12px rgba(0,0,0,.55);overflow:hidden}
+.panel + .panel{margin-top:12px}
+
+/* plan panel */
+.plan-top{padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--lime) 7%,transparent),transparent)}
+.plan-top .kick2{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime)}
+.plan-top h2{font-size:21px;font-weight:900;letter-spacing:-.025em;margin-top:5px;line-height:1.05}
+.plan-top .sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--violet);margin-top:6px;letter-spacing:.02em}
+.ring{width:62px;height:62px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;
+  background:conic-gradient(var(--lime) 0% 78%, color-mix(in srgb,var(--line) 90%,transparent) 78% 100%)}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2)}
+.ring span{position:relative;z-index:1;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:21px}
+.ring.sm{width:54px;height:54px}.ring.sm span{font-size:18px}
+
+.exlist{border-top:1px solid var(--line)}
+.exrow{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.exrow:last-child{border-bottom:none}
+.exrow .nm{font-weight:600;font-size:15px;letter-spacing:-.01em}
+.exrow .sc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ash)}
+.exrow .sc b{color:var(--chalk);font-weight:600}
+.startfoot{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--lime) 5%,transparent)}
+.startfoot .chips{display:flex;gap:14px}
+.metric{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ash)}
+.metric b{color:var(--chalk)}
+.mini-pill{background:var(--lime);color:#0c1004;border:none;border-radius:999px;padding:8px 16px;font-weight:800;font-size:12.5px;cursor:pointer}
+
+/* coach panel */
+.coach{padding:16px 18px}
+.coach .head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.coach .glyph{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--violet) 22%,transparent);
+  border:1px solid color-mix(in srgb,var(--violet) 40%,transparent);display:grid;place-items:center;font-size:15px}
+.coach .head .t{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--violet)}
+.coach .head .q{font-weight:800;font-size:15px;margin-top:1px}
+.coach .blurb{font-size:13.5px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 88%,transparent)}
+.coach .blurb b{color:var(--violet);font-weight:700}
+.chatpill{margin-top:13px;display:flex;align-items:center;gap:10px;background:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 16px}
+.chatpill input{flex:1;background:none;border:none;outline:none;color:var(--chalk);font-family:'Archivo';font-size:13.5px}
+.chatpill input::placeholder{color:var(--ash)}
+.chatpill .send{width:34px;height:34px;border-radius:50%;background:var(--violet);color:#15101e;border:none;display:grid;place-items:center;font-size:15px;font-weight:800;cursor:pointer}
+
+/* sport log strip */
+.logstrip{margin:14px 20px 0;display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--amber) 14%,var(--ink2)),var(--ink2));
+  border:1px solid color-mix(in srgb,var(--amber) 28%,var(--line));border-radius:18px;padding:14px 16px}
+.logstrip .l{display:flex;align-items:center;gap:11px}
+.logstrip .ic{font-size:18px}
+.logstrip .tx{font-weight:600;font-size:13.5px}
+.logstrip .arr{color:var(--amber);font-weight:800;font-size:15px}
+
+/* on-track */
+.ontrack{display:flex;align-items:center;justify-content:space-between;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:13px 16px}
+.ontrack .l{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13.5px}
+.gdot{width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.ontrack .r{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lime)}
+
+/* square widgets */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.sq{border-radius:22px;padding:16px;border:1px solid var(--line);background:var(--ink2);position:relative;overflow:hidden}
+.sq .k{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase}
+.sq .h{font-weight:800;font-size:15px;margin-top:8px;letter-spacing:-.01em}
+.sq.checkin{background:linear-gradient(160deg,color-mix(in srgb,var(--blue) 14%,var(--ink2)),var(--ink2))}
+.sq.checkin .k{color:var(--blue)}
+.sq.nutri{background:linear-gradient(160deg,color-mix(in srgb,var(--amber) 13%,var(--ink2)),var(--ink2))}
+.sq.nutri .k{color:var(--amber)}
+.faces{display:flex;gap:6px;margin-top:12px;align-items:center}
+.faces .num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:30px;line-height:1;color:var(--blue)}
+.faces .ds{display:flex;gap:5px;margin-left:auto;align-items:center}
+.faces .ds i{width:8px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--blue) 30%,transparent)}
+.faces .ds i.on{background:var(--blue);box-shadow:0 0 8px var(--blue)}
+.kcal{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:20px;margin-top:12px;letter-spacing:-.02em}
+.kcal small{font-size:11px;color:var(--ash);font-weight:400}
+.bar{height:7px;border-radius:4px;background:color-mix(in srgb,var(--amber) 18%,transparent);margin-top:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--amber);border-radius:4px}
+.macros{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash);margin-top:8px;letter-spacing:.04em}
+
+/* week chips */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.day{background:var(--ink2);border:1px solid var(--line);border-radius:15px;padding:10px 4px;text-align:center}
+.day .d{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:var(--ash);text-transform:uppercase}
+.day .mk{width:26px;height:26px;border-radius:50%;margin:8px auto 6px;display:grid;place-items:center;font-size:12px;
+  background:var(--ink);border:1px solid var(--line)}
+.day .lab{font-size:9px;color:var(--ash);font-weight:600;letter-spacing:.01em;line-height:1.1}
+.day.done .mk{background:color-mix(in srgb,var(--lime) 22%,transparent);border-color:var(--lime);color:var(--lime)}
+.day.done.blue .mk{background:color-mix(in srgb,var(--blue) 22%,transparent);border-color:var(--blue);color:var(--blue)}
+.day.today{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 8%,var(--ink2))}
+.day.today .mk{background:conic-gradient(var(--lime) 0 70%,var(--line) 70% 100%);border:none;position:relative}
+.day.today .mk::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ink2)}
+.day.today .lab{color:var(--lime)}
+.day.sport .mk{background:color-mix(in srgb,var(--amber) 20%,transparent);border-color:var(--amber);color:var(--amber)}
+.day.longrun .mk{background:color-mix(in srgb,var(--blue) 20%,transparent);border-color:var(--blue);color:var(--blue)}
+
+/* coach rail */
+.rail{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.ccard{flex:none;width:150px;background:var(--ink2);border:1px solid var(--line);border-radius:20px;padding:16px;text-align:center}
+.cav{width:50px;height:50px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;font-weight:800;font-size:16px;
+  background:color-mix(in srgb,var(--violet) 18%,transparent);border:1.5px solid color-mix(in srgb,var(--violet) 45%,transparent);color:var(--violet)}
+.ccard .nm{font-weight:800;font-size:14px;letter-spacing:-.01em}
+.ccard .sp{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ash);margin-top:3px}
+.ccard .fl{margin-top:12px;width:100%;background:color-mix(in srgb,var(--violet) 16%,transparent);
+  border:1px solid color-mix(in srgb,var(--violet) 40%,transparent);color:var(--violet);border-radius:999px;padding:8px;font-weight:800;font-size:12px;cursor:pointer}
+
+/* circle feed */
+.feed .frow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.feed .frow:last-child{border-bottom:none}
+.fav{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:13px;color:var(--chalk)}
+.fav.a{background:color-mix(in srgb,var(--lime) 20%,transparent);border:1px solid color-mix(in srgb,var(--lime) 40%,transparent);color:var(--lime)}
+.fav.s{background:color-mix(in srgb,var(--blue) 20%,transparent);border:1px solid color-mix(in srgb,var(--blue) 40%,transparent);color:var(--blue)}
+.feed .ftx{flex:1}
+.feed .ftx .a{font-weight:600;font-size:13.5px;letter-spacing:-.01em}
+.feed .ftx .a b{font-weight:800}
+.feed .ftx .m{display:flex;gap:12px;margin-top:5px}
+.echip{display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash)}
+.feed .tm{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash);flex:none}
+
+/* footer */
+.footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--ash);margin-top:34px;padding:0 20px;text-transform:uppercase}
+
+/* floating action */
+.fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:20;
+  background:var(--lime);color:#0c1004;border:none;border-radius:999px;padding:14px 24px;font-weight:800;font-size:14px;
+  display:flex;align-items:center;gap:8px;box-shadow:0 14px 34px -8px color-mix(in srgb,var(--lime) 75%,#000);cursor:pointer}
+@media(max-width:460px){.phone{width:100%}.fab{bottom:16px}}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="topbar">
+    <div class="avatar">RA<span class="dot"></span></div>
+    <div class="wordmark">HYBRID<span style="color:var(--lime)">.</span><span class="u"></span></div>
+    <div class="bell">🔔<span class="badge">3</span></div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="greet">
+      <div>
+        <h1>Good morning,<br>Rafal</h1>
+        <div class="date mono">SATURDAY, JUNE 27</div>
+      </div>
+      <div class="streak">🔥 12 day streak</div>
+    </div>
+
+    <div class="readblock">
+      <div class="bignum">78<sup>/100</sup></div>
+      <div class="readmeta">
+        <div class="lbl">Readiness</div>
+        <div class="state">Primed <span class="pr">· push the top set</span></div>
+        <div class="spark">
+          <i style="height:42%"></i><i style="height:55%"></i><i style="height:48%"></i>
+          <i style="height:63%"></i><i style="height:58%"></i><i style="height:72%"></i>
+          <i style="height:66%"></i><i style="height:80%"></i><i class="hot" style="height:96%"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="startrow">
+      <button class="btn-primary">▶ Start today’s session</button>
+      <button class="btn-ghost">Skip</button>
+    </div>
+  </div>
+
+  <!-- TRAIN -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--lime)"></span><span class="name" style="color:var(--lime)">Train</span><span class="rule"></span></div>
+
+    <div class="panel">
+      <div class="plan-top">
+        <div>
+          <div class="kick2">Your plan today</div>
+          <h2>Soviet 8-Week OWL</h2>
+          <div class="sub">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+        </div>
+        <div class="ring"><span>78</span></div>
+      </div>
+      <div class="exlist">
+        <div class="exrow"><span class="nm">Back Squat</span><span class="sc"><b>5 × 5</b> · RPE 8</span></div>
+        <div class="exrow"><span class="nm">Bench Press</span><span class="sc"><b>5 × 5</b> · RPE 8</span></div>
+        <div class="exrow"><span class="nm">Barbell Row</span><span class="sc"><b>4 × 8</b> · RPE 7</span></div>
+        <div class="exrow"><span class="nm">Weighted Pull-up</span><span class="sc"><b>3 × 6</b></span></div>
+      </div>
+      <div class="startfoot">
+        <div class="chips">
+          <span class="metric">⏱ <b>~58 min</b></span>
+          <span class="metric">🏋 <b>4 lifts</b></span>
+        </div>
+        <button class="mini-pill">Start →</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="coach">
+        <div class="head">
+          <div class="glyph">✦</div>
+          <div><div class="t">AI Coach</div><div class="q">Ask your coach</div></div>
+        </div>
+        <div class="blurb">Your readiness is <b>78</b>. Squats look primed — push the top set.</div>
+        <div class="chatpill">
+          <input placeholder="Ask anything about today…">
+          <button class="send">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- sport log strip -->
+  <div class="logstrip">
+    <div class="l"><span class="ic">🏃</span><span class="tx">Back from a run or match? Log it</span></div>
+    <span class="arr">→</span>
+  </div>
+
+  <!-- RECOVER · FEEL -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--blue)"></span><span class="name" style="color:var(--blue)">Recover · Feel</span><span class="rule"></span></div>
+
+    <div class="ontrack">
+      <div class="l"><span class="gdot"></span> You’re on track this week</div>
+      <div class="r">3/3 · HABIT STRONG</div>
+    </div>
+
+    <div class="duo">
+      <div class="sq checkin">
+        <div class="k">Check-in</div>
+        <div class="h">How do you feel?</div>
+        <div class="faces">
+          <div class="num">78</div>
+          <div class="ds"><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+        </div>
+      </div>
+      <div class="sq nutri">
+        <div class="k">Nutrition</div>
+        <div class="h">Fuel</div>
+        <div class="kcal">1,840 <small>/ 2,400 kcal</small></div>
+        <div class="bar"><i style="width:77%"></i></div>
+        <div class="macros">P 142 · C 180 · F 60</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAN -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--amber)"></span><span class="name" style="color:var(--amber)">Plan · This Week</span><span class="rule"></span></div>
+    <div class="week">
+      <div class="day done"><div class="d">Mon</div><div class="mk">✓</div><div class="lab">Squat</div></div>
+      <div class="day done blue"><div class="d">Tue</div><div class="mk">✓</div><div class="lab">Run</div></div>
+      <div class="day"><div class="d">Wed</div><div class="mk">·</div><div class="lab">Rest</div></div>
+      <div class="day today"><div class="d">Thu</div><div class="mk"></div><div class="lab">Bench</div></div>
+      <div class="day sport"><div class="d">Fri</div><div class="mk">◆</div><div class="lab">Sport</div></div>
+      <div class="day longrun"><div class="d">Sat</div><div class="mk">▲</div><div class="lab">Long&nbsp;Run</div></div>
+      <div class="day"><div class="d">Sun</div><div class="mk">·</div><div class="lab">Rest</div></div>
+    </div>
+  </div>
+
+  <!-- CONNECT -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--violet)"></span><span class="name" style="color:var(--violet)">Connect · Follow a Coach</span><span class="rule"></span></div>
+    <div class="rail">
+      <div class="ccard"><div class="cav">CM</div><div class="nm">Coach Mara</div><div class="sp">Strength · 12.4k</div><button class="fl">+ Follow</button></div>
+      <div class="ccard"><div class="cav">DC</div><div class="nm">Devin Cross</div><div class="sp">Hyrox · 8.1k</div><button class="fl">+ Follow</button></div>
+      <div class="ccard"><div class="cav">YT</div><div class="nm">Yuki Tanaka</div><div class="sp">Endurance · 5.6k</div><button class="fl">+ Follow</button></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--violet)"></span><span class="name" style="color:var(--violet)">From Your Circle</span><span class="rule"></span></div>
+    <div class="panel" style="padding:4px 16px">
+      <div class="feed">
+        <div class="frow">
+          <div class="fav a">AX</div>
+          <div class="ftx">
+            <div class="a"><b>Alex</b> PR’d Deadlift 220kg</div>
+            <div class="m"><span class="echip">💚 24</span><span class="echip">💬 6</span><span class="echip">🔁 share</span></div>
+          </div>
+          <div class="tm">2h</div>
+        </div>
+        <div class="frow">
+          <div class="fav s">SM</div>
+          <div class="ftx">
+            <div class="a"><b>Sam</b> finished a 10K · 47:32</div>
+            <div class="m"><span class="echip">💚 18</span><span class="echip">💬 3</span><span class="echip">🔁 share</span></div>
+          </div>
+          <div class="tm">5h</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Pulse · HYBRID design exploration</div>
+</div>
+
+<button class="fab">▶ Start Session</button>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYBRID · Today</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#0c0d0c;
+  --ink2:#141614;
+  --card:#161816;
+  --line:#2a2d2a;
+  --lime:#c4f035;
+  --lime-t:#c4f035;
+  --chalk:#f3f4ef;
+  --ash:#8b8f86;
+  --blue:#7fd4e8;
+  --violet:#c9a9f0;
+  --amber:#f0b45e;
+  --red:#e0625e;
+  --shadow:0 6px 22px -12px rgba(0,0,0,.55);
+
+  /* baseline rhythm */
+  --u:8px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:24px 0 64px;min-height:100vh}
+
+.phone{
+  width:100%;
+  max-width:430px;
+  padding:0 22px;
+}
+
+/* ---- mono helpers ---- */
+.mono{font-family:'JetBrains Mono',monospace}
+.kick{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ash);
+}
+
+/* ====== HEADER ====== */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 14px;
+}
+.avatar{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.04em;
+  color:var(--lime);
+  background:color-mix(in srgb, var(--lime) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--lime) 40%, transparent);
+  position:relative;
+}
+.avatar .online{
+  position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;
+  background:var(--lime);border:2px solid var(--ink);
+}
+.wordmark{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.wordmark .word{font-weight:800;font-size:15px;letter-spacing:.14em}
+.wordmark .word b{color:var(--lime);font-weight:800}
+.wordmark .bar{width:18px;height:2px;background:var(--lime);border-radius:2px}
+.bell{
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);background:var(--ink2);
+  display:flex;align-items:center;justify-content:center;position:relative;color:var(--ash);
+}
+.bell svg{width:17px;height:17px}
+.bell .badge{
+  position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;
+  background:var(--red);color:#1a0c0b;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--ink);
+}
+
+/* ====== GREETING ====== */
+.greet{padding:26px 0 36px}
+.greet h1{font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+.greet .date{margin-top:14px;font-size:11px;letter-spacing:.12em;color:var(--ash)}
+.greet .streak{
+  display:inline-flex;align-items:center;gap:7px;margin-top:18px;
+  padding:7px 13px;border-radius:999px;
+  border:1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+  background:color-mix(in srgb, var(--amber) 8%, transparent);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--amber);
+}
+
+/* ====== SECTION HEADER ====== */
+.section{margin-top:52px}
+.section:first-of-type{margin-top:8px}
+.sec-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding-bottom:20px;
+}
+.sec-head .lhs{display:flex;align-items:center;gap:10px}
+.dot{width:6px;height:6px;border-radius:50%;flex:none}
+.sec-head .label{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase}
+.sec-head .num{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--ash)}
+
+/* ====== CARD ====== */
+.card{
+  background:var(--ink2);
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:26px;
+}
+.card + .card{margin-top:16px}
+
+/* plan card */
+.plan-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.plan-top .kicker{margin-bottom:0}
+.plan-title{margin-top:22px;font-size:23px;font-weight:600;letter-spacing:-.02em}
+.plan-sub{margin-top:11px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--violet)}
+
+/* readiness ring */
+.ring{
+  --val:78;
+  width:62px;height:62px;border-radius:50%;flex:none;
+  background:conic-gradient(var(--lime) calc(var(--val)*1%), color-mix(in srgb,var(--line) 80%, transparent) 0);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.ring::after{
+  content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2);
+}
+.ring .v{position:relative;z-index:1;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600}
+.ring.sm{width:54px;height:54px}
+.ring.sm .v{font-size:16px}
+
+.ex-list{margin-top:26px;border-top:1px solid var(--line)}
+.ex-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 0;border-bottom:1px solid var(--line);
+}
+.ex-row:last-child{border-bottom:none}
+.ex-row .name{font-size:14.5px;font-weight:500}
+.ex-row .scheme{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.03em;color:var(--ash)}
+
+.start-btn{
+  margin-top:26px;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:15px;border-radius:999px;border:none;cursor:pointer;
+  background:var(--lime);color:#101400;
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;letter-spacing:.02em;
+}
+
+/* coach card */
+.coach-card .blurb{
+  margin-top:16px;font-size:14px;font-weight:400;line-height:1.55;color:var(--chalk);
+}
+.coach-card .blurb b{color:var(--violet);font-weight:600}
+.chat-pill{
+  margin-top:22px;display:flex;align-items:center;gap:10px;
+  padding:13px 16px;border-radius:999px;
+  border:1px solid var(--line);background:var(--ink);
+}
+.chat-pill .ph{flex:1;font-size:13px;color:var(--ash)}
+.chat-pill .send{
+  width:30px;height:30px;border-radius:50%;flex:none;
+  background:color-mix(in srgb,var(--violet) 16%, transparent);
+  border:1px solid color-mix(in srgb,var(--violet) 40%, transparent);
+  display:flex;align-items:center;justify-content:center;color:var(--violet);
+}
+.chat-pill .send svg{width:14px;height:14px}
+
+/* sport log strip */
+.log-strip{
+  margin-top:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;border-radius:18px;
+  border:1px dashed var(--line);background:transparent;
+}
+.log-strip .t{font-size:13px;color:var(--ash)}
+.log-strip .arrow{color:var(--lime);font-size:13px;font-weight:600}
+
+/* on-track strip */
+.track-strip{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px;border-radius:18px;
+  border:1px solid var(--line);background:var(--ink2);
+}
+.track-strip .lhs{display:flex;align-items:center;gap:11px;font-size:13.5px;font-weight:500}
+.track-strip .pulse{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 4px color-mix(in srgb,var(--lime) 16%, transparent)}
+.track-strip .rhs{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:var(--ash)}
+
+/* widget grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.widget{
+  background:var(--ink2);border:1px solid var(--line);border-radius:22px;
+  box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;
+  min-height:172px;
+}
+.widget .wk{margin-bottom:0}
+.widget .q{margin-top:18px;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.widget .spacer{flex:1}
+
+.feel-row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:20px}
+.feel-faces{display:flex;gap:6px}
+.feel-faces span{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.feel-faces span.on{background:var(--blue)}
+
+.kcal{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600}
+.kcal .of{color:var(--ash);font-size:12px}
+.prog{height:5px;border-radius:3px;background:var(--ink);overflow:hidden;margin-top:14px;border:1px solid var(--line)}
+.prog i{display:block;height:100%;width:77%;background:var(--amber);border-radius:3px}
+.macros{margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--ash)}
+
+/* week chips */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.day{
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  padding:14px 0;border-radius:14px;border:1px solid var(--line);background:var(--ink);
+}
+.day.today{border-color:color-mix(in srgb,var(--lime) 45%, transparent);background:color-mix(in srgb,var(--lime) 7%, transparent)}
+.day .dname{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--ash)}
+.day .ddot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.day .dlabel{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.04em;color:var(--ash)}
+.day .ring-mini{
+  width:18px;height:18px;border-radius:50%;
+  background:conic-gradient(var(--lime) 78%, var(--line) 0);position:relative;
+}
+.day .ring-mini::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--ink)}
+
+/* coach rail */
+.rail{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.coach-mini{
+  flex:none;width:148px;
+  background:var(--ink2);border:1px solid var(--line);border-radius:20px;
+  padding:22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.coach-mini .ca{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;
+  background:color-mix(in srgb,var(--violet) 12%, transparent);
+  border:1px solid color-mix(in srgb,var(--violet) 35%, transparent);color:var(--violet);
+}
+.coach-mini .cn{margin-top:16px;font-size:14px;font-weight:600}
+.coach-mini .cs{margin-top:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:var(--ash)}
+.coach-mini .follow{
+  margin-top:18px;padding:8px 20px;border-radius:999px;cursor:pointer;
+  border:1px solid color-mix(in srgb,var(--violet) 40%, transparent);
+  background:color-mix(in srgb,var(--violet) 10%, transparent);color:var(--violet);
+  font-family:'Archivo',sans-serif;font-weight:600;font-size:11.5px;
+}
+
+/* circle feed */
+.feed{margin-top:16px;background:var(--ink2);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:8px 26px}
+.feed-row{
+  display:flex;align-items:center;gap:14px;padding:18px 0;border-bottom:1px solid var(--line);
+}
+.feed-row:last-child{border-bottom:none}
+.feed-row .fa{
+  width:36px;height:36px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ash);
+  background:var(--ink);border:1px solid var(--line);
+}
+.feed-row .ft{flex:1;font-size:13px;font-weight:500}
+.feed-row .ft b{font-weight:600}
+.feed-row .ftime{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--ash)}
+
+/* footer */
+.foot{
+  margin-top:56px;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ash);
+}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- HEADER -->
+  <div class="topbar">
+    <div class="avatar">RA<span class="online"></span></div>
+    <div class="wordmark">
+      <div class="word">HYBRID<b>.</b></div>
+      <div class="bar"></div>
+    </div>
+    <div class="bell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      <span class="badge">3</span>
+    </div>
+  </div>
+
+  <!-- GREETING -->
+  <div class="greet">
+    <h1>Good morning,<br>Rafal</h1>
+    <div class="date mono">SATURDAY, JUNE 27</div>
+    <div class="streak">🔥 12 DAY STREAK</div>
+  </div>
+
+  <!-- TRAIN -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="lhs">
+        <span class="dot" style="background:var(--lime)"></span>
+        <span class="label" style="color:var(--lime)">Train</span>
+      </div>
+      <span class="num">01 — 02</span>
+    </div>
+
+    <div class="card">
+      <div class="plan-top">
+        <div>
+          <div class="kick">Your Plan Today</div>
+          <div class="plan-title">Soviet 8-Week OWL</div>
+          <div class="plan-sub">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+        </div>
+        <div class="ring"><span class="v">78</span></div>
+      </div>
+
+      <div class="ex-list">
+        <div class="ex-row"><span class="name">Back Squat</span><span class="scheme">5 × 5 · RPE 8</span></div>
+        <div class="ex-row"><span class="name">Bench Press</span><span class="scheme">5 × 5 · RPE 8</span></div>
+        <div class="ex-row"><span class="name">Barbell Row</span><span class="scheme">4 × 8 · RPE 7</span></div>
+        <div class="ex-row"><span class="name">Weighted Pull-up</span><span class="scheme">3 × 6</span></div>
+      </div>
+
+      <button class="start-btn">Start session
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="card coach-card">
+      <div class="plan-top">
+        <div>
+          <div class="kick" style="color:var(--violet)">AI Coach</div>
+          <div class="plan-title" style="font-size:20px;margin-top:14px">Ask your coach</div>
+        </div>
+        <span class="dot" style="width:8px;height:8px;background:var(--violet);margin-top:6px"></span>
+      </div>
+      <p class="blurb">Your readiness is <b>78</b>. Squats look primed — push the top set.</p>
+      <div class="chat-pill">
+        <span class="ph">Ask anything about today…</span>
+        <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+    </div>
+
+    <div class="log-strip">
+      <span class="t">Back from a run or match? <span style="color:var(--chalk)">Log it</span></span>
+      <span class="arrow">→</span>
+    </div>
+  </div>
+
+  <!-- RECOVER · FEEL -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="lhs">
+        <span class="dot" style="background:var(--blue)"></span>
+        <span class="label" style="color:var(--blue)">Recover · Feel</span>
+      </div>
+      <span class="num">02 — 02</span>
+    </div>
+
+    <div class="track-strip">
+      <div class="lhs"><span class="pulse"></span> You're on track this week</div>
+      <div class="rhs">3/3 · HABIT STRONG</div>
+    </div>
+
+    <div class="grid2">
+      <div class="widget">
+        <div class="kick" style="color:var(--blue)">Check-in</div>
+        <div class="q">How do you feel?</div>
+        <div class="spacer"></div>
+        <div class="feel-row">
+          <div class="ring sm" style="--val:78"><span class="v">78</span></div>
+          <div class="feel-faces"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <div class="widget">
+        <div class="kick" style="color:var(--amber)">Nutrition</div>
+        <div class="q">Fuel</div>
+        <div class="kcal">1,840 <span class="of">/ 2,400 kcal</span></div>
+        <div class="prog"><i></i></div>
+        <div class="spacer"></div>
+        <div class="macros">P 142 · C 180 · F 60</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAN -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="lhs">
+        <span class="dot" style="background:var(--amber)"></span>
+        <span class="label" style="color:var(--amber)">Plan</span>
+      </div>
+      <span class="num">This Week</span>
+    </div>
+
+    <div class="card" style="padding:24px 20px">
+      <div class="week">
+        <div class="day"><span class="dname">MON</span><span class="ddot" style="background:var(--lime)"></span><span class="dlabel">Squat</span></div>
+        <div class="day"><span class="dname">TUE</span><span class="ddot" style="background:var(--blue)"></span><span class="dlabel">Run</span></div>
+        <div class="day"><span class="dname">WED</span><span class="ddot"></span><span class="dlabel">Rest</span></div>
+        <div class="day today"><span class="dname" style="color:var(--lime)">THU</span><span class="ring-mini"></span><span class="dlabel" style="color:var(--lime)">Bench</span></div>
+        <div class="day"><span class="dname">FRI</span><span class="ddot" style="background:var(--amber)"></span><span class="dlabel">Sport</span></div>
+        <div class="day"><span class="dname">SAT</span><span class="ddot" style="background:var(--blue)"></span><span class="dlabel">Long</span></div>
+        <div class="day"><span class="dname">SUN</span><span class="ddot"></span><span class="dlabel">Rest</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECT -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="lhs">
+        <span class="dot" style="background:var(--violet)"></span>
+        <span class="label" style="color:var(--violet)">Connect</span>
+      </div>
+      <span class="num">Follow a Coach</span>
+    </div>
+
+    <div class="rail">
+      <div class="coach-mini">
+        <div class="ca">CM</div>
+        <div class="cn">Coach Mara</div>
+        <div class="cs">STRENGTH · 12.4K</div>
+        <button class="follow">Follow</button>
+      </div>
+      <div class="coach-mini">
+        <div class="ca">DC</div>
+        <div class="cn">Devin Cross</div>
+        <div class="cs">HYROX · 8.1K</div>
+        <button class="follow">Follow</button>
+      </div>
+      <div class="coach-mini">
+        <div class="ca">YT</div>
+        <div class="cn">Yuki Tanaka</div>
+        <div class="cs">ENDURANCE · 5.6K</div>
+        <button class="follow">Follow</button>
+      </div>
+    </div>
+
+    <div class="sec-head" style="margin-top:36px;padding-bottom:14px">
+      <div class="lhs">
+        <span class="kick" style="color:var(--ash)">From Your Circle</span>
+      </div>
+    </div>
+    <div class="feed">
+      <div class="feed-row">
+        <div class="fa">AL</div>
+        <div class="ft"><b>Alex</b> PR'd Deadlift 220kg</div>
+        <div class="ftime">2h</div>
+      </div>
+      <div class="feed-row">
+        <div class="fa">SM</div>
+        <div class="ft"><b>Sam</b> finished a 10K · 47:32</div>
+        <div class="ftime">5h</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">MA / GINZA · HYBRID DESIGN EXPLORATION</div>
+
+</div>
+</body>
+</html>

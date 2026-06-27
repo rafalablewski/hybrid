@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYBRID · Command Center</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#0c0d0c;
+  --ink2:#141614;
+  --card:#161816;
+  --line:#2a2d2a;
+  --lime:#c4f035;
+  --chalk:#f3f4ef;
+  --ash:#8b8f86;
+  --blue:#7fd4e8;
+  --violet:#c9a9f0;
+  --amber:#f0b45e;
+  --red:#e0625e;
+  --shadow:0 6px 22px -12px rgba(0,0,0,.55);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:24px 0 64px;min-height:100vh}
+.phone{width:100%;max-width:430px;padding:0 22px}
+
+.mono{font-family:'JetBrains Mono',monospace}
+.kick{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+
+/* ===== HEADER ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px}
+.wordmark{display:flex;flex-direction:column;align-items:center;gap:5px}
+.wordmark .word{font-weight:800;font-size:15px;letter-spacing:.14em}
+.wordmark .word b{color:var(--lime)}
+.wordmark .bar{width:18px;height:2px;background:var(--lime);border-radius:2px}
+.avatar{
+  width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--lime);
+  background:color-mix(in srgb,var(--lime) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--lime) 40%,transparent);position:relative;
+}
+.avatar .online{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;color:var(--ash)}
+.iconbtn svg{width:17px;height:17px}
+
+/* ===== TITLE ===== */
+.head{padding:30px 0 40px}
+.head h1{font-size:30px;font-weight:600;letter-spacing:-.03em}
+.head .sub{margin-top:14px;font-size:14px;color:var(--ash);font-weight:400}
+
+/* ===== CARD BASE ===== */
+.card{
+  background:var(--ink2);border:1px solid var(--line);border-radius:24px;
+  box-shadow:var(--shadow);padding:26px;margin-bottom:16px;
+}
+.chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.chead .lhs{display:flex;align-items:center;gap:10px}
+.dot{width:6px;height:6px;border-radius:50%;flex:none}
+.chead .kicker{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase}
+.chead .open{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-decoration:none}
+
+.c-title{font-size:18px;font-weight:600;letter-spacing:-.01em}
+.c-why{margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.02em;color:var(--ash);line-height:1.55}
+
+/* readiness ring */
+.ring{
+  --val:78;width:58px;height:58px;border-radius:50%;flex:none;
+  background:conic-gradient(var(--lime) calc(var(--val)*1%),color-mix(in srgb,var(--line) 80%,transparent) 0);
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2)}
+.ring .v{position:relative;z-index:1;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600}
+
+/* today readiness header style */
+.today-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
+.today-head .kk{display:flex;align-items:center;gap:10px}
+.score{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--lime)}
+
+/* ===== TWIN CARD ===== */
+.twin-top{display:flex;align-items:flex-start;justify-content:space-between}
+.hpi-big{font-size:54px;font-weight:700;letter-spacing:-.04em;line-height:.9}
+.hpi-meta{margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--ash)}
+.spark{display:flex;align-items:flex-end;gap:4px;height:46px}
+.spark i{width:6px;border-radius:2px;background:color-mix(in srgb,var(--blue) 35%,transparent)}
+.spark i.hot{background:var(--blue)}
+
+.comp{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:26px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}
+.comp .cell{background:var(--ink2);padding:18px 16px;display:flex;flex-direction:column;gap:7px}
+.comp .clbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--ash)}
+.comp .cval{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600}
+
+.driver{margin-top:20px;font-size:13px;line-height:1.55;color:var(--chalk);font-weight:400}
+
+.twin-divider{
+  margin-top:24px;padding-top:24px;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:18px;
+}
+.twin-divider .meta{flex:1}
+.twin-divider .tr-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--lime)}
+.twin-divider .tr-why{margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash);line-height:1.5}
+
+/* ===== INJURY ===== */
+.injury-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.band{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--red) 30%,transparent);
+  background:color-mix(in srgb,var(--red) 9%,transparent);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;color:var(--red);
+}
+.injury-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ash)}
+.prog{height:6px;border-radius:3px;background:var(--ink);border:1px solid var(--line);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:3px}
+
+/* ===== WEEK ===== */
+.pill{
+  display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;
+  border:1px solid color-mix(in srgb,var(--lime) 40%,transparent);
+  background:color-mix(in srgb,var(--lime) 10%,transparent);color:var(--lime);
+}
+.week-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-top:4px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}
+.week-stats .st{background:var(--ink2);padding:16px;display:flex;flex-direction:column;gap:6px}
+.week-stats .st.full{grid-column:1 / -1}
+.week-stats .slbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--ash)}
+.week-stats .sval{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600}
+.pr-line{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.7;color:var(--ash)}
+.pr-line b{color:var(--lime);font-weight:600}
+
+/* ===== 3-stat strip (endurance) ===== */
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:4px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}
+.stat3 .st{background:var(--ink2);padding:18px 16px;display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.stat3 .slbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--ash)}
+.stat3 .sval{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600}
+
+.simple-line{font-size:13.5px;color:var(--ash);font-weight:400;line-height:1.55;margin-top:2px}
+
+.foot{margin-top:48px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:var(--ash)}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- HEADER -->
+  <div class="topbar">
+    <div class="avatar">RA<span class="online"></span></div>
+    <div class="wordmark"><div class="word">HYBRID<b>.</b></div><div class="bar"></div></div>
+    <div class="iconbtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="head">
+    <h1>Command Center</h1>
+    <div class="sub">Your training, read at a glance.</div>
+  </div>
+
+  <!-- 1. GOAL & SEASON -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--violet)"></span><span class="kicker" style="color:var(--violet)">Goal &amp; Season</span></div>
+      <a class="open" href="#" style="color:var(--violet)">Open →</a>
+    </div>
+    <div class="c-title">Powerlifting Total</div>
+    <div class="c-why">Accumulation · Week 4/8 · Event in 6 wk</div>
+  </div>
+
+  <!-- 2. TODAY READINESS -->
+  <div class="card">
+    <div class="today-head">
+      <div>
+        <div class="kk"><span class="dot" style="background:var(--lime)"></span><span class="kicker" style="color:var(--lime)">Today · Readiness</span></div>
+        <div class="c-title" style="margin-top:16px">Back Squat + Bench Press</div>
+        <div class="c-why">Primed. Top-set ready; keep accessories crisp.</div>
+      </div>
+      <div class="ring" style="--val:78"><span class="v">78</span></div>
+    </div>
+  </div>
+
+  <!-- 3. PERFORMANCE TWIN -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--blue)"></span><span class="kicker" style="color:var(--blue)">Performance Twin</span></div>
+      <a class="open" href="#" style="color:var(--blue)">Open →</a>
+    </div>
+
+    <div class="twin-top">
+      <div>
+        <div class="hpi-big">72</div>
+        <div class="hpi-meta">HPI · STRONG · LIMITER RECOVERY</div>
+      </div>
+      <div class="spark">
+        <i style="height:40%"></i><i style="height:52%"></i><i style="height:46%"></i>
+        <i style="height:62%"></i><i style="height:58%"></i><i style="height:70%"></i>
+        <i style="height:66%"></i><i class="hot" style="height:88%"></i>
+      </div>
+    </div>
+
+    <div class="comp">
+      <div class="cell"><span class="clbl">STR</span><span class="cval" style="color:var(--lime)">80</span></div>
+      <div class="cell"><span class="clbl">END</span><span class="cval" style="color:var(--blue)">64</span></div>
+      <div class="cell"><span class="clbl">REC</span><span class="cval" style="color:var(--violet)">+5</span></div>
+    </div>
+
+    <p class="driver">Strength trending up; recovery is the current ceiling.</p>
+
+    <div class="twin-divider">
+      <div class="ring" style="--val:78"><span class="v">78</span></div>
+      <div class="meta">
+        <div class="tr-lbl">TODAY READINESS</div>
+        <div class="tr-why">Primed. Top-set ready; keep accessories crisp.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. INJURY RISK -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--red)"></span><span class="kicker" style="color:var(--red)">Injury Risk</span></div>
+      <a class="open" href="#" style="color:var(--red)">Open →</a>
+    </div>
+    <div class="injury-row">
+      <span class="band"><span class="dot" style="background:var(--red)"></span>Low</span>
+      <span class="injury-val">22/100</span>
+    </div>
+    <div class="prog"><i style="width:22%;background:var(--red)"></i></div>
+    <div class="c-why" style="margin-top:14px">No tissues flagged — keep it here.</div>
+  </div>
+
+  <!-- 5. YOUR WEEK -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--lime)"></span><span class="kicker" style="color:var(--lime)">Your Week</span></div>
+      <span class="pill">3 PR</span>
+    </div>
+    <div class="week-stats">
+      <div class="st"><span class="slbl">SESSIONS</span><span class="sval">5</span></div>
+      <div class="st"><span class="slbl">VOLUME</span><span class="sval">18,400 <span style="font-size:11px;color:var(--ash)">kg</span></span></div>
+      <div class="st"><span class="slbl">SETS</span><span class="sval">64</span></div>
+      <div class="st"><span class="slbl">DISTANCE</span><span class="sval">12 <span style="font-size:11px;color:var(--ash)">km</span></span></div>
+      <div class="st full"><span class="slbl">ACTIVE DAYS</span><span class="sval">5</span></div>
+    </div>
+    <div class="pr-line">
+      <b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)
+    </div>
+  </div>
+
+  <!-- 6. SPORT S&C -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--amber)"></span><span class="kicker" style="color:var(--amber)">Sport S&amp;C</span></div>
+      <a class="open" href="#" style="color:var(--amber)">Open →</a>
+    </div>
+    <div class="c-title">Hyrox · Intermediate</div>
+  </div>
+
+  <!-- 7. VELOCITY & TECHNIQUE -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--blue)"></span><span class="kicker" style="color:var(--blue)">Velocity &amp; Technique</span></div>
+      <a class="open" href="#" style="color:var(--blue)">Open →</a>
+    </div>
+    <div class="simple-line">Bar-speed trends and lift quality, session over session.</div>
+  </div>
+
+  <!-- 8. ENDURANCE -->
+  <div class="card">
+    <div class="chead">
+      <div class="lhs"><span class="dot" style="background:var(--lime)"></span><span class="kicker" style="color:var(--lime)">Endurance</span></div>
+      <a class="open" href="#" style="color:var(--lime)">Open →</a>
+    </div>
+    <div class="stat3">
+      <div class="st"><span class="slbl">EFFORTS</span><span class="sval">8</span></div>
+      <div class="st"><span class="slbl">KM</span><span class="sval">42</span></div>
+      <div class="st"><span class="slbl">MIN</span><span class="sval">310</span></div>
+    </div>
+  </div>
+
+  <div class="foot">MA / GINZA · HYBRID DESIGN EXPLORATION</div>
+
+</div>
+</body>
+</html>

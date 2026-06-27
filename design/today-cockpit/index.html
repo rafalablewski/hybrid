@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID · Today &amp; Cockpit — Redesign Gallery</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--chalk);font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;padding:40px 24px 80px;max-width:980px;margin:0 auto}
+h1{font-size:34px;font-weight:900;letter-spacing:-.03em}
+h1 span{color:var(--lime)}
+.sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ash);margin-top:12px;line-height:1.7;letter-spacing:.02em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:32px}
+.dir{border:1px solid var(--line);border-radius:20px;background:var(--ink2);padding:20px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+.dir .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+.dir h2{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-top:8px;display:flex;align-items:center;gap:9px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dir p{font-size:13px;color:var(--ash);line-height:1.5;margin-top:10px}
+.links{display:flex;gap:10px;margin-top:16px}
+.links a{flex:1;text-align:center;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;
+  padding:10px;border-radius:999px;border:1px solid var(--line);color:var(--chalk);background:var(--ink)}
+.links a:hover{border-color:var(--lime);color:var(--lime)}
+.foot{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase;margin-top:40px}
+</style>
+</head>
+<body>
+  <h1>HYBRID<span>.</span> Today &amp; Cockpit</h1>
+  <div class="sub">Five design directions × two screens = ten standalone mockups.<br>
+  Each direction renders both screens as a coherent pair. Open the files directly — no build step.</div>
+
+  <div class="grid">
+    <div class="dir">
+      <div class="k">01 · Japanese harmony</div>
+      <h2><span class="dot" style="background:var(--lime)"></span>Ma / Ginza</h2>
+      <p>Negative space, vertical rhythm, restraint. Calm and luxurious; the accent used sparingly.</p>
+      <div class="links"><a href="01-ma-today.html">Today</a><a href="01-ma-cockpit.html">Cockpit</a></div>
+    </div>
+    <div class="dir">
+      <div class="k">02 · Swiss craftsmanship</div>
+      <h2><span class="dot" style="background:var(--blue)"></span>Grid / Helvetica</h2>
+      <p>Strict grid, rigorous typographic hierarchy, tabular metrics. Structure is the design.</p>
+      <div class="links"><a href="02-swiss-today.html">Today</a><a href="02-swiss-cockpit.html">Cockpit</a></div>
+    </div>
+    <div class="dir">
+      <div class="k">03 · Singaporean professionalism</div>
+      <h2><span class="dot" style="background:var(--violet)"></span>Marina</h2>
+      <p>Premium fintech dashboard: refined glassy cards, tidy metric tiles, engineered &amp; trustworthy.</p>
+      <div class="links"><a href="03-marina-today.html">Today</a><a href="03-marina-cockpit.html">Cockpit</a></div>
+    </div>
+    <div class="dir">
+      <div class="k">04 · Facebook / Instagram</div>
+      <h2><span class="dot" style="background:var(--amber)"></span>Feed</h2>
+      <p>Friendly social card-stream: app-bar, stories rail, card headers, action rows, bottom nav.</p>
+      <div class="links"><a href="04-feed-today.html">Today</a><a href="04-feed-cockpit.html">Cockpit</a></div>
+    </div>
+    <div class="dir">
+      <div class="k">05 · Snapchat / Twitter-X</div>
+      <h2><span class="dot" style="background:var(--red)"></span>Pulse</h2>
+      <p>Bold &amp; immersive: full-bleed gradient hero, big numbers, tight timeline, floating action.</p>
+      <div class="links"><a href="05-pulse-today.html">Today</a><a href="05-pulse-cockpit.html">Cockpit</a></div>
+    </div>
+  </div>
+
+  <div class="foot">HYBRID design exploration · brand palette &amp; Archivo / JetBrains Mono throughout</div>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID — Today (Feed)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+  --lime:#c4f035; --lime-t:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+  --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+  --shadow:0 6px 22px -12px rgba(0,0,0,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:0;min-height:100vh}
+.phone{width:100%;max-width:430px;background:var(--ink);min-height:100vh;position:relative;padding-bottom:84px;border-left:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+
+/* ---------- mono helpers ---------- */
+.mono{font-family:'JetBrains Mono',monospace}
+.kick{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.14em;font-size:10px;font-weight:600;color:var(--ash)}
+
+/* ---------- top app bar ---------- */
+.appbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;background:color-mix(in srgb,var(--ink) 86%,transparent);backdrop-filter:blur(18px);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;position:relative;flex-shrink:0}
+.avatar.me{background:color-mix(in srgb,var(--lime) 16%,transparent);color:var(--lime);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent)}
+.avatar .dot{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wordmark{font-weight:900;font-size:20px;letter-spacing:-.03em;text-align:center;position:relative}
+.wordmark span{color:var(--lime)}
+.wordmark .ubar{position:absolute;left:50%;transform:translateX(-50%);bottom:-5px;width:26px;height:2px;background:var(--lime);border-radius:2px}
+.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.bell svg{width:18px;height:18px;stroke:var(--chalk);fill:none;stroke-width:1.8}
+.bell .badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 3px}
+
+/* ---------- greeting ---------- */
+.greet{padding:18px 18px 6px}
+.greet h1{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.greet .row{display:flex;align-items:center;gap:10px;margin-top:7px;flex-wrap:wrap}
+.greet .date{font-size:12px;color:var(--ash)}
+.streak{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  color:var(--amber);background:color-mix(in srgb,var(--amber) 13%,transparent);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
+  padding:4px 9px;border-radius:999px}
+
+/* ---------- stories rail ---------- */
+.stories{display:flex;gap:14px;overflow-x:auto;padding:16px 18px 10px;scrollbar-width:none}
+.stories::-webkit-scrollbar{display:none}
+.story{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;width:62px}
+.story .ring{width:60px;height:60px;border-radius:50%;padding:2.5px;display:flex;align-items:center;justify-content:center}
+.story .ring.plan{background:conic-gradient(from 220deg,var(--lime),#7ed957,var(--blue),var(--lime))}
+.story .ring.c1{background:conic-gradient(from 90deg,var(--violet),var(--lime),var(--violet))}
+.story .ring.c2{background:conic-gradient(from 140deg,var(--blue),var(--violet),var(--blue))}
+.story .ring.c3{background:conic-gradient(from 30deg,var(--amber),var(--red),var(--amber))}
+.story .ring.f1{background:conic-gradient(from 200deg,var(--blue),var(--lime),var(--blue))}
+.story .ring.muted{background:var(--line)}
+.story .inner{width:100%;height:100%;border-radius:50%;background:var(--ink2);display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;border:2.5px solid var(--ink)}
+.story .inner.plan{color:var(--lime);font-size:20px}
+.story .lbl{font-size:10px;color:var(--ash);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62px}
+.story .lbl.on{color:var(--chalk);font-weight:600}
+
+/* ---------- feed cards ---------- */
+.feed{display:flex;flex-direction:column;gap:18px;padding:4px 16px 8px}
+.post{background:var(--ink2);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+
+.phead{display:flex;align-items:center;gap:11px;padding:14px 16px}
+.phead .pa{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
+.phead .pa.lime{background:color-mix(in srgb,var(--lime) 15%,transparent);color:var(--lime);border:1.5px solid color-mix(in srgb,var(--lime) 40%,transparent)}
+.phead .pa.violet{background:color-mix(in srgb,var(--violet) 15%,transparent);color:var(--violet);border:1.5px solid color-mix(in srgb,var(--violet) 40%,transparent)}
+.phead .pa.blue{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue);border:1.5px solid color-mix(in srgb,var(--blue) 40%,transparent)}
+.phead .pa.amber{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber);border:1.5px solid color-mix(in srgb,var(--amber) 40%,transparent)}
+.phead .meta{flex:1;min-width:0}
+.phead .ttl{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:600}
+.phead .ttl .cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.phead .sub{font-size:11px;color:var(--ash);margin-top:3px}
+.more{color:var(--ash);font-size:20px;line-height:1;letter-spacing:1px;padding:0 4px;flex-shrink:0}
+
+.pbody{padding:2px 16px 14px}
+.pdivider{height:1px;background:var(--line);margin:0 16px}
+
+/* readiness ring */
+.ring-wrap{display:flex;align-items:center;gap:14px}
+.rring{width:64px;height:64px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;
+  background:conic-gradient(var(--lime) calc(78%*360deg/100),color-mix(in srgb,var(--line) 80%,transparent) 0)}
+.rring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2)}
+.rring .num{position:relative;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:20px;color:var(--lime)}
+.rring.sm{width:54px;height:54px}
+.rring.sm .num{font-size:17px}
+.rmeta .big{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.rmeta .small{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--violet);margin-top:4px}
+
+/* exercise rows */
+.exlist{margin-top:14px;border-top:1px solid var(--line)}
+.exrow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.exrow:last-child{border-bottom:none;padding-bottom:2px}
+.exrow .nm{font-size:14px;font-weight:600}
+.exrow .sc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ash)}
+
+/* action row */
+.actions{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.act{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--chalk);background:transparent;border:none;cursor:pointer}
+.act svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.act.spacer{margin-left:auto}
+.act.muted{color:var(--ash)}
+.btn-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-weight:700;font-size:13px;padding:9px 18px;border:none;cursor:pointer}
+.btn-lime{background:var(--lime);color:#10130a}
+.btn-lime svg{width:15px;height:15px;fill:#10130a;stroke:none}
+
+/* coach card start cta in header */
+.start-pill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:var(--lime);color:#10130a;font-weight:700;font-size:12px;padding:7px 14px;border-radius:999px;flex-shrink:0}
+.start-pill svg{width:13px;height:13px;fill:#10130a}
+
+/* AI chat input */
+.chat-input{display:flex;align-items:center;gap:10px;margin-top:12px;background:var(--ink);border:1px solid var(--line);border-radius:999px;padding:10px 8px 10px 16px}
+.chat-input .ph{flex:1;font-size:13px;color:var(--ash)}
+.chat-input .send{width:32px;height:32px;border-radius:50%;background:var(--violet);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-input .send svg{width:15px;height:15px;fill:#1a1320}
+.blurb{font-size:13.5px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 88%,transparent)}
+
+/* quick log strip */
+.qlog{display:flex;align-items:center;gap:12px;background:var(--ink2);border:1px dashed color-mix(in srgb,var(--line) 130%,transparent);
+  border-radius:16px;padding:14px 16px;margin:0 16px}
+.qlog .ic{width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--blue) 14%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.qlog .tx{flex:1;font-size:13.5px;font-weight:600}
+.qlog .ar{color:var(--blue);font-weight:700;font-size:16px}
+
+/* section divider header */
+.sechead{display:flex;align-items:center;gap:9px;padding:22px 18px 4px}
+.sechead .sd{width:8px;height:8px;border-radius:50%}
+.sechead .lbl{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:600;color:var(--ash)}
+.sechead .line{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+/* on track strip */
+.ontrack{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,#7ed957 9%,var(--ink2));border:1px solid color-mix(in srgb,#7ed957 25%,transparent);
+  border-radius:14px;padding:12px 14px;margin:0 16px}
+.ontrack .gd{width:9px;height:9px;border-radius:50%;background:#7ed957;box-shadow:0 0 8px color-mix(in srgb,#7ed957 70%,transparent)}
+.ontrack .t{flex:1;font-size:13.5px;font-weight:600}
+.ontrack .r{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7ed957}
+
+/* twin widgets */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 16px;margin-top:14px}
+.widget{background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--shadow)}
+.widget .wk{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.widget .wk .cdot{width:7px;height:7px;border-radius:50%}
+.widget .wk .lbl{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:600;color:var(--ash)}
+.widget .q{font-size:14px;font-weight:700;margin-bottom:10px}
+.faces{display:flex;gap:6px;margin-top:10px}
+.faces .f{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px}
+.faces .f.on{background:color-mix(in srgb,var(--blue) 18%,transparent);border-color:var(--blue)}
+.kcal{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700}
+.kcal small{color:var(--ash);font-weight:400}
+.pbar{height:7px;border-radius:99px;background:var(--ink);border:1px solid var(--line);overflow:hidden;margin:10px 0 9px}
+.pbar i{display:block;height:100%;border-radius:99px}
+.pbar i.amber{width:77%;background:var(--amber)}
+.macros{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash);letter-spacing:.04em}
+
+/* week chips */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;padding:0 16px;margin-top:14px}
+.day{background:var(--ink2);border:1px solid var(--line);border-radius:13px;padding:10px 4px 9px;text-align:center}
+.day .dl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--ash);text-transform:uppercase}
+.day .dd{width:22px;height:22px;border-radius:50%;margin:8px auto 6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.day .dt{font-size:8.5px;color:var(--ash);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd.done-lime{background:color-mix(in srgb,var(--lime) 18%,transparent);color:var(--lime);border:1px solid var(--lime)}
+.dd.done-blue{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue);border:1px solid var(--blue)}
+.dd.rest{background:var(--ink);color:var(--ash);border:1px solid var(--line)}
+.dd.amber{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);border:1px solid var(--amber)}
+.dd.today{background:transparent;border:none;position:relative}
+.dd.today::before{content:"";position:absolute;inset:-1px;border-radius:50%;background:conic-gradient(var(--lime) 60%,var(--line) 0)}
+.dd.today::after{content:"";position:absolute;inset:2px;border-radius:50%;background:var(--ink2)}
+.dd.today span{position:relative;color:var(--lime);font-weight:700;font-size:10px}
+.day.is-today{border-color:color-mix(in srgb,var(--lime) 40%,transparent)}
+
+/* coach rail */
+.crail{display:flex;gap:12px;overflow-x:auto;padding:14px 16px 4px;scrollbar-width:none}
+.crail::-webkit-scrollbar{display:none}
+.ccard{flex-shrink:0;width:150px;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:16px 14px;text-align:center;box-shadow:var(--shadow)}
+.ccard .ca{width:52px;height:52px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;background:color-mix(in srgb,var(--violet) 14%,transparent);
+  color:var(--violet);border:1.5px solid color-mix(in srgb,var(--violet) 40%,transparent)}
+.ccard .cn{font-size:13.5px;font-weight:700}
+.ccard .cs{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ash);margin-top:4px;letter-spacing:.04em}
+.ccard .follow{margin-top:11px;width:100%;border:1px solid var(--violet);color:var(--violet);background:transparent;border-radius:999px;padding:7px 0;font-weight:700;font-size:12px;cursor:pointer}
+
+/* circle feed */
+.circle{margin:14px 16px 0;background:var(--ink2);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.circle .frow{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.circle .frow:last-child{border-bottom:none}
+.circle .fa{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px}
+.fa.b{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+.fa.l{background:color-mix(in srgb,var(--lime) 15%,transparent);color:var(--lime)}
+.circle .ft{flex:1;font-size:13.5px}
+.circle .ft b{font-weight:700}
+.circle .ft span{color:var(--ash)}
+.circle .fime{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash)}
+
+/* footer */
+.footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ash);letter-spacing:.06em;padding:26px 16px 14px}
+
+/* bottom nav */
+.botnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;display:flex;justify-content:space-around;
+  background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:10px 0 16px;z-index:50}
+.nav-i{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ash);font-size:9px;font-weight:600;font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
+.nav-i svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.nav-i.on{color:var(--lime)}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- APP BAR -->
+  <div class="appbar">
+    <div class="avatar me">RA<span class="dot"></span></div>
+    <div class="wordmark">HYBRID<span>.</span><span class="ubar"></span></div>
+    <div class="bell">
+      <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      <span class="badge">3</span>
+    </div>
+  </div>
+
+  <!-- GREETING -->
+  <div class="greet">
+    <h1>Good morning, Rafal</h1>
+    <div class="row">
+      <span class="date mono">Saturday, June 27</span>
+      <span class="streak">🔥 12 day streak</span>
+    </div>
+  </div>
+
+  <!-- STORIES -->
+  <div class="stories">
+    <div class="story"><div class="ring plan"><div class="inner plan">▶</div></div><div class="lbl on">Your plan</div></div>
+    <div class="story"><div class="ring c1"><div class="inner">CM</div></div><div class="lbl">Coach Mara</div></div>
+    <div class="story"><div class="ring c2"><div class="inner">DC</div></div><div class="lbl">Devin</div></div>
+    <div class="story"><div class="ring c3"><div class="inner">YT</div></div><div class="lbl">Yuki</div></div>
+    <div class="story"><div class="ring f1"><div class="inner">AX</div></div><div class="lbl">Alex</div></div>
+    <div class="story"><div class="ring muted"><div class="inner">SM</div></div><div class="lbl">Sam</div></div>
+  </div>
+
+  <!-- SECTION TRAIN -->
+  <div class="sechead"><span class="sd" style="background:var(--lime)"></span><span class="lbl">Train</span><span class="line"></span></div>
+
+  <div class="feed">
+
+    <!-- YOUR PLAN TODAY -->
+    <div class="post">
+      <div class="phead">
+        <div class="pa lime">RA</div>
+        <div class="meta">
+          <div class="ttl"><span class="cdot" style="background:var(--lime)"></span>Your Plan Today</div>
+          <div class="sub">Posted by your program · just now</div>
+        </div>
+        <div class="more">⋯</div>
+      </div>
+      <div class="pbody">
+        <div class="ring-wrap">
+          <div class="rring"><span class="num">78</span></div>
+          <div class="rmeta" style="flex:1">
+            <div class="big">Soviet 8-Week OWL</div>
+            <div class="small">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+          </div>
+          <div class="start-pill"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Start</div>
+        </div>
+        <div class="exlist">
+          <div class="exrow"><span class="nm">Back Squat</span><span class="sc">5 × 5 · RPE 8</span></div>
+          <div class="exrow"><span class="nm">Bench Press</span><span class="sc">5 × 5 · RPE 8</span></div>
+          <div class="exrow"><span class="nm">Barbell Row</span><span class="sc">4 × 8 · RPE 7</span></div>
+          <div class="exrow"><span class="nm">Weighted Pull-up</span><span class="sc">3 × 6</span></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-pill btn-lime"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Start</button>
+        <button class="act muted"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</button>
+        <button class="act spacer muted"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button>
+      </div>
+    </div>
+
+    <!-- AI COACH -->
+    <div class="post">
+      <div class="phead">
+        <div class="pa violet">AI</div>
+        <div class="meta">
+          <div class="ttl"><span class="cdot" style="background:var(--violet)"></span>AI Coach</div>
+          <div class="sub">Ask your coach · personalized</div>
+        </div>
+        <div class="more">⋯</div>
+      </div>
+      <div class="pbody">
+        <p class="blurb">Your readiness is <b style="color:var(--violet)">78</b>. Squats look primed — push the top set.</p>
+        <div class="chat-input">
+          <span class="ph">Ask your coach anything…</span>
+          <div class="send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUICK LOG -->
+  <div style="margin-top:6px"></div>
+  <div class="qlog">
+    <div class="ic">🏃</div>
+    <div class="tx">Back from a run or match? Log it</div>
+    <div class="ar">→</div>
+  </div>
+
+  <!-- SECTION RECOVER · FEEL -->
+  <div class="sechead"><span class="sd" style="background:var(--blue)"></span><span class="lbl">Recover · Feel</span><span class="line"></span></div>
+
+  <div style="height:14px"></div>
+  <div class="ontrack">
+    <span class="gd"></span>
+    <span class="t">You're on track this week</span>
+    <span class="r">3/3 · Habit Strong</span>
+  </div>
+
+  <div class="duo">
+    <div class="widget">
+      <div class="wk"><span class="cdot" style="background:var(--blue)"></span><span class="lbl">Check-in</span></div>
+      <div class="q">How do you feel?</div>
+      <div class="ring-wrap">
+        <div class="rring sm"><span class="num">78</span></div>
+      </div>
+      <div class="faces">
+        <span class="f">😣</span><span class="f">😐</span><span class="f on">🙂</span><span class="f">😀</span>
+      </div>
+    </div>
+    <div class="widget">
+      <div class="wk"><span class="cdot" style="background:var(--amber)"></span><span class="lbl">Nutrition</span></div>
+      <div class="q">Fuel</div>
+      <div class="kcal">1,840 <small>/ 2,400 kcal</small></div>
+      <div class="pbar"><i class="amber"></i></div>
+      <div class="macros">P 142 · C 180 · F 60</div>
+    </div>
+  </div>
+
+  <!-- SECTION PLAN -->
+  <div class="sechead"><span class="sd" style="background:var(--amber)"></span><span class="lbl">Plan · This Week</span><span class="line"></span></div>
+
+  <div class="week">
+    <div class="day"><div class="dl">Mon</div><div class="dd done-lime">✓</div><div class="dt">Squat</div></div>
+    <div class="day"><div class="dl">Tue</div><div class="dd done-blue">✓</div><div class="dt">Run</div></div>
+    <div class="day"><div class="dl">Wed</div><div class="dd rest">·</div><div class="dt">Rest</div></div>
+    <div class="day is-today"><div class="dl">Thu</div><div class="dd today"><span>•</span></div><div class="dt">Bench</div></div>
+    <div class="day"><div class="dl">Fri</div><div class="dd amber">◆</div><div class="dt">Sport</div></div>
+    <div class="day"><div class="dl">Sat</div><div class="dd done-blue">↗</div><div class="dt">Long Run</div></div>
+    <div class="day"><div class="dl">Sun</div><div class="dd rest">·</div><div class="dt">Rest</div></div>
+  </div>
+
+  <!-- SECTION CONNECT -->
+  <div class="sechead"><span class="sd" style="background:var(--violet)"></span><span class="lbl">Connect · Follow a Coach</span><span class="line"></span></div>
+
+  <div class="crail">
+    <div class="ccard"><div class="ca">CM</div><div class="cn">Coach Mara</div><div class="cs">Strength · 12.4k</div><button class="follow">Follow</button></div>
+    <div class="ccard"><div class="ca">DC</div><div class="cn">Devin Cross</div><div class="cs">Hyrox · 8.1k</div><button class="follow">Follow</button></div>
+    <div class="ccard"><div class="ca">YT</div><div class="cn">Yuki Tanaka</div><div class="cs">Endurance · 5.6k</div><button class="follow">Follow</button></div>
+  </div>
+
+  <div class="sechead"><span class="sd" style="background:var(--violet)"></span><span class="lbl">From Your Circle</span><span class="line"></span></div>
+  <div class="circle">
+    <div class="frow">
+      <div class="fa l">AX</div>
+      <div class="ft"><b>Alex</b> <span>PR'd Deadlift 220kg</span></div>
+      <div class="fime">2h</div>
+    </div>
+    <div class="frow">
+      <div class="fa b">SM</div>
+      <div class="ft"><b>Sam</b> <span>finished a 10K · 47:32</span></div>
+      <div class="fime">5h</div>
+    </div>
+  </div>
+
+  <div class="footer">FEED · HYBRID design exploration</div>
+
+  <!-- BOTTOM NAV -->
+  <div class="botnav">
+    <div class="nav-i on"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Feed</div>
+    <div class="nav-i"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Cockpit</div>
+    <div class="nav-i"><svg viewBox="0 0 24 24"><path d="M6.5 6.5h11v11h-11z"/><path d="M3 10h3M18 10h3M3 14h3M18 14h3"/></svg>Train</div>
+    <div class="nav-i"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>You</div>
+  </div>
+
+</div>
+</body>
+</html>

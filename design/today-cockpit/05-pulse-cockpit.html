@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID · Cockpit · Pulse</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#0c0d0c; --ink2:#141614; --card:#161816; --line:#2a2d2a;
+  --lime:#c4f035; --lime-t:#c4f035; --chalk:#f3f4ef; --ash:#8b8f86;
+  --blue:#7fd4e8; --violet:#c9a9f0; --amber:#f0b45e; --red:#e0625e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:24px 0 80px}
+.phone{width:430px;max-width:100%;position:relative}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 14px}
+.avatar{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--lime);
+  background:color-mix(in srgb,var(--lime) 18%,transparent);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:13px;color:var(--lime);position:relative;letter-spacing:.02em}
+.avatar .dot{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
+.wordmark{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center;line-height:1}
+.wordmark .u{display:block;width:26px;height:3px;background:var(--lime);border-radius:2px;margin:5px auto 0}
+.bell{width:38px;height:38px;border-radius:50%;background:var(--ink2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:17px;position:relative}
+.bell .badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--red);
+  color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--ink)}
+
+/* HERO — performance twin as the immersive moment */
+.hero{position:relative;margin:4px 12px 0;border-radius:30px;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb,var(--blue) 55%,transparent) 0%, transparent 55%),
+    radial-gradient(130% 110% at 0% 100%, color-mix(in srgb,var(--violet) 50%,transparent) 0%, transparent 50%),
+    linear-gradient(150deg,#10222a 0%,#0d100f 60%);
+  border:1px solid color-mix(in srgb,var(--blue) 22%,var(--line));
+  box-shadow:0 24px 60px -28px color-mix(in srgb,var(--blue) 50%,#000);padding:22px}
+.hero .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.hero h1{font-size:25px;font-weight:900;letter-spacing:-.03em;line-height:1.05}
+.hero .sub{margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;color:color-mix(in srgb,var(--chalk) 70%,transparent)}
+.live{flex:none;display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--lime) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--lime) 45%,transparent);color:var(--lime);
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:6px 11px;border-radius:999px;letter-spacing:.1em}
+.live .ld{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+
+.readblock{margin-top:20px;display:flex;align-items:flex-end;gap:18px}
+.bignum{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:84px;line-height:.82;letter-spacing:-.04em;
+  color:var(--chalk);text-shadow:0 0 30px color-mix(in srgb,var(--blue) 40%,transparent)}
+.readmeta{flex:1;padding-bottom:6px}
+.readmeta .lbl{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:color-mix(in srgb,var(--chalk) 60%,transparent)}
+.readmeta .state{margin-top:4px;font-weight:800;font-size:16px;letter-spacing:-.01em}
+.readmeta .state .pr{color:var(--blue)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:30px;margin-top:11px}
+.spark i{flex:1;background:color-mix(in srgb,var(--blue) 30%,transparent);border-radius:2px;display:block}
+.spark i.hot{background:var(--blue)}
+.comprow{margin-top:18px;display:flex;gap:10px}
+.comprow .c{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:11px 13px}
+.comprow .c .cv{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:21px;line-height:1}
+.comprow .c .cl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:color-mix(in srgb,var(--chalk) 60%,transparent);margin-top:5px}
+.driver{margin-top:14px;font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 85%,transparent)}
+
+/* sections */
+.section{padding:0 20px;margin-top:26px}
+.sechead{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.sechead .dot{width:8px;height:8px;border-radius:50%}
+.sechead .name{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.sechead .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.sechead .open{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;background:none;border:0;cursor:pointer}
+
+.panel{background:var(--ink2);border:1px solid var(--line);border-radius:24px;
+  box-shadow:0 6px 22px -12px rgba(0,0,0,.55);overflow:hidden}
+.panel + .panel{margin-top:12px}
+.ptop{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ptop .kick2{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+.ptop h2{font-size:20px;font-weight:900;letter-spacing:-.025em;margin-top:6px;line-height:1.05}
+.ptop .sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--violet);margin-top:6px;letter-spacing:.02em}
+.ptop .sub.ash{color:var(--ash)}
+
+.ring{width:60px;height:60px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;
+  background:conic-gradient(var(--lime) 0% 78%, color-mix(in srgb,var(--line) 90%,transparent) 78% 100%)}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--ink2)}
+.ring span{position:relative;z-index:1;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:20px}
+
+/* injury panel inner */
+.pbody{padding:0 18px 18px}
+.risk-top{display:flex;align-items:baseline;gap:10px}
+.risk-band{font-weight:900;font-size:22px;letter-spacing:-.02em;color:var(--lime)}
+.risk-n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ash)}
+.rbar{height:9px;border-radius:5px;background:color-mix(in srgb,var(--lime) 14%,transparent);margin-top:12px;overflow:hidden}
+.rbar i{display:block;height:100%;width:22%;background:var(--lime);border-radius:5px;box-shadow:0 0 10px color-mix(in srgb,var(--lime) 60%,transparent)}
+.risk-note{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--lime);margin-top:11px;letter-spacing:.02em}
+
+/* week */
+.pr-pill{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;color:#0c1004;background:var(--lime);border-radius:999px;padding:5px 12px;letter-spacing:.04em}
+.weekstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.weekstats .s{background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:13px}
+.weekstats .s .sv{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;letter-spacing:-.02em}
+.weekstats .s .sl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:5px}
+.pr-line{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ash);margin-top:14px;line-height:1.65;letter-spacing:.02em}
+.pr-line b{color:var(--chalk)}
+
+/* endurance bigchips */
+.bigchips{display:flex;gap:10px}
+.bigchips .b{flex:1;background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center}
+.bigchips .b .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;letter-spacing:-.03em}
+.bigchips .b .l{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);margin-top:6px}
+
+.body-line{font-size:13px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 82%,transparent)}
+
+/* pair grid */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pair .panel{margin:0}
+.pair .ptop{padding:16px;display:block}
+
+.footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--ash);margin-top:32px;padding:0 20px;text-transform:uppercase}
+
+.fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:20;
+  background:var(--lime);color:#0c1004;border:none;border-radius:999px;padding:14px 24px;font-weight:800;font-size:14px;
+  display:flex;align-items:center;gap:8px;box-shadow:0 14px 34px -8px color-mix(in srgb,var(--lime) 75%,#000);cursor:pointer}
+@media(max-width:460px){.phone{width:100%}.fab{bottom:16px}}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="topbar">
+    <div class="avatar">RA<span class="dot"></span></div>
+    <div class="wordmark">HYBRID<span style="color:var(--lime)">.</span><span class="u"></span></div>
+    <div class="bell">🔔<span class="badge">3</span></div>
+  </div>
+
+  <!-- HERO: Performance Twin -->
+  <div class="hero">
+    <div class="top">
+      <div>
+        <h1>Command Center</h1>
+        <div class="sub">YOUR TRAINING, READ AT A GLANCE</div>
+      </div>
+      <div class="live"><span class="ld"></span>LIVE</div>
+    </div>
+
+    <div class="readblock">
+      <div class="bignum">72</div>
+      <div class="readmeta">
+        <div class="lbl">Performance · HPI</div>
+        <div class="state">Strong <span class="pr">· limiter recovery</span></div>
+        <div class="spark">
+          <i style="height:42%"></i><i style="height:55%"></i><i style="height:48%"></i>
+          <i style="height:63%"></i><i style="height:58%"></i><i style="height:72%"></i>
+          <i style="height:66%"></i><i style="height:80%"></i><i class="hot" style="height:96%"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="c"><div class="cv" style="color:var(--lime)">80</div><div class="cl">Strength</div></div>
+      <div class="c"><div class="cv" style="color:var(--blue)">64</div><div class="cl">Endurance</div></div>
+      <div class="c"><div class="cv" style="color:var(--violet)">+5</div><div class="cl">Recovery</div></div>
+    </div>
+    <div class="driver">Strength trending up; recovery is the current ceiling.</div>
+  </div>
+
+  <!-- TODAY READINESS -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--lime)"></span><span class="name" style="color:var(--lime)">Today · Readiness</span><span class="rule"></span><button class="open" style="color:var(--lime)">Log →</button></div>
+    <div class="panel">
+      <div class="ptop">
+        <div>
+          <div class="kick2" style="color:var(--lime)">Today · 78 / 100</div>
+          <h2>Back Squat + Bench</h2>
+          <div class="sub ash">Primed. Top-set ready; keep accessories crisp.</div>
+        </div>
+        <div class="ring"><span>78</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOAL & SEASON -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--violet)"></span><span class="name" style="color:var(--violet)">Goal &amp; Season</span><span class="rule"></span><button class="open" style="color:var(--violet)">Open →</button></div>
+    <div class="panel">
+      <div class="ptop">
+        <div>
+          <div class="kick2" style="color:var(--violet)">Goal &amp; Season</div>
+          <h2>Powerlifting Total</h2>
+          <div class="sub">Accumulation · Week 4/8 · Event in 6 wk</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INJURY RISK -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--red)"></span><span class="name" style="color:var(--red)">Injury Risk</span><span class="rule"></span><button class="open" style="color:var(--red)">Open →</button></div>
+    <div class="panel">
+      <div class="ptop" style="padding-bottom:6px">
+        <div><div class="kick2" style="color:var(--red)">Injury Risk</div></div>
+      </div>
+      <div class="pbody">
+        <div class="risk-top"><span class="risk-band">Low</span><span class="risk-n">22 / 100</span></div>
+        <div class="rbar"><i></i></div>
+        <div class="risk-note">No tissues flagged — keep it here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOUR WEEK -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--lime)"></span><span class="name" style="color:var(--lime)">Your Week</span><span class="rule"></span><span class="pr-pill">3 PR</span></div>
+    <div class="panel">
+      <div class="ptop" style="padding-bottom:8px">
+        <div><div class="kick2" style="color:var(--lime)">Last 7 days</div></div>
+      </div>
+      <div class="pbody">
+        <div class="weekstats">
+          <div class="s"><div class="sv">5</div><div class="sl">Sessions</div></div>
+          <div class="s"><div class="sv">18,400</div><div class="sl">Volume kg</div></div>
+          <div class="s"><div class="sv">64</div><div class="sl">Sets</div></div>
+          <div class="s"><div class="sv">12</div><div class="sl">Dist km</div></div>
+          <div class="s"><div class="sv">5</div><div class="sl">Active days</div></div>
+          <div class="s"><div class="sv">3</div><div class="sl">PRs</div></div>
+        </div>
+        <div class="pr-line"><b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPORT + VELOCITY -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--amber)"></span><span class="name" style="color:var(--amber)">Sport &amp; Quality</span><span class="rule"></span></div>
+    <div class="pair">
+      <div class="panel">
+        <div class="ptop">
+          <div class="kick2" style="color:var(--amber)">Sport S&amp;C</div>
+          <h2 style="font-size:17px;margin-top:8px">Hyrox</h2>
+          <div class="sub ash">Intermediate</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptop">
+          <div class="kick2" style="color:var(--blue)">Velocity</div>
+          <div class="body-line" style="font-size:12px;margin-top:10px">Bar-speed trends &amp; lift quality, session over session.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENDURANCE -->
+  <div class="section">
+    <div class="sechead"><span class="dot" style="background:var(--lime)"></span><span class="name" style="color:var(--lime)">Endurance</span><span class="rule"></span><button class="open" style="color:var(--lime)">Open →</button></div>
+    <div class="panel">
+      <div class="ptop" style="padding-bottom:8px"><div><div class="kick2" style="color:var(--lime)">Running &amp; conditioning</div></div></div>
+      <div class="pbody">
+        <div class="bigchips">
+          <div class="b"><div class="v">8</div><div class="l">Efforts</div></div>
+          <div class="b"><div class="v">42</div><div class="l">KM</div></div>
+          <div class="b"><div class="v">310</div><div class="l">MIN</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Pulse · HYBRID design exploration</div>
+</div>
+
+<button class="fab">⌕ Open full report</button>
+</body>
+</html>
