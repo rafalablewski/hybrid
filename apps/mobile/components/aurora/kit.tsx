@@ -18,7 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, serifIf } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraIcon } from "./icons";
@@ -445,9 +445,9 @@ export function ASegment<T extends string>({
 }
 
 export function AHeading({ children, style }: { children: ReactNode; style?: TextStyle }) {
-  const { palette } = useTheme();
+  const { palette, scheme } = useTheme();
   return (
-    <Text accessibilityRole="header" style={[{ fontFamily: F.black, fontSize: 30, color: palette.chalk, lineHeight: 36, letterSpacing: -0.5 }, style]}>
+    <Text accessibilityRole="header" style={[{ fontFamily: serifIf(scheme, F.black), fontSize: 30, color: palette.chalk, lineHeight: 36, letterSpacing: -0.5 }, style]}>
       {children}
     </Text>
   );

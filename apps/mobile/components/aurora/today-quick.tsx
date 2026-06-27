@@ -6,7 +6,7 @@ import { fetchCheckins } from "../../lib/api";
 import { useSignalsQuery } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, serifIf } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -17,7 +17,7 @@ import { AuroraIcon } from "./icons";
  * the widgets stay small and scannable). Mirrors the web today-quick.tsx.
  */
 export default function TodayWidgets() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const { data: signals = [] } = useSignalsQuery();
@@ -69,7 +69,7 @@ export default function TodayWidgets() {
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.w.today")}</Text>
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash, marginTop: 12 }}>{t("w.home.today.w.nutrition")}</Text>
-        <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk, marginTop: 2 }}>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 26, color: C.chalk, marginTop: 2 }}>
           {Math.round(today.kcal).toLocaleString()}
           <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}> / {targets.kcal.toLocaleString()}</Text>
         </Text>

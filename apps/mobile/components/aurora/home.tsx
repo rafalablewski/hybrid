@@ -35,7 +35,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, serifIf } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -63,7 +63,7 @@ const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
  * subset (no season/Performance State), like classic.
  */
 export default function AuroraHome() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const { name } = useSession();
@@ -285,7 +285,7 @@ export default function AuroraHome() {
         {/* GREETING + streak — sets the daily tone */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
           </View>
           {acc.streak.current > 0 && (
@@ -331,7 +331,7 @@ export default function AuroraHome() {
             </View>
             {plan ? (
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 8 }}>
                   {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
                 </Text>
@@ -353,7 +353,7 @@ export default function AuroraHome() {
               </>
             ) : hasData || phase ? (
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
                 </Text>
                 {phase && (
@@ -367,7 +367,7 @@ export default function AuroraHome() {
               /* Brand-new and not enrolled — first-session chooser (#3):
                  follow a plan (free), build your own (Full), or log a one-off. */
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
                   {t("w.home.today.howStartSub")}
                 </Text>
@@ -383,7 +383,7 @@ export default function AuroraHome() {
           {/* card 2 — AI coach */}
           <ACard style={{ width: cardW }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.today.aiCoach")}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.askCoach")}</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.askCoach")}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
               {t("w.home.today.aiCoachBlurb")}
             </Text>
@@ -535,9 +535,10 @@ export default function AuroraHome() {
 }
 
 function Metric({ label, value, color, C }: { label: string; value: string; color: string; C: P }) {
+  const { scheme } = useTheme();
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color }}>{value}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
     </View>
   );

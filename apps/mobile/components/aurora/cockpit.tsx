@@ -12,7 +12,7 @@ import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -34,7 +34,7 @@ export default function AuroraCockpit() {
 }
 
 function Full() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -81,7 +81,7 @@ function Full() {
       <Section C={C} title={t("w.home.cockpit.goalSeason")} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => router.push(macro ? "/periodize" : "/onboarding")}>
         {macro ? (
           <>
-            <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{macro.goalOrSport}</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{macro.goalOrSport}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · ${t("w.home.cockpit.eventIn")} ${macro.eventInWeeks} ${t("w.home.cockpit.wk")}` : ""}</Text>
           </>
         ) : (
@@ -102,7 +102,7 @@ function Full() {
       </Section>
 
       <Section C={C} title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} openLabel={hasData ? t("common.start") : t("w.home.cockpit.startFirstSection")} onOpen={() => router.push((hasData ? "/workout?source=ai" : "/workout?source=empty") as Href)}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</Text>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</Text>
         {hasData && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: 18 }}>{rx.why}</Text>}
       </Section>
 
@@ -110,7 +110,7 @@ function Full() {
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-              <Text style={{ fontFamily: F.black, fontSize: 40, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 40, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 4 }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</Text>
                 <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
@@ -233,9 +233,10 @@ function Section({ C, title, children, onOpen, openLabel }: { C: Palette; title:
 }
 
 function Stat({ C, label, value }: { C: Palette; label: string; value: string }) {
+  const { scheme } = useTheme();
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
     </View>
   );
