@@ -118,9 +118,9 @@ export default function AuroraCheckin() {
           accessibilityRole="checkbox"
           accessibilityLabel={t("w.recovery.checkins.shareCoach")}
           accessibilityState={{ checked: !!(form.sharedWithCoach && paid), disabled: !paid }}
-          style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 14, padding: 14, borderRadius: RADIUS.field, borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.violet : C.line, backgroundColor: form.sharedWithCoach && paid ? `${C.violet}1a` : "transparent", opacity: paid ? 1 : 0.6 }}
+          style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 14, padding: 14, borderRadius: RADIUS.field, borderWidth: 1, borderColor: form.sharedWithCoach && paid ? C.lime : C.line, backgroundColor: form.sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: paid ? 1 : 0.6 }}
         >
-          {form.sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.violet)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
+          {form.sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.checkins.shareCoach")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>
@@ -132,7 +132,7 @@ export default function AuroraCheckin() {
         <APill label={saving ? t("w.recovery.checkins.submitting") : t("w.recovery.checkins.submit")} onPress={submit} disabled={saving} style={{ marginTop: 14 }} />
       </ACard>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue), marginTop: 8, marginBottom: 10 }}>{t("w.recovery.checkins.historyShort")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 8, marginBottom: 10 }}>{t("w.recovery.checkins.historyShort")}</Text>
       {history.length === 0 ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.checkins.historyEmptyFirst")}</Text>
       ) : (
@@ -142,8 +142,8 @@ export default function AuroraCheckin() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
                 {c.sharedWithCoach ? (
-                  <View style={{ backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 2 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.violet), textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</Text>
+                  <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 2 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.lime), textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</Text>
                   </View>
                 ) : null}
               </View>
@@ -154,8 +154,8 @@ export default function AuroraCheckin() {
             </Text>
             {c.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 18 }}>{c.note}</Text> : null}
             {c.coachReply ? (
-              <View style={{ marginTop: 10, borderLeftWidth: 2, borderLeftColor: C.violet, paddingLeft: 10 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>{t("w.recovery.checkins.coach")}</Text>
+              <View style={{ marginTop: 10, borderLeftWidth: 2, borderLeftColor: C.line, paddingLeft: 10 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.recovery.checkins.coach")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 4, lineHeight: 18 }}>{c.coachReply}</Text>
               </View>
             ) : null}

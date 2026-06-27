@@ -57,7 +57,7 @@ export default function AuroraLongevity() {
           <AuroraIcon name="back" size={20} color={C.chalk} />
         </Pressable>
         <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.longevity.title")}</AHeading>
-        <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.blue)} /></View>
+        <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.lime)} /></View>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.recovery.longevity.intro")}</ASub>
 
@@ -74,11 +74,11 @@ export default function AuroraLongevity() {
 
       {report ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.recovery.longevity.bioAge")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.longevity.bioAge")}</Text>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6, flexWrap: "wrap" }}>
             <Text style={{ fontFamily: F.black, fontSize: 48, color: C.chalk }}>{Math.round(report.bioAge)}</Text>
             {chip(report.delta <= 0 ? C.lime : C.amber, `${report.delta <= 0 ? "" : "+"}${report.delta} ${t("w.recovery.longevity.yrVsAge")}`)}
-            {chip(C.violet, `${t("w.recovery.longevity.healthspan")} ${report.healthspanScore}`)}
+            {chip(C.lime, `${t("w.recovery.longevity.healthspan")} ${report.healthspanScore}`)}
           </View>
           {report.contributions.length > 0 && (
             <View style={{ marginTop: 12 }}>

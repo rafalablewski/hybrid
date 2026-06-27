@@ -50,7 +50,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
   const archivedToggle = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.hist.title")}</h1>
-      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? C("amber") : C("ash"), background: "none", border: `1px solid ${showArchived ? C("amber") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
+      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
     </div>
   );
 
@@ -71,7 +71,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
             const actions: SwipeAction[] = [
               showArchived
                 ? { key: "restore", label: t("w.analyze.hist.restore"), color: C("lime"), onPress: () => setArchivedFlag(s.id, false) }
-                : { key: "archive", label: t("w.analyze.hist.archive"), color: C("amber"), onPress: () => setArchivedFlag(s.id, true) },
+                : { key: "archive", label: t("w.analyze.hist.archive"), color: C("ash"), onPress: () => setArchivedFlag(s.id, true) },
               { key: "delete", label: t("w.analyze.hist.delete"), color: C("red"), onPress: () => remove(s.id, s.title) },
             ];
             return (
@@ -81,7 +81,7 @@ export default function AuroraHistory({ sessions, onOpenExercise, onChanged }: {
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{fmtDate(s.startedAt)}</span>
                 </div>
                 <div style={{ display: "flex", gap: space.sm, margin: "10px 0 14px", flexWrap: "wrap" }}>
-                  {chip(C("blue"), fmtTonnage(sessionVolume(s.blocks), units))}
+                  {chip(C("ash"), fmtTonnage(sessionVolume(s.blocks), units))}
                   {chip(C("ash"), `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`)}
                   {typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.hist.readiness")} ${s.readiness}`)}
                   {prCount > 0 && chip(C("lime"), `🏆 ${prCount} ${t("w.analyze.hist.pr")}`)}
