@@ -93,8 +93,8 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 padding: "9px 18px",
                 borderRadius: 999,
                 cursor: "pointer",
-                border: `1px solid ${on ? C("blue") : C("line")}`,
-                background: on ? C("blue") : C("ink2"),
+                border: `1px solid ${on ? C("lime") : C("line")}`,
+                background: on ? C("lime") : C("ink2"),
                 color: on ? C("ink") : C("ash"),
               }}
             >
@@ -143,7 +143,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               fontSize: fs.note,
               marginTop: 16,
               width: "100%",
-              background: C("blue"),
+              background: C("lime"),
               color: C("ink"),
               border: "none",
               borderRadius: 999,
@@ -173,7 +173,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
             >
               <div>
                 <div style={{ fontWeight: 700, fontSize: fs.note }}>{b.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>{b.demand}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{b.demand}</div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("lime"), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{b.scheme}</span>

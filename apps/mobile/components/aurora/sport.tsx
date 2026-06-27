@@ -100,8 +100,8 @@ export default function AuroraSport() {
                 paddingVertical: 11,
                 borderRadius: RADIUS.pill,
                 borderWidth: 1,
-                borderColor: on ? C.blue : C.line,
-                backgroundColor: on ? C.blue : C.ink2,
+                borderColor: on ? C.lime : C.line,
+                backgroundColor: on ? C.lime : C.ink2,
               }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.ink : C.ash }}>{l}</Text>
@@ -124,7 +124,7 @@ export default function AuroraSport() {
           as an activity (no wearable needed). */}
       <Pressable
         onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
-        style={{ backgroundColor: C.blue, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}
+        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>＋ {t("sport.logSession").replace("{sport}", sport)}</Text>
       </Pressable>
@@ -138,7 +138,7 @@ export default function AuroraSport() {
           <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 8 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.amber), marginTop: 2 }}>{b.demand}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{b.demand}</Text>
             </View>
             <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
               <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>

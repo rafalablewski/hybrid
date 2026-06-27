@@ -81,7 +81,7 @@ export default function AuroraBuilder() {
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>{tr("w.train.builder.templateLibrary")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{tr("w.train.builder.templateLibrary")}</div>
         {templates.length === 0 ? (
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 10, color: C("ash") }}>{tr("w.train.builder.noTemplates")}</div>
         ) : (
