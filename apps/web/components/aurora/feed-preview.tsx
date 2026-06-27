@@ -62,7 +62,7 @@ export default function FeedPreview({ onOpen }: { onOpen: () => void }) {
       <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, overflow: "hidden" }}>
         {feed.map((it, i) => (
           <button key={it.id} onClick={onOpen} style={{ width: "100%", display: "flex", gap: 12, alignItems: "center", padding: "12px 14px", background: "none", border: "none", borderTop: i === 0 ? "none" : `1px solid ${C("line")}`, cursor: "pointer", textAlign: "left" }}>
-            <div style={{ width: 34, height: 34, borderRadius: 999, flexShrink: 0, border: `1px solid ${C("line")}`, background: `linear-gradient(135deg, ${C(it.accent)}44, ${C("blue")}33)`, display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12, color: C("chalk"), overflow: "hidden" }}>
+            <div style={{ width: 34, height: 34, borderRadius: 999, flexShrink: 0, border: `1px solid ${C("line")}`, background: `linear-gradient(135deg, ${C("lime")}33, ${C("ink2")})`, display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12, color: C("chalk"), overflow: "hidden" }}>
               {it.author.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={it.author.avatarUrl} alt="" width={34} height={34} style={{ objectFit: "cover" }} />

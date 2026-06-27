@@ -44,15 +44,15 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
     <>
       {busy ? (
         <View style={{ marginTop: embedded ? 10 : 18, flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <ActivityIndicator color={C.violet} />
+          <ActivityIndicator color={C.lime} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.home.aicoach.reading")}</Text>
         </View>
       ) : note?.text ? (
         <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
           <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 10, flexWrap: "wrap" }}>
             {note.source ? chip(note.source === "ai" ? "Claude" : t("w.home.aicoach.engine"), note.source === "ai" ? C.lime : C.ash) : null}
-            {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.blue) : null}
-            {note.hpi != null ? chip(`HPI ${note.hpi}`, C.violet) : null}
+            {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.ash) : null}
+            {note.hpi != null ? chip(`HPI ${note.hpi}`, C.ash) : null}
           </View>
           {/* Coaching PROSE in Archivo (reads like a coach talking), not mono
               (which reads like a terminal log). Mono stays for the data chips. */}

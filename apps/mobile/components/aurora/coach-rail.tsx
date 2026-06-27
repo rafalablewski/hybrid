@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
-import { useTheme } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { getCoaches, follow } from "../../lib/social-api";
 
@@ -54,7 +54,7 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
                   <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 16 }}>{initials(c.name)}</Text>
                 </Pressable>
                 <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: C.blue }}> ✓</Text> : null}</Text>
+                  <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: 14 }}>{c.name}{c.verified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
                   <Text style={{ fontSize: 11, marginTop: 2 }}>
                     {c.rating == null ? <Text style={{ color: C.ash, fontFamily: F.mono }}>New</Text> : (
                       <Text><Text style={{ color: C.amber }}>{"★".repeat(Math.round(c.rating))}</Text><Text style={{ color: C.line }}>{"★".repeat(5 - Math.round(c.rating))}</Text><Text style={{ color: C.ash, fontFamily: F.mono }}> {c.rating.toFixed(1)}</Text></Text>
