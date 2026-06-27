@@ -48,7 +48,11 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     ash: "#8b8f86",
     accentText: { lime: "#c4f035", blue: "#7fd4e8", violet: "#c9a9f0", amber: "#f0b45e", red: "#e0625e" },
   },
-  // JAPANDI — warm minimal. Oat-paper surfaces, clay/sage foreground accents.
+  // JAPANDI — warm minimal (see reference/today-cockpit-design-concepts/04-japandi).
+  // Oat-paper surfaces; the brand accent becomes a warm CLAY/terracotta (the
+  // `lime` slot drives every accent, so clay lives there in this theme) with a
+  // serif display. `lime` here = clay #a5573c (the concept's #b06a4f darkened to
+  // clear AA). sage/secondary stays in the other accent slots.
   light: {
     ink: "#efe9df",
     ink2: "#f6f1e8",
@@ -56,6 +60,6 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     line: "#e4dccd",
     chalk: "#2f2a22",
     ash: "#6b6456",
-    accentText: { lime: "#566312", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
+    accentText: { lime: "#a5573c", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
   },
 };

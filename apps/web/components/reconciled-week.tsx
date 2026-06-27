@@ -219,7 +219,7 @@ export default function ReconciledWeek({
 function Metric({ label, value, c }: { label: string; value: string; c: string }) {
   return (
     <div>
-      <div style={{ ...disp, fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
+      <div style={{ ...disp, fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, color: c }}>{value}</div>
       <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</Mono>
     </div>
   );

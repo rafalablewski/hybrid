@@ -80,7 +80,7 @@ export default function TodayWidgets({ onNavigate }: { onNavigate?: (screen: str
           <span style={tag}>{t("w.home.today.w.today")}</span>
         </div>
         <div style={wname}>{t("w.home.today.w.nutrition")}</div>
-        <div style={{ fontWeight: 900, fontSize: 28, lineHeight: 1.05, marginTop: 2 }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 28, lineHeight: 1.05, marginTop: 2 }}>
           {Math.round(today.kcal).toLocaleString()}
           <span style={{ fontSize: 13, color: C("ash"), fontWeight: 600 }}> / {targets.kcal.toLocaleString()}</span>
         </div>

@@ -60,14 +60,14 @@ export default function AuroraCockpit({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: 28, margin: 0 }}>{t("w.home.cockpit.commandCenter")}</h1>
+      <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 28, margin: 0 }}>{t("w.home.cockpit.commandCenter")}</h1>
       <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 8 }}>{t("w.home.cockpit.commandSub")}</p>
 
       <div style={{ display: "grid", gap: 14, marginTop: 16 }}>
         <Section title={t("w.home.cockpit.goalSeason")} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))}>
           {macro ? (
             <>
-              <div style={{ fontWeight: 800, fontSize: fs.heading }}>{macro.goalOrSport}</div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading }}>{macro.goalOrSport}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · ${t("w.home.cockpit.eventIn")} ${macro.eventInWeeks} ${t("w.home.cockpit.wk")}` : ""}</div>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
@@ -82,7 +82,7 @@ export default function AuroraCockpit({
         </Section>
 
         <Section title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} openLabel={t("w.home.cockpit.logSession")} onOpen={() => setScreen("log")}>
-          <div style={{ fontWeight: 800, fontSize: fs.title }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</div>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</div>
           {hasData && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.6 }}>{rx.why}</div>}
         </Section>
 
@@ -90,7 +90,7 @@ export default function AuroraCockpit({
           {hasData ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
-                <span style={{ fontWeight: 800, fontSize: 44, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 44, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
                 <div style={{ minWidth: 120, flex: 1 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
                   <div style={{ marginTop: 6, maxWidth: 180 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
@@ -202,7 +202,7 @@ function Section({ title, children, onOpen, openLabel }: { title: string; childr
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ fontWeight: 800, fontSize: fs.heading }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading }}>{value}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
     </div>
   );

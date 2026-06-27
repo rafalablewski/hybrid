@@ -157,7 +157,7 @@ export default function AuroraToday({
       {/* GREETING + streak — sets the daily tone */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>
         </div>
         {acc.streak.current > 0 && (
@@ -194,7 +194,7 @@ export default function AuroraToday({
           </div>
           {plan ? (
             <>
-              <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 2px" }}>{plan.planName}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 10 }}>
                 {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
               </div>
@@ -218,7 +218,7 @@ export default function AuroraToday({
             </>
           ) : hasData || phase ? (
             <>
-              <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>
                 {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
               </div>
               {phase && (
@@ -235,7 +235,7 @@ export default function AuroraToday({
             </>
           ) : (
             <>
-              <div style={{ fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.howStart")}</div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, margin: "8px 0 6px" }}>{t("w.home.today.howStart")}</div>
               <div style={{ fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), marginBottom: 12 }}>
                 {t("w.home.today.howStartSub")}
               </div>
