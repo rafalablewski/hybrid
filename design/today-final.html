@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en" data-template="aurora">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — Today page · your spec</title>
+<style>
+  :root{
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724; --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c7ef00; --blue:#3c787e; --sand:#d0cd94; --terra:#d56f3e; --violet:#c9a9f0;
+    --card:26px; --pill:999px; --max:430px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#070807;color:var(--chalk);
+    font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:32px 16px 120px;display:flex;flex-direction:column;align-items:center;gap:24px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  .intro{max-width:620px;width:100%;text-align:center}
+  .intro h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+  .intro h1 b{color:var(--lime)}
+  .intro p{color:var(--ash);font-size:14px;line-height:1.6;margin-top:8px}
+  .controls{display:flex;gap:10px;align-items:center;margin-top:14px;justify-content:center}
+  .btn{cursor:pointer;border:1px solid var(--line);background:var(--ink2);color:var(--chalk);
+    padding:9px 16px;border-radius:var(--pill);font-size:13px;font-weight:600;transition:.15s}
+  .btn:hover{border-color:#3a3e3a}
+  .btn.on{background:var(--lime);color:#0c0d0c;border-color:var(--lime)}
+
+  .stage{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%}
+  .phone{width:var(--max);max-width:100%;background:var(--ink);border:1px solid var(--line);
+    border-radius:44px;padding:14px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9)}
+  .notch{width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;margin:0 auto 6px}
+  .screen{background:var(--ink);border-radius:32px;overflow:hidden;height:880px;overflow-y:auto;scroll-behavior:smooth}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* 1 · STICKY IDENTITY BAR */
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px 12px;background:linear-gradient(180deg,rgba(12,13,12,.96),rgba(12,13,12,.78) 70%,transparent);backdrop-filter:blur(14px)}
+  .ava{width:38px;height:38px;border-radius:50%;background:var(--lime);color:#0c0d0c;font-weight:800;display:grid;place-items:center;font-size:14px;position:relative}
+  .ava i{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#33d17a;border:2px solid var(--ink)}
+  .wordmark{font-weight:800;letter-spacing:.16em;font-size:14px}.wordmark b{color:var(--lime)}
+  .bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:16px;position:relative}
+  .bell em{position:absolute;top:-3px;right:-3px;background:var(--terra);color:#fff;font-size:9px;font-style:normal;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-weight:700}
+
+  .feed{padding:4px 16px 40px;display:flex;flex-direction:column;gap:16px}
+
+  /* stories rail */
+  .stories{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 0;margin:0 -2px}
+  .stories::-webkit-scrollbar{display:none}
+  .story{flex:none;width:62px;text-align:center}
+  .sr{width:62px;height:62px;border-radius:50%;padding:3px;background:conic-gradient(var(--lime),var(--blue),var(--terra),var(--lime))}
+  .sr.dim{background:#2c302c}
+  .sr .in{width:100%;height:100%;border-radius:50%;background:var(--ink2);display:grid;place-items:center;font-size:13px;font-weight:700}
+  .story small{display:block;font-size:10px;color:var(--ash);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* 2 · GREETING + STATUS */
+  .hero{padding:4px 4px 0}
+  .hero .hi{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+  .hero .meta{display:flex;align-items:center;gap:10px;margin-top:8px;color:var(--ash);font-size:12px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--pill);padding:5px 11px;font-size:12px;font-weight:600;color:var(--chalk)}
+  .chip.flame{color:var(--terra)}
+
+  .kicker{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--ash);margin:6px 2px 0}
+  .kicker .sub{margin-left:auto;letter-spacing:0;font-weight:500;text-transform:none}
+  .label{font-size:10px;letter-spacing:.18em;color:var(--ash);font-weight:700}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--card);padding:18px;box-shadow:0 6px 22px -12px rgba(0,0,0,.55)}
+
+  /* 3 · TODAY'S SESSION — dial number effect */
+  .session .crown{display:flex;align-items:center;gap:14px}
+  .dialwrap{position:relative;width:88px;height:88px;flex:none}
+  .ticks{position:absolute;inset:0;border-radius:50%;
+    background:repeating-conic-gradient(var(--lime) 0deg 2deg, transparent 2deg 10deg);
+    -webkit-mask:radial-gradient(circle, transparent 60%, #000 63%);
+            mask:radial-gradient(circle, transparent 60%, #000 63%)}
+  .ticks.dim{background:repeating-conic-gradient(#2f3329 0deg 2deg, transparent 2deg 10deg)}
+  .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .num b{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .num small{font-size:8px;letter-spacing:.16em;color:var(--ash);margin-top:2px}
+  .startbig{flex:1;background:var(--lime);color:#0c0d0c;border:none;border-radius:var(--pill);padding:18px;font-size:18px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .session h2{font-size:24px;font-weight:800;letter-spacing:-.01em;margin-top:16px}
+  .session .day{font-size:11px;color:var(--ash);margin-top:3px}
+  .items{margin-top:14px;border-top:1px solid var(--line)}
+  .items .row{display:flex;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .items .row span:last-child{color:var(--ash);font-size:12px}
+  .pgr{display:flex;gap:6px;justify-content:center;margin-top:12px}
+  .pgr i{width:6px;height:6px;border-radius:50%;background:#2c302c}.pgr i.on{background:var(--lime);width:18px;border-radius:3px}
+
+  /* 4 · QUICK LOG */
+  .carousel{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}.carousel::-webkit-scrollbar{display:none}
+  .qchip{flex:none;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:12px 14px;min-width:104px;display:flex;flex-direction:column;gap:6px}
+  .qchip b{font-size:13px;font-weight:700}.qchip small{font-size:10px;color:var(--ash)}.qchip .ic{font-size:18px}
+
+  /* 5 · RECOVER · FEEL */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .widget{aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:space-between}
+  .widget .big{font-size:30px;font-weight:800;letter-spacing:-.02em}.widget .big small{font-size:13px;color:var(--ash);font-weight:600}
+  .bar{height:7px;border-radius:4px;background:#23271f;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;border-radius:4px}
+  .macros{display:flex;gap:8px;margin-top:8px;font-size:10px;color:var(--ash)}.macros b{color:var(--chalk);font-weight:700}
+  .wbtn{margin-top:auto;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:var(--pill);padding:9px;font-size:12px;font-weight:700;cursor:pointer}.wbtn.go{background:var(--blue);border-color:var(--blue);color:#fff}
+
+  /* 6 · THIS WEEK (collapsible) */
+  .collap summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between}.collap summary::-webkit-details-marker{display:none}
+  .collap summary .arr{color:var(--ash);transition:.2s}.collap[open] summary .arr{transform:rotate(180deg)}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
+  .wd{aspect-ratio:1/1.4;border-radius:12px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;color:var(--ash)}
+  .wd.done{background:rgba(199,239,0,.12);border-color:rgba(199,239,0,.4);color:var(--lime)}.wd.today{border-color:var(--lime)}.wd b{font-size:11px;color:var(--chalk)}
+
+  /* 7 · FEED */
+  .post{padding:16px}.post .head{display:flex;align-items:center;gap:10px}
+  .post .pa{width:34px;height:34px;border-radius:50%;background:#2c302c;display:grid;place-items:center;font-size:13px;font-weight:700}
+  .post .nm{font-size:13px;font-weight:700}.post .tm{font-size:11px;color:var(--ash)}.post .body{margin-top:12px;font-size:14px;line-height:1.5}
+  .post .stat{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.pstat{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12px}.pstat b{font-weight:800}
+  .post .acts{display:flex;gap:20px;margin-top:14px;color:var(--ash);font-size:13px;border-top:1px solid var(--line);padding-top:12px}
+
+  /* 8 · DISCOVER */
+  .rail{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}.rail::-webkit-scrollbar{display:none}
+  .coach{flex:none;width:150px}.coach .ph{height:90px;border-radius:16px;background:linear-gradient(135deg,#23271f,#2c302c)}.coach b{display:block;font-size:13px;font-weight:700;margin-top:8px}.coach small{font-size:11px;color:var(--ash)}
+
+  /* annotations */
+  .anno{display:none}body.show-anno .anno{display:block}
+  .anno{background:rgba(199,239,0,.06);border:1px dashed rgba(199,239,0,.45);border-radius:14px;padding:10px 12px;margin:2px 0 0}
+  .anno .n{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--lime);color:#0c0d0c;font-weight:800;font-size:10px;margin-right:7px}
+  .anno .t{font-size:11px;font-weight:700;color:var(--lime)}.anno .why{font-size:11px;color:#cfd3c8;line-height:1.5;margin-top:6px}
+  .foot{max-width:620px;width:100%;color:var(--ash);font-size:13px;line-height:1.6;text-align:center}.foot a{color:var(--lime)}
+</style>
+</head>
+<body>
+  <div class="intro">
+    <h1>TODAY <b>· your spec</b></h1>
+    <p>Built to your 8-section order. Sticky bar + stories → greeting &amp; streak (no Ready chip) → Today's session with the dial number effect beside Start → Quick Log → Feel → This Week (collapsible) → Feed → Discover.</p>
+    <div class="controls"><button class="btn" id="toggle">Annotations: OFF</button></div>
+  </div>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+
+        <!-- 1 · STICKY IDENTITY BAR -->
+        <div class="topbar">
+          <div class="ava">RA<i></i></div>
+          <div class="wordmark">HY<b>BR</b>ID</div>
+          <div class="bell">🔔<em>3</em></div>
+        </div>
+
+        <div class="feed">
+
+          <!-- stories -->
+          <div class="stories">
+            <div class="story"><div class="sr"><div class="in">＋</div></div><small>Your story</small></div>
+            <div class="story"><div class="sr"><div class="in">MK</div></div><small>Maja · PR</small></div>
+            <div class="story"><div class="sr"><div class="in">TS</div></div><small>Tom · 10K</small></div>
+            <div class="story"><div class="sr dim"><div class="in">AV</div></div><small>Coach Vera</small></div>
+            <div class="story"><div class="sr dim"><div class="in">JD</div></div><small>Jess</small></div>
+            <div class="story"><div class="sr dim"><div class="in">LP</div></div><small>Leo</small></div>
+          </div>
+          <div class="anno"><span class="n">1</span><span class="t">STICKY IDENTITY BAR + STORIES</span><div class="why">Bar stays pinned (profile · wordmark · alerts); the stories rail greets you and scrolls away — people-first hook.</div></div>
+
+          <!-- 2 · GREETING + STATUS -->
+          <div class="hero">
+            <div class="hi">Good morning, Rafal.</div>
+            <div class="meta"><span>Saturday · Jun 27</span><span class="chip flame">🔥 12-day streak</span></div>
+          </div>
+          <div class="anno"><span class="n">2</span><span class="t">GREETING + STATUS</span><div class="why">Date + streak only — Ready info removed (it now lives in the session dial below, no duplication).</div></div>
+
+          <!-- 3 · TODAY'S SESSION -->
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>TRAIN <span class="sub">Today's session</span></div>
+          <div class="card session">
+            <div class="label">TODAY'S SESSION · DAY 3</div>
+            <div class="crown" style="margin-top:12px">
+              <div class="dialwrap"><div class="ticks"></div><div class="num"><b>78</b><small>READY</small></div></div>
+              <button class="startbig">Start →</button>
+            </div>
+            <h2>Lower Power</h2>
+            <div class="day">Soviet OWL · Week 4 · Realization</div>
+            <div class="items">
+              <div class="row"><span>Back Squat</span><span>5 × 3 @ RPE8</span></div>
+              <div class="row"><span>Deadlift</span><span>3 × 3 @ RPE8</span></div>
+              <div class="row"><span>KB Swing</span><span>4 × 20</span></div>
+            </div>
+          </div>
+          <div class="pgr"><i class="on"></i><i></i></div>
+          <div class="anno"><span class="n">3</span><span class="t">TODAY'S SESSION — dial number effect</span><div class="why">Ticked readiness dial beside the Start pill (the "Your Plan Today" effect, back). Small "Today's session" label; swipe sideways for AI Coach.</div></div>
+
+          <!-- 4 · QUICK LOG -->
+          <div class="kicker"><i class="dot" style="background:var(--lime)"></i>QUICK LOG <span class="sub">Already trained?</span></div>
+          <div class="carousel">
+            <div class="qchip"><span class="ic">🏃</span><b>Run</b><small>tap to log</small></div>
+            <div class="qchip"><span class="ic">🚴</span><b>Ride</b><small>tap to log</small></div>
+            <div class="qchip"><span class="ic">🏊</span><b>Swim</b><small>tap to log</small></div>
+            <div class="qchip"><span class="ic">🧘</span><b>Mobility</b><small>tap to log</small></div>
+            <div class="qchip"><span class="ic">＋</span><b>Other</b><small>custom</small></div>
+          </div>
+          <div class="anno"><span class="n">4</span><span class="t">QUICK LOG (carousel)</span><div class="why">One swipeable row of one-tap sports for "I already did something."</div></div>
+
+          <!-- 5 · RECOVER · FEEL -->
+          <div class="kicker"><i class="dot" style="background:var(--blue)"></i>FEEL <span class="sub">Check in &amp; fuel</span></div>
+          <div class="grid2">
+            <div class="card widget">
+              <div><div class="label" style="color:var(--blue)">CHECK-IN</div><div class="big" style="margin-top:6px;font-size:18px">How are you<br>feeling?</div></div>
+              <button class="wbtn go">Log readiness</button>
+            </div>
+            <div class="card widget">
+              <div><div class="label" style="color:var(--blue)">NUTRITION</div><div class="big" style="margin-top:6px">1,840<small> / 2,600</small></div>
+                <div class="bar"><i style="width:71%;background:var(--blue)"></i></div>
+                <div class="macros"><span>P <b>142g</b></span><span>C <b>180g</b></span><span>F <b>54g</b></span></div></div>
+              <button class="wbtn">Add meal</button>
+            </div>
+          </div>
+          <div class="anno"><span class="n">5</span><span class="t">RECOVER · FEEL widgets</span><div class="why">Two symmetric square glance widgets — companions, neither primary.</div></div>
+
+          <!-- 6 · THIS WEEK -->
+          <div class="kicker"><i class="dot" style="background:var(--sand)"></i>PLAN <span class="sub">This week</span></div>
+          <details class="card collap" open>
+            <summary>
+              <div><div class="label" style="color:var(--sand)">WEEK 4 · REALIZATION</div>
+                <div style="font-size:16px;font-weight:800;margin-top:4px">3 of 5 done</div></div>
+              <span class="arr">⌄</span>
+            </summary>
+            <div class="week">
+              <div class="wd done"><span>M</span><b>✓</b></div>
+              <div class="wd done"><span>T</span><b>✓</b></div>
+              <div class="wd"><span>W</span><b>rest</b></div>
+              <div class="wd done"><span>T</span><b>✓</b></div>
+              <div class="wd today"><span>F</span><b>•</b></div>
+              <div class="wd"><span>S</span><b>—</b></div>
+              <div class="wd"><span>S</span><b>—</b></div>
+            </div>
+          </details>
+          <div class="anno"><span class="n">6</span><span class="t">THIS WEEK (collapsible)</span><div class="why">Glance summary + 7-day strip; collapses the detail.</div></div>
+
+          <!-- 7 · FEED -->
+          <div class="kicker"><i class="dot" style="background:var(--terra)"></i>CONNECT <span class="sub">Your circle</span></div>
+          <div class="card post">
+            <div class="head"><div class="pa">MK</div><div style="flex:1"><div class="nm">Maja K.</div><div class="tm">2h ago · Push day</div></div><div style="color:var(--ash)">···</div></div>
+            <div class="body">New bench PR this morning 💪 felt smooth all the way up.</div>
+            <div class="stat"><div class="pstat"><b>92.5kg</b> bench</div><div class="pstat"><b>+2.5</b> PR</div><div class="pstat"><b>RPE 9</b></div></div>
+            <div class="acts"><span>♡ 14</span><span>💬 3</span><span>↗ Share</span></div>
+          </div>
+          <div class="card post">
+            <div class="head"><div class="pa">TS</div><div style="flex:1"><div class="nm">Tom S.</div><div class="tm">5h ago · 10K run</div></div><div style="color:var(--ash)">···</div></div>
+            <div class="body">Easy zone-2 to keep the streak alive. Legs felt heavy but good.</div>
+            <div class="stat"><div class="pstat"><b>10.2km</b></div><div class="pstat"><b>52:10</b></div><div class="pstat"><b>148bpm</b> avg</div></div>
+            <div class="acts"><span>♡ 8</span><span>💬 1</span><span>↗ Share</span></div>
+          </div>
+          <div class="anno"><span class="n">7</span><span class="t">FEED — social momentum</span><div class="why">Full-width feed cards with the same stat-pill grammar as your own logs; infinite scroll.</div></div>
+
+          <!-- 8 · DISCOVER -->
+          <div class="kicker"><i class="dot" style="background:var(--terra)"></i>DISCOVER <span class="sub">Coaches for you</span></div>
+          <div class="rail">
+            <div class="coach"><div class="ph"></div><b>Coach Vera</b><small>Hybrid · Strength</small></div>
+            <div class="coach"><div class="ph"></div><b>Coach Leo</b><small>Endurance</small></div>
+            <div class="coach"><div class="ph"></div><b>Coach Ana</b><small>KB · Mobility</small></div>
+          </div>
+          <div class="anno"><span class="n">8</span><span class="t">DISCOVER / COACHES</span><div class="why">Exploratory browse carousel at the tail.</div></div>
+
+          <div style="height:30px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Today page · your spec · Aurora dark theme. Toggle annotations to see the per-section notes.</div>
+
+<script>
+  const b=document.body,t=document.getElementById('toggle');
+  t.onclick=()=>{const on=b.classList.toggle('show-anno');t.classList.toggle('on',on);t.textContent='Annotations: '+(on?'ON':'OFF');};
+</script>
+</body>
+</html>
