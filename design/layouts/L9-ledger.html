@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID — L9 Dense Ledger (Today ⇄ Cockpit)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{
+  --color-ink:#0c0d0c;--color-ink2:#141614;--color-card:#161816;--color-line:#2a2d2a;
+  --color-lime:#c4f035;--color-chalk:#f3f4ef;--color-ash:#8b8f86;--color-blue:#7fd4e8;--color-violet:#c9a9f0;--color-amber:#f0b45e;--color-red:#e0625e;
+  --lime-text:#c4f035;--font-display:"Archivo",system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,monospace;
+  --r-card:28px;--shadow:0 6px 22px -12px rgba(0,0,0,.55);
+  --ink:var(--color-ink);--ink2:var(--color-ink2);--line:var(--color-line);--lime:var(--color-lime);--chalk:var(--color-chalk);--ash:var(--color-ash);--blue:var(--color-blue);--violet:var(--color-violet);--amber:var(--color-amber);--red:var(--color-red);--r:var(--r-card);--sh:var(--shadow);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:18px 16px 60px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:var(--font-mono)}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.av{position:relative;width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--lime) 13%,transparent);border:1px solid var(--lime);display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--lime-text)}
+.av .o{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;background:var(--lime);border:2.5px solid var(--ink)}
+.wm{display:flex;flex-direction:column;align-items:center;gap:5px}.wm .t{font-weight:900;font-size:19px;letter-spacing:-.03em;line-height:1}.wm .t b{color:var(--lime-text)}.wm .bar{width:26px;height:3px;border-radius:2px;background:var(--lime)}
+.bell{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:18px}
+.bell .bd{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#fff}
+.note{font-family:var(--font-mono);font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:14px;padding:11px 13px;margin-bottom:14px;line-height:1.55}
+.note b{color:var(--lime-text);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:4px}
+.switch>input{position:absolute;opacity:0;pointer-events:none}
+.toggle{position:sticky;top:8px;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:16px;box-shadow:var(--shadow)}
+.toggle label{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border-radius:999px;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ash);cursor:pointer}
+.toggle label .i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+#s-today:checked~.toggle label[for=s-today],#s-cockpit:checked~.toggle label[for=s-cockpit]{background:var(--lime);color:var(--ink)}
+.screen{display:none}
+#s-today:checked~.screens .today,#s-cockpit:checked~.screens .cockpit{display:block}
+.foot{margin-top:22px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+a{color:inherit;text-decoration:none}
+.titlebar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}.titlebar h1{font-size:19px;font-weight:800;letter-spacing:-.02em}.titlebar .s{font-family:var(--font-mono);font-size:10px;color:var(--ash)}
+
+/* LEDGER — dense rows in a single framed surface */
+.ledger{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.grp{padding:8px 16px 6px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--ink) 40%,transparent)}
+.grp:first-child{border-top:none}
+.grp .d{width:7px;height:7px;border-radius:3px}
+.grp .k{font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+.grp .go{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;color:var(--ash)}
+.row{display:flex;align-items:center;gap:10px;padding:8px 16px;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.row .lbl{font-size:13px;font-weight:500;color:var(--chalk)}
+.row .lbl small{font-family:var(--font-mono);font-size:9.5px;color:var(--ash);margin-left:6px}
+.row .val{margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--chalk);font-weight:600;letter-spacing:.01em}
+.row .val.dim{color:var(--ash);font-weight:500}
+.row.lead .lbl{font-weight:700;font-size:14px}
+.row.lead .val{font-weight:700}
+.bar{flex:1;max-width:120px;height:6px;border-radius:4px;background:var(--ink);border:1px solid var(--line);overflow:hidden;margin-left:auto}
+.bar i{display:block;height:100%}
+.spark{display:flex;align-items:flex-end;gap:2px;height:18px;margin-left:auto;width:96px}.spark i{flex:1;border-radius:1px;background:color-mix(in srgb,var(--blue) 32%,transparent)}.spark i.h{background:var(--blue)}
+.chips{display:flex;gap:5px;margin-left:auto}.chip{font-family:var(--font-mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:var(--ink);border:1px solid var(--line)}
+.dot7{width:7px;height:7px;border-radius:50%;background:var(--line)}.dot7.lime{background:var(--lime)}.dot7.blue{background:var(--blue)}.dot7.amber{background:var(--amber)}
+.actions{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.btn{flex:1;background:var(--lime);color:var(--ink);border:none;border-radius:999px;padding:11px;font-weight:700;font-size:13px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--chalk);flex:0 0 auto;padding:11px 16px}
+.weekrow{display:flex;gap:5px;margin-left:auto}
+.weekrow .d{display:flex;flex-direction:column;align-items:center;gap:4px}.weekrow .d .n{font-family:var(--font-mono);font-size:8px;color:var(--ash)}.weekrow .d .m{width:8px;height:8px;border-radius:50%;background:var(--line)}.weekrow .d.lime .m{background:var(--lime)}.weekrow .d.blue .m{background:var(--blue)}.weekrow .d.amber .m{background:var(--amber)}.weekrow .d.today .m{background:conic-gradient(var(--lime) 78%,var(--line) 0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm"><div class="t">HYBRID<b>.</b></div><div class="bar" style="max-width:none;height:3px;border:none;border-radius:2px;background:var(--lime);width:26px;flex:none"></div></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 9 · Dense Ledger</b>A pro-tool, terminal-style read — every module is a tight row in one framed ledger, mono values flush-right, hairline dividers. Maximum information per screen, minimum chrome. Toggle Today ⇄ Cockpit below.</div>
+
+  <div class="switch">
+    <input type="radio" name="scr" id="s-today" checked>
+    <input type="radio" name="scr" id="s-cockpit">
+    <div class="toggle">
+      <label for="s-today"><span class="i"></span>Today</label>
+      <label for="s-cockpit"><span class="i"></span>Cockpit</label>
+    </div>
+
+    <div class="screens">
+      <!-- TODAY -->
+      <section class="screen today">
+        <div class="titlebar"><h1>Good morning, Rafal</h1><span class="s">SAT JUN 27 · 🔥12</span></div>
+        <div class="ledger">
+          <div class="grp"><span class="d" style="background:var(--lime)"></span><span class="k">Session</span><span class="go">Soviet 8-Week OWL · Day 3/6</span></div>
+          <div class="row lead"><span class="lbl">Heavy Day</span><span class="chips"><span class="chip" style="color:var(--lime-text)">READY 78</span><span class="chip" style="color:var(--violet)">ACC W4/8</span></span></div>
+          <div class="row"><span class="lbl">Back Squat</span><span class="val">5 × 5 · RPE 8</span></div>
+          <div class="row"><span class="lbl">Bench Press</span><span class="val">5 × 5 · RPE 8</span></div>
+          <div class="row"><span class="lbl">Barbell Row</span><span class="val">4 × 8 · RPE 7</span></div>
+          <div class="row"><span class="lbl">Weighted Pull-up</span><span class="val">3 × 6</span></div>
+          <div class="actions"><button class="btn">▶ Start session</button><button class="btn ghost">Coach</button></div>
+
+          <div class="grp"><span class="d" style="background:var(--blue)"></span><span class="k">Recover · Feel</span></div>
+          <div class="row"><span class="lbl">On track <small>last 7d</small></span><span class="val" style="color:var(--lime-text)">3 / 3 · Strong</span></div>
+          <div class="row"><span class="lbl">Check-in</span><span class="val" style="color:var(--blue)">78 / 100</span></div>
+          <div class="row"><span class="lbl">Fuel <small>P142 C180 F60</small></span><div class="bar"><i style="width:77%;background:var(--amber)"></i></div><span class="val dim" style="margin-left:10px">1,840</span></div>
+
+          <div class="grp"><span class="d" style="background:var(--amber)"></span><span class="k">This week</span><span class="go">Thu · Bench</span></div>
+          <div class="row"><span class="lbl">Mon–Sun</span>
+            <div class="weekrow">
+              <div class="d lime"><span class="n">M</span><span class="m"></span></div>
+              <div class="d blue"><span class="n">T</span><span class="m"></span></div>
+              <div class="d"><span class="n">W</span><span class="m"></span></div>
+              <div class="d today"><span class="n">T</span><span class="m"></span></div>
+              <div class="d amber"><span class="n">F</span><span class="m"></span></div>
+              <div class="d blue"><span class="n">S</span><span class="m"></span></div>
+              <div class="d"><span class="n">S</span><span class="m"></span></div>
+            </div>
+          </div>
+
+          <div class="grp"><span class="d" style="background:var(--violet)"></span><span class="k">Connect</span></div>
+          <div class="row"><span class="lbl">Coach Mara <small>strength</small></span><span class="val dim">12.4k · Follow</span></div>
+          <div class="row"><span class="lbl">Alex <small>PR</small></span><span class="val dim">Deadlift 220kg · 2h</span></div>
+          <div class="row"><span class="lbl">Sam <small>run</small></span><span class="val dim">10K · 47:32 · 5h</span></div>
+        </div>
+      </section>
+
+      <!-- COCKPIT -->
+      <section class="screen cockpit">
+        <div class="titlebar"><h1>Command Center</h1><span class="s">LIVE</span></div>
+        <div class="ledger">
+          <div class="grp"><span class="d" style="background:var(--lime)"></span><span class="k">Today</span><span class="go">Open →</span></div>
+          <div class="row lead"><span class="lbl">Back Squat + Bench</span><span class="val" style="color:var(--lime-text)">78 / 100</span></div>
+          <div class="row"><span class="lbl">Note</span><span class="val dim">Primed · top-set ready</span></div>
+
+          <div class="grp"><span class="d" style="background:var(--violet)"></span><span class="k">Goal · Season</span><span class="go">Open →</span></div>
+          <div class="row lead"><span class="lbl">Powerlifting Total</span><span class="val" style="color:var(--violet)">Wk 4/8</span></div>
+          <div class="row"><span class="lbl">Block <small>event in 6 wk</small></span><span class="val dim">Accumulation</span></div>
+
+          <div class="grp"><span class="d" style="background:var(--blue)"></span><span class="k">Performance Twin</span><span class="go">Open →</span></div>
+          <div class="row lead"><span class="lbl">HPI <small>strong · limiter recovery</small></span><span class="val" style="color:var(--blue)">72</span></div>
+          <div class="row"><span class="lbl">14-day trend</span><div class="spark"><i style="height:44%"></i><i style="height:52%"></i><i style="height:48%"></i><i style="height:60%"></i><i style="height:56%"></i><i style="height:68%"></i><i style="height:64%"></i><i style="height:74%"></i><i style="height:70%"></i><i class="h" style="height:90%"></i></div></div>
+          <div class="row"><span class="lbl">Components</span><span class="chips"><span class="chip" style="color:var(--lime-text)">STR 80</span><span class="chip" style="color:var(--blue)">END 64</span><span class="chip" style="color:var(--violet)">REC +5</span></span></div>
+
+          <div class="grp"><span class="d" style="background:var(--red)"></span><span class="k">Injury Risk</span><span class="go">Open →</span></div>
+          <div class="row lead"><span class="lbl">Tissue load</span><div class="bar"><i style="width:22%;background:var(--lime)"></i></div><span class="val" style="margin-left:10px;color:var(--lime-text)">Low 22</span></div>
+
+          <div class="grp"><span class="d" style="background:var(--lime)"></span><span class="k">Your Week</span><span class="go">3 PR</span></div>
+          <div class="row"><span class="lbl">Volume <small>5 sess · 64 sets</small></span><span class="val">18,400 kg</span></div>
+          <div class="row"><span class="lbl">Distance <small>5 active days</small></span><span class="val">12 km</span></div>
+          <div class="row"><span class="lbl">PRs</span><span class="val dim">SQ 182 · DL 220 · BP 130</span></div>
+
+          <div class="grp"><span class="d" style="background:var(--amber)"></span><span class="k">Modules</span></div>
+          <div class="row"><span class="lbl">Sport S&amp;C</span><span class="val">Hyrox · Intermediate</span></div>
+          <div class="row"><span class="lbl">Velocity</span><span class="val dim">Bar-speed &amp; quality →</span></div>
+          <div class="row"><span class="lbl">Endurance</span><span class="val">8 · 42 km · 310 min</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="foot">L9 Dense Ledger · Today ⇄ Cockpit · HYBRID layout study</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID — L10 Editorial (Today ⇄ Cockpit)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{
+  --color-ink:#0c0d0c;--color-ink2:#141614;--color-card:#161816;--color-line:#2a2d2a;
+  --color-lime:#c4f035;--color-chalk:#f3f4ef;--color-ash:#8b8f86;--color-blue:#7fd4e8;--color-violet:#c9a9f0;--color-amber:#f0b45e;--color-red:#e0625e;
+  --lime-text:#c4f035;--font-display:"Archivo",system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,monospace;
+  --r-card:28px;--shadow:0 6px 22px -12px rgba(0,0,0,.55);
+  --ink:var(--color-ink);--ink2:var(--color-ink2);--line:var(--color-line);--lime:var(--color-lime);--chalk:var(--color-chalk);--ash:var(--color-ash);--blue:var(--color-blue);--violet:var(--color-violet);--amber:var(--color-amber);--red:var(--color-red);--r:var(--r-card);--sh:var(--shadow);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:18px 16px 60px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:var(--font-mono)}
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.av{position:relative;width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--lime) 13%,transparent);border:1px solid var(--lime);display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--lime-text)}
+.av .o{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;background:var(--lime);border:2.5px solid var(--ink)}
+.wm{display:flex;flex-direction:column;align-items:center;gap:5px}.wm .t{font-weight:900;font-size:19px;letter-spacing:-.03em;line-height:1}.wm .t b{color:var(--lime-text)}.wm .bar{width:26px;height:3px;border-radius:2px;background:var(--lime)}
+.bell{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:18px}
+.bell .bd{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#fff}
+.note{font-family:var(--font-mono);font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:14px;padding:11px 13px;margin-bottom:14px;line-height:1.55}
+.note b{color:var(--lime-text);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:4px}
+.switch>input{position:absolute;opacity:0;pointer-events:none}
+.toggle{position:sticky;top:8px;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:16px;box-shadow:var(--shadow)}
+.toggle label{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border-radius:999px;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ash);cursor:pointer}
+.toggle label .i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+#s-today:checked~.toggle label[for=s-today],#s-cockpit:checked~.toggle label[for=s-cockpit]{background:var(--lime);color:var(--ink)}
+.screen{display:none}
+#s-today:checked~.screens .today,#s-cockpit:checked~.screens .cockpit{display:block}
+.foot{margin-top:22px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+a{color:inherit;text-decoration:none}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px}
+.kick{display:flex;align-items:center;gap:8px}.kick .d{width:9px;height:9px;border-radius:5px}.kick .k{font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.open{font-family:var(--font-display);font-weight:700;font-size:12px;background:none;border:0;cursor:pointer;margin-left:auto}
+
+/* EDITORIAL */
+.eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.masthead{margin:2px 2px 14px}.masthead h1{font-size:30px;font-weight:900;letter-spacing:-.035em;line-height:1;margin-top:8px}.masthead .dek{font-family:var(--font-mono);font-size:11px;color:var(--ash);margin-top:10px}
+.hero{display:flex;align-items:flex-end;gap:14px;padding:20px;border-radius:var(--r);border:1px solid var(--line);background:
+  radial-gradient(140% 120% at 100% 0%, color-mix(in srgb,var(--lime) 13%,transparent), transparent 55%),var(--ink2);box-shadow:var(--sh)}
+.hero.blue{background:radial-gradient(140% 120% at 100% 0%, color-mix(in srgb,var(--blue) 14%,transparent), transparent 55%),var(--ink2)}
+.hero .big{font-family:var(--font-mono);font-weight:700;font-size:84px;line-height:.8;letter-spacing:-.05em}
+.hero .big sup{font-size:22px;vertical-align:super;color:var(--ash)}
+.hero .meta{flex:1;padding-bottom:6px}.hero .meta .lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash)}
+.hero .meta .st{font-weight:800;font-size:16px;margin-top:5px;letter-spacing:-.01em}
+.hero .meta .st .em{color:var(--lime-text)}.hero.blue .meta .st .em{color:var(--blue)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:26px;margin-top:10px}.spark i{flex:1;border-radius:2px;background:color-mix(in srgb,var(--lime) 30%,transparent)}.spark i.h{background:var(--lime)}
+.hero.blue .spark i{background:color-mix(in srgb,var(--blue) 30%,transparent)}.hero.blue .spark i.h{background:var(--blue)}
+.feature{margin-top:12px}
+.feature .lead{font-size:24px;font-weight:800;letter-spacing:-.025em;margin-top:10px}.feature .sub{font-family:var(--font-mono);font-size:11px;color:var(--violet);margin-top:6px}
+.ex{margin-top:14px;border-top:1px solid var(--line)}.ex .r{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.ex .r:last-child{border-bottom:none}.ex .nm{font-weight:600;font-size:14px}.ex .sc{font-family:var(--font-mono);font-size:11.5px;color:var(--ash)}
+.btn{background:var(--lime);color:var(--ink);border:none;border-radius:999px;padding:13px 16px;font-weight:700;font-size:14px;cursor:pointer;width:100%;margin-top:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.w2{grid-column:span 2}
+.cellk{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);display:flex;align-items:center;gap:6px}.cellk .d{width:7px;height:7px;border-radius:50%}
+.bignum{font-family:var(--font-mono);font-weight:700;font-size:34px;line-height:1;margin-top:10px;letter-spacing:-.03em}
+.cellsub{font-family:var(--font-mono);font-size:10px;color:var(--ash);margin-top:7px}
+.dots{display:flex;gap:5px;margin-top:10px}.dots i{width:9px;height:9px;border-radius:50%;background:color-mix(in srgb,var(--blue) 30%,transparent)}.dots i.on{background:var(--blue)}
+.bar{height:6px;border-radius:99px;background:var(--ink);border:1px solid var(--line);overflow:hidden;margin:10px 0 8px}.bar i{display:block;height:100%}
+.macros{font-family:var(--font-mono);font-size:10px;color:var(--ash)}
+.coach{display:flex;align-items:center;gap:12px}.coach .g{width:36px;height:36px;border-radius:11px;flex:none;background:color-mix(in srgb,var(--violet) 18%,transparent);border:1px solid color-mix(in srgb,var(--violet) 38%,transparent);display:grid;place-items:center;color:var(--violet);font-size:16px}.coach .tx{flex:1;font-size:13px;color:var(--ash);line-height:1.45}.coach .tx b{color:var(--chalk)}.coach .go{font-family:var(--font-mono);color:var(--violet);font-weight:700;font-size:12px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}.day{text-align:center}.day .dn{font-family:var(--font-mono);font-size:8.5px;color:var(--ash)}.day .dd{width:10px;height:10px;border-radius:50%;background:var(--line);margin:8px auto 5px}.day .dl{font-family:var(--font-mono);font-size:8px;color:var(--ash)}.day.lime .dd{background:var(--lime)}.day.blue .dd{background:var(--blue)}.day.amber .dd{background:var(--amber)}.day.today .dd{background:conic-gradient(var(--lime) 78%,var(--line) 0)}
+.comp{display:flex;gap:18px;margin-top:8px}.comp .cv{font-family:var(--font-mono);font-weight:700;font-size:19px}.comp .cl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:3px}
+.driver{font-size:12.5px;line-height:1.5;color:color-mix(in srgb,var(--chalk) 84%,transparent);margin-top:10px}
+.bigttl{font-size:18px;font-weight:800;letter-spacing:-.02em}.subttl{font-family:var(--font-mono);font-size:10.5px;color:var(--ash);margin-top:6px}.subttl.v{color:var(--violet)}
+.pr-line{font-family:var(--font-mono);font-size:10px;color:var(--ash);margin-top:10px;line-height:1.6}.pr-line b{color:var(--chalk)}
+.mod{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.mod:last-child{border-bottom:none}.mod .d{width:7px;height:7px;border-radius:50%;flex:none}.mod .mk{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}.mod .mv{margin-left:auto;font-weight:700;font-size:13px}.mod .mv.mono{font-family:var(--font-mono);font-size:11px;color:var(--ash);font-weight:500}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm"><div class="t">HYBRID<b>.</b></div><div class="bar" style="width:26px;height:3px"></div></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 10 · Editorial</b>A magazine cover treatment — one oversized hero number, a feature story, then an asymmetric grid of modules. Type-led and confident. Toggle Today ⇄ Cockpit below; each leads with its headline metric.</div>
+
+  <div class="switch">
+    <input type="radio" name="scr" id="s-today" checked>
+    <input type="radio" name="scr" id="s-cockpit">
+    <div class="toggle">
+      <label for="s-today"><span class="i"></span>Today</label>
+      <label for="s-cockpit"><span class="i"></span>Cockpit</label>
+    </div>
+
+    <div class="screens">
+      <!-- TODAY -->
+      <section class="screen today">
+        <div class="masthead"><div class="eyebrow">Saturday, June 27 · 🔥 12 day streak</div><h1>Good morning,<br>Rafal.</h1></div>
+
+        <div class="hero">
+          <div class="big">78<sup>/100</sup></div>
+          <div class="meta">
+            <div class="lab">Readiness</div>
+            <div class="st">Primed <span class="em">· push the top set</span></div>
+            <div class="spark"><i style="height:42%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:63%"></i><i style="height:58%"></i><i style="height:72%"></i><i style="height:66%"></i><i style="height:80%"></i><i class="h" style="height:96%"></i></div>
+          </div>
+        </div>
+
+        <div class="card feature">
+          <span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Today's session</span></span>
+          <div class="lead">Soviet 8-Week OWL</div><div class="sub">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+          <div class="ex">
+            <div class="r"><span class="nm">Back Squat</span><span class="sc">5 × 5 · RPE 8</span></div>
+            <div class="r"><span class="nm">Bench Press</span><span class="sc">5 × 5 · RPE 8</span></div>
+            <div class="r"><span class="nm">Barbell Row</span><span class="sc">4 × 8 · RPE 7</span></div>
+            <div class="r"><span class="nm">Weighted Pull-up</span><span class="sc">3 × 6</span></div>
+          </div>
+          <button class="btn">▶ Start session</button>
+        </div>
+
+        <div class="grid">
+          <div class="card"><div class="cellk"><span class="d" style="background:var(--blue)"></span>Check-in</div><div class="bignum" style="color:var(--blue)">78</div><div class="cellsub">How do you feel?</div><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+          <div class="card"><div class="cellk"><span class="d" style="background:var(--amber)"></span>Fuel</div><div class="bignum" style="font-size:24px;color:var(--amber)">1,840</div><div class="bar"><i style="width:77%;background:var(--amber)"></i></div><div class="macros">/ 2,400 · P142 C180 F60</div></div>
+          <div class="card w2 coach"><div class="g">✦</div><div class="tx">Readiness <b>78</b> — squats look primed, push the top set.</div><a class="go">Ask →</a></div>
+          <div class="card w2">
+            <span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k" style="color:var(--amber)">This week</span></span>
+            <div class="week">
+              <div class="day lime"><div class="dn">M</div><div class="dd"></div><div class="dl">Squat</div></div>
+              <div class="day blue"><div class="dn">T</div><div class="dd"></div><div class="dl">Run</div></div>
+              <div class="day"><div class="dn">W</div><div class="dd"></div><div class="dl">Rest</div></div>
+              <div class="day today"><div class="dn">T</div><div class="dd"></div><div class="dl">Bench</div></div>
+              <div class="day amber"><div class="dn">F</div><div class="dd"></div><div class="dl">Sport</div></div>
+              <div class="day blue"><div class="dn">S</div><div class="dd"></div><div class="dl">Long</div></div>
+              <div class="day"><div class="dn">S</div><div class="dd"></div><div class="dl">Rest</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COCKPIT -->
+      <section class="screen cockpit">
+        <div class="masthead"><div class="eyebrow">Command Center · Live</div><h1>Read at<br>a glance.</h1></div>
+
+        <div class="hero blue">
+          <div class="big">72</div>
+          <div class="meta">
+            <div class="lab">Performance · HPI</div>
+            <div class="st">Strong <span class="em">· limiter recovery</span></div>
+            <div class="spark"><i style="height:42%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:63%"></i><i style="height:58%"></i><i style="height:72%"></i><i style="height:66%"></i><i style="height:80%"></i><i class="h" style="height:96%"></i></div>
+          </div>
+        </div>
+
+        <div class="card feature">
+          <div class="comp"><div><div class="cv" style="color:var(--lime)">80</div><div class="cl">Strength</div></div><div><div class="cv" style="color:var(--blue)">64</div><div class="cl">Endurance</div></div><div><div class="cv" style="color:var(--violet)">+5</div><div class="cl">Recovery</div></div></div>
+          <div class="driver">Strength trending up; recovery is the current ceiling.</div>
+        </div>
+
+        <div class="grid">
+          <div class="card w2"><div class="cellk"><span class="d" style="background:var(--lime)"></span>Today · Readiness 78</div><div class="bigttl" style="margin-top:8px">Back Squat + Bench Press</div><div class="subttl">Primed. Top-set ready; keep accessories crisp.</div></div>
+          <div class="card"><div class="cellk"><span class="d" style="background:var(--violet)"></span>Goal</div><div class="bigttl" style="font-size:16px;margin-top:8px">Powerlifting</div><div class="subttl v">Accum · Wk 4/8</div></div>
+          <div class="card"><div class="cellk"><span class="d" style="background:var(--red)"></span>Injury risk</div><div class="bignum" style="font-size:26px;color:var(--lime-text)">Low</div><div class="bar"><i style="width:22%;background:var(--lime)"></i></div><div class="macros">22 / 100 · clear</div></div>
+          <div class="card w2"><div class="cellk"><span class="d" style="background:var(--lime)"></span>Your week · 3 PR</div>
+            <div class="comp" style="margin-top:10px"><div><div class="cv">5</div><div class="cl">Sessions</div></div><div><div class="cv">18.4k</div><div class="cl">Volume</div></div><div><div class="cv">64</div><div class="cl">Sets</div></div><div><div class="cv">12</div><div class="cl">km</div></div></div>
+            <div class="pr-line"><b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)</div>
+          </div>
+          <div class="card w2">
+            <div class="mod"><span class="d" style="background:var(--amber)"></span><span class="mk">Sport S&amp;C</span><span class="mv">Hyrox · Intermediate</span></div>
+            <div class="mod"><span class="d" style="background:var(--blue)"></span><span class="mk">Velocity</span><span class="mv mono">Bar-speed &amp; quality →</span></div>
+            <div class="mod"><span class="d" style="background:var(--lime)"></span><span class="mk">Endurance</span><span class="mv mono">8 · 42 km · 310 min</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="foot">L10 Editorial · Today ⇄ Cockpit · HYBRID layout study</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYBRID — L6 Spotlight Deck (Today ⇄ Cockpit)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+:root{
+  --color-ink:#0c0d0c;--color-ink2:#141614;--color-card:#161816;--color-line:#2a2d2a;
+  --color-lime:#c4f035;--color-chalk:#f3f4ef;--color-ash:#8b8f86;--color-blue:#7fd4e8;--color-violet:#c9a9f0;--color-amber:#f0b45e;--color-red:#e0625e;
+  --lime-text:#c4f035;--font-display:"Archivo",system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,monospace;
+  --r-card:28px;--shadow:0 6px 22px -12px rgba(0,0,0,.55);
+  --ink:var(--color-ink);--ink2:var(--color-ink2);--line:var(--color-line);--lime:var(--color-lime);--chalk:var(--color-chalk);--ash:var(--color-ash);--blue:var(--color-blue);--violet:var(--color-violet);--amber:var(--color-amber);--red:var(--color-red);--r:var(--r-card);--sh:var(--shadow);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--chalk);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;padding:18px 16px 60px;min-height:100vh}
+.app{width:100%;max-width:440px}
+.mono{font-family:var(--font-mono)}
+/* header */
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.av{position:relative;width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--lime) 13%,transparent);border:1px solid var(--lime);display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--lime-text)}
+.av .o{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;background:var(--lime);border:2.5px solid var(--ink)}
+.wm{display:flex;flex-direction:column;align-items:center;gap:5px}.wm .t{font-weight:900;font-size:19px;letter-spacing:-.03em;line-height:1}.wm .t b{color:var(--lime-text)}.wm .bar{width:26px;height:3px;border-radius:2px;background:var(--lime)}
+.bell{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:18px}
+.bell .bd{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#fff}
+.note{font-family:var(--font-mono);font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:14px;padding:11px 13px;margin-bottom:14px;line-height:1.55}
+.note b{color:var(--lime-text);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:4px}
+/* toggle */
+.switch>input{position:absolute;opacity:0;pointer-events:none}
+.toggle{position:sticky;top:8px;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:16px;box-shadow:var(--shadow)}
+.toggle label{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border-radius:999px;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ash);cursor:pointer}
+.toggle label .i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+#s-today:checked~.toggle label[for=s-today],#s-cockpit:checked~.toggle label[for=s-cockpit]{background:var(--lime);color:var(--ink)}
+.screen{display:none}
+#s-today:checked~.screens .today,#s-cockpit:checked~.screens .cockpit{display:block}
+/* shared bits */
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:20px}
+.kick{display:flex;align-items:center;gap:8px}.kick .d{width:9px;height:9px;border-radius:5px}.kick .k{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.open{font-family:var(--font-display);font-weight:700;font-size:12px;background:none;border:0;cursor:pointer;margin-left:auto}
+.ring{width:54px;height:54px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,var(--line) 0);display:grid;place-items:center;position:relative}.ring::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--ink2)}.ring span{position:relative;z-index:1;font-weight:800;font-size:16px;color:var(--chalk)}
+.btn{background:var(--lime);color:var(--ink);border:none;border-radius:999px;padding:13px 16px;font-weight:700;font-size:14px;cursor:pointer;width:100%}
+.foot{margin-top:22px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+a{color:inherit;text-decoration:none}
+/* deck */
+.greet{margin-bottom:14px}.greet h1{font-size:21px;font-weight:800;letter-spacing:-.02em}.greet .dt{font-family:var(--font-mono);font-size:11px;color:var(--ash);margin-top:5px}
+.greet .streak{display:inline-block;margin-top:9px;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--amber);background:color-mix(in srgb,var(--amber) 13%,transparent);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);padding:4px 11px;border-radius:999px}
+.titlebar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}.titlebar h1{font-size:21px;font-weight:800;letter-spacing:-.03em}.titlebar .s{font-family:var(--font-mono);font-size:10.5px;color:var(--ash)}
+.deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px;margin:0 -16px;padding-left:16px;padding-right:16px}
+.deck::-webkit-scrollbar{display:none}
+.slide{flex:0 0 90%;scroll-snap-align:center}
+.slide .card{min-height:420px;display:flex;flex-direction:column}
+.slide .ch{display:flex;align-items:center;margin-bottom:16px}
+.h2{font-size:22px;font-weight:800;letter-spacing:-.02em}.sub{font-family:var(--font-mono);font-size:11px;color:var(--violet);margin-top:6px}
+.ex{margin-top:16px;border-top:1px solid var(--line)}.ex .r{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.ex .r:last-child{border-bottom:none}.ex .nm{font-weight:600;font-size:14px}.ex .sc{font-family:var(--font-mono);font-size:11.5px;color:var(--ash)}
+.spacer{flex:1}
+.dots{display:flex;justify-content:center;gap:7px;margin-top:14px}.dots i{width:7px;height:7px;border-radius:999px;background:var(--line)}.dots i.on{width:22px;background:var(--lime)}
+.coach{display:flex;align-items:center;gap:13px}.coach .g{width:40px;height:40px;border-radius:12px;flex:none;background:color-mix(in srgb,var(--violet) 18%,transparent);border:1px solid color-mix(in srgb,var(--violet) 38%,transparent);display:grid;place-items:center;color:var(--violet);font-size:18px}
+.coach .tx{flex:1;font-size:14px;color:var(--ash);line-height:1.5}.coach .tx b{color:var(--chalk)}
+.inp{display:flex;align-items:center;gap:10px;margin-top:16px;background:var(--ink);border:1px solid var(--line);border-radius:999px;padding:11px 11px 11px 16px}.inp .ph{flex:1;font-size:13px;color:var(--ash)}.inp .s{width:32px;height:32px;border-radius:50%;background:var(--violet);color:#15101e;display:grid;place-items:center;font-weight:800}
+.log{display:flex;align-items:center;justify-content:space-between;margin-top:14px;border:1px dashed var(--line);border-radius:16px;padding:14px 16px}.log .t{font-size:13.5px;font-weight:600}.log .a{color:var(--blue);font-weight:800}
+.row3{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.track{display:flex;align-items:center;gap:10px;background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:13px 15px}.gdot{width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}.track .t{flex:1;font-size:13.5px;font-weight:600}.track .r{font-family:var(--font-mono);font-size:11px;color:var(--ash)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--ink);border:1px solid var(--line);border-radius:18px;padding:15px}
+.tile .tk{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash);display:flex;align-items:center;gap:6px}.tile .tk .d{width:7px;height:7px;border-radius:50%}
+.feel .n{font-family:var(--font-mono);font-weight:700;font-size:30px;color:var(--blue);margin-top:10px}.feel .o{font-family:var(--font-mono);font-size:11px;color:var(--ash)}.feel .q{font-size:12.5px;font-weight:600;margin-top:8px}
+.nut .kc{font-family:var(--font-mono);font-weight:700;font-size:16px;margin-top:10px}.nut .kc small{color:var(--ash);font-weight:400;font-size:11px}.nut .bar{height:6px;border-radius:99px;background:var(--ink2);border:1px solid var(--line);overflow:hidden;margin:9px 0}.nut .bar i{display:block;height:100%;width:77%;background:var(--amber)}.nut .m{font-family:var(--font-mono);font-size:10px;color:var(--ash)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:4px}.day{text-align:center}.day .dn{font-family:var(--font-mono);font-size:9px;color:var(--ash)}.day .dd{width:10px;height:10px;border-radius:50%;background:var(--line);margin:9px auto 6px}.day .dl{font-family:var(--font-mono);font-size:8px;color:var(--ash)}.day.lime .dd{background:var(--lime)}.day.blue .dd{background:var(--blue)}.day.amber .dd{background:var(--amber)}.day.today .dd{background:conic-gradient(var(--lime) 78%,var(--line) 0)}
+.cc{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.cc:last-child{border-bottom:none}.cc .ca{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-weight:700;font-size:12px;background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}.cc .cn{font-weight:700;font-size:13.5px}.cc .cs{font-family:var(--font-mono);font-size:9.5px;color:var(--ash);margin-top:2px}.cc .fl{margin-left:auto;border:1px solid var(--violet);background:transparent;color:var(--violet);border-radius:999px;padding:6px 14px;font-weight:700;font-size:11px;cursor:pointer}
+.bigttl{font-size:20px;font-weight:800;letter-spacing:-.02em}.subttl{font-family:var(--font-mono);font-size:11px;color:var(--ash);margin-top:7px}.subttl.v{color:var(--violet)}
+.split{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.twin{display:flex;align-items:center;gap:16px}.hpi{font-family:var(--font-mono);font-weight:700;font-size:52px;line-height:.9;letter-spacing:-.03em;color:var(--blue)}.tmeta{flex:1}.tmeta .l{font-family:var(--font-mono);font-size:10px;color:var(--ash)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:28px;margin-top:9px}.spark i{flex:1;border-radius:2px;background:color-mix(in srgb,var(--blue) 32%,transparent)}.spark i.h{background:var(--blue)}
+.comp{display:flex;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.comp .cv{font-family:var(--font-mono);font-weight:700;font-size:20px}.comp .cl{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:4px}
+.driver{font-size:13.5px;line-height:1.55;color:color-mix(in srgb,var(--chalk) 84%,transparent);margin-top:14px}
+.risk{display:flex;align-items:center;gap:14px}.risk .band{font-weight:800;font-size:22px;color:var(--lime)}.risk .bar{flex:1;height:9px;border-radius:5px;background:var(--ink);border:1px solid var(--line);overflow:hidden}.risk .bar i{display:block;height:100%;width:22%;background:var(--lime)}.risk .n{font-family:var(--font-mono);font-size:11px;color:var(--ash)}
+.pr-pill{font-family:var(--font-mono);font-size:9.5px;font-weight:700;color:#10130a;background:var(--lime);border-radius:999px;padding:4px 11px;margin-left:auto}
+.wstats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px}.wstats .s{background:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px}.wstats .sv{font-family:var(--font-mono);font-weight:700;font-size:20px}.wstats .sl{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:5px}
+.pr-line{font-family:var(--font-mono);font-size:10.5px;color:var(--ash);margin-top:14px;line-height:1.65}.pr-line b{color:var(--chalk)}
+.mod{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.mod:last-child{border-bottom:none}.mod .d{width:8px;height:8px;border-radius:50%;flex:none}.mod .mk{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}.mod .mv{margin-left:auto;font-weight:700;font-size:13.5px}.mod .mv.mono{font-family:var(--font-mono);font-size:11.5px;color:var(--ash);font-weight:500}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <div class="av">RA<span class="o"></span></div>
+    <div class="wm"><div class="t">HYBRID<b>.</b></div><div class="bar"></div></div>
+    <div class="bell">🔔<span class="bd">3</span></div>
+  </div>
+
+  <div class="note"><b>Layout 6 · Spotlight Deck</b>Each screen is a horizontal deck of full-width cards you swipe through — one focus at a time, dots track your place. Toggle Today ⇄ Cockpit below; both share the same deck behaviour.</div>
+
+  <div class="switch">
+    <input type="radio" name="scr" id="s-today" checked>
+    <input type="radio" name="scr" id="s-cockpit">
+    <div class="toggle">
+      <label for="s-today"><span class="i"></span>Today</label>
+      <label for="s-cockpit"><span class="i"></span>Cockpit</label>
+    </div>
+
+    <div class="screens">
+      <!-- ============ TODAY ============ -->
+      <section class="screen today">
+        <div class="greet"><h1>Good morning, Rafal</h1><div class="dt">Saturday, June 27</div><span class="streak">🔥 12 day streak</span></div>
+        <div class="deck">
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Today's session</span></span><div class="ring" style="margin-left:auto"><span>78</span></div></div>
+            <div class="h2">Soviet 8-Week OWL</div><div class="sub">Heavy Day · Day 3/6 · Accumulation Wk 4/8</div>
+            <div class="ex">
+              <div class="r"><span class="nm">Back Squat</span><span class="sc">5 × 5 · RPE 8</span></div>
+              <div class="r"><span class="nm">Bench Press</span><span class="sc">5 × 5 · RPE 8</span></div>
+              <div class="r"><span class="nm">Barbell Row</span><span class="sc">4 × 8 · RPE 7</span></div>
+              <div class="r"><span class="nm">Weighted Pull-up</span><span class="sc">3 × 6</span></div>
+            </div>
+            <div class="spacer"></div><button class="btn" style="margin-top:16px">▶ Start session</button>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--violet)"></span><span class="k" style="color:var(--violet)">AI Coach</span></span></div>
+            <div class="coach"><div class="g">✦</div><div class="tx">Your readiness is <b>78</b>. Squats look primed — push the top set.</div></div>
+            <div class="inp"><span class="ph">Ask anything about today…</span><span class="s">↑</span></div>
+            <div class="log"><span class="t">🏃 Back from a run or match? Log it</span><span class="a">→</span></div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k" style="color:var(--blue)">Recover · Feel</span></span></div>
+            <div class="row3">
+              <div class="track"><span class="gdot"></span><span class="t">You're on track this week</span><span class="r">3/3 · Habit strong</span></div>
+              <div class="duo">
+                <div class="tile feel"><div class="tk"><span class="d" style="background:var(--blue)"></span>Check-in</div><div class="n">78</div><div class="o">/ 100</div><div class="q">How do you feel?</div></div>
+                <div class="tile nut"><div class="tk"><span class="d" style="background:var(--amber)"></span>Fuel</div><div class="kc">1,840 <small>/ 2,400</small></div><div class="bar"><i></i></div><div class="m">P 142 · C 180 · F 60</div></div>
+              </div>
+            </div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k" style="color:var(--amber)">This week</span></span></div>
+            <div class="week">
+              <div class="day lime"><div class="dn">M</div><div class="dd"></div><div class="dl">Squat</div></div>
+              <div class="day blue"><div class="dn">T</div><div class="dd"></div><div class="dl">Run</div></div>
+              <div class="day"><div class="dn">W</div><div class="dd"></div><div class="dl">Rest</div></div>
+              <div class="day today"><div class="dn">T</div><div class="dd"></div><div class="dl">Bench</div></div>
+              <div class="day amber"><div class="dn">F</div><div class="dd"></div><div class="dl">Sport</div></div>
+              <div class="day blue"><div class="dn">S</div><div class="dd"></div><div class="dl">Long</div></div>
+              <div class="day"><div class="dn">S</div><div class="dd"></div><div class="dl">Rest</div></div>
+            </div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--violet)"></span><span class="k" style="color:var(--violet)">Connect</span></span></div>
+            <div class="cc"><div class="ca">CM</div><div><div class="cn">Coach Mara</div><div class="cs">Strength · 12.4k</div></div><button class="fl">Follow</button></div>
+            <div class="cc"><div class="ca">DC</div><div><div class="cn">Devin Cross</div><div class="cs">Hyrox · 8.1k</div></div><button class="fl">Follow</button></div>
+            <div class="cc"><div class="ca" style="background:color-mix(in srgb,var(--lime) 14%,transparent);color:var(--lime)">AX</div><div><div class="cn">Alex PR'd Deadlift 220kg</div><div class="cs">2h ago</div></div></div>
+            <div class="spacer"></div>
+          </div></div>
+        </div>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+      </section>
+
+      <!-- ============ COCKPIT ============ -->
+      <section class="screen cockpit">
+        <div class="titlebar"><h1>Command Center</h1><span class="s">Read at a glance</span></div>
+        <div class="deck">
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Today · 78 / 100</span></span><button class="open" style="color:var(--lime)">Log →</button></div>
+            <div class="split"><div><div class="bigttl">Back Squat + Bench Press</div><div class="subttl">Primed. Top-set ready; keep accessories crisp.</div></div><div class="ring"><span>78</span></div></div>
+            <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)"><div class="kick" style="margin-bottom:8px"><span class="d" style="background:var(--violet)"></span><span class="k" style="color:var(--violet)">Goal &amp; Season</span></div><div class="bigttl" style="font-size:18px">Powerlifting Total</div><div class="subttl v">Accumulation · Week 4/8 · Event in 6 wk</div></div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--blue)"></span><span class="k" style="color:var(--blue)">Performance Twin</span></span><button class="open" style="color:var(--blue)">Open →</button></div>
+            <div class="twin"><div class="hpi">72</div><div class="tmeta"><div class="l">HPI · Strong · Limiter Recovery</div><div class="spark"><i style="height:44%"></i><i style="height:52%"></i><i style="height:48%"></i><i style="height:60%"></i><i style="height:56%"></i><i style="height:68%"></i><i style="height:64%"></i><i style="height:74%"></i><i style="height:70%"></i><i class="h" style="height:90%"></i></div></div></div>
+            <div class="comp"><div><div class="cv" style="color:var(--lime)">80</div><div class="cl">STR</div></div><div><div class="cv" style="color:var(--blue)">64</div><div class="cl">END</div></div><div><div class="cv" style="color:var(--violet)">+5</div><div class="cl">REC</div></div></div>
+            <div class="driver">Strength trending up; recovery is the current ceiling.</div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--red)"></span><span class="k" style="color:var(--red)">Injury Risk</span></span><button class="open" style="color:var(--red)">Open →</button></div>
+            <div class="risk"><span class="band">Low</span><div class="bar"><i></i></div><span class="n">22/100</span></div>
+            <div class="subttl" style="color:var(--lime);margin-top:13px">No tissues flagged — keep it here.</div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--lime)"></span><span class="k" style="color:var(--lime)">Your Week</span></span><span class="pr-pill">3 PR</span></div>
+            <div class="wstats">
+              <div class="s"><div class="sv">5</div><div class="sl">Sessions</div></div>
+              <div class="s"><div class="sv">18,400</div><div class="sl">Volume kg</div></div>
+              <div class="s"><div class="sv">64</div><div class="sl">Sets</div></div>
+              <div class="s"><div class="sv">12 · 5</div><div class="sl">km · active</div></div>
+            </div>
+            <div class="pr-line"><b>Back Squat 182kg</b> (+5) · <b>Deadlift 220kg</b> (+10) · <b>Bench 130kg</b> (+2)</div>
+            <div class="spacer"></div>
+          </div></div>
+          <div class="slide"><div class="card">
+            <div class="ch"><span class="kick"><span class="d" style="background:var(--amber)"></span><span class="k" style="color:var(--amber)">Modules</span></span></div>
+            <div class="mod"><span class="d" style="background:var(--amber)"></span><span class="mk">Sport S&amp;C</span><span class="mv">Hyrox · Intermediate</span></div>
+            <div class="mod"><span class="d" style="background:var(--blue)"></span><span class="mk">Velocity</span><span class="mv mono">Bar-speed &amp; quality →</span></div>
+            <div class="mod"><span class="d" style="background:var(--lime)"></span><span class="mk">Endurance</span><span class="mv mono">8 · 42 km · 310 min</span></div>
+            <div class="spacer"></div>
+          </div></div>
+        </div>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="foot">L6 Spotlight Deck · Today ⇄ Cockpit · HYBRID layout study</div>
+</div>
+</body>
+</html>
