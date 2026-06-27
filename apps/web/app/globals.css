@@ -535,10 +535,17 @@ html {
   mix-blend-mode: screen;
   will-change: transform;
 }
-[data-theme="light"] .lg-field .lg-blob { mix-blend-mode: multiply; opacity: 0.2; }
 .lg-field .lg-a { background: var(--color-lime);   top: -8vmax;  left: -6vmax;  animation: lgDrift1 19s ease-in-out infinite; }
 .lg-field .lg-b { background: var(--color-blue);   top: 8vmax;   right: -10vmax; animation: lgDrift2 23s ease-in-out infinite; }
 .lg-field .lg-c { background: var(--color-violet); bottom: -14vmax; left: 34%;   animation: lgDrift3 27s ease-in-out infinite; }
+
+/* JAPANDI (light): retint the ambient field to warm, low-chroma stone tones —
+   the lime/blue/violet rainbow multiplied over warm paper turned the page green.
+   Warm neutrals keep the calm oat-paper feel; Aurora (dark) keeps its accents. */
+[data-theme="light"] .lg-field .lg-blob { mix-blend-mode: multiply; opacity: 0.16; filter: blur(80px); }
+[data-theme="light"] .lg-field .lg-a { background: #e0d2b6; }
+[data-theme="light"] .lg-field .lg-b { background: #d8cdbb; }
+[data-theme="light"] .lg-field .lg-c { background: #ddc8b4; }
 @keyframes lgDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7vmax,5vmax,0) scale(1.15); } }
 @keyframes lgDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-6vmax,6vmax,0) scale(1.1); } }
 @keyframes lgDrift3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-5vmax,-5vmax,0) scale(1.2); } }

@@ -12,7 +12,7 @@ import {
   type LoggedSession,
   type SessionBlock,
 } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, BLUE, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, ON_ACCENT, disp, mono, Mono, Card } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
 const field = {
@@ -98,7 +98,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
   // (no glass) there; the classic skin keeps the default glass Card.
   const content = (
     <>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
         {t("w.home.quickSport.title")}
       </Mono>
       <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>
@@ -134,7 +134,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
       </div>
       {(pace || msg) && (
         <div role="alert">
-          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={msg.startsWith("✓") ? LIME : pace ? BLUE : ASH}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={msg.startsWith("✓") ? LIME : pace ? LIME : ASH}>
             {msg || `${t("w.home.quickSport.pace")} ${pace}`}
           </Mono>
         </div>
@@ -241,12 +241,12 @@ function SportPicker({ sport, onPick }: { sport: string; onPick: (name: string) 
                         key={s.name}
                         type="button"
                         onClick={() => select(s.name)}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "10px 15px", cursor: "pointer", textAlign: "left", border: 0, background: on ? `color-mix(in srgb, ${BLUE} 12%, transparent)` : "transparent", color: CHALK }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "10px 15px", cursor: "pointer", textAlign: "left", border: 0, background: on ? `color-mix(in srgb, ${LIME} 14%, transparent)` : "transparent", color: CHALK }}
                       >
                         <span style={{ width: 20, textAlign: "center", fontSize: fs.bodyLg }}>{s.icon}</span>
-                        <span style={{ ...disp, flex: 1, fontWeight: 500, fontSize: fs.body, color: on ? BLUE : CHALK }}>{s.name}</span>
+                        <span style={{ ...disp, flex: 1, fontWeight: 500, fontSize: fs.body, color: on ? "var(--lime-text)" : CHALK }}>{s.name}</span>
                         <span style={{ ...mono, fontSize: fs.micro, color: ASH }}>{hint}</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={on ? BLUE : "transparent"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={on ? LIME : "transparent"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="m5 12 5 5 9-11" />
                         </svg>
                       </button>

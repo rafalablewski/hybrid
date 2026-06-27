@@ -116,7 +116,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
   const Surface = solid ? ACard : Card;
   return (
     <Surface style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.blue) }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
         {t("quickSport.title")}
       </Text>
       <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{t("quickSport.sub")}</Mono>
@@ -169,9 +169,9 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
                         style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}
                       >
                         <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{s.icon}</Text>
-                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: on ? txt(C, C.blue) : C.chalk }}>{s.name}</Text>
+                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: on ? txt(C, C.lime) : C.chalk }}>{s.name}</Text>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{hint}</Text>
-                        {on && <AuroraIcon name="check" size={16} color={txt(C, C.blue)} />}
+                        {on && <AuroraIcon name="check" size={16} color={txt(C, C.lime)} />}
                       </Pressable>
                     );
                   })}
@@ -211,7 +211,7 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
       </View>
 
       {(pace || msg) && (
-        <Text accessibilityLiveRegion={msg ? "polite" : "none"} style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg.startsWith("✓") ? txt(C, C.lime) : pace ? txt(C, C.blue) : C.ash }}>
+        <Text accessibilityLiveRegion={msg ? "polite" : "none"} style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg.startsWith("✓") ? txt(C, C.lime) : pace ? txt(C, C.lime) : C.ash }}>
           {msg || `${t("workout.pace")} ${pace}`}
         </Text>
       )}
