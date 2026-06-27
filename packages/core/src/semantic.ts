@@ -32,6 +32,22 @@ export const ROLE_COLOR: Record<SemanticRole, AccentKey> = {
   neutral: "ash",
 };
 
+/**
+ * AURORA SPECTRUM — the Today daily-flow sections are colour-coded across the
+ * brand palette so the screen reads as a guided gradient (Train → Feel → Plan →
+ * Connect). These are DECORATIVE section accents (the section kicker dot), NOT
+ * state colours, so they live apart from ROLE_COLOR above. Both clients resolve
+ * a section → the same AccentKey here, so web + mobile can't drift on the look.
+ */
+export type DailySection = "train" | "feel" | "plan" | "connect";
+
+export const SECTION_COLOR: Record<DailySection, AccentKey> = {
+  train: "lime", // chartreuse — the action colour
+  feel: "blue", // teal
+  plan: "amber", // sand
+  connect: "red", // terracotta (also the warm streak accent)
+};
+
 /** Readiness 0–100 → state role (green → amber → red). */
 export function readinessRole(v: number): SemanticRole {
   if (v >= 80) return "go";

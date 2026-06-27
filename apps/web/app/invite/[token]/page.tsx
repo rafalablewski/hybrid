@@ -11,7 +11,7 @@ import { useParams, useRouter } from "next/navigation";
 // claim on return, and an email match auto-links too (see /api/me).
 
 const INK = "#0c0d0c";
-const LIME = "#c4f035";
+const LIME = "#c7ef00";
 const FG = "#f3f5ef";
 const DIM = "#a7ad9e";
 const LINE = "#2a2e28";

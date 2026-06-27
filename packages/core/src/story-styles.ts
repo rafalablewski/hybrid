@@ -65,7 +65,7 @@ export const STORY_STYLES: readonly StoryStyle[] = [
     id: "aurora",
     nameKey: "summary.style.aurora",
     bg: colors.ink,
-    discs: [{ x: 0.78, y: 0.16, r: 0.58, color: "rgba(196,240,53,0.20)" }],
+    discs: [{ x: 0.78, y: 0.16, r: 0.58, color: "rgba(199,239,0,0.20)" }],
     text: colors.chalk,
     muted: colors.ash,
     accent: colors.lime,
@@ -81,8 +81,8 @@ export const STORY_STYLES: readonly StoryStyle[] = [
     nameKey: "summary.style.liquidGlass",
     bg: colors.ink,
     discs: [
-      { x: 0.24, y: 0.2, r: 0.58, color: "rgba(196,240,53,0.30)" },
-      { x: 0.82, y: 0.78, r: 0.58, color: "rgba(127,212,232,0.28)" },
+      { x: 0.24, y: 0.2, r: 0.58, color: "rgba(199,239,0,0.30)" },
+      { x: 0.82, y: 0.78, r: 0.58, color: "rgba(60,120,126,0.28)" },
     ],
     // Borderless frosted slab — the rim stroke read as a "weird" floating box,
     // so the glass is just the translucent fill + the lime×blue glows behind it.
