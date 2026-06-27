@@ -6,34 +6,34 @@
 <title>Today — L2 Bento Grid</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--r:18px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
+:root{--ink:#0c0d0c;--ink2:#141614;--card:#161816;--line:#2a2d2a;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--blue:#7fd4e8;--violet:#c9a9f0;--amber:#f0b45e;--red:#e0625e;--lime-text:#c4f035;--blue-text:#7fd4e8;--violet-text:#c9a9f0;--amber-text:#f0b45e;--red-text:#e0625e;--font-display:"Archivo",system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,monospace;--r:28px;--sh:0 6px 22px -12px rgba(0,0,0,.55)}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--ink);color:var(--chalk);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+html,body{background:var(--ink);color:var(--chalk);font-family:var(--font-display),system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh}
 .app{width:100%;max-width:440px}
-.mono{font-family:'JetBrains Mono',monospace}
+.mono{font-family:var(--font-mono)}
 .appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.av{width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--lime) 16%,transparent);border:1.5px solid color-mix(in srgb,var(--lime) 55%,transparent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--lime);position:relative}
-.av .o{position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:var(--lime);border:2px solid var(--ink)}
-.wm{font-weight:900;font-size:18px;letter-spacing:-.02em;text-align:center}.wm .p{color:var(--lime)}
-.wm .b{display:block;width:24px;height:2.5px;background:var(--lime);border-radius:2px;margin:4px auto 0}
-.bell{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
-.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:'JetBrains Mono';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
-.note{font-family:'JetBrains Mono';font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
+.av{position:relative;width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--lime) 13%,transparent);border:1px solid var(--lime);display:grid;place-items:center;font-family:var(--font-display);font-weight:900;font-size:14px;color:var(--lime-text)}
+.av .o{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;border-radius:50%;background:var(--lime);border:2.5px solid var(--ink)}
+.wm{font-weight:900;font-size:19px;letter-spacing:-.03em;text-align:center}.wm .p{color:var(--lime-text)}
+.wm .b{display:block;width:26px;height:3px;background:var(--lime);border-radius:2px;margin:4px auto 0}
+.bell{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-size:18px}
+.bell .bd{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-family:var(--font-mono);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);padding:0 4px}
+.note{font-family:var(--font-mono);font-size:11px;color:var(--ash);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
 .note b{color:var(--lime);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;display:block;margin-bottom:3px}
 .kick{display:flex;align-items:center;gap:7px}
 .kick .d{width:6px;height:6px;border-radius:50%}
-.kick .k{font-family:'JetBrains Mono';font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+.kick .k{font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
 .ring{width:50px;height:50px;border-radius:50%;flex:none;background:conic-gradient(var(--lime) 78%,color-mix(in srgb,var(--line) 80%,transparent) 0);display:grid;place-items:center;position:relative}
 .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--ink2)}
-.ring span{position:relative;z-index:1;font-family:'JetBrains Mono';font-weight:700;font-size:15px}
-.btn{background:var(--lime);color:#10130a;border:none;border-radius:999px;padding:11px 16px;font-family:'Archivo';font-weight:800;font-size:13px;cursor:pointer}
-.foot{margin-top:22px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
+.ring span{position:relative;z-index:1;font-family:var(--font-display);font-weight:800;font-size:15px}
+.btn{background:var(--lime);color:#10130a;border:none;border-radius:999px;padding:11px 16px;font-family:var(--font-display);font-weight:800;font-size:13px;cursor:pointer}
+.foot{margin-top:22px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--ash);letter-spacing:.1em;text-transform:uppercase}
 
 .greet{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .greet h1{font-size:20px;font-weight:800;letter-spacing:-.02em}
-.greet .dt{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ash);margin-top:4px}
-.streak{font-family:'JetBrains Mono';font-size:11px;font-weight:600;color:var(--amber);background:color-mix(in srgb,var(--amber) 13%,transparent);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);padding:5px 10px;border-radius:999px}
+.greet .dt{font-family:var(--font-mono);font-size:10.5px;color:var(--ash);margin-top:4px}
+.streak{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--amber);background:color-mix(in srgb,var(--amber) 13%,transparent);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);padding:5px 10px;border-radius:999px}
 
 /* BENTO */
 .bento{display:grid;grid-template-columns:1fr 1fr;gap:12px;grid-auto-flow:row dense}
@@ -43,46 +43,46 @@ body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh
 
 /* session (big) */
 .session h2{font-size:18px;font-weight:800;letter-spacing:-.02em}
-.session .sub{font-family:'JetBrains Mono';font-size:10.5px;color:var(--violet);margin-top:5px}
+.session .sub{font-family:var(--font-mono);font-size:10.5px;color:var(--violet);margin-top:5px}
 .session .ex{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-top:12px}
 .session .ex .r{display:flex;justify-content:space-between;font-size:12.5px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding-bottom:6px}
-.session .ex .nm{font-weight:600}.session .ex .sc{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ash)}
+.session .ex .nm{font-weight:600}.session .ex .sc{font-family:var(--font-mono);font-size:10.5px;color:var(--ash)}
 .session .btn{margin-top:13px}
 
 /* check-in */
 .feel .big{display:flex;align-items:baseline;gap:6px;margin-top:auto}
-.feel .big .n{font-family:'JetBrains Mono';font-weight:700;font-size:34px;line-height:1;color:var(--blue)}
-.feel .big .o{font-family:'JetBrains Mono';font-size:11px;color:var(--ash)}
+.feel .big .n{font-family:var(--font-mono);font-weight:700;font-size:34px;line-height:1;color:var(--blue)}
+.feel .big .o{font-family:var(--font-mono);font-size:11px;color:var(--ash)}
 .feel .dots{display:flex;gap:5px;margin-top:10px}
 .feel .dots i{width:9px;height:9px;border-radius:50%;background:color-mix(in srgb,var(--blue) 30%,transparent)}
 .feel .dots i.on{background:var(--blue)}
 .feel .q{font-size:12.5px;font-weight:600;margin-top:10px}
 
 /* nutrition */
-.nut .kc{font-family:'JetBrains Mono';font-weight:700;font-size:17px;margin-top:auto}
+.nut .kc{font-family:var(--font-mono);font-weight:700;font-size:17px;margin-top:auto}
 .nut .kc small{color:var(--ash);font-size:11px;font-weight:400}
 .nut .bar{height:6px;border-radius:99px;background:var(--ink);border:1px solid var(--line);overflow:hidden;margin:9px 0}
 .nut .bar i{display:block;height:100%;width:77%;background:var(--amber)}
-.nut .m{font-family:'JetBrains Mono';font-size:10px;color:var(--ash)}
+.nut .m{font-family:var(--font-mono);font-size:10px;color:var(--ash)}
 
 /* on-track small */
 .track{justify-content:center}
-.track .v{font-family:'JetBrains Mono';font-weight:700;font-size:22px;margin-top:8px}
-.track .l{font-family:'JetBrains Mono';font-size:9.5px;color:var(--ash);margin-top:4px}
+.track .v{font-family:var(--font-mono);font-weight:700;font-size:22px;margin-top:8px}
+.track .l{font-family:var(--font-mono);font-size:9.5px;color:var(--ash);margin-top:4px}
 .gdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
 
 /* coach wide */
 .coach{flex-direction:row;align-items:center;gap:12px}
 .coach .g{width:34px;height:34px;border-radius:10px;flex:none;background:color-mix(in srgb,var(--violet) 18%,transparent);border:1px solid color-mix(in srgb,var(--violet) 38%,transparent);display:grid;place-items:center;color:var(--violet)}
 .coach .tx{flex:1;font-size:12.5px;color:var(--ash);line-height:1.4}.coach .tx b{color:var(--chalk)}
-.coach .go{font-family:'JetBrains Mono';color:var(--violet);font-weight:700;font-size:13px}
+.coach .go{font-family:var(--font-mono);color:var(--violet);font-weight:700;font-size:13px}
 
 /* week wide */
 .week .row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
 .week .day{text-align:center}
-.week .dn{font-family:'JetBrains Mono';font-size:8.5px;color:var(--ash)}
+.week .dn{font-family:var(--font-mono);font-size:8.5px;color:var(--ash)}
 .week .dd{width:8px;height:8px;border-radius:50%;background:var(--line);margin:7px auto 5px}
-.week .dl{font-family:'JetBrains Mono';font-size:8px;color:var(--ash)}
+.week .dl{font-family:var(--font-mono);font-size:8px;color:var(--ash)}
 .week .lime .dd{background:var(--lime)}.week .blue .dd{background:var(--blue)}.week .amber .dd{background:var(--amber)}
 .week .today .dd{background:conic-gradient(var(--lime) 78%,var(--line) 0)}
 
@@ -90,8 +90,8 @@ body{display:flex;justify-content:center;padding:20px 16px 64px;min-height:100vh
 .connect .rail{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;margin-top:4px}
 .connect .rail::-webkit-scrollbar{display:none}
 .cc{flex:none;display:flex;align-items:center;gap:9px;background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 12px 9px 9px}
-.cc .ca{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:'JetBrains Mono';font-weight:700;font-size:11px;background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
-.cc .cn{font-weight:700;font-size:12px;white-space:nowrap}.cc .cs{font-family:'JetBrains Mono';font-size:9px;color:var(--ash)}
+.cc .ca{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-weight:700;font-size:11px;background:color-mix(in srgb,var(--violet) 16%,transparent);color:var(--violet)}
+.cc .cn{font-weight:700;font-size:12px;white-space:nowrap}.cc .cs{font-family:var(--font-mono);font-size:9px;color:var(--ash)}
 </style>
 </head>
 <body>
