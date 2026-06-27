@@ -81,7 +81,7 @@ export default function AuroraTrends() {
 
           <ACard style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.trends.muscleBreakdown")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.trends.muscleBreakdown")}</Text>
               <Pressable onPress={() => router.push("/volume")}><Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.analyze.trends.volumeDetail")}</Text></Pressable>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>

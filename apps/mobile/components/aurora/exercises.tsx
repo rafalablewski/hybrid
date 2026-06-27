@@ -99,12 +99,12 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       <>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
           <Metric label={t("w.analyze.ex.runs")} value={String(stats.efforts)} />
-          <Metric label={t("w.analyze.ex.km")} value={String(stats.distanceKm)} color={C.blue} />
+          <Metric label={t("w.analyze.ex.km")} value={String(stats.distanceKm)} color={txt(C, C.lime)} />
           <Metric label={t("w.analyze.ex.longest")} value={String(stats.longestKm)} />
-          <Metric label={t("w.analyze.ex.bestPace")} value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} color={C.blue} />
+          <Metric label={t("w.analyze.ex.bestPace")} value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} color={txt(C, C.lime)} />
         </View>
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.ex.paceTitle")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.ex.paceTitle")}</Text>
           <TrendBars series={stats.pace.map((p) => p.secPerKm)} color={C.blue} lowerIsBetter unit="pace" />
         </ACard>
       </>
@@ -132,8 +132,8 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       )}
       {stats.velocity && (
         <ACard style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.ex.velocityProfile")}</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.blue), marginTop: 6 }}>{fmtWeight(stats.velocity.e1rm, units)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.ex.velocityProfile")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime), marginTop: 6 }}>{fmtWeight(stats.velocity.e1rm, units)}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} · {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>
         </ACard>
       )}

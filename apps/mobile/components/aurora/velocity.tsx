@@ -94,11 +94,11 @@ export default function AuroraVelocity() {
       <ACard style={{ marginTop: 14 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.profile")} · {active}</Text>
         <View style={{ marginTop: 10 }}><Plot points={points} profile={profile} /></View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}><Text style={{ color: txt(C, C.lime) }}>●</Text> {t("w.analyze.vel.measured")} · <Text style={{ color: txt(C, C.violet) }}>—</Text> {t("w.analyze.vel.fit")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}><Text style={{ color: txt(C, C.lime) }}>●</Text> {t("w.analyze.vel.measured")} · <Text style={{ color: C.ash }}>—</Text> {t("w.analyze.vel.fit")}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>{t("w.analyze.vel.aiLoad")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.vel.aiLoad")}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 12 }}>
           <Stepper label="−" onPress={() => setTargetVel((v) => Math.max(0.2, +(v - 0.05).toFixed(2)))} />
           <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{targetVel.toFixed(2)} m/s</Text>
@@ -106,7 +106,7 @@ export default function AuroraVelocity() {
         </View>
         {rec ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.violet) }}>{rec.load} <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>kg</Text></Text>
+            <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{rec.load} <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>kg</Text></Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</Text>
             {chip(zoneColor(rec.zone.id, C), rec.zone.label)}
           </View>
@@ -114,7 +114,7 @@ export default function AuroraVelocity() {
       </ACard>
 
       <ACard style={{ marginTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.vel.zones")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.vel.zones")}</Text>
         <View style={{ marginTop: 8 }}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (
             <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
@@ -155,8 +155,8 @@ export default function AuroraVelocity() {
 function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
   const { palette: C } = useTheme();
   return (
-    <Pressable onPress={onPress} style={{ width: 48, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: `${C.violet}66`, backgroundColor: `${C.violet}1f`, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.violet) }}>{label}</Text>
+    <Pressable onPress={onPress} style={{ width: 48, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: `${C.lime}66`, backgroundColor: `${C.lime}1f`, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime) }}>{label}</Text>
     </Pressable>
   );
 }
