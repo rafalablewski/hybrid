@@ -12,7 +12,6 @@ import {
   weekNeedsResync,
   currentPhase,
   computeAccountability,
-  habitStrength,
   buildActivityFeed,
   planToday,
   srSingleReps,
@@ -21,7 +20,6 @@ import {
   toBiometrics,
   velocityProfiles,
   readinessRole,
-  accountabilityRole,
   SECTION_COLOR,
   SPORTS,
   LEVELS,
@@ -44,6 +42,7 @@ import { AuroraIcon } from "./icons";
 import AuroraAiCoach from "./ai-coach";
 import CoachRail from "./coach-rail";
 import FeedPreview from "./feed-preview";
+import Stories from "./stories";
 import TodayWidgets from "./today-quick";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
@@ -53,7 +52,6 @@ type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
 // semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
 const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
-const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
 
 /**
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at
@@ -137,7 +135,6 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  const strength = useMemo(() => habitStrength(sessions, 3), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -206,6 +203,8 @@ export default function AuroraHome() {
   // Plan/AI-coach pager — track the active card so the dots signal the swipe.
   const cardW = width - 48; // 24px screen padding each side
   const [activeCard, setActiveCard] = useState(0);
+  // THIS WEEK collapse — tap the Plan kicker to fold/unfold the reconciled plan.
+  const [weekOpen, setWeekOpen] = useState(true);
   const onPagerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setActiveCard(Math.round(e.nativeEvent.contentOffset.x / Math.max(1, cardW + 12)));
   };
@@ -282,6 +281,9 @@ export default function AuroraHome() {
             )}
           </Pressable>
         </View>
+
+        {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
+        <Stories name={name} youLabel={t("w.home.today.storyYou")} onOpen={() => router.push("/feed")} />
 
         {/* GREETING + streak — sets the daily tone */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
@@ -457,24 +459,17 @@ export default function AuroraHome() {
         {/* ───── RECOVER · FEEL ───── */}
         <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C[SECTION_COLOR.feel]} />
 
-        {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: bandColor(acc.band, C) }} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.today.onTrackLead")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: "auto" }}>{acc.sessionsLast7}/3 · {t("w.home.today.habit")} {strength}</Text>
-        </View>
-
         {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
         <View style={{ marginTop: 12 }}>
           <TodayWidgets />
         </View>
 
-        {/* ───── PLAN ───── */}
+        {/* ───── PLAN ───── (collapsible — tap the kicker to fold This week) */}
         {(isAthlete || coached) && macro ? (
-          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} />
+          <CollapsibleKicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} open={weekOpen} onToggle={() => setWeekOpen((o) => !o)} />
         ) : null}
         {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
-        {(isAthlete || coached) && macro && reconciledView && (
+        {weekOpen && (isAthlete || coached) && macro && reconciledView && (
           <ACard style={{ marginTop: 18 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
@@ -524,13 +519,17 @@ export default function AuroraHome() {
         )}
 
 
-        {/* ───── CONNECT ───── */}
+        {/* ───── CONNECT ───── (feed first — your circle's momentum) */}
         <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C[SECTION_COLOR.connect]} />
+
+        {/* FEED STRIP — your circle's latest, IG-Threads style. */}
+        <FeedPreview onOpen={() => router.push("/feed")} />
+
+        {/* ───── DISCOVER ───── (coaches last — exploratory, not daily) */}
+        <Kicker C={C} k={t("w.home.today.kDiscover")} h={t("w.home.today.kDiscoverH")} color={C[SECTION_COLOR.connect]} />
 
         {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
         <CoachRail onOpen={() => router.push("/coaches")} />
-        {/* FEED STRIP — your circle's latest, IG-Threads style, at the bottom. */}
-        <FeedPreview onOpen={() => router.push("/feed")} />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -555,6 +554,19 @@ function Kicker({ C, k, h, color }: { C: P; k: string; h: string; color: string 
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, marginLeft: "auto" }}>{h}</Text>
     </View>
+  );
+}
+
+// Kicker that folds the section below it (used by This week). Same look, plus a
+// chevron that flips when open; the whole row is the tap target.
+function CollapsibleKicker({ C, k, h, color, open, onToggle }: { C: P; k: string; h: string; color: string; open: boolean; onToggle: () => void }) {
+  return (
+    <Pressable onPress={onToggle} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
+      <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, marginLeft: "auto" }}>{h}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>⌄</Text>
+    </Pressable>
   );
 }
 
