@@ -14,63 +14,31 @@ import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { fs, space, Card, Mono, F } from "../lib/ui";
+import { fs, space, F } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { ACard, RADIUS } from "./aurora/kit";
+import { RADIUS } from "./aurora/kit";
 
 /**
- * Home-screen quick-log widget — pick a sport, enter time (+ distance for
- * distance sports), tap Log. Saves a real session straight away (one cardio
- * activity named after the sport) so "back from a run → log it → done" never
- * leaves Home. Distance is entered in the sport's natural unit (metres for
- * swimming/rowing); storage stays km. No wearable needed.
+ * Home quick-log — a horizontal CAROUSEL of one-tap sport cards (likely sports +
+ * an "Other" card). Tapping a card opens a small sheet to enter time (+ distance
+ * for distance sports) and Log, which saves a real cardio session straight away
+ * so "back from a run → tap → log → done" never leaves Home. Mirrors the web
+ * quick-sport.tsx carousel.
  */
-export default function QuickSportLog({ sessions = [], onSaved, solid = false }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
+export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const { session } = useSession();
-  const guest = !session;
-  const suggested = suggestedSports(sessions);
-  // Until the athlete picks, track the top suggestion — which only resolves once
-  // `sessions` has loaded (empty on first mount), so a computed state default
-  // would freeze on "Running".
-  const [picked, setPicked] = useState<string | null>(null);
-  const sport = picked ?? suggested[0] ?? "Running";
+
+  const suggested = useMemo(() => {
+    const seen = new Set<string>();
+    return [...suggestedSports(sessions), "Running", "Cycling", "Swimming"].filter((n) => (seen.has(n) ? false : (seen.add(n), true))).slice(0, 4);
+  }, [sessions]);
+
+  const [sheetSport, setSheetSport] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [minutes, setMinutes] = useState("");
-  const [distance, setDistance] = useState(""); // in the sport's unit
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
 
-  const sportMeta = olympicSport(sport);
-  const pickSport = (name: string) => {
-    setPicked(name);
-    setPickerOpen(false);
-    setQuery("");
-    setMsg("");
-  };
-
-  const tracksDist = sportTracksDistance(sport);
-  const km = parseSportDistance(distance, sport);
-  const pace = cardioPace({ name: sport, distance: km, minutes: parseFloat(minutes) });
-
-  const field = {
-    fontFamily: F.mono,
-    fontSize: fs.bodyLg,
-    color: C.chalk,
-    backgroundColor: C.ink,
-    borderWidth: 1,
-    borderColor: C.line,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-  } as const;
-
-  // The categorised catalog, live-filtered by the search query — categories with
-  // no matching sports drop out so the list stays scannable. Memoised so typing
-  // doesn't rebuild + refilter the whole catalog on every keystroke.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return olympicSportsByCategory()
@@ -78,60 +46,27 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
       .filter((g) => g.sports.length > 0);
   }, [query]);
 
-  const save = async () => {
-    const mins = parseFloat(minutes);
-    if (!Number.isFinite(mins) && km == null) {
-      setMsg(t("quickSport.needValue"));
-      return;
-    }
-    setSaving(true);
-    setMsg("");
-    const now = new Date().toISOString();
-    const payload = {
-      title: sport,
-      startedAt: now,
-      completedAt: now,
-      blocks: [
-        {
-          kind: "cardio" as const,
-          name: sport,
-          ...(km != null ? { distance: km } : {}),
-          ...(Number.isFinite(mins) ? { minutes: mins } : {}),
-        },
-      ],
-    };
-    // Guests keep it on-device; signed-in saves to the API, falling back to a
-    // local stash on a network hiccup (never lose the log).
-    const ok = guest ? (await saveGuestSession(payload), true) : await createSession(payload);
-    if (!ok) await saveGuestSession(payload);
-    setSaving(false);
-    setMinutes("");
-    setDistance("");
-    setMsg(`✓ ${t("quickSport.logged")} ${sport}`);
-    onSaved?.();
-  };
+  const card = { flex: 0, minWidth: 112, gap: 6, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12 } as const;
 
-  // Aurora pairs this with the solid `ink2` season card, so match that surface
-  // (no glass) there; the classic skin keeps the default glass Card.
-  const Surface = solid ? ACard : Card;
   return (
-    <Surface style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
-        {t("quickSport.title")}
-      </Text>
-      <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{t("quickSport.sub")}</Mono>
+    <>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }} style={{ marginHorizontal: -2 }}>
+        {suggested.map((name) => (
+          <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
+            <Text style={{ fontSize: 18 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{name}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.home.today.w.tapLog")}</Text>
+          </Pressable>
+        ))}
+        {/* Other — opens the searchable picker, then the log sheet */}
+        <Pressable onPress={() => setPickerOpen(true)} style={card}>
+          <Text style={{ fontSize: 18 }}>＋</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.home.quickSport.other")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.home.quickSport.search")}</Text>
+        </Pressable>
+      </ScrollView>
 
-      {/* Sport selector — a field-styled trigger that opens the searchable sheet. */}
-      <Pressable
-        onPress={() => setPickerOpen(true)}
-        style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 12 }}
-      >
-        {!!sportMeta && <Text style={{ fontSize: fs.subtitle }}>{sportMeta.icon}</Text>}
-        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{sport}</Text>
-        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>▾</Text>
-      </Pressable>
-
-      {/* Full-screen searchable sport chooser (RpeHelpModal pattern, full-screen). */}
+      {/* Searchable sport chooser → hands the pick to the log sheet */}
       <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => setPickerOpen(false)}>
         <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
           <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
@@ -141,37 +76,21 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
               </Pressable>
             </View>
-
-            {/* Search row — the canonical exercises.tsx icon + TextInput pattern. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
               <AuroraIcon name="search" size={18} color={C.ash} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={t("w.home.quickSport.search")}
-                placeholderTextColor={C.ash}
-                autoFocus
-                style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }}
-              />
+              <TextInput value={query} onChangeText={setQuery} placeholder={t("w.home.quickSport.search")} placeholderTextColor={C.ash} autoFocus style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }} />
             </View>
-
             <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
               {filtered.map((g) => (
                 <View key={g.category} style={{ marginBottom: 6 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
                   {g.sports.map((s) => {
-                    const on = s.name === sport;
                     const hint = sportTracksDistance(s.name) ? sportDistanceUnit(s.name) : g.category;
                     return (
-                      <Pressable
-                        key={s.name}
-                        onPress={() => pickSport(s.name)}
-                        style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}
-                      >
+                      <Pressable key={s.name} onPress={() => { setPickerOpen(false); setQuery(""); setSheetSport(s.name); }} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
                         <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{s.icon}</Text>
-                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: on ? txt(C, C.lime) : C.chalk }}>{s.name}</Text>
+                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.name}</Text>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{hint}</Text>
-                        {on && <AuroraIcon name="check" size={16} color={txt(C, C.lime)} />}
                       </Pressable>
                     );
                   })}
@@ -185,36 +104,76 @@ export default function QuickSportLog({ sessions = [], onSaved, solid = false }:
         </Pressable>
       </Modal>
 
-      {/* divider */}
-      <View style={{ height: 1, backgroundColor: C.line, marginVertical: 16 }} />
+      {/* Log sheet — minutes (+ distance) and Log, for the chosen sport */}
+      <LogSheet sport={sheetSport} onClose={() => setSheetSport(null)} onSaved={() => { setSheetSport(null); onSaved?.(); }} />
+    </>
+  );
+}
 
-      <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end" }}>
-        {tracksDist && (
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>
-              {sportDistanceUnit(sport) === "m" ? t("workout.distM") : t("workout.dist")}
-            </Text>
-            <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(sport) === "m" ? "400" : "8"} placeholderTextColor={C.ash} style={field} />
+function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: () => void; onSaved: () => void }) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  const { session } = useSession();
+  const guest = !session;
+  const [minutes, setMinutes] = useState("");
+  const [distance, setDistance] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const name = sport ?? "";
+  const meta = olympicSport(name);
+  const tracksDist = name ? sportTracksDistance(name) : false;
+  const km = parseSportDistance(distance, name);
+  const pace = cardioPace({ name, distance: km, minutes: parseFloat(minutes) });
+
+  const field = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11 } as const;
+
+  const close = () => { setMinutes(""); setDistance(""); setMsg(""); onClose(); };
+
+  const save = async () => {
+    const mins = parseFloat(minutes);
+    if (!Number.isFinite(mins) && km == null) { setMsg(t("quickSport.needValue")); return; }
+    setSaving(true); setMsg("");
+    const now = new Date().toISOString();
+    const payload = { title: name, startedAt: now, completedAt: now, blocks: [{ kind: "cardio" as const, name, ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) }] };
+    const ok = guest ? (await saveGuestSession(payload), true) : await createSession(payload);
+    if (!ok) await saveGuestSession(payload);
+    setSaving(false);
+    setMinutes(""); setDistance("");
+    onSaved();
+  };
+
+  return (
+    <Modal visible={!!sport} transparent animationType="slide" onRequestClose={close}>
+      <Pressable onPress={close} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
+        <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 34 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+            {!!meta && <Text style={{ fontSize: fs.heading }}>{meta.icon}</Text>}
+            <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{name}</Text>
+            <Pressable onPress={close} hitSlop={10}><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text></Pressable>
           </View>
-        )}
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>Minutes</Text>
-          <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} style={field} />
-        </View>
-        <Pressable
-          onPress={save}
-          disabled={saving}
-          style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}
-        >
-          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>{saving ? "…" : t("quickSport.log")}</Text>
+          <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 16 }}>
+            {tracksDist && (
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
+                <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(name) === "m" ? "400" : "8"} placeholderTextColor={C.ash} autoFocus style={field} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>Minutes</Text>
+              <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
+            </View>
+            <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.ink }}>{saving ? "…" : t("quickSport.log")}</Text>
+            </Pressable>
+          </View>
+          {(pace || msg) && (
+            <Text accessibilityLiveRegion={msg ? "polite" : "none"} style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg ? C.ash : txt(C, C.lime) }}>
+              {msg || `${t("workout.pace")} ${pace}`}
+            </Text>
+          )}
         </Pressable>
-      </View>
-
-      {(pace || msg) && (
-        <Text accessibilityLiveRegion={msg ? "polite" : "none"} style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg.startsWith("✓") ? txt(C, C.lime) : pace ? txt(C, C.lime) : C.ash }}>
-          {msg || `${t("workout.pace")} ${pace}`}
-        </Text>
-      )}
-    </Surface>
+      </Pressable>
+    </Modal>
   );
 }

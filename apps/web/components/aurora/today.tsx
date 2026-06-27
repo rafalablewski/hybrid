@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
   computeAccountability,
+  weekAdherence,
   buildActivityFeed,
   currentPhase,
   planToday,
@@ -93,6 +94,7 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
+  const adherence = useMemo(() => weekAdherence(sessions, 3), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -282,10 +284,9 @@ export default function AuroraToday({
         ))}
       </div>
 
-      {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
-      <div style={{ marginTop: 16 }}>
-        <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
-      </div>
+      {/* QUICK LOG — back from a run/match? one-tap carousel, log it right here. */}
+      <Kicker k={t("w.home.today.kQuick")} h={t("w.home.today.kQuickH")} color={C(SECTION_COLOR.train)} />
+      <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
 
       {/* ───── RECOVER · FEEL ───── */}
       <Kicker k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C(SECTION_COLOR.feel)} />
@@ -293,11 +294,20 @@ export default function AuroraToday({
       {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
       <TodayWidgets onNavigate={onNavigate} />
 
-      {/* ───── PLAN ───── (collapsible — tap the kicker to fold This week) */}
-      <CollapsibleKicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C(SECTION_COLOR.plan)} open={!week.collapsed} onToggle={week.toggle} />
+      {/* ───── PLAN ───── */}
+      <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C(SECTION_COLOR.plan)} />
 
-      {/* THIS WEEK — shared reconciled plan; coached clients see it read-only */}
-      {!week.collapsed && ((isAthlete || coached) && macro ? (
+      {/* WEEK ADHERENCE — glanceable Mon→Sun strip; the one collapsible card */}
+      <WeekStrip
+        title={phase ? `${t("w.home.today.week")} ${currentWeek} · ${phase.block.label}` : t("w.home.today.kWeekH")}
+        doneLabel={`${adherence.done} ${t("w.home.today.of")} ${adherence.target} ${t("w.home.today.w.done")}`}
+        days={adherence.days}
+        open={!week.collapsed}
+        onToggle={week.toggle}
+      />
+
+      {/* THIS WEEK — shared reconciled plan (always shown); coached read-only */}
+      {(isAthlete || coached) && macro ? (
         <ReconciledWeek macro={macro} currentWeek={currentWeek} sessions={sessions} bio={bio} experience={intake.experience} equipment={intake.equipment} readOnly={!isAthlete} />
       ) : (
         <button
@@ -310,7 +320,7 @@ export default function AuroraToday({
           </span>
           <span style={{ fontWeight: 800, fontSize: fs.heading, color: C("lime") }}>→</span>
         </button>
-      ))}
+      )}
 
       {/* ───── CONNECT ───── (feed first — your circle's momentum) */}
       <Kicker k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C(SECTION_COLOR.connect)} />
@@ -377,15 +387,34 @@ function Ring({ value, color, size = 44, ticks = 32 }: { value: number; color: s
   );
 }
 
-// PLAN kicker that folds This week. Same look as Kicker, but the whole row is a
-// button with a chevron that flips when open.
-function CollapsibleKicker({ k, h, color, open, onToggle }: { k: string; h: string; color: string; open: boolean; onToggle: () => void }) {
+/** WEEK ADHERENCE strip — a collapsible card with the Mon→Sun day cells (done /
+ *  today / missed / future), summarising the week at a glance. The chevron folds
+ *  just this card; the detailed reconciled plan below stays visible. */
+function WeekStrip({ title, doneLabel, days, open, onToggle }: { title: string; doneLabel: string; days: { label: string; state: "done" | "today" | "future" | "missed" }[]; open: boolean; onToggle: () => void }) {
+  const cell = (s: string) => {
+    const done = s === "done", today = s === "today";
+    return { aspectRatio: "1 / 1.4", borderRadius: 12, border: `1px solid ${done ? "color-mix(in srgb, " + C("lime") + " 40%, transparent)" : today ? C("lime") : C("line")}`, background: done ? `color-mix(in srgb, ${C("lime")} 12%, transparent)` : "transparent", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4, color: C("ash") } as const;
+  };
+  const mark = (s: string) => (s === "done" ? "✓" : s === "today" ? "•" : s === "missed" ? "—" : "—");
   return (
-    <button onClick={onToggle} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
-      <span style={{ fontWeight: 800, fontSize: 19, marginLeft: "auto", color: C("chalk") }}>{h}</span>
-      <span style={{ color: C("ash"), fontSize: 14, transition: "transform .2s", transform: open ? "rotate(180deg)" : "none" }}>⌄</span>
-    </button>
+    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, marginBottom: 16 }}>
+      <button onClick={onToggle} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "flex-start", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
+        <span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--amber-text)" }}>{title}</span>
+          <span style={{ display: "block", fontWeight: 800, fontSize: 16, marginTop: 4, color: C("chalk") }}>{doneLabel}</span>
+        </span>
+        <span style={{ color: C("ash"), fontSize: 14, transition: "transform .2s", transform: open ? "rotate(180deg)" : "none" }}>⌄</span>
+      </button>
+      {open && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginTop: 14 }}>
+          {days.map((d, i) => (
+            <div key={i} style={cell(d.state)}>
+              <span style={{ fontSize: 10 }}>{d.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: d.state === "done" || d.state === "today" ? C("lime") : C("ash") }}>{mark(d.state)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

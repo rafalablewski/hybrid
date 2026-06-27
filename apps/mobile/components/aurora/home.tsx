@@ -12,6 +12,7 @@ import {
   weekNeedsResync,
   currentPhase,
   computeAccountability,
+  weekAdherence,
   buildActivityFeed,
   planToday,
   srSingleReps,
@@ -135,6 +136,7 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
+  const adherence = useMemo(() => weekAdherence(sessions, 3), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const plan = useMemo(() => planToday(planId, sessions.length), [planId, sessions.length]);
   const hasData = sessions.length > 0;
@@ -452,7 +454,8 @@ export default function AuroraHome() {
           </Pressable>
         )}
 
-        {/* QUICK SPORT LOG — back from a run/match? log it right here, no gear. */}
+        {/* QUICK LOG — back from a run/match? one-tap carousel, log it right here. */}
+        <Kicker C={C} k={t("w.home.today.kQuick")} h={t("w.home.today.kQuickH")} color={C[SECTION_COLOR.train]} />
         <QuickSportLog sessions={sessions} onSaved={load} solid />
 
 
@@ -464,12 +467,19 @@ export default function AuroraHome() {
           <TodayWidgets />
         </View>
 
-        {/* ───── PLAN ───── (collapsible — tap the kicker to fold This week) */}
-        {(isAthlete || coached) && macro ? (
-          <CollapsibleKicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} open={weekOpen} onToggle={() => setWeekOpen((o) => !o)} />
-        ) : null}
-        {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
-        {weekOpen && (isAthlete || coached) && macro && reconciledView && (
+        {/* ───── PLAN ───── */}
+        <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C[SECTION_COLOR.plan]} />
+        {/* WEEK ADHERENCE — glanceable Mon→Sun strip; the one collapsible card */}
+        <WeekStrip
+          C={C}
+          title={phase ? `${t("w.home.today.week")} ${currentWeek} · ${phase.block.label}` : t("w.home.today.kWeekH")}
+          doneLabel={`${adherence.done} ${t("w.home.today.of")} ${adherence.target} ${t("w.home.today.w.done")}`}
+          days={adherence.days}
+          open={weekOpen}
+          onToggle={() => setWeekOpen((o) => !o)}
+        />
+        {/* THIS WEEK — reconciled plan (always shown); coached read-only */}
+        {(isAthlete || coached) && macro && reconciledView && (
           <ACard style={{ marginTop: 18 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
@@ -557,16 +567,34 @@ function Kicker({ C, k, h, color }: { C: P; k: string; h: string; color: string 
   );
 }
 
-// Kicker that folds the section below it (used by This week). Same look, plus a
-// chevron that flips when open; the whole row is the tap target.
-function CollapsibleKicker({ C, k, h, color, open, onToggle }: { C: P; k: string; h: string; color: string; open: boolean; onToggle: () => void }) {
+// WEEK ADHERENCE strip — a collapsible card with the Mon→Sun day cells (done /
+// today / missed / future), summarising the week at a glance. The chevron folds
+// just this card; the detailed reconciled plan below stays visible.
+function WeekStrip({ C, title, doneLabel, days, open, onToggle }: { C: P; title: string; doneLabel: string; days: { label: string; state: "done" | "today" | "future" | "missed" }[]; open: boolean; onToggle: () => void }) {
+  const mark = (s: string) => (s === "done" ? "✓" : s === "today" ? "•" : "—");
   return (
-    <Pressable onPress={onToggle} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
-      <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, marginLeft: "auto" }}>{h}</Text>
-      <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>⌄</Text>
-    </Pressable>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18, marginTop: 12 }}>
+      <Pressable onPress={onToggle} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <View>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.amber) }}>{title}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.chalk, marginTop: 4 }}>{doneLabel}</Text>
+        </View>
+        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>⌄</Text>
+      </Pressable>
+      {open && (
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 14 }}>
+          {days.map((d, i) => {
+            const done = d.state === "done", today = d.state === "today";
+            return (
+              <View key={i} style={{ flex: 1, aspectRatio: 1 / 1.4, borderRadius: 12, borderWidth: 1, borderColor: done ? `${C.lime}66` : today ? C.lime : C.line, backgroundColor: done ? `${C.lime}1f` : "transparent", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{d.label}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: 11, color: done || today ? txt(C, C.lime) : C.ash }}>{mark(d.state)}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
   );
 }
 

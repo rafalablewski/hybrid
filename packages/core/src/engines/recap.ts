@@ -35,6 +35,64 @@ export interface WeeklyRecap {
 const WEEK = 7 * 86_400_000;
 const ms = (iso: string) => new Date(iso).getTime();
 
+// ── Week adherence strip ─────────────────────────────────────────────────────
+// A glanceable Mon→Sun calendar of THIS week: which days were trained, which is
+// today, which are still ahead. Pure so web + mobile render the identical strip.
+
+export type WeekDayState = "done" | "today" | "future" | "missed";
+export interface WeekDay {
+  /** 0=Mon … 6=Sun (ISO weekday order, what the strip renders left→right). */
+  index: number;
+  /** Single-letter label in Mon→Sun order: M T W T F S S. */
+  label: string;
+  state: WeekDayState;
+}
+export interface WeekAdherence {
+  days: WeekDay[];
+  /** Days trained so far this week. */
+  done: number;
+  /** Target sessions for the week (defaults to 3). */
+  target: number;
+}
+
+const DOW_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+/** Monday-start day-of-week index (0=Mon … 6=Sun) for a Date. */
+const monIndex = (d: Date) => (d.getDay() + 6) % 7;
+
+/**
+ * Build the Mon→Sun adherence strip for the week containing `now`. A day is
+ * `done` when a session was logged on it, `today` for the current day (when not
+ * yet trained), `missed` for past untrained days, `future` for days ahead.
+ */
+export function weekAdherence(sessions: LoggedSession[], target = 3, now = Date.now()): WeekAdherence {
+  const today = new Date(now);
+  const todayIdx = monIndex(today);
+  // Midnight of this week's Monday.
+  const monday = new Date(today);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(today.getDate() - todayIdx);
+  const mondayMs = monday.getTime();
+
+  // Which Mon-start day-indices have at least one logged session this week.
+  const trained = new Set<number>();
+  for (const s of sessions) {
+    const t = ms(s.startedAt);
+    if (!Number.isFinite(t) || t < mondayMs || t >= mondayMs + WEEK) continue;
+    trained.add(monIndex(new Date(t)));
+  }
+
+  const days: WeekDay[] = DOW_LABELS.map((label, index) => {
+    let state: WeekDayState;
+    if (trained.has(index)) state = "done";
+    else if (index === todayIdx) state = "today";
+    else if (index < todayIdx) state = "missed";
+    else state = "future";
+    return { index, label, state };
+  });
+
+  return { days, done: trained.size, target: Math.max(target, trained.size) };
+}
+
 export function weeklyRecap(sessions: LoggedSession[], now = Date.now()): WeeklyRecap {
   const within = (s: LoggedSession, from: number, to: number) => ms(s.startedAt) >= from && ms(s.startedAt) < to;
   const thisWeek = sessions.filter((s) => within(s, now - WEEK, now + 1));

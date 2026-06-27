@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { e1rm } from "./session";
-import { weeklyRecap } from "./recap";
+import { weeklyRecap, weekAdherence } from "./recap";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-10T12:00:00.000Z").getTime();
@@ -77,5 +77,33 @@ describe("weeklyRecap", () => {
     const r = weeklyRecap(runs, NOW);
     expect(r.distanceKm).toBe(8); // only this week's run counts
     expect(r.cardioPrs.map((p) => p.kind)).toContain("distance");
+  });
+});
+
+describe("weekAdherence", () => {
+  it("renders a 7-day Mon→Sun strip", () => {
+    const a = weekAdherence([], 3, NOW);
+    expect(a.days).toHaveLength(7);
+    expect(a.days.map((d) => d.label)).toEqual(["M", "T", "W", "T", "F", "S", "S"]);
+  });
+
+  it("marks today and counts trained days; empty week trains nothing", () => {
+    const a = weekAdherence([], 3, NOW);
+    expect(a.done).toBe(0);
+    const todayCell = a.days.find((d) => d.state === "today");
+    expect(todayCell).toBeTruthy();
+    // every other day is missed (past) or future — never done with no sessions
+    expect(a.days.some((d) => d.state === "done")).toBe(false);
+  });
+
+  it("a session logged today counts as done", () => {
+    const a = weekAdherence([sess("t", new Date(NOW).toISOString(), null, [squat("100", "5")])], 3, NOW);
+    expect(a.done).toBe(1);
+    expect(a.days.some((d) => d.state === "done")).toBe(true);
+    expect(a.days.some((d) => d.state === "today")).toBe(false); // today is now "done"
+  });
+
+  it("target floors at the done count so the ratio never exceeds the goal", () => {
+    expect(weekAdherence([], 3, NOW).target).toBe(3);
   });
 });

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fs, todayNutrition, adaptiveTargets, type Signal } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import { AuroraIcon } from "./icons";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -48,51 +47,42 @@ export default function TodayWidgets({ onNavigate }: { onNavigate?: (screen: str
   const today = useMemo(() => todayNutrition(signals), [signals]);
   const targets = useMemo(() => adaptiveTargets(signals, { goal: "maintain" }), [signals]);
   const kcalPct = targets.kcal > 0 ? Math.min(1, today.kcal / targets.kcal) : 0;
-  const hasNutrition = today.kcal > 0;
   const done = checkedToday === true;
 
-  const widget = { aspectRatio: "1 / 1", borderRadius: 26, border: `1px solid ${C("line")}`, background: C("ink2"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, display: "flex", flexDirection: "column" as const, cursor: "pointer", textAlign: "left" as const, color: C("chalk") };
-  const wicon = (bg: string, fg: string) => ({ width: 30, height: 30, borderRadius: 10, display: "grid", placeItems: "center", background: bg, color: fg });
-  const wname = { fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase" as const, color: C("ash"), marginTop: 12 };
-  const tag = { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" as const, color: C("ash") };
+  // FEEL section → blue accents (the spectrum's Feel band), clean & icon-free.
+  const widget = { aspectRatio: "1 / 1", borderRadius: 26, border: `1px solid ${C("line")}`, background: C("ink2"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, display: "flex", flexDirection: "column" as const, cursor: "pointer", textAlign: "left" as const, color: C("chalk") };
+  const wname = { fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase" as const, color: "var(--blue-text)" };
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       {/* CHECK-IN */}
       <button onClick={() => onNavigate?.("checkin")} style={widget} aria-label={t("w.home.today.w.checkin")}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={wicon(`color-mix(in srgb, ${C("lime")} 14%, transparent)`, C("lime"))}><AuroraIcon name="heart" size={16} color={C("lime")} /></span>
-          <span style={tag}>{done ? t("w.home.today.w.done") : t("w.home.today.w.tapLog")}</span>
-        </div>
         <div style={wname}>{t("w.home.today.w.checkin")}</div>
-        <div style={{ fontWeight: 800, fontSize: done ? 26 : 21, lineHeight: 1.08, marginTop: 6 }}>
+        <div style={{ fontWeight: 800, fontSize: done ? 24 : 21, lineHeight: 1.12, marginTop: 8 }}>
           {done ? t("w.home.today.w.checkinDone") : t("w.home.today.w.checkinPrompt")}
         </div>
-        <div style={{ marginTop: "auto", borderRadius: 999, textAlign: "center", fontWeight: 700, fontSize: 13, padding: "9px 0", background: done ? "transparent" : C("lime"), color: done ? C("ash") : C("ink"), border: done ? `1px solid ${C("line")}` : "none" }}>
-          {done ? t("w.home.today.w.view") : t("w.home.today.w.checkinCta")}
+        <div style={{ marginTop: "auto", borderRadius: 999, textAlign: "center", fontWeight: 700, fontSize: 13, padding: "11px 0", background: done ? "transparent" : C("blue"), color: done ? C("ash") : "#fff", border: done ? `1px solid ${C("line")}` : "none" }}>
+          {done ? t("w.home.today.w.view") : t("w.home.today.w.logReadiness")}
         </div>
       </button>
 
       {/* NUTRITION */}
       <button onClick={() => onNavigate?.("nutrition")} style={widget} aria-label={t("w.home.today.w.nutrition")}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={wicon(`color-mix(in srgb, ${C("lime")} 14%, transparent)`, C("lime"))}><AuroraIcon name="heart" size={16} color={C("lime")} /></span>
-          <span style={tag}>{t("w.home.today.w.today")}</span>
-        </div>
         <div style={wname}>{t("w.home.today.w.nutrition")}</div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 28, lineHeight: 1.05, marginTop: 2 }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 28, lineHeight: 1.05, marginTop: 6 }}>
           {Math.round(today.kcal).toLocaleString()}
           <span style={{ fontSize: 13, color: C("ash"), fontWeight: 600 }}> / {targets.kcal.toLocaleString()}</span>
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>kcal</div>
-        <div style={{ height: 7, borderRadius: 4, background: C("ink"), overflow: "hidden", marginTop: 10 }}>
-          <div style={{ width: `${kcalPct * 100}%`, height: "100%", background: today.kcal > targets.kcal * 1.05 ? C("red") : C("lime") }} />
+        <div style={{ height: 7, borderRadius: 4, background: C("ink"), overflow: "hidden", marginTop: 8 }}>
+          <div style={{ width: `${kcalPct * 100}%`, height: "100%", background: today.kcal > targets.kcal * 1.05 ? C("red") : C("blue") }} />
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
-          <span>P {Math.round(today.protein)}</span><span>C {Math.round(today.carbs)}</span><span>F {Math.round(today.fat)}</span>
+          <span>P <b style={{ color: C("chalk"), fontWeight: 700 }}>{Math.round(today.protein)}g</b></span>
+          <span>C <b style={{ color: C("chalk"), fontWeight: 700 }}>{Math.round(today.carbs)}g</b></span>
+          <span>F <b style={{ color: C("chalk"), fontWeight: 700 }}>{Math.round(today.fat)}g</b></span>
         </div>
-        <div style={{ marginTop: "auto", borderRadius: 999, textAlign: "center", fontWeight: 700, fontSize: 13, padding: "9px 0", border: `1px solid ${C("line")}`, color: C("chalk") }}>
-          {hasNutrition ? t("w.home.today.w.add") : t("w.home.today.w.addFirst")}
+        <div style={{ marginTop: "auto", borderRadius: 999, textAlign: "center", fontWeight: 700, fontSize: 13, padding: "11px 0", border: `1px solid ${C("line")}`, color: C("chalk") }}>
+          {t("w.home.today.w.addMeal")}
         </div>
       </button>
     </div>
