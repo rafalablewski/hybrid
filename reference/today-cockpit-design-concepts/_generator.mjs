@@ -1,6 +1,9 @@
 import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
-const OUT = '/home/user/hybrid/reference/today-cockpit-design-concepts';
+// Write next to this script (its own folder), so it's portable across machines/CI.
+const OUT = dirname(fileURLToPath(import.meta.url));
 
 /* ------------------------------------------------------------------ *
  * SHARED CONTENT  — identical real data across all 10 concepts.
