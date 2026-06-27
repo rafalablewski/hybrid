@@ -474,7 +474,7 @@ export default function AuroraHome() {
         {(isAthlete || coached) && macro && reconciledView && (
           <ACard style={{ marginTop: 18 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
                 {t("w.home.recweek.thisWeek")} {reconciledView.phase.label} · {t("w.home.recweek.week")} {reconciledView.phase.week}
               </Text>
               <View style={{ backgroundColor: `${reconciledView.phase.kind === "recovery" ? C.amber : C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
@@ -484,12 +484,12 @@ export default function AuroraHome() {
               </View>
             </View>
             {readOnlyPlan ? (
-              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>{t("w.home.recweek.assignedByCoach")}</Text>
+              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.recweek.assignedByCoach")}</Text>
               </View>
             ) : (
               <>
-                <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
+                <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{scheduling ? t("w.home.recweek.scheduling") : `${t("w.home.recweek.scheduleResync")} ${daysPerWeek}d →`}</Text>
                 </Pressable>
                 {scheduled && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>{scheduled}</Text>}
@@ -498,8 +498,8 @@ export default function AuroraHome() {
             <View style={{ flexDirection: "row", gap: 18, marginTop: 14 }}>
               <Metric label={t("w.home.recweek.intensity")} value={`${reconciledView.intensity}`} color={C.chalk} C={C} />
               <Metric label={t("w.home.recweek.volume")} value={`${reconciledView.volume}`} color={C.chalk} C={C} />
-              <Metric label={t("w.home.recweek.loadX")} value={reconciledView.loadFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
-              <Metric label={t("w.home.recweek.volumeX")} value={reconciledView.volumeFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
+              <Metric label={t("w.home.recweek.loadX")} value={reconciledView.loadFactor.toFixed(2)} color={C.chalk} C={C} />
+              <Metric label={t("w.home.recweek.volumeX")} value={reconciledView.volumeFactor.toFixed(2)} color={C.chalk} C={C} />
             </View>
             <View style={{ marginTop: 12 }}>
               {reconciledView.blocks.map((b, i) => (

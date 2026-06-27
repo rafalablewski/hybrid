@@ -21,7 +21,7 @@ import {
 import { readSportSelection } from "@/lib/sport-store";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
-import { fs, space, LINE, LIME, CHALK, ASH, VIOLET, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, ON_ACCENT, disp, cond, Mono, Card, Chip } from "@/lib/ui";
 
 /**
  * The reconciled week — the macrocycle phase arbitrates the daily route + sport
@@ -159,13 +159,13 @@ export default function ReconciledWeek({
     // of the Aurora Today. Classic keeps the glass card.
     <Card
       glass={!aurora}
-      style={{ borderLeft: `3px solid ${VIOLET}`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
+      style={{ borderLeft: `3px solid ${LIME}`, ...(aurora ? { background: "var(--color-ink2)", padding: 22 } : {}), ...style }}
     >
       {/* Header — the kicker + load/deload chip only. The schedule action used to
           live in this row, which squashed into a circle on narrow widths; it now
           sits as a full-width pill below (matching the mobile layout). */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
           {t("w.home.recweek.thisWeek")} {reconciled.phase.label} · {t("w.home.recweek.week")} {reconciled.phase.week}
         </Mono>
         <Chip c={reconciled.phase.kind === "recovery" ? AMBER : LIME}>
@@ -174,7 +174,7 @@ export default function ReconciledWeek({
       </div>
       {readOnly ? (
         <div style={{ marginTop: 12 }}>
-          <Chip c={VIOLET}>{t("w.home.recweek.assignedByCoach")}</Chip>
+          <Chip c={LIME}>{t("w.home.recweek.assignedByCoach")}</Chip>
         </div>
       ) : (
         <>
@@ -187,8 +187,8 @@ export default function ReconciledWeek({
       <div style={{ display: "flex", gap: 18, marginTop: 14 }}>
         <Metric label={t("w.home.recweek.intensity")} value={`${reconciled.intensity}`} c={CHALK} />
         <Metric label={t("w.home.recweek.volume")} value={`${reconciled.volume}`} c={CHALK} />
-        <Metric label={t("w.home.recweek.loadX")} value={`${reconciled.loadFactor.toFixed(2)}`} c={VIOLET} />
-        <Metric label={t("w.home.recweek.volumeX")} value={`${reconciled.volumeFactor.toFixed(2)}`} c={VIOLET} />
+        <Metric label={t("w.home.recweek.loadX")} value={`${reconciled.loadFactor.toFixed(2)}`} c={CHALK} />
+        <Metric label={t("w.home.recweek.volumeX")} value={`${reconciled.volumeFactor.toFixed(2)}`} c={CHALK} />
       </div>
       <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
         {reconciled.blocks.map((b, i) => (
@@ -239,7 +239,7 @@ function cta(disabled: boolean, aurora = false) {
     textTransform: "uppercase" as const,
     letterSpacing: ".04em",
     color: ON_ACCENT,
-    background: VIOLET,
+    background: LIME,
     border: "none",
     borderRadius: aurora ? 999 : 10,
     padding: aurora ? "11px 18px" : "10px 16px",
