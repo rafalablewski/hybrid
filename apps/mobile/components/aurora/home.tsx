@@ -562,9 +562,8 @@ function Kicker({ C, k, h, color }: { C: P; k: string; h: string; color: string 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 26, marginBottom: 12, marginHorizontal: 2 }}>
       <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: color }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k}</Text>
-      {/* heading shares the EXACT same font as the kicker label (k) */}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginLeft: "auto" }}>{h}</Text>
+      {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{k} · {h}</Text>
     </View>
   );
 }

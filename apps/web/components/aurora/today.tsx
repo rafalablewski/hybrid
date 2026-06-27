@@ -344,9 +344,8 @@ function Kicker({ k, h, color }: { k: string; h: string; color: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
       <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
-      {/* heading shares the EXACT same font as the kicker label (k) */}
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginLeft: "auto" }}>{h}</span>
+      {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k} · {h}</span>
     </div>
   );
 }
