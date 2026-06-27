@@ -48,7 +48,7 @@ export default function AuroraCoachApply() {
   };
 
   const statusColor = (s: CoachApplication["status"]) =>
-    s === "approved" ? C.lime : s === "denied" ? C.red : C.amber;
+    s === "approved" ? C.lime : s === "denied" ? C.red : C.ash;
 
   return (
     <AuroraScreen>
@@ -102,7 +102,7 @@ export default function AuroraCoachApply() {
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}
-                style={{ backgroundColor: canSubmit ? C.violet : `${C.violet}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
+                style={{ backgroundColor: canSubmit ? C.lime : `${C.lime}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
               >
                 {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
               </Pressable>

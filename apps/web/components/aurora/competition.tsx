@@ -59,7 +59,7 @@ export default function AuroraCompetition() {
   return (
     <div style={{ display: "grid", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
-        <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>
+        <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
           {t("w.train.comp.peakingOptimizer")}
         </div>
         <div style={{ ...mono, fontSize: fs.body, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
@@ -77,7 +77,7 @@ export default function AuroraCompetition() {
           {events.map((e) => {
             const active = e.id === selected;
             return (
-              <button key={e.id} onClick={() => setSelected(e.id)} style={{ ...mono, fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("amber")} 14%, transparent)` : C("ink"), color: active ? C("amber") : C("ash"), border: `1px solid ${active ? C("amber") : C("line")}` }}>
+              <button key={e.id} onClick={() => setSelected(e.id)} style={{ ...mono, fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), color: active ? "var(--lime-text)" : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` }}>
                 {e.name} · {new Date(e.date).toLocaleDateString()}
               </button>
             );

@@ -35,7 +35,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, serifIf } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -63,7 +63,7 @@ const bandColor = (b: string, C: P) => roleColor(C, accountabilityRole(b));
  * subset (no season/Performance State), like classic.
  */
 export default function AuroraHome() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const { name } = useSession();
@@ -285,12 +285,12 @@ export default function AuroraHome() {
         {/* GREETING + streak — sets the daily tone */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
           </View>
           {acc.streak.current > 0 && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.amber}24`, borderWidth: 1, borderColor: `${C.amber}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.amber) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
             </View>
           )}
         </View>
@@ -314,7 +314,7 @@ export default function AuroraHome() {
           {/* card 1 — plan today */}
           <ACard style={{ width: cardW }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.lime), flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash, flex: 1 }}>
                 {t("w.home.today.yourPlan")}{plan && !(isAthlete && planReadiness) ? t("w.home.today.asWritten") : ""}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
@@ -331,8 +331,8 @@ export default function AuroraHome() {
             </View>
             {plan ? (
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginBottom: 8 }}>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 8 }}>
                   {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
                 </Text>
                 {plan.items.map((it, i) => (
@@ -344,20 +344,20 @@ export default function AuroraHome() {
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                    style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${C.violet}55`, backgroundColor: `${C.violet}14` }}
+                    style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.ms, padding: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14` }}
                   >
                     <Text style={{ fontFamily: F.mono, fontSize: 11.5, lineHeight: 16, color: C.chalk, flex: 1 }}>{t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
-                    <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.violet) }}>→</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>→</Text>
                   </Pressable>
                 )}
               </>
             ) : hasData || phase ? (
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>
                   {`${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}`}
                 </Text>
                 {phase && (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet), marginTop: 4 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
                     {t("w.home.today.goal")} {macro!.goalOrSport} · {phase.block.label} · {t("w.home.today.wk")} {currentWeek}/{macro!.totalWeeks}
                   </Text>
                 )}
@@ -367,7 +367,7 @@ export default function AuroraHome() {
               /* Brand-new and not enrolled — first-session chooser (#3):
                  follow a plan (free), build your own (Full), or log a one-off. */
               <>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.howStart")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }}>
                   {t("w.home.today.howStartSub")}
                 </Text>
@@ -382,8 +382,8 @@ export default function AuroraHome() {
 
           {/* card 2 — AI coach */}
           <ACard style={{ width: cardW }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>{t("w.home.today.aiCoach")}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.askCoach")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.today.aiCoach")}</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{t("w.home.today.askCoach")}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, marginBottom: 6, lineHeight: 19 }}>
               {t("w.home.today.aiCoachBlurb")}
             </Text>
@@ -395,7 +395,7 @@ export default function AuroraHome() {
             ) : (
               <Pressable
                 onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-aicoach" }); router.push("/upgrade"); }}
-                style={{ marginTop: 6, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}
+                style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}
               >
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.home.today.unlockFullBtn")}</Text>
               </Pressable>
@@ -452,7 +452,7 @@ export default function AuroraHome() {
 
 
         {/* ───── RECOVER · FEEL ───── */}
-        <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C.blue} />
+        <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C.lime} />
 
         {/* On-track strip — the daily motivation cue (accountability lives on Today) */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 }}>
@@ -468,13 +468,13 @@ export default function AuroraHome() {
 
         {/* ───── PLAN ───── */}
         {(isAthlete || coached) && macro ? (
-          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C.amber} />
+          <Kicker C={C} k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C.lime} />
         ) : null}
         {/* THIS WEEK — reconciled plan; coached clients see it read-only */}
         {(isAthlete || coached) && macro && reconciledView && (
           <ACard style={{ marginTop: 18 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: txt(C, C.violet) }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
                 {t("w.home.recweek.thisWeek")} {reconciledView.phase.label} · {t("w.home.recweek.week")} {reconciledView.phase.week}
               </Text>
               <View style={{ backgroundColor: `${reconciledView.phase.kind === "recovery" ? C.amber : C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
@@ -484,12 +484,12 @@ export default function AuroraHome() {
               </View>
             </View>
             {readOnlyPlan ? (
-              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: `${C.violet}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>{t("w.home.recweek.assignedByCoach")}</Text>
+              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.recweek.assignedByCoach")}</Text>
               </View>
             ) : (
               <>
-                <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
+                <Pressable onPress={() => doSchedule(false)} disabled={scheduling} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center", opacity: scheduling ? 0.6 : 1 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{scheduling ? t("w.home.recweek.scheduling") : `${t("w.home.recweek.scheduleResync")} ${daysPerWeek}d →`}</Text>
                 </Pressable>
                 {scheduled && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>{scheduled}</Text>}
@@ -498,8 +498,8 @@ export default function AuroraHome() {
             <View style={{ flexDirection: "row", gap: 18, marginTop: 14 }}>
               <Metric label={t("w.home.recweek.intensity")} value={`${reconciledView.intensity}`} color={C.chalk} C={C} />
               <Metric label={t("w.home.recweek.volume")} value={`${reconciledView.volume}`} color={C.chalk} C={C} />
-              <Metric label={t("w.home.recweek.loadX")} value={reconciledView.loadFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
-              <Metric label={t("w.home.recweek.volumeX")} value={reconciledView.volumeFactor.toFixed(2)} color={txt(C, C.violet)} C={C} />
+              <Metric label={t("w.home.recweek.loadX")} value={reconciledView.loadFactor.toFixed(2)} color={C.chalk} C={C} />
+              <Metric label={t("w.home.recweek.volumeX")} value={reconciledView.volumeFactor.toFixed(2)} color={C.chalk} C={C} />
             </View>
             <View style={{ marginTop: 12 }}>
               {reconciledView.blocks.map((b, i) => (
@@ -522,7 +522,7 @@ export default function AuroraHome() {
 
 
         {/* ───── CONNECT ───── */}
-        <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C.violet} />
+        <Kicker C={C} k={t("w.home.today.kConnect")} h={t("w.home.today.kConnectH")} color={C.lime} />
 
         {/* FOLLOW A COACH — swipeable rail of marketplace coaches */}
         <CoachRail onOpen={() => router.push("/coaches")} />
@@ -535,9 +535,10 @@ export default function AuroraHome() {
 }
 
 function Metric({ label, value, color, C }: { label: string; value: string; color: string; C: P }) {
+  const { scheme } = useTheme();
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color }}>{value}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
     </View>
   );

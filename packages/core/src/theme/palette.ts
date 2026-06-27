@@ -29,23 +29,37 @@ export interface ThemePalette {
 
 export type ThemeName = "dark" | "light";
 
+/**
+ * Two disciplined themes (see reference/today-cockpit-design-concepts):
+ * - `dark`  = AURORA — a true neutral charcoal ramp; lime is the single accent,
+ *             red is kept strictly for risk. (The old multi-accent rainbow is
+ *             retired in the surfaces here and in the Today/Cockpit chrome.)
+ * - `light` = JAPANDI — warm oat paper, clay/sage accents, calm contrast.
+ * `accentText` stays per-theme so any accent rendered as TEXT clears AA on the
+ * theme's card (guarded by palette.test.ts).
+ */
 export const THEMES: Record<ThemeName, ThemePalette> = {
   dark: {
     ink: "#0c0d0c",
     ink2: "#141614",
-    card: "#161816",
-    line: "#2a2d2a",
+    card: "#151715",
+    line: "#242724",
     chalk: "#f3f4ef",
     ash: "#8b8f86",
     accentText: { lime: "#c4f035", blue: "#7fd4e8", violet: "#c9a9f0", amber: "#f0b45e", red: "#e0625e" },
   },
+  // JAPANDI — warm minimal (see reference/today-cockpit-design-concepts/04-japandi).
+  // Oat-paper surfaces; the brand accent becomes a warm CLAY/terracotta (the
+  // `lime` slot drives every accent, so clay lives there in this theme) with a
+  // serif display. `lime` here = clay #a5573c (the concept's #b06a4f darkened to
+  // clear AA). sage/secondary stays in the other accent slots.
   light: {
-    ink: "#e9ece6",
-    ink2: "#dfe2da",
-    card: "#f6f7f3",
-    line: "#cdd0c6",
-    chalk: "#14160f",
-    ash: "#5a5e54",
-    accentText: { lime: "#4c6606", blue: "#176577", violet: "#5f3f93", amber: "#8a5a12", red: "#a82e2a" },
+    ink: "#efe9df",
+    ink2: "#f6f1e8",
+    card: "#fcfaf4",
+    line: "#e4dccd",
+    chalk: "#2f2a22",
+    ash: "#6b6456",
+    accentText: { lime: "#a5573c", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
   },
 };

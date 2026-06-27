@@ -48,8 +48,8 @@ export default function AuroraHistory() {
     <AuroraScreen refreshing={refreshing} onRefresh={() => q.refetch()}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
-        <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.blue : C.line, backgroundColor: showArchived ? `${C.blue}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.blue) : C.ash }}>{t("history.archived")}</Text>
+        <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.lime : C.line, backgroundColor: showArchived ? `${C.lime}1a` : "transparent" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
 
@@ -67,7 +67,7 @@ export default function AuroraHistory() {
             const actions: SwipeAction[] = [
               showArchived
                 ? { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => onArchive(s.id, false) }
-                : { key: "archive", label: t("common.archive"), color: C.amber, onPress: () => onArchive(s.id, true) },
+                : { key: "archive", label: t("common.archive"), color: C.ash, onPress: () => onArchive(s.id, true) },
               { key: "delete", label: t("common.delete"), color: C.red, onPress: () => onDelete(s) },
             ];
             return (
@@ -77,7 +77,7 @@ export default function AuroraHistory() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
                 </View>
                 <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                  {chip(C.blue, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
+                  {chip(C.ash, `${sessionVolume(s.blocks).toLocaleString()} kg`)}
                   {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("history.block") : t("history.blocks")}`)}
                   {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
                 </View>

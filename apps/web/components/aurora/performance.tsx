@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { fs, space, LINE, ASH, LIME, BLUE, tip, mono, roleHex } from "@/lib/ui";
+import { fs, space, LINE, ASH, LIME, LIME_HEX, BLUE, tip, mono, roleHex } from "@/lib/ui";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog,
   ROLE_COLOR, hpiRole, riskRole,
@@ -78,9 +78,9 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: space.lg }}>
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.perf.twinHpi")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.perf.twinHpi")}</div>
           <div style={{ fontWeight: 900, fontSize: 56, color: C(hpiVar(state.hpi.band)), lineHeight: 1.1, margin: "6px 0" }}>{state.hpi.score}</div>
-          <div style={{ marginBottom: 6 }}>{chip(C(hpiVar(state.hpi.band)), state.hpi.band)}{chip(C("amber"), `${t("w.analyze.perf.limiter")} · ${state.hpi.limiter}`)}</div>
+          <div style={{ marginBottom: 6 }}>{chip(C(hpiVar(state.hpi.band)), state.hpi.band)}{chip(C("ash"), `${t("w.analyze.perf.limiter")} · ${state.hpi.limiter}`)}</div>
           <div style={{ marginTop: 14 }}>
             {([["w.analyze.perf.strength", state.hpi.components.strength, "lime"], ["w.analyze.perf.endurance", state.hpi.components.endurance, "blue"], ["w.analyze.perf.recovery", Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), "violet"]] as const).map(([l, v, c]) => (
               <div key={l} style={{ marginBottom: 8 }}>
@@ -101,7 +101,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
                 <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <Tooltip contentStyle={tip} />
-                <Line type="monotone" dataKey="HPI" stroke={LIME} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="HPI" stroke={LIME_HEX} strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="Readiness" stroke={BLUE} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>

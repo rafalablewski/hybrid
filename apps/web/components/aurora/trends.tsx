@@ -6,7 +6,7 @@ import {
   weeklyVolumeTrend, weeklyMuscleSets, exerciseTable, volumeStatus, volumeAdvice, resolveLandmarks, fmtWeight, fmtTonnage, kgToUnit,
   type LoggedSession, type ExercisePeriod, type TrendDir, type MuscleGroup, type ExerciseTableRow,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, BLUE, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, ASH, BLUE, tip, mono } from "@/lib/ui";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 
@@ -56,7 +56,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
         <div style={card}>{frameHead("lime", t("w.analyze.trends.weeklySets"))}
-          <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={LIME} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={LIME_HEX} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
         <div style={card}>{frameHead("blue", `${t("w.analyze.trends.weeklyTonnage")} · ${units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}`)}
           <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${units === "kg" ? "t" : "k lb"}`} /><Bar dataKey="t" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
@@ -65,7 +65,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
 
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.trends.muscleBreakdown")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.trends.muscleBreakdown")}</span>
           {onOpenVolume && <button onClick={onOpenVolume} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), background: "none", border: "none", cursor: "pointer" }}>{t("w.analyze.trends.volumeDetail")}</button>}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 12 }}>

@@ -12,7 +12,7 @@ import {
 import { fs, space,
   INK2,
   LINE,
-  LIME,
+  LIME, LIME_HEX,
   CHALK,
   ASH,
   BLUE,
@@ -183,7 +183,7 @@ export function SessionDetail({
                 <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
                 <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} />
                 <Tooltip contentStyle={tip} />
-                <Line type="monotone" dataKey="e1rm" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="e1rm" stroke={LIME_HEX} strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </ChartFrame>

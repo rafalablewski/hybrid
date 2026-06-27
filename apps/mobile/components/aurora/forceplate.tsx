@@ -63,7 +63,7 @@ export default function AuroraForcePlate() {
         {parsed && (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
             {chip(C.lime, `${parsed.signals.length} ${t("w.analyze.fp.signals")} · ${parsed.rows} ${t("w.analyze.fp.rows")}`)}
-            {parsed.recognized.length > 0 && chip(C.blue, `${t("w.analyze.fp.recognized")} ${parsed.recognized.join(", ")}`)}
+            {parsed.recognized.length > 0 && chip(C.ash, `${t("w.analyze.fp.recognized")} ${parsed.recognized.join(", ")}`)}
             {parsed.ignored.length > 0 && chip(C.ash, `${t("w.analyze.fp.skipped")} ${parsed.ignored.join(", ")}`)}
           </View>
         )}

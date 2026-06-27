@@ -531,7 +531,7 @@ export default function AdminAgents() {
                     <button
                       key={t.value}
                       onClick={() => set("tools", on ? draft.tools.filter((x) => x !== t.value) : [...draft.tools, t.value])}
-                      style={{ ...chipBtn, background: on ? `${LIME}1f` : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
+                      style={{ ...chipBtn, background: on ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
                     >
                       {on ? "✓ " : "+ "}{t.label}
                     </button>
@@ -903,7 +903,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LIME}`,
-  background: `${LIME}22`,
+  background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`,
   color: txt(LIME),
 };
 const dangerBtn: React.CSSProperties = {
@@ -959,7 +959,7 @@ function toggle(on: boolean): React.CSSProperties {
     height: 24,
     borderRadius: 999,
     border: `1px solid ${on ? LIME : LINE}`,
-    background: on ? `${LIME}33` : INK2,
+    background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2,
     cursor: "pointer",
     padding: 2,
     display: "flex",

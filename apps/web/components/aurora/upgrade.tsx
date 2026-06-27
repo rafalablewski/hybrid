@@ -24,7 +24,7 @@ const buildBundle = (t: (k: string) => string): { kicker: string; color: string;
     ],
   },
   {
-    kicker: t("w.account.upgrade.cat-performance"), color: C("blue"), items: [
+    kicker: t("w.account.upgrade.cat-performance"), color: C("lime"), items: [
       { ic: "◈", nm: t("w.account.upgrade.athlete-twin"), ds: t("w.account.upgrade.athlete-twin-ds") },
       { ic: "◇", nm: t("w.account.upgrade.injury-risk"), ds: t("w.account.upgrade.injury-risk-ds") },
       { ic: "↗", nm: t("w.account.upgrade.future-self"), ds: t("w.account.upgrade.future-self-ds") },
@@ -32,7 +32,7 @@ const buildBundle = (t: (k: string) => string): { kicker: string; color: string;
     ],
   },
   {
-    kicker: t("w.account.upgrade.cat-sport"), color: C("amber"), items: [
+    kicker: t("w.account.upgrade.cat-sport"), color: C("lime"), items: [
       { ic: "◎", nm: t("w.account.upgrade.sport-sc"), ds: t("w.account.upgrade.sport-sc-ds") },
       { ic: "⚡", nm: t("w.account.upgrade.velocity"), ds: t("w.account.upgrade.velocity-ds") },
       { ic: "◇", nm: t("w.account.upgrade.force-plate"), ds: t("w.account.upgrade.force-plate-ds") },
@@ -40,7 +40,7 @@ const buildBundle = (t: (k: string) => string): { kicker: string; color: string;
     ],
   },
   {
-    kicker: t("w.account.upgrade.cat-endurance"), color: C("violet"), items: [
+    kicker: t("w.account.upgrade.cat-endurance"), color: C("lime"), items: [
       { ic: "🏃", nm: t("w.account.upgrade.running"), ds: t("w.account.upgrade.running-ds") },
       { ic: "▦", nm: t("w.account.upgrade.volume"), ds: t("w.account.upgrade.volume-ds") },
       { ic: "≡", nm: t("w.account.upgrade.exercises-trends"), ds: t("w.account.upgrade.exercises-trends-ds") },
@@ -99,14 +99,14 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
 
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("amber") }}>{t("w.account.upgrade.kicker")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--lime-text)" }}>{t("w.account.upgrade.kicker")}</div>
       <h2 style={{ fontWeight: 900, fontSize: 30, margin: "5px 0 0" }}>{t("w.account.upgrade.headline")}</h2>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.7, marginTop: 10, maxWidth: 660, color: C("chalk") }}>
         {t("w.account.upgrade.intro")}
       </div>
 
       {/* hero */}
-      <div style={{ marginTop: 18, padding: 22, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 13%, transparent), color-mix(in srgb, ${C("violet")} 10%, transparent))` }}>
+      <div style={{ marginTop: 18, padding: 22, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 14%, transparent), transparent)` }}>
         <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, color: C("lime"), border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "3px 12px", fontWeight: 700 }}>
           {t("w.account.upgrade.hero-badge")}
         </span>
@@ -114,7 +114,7 @@ export default function AuroraUpgrade({ onUpgraded }: { onUpgraded?: () => void 
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.upgrade.hero-sub")}</span>
         </div>
         <div style={{ marginTop: 14 }}>{CTA}</div>
-        {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("amber") }}>{msg}</div>}
+        {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{msg}</div>}
       </div>
 
       {/* flagship — the Cockpit (assembles everything) */}

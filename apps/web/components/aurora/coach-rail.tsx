@@ -67,10 +67,10 @@ export default function CoachRail({ onOpen }: { onOpen: () => void }) {
               style={{ scrollSnapAlign: "start", flex: "0 0 auto", width: 216, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 16, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button onClick={onOpen} aria-label={`Open ${c.name}`} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${C("line")}`, background: `linear-gradient(135deg, ${C(c.accent)}44, ${C("blue")}33)`, color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, cursor: "pointer", flexShrink: 0 }}>{initials(c.name)}</button>
+                <button onClick={onOpen} aria-label={`Open ${c.name}`} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${C("line")}`, background: `linear-gradient(135deg, ${C("lime")}33, ${C("ink2")})`, color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, cursor: "pointer", flexShrink: 0 }}>{initials(c.name)}</button>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {c.name}{c.verified && <span style={{ color: C("blue"), fontSize: 12 }}>✓</span>}
+                    {c.name}{c.verified && <span style={{ color: "var(--lime-text)", fontSize: 12 }}>✓</span>}
                   </div>
                   <div style={{ marginTop: 2 }}><Stars rating={c.rating} /></div>
                 </div>

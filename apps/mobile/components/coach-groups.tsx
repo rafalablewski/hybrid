@@ -60,7 +60,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
   return (
     <View>
       {unavailable && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.amber, marginTop: 12 }}>
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }}>
           <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>
             Groups aren&apos;t enabled yet — run reference/sql-coach-groups.sql in Supabase.
           </Mono>
@@ -117,9 +117,9 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                 <Pressable
                   key={gg}
                   onPress={() => { setGoalFor((m) => ({ ...m, [g.id]: gg })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }}
-                  style={{ borderWidth: 1, borderColor: sel ? C.violet : C.line, backgroundColor: sel ? `${C.violet}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
+                  style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.violet) : C.ash }}>{gg}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.lime) : C.ash }}>{gg}</Text>
                 </Pressable>
               );
             })}
@@ -146,7 +146,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
             );
           })()}
           <View style={{ marginTop: 10 }}>
-            <Button label="Assign plan to group" color={C.violet} onPress={() => assign(g)} />
+            <Button label="Assign plan to group" color={C.lime} onPress={() => assign(g)} />
           </View>
         </Card>
       ))}

@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { fs, space, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Stats = {
@@ -64,7 +64,7 @@ export default function AdminOverview() {
             <XAxis dataKey="week" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
             <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} allowDecimals={false} />
             <Tooltip contentStyle={tip} />
-            <Line type="monotone" dataKey="signups" stroke={LIME} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="signups" stroke={LIME_HEX} strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="sessions" stroke={BLUE} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
@@ -78,7 +78,7 @@ export default function AdminOverview() {
               <XAxis dataKey="goal" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
               <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} allowDecimals={false} />
               <Tooltip contentStyle={tip} />
-              <Bar dataKey="n" fill={LIME} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="n" fill={LIME_HEX} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartFrame>

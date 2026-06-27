@@ -275,7 +275,7 @@ const smallBtn: React.CSSProperties = { ...cond, fontSize: fs.caption, fontWeigh
 const iconBtn: React.CSSProperties = { ...disp, fontSize: fs.body, width: 28, height: 22, borderRadius: 7, border: `1px solid ${LINE}`, background: INK2, color: txt(ASH), cursor: "pointer", lineHeight: 1, padding: 0 };
 
 function toggle(on: boolean): React.CSSProperties {
-  return { width: 46, height: 26, borderRadius: 999, border: `1px solid ${on ? LIME : LINE}`, background: on ? `${LIME}33` : INK2, cursor: "pointer", padding: 2, display: "flex", justifyContent: on ? "flex-end" : "flex-start", alignItems: "center", transition: "all .12s" };
+  return { width: 46, height: 26, borderRadius: 999, border: `1px solid ${on ? LIME : LINE}`, background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2, cursor: "pointer", padding: 2, display: "flex", justifyContent: on ? "flex-end" : "flex-start", alignItems: "center", transition: "all .12s" };
 }
 function knob(on: boolean): React.CSSProperties {
   return { width: 20, height: 20, borderRadius: 999, background: on ? LIME : ASH, display: "block" };

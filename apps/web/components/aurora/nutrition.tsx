@@ -8,7 +8,7 @@ import {
   isFullAccess,
   type NutritionGoal, type Signal,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, tip, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, ASH, tip, txt } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
@@ -89,7 +89,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
 
       {coachDiet?.diet && (
         <div style={{ ...card, marginTop: 16, }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
             {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} · {t("w.recovery.nutrition.readOnly")}
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 10, flexWrap: "wrap" }}>
@@ -149,7 +149,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
                 <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
                 <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? t("w.recovery.nutrition.trend") : t("w.recovery.nutrition.raw")]} />
                 <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="smoothed" stroke={LIME} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="smoothed" stroke={LIME_HEX} strokeWidth={2.5} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -158,7 +158,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
 
       <div style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-          <AuroraIcon name="add" size={20} color={C("violet")} />
+          <AuroraIcon name="add" size={20} color={C("lime")} />
           <b style={{ fontSize: fs.note }}>{t("w.recovery.nutrition.addToToday")}</b>
         </div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
@@ -191,7 +191,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
       </div>
 
       <div style={{ ...card, marginTop: 16, padding: 18 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.recovery.nutrition.recentDays")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.recentDays")}</div>
         <div style={{ marginTop: 10 }}>
           {recent.length === 0 ? (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.recovery.nutrition.recentEmpty")}</div>

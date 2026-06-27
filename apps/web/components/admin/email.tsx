@@ -271,7 +271,7 @@ function CampaignsPane({ onChange }: { onChange: () => void }) {
                 <Chip c={statusColor[c.status] ?? CHALK}>{c.status}</Chip>
                 <Chip c={VIOLET}>{c.audience} · {c.audienceSize}</Chip>
                 {c.status === "sent" && <Chip c={LIME}>{c.sentCount} sent{c.failedCount ? ` · ${c.failedCount} failed` : ""}</Chip>}
-                {c.scheduledAt && c.status === "scheduled" && <Chip c={BLUE}>{new Date(c.scheduledAt).toLocaleString()}</Chip>}
+                {c.scheduledAt && c.status === "scheduled" && <Chip c={ASH}>{new Date(c.scheduledAt).toLocaleString()}</Chip>}
               </div>
             </div>
             <div style={{ display: "flex", gap: space.xs, flexShrink: 0 }}>
@@ -439,7 +439,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle }}>{s.name}</div>
               <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 6 }}>
                 <Chip c={s.active ? LIME : ASH}>{s.active ? "active" : "paused"}</Chip>
-                <Chip c={BLUE}>{EMAIL_TRIGGERS.find((t) => t.id === s.trigger)?.label ?? s.trigger}</Chip>
+                <Chip c={ASH}>{EMAIL_TRIGGERS.find((t) => t.id === s.trigger)?.label ?? s.trigger}</Chip>
                 <Chip c={VIOLET}>{s.steps.length} step{s.steps.length === 1 ? "" : "s"}</Chip>
                 <Chip c={CHALK}>{s._count?.enrollments ?? 0} enrolled</Chip>
               </div>

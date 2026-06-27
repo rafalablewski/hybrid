@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { parseForcePlateCsv, type Signal } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, tip } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -51,7 +51,7 @@ export default function AuroraForcePlate() {
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.fp.title")}</h1>
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.fp.importTitle")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.fp.importTitle")}</div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, margin: "8px 0 12px", color: C("ash") }}>{t("w.analyze.fp.importBody")}</p>
         <div style={{ display: "flex", gap: space.sm, marginBottom: 8 }}>
           <label style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
@@ -64,7 +64,7 @@ export default function AuroraForcePlate() {
           <div style={{ marginTop: 10 }}>
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 8 }}>
               {chip(C("lime"), `${parsed.imported} ${t("w.analyze.fp.signalsFromPre")} ${parsed.rows} ${t("w.analyze.fp.rows")}`)}
-              {parsed.recognized.map((r) => <span key={r}>{chip(C("blue"), r)}</span>)}
+              {parsed.recognized.map((r) => <span key={r}>{chip(C("ash"), r)}</span>)}
               {parsed.ignored.map((r) => <span key={r}>{chip(C("ash"), `${t("w.analyze.fp.skipped")} ${r}`)}</span>)}
             </div>
             {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 6, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
@@ -77,7 +77,7 @@ export default function AuroraForcePlate() {
         <div style={{ ...card, marginTop: 16 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime"), marginBottom: 10 }}>{t("w.analyze.fp.jumpTitle")}</div>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={jumps} margin={{ left: -10, right: 8 }}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} /><YAxis unit="cm" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 2", "dataMax + 2"]} /><Tooltip contentStyle={tip} formatter={(v) => [`${v} cm`, t("w.analyze.fp.jumpLabel")]} /><Line type="monotone" dataKey="jh" stroke={LIME} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} /></LineChart>
+            <LineChart data={jumps} margin={{ left: -10, right: 8 }}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} /><YAxis unit="cm" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 2", "dataMax + 2"]} /><Tooltip contentStyle={tip} formatter={(v) => [`${v} cm`, t("w.analyze.fp.jumpLabel")]} /><Line type="monotone" dataKey="jh" stroke={LIME_HEX} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} /></LineChart>
           </ResponsiveContainer>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}>{t("w.analyze.fp.jumpNote")}</div>
         </div>

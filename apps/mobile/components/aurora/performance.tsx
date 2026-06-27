@@ -67,7 +67,7 @@ export default function AuroraPerformance() {
       {header}
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.analyze.perf.twinHpi")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.perf.twinHpi")}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.md, marginTop: 4 }}>
           <Text style={{ fontFamily: F.black, fontSize: 52, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
           <View>
@@ -80,8 +80,8 @@ export default function AuroraPerformance() {
         <View style={{ marginTop: 14, gap: space.ms }}>
           {([
             [t("w.analyze.perf.strength"), state.hpi.components.strength, C.lime] as const,
-            [t("w.analyze.perf.endurance"), state.hpi.components.endurance, C.blue] as const,
-            [t("w.analyze.perf.recovery"), Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), C.violet] as const,
+            [t("w.analyze.perf.endurance"), state.hpi.components.endurance, C.lime] as const,
+            [t("w.analyze.perf.recovery"), Math.max(0, Math.min(100, Math.round(50 + state.hpi.components.recovery * (50 / 15)))), C.lime] as const,
           ]).map(([l, v, col]) => (
             <View key={l}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

@@ -108,8 +108,8 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
           style={{ ...numField, resize: "vertical", marginTop: 12 }} />
 
         <button onClick={() => isPaid && setForm((s) => ({ ...s, sharedWithCoach: !s.sharedWithCoach }))} disabled={!isPaid}
-          style={{ display: "flex", alignItems: "center", gap: space.md, width: "100%", textAlign: "left", marginTop: 14, padding: 14, borderRadius: 14, background: form.sharedWithCoach && isPaid ? "rgba(201,169,240,.10)" : "transparent", border: `1px solid ${form.sharedWithCoach && isPaid ? C("violet") : C("line")}`, cursor: isPaid ? "pointer" : "default", opacity: isPaid ? 1 : 0.6, color: C("chalk") }}>
-          <AuroraIcon name={form.sharedWithCoach && isPaid ? "check" : "lock"} size={20} color={form.sharedWithCoach && isPaid ? C("violet") : C("ash")} />
+          style={{ display: "flex", alignItems: "center", gap: space.md, width: "100%", textAlign: "left", marginTop: 14, padding: 14, borderRadius: 14, background: form.sharedWithCoach && isPaid ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : "transparent", border: `1px solid ${form.sharedWithCoach && isPaid ? C("lime") : C("line")}`, cursor: isPaid ? "pointer" : "default", opacity: isPaid ? 1 : 0.6, color: C("chalk") }}>
+          <AuroraIcon name={form.sharedWithCoach && isPaid ? "check" : "lock"} size={20} color={form.sharedWithCoach && isPaid ? C("lime") : C("ash")} />
           <span style={{ flex: 1 }}>
             <span style={{ fontWeight: 700, fontSize: fs.body, display: "block" }}>{t("w.recovery.checkins.shareCoach")}</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), display: "block", marginTop: 2 }}>
@@ -125,7 +125,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
         </button>
       </div>
 
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue"), margin: "18px 0 10px" }}>{t("w.recovery.checkins.history")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), margin: "18px 0 10px" }}>{t("w.recovery.checkins.history")}</div>
       {history.length === 0 ? (
         <div style={{ fontSize: fs.body, color: C("ash") }}>{t("w.recovery.checkins.historyEmpty")}</div>
       ) : (
@@ -134,7 +134,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontWeight: 700, fontSize: fs.note }}>{new Date(c.weekOf).toLocaleDateString()}</div>
               <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-                {c.sharedWithCoach && <span style={{ background: "rgba(201,169,240,.14)", color: C("violet"), borderRadius: 999, padding: "2px 10px", fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</span>}
+                {c.sharedWithCoach && <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "2px 10px", fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase" }}>{t("w.recovery.checkins.shared")}</span>}
                 {c.adherencePct != null && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{c.adherencePct}% {t("w.recovery.checkins.adherence")}</span>}
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function AuroraCheckins({ sessions }: { sessions: LoggedSession[]
             {c.note && <div style={{ fontSize: fs.bodyLg, lineHeight: 1.5, marginTop: 6 }}>{c.note}</div>}
             {c.coachReply && (
               <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("violet") }}>{t("w.recovery.checkins.coach")}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.recovery.checkins.coach")}</div>
                 <div style={{ fontSize: fs.bodyLg, lineHeight: 1.5, marginTop: 4 }}>{c.coachReply}</div>
               </div>
             )}

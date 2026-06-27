@@ -236,7 +236,7 @@ export default function AuroraProfile() {
       </View>
 
       {/* ID CARD — premium membership card */}
-      <View style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", borderWidth: 1, borderColor: "#34381f", backgroundColor: "#161814" }}>
+      <View style={{ position: "relative", borderRadius: 22, padding: 18, overflow: "hidden", borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
         {/* soft lime corner sheen */}
         <View pointerEvents="none" style={{ position: "absolute", top: -60, right: -50, width: 180, height: 180, borderRadius: 90, backgroundColor: C.lime, opacity: 0.12 }} />
         {/* faint diagonal etch */}
@@ -276,7 +276,7 @@ export default function AuroraProfile() {
               return hpiTrace.map((v, i) => (
                 <View
                   key={i}
-                  style={{ flex: 1, height: 6 + ((v - min) / range) * 28, borderRadius: 2, backgroundColor: i === hpiTrace.length - 1 ? C.lime : "#2c2f27" }}
+                  style={{ flex: 1, height: 6 + ((v - min) / range) * 28, borderRadius: 2, backgroundColor: i === hpiTrace.length - 1 ? C.lime : C.line }}
                 />
               ));
             })()}
@@ -344,7 +344,7 @@ export default function AuroraProfile() {
                 borderRadius: 20,
                 borderWidth: 1,
                 borderColor: a.earned ? `${C.lime}73` : C.line,
-                backgroundColor: a.earned ? "#181a12" : C.ink2,
+                backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
                 alignItems: "center",
                 justifyContent: "center",
                 opacity: a.earned ? 1 : 0.55,
@@ -411,7 +411,7 @@ const hpiHead = (n: number) => { const s = `${n}`; return s.length > 1 ? s.slice
 const hpiTail = (n: number) => `${n}`.slice(-1);
 
 function heatColor(level: HeatCell["level"], C: P): string {
-  if (level === 0) return "#1b1e18";
+  if (level === 0) return C.line;
   const op = level === 1 ? 0.28 : level === 2 ? 0.5 : level === 3 ? 0.74 : 1;
   return level === 4 ? C.lime : `${C.lime}${Math.round(op * 255).toString(16).padStart(2, "0")}`;
 }

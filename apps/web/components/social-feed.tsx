@@ -83,7 +83,7 @@ export default function SocialFeed() {
       <div style={card(aurora, { marginBottom: 16 })}>
         <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder="Share an update with your followers…" style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? C("amber") : C("ash"), fontSize: 13, cursor: "pointer" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
             <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> 🏆 Attach my latest PR
           </label>
           <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? "Sharing…" : "Share"}</Btn>

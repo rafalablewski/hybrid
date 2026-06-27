@@ -507,7 +507,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               {d.role === "COACH" && d.coachVerified && <Chip c={BLUE}>✓ verified coach</Chip>}
               <Chip c={planColor(d.entitlement)}>{planLabel(d.entitlement)}</Chip>
               <Chip c={d.linkedAuth ? LIME : ASH}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
-              <Chip c={BLUE}>joined {fmt(d.createdAt)}</Chip>
+              <Chip c={ASH}>joined {fmt(d.createdAt)}</Chip>
               {d.lastActiveAt && <Chip c={CHALK}>last active {fmt(d.lastActiveAt)}</Chip>}
             </div>
 
@@ -602,7 +602,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                         borderRadius: "var(--r-field)",
                         cursor: "pointer",
                         border: `1px solid ${on ? LIME : LINE}`,
-                        background: on ? `${LIME}1a` : "transparent",
+                        background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent",
                         color: txt(on ? LIME : ASH),
                       }}
                     >

@@ -100,7 +100,7 @@ export default function RtpPanel() {
                   {overrideFor === p.id && (
                     <div style={{ display: "flex", gap: space.sm, marginTop: 8, alignItems: "center" }}>
                       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (logged to audit)" style={{ ...input, flex: 1, textTransform: "none" }} />
-                      <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: ON_ACCENT }}>Force advance</button>
+                      <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: "#0c0d0c" }}>Force advance</button>
                     </div>
                   )}
                 </>

@@ -426,7 +426,7 @@ export default function AuroraLogger({
       {restSince != null && (() => {
         const remaining = restTarget != null ? restTarget - restNow : null;
         const over = remaining != null && remaining <= 0;
-        const accent = over ? C("lime") : C("blue");
+        const accent = over ? C("lime") : C("ash");
         const clock = restTarget == null ? mmss(restNow) : over ? `+${mmss(restNow - restTarget)}` : `${mmss(remaining!)} ${t("workout.restLeft")}`;
         return (
           <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 18, padding: "10px 14px", marginBottom: 16 }}>
@@ -442,7 +442,7 @@ export default function AuroraLogger({
               {REST_PRESETS.map((sec) => {
                 const on = restTarget === sec;
                 return (
-                  <button key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("blue") : C("ash"), background: on ? `color-mix(in srgb, ${C("blue")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("blue") : C("line")}`, borderRadius: 8, padding: "6px 0", cursor: "pointer" }}>
+                  <button key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("lime") : C("ash"), background: on ? `color-mix(in srgb, ${C("lime")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 8, padding: "6px 0", cursor: "pointer" }}>
                     {sec < 120 ? `${sec}s` : `${sec / 60}m`}
                   </button>
                 );
@@ -494,7 +494,7 @@ export default function AuroraLogger({
           Hidden once you've added/seeded blocks. */}
       {blocks.length === 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 14 }}>
-          <button onClick={loadPrescribed} style={pill("violet")}>
+          <button onClick={loadPrescribed} style={pill("lime")}>
             {sessions.length > 0 ? `✦ ${t("w.train.logger.usePrescribed")} · ${rx.readiness}` : `✦ ${t("w.train.logger.startSession")}`}
           </button>
           {routines.map((r) => (

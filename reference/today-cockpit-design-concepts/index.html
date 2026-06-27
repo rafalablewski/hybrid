@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HYBRID — Today &amp; Cockpit · 10 design concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0c0d0c;color:#f3f4ef;font-family:'Inter',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:64px 28px 90px}
+.wrap{max-width:1180px;margin:0 auto}
+a{color:inherit;text-decoration:none}
+.tag{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#c4f035;margin-bottom:16px}
+h1{font-size:clamp(36px,6vw,68px);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin-bottom:18px}
+.lede{max-width:760px;color:#9a9e94;font-size:17px;margin-bottom:14px}
+.lede b{color:#f3f4ef;font-weight:600}
+.note{max-width:760px;color:#7c7f76;font-size:14px;font-family:'JetBrains Mono',monospace;line-height:1.7;border-left:2px solid #242724;padding-left:16px;margin-bottom:48px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.ix-card{display:block;text-decoration:none;border:1px solid #242724;border-radius:18px;overflow:hidden;background:#121312;transition:transform .18s ease,border-color .18s ease}
+.ix-card:hover{transform:translateY(-4px);border-color:#3a3d3a}
+.ix-prev{height:150px;background:var(--c-bg);display:grid;place-items:center;padding:22px}
+.ix-mini{width:100%;height:100%;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;position:relative}
+.ix-bar{width:44px;height:8px;border-radius:3px}
+.ix-l{width:80%;height:7px;border-radius:3px;opacity:.8}
+.ix-l.sm{width:55%;opacity:.4}
+.ix-chip{position:absolute;right:14px;bottom:14px;width:30px;height:30px;border-radius:8px}
+.ix-meta{padding:16px 18px 20px;display:flex;flex-direction:column;gap:3px;border-top:1px solid #242724}
+.ix-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6e7269;letter-spacing:.1em}
+.ix-name{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.ix-insp{font-size:12.5px;color:#8b8f86}
+.foot{margin-top:54px;padding-top:26px;border-top:1px solid #242724;font-size:13px;color:#7c7f76;max-width:760px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tag">HYBRID · design exploration</div>
+  <h1>Today &amp; Cockpit —<br>10 ways to kill the slop.</h1>
+  <p class="lede">Same real content, ten disciplined design systems. The fix for an "AI-slop" look is never a new color — it's <b>restraint</b>: one accent, a neutral ramp, real typographic hierarchy, and a strict grid.</p>
+  <p class="note">Diagnosis — today's UI runs five accent colors at once (lime + blue + violet + amber + red on near-black). That competing-rainbow is the slop. Every concept below collapses to a single accent and lets a neutral ramp + type + grid carry the structure. Concept 10 keeps your exact lime — just disciplined — so you can ship the smallest possible change.</p>
+  <div class="grid"><a class="ix-card" href="01-cupertino.html" style="--c-bg:#f5f5f7;--c-card:#ffffff;--c-text:#1d1d1f;--c-acc:#0a84ff;--c-line:#e6e6ea;--c-muted:#86868b">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#ffffff;border:1px solid #e6e6ea">
+          <span class="ix-bar" style="background:#0a84ff"></span>
+          <span class="ix-l" style="background:#1d1d1f;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#86868b"></span>
+          <span class="ix-chip" style="background:#0a84ff"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">01</div>
+        <div class="ix-name">Cupertino</div>
+        <div class="ix-insp">Apple · iOS / visionOS</div>
+      </div>
+    </a><a class="ix-card" href="02-lucid.html" style="--c-bg:linear-gradient(180deg,#fbfcfc 0%,#eef2f3 100%);--c-card:#ffffff;--c-text:#21282b;--c-acc:#5a8a90;--c-line:#e7ecec;--c-muted:#8b979a">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#ffffff;border:1px solid #e7ecec">
+          <span class="ix-bar" style="background:#5a8a90"></span>
+          <span class="ix-l" style="background:#21282b;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#8b979a"></span>
+          <span class="ix-chip" style="background:#5a8a90"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">02</div>
+        <div class="ix-name">Lucid</div>
+        <div class="ix-insp">Lucid Motors · luxury EV</div>
+      </div>
+    </a><a class="ix-card" href="03-tesla.html" style="--c-bg:#fafafa;--c-card:#ffffff;--c-text:#111111;--c-acc:#e31937;--c-line:#e2e2e2;--c-muted:#8a8a8a">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#ffffff;border:1px solid #e2e2e2">
+          <span class="ix-bar" style="background:#e31937"></span>
+          <span class="ix-l" style="background:#111111;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#8a8a8a"></span>
+          <span class="ix-chip" style="background:#e31937"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">03</div>
+        <div class="ix-name">Apex</div>
+        <div class="ix-insp">Tesla · industrial UI</div>
+      </div>
+    </a><a class="ix-card" href="04-japandi.html" style="--c-bg:#efe9df;--c-card:#fcfaf4;--c-text:#3a352c;--c-acc:#b06a4f;--c-line:#e2d9c9;--c-muted:#9b9384">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#fcfaf4;border:1px solid #e2d9c9">
+          <span class="ix-bar" style="background:#b06a4f"></span>
+          <span class="ix-l" style="background:#3a352c;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#9b9384"></span>
+          <span class="ix-chip" style="background:#b06a4f"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">04</div>
+        <div class="ix-name">Japandi</div>
+        <div class="ix-insp">Japandi · warm minimal</div>
+      </div>
+    </a><a class="ix-card" href="05-swiss.html" style="--c-bg:#ffffff;--c-card:#ffffff;--c-text:#111111;--c-acc:#e2001a;--c-line:#111111;--c-muted:#7a7a7a">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#ffffff;border:1px solid #111111">
+          <span class="ix-bar" style="background:#e2001a"></span>
+          <span class="ix-l" style="background:#111111;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#7a7a7a"></span>
+          <span class="ix-chip" style="background:#e2001a"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">05</div>
+        <div class="ix-name">Grid</div>
+        <div class="ix-insp">Swiss / International Typographic</div>
+      </div>
+    </a><a class="ix-card" href="06-nordic.html" style="--c-bg:#e9edf0;--c-card:#ffffff;--c-text:#2b333a;--c-acc:#5a7184;--c-line:#e0e6ea;--c-muted:#8b96a0">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#ffffff;border:1px solid #e0e6ea">
+          <span class="ix-bar" style="background:#5a7184"></span>
+          <span class="ix-l" style="background:#2b333a;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#8b96a0"></span>
+          <span class="ix-chip" style="background:#5a7184"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">06</div>
+        <div class="ix-name">Fjord</div>
+        <div class="ix-insp">Nordic · functional calm</div>
+      </div>
+    </a><a class="ix-card" href="07-onyx.html" style="--c-bg:#0d0d0f;--c-card:#17171a;--c-text:#ededee;--c-acc:#c8a24b;--c-line:#262629;--c-muted:#8a8a92">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#17171a;border:1px solid #262629">
+          <span class="ix-bar" style="background:#c8a24b"></span>
+          <span class="ix-l" style="background:#ededee;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#8a8a92"></span>
+          <span class="ix-chip" style="background:#c8a24b"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">07</div>
+        <div class="ix-name">Onyx</div>
+        <div class="ix-insp">Premium dark · brushed brass</div>
+      </div>
+    </a><a class="ix-card" href="08-editorial.html" style="--c-bg:#f3efe6;--c-card:#faf7f0;--c-text:#211d18;--c-acc:#7a2e2e;--c-line:#ddd5c4;--c-muted:#928a79">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#faf7f0;border:1px solid #ddd5c4">
+          <span class="ix-bar" style="background:#7a2e2e"></span>
+          <span class="ix-l" style="background:#211d18;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#928a79"></span>
+          <span class="ix-chip" style="background:#7a2e2e"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">08</div>
+        <div class="ix-name">Editorial</div>
+        <div class="ix-insp">Print magazine · type-led</div>
+      </div>
+    </a><a class="ix-card" href="09-carbon.html" style="--c-bg:#0b0c0d;--c-card:#16191c;--c-text:#dfe4e8;--c-acc:#3fb6c9;--c-line:#23282c;--c-muted:#7c858d">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#16191c;border:1px solid #23282c">
+          <span class="ix-bar" style="background:#3fb6c9"></span>
+          <span class="ix-l" style="background:#dfe4e8;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#7c858d"></span>
+          <span class="ix-chip" style="background:#3fb6c9"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">09</div>
+        <div class="ix-name">Carbon</div>
+        <div class="ix-insp">Bloomberg · tasteful terminal</div>
+      </div>
+    </a><a class="ix-card" href="10-aurora-refined.html" style="--c-bg:#0a0b0a;--c-card:#151715;--c-text:#f3f4ef;--c-acc:#c4f035;--c-line:#242724;--c-muted:#8b8f86">
+      <div class="ix-prev">
+        <div class="ix-mini" style="background:#151715;border:1px solid #242724">
+          <span class="ix-bar" style="background:#c4f035"></span>
+          <span class="ix-l" style="background:#f3f4ef;opacity:.85"></span>
+          <span class="ix-l sm" style="background:#8b8f86"></span>
+          <span class="ix-chip" style="background:#c4f035"></span>
+        </div>
+      </div>
+      <div class="ix-meta">
+        <div class="ix-num">10</div>
+        <div class="ix-name">Aurora — disciplined</div>
+        <div class="ix-insp">Your brand, fixed</div>
+      </div>
+    </a></div>
+  <div class="foot">Each tile opens a standalone HTML page showing both Today and Cockpit in that language, with your live data (readiness 78, HPI 71, the Lower Power + Zone 2 session, week stats, injury risk). Pick a direction — or a hybrid of two — and I'll wire the winning tokens into <code>packages/core</code> so web + mobile inherit it.</div>
+</div>
+</body>
+</html>

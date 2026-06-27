@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 
@@ -211,7 +211,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
                   cursor={{ fill: `${AMBER}14` }}
                   contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }}
                 />
-                <Bar dataKey="ok" stackId="a" fill={LIME} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="ok" stackId="a" fill={LIME_HEX} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="error" stackId="a" fill={RED} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -381,7 +381,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 title="Drag me onto the dropzone"
-                style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, padding: "10px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `${LIME}1f` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
+                style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, padding: "10px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
               >
                 <span style={{ color: txt(ASH) }}>⠿</span>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: DOT[a.status] ?? ASH }} />
@@ -402,7 +402,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
               if (id) setAgentId(id);
               setDragOver(false);
             }}
-            style={{ flex: 1, minWidth: 220, border: `2px dashed ${dragOver ? LIME : LINE}`, borderRadius: "var(--r-card)", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dragOver ? `${LIME}12` : "transparent", transition: "all .12s", minHeight: 88 }}
+            style={{ flex: 1, minWidth: 220, border: `2px dashed ${dragOver ? LIME : LINE}`, borderRadius: "var(--r-card)", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dragOver ? `color-mix(in srgb, var(--color-lime) 7%, transparent)` : "transparent", transition: "all .12s", minHeight: 88 }}
           >
             {assignedName ? (
               <Mono s={{ fontSize: fs.bodyLg, fontWeight: 700, textAlign: "center" }} c={LIME}>✓ {assignedName} assigned — add a task below</Mono>
@@ -431,7 +431,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           <button
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
-            style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
+            style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
           >
             {busy ? "Running…" : "Run"}
           </button>
@@ -642,7 +642,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
                   <YAxis tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} width={40} />
                   <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }} />
                   {target != null && <ReferenceLine y={target} stroke={ASH} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: fs.micro, position: "insideTopRight" }} />}
-                  <Line type="monotone" dataKey="value" stroke={LIME} strokeWidth={2} dot={{ r: 3, fill: LIME }} />
+                  <Line type="monotone" dataKey="value" stroke={LIME_HEX} strokeWidth={2} dot={{ r: 3, fill: LIME_HEX }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -730,7 +730,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
               <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} · {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `${LIME}22`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
+              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
                 Approve &amp; run
               </button>
               <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>

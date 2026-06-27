@@ -15,7 +15,7 @@ function Row({ p, onChanged, onOpen }: { p: any; onChanged: () => void; onOpen: 
       <Pressable onPress={() => onOpen(p.handle)} style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={42} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "600" }}>{p.displayName || `@${p.handle}`}{p.coachVerified ? <Text style={{ color: C.blue }}> ✓</Text> : null}</Text>
+          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "600" }}>{p.displayName || `@${p.handle}`}{p.coachVerified ? <Text style={{ color: C.lime }}> ✓</Text> : null}</Text>
           <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{p.handle}{p.reason ? ` · ${p.reason}` : p.isCoach ? " · coach" : ""}</Text>
         </View>
       </Pressable>

@@ -46,7 +46,7 @@ export default function AuroraLongevity() {
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.longevity.title")}</h1>
-        <AuroraIcon name="heart" size={24} color={C("blue")} />
+        <AuroraIcon name="heart" size={24} color={C("lime")} />
       </div>
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{t("w.recovery.longevity.intro")}</p>
 
@@ -65,16 +65,16 @@ export default function AuroraLongevity() {
 
       {!hasMarkers ? (
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.recovery.longevity.bioAge")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.longevity.bioAge")}</div>
           <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, marginTop: 10 }}>{t("w.recovery.longevity.bioAgeEmpty")}</p>
         </div>
       ) : (
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.recovery.longevity.bioAge")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.longevity.bioAge")}</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: space.md, margin: "6px 0", flexWrap: "wrap" }}>
             <div style={{ fontWeight: 900, fontSize: 48, color: deltaColor }}>{report.bioAge}</div>
             {chip(deltaColor, `${report.delta <= 0 ? "" : "+"}${report.delta} ${t("w.recovery.longevity.yrVsAge")}`)}
-            {chip(C("violet"), `${t("w.recovery.longevity.healthspan")} ${report.healthspanScore}`)}
+            {chip(C("lime"), `${t("w.recovery.longevity.healthspan")} ${report.healthspanScore}`)}
           </div>
           <div style={{ marginTop: 8 }}>
             {report.contributions.map((c) => (

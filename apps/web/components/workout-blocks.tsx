@@ -330,7 +330,7 @@ export default function WorkoutBlocks({
               {b.kind}
             </Mono>
             {ssLabels[idx] && (
-              <span style={{ ...mono, fontSize: fs.micro, fontWeight: 700, color: txt(LIME), background: `${LIME}1f`, border: `1px solid ${LIME}55`, borderRadius: 6, padding: "1px 6px" }}>
+              <span style={{ ...mono, fontSize: fs.micro, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 33%, transparent)`, borderRadius: 6, padding: "1px 6px" }}>
                 ⛓ {ssLabels[idx]}
               </span>
             )}

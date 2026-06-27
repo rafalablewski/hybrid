@@ -85,7 +85,7 @@ export default function AuroraNutrition() {
 
       {coachDiet?.diet && (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.violet) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>
             {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} · {t("w.recovery.nutrition.readOnly")}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 8 }}>
@@ -136,7 +136,7 @@ export default function AuroraNutrition() {
       {/* Add to today */}
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-          <AuroraIcon name="add" size={20} color={txt(C, C.violet)} />
+          <AuroraIcon name="add" size={20} color={txt(C, C.lime)} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.addToToday")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12 }}>
@@ -172,7 +172,7 @@ export default function AuroraNutrition() {
 
       {/* Recent */}
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.recovery.nutrition.recentDays")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.recentDays")}</Text>
         <View style={{ marginTop: 8 }}>
           {recent.length === 0 ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.recovery.nutrition.recentEmpty")}</Text>

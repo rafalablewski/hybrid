@@ -127,7 +127,7 @@ export default function AuroraTalent() {
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: form.visibility === "discoverable" ? C("lime") : C("ash") }}>{t("w.teams.talent.discoverable")}</span>
           </label>
           {profile?.visibility === "discoverable" && profile?.moderationStatus === "pending" && (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 8, color: C("amber") }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 8, color: C("ash") }}>
               ⏳ {t("w.teams.talent.pendingReview")}
             </div>
           )}
@@ -155,7 +155,7 @@ export default function AuroraTalent() {
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{b.value} · {t("w.teams.talent.cohort")} {b.cohortMean}</span>
                   </div>
                   <div style={{ position: "relative", height: 8, borderRadius: 999, background: C("ink"), marginTop: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${b.potentialPercentile}%`, height: "100%", background: `color-mix(in srgb, ${C("violet")} 40%, transparent)`, position: "absolute" }} />
+                    <div style={{ width: `${b.potentialPercentile}%`, height: "100%", background: `color-mix(in srgb, ${C("lime")} 40%, transparent)`, position: "absolute" }} />
                     <div style={{ width: `${b.percentile}%`, height: "100%", background: C(pctColor(b.percentile)), position: "absolute" }} />
                   </div>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{b.percentile}{t("w.teams.talent.ordinal")}{b.potentialPercentile > b.percentile ? ` · ${b.potentialPercentile}${t("w.teams.talent.ordinal")} ${t("w.teams.talent.potentialWord")}` : ""}</span>

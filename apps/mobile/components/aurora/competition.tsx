@@ -73,8 +73,8 @@ export default function AuroraCompetition() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", gap: space.sm }}>
             {events.map((e) => (
-              <Pressable key={e.id} onPress={() => setSelected(e.id)} style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: RADIUS.field, borderWidth: 1, borderColor: selected === e.id ? C.violet : C.line, backgroundColor: selected === e.id ? `${C.violet}1f` : C.ink2 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: selected === e.id ? txt(C, C.violet) : C.chalk }}>{e.name}</Text>
+              <Pressable key={e.id} onPress={() => setSelected(e.id)} style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: RADIUS.field, borderWidth: 1, borderColor: selected === e.id ? C.lime : C.line, backgroundColor: selected === e.id ? `${C.lime}1f` : C.ink2 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: selected === e.id ? txt(C, C.lime) : C.chalk }}>{e.name}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{fmt(e.date)}</Text>
               </Pressable>
             ))}
@@ -86,7 +86,7 @@ export default function AuroraCompetition() {
         <>
           <ACard style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.amber) }}>{event.name} · {event.sport}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{event.name} · {event.sport}</Text>
               <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek}`}</Text>
               </View>

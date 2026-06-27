@@ -22,7 +22,7 @@ export default function AuroraVideo() {
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: space.lg }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.vid.title")}</h1>
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("violet") }}>{t("w.analyze.vid.intel")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.vid.intel")}</div>
         <p style={{ fontSize: fs.body, lineHeight: 1.5, marginTop: 6 }}>{t("w.analyze.vid.intelBody")}</p>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 12, color: C("ash") }}>{t("w.analyze.vid.captureNote")}</div>
       </div>
@@ -36,7 +36,7 @@ export default function AuroraVideo() {
             </div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 2, color: C("ash") }}>{t("w.analyze.vid.techniqueScore")}</div>
             <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginTop: 10 }}>
-              {chip(C("blue"), `${a.metrics.reps} ${t("w.analyze.vid.reps")}`)}
+              {chip(C("ash"), `${a.metrics.reps} ${t("w.analyze.vid.reps")}`)}
               {a.metrics.minKneeAngle != null && chip(C("ash"), `${t("w.analyze.vid.depth")} ${Math.round(a.metrics.minKneeAngle)}°`)}
               {a.metrics.kneeAsymmetryPct != null && chip(a.metrics.kneeAsymmetryPct > 10 ? C("amber") : C("lime"), `${t("w.analyze.vid.asym")} ${a.metrics.kneeAsymmetryPct.toFixed(0)}%`)}
             </div>

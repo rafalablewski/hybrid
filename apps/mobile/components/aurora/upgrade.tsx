@@ -15,9 +15,9 @@ import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 // value is clear (not "just one screen"). Grouped to stay scannable.
 const BUNDLE: { k: string; c: (C: ReturnType<typeof useTheme>["palette"]) => string; items: string[] }[] = [
   { k: "Train smarter", c: (C) => C.lime, items: ["Adaptive plans — auto-progression", "Periodize — your season", "Competition — peak on the day"] },
-  { k: "Your performance", c: (C) => C.blue, items: ["Performance State · HPI", "Injury risk by tissue", "Future-self projections", "Analytics dashboards"] },
-  { k: "Sport & technique", c: (C) => C.amber, items: ["Sport S&C transfer", "Velocity (VBT)", "Force plate", "Technique video"] },
-  { k: "Endurance & body", c: (C) => C.violet, items: ["Running — pace zones", "Volume · MEV–MRV", "Exercises & trends", "Longevity"] },
+  { k: "Your performance", c: (C) => C.lime, items: ["Performance State · HPI", "Injury risk by tissue", "Future-self projections", "Analytics dashboards"] },
+  { k: "Sport & technique", c: (C) => C.lime, items: ["Sport S&C transfer", "Velocity (VBT)", "Force plate", "Technique video"] },
+  { k: "Endurance & body", c: (C) => C.lime, items: ["Running — pace zones", "Volume · MEV–MRV", "Exercises & trends", "Longevity"] },
 ];
 
 /** AURORA Upgrade — the Full toolkit paywall, reusing the same checkout / IAP
@@ -73,7 +73,7 @@ export default function AuroraUpgrade() {
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>← {t("common.back")}</Text>
       </Pressable>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.amber), marginTop: 12 }}>{t("w.account.upgrade.kicker")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime), marginTop: 12 }}>{t("w.account.upgrade.kicker")}</Text>
       <AHeading style={{ fontSize: fs.display, marginTop: 4 }}>Unlock HYBRID Full</AHeading>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 21 }}>
         One upgrade turns on the whole athlete toolkit — not a single screen. Your free training stays

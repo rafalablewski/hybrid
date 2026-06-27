@@ -107,7 +107,16 @@ export const F = {
   bold: "Archivo_700Bold",
   black: "Archivo_900Black",
   mono: "JetBrainsMono_400Regular",
+  // Japandi (light) serif display — Fraunces. Used for hero headings via serifIf.
+  serifMed: "Fraunces_500Medium",
+  serifSemi: "Fraunces_600SemiBold",
+  serifBold: "Fraunces_700Bold",
 } as const;
+
+/** Heading face: the Fraunces serif in Japandi (light), else the given Archivo
+ *  weight — the mobile twin of web's --font-heading. Body/labels stay sans/mono. */
+export const serifIf = (scheme: "dark" | "light", archivo: string = F.black): string =>
+  scheme === "light" ? F.serifBold : archivo;
 
 // Concentric rings fake a radial falloff — RN has no CSS blur or radial
 // gradient (and we add no native gradient dep), so we stack a few low-opacity

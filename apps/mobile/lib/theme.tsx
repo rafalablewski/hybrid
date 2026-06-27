@@ -30,7 +30,14 @@ const ACCENTS = {
   onAccent: colors.ink,
 };
 
-export const paletteFor = (scheme: ThemeName): Palette => ({ ...THEMES[scheme], ...ACCENTS });
+export const paletteFor = (scheme: ThemeName): Palette =>
+  scheme === "light"
+    ? // JAPANDI: the brand accent becomes a warm CLAY/terracotta (reference
+      // concept 04) — the `lime` slot drives every accent fill, so clay lives
+      // there; bright acid-lime breaks the warm palette. On-accent text flips to
+      // light paper so it reads on the clay. Aurora (dark) keeps raw lime.
+      { ...THEMES.light, ...ACCENTS, lime: "#a5573c", onAccent: "#faf8f3" }
+    : { ...THEMES[scheme], ...ACCENTS };
 
 /** Map a bright accent (or ash) used as TEXT to its theme-aware colour. */
 export function txt(palette: Palette, c: string): string {

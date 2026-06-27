@@ -90,7 +90,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
         ) : selSessions.map((s) => (
           <div key={s.id} style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
             <div style={{ fontWeight: 700, fontSize: fs.note }}>{s.title}</div>
-            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("blue"), `${t("w.analyze.cal.load")} ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} ${t("w.analyze.cal.blocks")}`)}{typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.cal.readiness")} ${s.readiness}`)}</div>
+            <div style={{ display: "flex", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>{chip(C("ash"), `${sessionVolume(s.blocks).toLocaleString()} kg`)}{chip(C("ash"), `${t("w.analyze.cal.load")} ${sessionLoad(s)}`)}{chip(C("ash"), `${s.blocks.length} ${t("w.analyze.cal.blocks")}`)}{typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.cal.readiness")} ${s.readiness}`)}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 6, color: C("ash") }}>{s.blocks.map((b) => b.name).join(" · ")}</div>
           </div>
         ))}

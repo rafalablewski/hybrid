@@ -62,7 +62,7 @@ export default function AdminAgentRuns() {
               borderRadius: 999,
               cursor: "pointer",
               border: `1px solid ${filter === f ? LIME : LINE}`,
-              background: filter === f ? `${LIME}1f` : "transparent",
+              background: filter === f ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : "transparent",
               color: txt(filter === f ? LIME : ASH),
             }}
           >

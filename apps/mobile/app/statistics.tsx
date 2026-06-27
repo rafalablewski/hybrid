@@ -97,11 +97,11 @@ export default function Statistics() {
       {/* Summary cards */}
       <View style={{ flexDirection: "row", gap: space.md, marginTop: 4 }}>
         <Mini icon="verified" label="Active days" value={hasData ? String(buckets.activeDays) : "—"} color={C.lime} />
-        <Mini icon="heart" label="HPI" value={hasData ? String(state.hpi.score) : "—"} color={C.blue} />
+        <Mini icon="heart" label="HPI" value={hasData ? String(state.hpi.score) : "—"} color={C.lime} />
       </View>
       <View style={{ flexDirection: "row", gap: space.md, marginTop: 12 }}>
-        <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C.violet} />
-        <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C.amber} />
+        <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C.lime} />
+        <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C.lime} />
       </View>
 
       {!hasData && (

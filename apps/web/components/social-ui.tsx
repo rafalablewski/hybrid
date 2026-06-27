@@ -56,7 +56,7 @@ export function Avatar({
         width: size,
         height: size,
         borderRadius: 999,
-        background: `linear-gradient(135deg, ${C("lime")}33, ${C("blue")}33)`,
+        background: `linear-gradient(135deg, ${C("lime")}33, ${C("ink2")})`,
         border: `1px solid ${C("line")}`,
         display: "flex",
         alignItems: "center",
@@ -157,7 +157,7 @@ export function Btn({
 
 export function VerifiedTick() {
   return (
-    <span title="Verified coach" style={{ color: C("blue"), fontSize: 13 }}>
+    <span title="Verified coach" style={{ color: "var(--lime-text)", fontSize: 13 }}>
       ✓
     </span>
   );
