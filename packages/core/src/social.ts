@@ -146,6 +146,25 @@ export interface FeedOptions {
   closeBoostHours?: number;
 }
 
+/** View model for a feed CARD (avatar header + optional prose body + stat
+ *  chips), shared by web + mobile so both render the identical card. The
+ *  ` · `-delimited `detail` becomes the stat chips; a post keeps its prose as the
+ *  body, and a session puts its workout name in the meta line. */
+export interface FeedCardView {
+  name: string;
+  meta: string;
+  body: string | null;
+  chips: string[];
+}
+export function feedCardView(it: { kind: FeedKind; author: { displayName?: string | null; handle: string }; detail: string; when: string }): FeedCardView {
+  const name = it.author.displayName || `@${it.author.handle}`;
+  const segs = it.detail.split("·").map((s) => s.trim()).filter(Boolean);
+  if (it.kind === "post") return { name, meta: it.when, body: it.detail.trim() || null, chips: [] };
+  if (it.kind === "pr") return { name, meta: `${it.when} · PR`, body: null, chips: segs };
+  // session / recap / anything else: workout name → meta, the rest → chips.
+  return { name, meta: segs.length ? `${it.when} · ${segs[0]}` : it.when, body: null, chips: segs.slice(1) };
+}
+
 const ms = (iso: string) => new Date(iso).getTime();
 
 /** Build the cross-athlete activity feed from followees' sessions. Emits a

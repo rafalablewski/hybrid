@@ -163,8 +163,8 @@ export default function AuroraToday({
       {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
       <Stories you={initials} youLabel={t("w.home.today.storyYou")} onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
 
-      {/* GREETING + streak — sets the daily tone */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
+      {/* GREETING + streak — streak sits on the greeting's line, top-right */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>

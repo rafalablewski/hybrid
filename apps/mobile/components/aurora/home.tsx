@@ -288,8 +288,8 @@ export default function AuroraHome() {
         {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
         <Stories name={name} youLabel={t("w.home.today.storyYou")} onOpen={() => router.push("/feed")} />
 
-        {/* GREETING + streak — sets the daily tone */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
+        {/* GREETING + streak — streak sits on the greeting's line, top-right */}
+        <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
