@@ -250,26 +250,26 @@ describe("profile stats", () => {
 });
 
 describe("feedCardView", () => {
-  const author = { id: "u1", handle: "maja", displayName: "Maja K." };
+  const author = { handle: "maja", displayName: "Maja K." };
   it("session: workout name → meta, the rest → chips", () => {
-    const v = feedCardView({ kind: "session", author, title: "Maja K. trained", detail: "Push day · 5 exercises · 18,200 kg", when: "2h ago" });
+    const v = feedCardView({ kind: "session", author, detail: "Push day · 5 exercises · 18,200 kg", when: "2h ago" });
     expect(v.name).toBe("Maja K.");
     expect(v.meta).toBe("2h ago · Push day");
     expect(v.body).toBeNull();
     expect(v.chips).toEqual(["5 exercises", "18,200 kg"]);
   });
   it("pr: detail segments become chips, PR tagged in meta", () => {
-    const v = feedCardView({ kind: "pr", author, title: "Maja K. hit a PR", detail: "Back Squat — 182 kg e1RM", when: "5h ago" });
+    const v = feedCardView({ kind: "pr", author, detail: "Back Squat — 182 kg e1RM", when: "5h ago" });
     expect(v.meta).toBe("5h ago · PR");
     expect(v.chips).toEqual(["Back Squat — 182 kg e1RM"]);
   });
   it("post: keeps its prose as the body, no chips", () => {
-    const v = feedCardView({ kind: "post", author, title: "Maja K. posted", detail: "New bench PR this morning", when: "1h ago" });
+    const v = feedCardView({ kind: "post", author, detail: "New bench PR this morning", when: "1h ago" });
     expect(v.body).toBe("New bench PR this morning");
     expect(v.chips).toEqual([]);
   });
   it("falls back to @handle when there's no display name", () => {
-    const v = feedCardView({ kind: "session", author: { id: "u2", handle: "tom", displayName: null }, title: "x", detail: "Run", when: "now" });
+    const v = feedCardView({ kind: "session", author: { handle: "tom", displayName: null }, detail: "Run", when: "now" });
     expect(v.name).toBe("@tom");
   });
 });
