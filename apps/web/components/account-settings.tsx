@@ -11,7 +11,7 @@ import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, VIOLET, AMBER, BLUE, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, RED, INK2, ON_ACCENT, disp, mono, Mono, Card, txt } from "@/lib/ui";
 import MfaSettings from "./account/mfa";
 import RequestAccess from "./request-access";
 import { SocialProfileEdit } from "./social-profile";
@@ -21,8 +21,8 @@ type CoachStatus = "pending" | "approved" | "denied";
 
 // Per-category accent — the icon-tile tint, matching the V1 mockup + mobile.
 const TONE: Record<SettingsCategoryId, string> = {
-  account: LIME, social: LIME, preferences: BLUE, logger: AMBER, notifications: VIOLET,
-  privacy: BLUE, coaching: VIOLET, security: BLUE, subscription: LIME,
+  account: LIME, social: LIME, preferences: LIME, logger: LIME, notifications: LIME,
+  privacy: LIME, coaching: LIME, security: LIME, subscription: LIME,
   data: ASH, danger: RED,
 };
 
@@ -349,19 +349,19 @@ export default function AccountSettings() {
           <>
             {isClient && (
               <div style={{ marginBottom: 16 }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={VIOLET}>{t("w.account.settings.become-coach")}</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.become-coach")}</Mono>
                 {coachUnavailable ? (
                   <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.coach-not-enabled")}</Mono>
                 ) : coachStatus ? (
                   <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>
-                    {t("w.account.settings.application-is")} <b style={{ color: txt(coachStatus === "approved" ? LIME : coachStatus === "denied" ? RED : AMBER) }}>{coachStatus}</b>.
+                    {t("w.account.settings.application-is")} <b style={{ color: txt(coachStatus === "approved" ? LIME : coachStatus === "denied" ? RED : ASH) }}>{coachStatus}</b>.
                   </Mono>
                 ) : (
                   <>
                     <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.coach-intro")}</Mono>
                     <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
                     {coachMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>}
-                    <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
+                    <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
                       {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
                     </button>
                   </>
@@ -376,7 +376,7 @@ export default function AccountSettings() {
           <>
             <MfaSettings />
             <div style={{ marginTop: 16 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={BLUE}>{t("w.account.settings.change-password")}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.change-password")}</Mono>
               {session?.provider && session.provider !== "email" ? (
                 <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
                   {t("w.account.settings.signin-with")} {session.provider} {t("w.account.settings.manage-password-there")}
@@ -390,7 +390,7 @@ export default function AccountSettings() {
               {passwordMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
             </div>
             <div style={{ marginTop: 16 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={BLUE}>{t("w.account.settings.active-sessions")}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.active-sessions")}</Mono>
               <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.active-sessions-desc")}</Mono>
               <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>{t("w.account.settings.sign-out-everywhere")}</button>
             </div>
@@ -411,7 +411,7 @@ export default function AccountSettings() {
                   {!paid && (
                     <>
                       <span>🔒</span>
-                      <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(AMBER), background: `${AMBER}1a`, border: `1px solid ${AMBER}`, borderRadius: 6, padding: "1px 6px" }}>{t("w.account.settings.paid")}</span>
+                      <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 6, padding: "1px 6px" }}>{t("w.account.settings.paid")}</span>
                     </>
                   )}
                 </div>
@@ -490,7 +490,7 @@ export default function AccountSettings() {
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{session?.name || t("w.account.settings.your-account")}</div>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={CHALK}>{session?.email}</Mono>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(VIOLET), background: `${VIOLET}1a`, border: `1px solid ${VIOLET}55`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
+            <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: ASH, background: `${INK2}`, border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
             <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
             {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{t("w.account.settings.via")} {session.provider}</span>}
           </div>

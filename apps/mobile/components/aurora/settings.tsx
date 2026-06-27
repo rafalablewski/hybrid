@@ -101,9 +101,9 @@ export default function AuroraSettings() {
       case "preferences":
         return (
       <>
-        <Label color={C.blue}>APPEARANCE</Label>
+        <Label color={C.ash}>APPEARANCE</Label>
         <ASegment options={APPEARANCE} value={pref} onPick={setPref} />
-        <Label color={C.blue} top>LANGUAGE</Label>
+        <Label color={C.ash} top>LANGUAGE</Label>
         <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         {lg.supported && (
           <View style={{ marginTop: 6 }}>
@@ -133,7 +133,7 @@ export default function AuroraSettings() {
       case "security":
         return (
       <>
-        <Label color={C.blue}>PASSWORD</Label>
+        <Label color={C.ash}>PASSWORD</Label>
         {acct.provider && acct.provider !== "email" ? (
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
         ) : (
@@ -143,7 +143,7 @@ export default function AuroraSettings() {
             {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
           </>
         )}
-        <Label color={C.blue} top>ACTIVE SESSIONS</Label>
+        <Label color={C.ash} top>ACTIVE SESSIONS</Label>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
         <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
       </>
@@ -151,7 +151,7 @@ export default function AuroraSettings() {
       case "data":
         return (
       <>
-        <Label color={C.blue}>EXPORT</Label>
+        <Label color={C.ash}>EXPORT</Label>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
         {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
         {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}

@@ -382,7 +382,7 @@ export default function AppShell() {
                 borderRadius: 12,
                 cursor: "pointer",
                 border: `1px solid ${LIME}80`,
-                background: `linear-gradient(135deg, ${LIME}24, ${VIOLET}1a)`,
+                background: `linear-gradient(135deg, ${LIME}24, transparent)`,
                 color: txt(CHALK),
                 textAlign: "left",
               }}
