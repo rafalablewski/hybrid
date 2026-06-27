@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>04 · Bento grid — HYBRID layout reorg</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --page:#0a0b0a; --screen:#0c0d0c; --card:#151715; --surface2:#1d201d;
+  --line:#242724; --text:#f3f4ef; --muted:#8b8f86; --accent:#c4f035;
+  --accent-ink:#0c0d0c; --accent-text:#c4f035; --accent-soft:rgba(196,240,53,.12);
+  --accent-line:rgba(196,240,53,.3); --ring-track:#242724;
+  --warn:#e0625e; --warn-soft:rgba(224,98,94,.12); --warn-line:rgba(224,98,94,.32);
+  --display:'Archivo',sans-serif; --body:'Archivo',sans-serif; --mono:'JetBrains Mono',monospace;
+  --r-card:20px; --r-btn:14px; --r-field:12px; --r-avatar:11px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{background:var(--page);color:var(--text);font-family:var(--body);line-height:1.5;padding:40px 24px 80px}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto}
+.crumb{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.crumb a{text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px}
+.ph-tag{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.ph-title{font-family:var(--display);font-size:clamp(30px,5vw,52px);line-height:1;letter-spacing:-.02em;font-weight:900;margin-bottom:12px}
+.ph-lede{max-width:680px;color:var(--muted);font-size:16px;margin-bottom:34px}
+
+/* the phone/board frame */
+.screen{background:var(--screen);border:1px solid #1f211f;border-radius:28px;padding:22px;box-shadow:0 40px 90px -40px rgba(0,0,0,.7)}
+
+/* appbar */
+.appbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.avatar{position:relative;width:38px;height:38px;border-radius:var(--r-avatar);background:var(--surface2);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);border:1px solid var(--line)}
+.avatar .dot{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid var(--screen)}
+.wm{font-family:var(--display);font-weight:800;letter-spacing:-.01em;font-size:17px}
+.wm .acc{color:var(--accent)}
+.bell{position:relative;width:38px;height:38px;border-radius:var(--r-avatar);background:var(--surface2);border:1px solid var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.bell .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:10px;font-weight:700;display:grid;place-items:center;border:2px solid var(--screen)}
+
+/* greeting */
+.greet{margin-bottom:20px}
+.hello{font-family:var(--display);font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.date{color:var(--muted);font-size:13px;margin-bottom:12px}
+.streak{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:5px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);border:1px solid var(--accent-line)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:17px;box-shadow:none}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-top-r{display:flex;align-items:center;gap:12px}
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.kicker.k2{color:var(--accent-text)}
+.title{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.subtitle{font-family:var(--display);font-size:18px;font-weight:700;margin:8px 0 6px}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--accent-text);letter-spacing:.02em}
+.meta.sm{color:var(--muted);font-size:10.5px;margin-top:8px}
+.blurb{color:var(--muted);font-size:13px;line-height:1.55;margin:6px 0 14px}
+
+/* buttons */
+.btn{font-family:var(--body);font-weight:600;font-size:13px;border:none;cursor:pointer;padding:9px 15px;border-radius:var(--r-btn);background:var(--accent);color:var(--accent-ink);white-space:nowrap}
+.btn.ghost{background:transparent;border:1px solid var(--accent-line);color:var(--accent-text)}
+.btn.sm{padding:7px 13px;font-size:12px;margin-top:10px}
+.link{font-family:var(--mono);font-size:11px;letter-spacing:.05em;background:none;border:none;color:var(--accent-text);cursor:pointer}
+
+/* readiness ring */
+.ring{width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--ring-track) 0);display:grid;place-items:center;flex:0 0 auto}
+.ring-hole{width:42px;height:42px;border-radius:50%;background:var(--card);display:grid;place-items:center}
+.ring-hole b{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)}
+
+/* exercise list */
+.exlist{margin-top:14px}
+.ex{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line)}
+.exname{font-weight:600;font-size:14px}
+.exmeta{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* small widgets */
+.w-line{font-size:14px;margin:12px 0 4px}
+.kcal{margin:10px 0 8px}
+.kcal b{font-family:var(--display);font-size:22px;font-weight:700}
+.kcal span{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.bar{height:6px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.macros{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px}
+
+/* stats grid */
+.stats{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-field);overflow:hidden;margin-top:4px}
+.stats.wk{grid-template-columns:repeat(4,1fr)}
+.stats.end{grid-template-columns:repeat(3,1fr)}
+.stat{background:var(--card);padding:13px 8px;text-align:center}
+.stat .num{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:-.02em}
+.stat .lab{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.pr{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent-text);border:1px solid var(--accent-line)}
+
+/* cockpit bits */
+.sec-big{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:-.01em;margin:4px 0 4px}
+.sec-big.sm{font-size:15px}
+.barseg{display:flex;gap:3px;height:7px;margin:12px 0 6px}
+.barseg i{border-radius:3px}
+.barseg .t1{background:var(--surface2)}
+.barseg .t2{background:var(--accent)}
+.hpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:8px 0 14px}
+.hpi{display:flex;align-items:baseline;gap:7px}
+.hpi-n{font-family:var(--display);font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:.9;color:var(--accent-text)}
+.hpi-l{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--muted)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:40px;flex:1;max-width:170px}
+.spark i{flex:1;background:var(--surface2);border-radius:2px 2px 0 0;min-height:3px}
+.spark i.on{background:var(--accent)}
+.comp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.comp .c{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--surface2);border-radius:var(--r-field)}
+.comp .cl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--muted)}
+.comp .cv{font-family:var(--display);font-size:18px;font-weight:700}
+.comp .cv.up{color:var(--accent-text)}
+.risk-row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.risk-pill{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line)}
+.risk-row .bar{flex:1}
+.risk-row .bar i{background:var(--warn)}
+.risk-n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* generic flow gap so cards breathe in any container */
+.flow > .card + .card,.flow > .card{margin-bottom:13px}
+.board{max-width:1000px;margin:0 auto}
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;align-items:start}
+  .bento > *{min-width:0}
+  .c-2{grid-column:span 2}
+  .c-3{grid-column:span 3}
+  .c-4{grid-column:span 4}
+  @media(max-width:760px){.bento{grid-template-columns:1fr 1fr}.c-3,.c-4{grid-column:span 2}}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="index.html">← all 10 layouts</a> &nbsp;·&nbsp; 04 / 10 &nbsp;·&nbsp; <a href="03.html">prev</a> / <a href="05.html">next</a></div>
+  <div class="ph-tag">Layout 04 · mosaic · mixed tiles</div>
+  <h1 class="ph-title">Bento grid</h1>
+  <p class="ph-lede">A bento mosaic: cards span different numbers of columns and rows so the board reads as a set of right-sized tiles rather than a list.</p>
+<div class="screen board">
+<header class="appbar">
+  <div class="avatar">RA<span class="dot"></span></div>
+  <div class="wm">HYBRID<span class="acc">.</span></div>
+  <button class="bell"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge">3</span></button>
+</header>
+<div class="greet">
+  <div class="hello">Good morning, Rafal</div>
+  <div class="date">Friday, June 27</div>
+  <span class="streak">12-day streak</span>
+</div>
+<div class="bento">
+  <div class="c-2"><div class="card plan">
+  <div class="card-top">
+    <span class="kicker">Train · today's session</span>
+    <div class="card-top-r">
+      <div class="ring" style="--p:78"><div class="ring-hole"><b>78</b></div></div>
+      <button class="btn">Start →</button>
+    </div>
+  </div>
+  <h2 class="title">Lower Power + Zone 2</h2>
+  <div class="meta">Push · Day 3/5 · Build wk 4/12</div>
+  <div class="exlist">
+    <div class="ex"><span class="exname">Back Squat</span><span class="exmeta">5×3 · RPE 8</span></div>
+    <div class="ex"><span class="exname">Romanian Deadlift</span><span class="exmeta">3×8 · RPE 7</span></div>
+    <div class="ex"><span class="exname">Zone 2 Bike</span><span class="exmeta">30:00</span></div>
+  </div>
+</div></div>
+  <div class="c-2"><div class="card section perf">
+  <div class="card-top"><span class="kicker">Performance state · Athlete Twin</span><button class="link">Performance →</button></div>
+  <div class="hpi-row">
+    <div class="hpi"><span class="hpi-n">71</span><span class="hpi-l">HPI</span></div>
+    <div class="spark"><i style="height:60%"></i><i style="height:71%"></i><i style="height:66%"></i><i style="height:82%"></i><i style="height:78%"></i><i style="height:86%"></i><i style="height:81%"></i><i style="height:90%"></i><i style="height:85%"></i><i style="height:96%"></i><i style="height:92%"></i><i style="height:100%"></i><i style="height:95%"></i><i style="height:97%" class="on"></i></div>
+  </div>
+  <div class="comp">
+    <div class="c"><span class="cl">STR</span><span class="cv up">78</span></div>
+    <div class="c"><span class="cl">END</span><span class="cv">61</span></div>
+    <div class="c"><span class="cl">REC</span><span class="cv up">+73</span></div>
+  </div>
+  <p class="blurb" style="margin-bottom:0">Squat e1RM up 6% over 4 weeks — endurance is the limiter.</p>
+</div></div>
+  <div class="c-2"><div class="card section">
+  <div class="card-top"><span class="kicker k2">Goal &amp; season</span><button class="link">Periodize →</button></div>
+  <div class="sec-big">Hybrid strength-endurance</div>
+  <div class="meta">Build · week 5/16 · event in 11 wk</div>
+  <div class="barseg"><i style="flex:4" class="t1"></i><i style="flex:6" class="t2 cur"></i><i style="flex:4" class="t1"></i><i style="flex:2" class="t1"></i></div>
+  <div class="meta sm">Base · Build · Peak · Taper</div>
+</div></div>
+  <div class="c-1"><div class="card widget">
+  <span class="kicker">Daily check-in</span>
+  <div class="w-line">How do you feel today?</div>
+  <button class="btn sm">Check in</button>
+</div></div>
+  <div class="c-1"><div class="card widget">
+  <span class="kicker">Nutrition</span>
+  <div class="kcal"><b>1,847</b><span> / 2,200 kcal</span></div>
+  <div class="bar"><i style="width:84%"></i></div>
+  <div class="macros">P 156 · C 187 · F 61</div>
+</div></div>
+  <div class="c-2"><div class="card coach">
+  <span class="kicker k2">AI coach</span>
+  <h3 class="subtitle">Ask your coach</h3>
+  <p class="blurb">Reads your real readiness, fatigue and velocity, then writes today's call — what to push, what to hold back.</p>
+  <button class="btn ghost">Open coach →</button>
+</div></div>
+  <div class="c-2"><div class="card section risk">
+  <div class="card-top"><span class="kicker">Injury risk · by tissue</span></div>
+  <div class="risk-row"><span class="risk-pill">Moderate</span><div class="bar"><i style="width:41%"></i></div><span class="risk-n">41/100</span></div>
+  <div class="meta">Patellar tendon · load spike · overall 22/100 (low)</div>
+</div></div>
+  <div class="c-2"><div class="card week">
+  <div class="card-top"><span class="kicker">Plan · this week</span><span class="pr">2 PR</span></div>
+  <div class="stats wk">
+    <div class="stat"><div class="num">3</div><div class="lab">Sessions</div></div>
+    <div class="stat"><div class="num">4,250kg</div><div class="lab">Volume</div></div>
+    <div class="stat"><div class="num">42</div><div class="lab">Sets</div></div>
+    <div class="stat"><div class="num">8.4km</div><div class="lab">Distance</div></div>
+  </div>
+</div></div>
+  <div class="c-2"><div class="card section">
+  <div class="card-top"><span class="kicker k2">Sport S&amp;C</span><button class="link">Sport →</button></div>
+  <div class="sec-big sm">Sprint / 100m · Regional</div>
+</div></div>
+  <div class="c-2"><div class="card section">
+  <div class="card-top"><span class="kicker">Endurance</span><button class="link">Running →</button></div>
+  <div class="stats end">
+    <div class="stat"><div class="num">12</div><div class="lab">efforts</div></div>
+    <div class="stat"><div class="num">86</div><div class="lab">km</div></div>
+    <div class="stat"><div class="num">412</div><div class="lab">min</div></div>
+  </div>
+</div></div>
+</div>
+</div>
+</div>
+</body>
+</html>
