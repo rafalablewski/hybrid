@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { fs, space, LIME, ASH, CHALK, VIOLET, LINE, disp, mono, Mono, Card } from "@/lib/ui";
+import { fs, space, LIME, ASH, CHALK, LINE, disp, mono, Mono, Card } from "@/lib/ui";
 
 type Invite = { id: string; token: string; email: string | null; phone: string | null; url: string; expiresAt: string };
 
@@ -114,7 +114,7 @@ export default function CoachInvite() {
       )}
 
       {unavailable && (
-        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 12 }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 12 }} c={ASH}>
           Invites aren&apos;t enabled yet — run reference/sql-coach-invites.sql in Supabase.
         </Mono>
       )}

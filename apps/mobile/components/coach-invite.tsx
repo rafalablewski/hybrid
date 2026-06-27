@@ -102,7 +102,7 @@ export default function CoachInvite() {
         </View>
       )}
 
-      {unavailable && <Mono color={C.violet} style={{ marginTop: 10 }}>Invites aren&apos;t enabled yet — run reference/sql-coach-invites.sql.</Mono>}
+      {unavailable && <Mono color={C.ash} style={{ marginTop: 10 }}>Invites aren&apos;t enabled yet — run reference/sql-coach-invites.sql.</Mono>}
     </Card>
   );
 }

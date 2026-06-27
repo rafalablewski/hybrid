@@ -75,7 +75,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                     <div style={{ color: C("ash"), fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} weeks` : null].filter(Boolean).join(" · ")}</div>
                   </div>
                   {p.enrollmentStatus ? (
-                    <span style={{ fontSize: 12, color: p.enrollmentStatus === "active" ? C("lime") : C("amber"), fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</span>
+                    <span style={{ fontSize: 12, color: p.enrollmentStatus === "active" ? C("lime") : C("ash"), fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{p.enrollmentStatus === "active" ? "Enrolled ✓" : "Requested"}</span>
                   ) : data.isMe ? null : (
                     <Btn small onClick={() => enroll(p.id)} disabled={busy.is(p.id)}>Start program</Btn>
                   )}
@@ -209,7 +209,7 @@ function Storefront() {
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ color: C("chalk"), fontWeight: 600 }}>{e.client?.displayName || `@${e.client?.handle}`}</div>
-                  <div style={{ color: C("ash"), fontSize: 12 }}>{e.programName} · <span style={{ color: e.status === "active" ? C("lime") : C("amber") }}>{e.status}</span></div>
+                  <div style={{ color: C("ash"), fontSize: 12 }}>{e.programName} · <span style={{ color: e.status === "active" ? C("lime") : C("ash") }}>{e.status}</span></div>
                 </div>
                 {e.status === "requested" && (
                   <div style={{ display: "flex", gap: 6 }}>

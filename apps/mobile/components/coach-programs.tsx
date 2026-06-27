@@ -70,7 +70,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
         {draft.weeks.map((w, wi) => (
           <View key={wi} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 10, marginTop: 10 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <Kicker color={C.violet}>Week {wi + 1}</Kicker>
+              <Kicker color={C.ash}>Week {wi + 1}</Kicker>
               <Pressable onPress={() => setWeeks(draft.weeks.filter((_, i) => i !== wi))}><Mono color={C.ash} style={{ fontSize: fs.micro }}>remove</Mono></Pressable>
             </View>
             {w.days.map((d, di) => (
@@ -97,7 +97,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
           </View>
         ))}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
-          <Button label="+ week" color={C.violet} onPress={() => setWeeks([...draft.weeks, { days: [] }])} />
+          <Button label="+ week" color={C.lime} onPress={() => setWeeks([...draft.weeks, { days: [] }])} />
           <Button label="Close" color={C.ash} onPress={() => setDraft(null)} />
         </View>
         {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8, fontSize: fs.caption }}>{msg}</Mono></View>}
@@ -108,7 +108,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
   return (
     <View>
       {unavailable && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.amber, marginTop: 12 }}>
+        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }}>
           <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>Programs aren&apos;t enabled yet — run reference/sql-coach-programs.sql in Supabase.</Mono>
         </Card>
       )}
@@ -167,7 +167,7 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
           <Mono style={{ fontSize: fs.micro, marginTop: 2 }}>{program.weeks.length} wk · {sessions} session{sessions === 1 ? "" : "s"}</Mono>
         </View>
         <View style={{ flexDirection: "row", gap: space.sm }}>
-          <Pressable onPress={onEdit}><Mono color={C.violet} style={{ fontSize: fs.caption }}>Edit</Mono></Pressable>
+          <Pressable onPress={onEdit}><Mono color={txt(C, C.lime)} style={{ fontSize: fs.caption }}>Edit</Mono></Pressable>
           <Pressable onPress={onDelete}><Mono color={C.ash} style={{ fontSize: fs.caption }}>Delete</Mono></Pressable>
         </View>
       </View>

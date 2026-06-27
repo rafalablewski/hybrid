@@ -43,7 +43,7 @@ const personName = (p: Person | undefined, t: (k: string) => string) => p?.name 
 // Verified-coach tick — shown next to a coach's name once an admin has vetted them.
 const VerifiedTick = ({ p }: { p?: Person }) => {
   const { t } = useLang();
-  return p?.coachVerified ? <span title={t("w.teams.coach.verifiedCoach")} style={{ color: C("blue"), marginLeft: 5 }}>✓</span> : null;
+  return p?.coachVerified ? <span title={t("w.teams.coach.verifiedCoach")} style={{ color: "var(--lime-text)", marginLeft: 5 }}>✓</span> : null;
 };
 
 /** AURORA Coach (web) — same /api/coach/* flows as the classic CoachScreen, in
@@ -108,7 +108,7 @@ export default function AuroraCoach() {
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* incoming requests */}
       {incoming.length > 0 && (
-        <Section title={t("w.teams.coach.requestsTitle")} color={C("violet")}>
+        <Section title={t("w.teams.coach.requestsTitle")} color={C("ash")}>
           {incoming.map((l) => (
             <div key={l.id} style={{ ...card, }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -127,7 +127,7 @@ export default function AuroraCoach() {
       )}
 
       {/* your coaches */}
-      <Section title={t("w.teams.coach.yourCoach")} color={C("lime")}>
+      <Section title={t("w.teams.coach.yourCoach")} color={C("ash")}>
         {coaches.length === 0 ? (
           <Mono s={{ display: "block", marginBottom: 12 }}>{t("w.teams.coach.noCoach")}</Mono>
         ) : (
@@ -143,7 +143,7 @@ export default function AuroraCoach() {
       </Section>
 
       {/* coaching: invite + roster */}
-      <Section title={t("w.teams.coach.coaching")} color={C("violet")}>
+      <Section title={t("w.teams.coach.coaching")} color={C("ash")}>
         <div style={card}>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.inviteAnAthlete")}</Mono>
           <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
@@ -158,7 +158,7 @@ export default function AuroraCoach() {
           </div>
           {msg && (
             <div role="alert">
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("amber")}>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={msg.ok ? C("lime") : C("red")}>
                 {msg.text}
               </Mono>
             </div>
@@ -185,7 +185,7 @@ export default function AuroraCoach() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client, t)}</div>
-                <Chip c={C("amber")}>{t("w.teams.coach.pending")}</Chip>
+                <Chip c={C("ash")}>{t("w.teams.coach.pending")}</Chip>
               </div>
               <Btn label={t("w.teams.coach.cancel")} color={C("ash")} onClick={() => act(l.id, "end")} />
             </div>
@@ -353,9 +353,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
       <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
         {tags.map((tg) => (
-          <span key={tg} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("blue"), background: `color-mix(in srgb, ${C("blue")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("blue")} 33%, transparent)`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
+          <span key={tg} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: `color-mix(in srgb, ${C("ash")} 12%, transparent)`, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
             {tg}
-            <button aria-label={`${t("w.teams.coach.removeTag")} ${tg}`} onClick={() => saveTags(tags.filter((x) => x !== tg))} style={{ background: "none", border: "none", color: C("blue"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
+            <button aria-label={`${t("w.teams.coach.removeTag")} ${tg}`} onClick={() => saveTags(tags.filter((x) => x !== tg))} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
           </span>
         ))}
         <input
@@ -368,11 +368,11 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         />
       </div>
 
-      <Section title={t("w.teams.coach.diet")} color={C("lime")}>
+      <Section title={t("w.teams.coach.diet")} color={C("ash")}>
         <CoachDiet linkId={link.id} />
       </Section>
 
-      <Section title={t("w.teams.coach.coachingNotes")} color={C("violet")}>
+      <Section title={t("w.teams.coach.coachingNotes")} color={C("ash")}>
         <div style={card}>
           <textarea
             value={noteBody}
@@ -385,7 +385,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
             <label style={{ display: "flex", alignItems: "center", gap: space.xs, cursor: "pointer" }}>
               <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-              <Mono s={{ fontSize: fs.caption }} c={isPrivate ? C("amber") : C("ash")}>{t("w.teams.coach.privateNote")}</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={C("ash")}>{t("w.teams.coach.privateNote")}</Mono>
             </label>
             <Btn label={t("w.teams.coach.addNote")} color={C("lime")} onClick={addNote} />
           </div>
@@ -393,7 +393,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         {notes.map((n) => (
           <div key={n.id} style={{ ...card, }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              {n.private ? <Chip c={C("amber")}>{t("w.teams.coach.private")}</Chip> : <span />}
+              {n.private ? <Chip c={C("ash")}>{t("w.teams.coach.private")}</Chip> : <span />}
               <Mono s={{ fontSize: fs.micro }}>{new Date(n.createdAt).toLocaleDateString()}</Mono>
             </div>
             <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{n.body}</Mono>
@@ -401,7 +401,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         ))}
       </Section>
 
-      <Section title={t("w.teams.coach.programming")} color={C("lime")}>
+      <Section title={t("w.teams.coach.programming")} color={C("ash")}>
         <div style={card}>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.assignWorkout")}</Mono>
           {templates.length === 0 ? (
@@ -422,7 +422,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           )}
         </div>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("ash")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             {sessions.length === 0
               ? t("w.teams.coach.genEmptyHint")
@@ -439,7 +439,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 )),
               )}
             </Select>
-            <Btn label={generating ? t("w.teams.coach.generating") : t("w.teams.coach.generateAssign")} color={sessions.length > 0 && !generating ? C("violet") : C("ash")} onClick={generateWeek} />
+            <Btn label={generating ? t("w.teams.coach.generating") : t("w.teams.coach.generateAssign")} color={sessions.length > 0 && !generating ? C("lime") : C("ash")} onClick={generateWeek} />
           </div>
           {genMsg && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={C("lime")}>{genMsg}</Mono>}
         </div>
@@ -450,13 +450,13 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 <div style={{ fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
                 <Mono s={{ fontSize: fs.caption }}>{new Date(a.date).toLocaleDateString()}</Mono>
               </div>
-              <Chip c={a.status === "completed" ? C("lime") : a.status === "skipped" ? C("red") : C("amber")}>{a.status}</Chip>
+              <Chip c={a.status === "completed" ? C("lime") : a.status === "skipped" ? C("red") : C("ash")}>{a.status}</Chip>
             </div>
           </div>
         ))}
       </Section>
 
-      <Section title={t("w.teams.coach.weeklyCheckins")} color={C("blue")}>
+      <Section title={t("w.teams.coach.weeklyCheckins")} color={C("ash")}>
         {checkins.length === 0 ? (
           <Mono>{t("w.teams.coach.noCheckins")}</Mono>
         ) : (
@@ -473,7 +473,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
                 <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("violet")}>{t("w.teams.coach.yourReply")}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("ash")}>{t("w.teams.coach.yourReply")}</Mono>
                   <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
                 </div>
               ) : replyFor === c.id ? (
@@ -493,7 +493,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 </div>
               ) : (
                 <div style={{ marginTop: 10 }}>
-                  <Btn label={t("w.teams.coach.reply")} color={C("violet")} onClick={() => { setReplyFor(c.id); setReplyText(""); }} />
+                  <Btn label={t("w.teams.coach.reply")} color={C("lime")} onClick={() => { setReplyFor(c.id); setReplyText(""); }} />
                 </div>
               )}
             </div>
@@ -503,7 +503,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
       {sessions.length > 0 && <ClientWeek sessions={sessions} />}
 
-      <Section title={t("w.teams.coach.recentSessions")} color={C("lime")}>
+      <Section title={t("w.teams.coach.recentSessions")} color={C("ash")}>
         {sessions.length === 0 ? (
           <Mono>{t("w.teams.coach.noSessions")}</Mono>
         ) : (
@@ -538,7 +538,7 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
   const r = weeklyRecap(sessions);
   const hasPrev = r.prevSessions > 0 || r.prevVolume > 0;
   return (
-    <Section title={t("w.teams.coach.thisWeek")} color={C("lime")}>
+    <Section title={t("w.teams.coach.thisWeek")} color={C("ash")}>
       <div style={card}>
         {r.sessions === 0 ? (
           <Mono>{t("w.teams.coach.noSessions7d")}</Mono>
@@ -549,7 +549,7 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
               <Metric label={t("w.teams.coach.metricVolume")} value={`${r.volume.toLocaleString()} kg`} c={C("lime")} />
               <Metric label={t("w.teams.coach.metricSets")} value={`${r.sets}`} c={C("chalk")} />
               <Metric label={t("w.teams.coach.metricActiveDays")} value={`${r.activeDays}`} c={C("chalk")} />
-              {r.topMuscle && <Metric label={t("w.teams.coach.metricTopMuscle")} value={MUSCLE_LABEL[r.topMuscle.muscle] ? t(MUSCLE_LABEL[r.topMuscle.muscle]!) : r.topMuscle.muscle} c={C("blue")} />}
+              {r.topMuscle && <Metric label={t("w.teams.coach.metricTopMuscle")} value={MUSCLE_LABEL[r.topMuscle.muscle] ? t(MUSCLE_LABEL[r.topMuscle.muscle]!) : r.topMuscle.muscle} c={C("chalk")} />}
               <Metric label={t("w.teams.coach.metricPRs")} value={`${r.prs.length}`} c={r.prs.length ? C("lime") : C("ash")} />
             </div>
             {hasPrev && (

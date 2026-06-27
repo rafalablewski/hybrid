@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, LIME, ASH, CHALK, BLUE, VIOLET, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LIME, ASH, CHALK, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
 type Invite = { id: string; status: string; coach?: { name: string | null; email: string; coachVerified?: boolean } };
 
@@ -47,13 +47,13 @@ export default function CoachInviteBanner() {
   return (
     <div style={{ marginBottom: 16, display: "grid", gap: space.sm }}>
       {invites.map((inv) => (
-        <Card key={inv.id} style={{ borderLeft: `3px solid ${VIOLET}` }}>
+        <Card key={inv.id} style={{ borderLeft: `3px solid ${LIME}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
             <div>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>Coach invite</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Coach invite</Mono>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 4 }}>
                 {coachName(inv.coach)}
-                {inv.coach?.coachVerified && <span title="Verified coach" style={{ color: txt(BLUE), marginLeft: 5 }}>✓</span>}
+                {inv.coach?.coachVerified && <span title="Verified coach" style={{ color: txt(LIME), marginLeft: 5 }}>✓</span>}
                 {" "}wants to coach you
               </div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>
