@@ -94,7 +94,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: C.blue }}>✓</Text> : null}</Text>
+                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: C.lime }}>✓</Text> : null}</Text>
                     <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
                   </View>
                 </View>

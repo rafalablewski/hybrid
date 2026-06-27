@@ -76,7 +76,7 @@ export default function FeedScreen() {
       <Card>
         <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder="Share an update with your followers…" placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: 15, fontFamily: F.reg }} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? C.amber : C.ash, fontSize: 13, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} 🏆 Attach my latest PR</Text></Pressable>
+          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? C.lime : C.ash, fontSize: 13, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} 🏆 Attach my latest PR</Text></Pressable>
           <SButton label={posting ? "Sharing…" : "Share"} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
         </View>
       </Card>
