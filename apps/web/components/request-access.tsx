@@ -60,7 +60,7 @@ export default function RequestAccess() {
               ) : (
                 <button
                   onClick={() => request(item.id)}
-                  style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 9, padding: "6px 14px", cursor: "pointer" }}
+                  style={{ ...mono, fontSize: fs.caption, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: 9, padding: "6px 14px", cursor: "pointer" }}
                 >
                   Request
                 </button>

@@ -17,7 +17,11 @@ export const INK = "var(--color-ink)",
   INK2 = "var(--color-ink2)",
   CARD = "var(--color-card)",
   LINE = colors.line;
-export const LIME = colors.lime,
+// LIME is the brand accent as a THEMED CSS var (bright lime in Aurora, clay in
+// Japandi) so every fill/border/text follows the theme. Use LIME_HEX (raw) only
+// where a CSS var can't resolve — recharts/SVG stroke/fill presentation attrs.
+export const LIME = "var(--color-lime)",
+  LIME_HEX = colors.lime,
   CHALK = "var(--color-chalk)",
   ASH = colors.ash,
   BLUE = colors.blue,

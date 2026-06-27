@@ -153,7 +153,7 @@ function toggle(on: boolean): React.CSSProperties {
     height: 26,
     borderRadius: 999,
     border: `1px solid ${on ? LIME : LINE}`,
-    background: on ? `${LIME}33` : INK2,
+    background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2,
     cursor: "pointer",
     padding: 2,
     display: "flex",

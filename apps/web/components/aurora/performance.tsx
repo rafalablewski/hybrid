@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { fs, space, LINE, ASH, LIME, BLUE, tip, mono, roleHex } from "@/lib/ui";
+import { fs, space, LINE, ASH, LIME, LIME_HEX, BLUE, tip, mono, roleHex } from "@/lib/ui";
 import {
   computePerformanceState, computeInjuryRisk, performanceTrajectory, toTrainingLog,
   ROLE_COLOR, hpiRole, riskRole,
@@ -101,7 +101,7 @@ export default function AuroraPerformance({ sessions = [], bio }: { sessions?: L
                 <XAxis dataKey="day" stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <YAxis domain={[0, 100]} stroke={ASH} style={mono} tick={{ fontSize: fs.nano }} />
                 <Tooltip contentStyle={tip} />
-                <Line type="monotone" dataKey="HPI" stroke={LIME} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="HPI" stroke={LIME_HEX} strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="Readiness" stroke={BLUE} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>

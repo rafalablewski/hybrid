@@ -279,7 +279,7 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>{t("w.account.settings.appearance")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {(["dark", "light"] as const).map((m) => (
-                <button key={m} onClick={() => setTheme(m)} title={m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `${LIME}1a` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
+                <button key={m} onClick={() => setTheme(m)} title={m === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: theme === m ? txt(LIME) : txt(ASH), background: theme === m ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${theme === m ? LIME : LINE}` }}>
                   {m === "dark" ? "Aurora" : "Japandi"}
                 </button>
               ))}
@@ -287,7 +287,7 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.language")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {LANGS.map((l) => (
-                <button key={l.id} onClick={() => setLang(l.id)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `${LIME}1a` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}>
+                <button key={l.id} onClick={() => setLang(l.id)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}>
                   {l.label}
                 </button>
               ))}
@@ -304,17 +304,17 @@ export default function AccountSettings() {
             <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.units")}</Mono>
             <div style={{ display: "flex", gap: space.sm }}>
               {(["kg", "lb"] as const).map((u) => (
-                <button key={u} onClick={() => setLoggerPref("units", u)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}>
+                <button key={u} onClick={() => setLoggerPref("units", u)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}>
                   {u}
                 </button>
               ))}
             </div>
             <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 16, marginBottom: 6 }} c={ASH}>{t("w.account.settings.volume-counting")}</Mono>
-            <button onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}>
+            <button onClick={() => setLoggerPref("countWarmupsInVolume", !prefs.countWarmupsInVolume)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: txt(prefs.countWarmupsInVolume ? LIME : CHALK), background: prefs.countWarmupsInVolume ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.countWarmupsInVolume ? LIME : LINE}` }}>
               {prefs.countWarmupsInVolume ? t("w.account.settings.warmups-count") : t("w.account.settings.warmups-excluded")}
             </button>
             <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.volume-counting-help")}</Mono>
-            <button onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `${LIME}1a` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}>
+            <button onClick={() => setLoggerPref("fractionalVolume", !prefs.fractionalVolume)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", marginTop: 12, color: txt(prefs.fractionalVolume ? LIME : CHALK), background: prefs.fractionalVolume ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.fractionalVolume ? LIME : LINE}` }}>
               {prefs.fractionalVolume ? t("w.account.settings.fractional-on") : t("w.account.settings.fractional-off")}
             </button>
             <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={ASH}>{t("w.account.settings.fractional-help")}</Mono>
@@ -361,7 +361,7 @@ export default function AccountSettings() {
                     <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>{t("w.account.settings.coach-intro")}</Mono>
                     <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
                     {coachMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>}
-                    <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
+                    <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
                       {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
                     </button>
                   </>
@@ -401,17 +401,17 @@ export default function AccountSettings() {
           <>
             <Mono s={{ fontSize: fs.body, display: "block" }} c={CHALK}>{t("w.account.settings.mode-desc")}</Mono>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.sm, marginTop: 12 }}>
-              <button onClick={() => setClientPersona("casual")} style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `${LIME}14` : "transparent" }}>
+              <button onClick={() => setClientPersona("casual")} style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent" }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>{t("w.account.settings.simple")}</div>
                 <Mono s={{ fontSize: fs.micro }}>{t("w.account.settings.simple-tags")}</Mono>
               </button>
-              <button onClick={() => (paid ? setClientPersona("athlete") : undefined)} aria-disabled={!paid} style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `${LIME}14` : "transparent", opacity: paid ? 1 : 0.7 }}>
+              <button onClick={() => (paid ? setClientPersona("athlete") : undefined)} aria-disabled={!paid} style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", opacity: paid ? 1 : 0.7 }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "flex", alignItems: "center", gap: space.xs, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
                   {t("w.account.settings.full")}
                   {!paid && (
                     <>
                       <span>🔒</span>
-                      <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 6, padding: "1px 6px" }}>{t("w.account.settings.paid")}</span>
+                      <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: 6, padding: "1px 6px" }}>{t("w.account.settings.paid")}</span>
                     </>
                   )}
                 </div>
@@ -420,7 +420,7 @@ export default function AccountSettings() {
             </div>
             {!paid ? (
               <>
-                <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
+                <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.starting") : t("w.account.settings.upgrade-full")}
                 </button>
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
@@ -491,7 +491,7 @@ export default function AccountSettings() {
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={CHALK}>{session?.email}</Mono>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
             <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: ASH, background: `${INK2}`, border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
-            <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `${LIME}1a` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
+            <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
             {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{t("w.account.settings.via")} {session.provider}</span>}
           </div>
         </div>

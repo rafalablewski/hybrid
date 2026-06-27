@@ -35,7 +35,7 @@ import {
 } from "@hybrid/core";
 import { fs, space,
   LINE,
-  LIME,
+  LIME, LIME_HEX,
   CHALK,
   ASH,
   BLUE,
@@ -387,7 +387,7 @@ export default function AdminFinancials() {
                   <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
                   <XAxis dataKey="name" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
                   <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={44} />
-                  <Tooltip contentStyle={tip} formatter={(v) => usdFull(Number(v))} cursor={{ fill: `${LIME}10` }} />
+                  <Tooltip contentStyle={tip} formatter={(v) => usdFull(Number(v))} cursor={{ fill: `color-mix(in srgb, var(--color-lime) 6%, transparent)` }} />
                   <Bar dataKey="v" radius={[4, 4, 0, 0]}>
                     {revChart.map((d) => (
                       <Cell key={d.name} fill={d.c} />
@@ -548,7 +548,7 @@ export default function AdminFinancials() {
               />
               <Legend wrapperStyle={{ ...mono, fontSize: fs.caption }} formatter={(name) => (name === "mrr" ? "MRR" : "Cumulative cash")} />
               <ReferenceLine yAxisId="cash" y={0} stroke={RED} strokeDasharray="4 4" />
-              <Area yAxisId="mrr" type="monotone" dataKey="mrr" stroke={LIME} strokeWidth={2} fill="url(#mrrFill)" />
+              <Area yAxisId="mrr" type="monotone" dataKey="mrr" stroke={LIME_HEX} strokeWidth={2} fill="url(#mrrFill)" />
               <Line yAxisId="cash" type="monotone" dataKey="cumulativeCash" stroke={BLUE} strokeWidth={2} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -915,7 +915,7 @@ function Btn({ label, active, onClick, disabled }: { label: string; active: bool
         borderRadius: "var(--r-field)",
         cursor: disabled ? "not-allowed" : "pointer",
         border: `1px solid ${active ? LIME : LINE}`,
-        background: active ? `${LIME}1c` : "transparent",
+        background: active ? `color-mix(in srgb, var(--color-lime) 11%, transparent)` : "transparent",
         color: txt(disabled ? LINE : active ? LIME : ASH),
       }}
     >

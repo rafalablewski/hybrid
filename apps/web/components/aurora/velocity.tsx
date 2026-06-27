@@ -6,7 +6,7 @@ import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES, type LoggedSession,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, ASH, tip, mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
 
@@ -89,7 +89,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
               <ZAxis range={[70, 70]} />
               <Tooltip contentStyle={tip} formatter={(v, n) => [`${Number(v).toFixed(2)}${n === "Velocity" ? " m/s" : " kg"}`, n]} cursor={{ stroke: LINE }} />
               {fitLine.length === 2 && <Line data={fitLine} dataKey="velocity" stroke={ASH} strokeWidth={2} dot={false} isAnimationActive={false} legendType="none" />}
-              <Scatter data={points} dataKey="velocity" fill={LIME} line={false} isAnimationActive={false} />
+              <Scatter data={points} dataKey="velocity" fill={LIME_HEX} line={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} · <span style={{ color: C("ash") }}>—</span> {t("w.analyze.vel.fit")}</div>

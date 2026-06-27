@@ -8,7 +8,7 @@ import {
   isFullAccess,
   type NutritionGoal, type Signal,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, tip, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, LIME_HEX, ASH, tip, txt } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
@@ -149,7 +149,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
                 <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
                 <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? t("w.recovery.nutrition.trend") : t("w.recovery.nutrition.raw")]} />
                 <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="smoothed" stroke={LIME} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="smoothed" stroke={LIME_HEX} strokeWidth={2.5} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

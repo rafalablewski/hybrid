@@ -246,7 +246,7 @@ function SportPicker({ sport, onPick }: { sport: string; onPick: (name: string) 
                         <span style={{ width: 20, textAlign: "center", fontSize: fs.bodyLg }}>{s.icon}</span>
                         <span style={{ ...disp, flex: 1, fontWeight: 500, fontSize: fs.body, color: on ? "var(--lime-text)" : CHALK }}>{s.name}</span>
                         <span style={{ ...mono, fontSize: fs.micro, color: ASH }}>{hint}</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={on ? LIME : "transparent"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: on ? "var(--color-lime)" : "transparent" }} stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                           <path d="m5 12 5 5 9-11" />
                         </svg>
                       </button>

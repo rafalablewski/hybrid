@@ -63,7 +63,7 @@ export default function CoachInviteBanner() {
             <div style={{ display: "flex", gap: space.sm }}>
               <button
                 onClick={() => act(inv.id, "accept")}
-                style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: `${LIME}1a`, border: `1px solid ${LIME}`, borderRadius: 10, padding: "8px 16px", cursor: "pointer" }}
+                style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: 10, padding: "8px 16px", cursor: "pointer" }}
               >
                 Accept
               </button>
