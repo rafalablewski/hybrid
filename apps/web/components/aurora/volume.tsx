@@ -93,7 +93,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
 
       {trained && (
         <div style={card}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.vol.byMuscle")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.vol.byMuscle")}</span>
           <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 14 }}>
             {rows.map((r) => <LandmarkBar key={r.muscle} s={r} />)}
           </div>

@@ -6,7 +6,7 @@ import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES, type LoggedSession,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, ASH, VIOLET, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LIME, ASH, tip, mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
 
@@ -58,19 +58,19 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: space.lg }}>
         <div style={card}>
-          {head("lime", t("w.analyze.vel.est1rm"))}
+          {head("ash", t("w.analyze.vel.est1rm"))}
           <div style={{ fontWeight: 800, fontSize: 44, lineHeight: 1.05, margin: "8px 0 2px" }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<span style={{ fontSize: fs.heading, color: C("ash") }}> kg</span></div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{resolved ? `${t("w.analyze.vel.lineCrossesPre")} ${mvt} m/s · v₀ ${profile.v0.toFixed(2)} · r² ${profile.r2.toFixed(2)} · ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</div>
         </div>
         <div style={card}>
-          {head("violet", t("w.analyze.vel.aiLoad"))}
+          {head("ash", t("w.analyze.vel.aiLoad"))}
           <div style={{ display: "flex", alignItems: "center", gap: space.ms, margin: "12px 0" }}>
-            <input type="range" min={0.2} max={1.3} step={0.01} value={targetVel} onChange={(e) => setTargetVel(Number(e.target.value))} style={{ flex: 1, accentColor: VIOLET }} />
+            <input type="range" min={0.2} max={1.3} step={0.01} value={targetVel} onChange={(e) => setTargetVel(Number(e.target.value))} style={{ flex: 1, accentColor: LIME }} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, fontWeight: 700 }}>{targetVel.toFixed(2)} m/s</span>
           </div>
           {rec ? (
             <div style={{ display: "flex", alignItems: "baseline", gap: space.md, flexWrap: "wrap" }}>
-              <div style={{ fontWeight: 800, fontSize: 34, color: C("violet") }}>{rec.load} <span style={{ fontSize: fs.subtitle, color: C("ash") }}>kg</span></div>
+              <div style={{ fontWeight: 800, fontSize: 34, color: "var(--lime-text)" }}>{rec.load} <span style={{ fontSize: fs.subtitle, color: C("ash") }}>kg</span></div>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</span>
               {chip(C(zoneVar(rec.zone.id)), rec.zone.label)}
             </div>
@@ -79,7 +79,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
       </div>
 
       <div style={{ ...card, marginTop: 16 }}>
-        {head("lime", `${t("w.analyze.vel.profile")} · ${active}`)}
+        {head("ash", `${t("w.analyze.vel.profile")} · ${active}`)}
         <div style={{ marginTop: 10 }}>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart margin={{ top: 8, right: 12, bottom: 8, left: -8 }}>
@@ -88,17 +88,17 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
               <YAxis type="number" dataKey="velocity" name="Velocity" unit=" m/s" domain={[0, "dataMax + 0.2"]} tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} />
               <ZAxis range={[70, 70]} />
               <Tooltip contentStyle={tip} formatter={(v, n) => [`${Number(v).toFixed(2)}${n === "Velocity" ? " m/s" : " kg"}`, n]} cursor={{ stroke: LINE }} />
-              {fitLine.length === 2 && <Line data={fitLine} dataKey="velocity" stroke={VIOLET} strokeWidth={2} dot={false} isAnimationActive={false} legendType="none" />}
+              {fitLine.length === 2 && <Line data={fitLine} dataKey="velocity" stroke={ASH} strokeWidth={2} dot={false} isAnimationActive={false} legendType="none" />}
               <Scatter data={points} dataKey="velocity" fill={LIME} line={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} · <span style={{ color: C("violet") }}>—</span> {t("w.analyze.vel.fit")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} · <span style={{ color: C("ash") }}>—</span> {t("w.analyze.vel.fit")}</div>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.lg, marginTop: 16 }}>
         <div style={card}>
-          {head("blue", t("w.analyze.vel.zones"))}
+          {head("ash", t("w.analyze.vel.zones"))}
           <div style={{ marginTop: 8 }}>
             {VELOCITY_ZONES.slice().reverse().map((z) => (
               <div key={z.id} style={{ display: "flex", alignItems: "center", gap: space.ms, padding: "7px 0", borderBottom: `1px solid ${C("line")}` }}>
@@ -110,7 +110,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
           </div>
         </div>
         <div style={card}>
-          {head("lime", t("w.analyze.vel.recentSets"))}
+          {head("ash", t("w.analyze.vel.recentSets"))}
           <div style={{ marginTop: 8 }}><RecentSets sessions={sessions} lift={active} /></div>
         </div>
       </div>

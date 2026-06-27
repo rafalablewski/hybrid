@@ -219,7 +219,7 @@ export function AuroraOperatorAnalytics() {
                     <span style={{ ...mono, fontSize: fs.caption, color: C("ash") }}>{l.n}</span>
                   </div>
                   <div style={{ height: 6, borderRadius: 3, background: C("ink"), overflow: "hidden" }}>
-                    <div style={{ width: `${(l.n / max) * 100}%`, height: "100%", background: C("blue") }} />
+                    <div style={{ width: `${(l.n / max) * 100}%`, height: "100%", background: C("lime") }} />
                   </div>
                 </div>
               ));

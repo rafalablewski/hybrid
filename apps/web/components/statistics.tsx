@@ -84,8 +84,8 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
 
         <div style={{ display: "flex", gap: space.md, marginTop: 16 }}>
           <Mini icon="verified" label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} radius={r.card} />
-          <Mini icon="navigation" label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("violet")} radius={r.card} />
-          <Mini icon="play" label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("amber")} radius={r.card} />
+          <Mini icon="navigation" label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("lime")} radius={r.card} />
+          <Mini icon="play" label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("lime")} radius={r.card} />
         </div>
 
         {!hasData && (

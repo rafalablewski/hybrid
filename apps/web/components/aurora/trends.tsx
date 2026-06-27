@@ -65,7 +65,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
 
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.trends.muscleBreakdown")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.trends.muscleBreakdown")}</span>
           {onOpenVolume && <button onClick={onOpenVolume} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), background: "none", border: "none", cursor: "pointer" }}>{t("w.analyze.trends.volumeDetail")}</button>}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 12 }}>

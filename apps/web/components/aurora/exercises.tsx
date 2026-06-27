@@ -92,11 +92,11 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
     return (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: space.md }}>
-          <Stat label={t("w.analyze.ex.runs")} value={stats.efforts} /><Stat label={t("w.analyze.ex.distance")} value={`${stats.distanceKm} km`} c={C("blue")} /><Stat label={t("w.analyze.ex.longest")} value={`${stats.longestKm} km`} /><Stat label={t("w.analyze.ex.bestPace")} value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} c={C("blue")} />
+          <Stat label={t("w.analyze.ex.runs")} value={stats.efforts} /><Stat label={t("w.analyze.ex.distance")} value={`${stats.distanceKm} km`} c={C("lime")} /><Stat label={t("w.analyze.ex.longest")} value={`${stats.longestKm} km`} /><Stat label={t("w.analyze.ex.bestPace")} value={stats.bestPaceSecPerKm != null ? paceClock(stats.bestPaceSecPerKm) : "–"} c={C("lime")} />
         </div>
         {paceData.length > 1 && (
           <div style={card}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue"), marginBottom: 10 }}>{t("w.analyze.ex.paceTitle")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginBottom: 10 }}>{t("w.analyze.ex.paceTitle")}</div>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={paceData}><CartesianGrid stroke={LINE} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} reversed domain={["auto", "auto"]} tickFormatter={(v: number) => paceClock(v)} width={48} /><Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} /><Line type="monotone" dataKey="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} /></LineChart>
             </ResponsiveContainer>
@@ -130,8 +130,8 @@ function Dashboard({ stats, units }: { stats: ExerciseStats; units: WeightUnit }
       )}
       {stats.velocity && (
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("blue") }}>{t("w.analyze.ex.velocityProfile")}</div>
-          <div style={{ fontWeight: 800, fontSize: 22, color: C("blue"), marginTop: 8 }}>{fmtWeight(stats.velocity.e1rm, units)}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.ex.velocityProfile")}</div>
+          <div style={{ fontWeight: 800, fontSize: 22, color: "var(--lime-text)", marginTop: 8 }}>{fmtWeight(stats.velocity.e1rm, units)}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4 }}>{t("w.analyze.ex.velEstPre")} {stats.velocity.r2} · {stats.velocity.n} {t("w.analyze.ex.velEstTail")}</div>
         </div>
       )}
