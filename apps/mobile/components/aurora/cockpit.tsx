@@ -78,9 +78,9 @@ function Full() {
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      {/* 1 · CONTEXT RAIL — where am I in the plan? */}
+  // 1 · STICKY CONTEXT RAIL — where am I in the plan? (RN parity of web position:sticky)
+  const contextRail = (
+    <>
       <AHeading style={{ fontSize: 24 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
         {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
@@ -92,7 +92,11 @@ function Full() {
           <Pill C={C}>📈 {loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>
         </ScrollView>
       )}
+    </>
+  );
 
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={load} stickyHeader={contextRail}>
       {/* 2 · PERFORMANCE STATE — STR/END/REC in three columns */}
       <Section C={C} title={t("w.home.cockpit.perfTwin")} openLabel={t("w.home.cockpit.performance")} onOpen={() => router.push("/performance")}>
         {hasData ? (

@@ -98,6 +98,7 @@ export function AuroraScreen({
   padding = 24,
   refreshing,
   onRefresh,
+  stickyHeader,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -105,6 +106,9 @@ export function AuroraScreen({
   padding?: number;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** A node pinned to the top of the scroll viewport — the RN parity of the web
+   *  `position: sticky` header (stays put while the body scrolls beneath it). */
+  stickyHeader?: ReactNode;
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
@@ -136,8 +140,16 @@ export function AuroraScreen({
       // source of truth in lib/layout), not a hand-copied magic number.
       contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       keyboardShouldPersistTaps="handled"
+      stickyHeaderIndices={stickyHeader ? [0] : undefined}
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
     >
+      {/* Sticky header bleeds full-width (cancels the scroll padding) and paints
+          an opaque ink base so the body scrolls cleanly underneath it. */}
+      {stickyHeader != null && (
+        <View style={{ marginHorizontal: -padding, paddingHorizontal: padding, marginTop: -padding, paddingTop: padding, paddingBottom: 12, backgroundColor: palette.ink, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+          {stickyHeader}
+        </View>
+      )}
       {children}
     </ScrollView>
   ) : (
