@@ -166,7 +166,7 @@ export default function AuroraToday({
       {/* GREETING + streak — streak sits on the greeting's line, top-right */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
         <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>
         </div>
         {acc.streak.current > 0 && (

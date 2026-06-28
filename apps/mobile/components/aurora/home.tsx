@@ -291,7 +291,7 @@ export default function AuroraHome() {
         {/* GREETING + streak — streak sits on the greeting's line, top-right */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
+            <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
           </View>
           {acc.streak.current > 0 && (
