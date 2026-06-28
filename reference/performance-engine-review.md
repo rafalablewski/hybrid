@@ -339,3 +339,110 @@ own-baseline HRV principle, configurable archetype weighting, and the honesty of
 captioning ACWR as contested are all genuinely good and **should survive the
 redesign**. The work is to make the engine **uncertainty-aware,
 population-normalised, predictive and versioned** — not to discard what works.
+
+---
+
+## Appendix A — Candidate algorithm spec v0
+
+A self-contained scoring spec proposed for the MVP — computes **Fitness Level**,
+**Performance Index**, **Athletic Age** and **ACWR** from strength, running,
+body-composition and training-load inputs. Reproduced here as the artifact under
+review; the soundness review is **Appendix B**.
+
+### A.1 Input schema
+- **Demographics (required):** age (18–80, yr), sex (M/F), height (cm),
+  weight (kg), body-fat % (optional).
+- **Strength:** bench / squat / deadlift 1RM (kg).
+- **Endurance:** average running pace (min/km), average weekly distance (km/wk).
+- **Training history:** experience (yr), sessions/week (count).
+- **Workload (ACWR):** daily training load, last 28 days — `array[28]`
+  (e.g. session-RPE × duration).
+
+### A.2 Core maths
+**Step A — Relative strength** — `RB = bench/BW`, `RS = squat/BW`,
+`RD = deadlift/BW`.
+
+**Step B — Population normalisation** — `z = (x − μ) / σ`. Example **male**
+relative-strength norms:
+
+| Metric | Mean | SD |
+|--------|------|----|
+| Bench / BW | 1.10 | 0.30 |
+| Squat / BW | 1.50 | 0.40 |
+| Deadlift / BW | 1.80 | 0.45 |
+
+**Step C — Running score (VO₂max est.)** — `v = 1000 / pace_min_per_km` (m/min),
+`VO₂ = 0.182258·v + 0.000104·v² + 3.5`.
+
+**Step D — Age adjustment** — `AF = exp(−(age − peak)² / (2σ²))`; strength
+peak = 30, endurance peak = 35, σ = 12.
+
+### A.3 Domain scores (0–100)
+```
+strength_z      = 0.25·zBench + 0.40·zSquat + 0.35·zDeadlift
+strength_score  = clamp(50 + 15·strength_z, 0, 100)
+endurance_z     = (VO2 − 42) / 8
+endurance_score = clamp(50 + 15·endurance_z, 0, 100)
+bodycomp_score  = clamp(100 − 0.8·(BF − ideal)², 0, 100)   // ideal 12% M, 22% F
+consistency     = clamp((sessions_per_week / 5)·100, 0, 100)
+experience      = clamp(20·log2(training_years + 1), 0, 100)
+```
+
+### A.4 Performance Index (0–1000)
+```
+PI_raw = 0.35·strength + 0.30·endurance + 0.10·bodycomp
+       + 0.10·consistency + 0.10·experience + 0.05·(100·AF)
+PerformanceIndex = round(PI_raw · 10)
+```
+Bands: 900+ elite · 800–899 advanced · 700–799 intermediate ·
+600–699 recreationally fit · <600 beginner.
+
+### A.5 Fitness Level (percentile)
+`overall_z = (PI_raw − 50) / 15` · `fitness_level = round(100·normalCDF(overall_z))`.
+
+### A.6 Athletic Age
+`athletic_age = clamp(65 − (PI_raw − 40)·0.8, 18, 80)`.
+
+### A.7 ACWR (EWMA)
+`λ7 = 2/8`, `λ28 = 2/29`, `EWMA[t] = λ·load[t] + (1−λ)·EWMA[t−1]`,
+`acute = EWMA_7`, `chronic = EWMA_28`, `ACWR = acute/chronic`.
+Zones: <0.80 detraining · 0.80–1.30 optimal · 1.30–1.50 elevated · >1.50 high risk.
+
+---
+
+## Appendix B — Is the calc mathematically sound?
+
+**Verdict: partially.** The ACWR block (A.7) is correct and matches the
+literature (Williams et al. 2017) — it's already what the engine implements. The
+scoring pipeline (A.1–A.6) is *structurally* reasonable and a fine MVP skeleton,
+but it contains **one invalid statistical step and several systematic biases**
+that would mis-rank real athletes. None are fatal; all are fixable.
+
+| # | Step | Finding | Severity |
+|---|------|---------|----------|
+| 1 | A.5 Fitness Level | **Statistically invalid.** `overall_z = (PI_raw − 50)/15` reuses the *single-metric* SD (15) as the SD of the *composite*. A weighted average has a much smaller SD — ≈ **7.4** if the six components were independent (√(Σwᵢ²)·15), and only somewhat larger once they're positively correlated. Dividing by 15 understates the z-score roughly 2×, so every percentile is **compressed toward 50** and elite athletes read as ~70th percentile. Must use the **empirical SD of `PI_raw`** measured in the reference population. | critical |
+| 2 | A.5 / A.4 | **Space mismatch.** `PI_raw ∈ [0,100]` is a *score*, but A.5 treats it as if `50/15` were its mean/SD. Mean of `PI_raw` is only ≈ 50 if every component averages 50 — `experience` (≈ log) and `AF` (≤ 1, so the term ≤ 100 but typically ~90) don't, so the true mean is offset. Calibrate mean **and** SD from data, don't assume 50/15. | major |
+| 3 | A.2 C | **VO₂ intercept looks transposed.** The polynomial coefficients `0.182258·v + 0.000104·v²` are normally paired with an intercept of **≈ −4.60**, not `+3.5` (the ACSM *resting* constant belongs to a different linear equation). At 5:00/km this is **44.1 vs 36.0 mL·kg⁻¹·min⁻¹** — an ~8-unit systematic over-estimate. Verify against the source and use one consistent equation. | major |
+| 4 | A.2 C | **Average pace ≠ capacity.** VO₂max should be estimated from a maximal/time-trial effort; *average training pace* measures habitual intensity and under-reads true capacity. Methodological, not arithmetic. | major |
+| 5 | A.2 B / A.3 | **Sex handling incomplete.** Only **male** strength/endurance norms are given (and `endurance_z` hard-codes mean 42 / SD 8). Female athletes would be scored against male distributions → biased. Needs sex-specific μ/σ for every normed metric, not just `ideal` BF and `peak`. | major |
+| 6 | A.2 A | **Raw bodyweight ratio is allometrically biased** — it over-rewards light and penalises heavy lifters. Prefer **DOTS / IPF-GL** (Sinclair for weightlifting). | major |
+| 7 | A.2 D | **Symmetric age Gaussian penalises youth.** `AF` is symmetric about the peak, so an 18-y/o (12 yr *before* peak 30) is docked the same as a 42-y/o. Decline should be ~flat pre-peak and fall after. Also `AF` is ambiguous: A.4 uses one `AF` term but D defines two peaks (30 & 35) — which feeds the PI? | major |
+| 8 | A.3 bodycomp | `100 − 0.8·(BF − ideal)²` is **symmetric and steep**: a male at 4% BF scores the same penalty as one 8% over ideal, and ideal±11% → 0. Use an asymmetric, gentler penalty (very-lean ≠ as costly as the curve implies, but not free). | minor |
+| 9 | A.6 Athletic Age | Formula is a **hand-set line**, not "the age whose average PI matches" as claimed — it's disconnected from the A.2-D age model. Derive it by **inverting** the age→PI curve implied by `AF` so the two are consistent. | minor |
+| 10 | A.4 bands | **Bands vs percentile semantics clash.** Because scores centre at 50, the typical athlete gets PI ≈ 500, so "<600 = beginner" labels everyone below ~the top quartile a beginner. Re-anchor the bands to the calibrated percentile (A.5), once fixed. | minor |
+| 11 | all | **No uncertainty.** Every output is a point estimate — same gap flagged in §2/§8. Attach a confidence/interval driven by which inputs are present (e.g. BF and the 28-day array are optional). | major |
+| 12 | A.7 ACWR | **Correct.** EWMA λ's, recursion, and zones are right. Minor: seed `EWMA[0]` (e.g. = `load[0]`) and note the chronic EWMA needs a burn-in before it's trustworthy. | ok |
+
+**Corrected critical step (A.5).** Calibrate from a reference sample, don't assume:
+```
+// μ_PI and σ_PI are the MEASURED mean and SD of PI_raw in the reference cohort
+overall_z    = (PI_raw − μ_PI) / σ_PI        // not (PI_raw − 50) / 15
+fitness_level = round(100 · normalCDF(overall_z))
+```
+
+**Bottom line.** Ship A.7 as-is (the engine already has it). Treat A.1–A.6 as a
+solid scaffold but, before it ranks anyone: fix the percentile SD (#1–2), settle
+the VO₂ equation (#3–4), add **sex-specific** norms (#5), and move strength to
+**DOTS/IPF-GL** (#6). Those four changes turn a plausible-looking demo into a
+defensible v1. The deeper redesign (population normalisation, latent capacity,
+uncertainty, prediction) in §1–§13 still stands on top of it.
