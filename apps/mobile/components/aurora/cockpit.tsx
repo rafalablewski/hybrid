@@ -78,6 +78,8 @@ function Full() {
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
+  // Exception-driven: slim all-clear row when nothing's flagged, full maroon otherwise.
+  const calm = risk.flagged.length === 0;
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
@@ -126,39 +128,41 @@ function Full() {
         )}
       </Section>
 
-      {/* 3 · INJURY RISK — maroon, tissues + load to watch */}
+      {/* 3 · INJURY RISK — exception-driven: slim all-clear row when nothing's
+          flagged; the full maroon alert card only when a tissue needs attention. */}
       {hasData && (
-        <ACard style={{ marginTop: 14, borderColor: `${C.red}73`, backgroundColor: `${C.red}12` }}>
-          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+        <ACard style={{ marginTop: 14, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-              <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.red }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.home.today.injuryRisk")}</Text>
+              <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: calm ? C.lime : C.red }} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: calm ? C.ash : txt(C, C.red) }}>{t("w.home.today.injuryRisk")}</Text>
             </View>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{risk.band} · {risk.overall}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} · {risk.overall}</Text>
           </View>
-          <View style={{ height: 9, borderRadius: 5, backgroundColor: C.ink, overflow: "hidden", marginTop: 10 }}>
-            <View style={{ width: `${risk.overall}%`, height: 9, backgroundColor: riskColor(risk.band, C) }} />
-          </View>
-          {risk.flagged.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 12 }}>{t("w.home.today.noTissues")}</Text>
+          {calm ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>{t("w.home.today.noTissues")}</Text>
           ) : (
-            <View style={{ marginTop: 12, gap: space.sm }}>
-              {risk.flagged.map((ti) => (
-                <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-                  <View style={{ borderWidth: 1, borderColor: `${riskColor(ti.band, C)}8c`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", color: txt(C, riskColor(ti.band, C)) }}>{ti.risk}</Text>
+            <>
+              <View style={{ height: 9, borderRadius: 5, backgroundColor: C.ink, overflow: "hidden", marginTop: 10 }}>
+                <View style={{ width: `${risk.overall}%`, height: 9, backgroundColor: riskColor(risk.band, C) }} />
+              </View>
+              <View style={{ marginTop: 12, gap: space.sm }}>
+                {risk.flagged.map((ti) => (
+                  <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                    <View style={{ borderWidth: 1, borderColor: `${riskColor(ti.band, C)}8c`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", color: txt(C, riskColor(ti.band, C)) }}>{ti.risk}</Text>
+                    </View>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{ti.tissue}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1, textAlign: "right" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</Text>
                   </View>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{ti.tissue}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1, textAlign: "right" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</Text>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            </>
           )}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.home.cockpit.toWatch")}</Text>
           {loadState.enoughHistory ? (
             <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
               <Watch C={C} label={t("w.home.cockpit.acwr")} value={loadState.acwr.toFixed(2)} color={txt(C, acwrColor(loadState.band, C))} />
-              <Watch C={C} label={t("w.home.cockpit.wellbeing")} value={`${rx.readiness}`} color={txt(C, readyColor(rx.readiness, C))} />
               <Watch C={C} label={t("w.home.cockpit.srpe")} value={loadState.acute.toLocaleString()} />
               <Watch C={C} label={t("w.home.cockpit.monotony")} value={loadState.monotony.toFixed(1)} />
               <Watch C={C} label={t("w.home.cockpit.strain")} value={loadState.strain.toLocaleString()} />

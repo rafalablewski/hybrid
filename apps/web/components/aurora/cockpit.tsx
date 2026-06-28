@@ -64,6 +64,9 @@ export default function AuroraCockpit({
 
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
+  // Injury risk is exception-driven: a slim all-clear row when nothing's flagged,
+  // the full maroon alert only when a tissue needs attention.
+  const calm = risk.flagged.length === 0;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -112,39 +115,42 @@ export default function AuroraCockpit({
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>}
         </Section>
 
-        {/* 3 · INJURY RISK — maroon, exception-driven; tissues + load to watch */}
+        {/* 3 · INJURY RISK — exception-driven: slim all-clear row when nothing's
+            flagged; the full maroon alert card only when a tissue needs attention. */}
         {hasData && (
-          <div style={{ ...CARD, border: `1px solid color-mix(in srgb, ${C("red")} 45%, ${C("line")})`,
-            background: `linear-gradient(180deg, color-mix(in srgb, ${C("red")} 7%, ${C("ink2")}), ${C("ink2")})` }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+          <div style={{ ...CARD,
+            border: calm ? `1px solid ${C("line")}` : `1px solid color-mix(in srgb, ${C("red")} 45%, ${C("line")})`,
+            background: calm ? C("ink2") : `linear-gradient(180deg, color-mix(in srgb, ${C("red")} 7%, ${C("ink2")}), ${C("ink2")})` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-                <span style={{ width: 9, height: 9, borderRadius: 5, background: C("red") }} />
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>{t("w.home.today.injuryRisk")}</span>
+                <span style={{ width: 9, height: 9, borderRadius: 5, background: calm ? C("lime") : C("red") }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: calm ? C("ash") : C("red") }}>{t("w.home.today.injuryRisk")}</span>
               </span>
-              <span style={{ fontWeight: 800, fontSize: fs.subtitle, color: C(riskVar(risk.band)) }}>{risk.band} · {risk.overall}</span>
+              <span style={{ fontWeight: 800, fontSize: fs.subtitle, color: C(riskVar(risk.band)) }}>{cap(risk.band)} · {risk.overall}</span>
             </div>
-            <div style={{ height: 9, borderRadius: 5, background: C("ink"), overflow: "hidden", marginTop: 10 }}>
-              <div style={{ width: `${risk.overall}%`, height: "100%", background: C(riskVar(risk.band)) }} />
-            </div>
-            {risk.flagged.length === 0 ? (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 12 }}>{t("w.home.today.noTissues")}</div>
+            {calm ? (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 10 }}>{t("w.home.today.noTissues")}</div>
             ) : (
-              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
-                {risk.flagged.map((ti) => (
-                  <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
-                    <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div style={{ height: 9, borderRadius: 5, background: C("ink"), overflow: "hidden", marginTop: 10 }}>
+                  <div style={{ width: `${risk.overall}%`, height: "100%", background: C(riskVar(risk.band)) }} />
+                </div>
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
+                  {risk.flagged.map((ti) => (
+                    <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
+                      <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
-            {/* THINGS TO WATCH — ACWR · well-being · s-RPE · monotony · strain */}
+            {/* THINGS TO WATCH — ACWR · s-RPE · monotony · strain (always available) */}
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), margin: "16px 0 8px" }}>{t("w.home.cockpit.toWatch")}</div>
             {load.enoughHistory ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 1, background: C("line"), border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: C("line"), border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden" }}>
                 <Watch label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={C(acwrVar(load.band))} />
-                <Watch label={t("w.home.cockpit.wellbeing")} value={`${rx.readiness}`} color={C(readyVar(rx.readiness))} />
                 <Watch label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
                 <Watch label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
                 <Watch label={t("w.home.cockpit.strain")} value={load.strain.toLocaleString()} />
