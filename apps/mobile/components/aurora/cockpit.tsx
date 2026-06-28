@@ -80,6 +80,8 @@ function Full() {
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
   // Exception-driven: slim all-clear row when nothing's flagged, full maroon otherwise.
   const calm = risk.flagged.length === 0;
+  // Season completion %, guarded against a 0 / malformed totalWeeks.
+  const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
@@ -242,9 +244,9 @@ function Full() {
           </View>
           {macro ? (
             <>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}%</Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{seasonPct}%</Text>
               <View style={{ height: 6, borderRadius: 99, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 8, marginBottom: 10 }}>
-                <View style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: 6, backgroundColor: C.violet }} />
+                <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
               </View>
             </>
           ) : (

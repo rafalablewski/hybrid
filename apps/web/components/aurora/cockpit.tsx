@@ -67,6 +67,8 @@ export default function AuroraCockpit({
   // Injury risk is exception-driven: a slim all-clear row when nothing's flagged,
   // the full maroon alert only when a tissue needs attention.
   const calm = risk.flagged.length === 0;
+  // Season completion %, guarded against a 0 / malformed totalWeeks.
+  const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -198,7 +200,7 @@ export default function AuroraCockpit({
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.horizon")}</span>
           </span>
-          <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} · ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
+          <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} · ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
           <Mod dot={C("blue")} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
           <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
         </div>
@@ -228,11 +230,11 @@ export default function AuroraCockpit({
             {macro ? (
               <>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, color: C("chalk") }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}</span>
+                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, color: C("chalk") }}>{seasonPct}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 99, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "8px 0 10px" }}>
-                  <div style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: "100%", background: C("violet") }} />
+                  <div style={{ width: `${seasonPct}%`, height: "100%", background: C("violet") }} />
                 </div>
               </>
             ) : <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>}
@@ -314,7 +316,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
         {tab === "sport" && (
           sport ? (
             <>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx] ?? LEVELS[0]}</div>
               <button onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}>{t("w.home.cockpit.sport")} →</button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>
