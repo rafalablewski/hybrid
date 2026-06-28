@@ -21,6 +21,7 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
 const riskColor = (b: string, C: Palette) => roleColor(C, riskRole(b));
 const readyColor = (v: number, C: Palette) => roleColor(C, readinessRole(v));
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
 const acwrColor = (b: AcwrBand, C: Palette): string =>
   b === "sweet-spot" ? C.lime : b === "caution" ? C.amber : b === "danger" ? C.red : b === "detraining" ? C.blue : C.ash;
 
@@ -78,9 +79,9 @@ function Full() {
   const hasData = sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
 
-  // 1 · STICKY CONTEXT RAIL — where am I in the plan? (RN parity of web position:sticky)
-  const contextRail = (
-    <>
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      {/* 1 · CONTEXT RAIL — title + season + sliding pills (scrolls like Today) */}
       <AHeading style={{ fontSize: 24 }}>{t("w.home.cockpit.commandCenter")}</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
         {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
@@ -92,11 +93,7 @@ function Full() {
           <Pill C={C}>📈 {loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>
         </ScrollView>
       )}
-    </>
-  );
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load} stickyHeader={contextRail}>
       {/* 2 · PERFORMANCE STATE — STR/END/REC in three columns */}
       <Section C={C} title={t("w.home.cockpit.perfTwin")} openLabel={t("w.home.cockpit.performance")} onOpen={() => router.push("/performance")}>
         {hasData ? (
@@ -108,10 +105,10 @@ function Full() {
                 <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
               </View>
             </View>
-            <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden", marginTop: 14 }}>
-              <Comp C={C} label="STR" value={`${state.hpi.components.strength}`} color={txt(C, C.lime)} />
-              <Comp C={C} label="END" value={`${state.hpi.components.endurance}`} color={txt(C, C.blue)} />
-              <Comp C={C} label="REC" value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} color={txt(C, C.violet)} />
+            <View style={{ flexDirection: "row", marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.strength")} value={`${state.hpi.components.strength}`} />
+              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
+              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
             </View>
             {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 12, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -216,42 +213,45 @@ function Full() {
         <Mod C={C} dot={C.lime} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onPress={() => router.push("/(tabs)/running")} last />
       </ACard>
 
-      {/* 7 · GOAL — goal/season + plan controls */}
-      <ACard style={{ marginTop: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
-          <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.violet }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.home.cockpit.goalSeason")}</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 14 }}>
-          <View style={{ flex: 1 }}>
-            {macro ? (
-              <>
-                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{macro.goalOrSport}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</Text>
-              </>
-            ) : (
-              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.noSeason")}</Text>
-            )}
+      {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
+        {/* widget 1 — goal */}
+        <ACard style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
+            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.violet }} />
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.home.cockpit.goal")}</Text>
           </View>
-          <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: C.line, paddingLeft: 14 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{macro ? t("w.home.cockpit.seasonProgress") : t("w.home.cockpit.setUpChange")}</Text>
-            {macro ? (
-              <>
-                <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.heading, color: C.chalk, marginTop: 8 }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}%</Text>
-                <View style={{ height: 6, borderRadius: 99, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 8, marginBottom: 8 }}>
-                  <View style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: 6, backgroundColor: C.violet }} />
-                </View>
-              </>
-            ) : (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{t("w.home.cockpit.fourQuestions")}</Text>
-            )}
-            <View style={{ flexDirection: "row", gap: 14, marginTop: 8 }}>
-              {macro && <Pressable onPress={() => router.push("/periodize")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.periodize")} →</Text></Pressable>}
-              <Pressable onPress={() => router.push("/onboarding")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.openSetup")}</Text></Pressable>
-            </View>
+          {macro ? (
+            <>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{macro.goalOrSport}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</Text>
+            </>
+          ) : (
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>{t("w.home.cockpit.noSeason")}</Text>
+          )}
+        </ACard>
+        {/* widget 2 — season progress / plan controls */}
+        <ACard style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
+            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")}</Text>
           </View>
-        </View>
-      </ACard>
+          {macro ? (
+            <>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}%</Text>
+              <View style={{ height: 6, borderRadius: 99, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 8, marginBottom: 10 }}>
+                <View style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: 6, backgroundColor: C.violet }} />
+              </View>
+            </>
+          ) : (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, marginBottom: 10, lineHeight: 16 }}>{t("w.home.cockpit.fourQuestions")}</Text>
+          )}
+          <View style={{ gap: 8 }}>
+            {macro && <Pressable onPress={() => router.push("/periodize")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.periodize")} →</Text></Pressable>}
+            <Pressable onPress={() => router.push("/onboarding")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.openSetup")}</Text></Pressable>
+          </View>
+        </ACard>
+      </View>
     </AuroraScreen>
   );
 }
@@ -300,8 +300,8 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
           <>
             <View style={{ flexDirection: "row", gap: 22 }}>
               <Stat C={C} label={t("w.home.cockpit.strIndex")} value={`${state.hpi.components.strength}`} />
-              <Stat C={C} label={t("w.home.cockpit.wkTonnage")} value={recap.volume.toLocaleString()} />
-              <Stat C={C} label={t("w.home.cockpit.sets")} value={`${recap.sets}`} />
+              <Stat C={C} label={t("w.home.cockpit.lifts")} value={`${recap.lifts}`} />
+              <Stat C={C} label={t("w.home.today.topMuscle")} value={recap.topMuscle ? cap(recap.topMuscle.muscle) : "—"} />
             </View>
             {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 14, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
           </>
@@ -381,11 +381,11 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
   );
 }
 
-function Comp({ C, label, value, color }: { C: Palette; label: string; value: string; color: string }) {
+function Comp({ C, scheme, label, value }: { C: Palette; scheme: ReturnType<typeof useTheme>["scheme"]; label: string; value: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 12, paddingHorizontal: 8, alignItems: "center" }}>
-      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{label}</Text>
+    <View style={{ flex: 1, alignItems: "center" }}>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, color: C.chalk, letterSpacing: -0.4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash, marginTop: 6 }}>{label}</Text>
     </View>
   );
 }

@@ -182,6 +182,10 @@ export const web_home = {
     "w.home.cockpit.horizon": "Horizon",
     "w.home.cockpit.velocityValue": "Bar-speed & quality",
     "w.home.cockpit.seasonProgress": "Season progress",
+    "w.home.cockpit.recovery": "Recovery",
+    "w.home.cockpit.lifts": "Lifts",
+    "w.home.cockpit.goal": "Goal",
+    "w.home.cockpit.season": "Season",
     // teaser
     "w.home.cockpit.teaseTitle": "Unlock your command center",
     "w.home.cockpit.teaseSub1": "Goal, season, your Performance State, sport S&C, velocity and endurance — assembled into one screen. It's part of ",
@@ -485,6 +489,10 @@ export const web_home = {
     "w.home.cockpit.horizon": "Horyzont",
     "w.home.cockpit.velocityValue": "Prędkość i jakość",
     "w.home.cockpit.seasonProgress": "Postęp sezonu",
+    "w.home.cockpit.recovery": "Regeneracja",
+    "w.home.cockpit.lifts": "Ćwiczenia",
+    "w.home.cockpit.goal": "Cel",
+    "w.home.cockpit.season": "Sezon",
     // teaser
     "w.home.cockpit.teaseTitle": "Odblokuj swoje centrum dowodzenia",
     "w.home.cockpit.teaseSub1": "Cel, sezon, Twój stan formy, sport S&C, prędkość i wytrzymałość — zebrane na jednym ekranie. To część ",
@@ -788,6 +796,10 @@ export const web_home = {
     "w.home.cockpit.horizon": "Horizont",
     "w.home.cockpit.velocityValue": "Hantelgeschw. & Qualität",
     "w.home.cockpit.seasonProgress": "Saison-Fortschritt",
+    "w.home.cockpit.recovery": "Erholung",
+    "w.home.cockpit.lifts": "Übungen",
+    "w.home.cockpit.goal": "Ziel",
+    "w.home.cockpit.season": "Saison",
     // teaser
     "w.home.cockpit.teaseTitle": "Schalte deine Kommandozentrale frei",
     "w.home.cockpit.teaseSub1": "Ziel, Saison, dein Leistungszustand, Sport S&C, Geschwindigkeit und Ausdauer — auf einem Bildschirm vereint. Es ist Teil von ",

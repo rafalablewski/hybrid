@@ -21,6 +21,7 @@ const readyVar = (v: number) => ROLE_COLOR[readinessRole(v)];
 const acwrVar = (b: AcwrBand): string =>
   b === "sweet-spot" ? "lime" : b === "caution" ? "amber" : b === "danger" ? "red" : b === "detraining" ? "blue" : "ash";
 const C = (v: string) => `var(--color-${v})`;
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
 const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
 /** AURORA Cockpit (web) — a command center: a sticky season-context rail, then
@@ -66,10 +67,8 @@ export default function AuroraCockpit({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* 1 · STICKY CONTEXT RAIL — always answers "where am I in the plan?" */}
-      <div style={{ position: "sticky", top: 0, zIndex: 20, margin: "-8px -4px 0", padding: "10px 4px 12px",
-        background: `linear-gradient(180deg, color-mix(in srgb, ${C("ink")} 97%, transparent), color-mix(in srgb, ${C("ink")} 80%, transparent) 75%, transparent)`,
-        backdropFilter: "blur(14px)" }}>
+      {/* 1 · CONTEXT RAIL — title + season + sliding pills (scrolls with the page, like Today) */}
+      <div>
         <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, margin: 0, letterSpacing: "-.02em" }}>{t("w.home.cockpit.commandCenter")}</h1>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>
           {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
@@ -95,11 +94,11 @@ export default function AuroraCockpit({
                   <div style={{ marginTop: 6, maxWidth: 220 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
                 </div>
               </div>
-              {/* three columns — strength · endurance · recovery */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: C("line"), border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden", marginTop: 14 }}>
-                <Comp label="STR" value={`${state.hpi.components.strength}`} color={C("lime")} />
-                <Comp label="END" value={`${state.hpi.components.endurance}`} color={C("blue")} />
-                <Comp label="REC" value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} color={C("violet")} />
+              {/* three columns — strength · endurance · recovery (big numbers, full words) */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+                <Comp label={t("w.home.cockpit.tab.strength")} value={`${state.hpi.components.strength}`} />
+                <Comp label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
+                <Comp label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
               </div>
               {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 12 }}>{state.drivers[0].detail}</div>}
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "center", gap: space.md }}>
@@ -198,44 +197,45 @@ export default function AuroraCockpit({
           <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
         </div>
 
-        {/* 7 · GOAL — goal/season (col 1) + plan controls (col 2) */}
-        <div style={CARD}>
-          <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
-            <span style={{ width: 9, height: 9, borderRadius: 5, background: C("violet") }} />
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.goalSeason")}</span>
-          </span>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {/* col 1 — goal */}
-            <div>
-              {macro ? (
-                <>
-                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{macro.goalOrSport}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</div>
-                </>
-              ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
-            </div>
-            {/* col 2 — plan controls / season progress */}
-            <div style={{ borderLeft: `1px solid ${C("line")}`, paddingLeft: 14 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{macro ? t("w.home.cockpit.seasonProgress") : t("w.home.cockpit.setUpChange")}</div>
-              {macro ? (
-                <>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 8 }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.heading, color: C("chalk") }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>%</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 99, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "8px 0" }}>
-                    <div style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: "100%", background: C("violet") }} />
-                  </div>
-                </>
-              ) : <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>}
-              <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
-                {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.cockpit.periodize")} →</button>}
-                <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
-              </div>
+        {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {/* widget 1 — goal */}
+          <div style={CARD}>
+            <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
+              <span style={{ width: 9, height: 9, borderRadius: 5, background: C("violet") }} />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.goal")}</span>
+            </span>
+            {macro ? (
+              <>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{macro.goalOrSport}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</div>
+              </>
+            ) : <div style={{ fontSize: fs.caption, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
+          </div>
+          {/* widget 2 — season progress / plan controls */}
+          <div style={CARD}>
+            <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
+              <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")}</span>
+            </span>
+            {macro ? (
+              <>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                  <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, color: C("chalk") }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 99, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "8px 0 10px" }}>
+                  <div style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: "100%", background: C("violet") }} />
+                </div>
+              </>
+            ) : <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
+              {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.cockpit.periodize")} →</button>}
+              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
             </div>
           </div>
-          {setupOpen && <div style={{ marginTop: 16 }}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
         </div>
+        {setupOpen && <div style={CARD}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
       </div>
     </div>
   );
@@ -284,8 +284,8 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
           <>
             <div style={{ display: "flex", gap: 22 }}>
               <Stat label={t("w.home.cockpit.strIndex")} value={`${state.hpi.components.strength}`} />
-              <Stat label={t("w.home.cockpit.wkTonnage")} value={recap.volume.toLocaleString()} />
-              <Stat label={t("w.home.cockpit.sets")} value={`${recap.sets}`} />
+              <Stat label={t("w.home.cockpit.lifts")} value={`${recap.lifts}`} />
+              <Stat label={t("w.home.today.topMuscle")} value={recap.topMuscle ? cap(recap.topMuscle.muscle) : "—"} />
             </div>
             {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 14 }}>{state.drivers[0].detail}</div>}
           </>
@@ -361,11 +361,11 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Comp({ label, value, color }: { label: string; value: string; color: string }) {
+function Comp({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: C("ink2"), padding: "12px 8px", textAlign: "center" }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, color }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{label}</div>
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, color: C("chalk"), letterSpacing: "-.02em" }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginTop: 6 }}>{label}</div>
     </div>
   );
 }
@@ -389,13 +389,21 @@ function Mod({ dot, label, value, onClick, mono, last }: { dot: string; label: s
   );
 }
 
-/** Readiness dial — conic-gradient ring with the number inside. */
-function Ring({ value, color, size = 48 }: { value: number; color: string; size?: number }) {
+/** Readiness/score dial — a ring of TICK MARKS lit up to the value, matching the
+ *  Today screen + the mobile kit Ring so the "number effect" reads the same. */
+function Ring({ value, color, size = 48, ticks = 32 }: { value: number; color: string; size?: number; ticks?: number }) {
   const pct = Math.max(0, Math.min(100, value));
-  const inner = size - 12;
+  const lit = Math.round((pct / 100) * ticks);
+  const tickLen = Math.max(4, Math.round(size * 0.16));
+  const tickW = Math.max(2, Math.round(size * 0.045));
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", background: `conic-gradient(${color} ${pct * 3.6}deg, ${C("line")} 0)`, display: "grid", placeItems: "center", flexShrink: 0 }}>
-      <div style={{ width: inner, height: inner, borderRadius: "50%", background: C("ink2"), display: "grid", placeItems: "center", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</div>
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0, display: "grid", placeItems: "center" }}>
+      {Array.from({ length: ticks }).map((_, i) => (
+        <span key={i} style={{ position: "absolute", top: 0, left: "50%", width: tickW, height: size / 2, transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${(i / ticks) * 360}deg)` }}>
+          <span style={{ display: "block", width: tickW, height: tickLen, borderRadius: tickW, background: i < lit ? color : C("line") }} />
+        </span>
+      ))}
+      <span style={{ position: "relative", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</span>
     </div>
   );
 }
