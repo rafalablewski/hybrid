@@ -6,7 +6,9 @@ import {
   layersBySeverity,
   planByPriority,
   roadmapByHorizon,
+  weaknessesByRank,
   type EvidenceGrade,
+  type MajorWeakness,
   type ReviewLayer,
   type ReviewPriority,
   type RoadmapItem,
@@ -39,13 +41,27 @@ import {
 // @hybrid/core/engines/hpi-review (the single source of truth) so this screen
 // never drifts from the science doc.
 
-type Tab = "summary" | "layers" | "missing" | "model" | "roadmap" | "plan";
+type Tab =
+  | "summary"
+  | "layers"
+  | "weaknesses"
+  | "missing"
+  | "redesign"
+  | "model"
+  | "roadmap"
+  | "plan";
 
 const SEVERITY_COLOR: Record<ReviewLayer["severity"], string> = {
   critical: RED,
   major: AMBER,
   minor: BLUE,
   ok: LIME,
+};
+
+const WEAKNESS_COLOR: Record<MajorWeakness["severity"], string> = {
+  critical: RED,
+  major: AMBER,
+  minor: BLUE,
 };
 
 const GRADE_META: Record<EvidenceGrade, { label: string; color: string }> = {
@@ -75,7 +91,9 @@ export default function AdminPerformanceEngine() {
   const tabs: [Tab, string][] = [
     ["summary", "Executive summary"],
     ["layers", "Layer review"],
+    ["weaknesses", "Major weaknesses"],
     ["missing", "Missing"],
+    ["redesign", "Recommended redesign"],
     ["model", "Redesigned model"],
     ["roadmap", "Roadmap"],
     ["plan", "Build plan"],
@@ -120,7 +138,9 @@ export default function AdminPerformanceEngine() {
 
       {tab === "summary" && <Summary />}
       {tab === "layers" && <Layers />}
+      {tab === "weaknesses" && <Weaknesses />}
       {tab === "missing" && <Missing />}
+      {tab === "redesign" && <Redesign />}
       {tab === "model" && <Model />}
       {tab === "roadmap" && <Roadmap />}
       {tab === "plan" && <Plan />}
@@ -221,6 +241,74 @@ function List({ title, color, items }: { title: string; color: string; items: st
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function Weaknesses() {
+  const items = weaknessesByRank();
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.55, display: "block" }} c={ASH}>
+        The top-level failings, ranked worst first. Each traces to a layer in the review and to a build-plan item that fixes it.
+      </Mono>
+      {items.map((w) => {
+        const color = WEAKNESS_COLOR[w.severity];
+        return (
+          <Card key={w.rank} style={{ borderLeft: `3px solid ${color}`, display: "flex", gap: space.md, alignItems: "flex-start" }}>
+            <div
+              style={{
+                ...disp,
+                fontWeight: 800,
+                fontSize: fs.heading,
+                color: txt(color),
+                minWidth: 28,
+                lineHeight: 1.1,
+              }}
+            >
+              {w.rank}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{w.title}</div>
+                <Chip c={color}>{w.severity}</Chip>
+              </div>
+              <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 6 }} c={CHALK}>
+                {w.detail}
+              </Mono>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+function Redesign() {
+  return (
+    <div>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.55, display: "block", marginBottom: 14 }} c={CHALK}>
+        The blueprint, not the backlog: keep the clean pure core, but re-architect it around four pillars. The phased,
+        effort-tagged version lives under Roadmap and Build plan.
+      </Mono>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.md }}>
+        {HPI_REVIEW.redesign.map((p, i) => (
+          <Card key={p.id} style={{ borderLeft: `3px solid ${LIME}` }}>
+            <div style={{ display: "flex", gap: space.md, alignItems: "baseline" }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, color: txt(LIME), minWidth: 22 }}>
+                {i + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{p.title}</div>
+                <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 4 }} c={CHALK}>
+                  {p.summary}
+                </Mono>
+                <List title="Specifics" color={LIME} items={p.points} />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

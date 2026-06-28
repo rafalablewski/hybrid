@@ -196,39 +196,72 @@ confidence flags. (Each is graded in the structured data.)
 
 ## 8. Major weaknesses (ranked)
 
-1. State/trait conflation in a metric branded as an index. *(critical)*
-2. No uncertainty on any output. *(critical)*
-3. No population normalisation. *(critical)*
-4. Single-snapshot, single-signal recovery. *(major)*
-5. Contested, coupled ACWR presented as a verdict. *(major)*
-6. Hand-set composite weights with no empirical/personalised basis. *(major)*
-7. No predictive layer. *(major)*
-8. No model versioning / feature store / audit. *(major)*
+Ranked worst-first. Each traces to the layer it comes from (§2/§3) and the
+build-plan item that fixes it (§12). Mirrors `majorWeaknesses` in the structured
+data (`weaknessesByRank()`).
+
+| # | Weakness | Severity | Layer | Why it matters |
+|---|----------|----------|-------|----------------|
+| 1 | **State/trait conflation in a metric branded as an index** | critical | Conceptual model | Freshness (a daily STATE) is read as a fitness INDEX (a TRAIT). They move on different time-scales, so the number is systematically misread — a rested novice outscores a fatigued champion. Until Readiness and Capacity are separated, nothing downstream can be interpreted correctly. |
+| 2 | **No uncertainty on any output** | critical | Domain scores | A score from one noisy HRV night is presented as authoritatively as one from two years of data. A metric without a confidence interval over-claims precision and cannot safely gate training for elite/military/clinical users. |
+| 3 | **No population normalisation** | critical | Validation & normalisation | Scores have no reference distribution, so "70" is uninterpretable and incomparable across athletes. The engine cannot answer "good versus whom?" or scale from a sedentary beginner to a world champion — the platform's core requirement. |
+| 4 | **Single-snapshot, single-signal recovery** | major | Recovery model | Recovery is one ±15 nudge from a single biometric. HRV is only meaningful as a rolling deviation; sleep debt, RHR trend and subjective wellness are ignored; a missing wearable silently zeroes the term instead of widening uncertainty. |
+| 5 | **Contested, coupled ACWR presented as a verdict** | major | ACWR / workload | The coupled ratio is autocorrelated by construction and its thresholds are disputed (Lolli 2019; Impellizzeri 2020). Discrete bands imply a risk cliff the evidence does not support. It should be one input, not the headline. |
+| 6 | **Hand-set composite weights with no empirical basis** | major | Composite index | Archetype weights are fixed constants, and an additive recovery term mixed into a multiplicative blend is dimensionally incoherent — recovery can dominate or vanish near the clamp. No personalisation, no learning from the athlete's own response. |
+| 7 | **No predictive layer** | major | ML vs. mathematics | The engine is entirely retrospective. No PR/race-time trajectory, plateau, overtraining, peaking, injury-risk or return-to-play forecasting — the single largest capability gap versus WHOOP/TrainingPeaks/AMS platforms. |
+| 8 | **No model versioning, feature store or audit trail** | major | Software architecture | Outputs carry no version stamp, inputs→features→scores aren't persisted, and there's no per-athlete state. A score shown last month can't be reproduced or explained — unacceptable under GDPR/HIPAA-adjacent expectations. |
 
 ---
 
 ## 9. Recommended redesign
 
-**Two models, not one.**
+The **blueprint, not the backlog** (the phased, effort-tagged version is §11–§12).
+Keep the clean pure core; re-architect it around four pillars. Mirrors
+`redesign` in the structured data.
+
+### Pillar 1 — Two models, not one: Readiness vs. Capacity
+Split the single number into a daily STATE model and a slow-moving TRAIT model so
+each answers its own question.
 - **Readiness** (state, daily, 0–100 + interval): muscular freshness +
-  energy-system freshness + multi-signal recovery (HRV-deviation, sleep debt,
-  RHR trend, subjective wellness), missing-data-aware.
+  energy-system freshness + the new multi-signal recovery sub-model
+  (HRV-deviation, sleep debt, RHR trend, subjective wellness), missing-data-aware.
 - **Capacity / Fitness Level** (trait, slow-moving, **percentile** + interval):
   latent factors estimated from validated tests, population-normalised with
   Bayesian shrinkage.
+- Each surfaces its own limiter; neither is forced to mean the other.
 
-**Latent capacity model (measurement model).** Maximal strength · aerobic
-capacity · power/RFD · robustness/injury-resilience · movement economy ·
-neuromuscular efficiency · recoverability · adaptability · psychological
-readiness — each estimated from observable indicators (see structured data for
-the indicator → latent mapping and the core/extended/research horizons).
+### Pillar 2 — Latent capacity measurement model
+Estimate capacity as latent factors from observable indicators rather than
+averaging proxies into an opaque score.
+- **Constructs:** maximal strength · aerobic capacity · power/RFD ·
+  robustness/injury-resilience · movement economy · neuromuscular efficiency ·
+  recoverability · adaptability · psychological readiness.
+- Each is scored from validated indicators (see the latent model in the
+  structured data) and carries a **credible interval** driven by how much data
+  backs it.
+- Start with **confirmatory factor scoring**; evolve toward a **Bayesian
+  network** encoding the *load → fatigue → recovery → adaptation* causal chain.
 
-**Load model v2.** Uncoupled/EWMA ACWR + Banister fitness–fatigue trajectory +
-ramp rate + monotony/strain → one **continuous, uncertainty-aware** load-status
-signal. ACWR demoted to one input.
+### Pillar 3 — Load model v2
+Demote ACWR to one input inside a continuous, uncertainty-aware load-status
+signal.
+- Default to **uncoupled / EWMA** ACWR; add the **Banister fitness–fatigue
+  trajectory** and **ramp rate**; keep monotony and strain.
+- Replace hard bands with a **continuous risk surface** that always shows
+  absolute load alongside the ratio.
+- Carry uncertainty so a thin training history **widens the band** rather than
+  asserting a false verdict.
 
-**Everywhere:** monotone saturating score links, credible intervals,
-explainability payloads, versioned envelopes.
+### Pillar 4 — Cross-cutting substrate
+The properties every output must gain, whichever model produced it.
+- **Monotone saturating score links** (logistic/expit on the normalised
+  percentile) so elite gains require exponentially more.
+- A **credible interval** on every score, propagated from input noise + data
+  sufficiency.
+- A **versioned result envelope** `{ value, interval, confidence, engineVersion,
+  inputsHash, contributors }` — non-breaking; callers read `.value`.
+- An **explainability payload**: top contributors plus a counterfactual ("what
+  would move this").
 
 ---
 

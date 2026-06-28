@@ -62,6 +62,28 @@ export interface LatentConstruct {
   horizon: "core" | "extended" | "research";
 }
 
+/** A ranked top-level weakness of the current engine. */
+export interface MajorWeakness {
+  /** 1 = most severe. Drives display order. */
+  rank: number;
+  title: string;
+  severity: "critical" | "major" | "minor";
+  /** Why it matters + the consequence today. */
+  detail: string;
+  /** The layer id (see `layers`) this traces back to. */
+  relatesTo: string;
+}
+
+/** One pillar of the recommended redesign — the blueprint, not the backlog. */
+export interface RedesignPillar {
+  id: string;
+  title: string;
+  /** One-line statement of the move. */
+  summary: string;
+  /** Concrete specifics of the pillar. */
+  points: string[];
+}
+
 export interface RoadmapItem {
   id: string;
   horizon: "now" | "year1" | "year3" | "year10";
@@ -88,6 +110,10 @@ export interface HpiReview {
   layers: ReviewLayer[];
   latentModel: LatentConstruct[];
   missing: MissingComponent[];
+  /** The ranked top-level weaknesses (worst first). */
+  majorWeaknesses: MajorWeakness[];
+  /** The recommended redesign blueprint. */
+  redesign: RedesignPillar[];
   roadmap: RoadmapItem[];
   plan: PlanItem[];
 }
@@ -329,6 +355,109 @@ export const HPI_REVIEW: HpiReview = {
     { id: "data-quality", title: "Input quality / confidence flags", rationale: "Implausible values, stale data and device disagreement must feed output confidence rather than silently corrupting scores.", evidence: "established" },
   ],
 
+  majorWeaknesses: [
+    {
+      rank: 1,
+      title: "State/trait conflation in a metric branded as an index",
+      severity: "critical",
+      relatesTo: "conceptual-model",
+      detail: "HPI fuses freshness signals (a daily STATE) but is named and read as a fitness INDEX (a TRAIT). The two move on different time-scales and answer different questions, so the single number is systematically misread: a rested novice outscores a fatigued champion. Until Readiness and Capacity are separated, no downstream layer can be interpreted correctly.",
+    },
+    {
+      rank: 2,
+      title: "No uncertainty on any output",
+      severity: "critical",
+      relatesTo: "domain-scores",
+      detail: "Every score is a bare point estimate. A figure built on one noisy night of HRV is presented with the same authority as one built on two years of history. For elite, military and clinical decisions, a metric without a confidence interval over-claims precision and cannot be trusted to gate training.",
+    },
+    {
+      rank: 3,
+      title: "No population normalisation",
+      severity: "critical",
+      relatesTo: "validation-normalization",
+      detail: "Scores have no reference distribution, so a '70' is uninterpretable and incomparable across athletes. The engine cannot answer 'good versus whom?' and cannot scale meaningfully from a sedentary beginner to a world champion — the core requirement of the platform.",
+    },
+    {
+      rank: 4,
+      title: "Single-snapshot, single-signal recovery",
+      severity: "major",
+      relatesTo: "recovery",
+      detail: "Recovery is one additive ±15 nudge from a single biometric reading. HRV is only meaningful as a rolling deviation; sleep debt, RHR trend and subjective wellness carry orthogonal information that is ignored; and a missing wearable silently zeroes the term instead of widening uncertainty.",
+    },
+    {
+      rank: 5,
+      title: "Contested, coupled ACWR presented as a verdict",
+      severity: "major",
+      relatesTo: "acwr",
+      detail: "The coupled acute:chronic ratio is autocorrelated by construction and its injury-risk thresholds are heavily disputed (Lolli 2019; Impellizzeri 2020). Rendering it as discrete bands implies a sharp risk cliff the evidence does not support. It should be one input among several, not the headline.",
+    },
+    {
+      rank: 6,
+      title: "Hand-set composite weights with no empirical basis",
+      severity: "major",
+      relatesTo: "performance-index",
+      detail: "Archetype weights are fixed constants, and an additive recovery term is mixed into a multiplicative-feeling blend so contributions are not commensurable and recovery can dominate or vanish near the clamp. There is no personalisation and no learning from the athlete's own response.",
+    },
+    {
+      rank: 7,
+      title: "No predictive layer",
+      severity: "major",
+      relatesTo: "ml-vs-math",
+      detail: "The engine is entirely retrospective — it describes today, forecasts nothing. No PR/race-time trajectory, no plateau, overtraining, peaking, injury-risk or return-to-play prediction. This is the single largest capability gap versus WHOOP/TrainingPeaks/AMS platforms.",
+    },
+    {
+      rank: 8,
+      title: "No model versioning, feature store or audit trail",
+      severity: "major",
+      relatesTo: "architecture",
+      detail: "Outputs carry no version stamp, inputs→features→scores are not persisted, and there is no per-athlete state. A score shown last month cannot be reproduced or explained — unacceptable for a platform making decisions about real athletes under GDPR/HIPAA-adjacent expectations.",
+    },
+  ],
+
+  redesign: [
+    {
+      id: "two-models",
+      title: "Two models, not one — Readiness vs. Capacity",
+      summary: "Split the single number into a daily STATE model and a slow-moving TRAIT model so each answers its own question.",
+      points: [
+        "Readiness (state, daily, 0–100 + interval): muscular freshness + energy-system freshness + the new multi-signal recovery sub-model, missing-data-aware.",
+        "Capacity / Fitness Level (trait, slow-moving, percentile + interval): latent factors from validated tests, population-normalised with Bayesian shrinkage.",
+        "Each surfaces its own limiter; neither is forced to mean the other.",
+      ],
+    },
+    {
+      id: "latent-capacity",
+      title: "Latent capacity measurement model",
+      summary: "Estimate capacity as latent factors from observable indicators rather than averaging proxies into an opaque score.",
+      points: [
+        "Constructs: maximal strength · aerobic capacity · power/RFD · robustness/injury-resilience · movement economy · neuromuscular efficiency · recoverability · adaptability · psychological readiness.",
+        "Each is scored from validated indicators (see the latent model) and carries a credible interval driven by how much data backs it.",
+        "Start with confirmatory factor scoring; evolve toward a Bayesian network encoding the load→fatigue→recovery→adaptation causal structure.",
+      ],
+    },
+    {
+      id: "load-v2",
+      title: "Load model v2",
+      summary: "Demote ACWR to one input inside a continuous, uncertainty-aware load-status signal.",
+      points: [
+        "Default to uncoupled / EWMA ACWR; add the Banister fitness–fatigue trajectory and ramp rate; keep monotony and strain.",
+        "Replace hard bands with a continuous risk surface that always shows absolute load alongside the ratio.",
+        "Carry uncertainty so a thin training history widens the band rather than asserting a false verdict.",
+      ],
+    },
+    {
+      id: "cross-cutting",
+      title: "Cross-cutting substrate",
+      summary: "The properties every output must gain, regardless of which model produced it.",
+      points: [
+        "Monotone saturating score links (logistic/expit on the normalised percentile) so elite gains require exponentially more.",
+        "A credible interval on every score, propagated from input noise + data sufficiency.",
+        "A versioned result envelope { value, interval, confidence, engineVersion, inputsHash, contributors } — non-breaking; callers read .value.",
+        "An explainability payload: top contributors plus a counterfactual 'what would move this'.",
+      ],
+    },
+  ],
+
   roadmap: [
     { id: "r-envelope", horizon: "now", title: "Versioned, uncertainty-bearing result envelope", detail: "Wrap every engine output in { value, interval, confidence, engineVersion, inputsHash, contributors }. Non-breaking — existing callers read .value." },
     { id: "r-readiness-capacity", horizon: "now", title: "Separate Readiness from Capacity", detail: "Rename the daily number to Readiness; introduce a slow-moving Capacity/Fitness-Level model that is population-normalised." },
@@ -384,4 +513,9 @@ export function planByPriority(p: ReviewPriority): PlanItem[] {
 /** Roadmap items for one horizon. */
 export function roadmapByHorizon(h: RoadmapItem["horizon"]): RoadmapItem[] {
   return HPI_REVIEW.roadmap.filter((x) => x.horizon === h);
+}
+
+/** Major weaknesses, worst first (rank 1 = most severe). */
+export function weaknessesByRank(): MajorWeakness[] {
+  return [...HPI_REVIEW.majorWeaknesses].sort((a, b) => a.rank - b.rank);
 }
