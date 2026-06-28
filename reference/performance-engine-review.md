@@ -440,9 +440,36 @@ overall_z    = (PI_raw − μ_PI) / σ_PI        // not (PI_raw − 50) / 15
 fitness_level = round(100 · normalCDF(overall_z))
 ```
 
-**Bottom line.** Ship A.7 as-is (the engine already has it). Treat A.1–A.6 as a
-solid scaffold but, before it ranks anyone: fix the percentile SD (#1–2), settle
-the VO₂ equation (#3–4), add **sex-specific** norms (#5), and move strength to
-**DOTS/IPF-GL** (#6). Those four changes turn a plausible-looking demo into a
-defensible v1. The deeper redesign (population normalisation, latent capacity,
-uncertainty, prediction) in §1–§13 still stands on top of it.
+### B.1 Status — a corrected implementation now exists
+
+The fixable items have been **implemented** in
+`packages/core/src/engines/performance-index.ts` (`computePerformanceIndex`),
+unit-tested in `performance-index.test.ts`:
+
+| # | Fix | State |
+|---|-----|-------|
+| 1 / 2 | Percentile uses a **derived composite SD** (`compositeSd()` ≈ 7.8 × a documented correlation-inflation factor) and the **reference-athlete mean**, never `(PI_raw−50)/15`. A test asserts the SD is < 15 and that an elite athlete clears the 90th percentile instead of being compressed to ~70. | ✅ fixed |
+| 3 | One consistent VO₂ equation (`vo2FromPace`, −4.60 intercept). | ✅ fixed |
+| 5 | **Sex-specific** strength + VO₂ norms (`NORMS.M` / `NORMS.F`). | ✅ fixed |
+| 7 | **Asymmetric** age factor — flat ≤ peak, Gaussian after. | ✅ fixed |
+| 8 | **Asymmetric** body-comp penalty (over-fat costs more than lean). | ✅ fixed |
+| 9 | Athletic age **inverts the age-decline curve**, consistent with the age model. | ✅ fixed |
+| 10 | Bands anchored to the calibrated percentile. | ✅ fixed |
+| 11 | Confidence + interval on the index from input completeness. | ✅ fixed |
+| 12 | EWMA ACWR (already correct; reused). | ✅ (was already sound) |
+| 4 | *Average* pace under-reads capacity. Accepted + documented; a max/time-trial input is the real fix. | 🟡 open (methodology) |
+| 6 | Raw bodyweight strength ratio is allometrically biased. Documented; **DOTS/IPF-GL** is the upgrade once DOTS-specific norms exist. | 🟡 open (needs norms) |
+
+**Honest boundary.** The *maths/stats errors* are fixed in code. The
+*calibration constants* (`NORMS`, `REFERENCE_PI`, `COMPONENT_SCORE_SD`,
+`CORRELATION_INFLATION`) are **provisional placeholders**, exported so a real
+reference cohort can replace them without touching the formulas — the form is
+correct, the population numbers still need validation. #4 and #6 are
+methodology/data choices, not arithmetic, so they're documented rather than
+silently faked.
+
+**Bottom line.** A.7 ships as-is (the engine already had it). A.1–A.6 are no
+longer a plausible-looking demo with a broken percentile — they're a
+calibration-pending but mathematically defensible module. The deeper redesign
+(true population normalisation, latent capacity, prediction) in §1–§13 still
+stands on top of it.
