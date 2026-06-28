@@ -98,6 +98,8 @@ export interface PlanItem {
   detail: string;
   /** Rough lift. */
   effort: "S" | "M" | "L" | "XL";
+  /** Build progress. Absent = not started. */
+  status?: "shipped" | "partial";
 }
 
 export interface HpiReview {
@@ -475,10 +477,10 @@ export const HPI_REVIEW: HpiReview = {
 
   plan: [
     // MUST
-    { id: "p-envelope", priority: "must", effort: "M", title: "Result envelope + confidence", detail: "Add { value, interval, confidence, version } to HPI, load and recovery outputs. Foundation for everything else." },
-    { id: "p-split", priority: "must", effort: "M", title: "Readiness vs. Capacity split", detail: "Clarify the conceptual model; stop a fresh beginner outscoring a fatigued champion on 'performance'." },
-    { id: "p-recovery", priority: "must", effort: "M", title: "HRV-trend recovery", detail: "Replace the single ±15 snapshot with a rolling-deviation, multi-signal recovery score." },
-    { id: "p-acwr", priority: "must", effort: "S", title: "ACWR de-risk", detail: "Add uncoupled/EWMA ACWR + ramp rate; keep monotony/strain; demote bands to a continuous signal." },
+    { id: "p-envelope", priority: "must", effort: "M", status: "partial", title: "Result envelope + confidence", detail: "DONE for HPI: computeHpi now returns a data-sufficiency `confidence` (0..1) and a clamped credible `interval`. STILL TODO: extend the same envelope (value/interval/confidence + engineVersion/inputsHash) to the load and recovery outputs and stamp a model version." },
+    { id: "p-split", priority: "must", effort: "M", title: "Readiness vs. Capacity split", detail: "Clarify the conceptual model; stop a fresh beginner outscoring a fatigued champion on 'performance'. (Capacity needs population norms + validated-test inputs — see p-normalise.)" },
+    { id: "p-recovery", priority: "must", effort: "M", status: "partial", title: "HRV-trend recovery", detail: "DONE: biometricAdjustment now folds in the wearable sleep SCORE (was ignored) as an orthogonal signal. STILL TODO: rolling HRV deviation (7d vs 60d), sleep debt and RHR trend — these need a biometric time-series the current snapshot type doesn't carry." },
+    { id: "p-acwr", priority: "must", effort: "S", status: "shipped", title: "ACWR de-risk", detail: "DONE: computeLoad now returns uncoupled ACWR (prior-21d denominator), EWMA ACWR (Williams 2017, the recommended `acwrEwma`/`bandEwma`), and a week-over-week ramp rate alongside monotony/strain. The coupled ratio is retained as one labelled input, not the verdict." },
     // SHOULD
     { id: "p-normalise", priority: "should", effort: "L", title: "Cohort percentiles", detail: "LMS/quantile normalisation with priors; allometric strength scaling." },
     { id: "p-features", priority: "should", effort: "L", title: "Validated feature store", detail: "DOTS/IPF-GL/Sinclair, critical speed/power, W′, FV-profile, Banister load — persisted with provenance." },

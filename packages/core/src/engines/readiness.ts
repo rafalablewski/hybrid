@@ -18,6 +18,12 @@ export function biometricAdjustment(bio: Biometrics): number {
   adj += dev(bio.hrv) * 40 * (bio.hrv.better === "high" ? 1 : -1);
   adj += dev(bio.restingHr) * 40 * (bio.restingHr.better === "high" ? 1 : -1);
   adj += dev(bio.sleep) * 25 * (bio.sleep.better === "high" ? 1 : -1);
+  // Fold in the wearable's own sleep SCORE when present — an orthogonal recovery
+  // signal (sleep quality/efficiency, not just duration) that was previously
+  // ignored. Lighter weight than HRV/RHR so it nudges rather than dominates.
+  if (bio.sleepScore) {
+    adj += dev(bio.sleepScore) * 20 * (bio.sleepScore.better === "high" ? 1 : -1);
+  }
   return Math.max(-15, Math.min(15, Math.round(adj)));
 }
 

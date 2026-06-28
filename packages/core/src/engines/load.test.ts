@@ -64,3 +64,60 @@ describe("computeLoad — ACWR", () => {
     expect(r.strain).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe("computeLoad — uncoupled / EWMA / ramp (ACWR de-risk)", () => {
+  // Steady 4-week block: every ratio should sit near 1, and the uncoupled
+  // ratio must differ from the coupled one (it excludes the acute window).
+  function steady(): LoggedSession[] {
+    const s: LoggedSession[] = [];
+    let i = 0;
+    for (let d = 1; d <= 27; d += 2) s.push(strengthSession(`s${i++}`, d));
+    return s;
+  }
+
+  it("computes uncoupled + EWMA ratios and a ramp rate", () => {
+    const r = computeLoad(steady(), NOW);
+    expect(r.acwrUncoupled).toBeGreaterThan(0.6);
+    expect(r.acwrUncoupled).toBeLessThan(1.6);
+    expect(r.acwrEwma).toBeGreaterThan(0.6);
+    expect(r.acwrEwma).toBeLessThan(1.6);
+    // a steady block ramps little week-over-week
+    expect(Math.abs(r.rampRate)).toBeLessThan(0.6);
+    expect(r.bandEwma).not.toBe("insufficient");
+  });
+
+  it("uncoupled ratio is not identical to the coupled ratio", () => {
+    const r = computeLoad(steady(), NOW);
+    // they measure the denominator differently, so on real data they diverge
+    expect(r.acwrUncoupled).not.toBe(r.acwr);
+  });
+
+  it("an acute spike pushes the EWMA ratio up", () => {
+    const s: LoggedSession[] = [
+      strengthSession("c1", 20),
+      strengthSession("a1", 0, 8), strengthSession("a2", 1, 8), strengthSession("a3", 2, 8),
+      strengthSession("a4", 3, 8), strengthSession("a5", 5, 8),
+    ];
+    const r = computeLoad(s, NOW);
+    expect(r.acwrEwma).toBeGreaterThan(1.2);
+  });
+
+  it("ramp rate is positive when this week out-loads last week", () => {
+    const s: LoggedSession[] = [
+      // last week: one light session; this week: three — a clear ramp up
+      strengthSession("l1", 9, 3),
+      strengthSession("t1", 0, 6), strengthSession("t2", 2, 6), strengthSession("t3", 4, 6),
+      // chronic base so there's enough history
+      strengthSession("c1", 18, 3), strengthSession("c2", 24, 3),
+    ];
+    const r = computeLoad(s, NOW);
+    expect(r.rampRate).toBeGreaterThan(0);
+  });
+
+  it("ratios are 0 (not NaN) with no chronic base", () => {
+    const r = computeLoad([strengthSession("a", 0)], NOW);
+    expect(Number.isNaN(r.acwrUncoupled)).toBe(false);
+    expect(Number.isNaN(r.acwrEwma)).toBe(false);
+    expect(Number.isNaN(r.rampRate)).toBe(false);
+  });
+});

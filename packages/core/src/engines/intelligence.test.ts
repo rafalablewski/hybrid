@@ -143,4 +143,32 @@ describe("HPI", () => {
     expect(withBio.components.recovery).toBeGreaterThan(0);
     expect(withBio.score).toBeGreaterThanOrEqual(without.score);
   });
+
+  it("reports a confidence and a credible interval", () => {
+    const hpi = computeHpi(computeFatigue(SAMPLE_TRAINING_LOG));
+    expect(hpi.confidence).toBeGreaterThan(0);
+    expect(hpi.confidence).toBeLessThanOrEqual(1);
+    expect(hpi.interval.low).toBeLessThanOrEqual(hpi.score);
+    expect(hpi.interval.high).toBeGreaterThanOrEqual(hpi.score);
+    expect(hpi.interval.low).toBeGreaterThanOrEqual(0);
+    expect(hpi.interval.high).toBeLessThanOrEqual(100);
+  });
+
+  it("wearable data raises confidence and narrows the interval", () => {
+    const f = computeFatigue(SAMPLE_TRAINING_LOG);
+    const bio = toBiometrics([
+      sig("hrv", 50, "2026-06-02"),
+      sig("hrv", 55, "2026-06-03"),
+      sig("restingHr", 60, "2026-06-02"),
+      sig("restingHr", 58, "2026-06-03"),
+      sig("sleep", 7, "2026-06-02"),
+      sig("sleep", 8, "2026-06-03"),
+    ]);
+    const without = computeHpi(f);
+    const withBio = computeHpi(f, bio);
+    expect(withBio.confidence).toBeGreaterThan(without.confidence);
+    const widthWith = withBio.interval.high - withBio.interval.low;
+    const widthWithout = without.interval.high - without.interval.low;
+    expect(widthWith).toBeLessThan(widthWithout);
+  });
 });

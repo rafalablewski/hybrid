@@ -46,9 +46,33 @@ export interface LoadState {
   acute: number;
   /** average weekly load over the last 28 days */
   chronicWeekly: number;
-  /** acute : chronic-weekly ratio (0 when no chronic base) */
+  /**
+   * COUPLED acute:chronic-weekly ratio (acute is INSIDE chronic). Retained for
+   * back-compat and as one input — but it is autocorrelated by construction
+   * (Lolli 2019; Impellizzeri 2020), so do not read it alone. Prefer `acwrEwma`.
+   */
   acwr: number;
+  /**
+   * UNCOUPLED ACWR — acute(7d) vs. the average weekly load of the PRIOR 21 days
+   * (days 7..27), so the acute window is no longer part of the denominator.
+   * Removes the mathematical artefact in the coupled ratio.
+   */
+  acwrUncoupled: number;
+  /**
+   * EWMA ACWR (Williams et al. 2017) — exponentially-weighted acute (N=7) vs.
+   * chronic (N=28) loads. The recommended primary signal: it respects the decay
+   * structure of fatigue vs. fitness instead of a flat rolling window.
+   */
+  acwrEwma: number;
+  /**
+   * Week-over-week load change (this week vs. last), as a fraction. Large
+   * positive ramps (>~0.5) flag a spike independent of any ratio.
+   */
+  rampRate: number;
+  /** band derived from the COUPLED ratio (kept for back-compat). */
   band: AcwrBand;
+  /** band derived from the recommended EWMA ratio — read this one. */
+  bandEwma: AcwrBand;
   /** mean ÷ SD of daily load over the last 7 days (variety of the week) */
   monotony: number;
   /** weekly load × monotony — the injury-associated "strain" */
@@ -56,6 +80,30 @@ export interface LoadState {
   /** load per week for the last 4 weeks, newest first */
   weekly: { weeksAgo: number; load: number }[];
   enoughHistory: boolean;
+}
+
+/** Continuous → coarse band. Bands are a label over a continuous signal, not a
+ *  cliff: the same thresholds apply to whichever ratio is passed in. */
+function acwrBand(ratio: number, enoughHistory: boolean): AcwrBand {
+  if (!enoughHistory) return "insufficient";
+  if (ratio < 0.8) return "detraining";
+  if (ratio <= 1.3) return "sweet-spot";
+  if (ratio <= 1.5) return "caution";
+  return "danger";
+}
+
+/**
+ * Exponentially-weighted moving average of a daily-load series given a window
+ * size N (λ = 2/(N+1)). `loads` is newest-first (index 0 = today); we fold from
+ * the oldest day forward so the most recent day dominates.
+ */
+function ewma(loads: number[], n: number): number {
+  const lambda = 2 / (n + 1);
+  let acc = 0;
+  for (let i = loads.length - 1; i >= 0; i--) {
+    acc = (loads[i] ?? 0) * lambda + acc * (1 - lambda);
+  }
+  return acc;
 }
 
 function dailyLoads(sessions: LoggedSession[], now: number, days: number): number[] {
@@ -75,6 +123,15 @@ export function computeLoad(sessions: LoggedSession[], now = Date.now()): LoadSt
   const chronicWeekly = chronicTotal / 4;
   const acwr = chronicWeekly > 0 ? acute / chronicWeekly : 0;
 
+  // UNCOUPLED: denominator is the prior 21 days only (days 7..27), as weekly.
+  const priorWeekly = d28.slice(7, 28).reduce((a, b) => a + b, 0) / 3;
+  const acwrUncoupled = priorWeekly > 0 ? acute / priorWeekly : 0;
+
+  // EWMA acute (N=7) vs. chronic (N=28) — the recommended primary ratio.
+  const ewmaAcute = ewma(d28.slice(0, 7), 7);
+  const ewmaChronic = ewma(d28, 28);
+  const acwrEwma = ewmaChronic > 0 ? ewmaAcute / ewmaChronic : 0;
+
   // monotony over the last 7 days (zeros included → rest-day variety counts)
   const week = d28.slice(0, 7);
   const mean = week.reduce((a, b) => a + b, 0) / 7;
@@ -88,26 +145,25 @@ export function computeLoad(sessions: LoggedSession[], now = Date.now()): LoadSt
     load: d28.slice(w * 7, w * 7 + 7).reduce((a, b) => a + b, 0),
   }));
 
+  // Week-over-week ramp: this week vs. last week (fraction change).
+  const thisWeek = weekly[0]?.load ?? 0;
+  const lastWeek = weekly[1]?.load ?? 0;
+  const rampRate = lastWeek > 0 ? (thisWeek - lastWeek) / lastWeek : 0;
+
   const oldestDaysAgo = sessions.length
     ? Math.max(...sessions.map((s) => Math.floor((now - Date.parse(s.startedAt)) / DAY)))
     : 0;
   const enoughHistory = oldestDaysAgo >= 14 && chronicWeekly > 0;
 
-  const band: AcwrBand = !enoughHistory
-    ? "insufficient"
-    : acwr < 0.8
-      ? "detraining"
-      : acwr <= 1.3
-        ? "sweet-spot"
-        : acwr <= 1.5
-          ? "caution"
-          : "danger";
-
   return {
     acute: Math.round(acute),
     chronicWeekly: Math.round(chronicWeekly),
     acwr: Math.round(acwr * 100) / 100,
-    band,
+    acwrUncoupled: Math.round(acwrUncoupled * 100) / 100,
+    acwrEwma: Math.round(acwrEwma * 100) / 100,
+    rampRate: Math.round(rampRate * 100) / 100,
+    band: acwrBand(acwr, enoughHistory),
+    bandEwma: acwrBand(acwrEwma, enoughHistory),
     monotony: Math.round(monotony * 100) / 100,
     strain,
     weekly,

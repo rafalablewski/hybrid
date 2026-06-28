@@ -53,6 +53,18 @@ export interface Hpi {
   /** which pillar is dragging the score down today — the actionable insight */
   limiter: "strength" | "endurance" | "recovery";
   weights: HpiWeights;
+  /**
+   * How much to trust the score, 0..1, driven by INPUT SUFFICIENCY (do we have
+   * muscle data, wearable biometrics, the richer sleep signal). A score built on
+   * fatigue alone is honest about being less certain than one with a full
+   * wearable picture.
+   */
+  confidence: number;
+  /**
+   * Credible interval around `score`, clamped to 0..100. Widens as confidence
+   * falls, so a thinly-supported number is never shown as if it were precise.
+   */
+  interval: { low: number; high: number };
 }
 
 /**
@@ -100,6 +112,23 @@ export function computeHpi(
     (weights.strength * strength + weights.endurance * endurance) / wSum;
   const score = Math.max(0, Math.min(100, Math.round(base + recovery)));
 
+  // Confidence from input sufficiency: full muscle map gets us most of the way;
+  // wearable biometrics (and the richer sleep score) close the gap. No wearable
+  // → the recovery pillar is blind, so we're honestly less certain.
+  const hasMuscles = muscleVals.length > 0;
+  const hasSleepScore = bio?.sleepScore != null;
+  const confidence = Math.min(
+    1,
+    (hasMuscles ? 0.6 : 0.3) + (bio ? 0.25 : 0) + (hasSleepScore ? 0.15 : 0),
+  );
+  // Interval half-width grows as confidence falls (full data ≈ ±4, fatigue-only
+  // ≈ ±13), clamped to the 0..100 range.
+  const halfWidth = Math.round((1 - confidence) * 22 + 2);
+  const interval = {
+    low: Math.max(0, score - halfWidth),
+    high: Math.min(100, score + halfWidth),
+  };
+
   // limiter = whichever pillar is furthest below "fully ready" (recovery only
   // counts as a limiter when it's an actual drag).
   const gaps: Record<Hpi["limiter"], number> = {
@@ -117,5 +146,7 @@ export function computeHpi(
     components: { strength, endurance, recovery },
     limiter,
     weights,
+    confidence: Math.round(confidence * 100) / 100,
+    interval,
   };
 }

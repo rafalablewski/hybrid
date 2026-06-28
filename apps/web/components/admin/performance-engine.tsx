@@ -410,18 +410,25 @@ function Plan() {
                 <Card key={it.id} style={{ borderLeft: `3px solid ${m.color}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
                     <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{it.title}</div>
-                    <span
-                      style={{
-                        ...mono,
-                        fontSize: fs.micro,
-                        color: txt(m.color),
-                        border: `1px solid ${m.color}55`,
-                        borderRadius: 6,
-                        padding: "2px 7px",
-                      }}
-                    >
-                      {it.effort}
-                    </span>
+                    <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexShrink: 0 }}>
+                      {it.status && (
+                        <Chip c={it.status === "shipped" ? LIME : AMBER}>
+                          {it.status === "shipped" ? "Shipped" : "Partial"}
+                        </Chip>
+                      )}
+                      <span
+                        style={{
+                          ...mono,
+                          fontSize: fs.micro,
+                          color: txt(m.color),
+                          border: `1px solid ${m.color}55`,
+                          borderRadius: 6,
+                          padding: "2px 7px",
+                        }}
+                      >
+                        {it.effort}
+                      </span>
+                    </div>
                   </div>
                   <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginTop: 5 }} c={CHALK}>
                     {it.detail}
