@@ -203,8 +203,9 @@ export default function AuroraCockpit({
           <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
         </div>
 
-        {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {/* 7 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
+            reflows to a single column on very narrow viewports. */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
           {/* widget 1 — goal */}
           <div style={CARD}>
             <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
@@ -276,7 +277,9 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
       </span>
       {/* top-notch segmented tabs with a sliding indicator */}
       <div style={{ position: "relative", display: "grid", gridTemplateColumns: `repeat(${TABS.length},1fr)`, gap: 0, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
-        <div style={{ position: "absolute", top: 4, bottom: 4, left: `calc(${(idx / TABS.length) * 100}% + 4px)`, width: `calc(${100 / TABS.length}% - 8px)`, background: C("chalk"), borderRadius: 999, transition: "left .25s cubic-bezier(.4,0,.2,1)", boxShadow: "0 2px 8px -2px rgba(0,0,0,.5)" }} />
+        {/* indicator sized off the CONTENT box ((100% − 8px padding) / n) so it
+            stays aligned with the tabs at any container width, not just phone-narrow. */}
+        <div style={{ position: "absolute", top: 4, bottom: 4, left: `calc(4px + ${idx} * ((100% - 8px) / ${TABS.length}))`, width: `calc((100% - 8px) / ${TABS.length})`, background: C("chalk"), borderRadius: 999, transition: "left .25s cubic-bezier(.4,0,.2,1)", boxShadow: "0 2px 8px -2px rgba(0,0,0,.5)" }} />
         {TABS.map((x) => {
           const on = x.id === tab;
           return (
