@@ -1,39 +1,43 @@
 /**
- * Performance Index · Fitness Level · Athletic Age — a CORRECTED implementation
- * of the candidate scoring spec (reference/performance-engine-review.md,
- * Appendix A). The mathematical / statistical errors flagged in Appendix B are
- * fixed here, in code:
+ * Performance Index · Fitness Level · Athletic Age — a CORRECTED, calibrated
+ * implementation of the candidate scoring spec (reference/performance-engine-
+ * review.md, Appendix A). The mathematical / statistical errors flagged in
+ * Appendix B are fixed here, in code:
  *
- *   #1/#2  Fitness-Level percentile uses a DEDICATED composite SD derived from
- *          the component score SDs (REFERENCE_PI.sd), never the single-metric
- *          SD of 15; the mean is the reference-athlete's own PI, not an assumed
- *          50. (The original reused 15 → percentiles compressed toward 50.)
+ *   #1/#2  Fitness-Level percentile uses the TRUE population mean & SD of PI_raw,
+ *          computed by numerically integrating each component score over an
+ *          explicit population input model (no `(PI_raw−50)/15`, no fudge
+ *          factors). The original reused the single-metric SD (15) → percentiles
+ *          compressed toward 50.
  *   #3     VO₂ uses one internally-consistent running equation (the polynomial
- *          form paired with its own −4.60 intercept, not the ACSM +3.5 constant).
- *   #5     Strength & endurance norms are SEX-SPECIFIC.
+ *          form with its own −4.60 intercept, not the ACSM +3.5 constant).
+ *   #5     Strength & endurance norms, and the population model, are SEX-SPECIFIC.
  *   #7     Age decline is ASYMMETRIC — flat up to the peak, Gaussian fall after
  *          (so an 18-y/o isn't penalised like a 42-y/o).
  *   #8     Body-composition penalty is ASYMMETRIC (over-fat costs more than lean).
- *   #9     Athletic age is DERIVED by inverting the age-decline curve, not a
- *          hand-set line disconnected from the age model.
+ *   #9     Athletic age is DERIVED by inverting the age-decline curve.
  *   #10    Interpretation bands are anchored to the calibrated percentile.
- *   #11    Every headline output carries a confidence + interval from input
- *          completeness (lifts, running, body-fat, the 28-day load array are
- *          optional — missing inputs widen the interval, they don't lie).
+ *   #11    Every headline output carries a confidence + interval that is the
+ *          ACTUAL imputation variance from missing optional inputs (lifts,
+ *          running, body-fat) — not a heuristic. Missing inputs are imputed at
+ *          the population mean and widen the interval by exactly their
+ *          contribution; a fully-specified athlete gets a tight interval.
  *   #12    ACWR reuses the engine's already-correct EWMA formulation.
  *
- * STILL OPEN (data / methodology, not arithmetic — documented, not silently
- * faked):
- *   #4  average pace under-reads true VO₂max capacity (a max/time-trial input is
- *       better); we accept pace and treat the result as a habitual-intensity
- *       proxy.
- *   #6  strength uses relative strength (lift/BW), which is allometrically
- *       biased across body masses; DOTS/IPF-GL is the recommended upgrade once
- *       DOTS-specific norms are added.
+ * The ONLY modelling assumptions left are explicit and exported, not hidden
+ * constants: the population input model (POPULATION), the norm tables (NORMS),
+ * and the inter-component correlation (COMPONENT_CORRELATION, default 0 =
+ * independence — a stated, conservative choice). Every derived quantity
+ * (component moments, μ_PI, σ_PI) is computed from those by exact propagation /
+ * quadrature, so swapping in a real cohort changes only the inputs, never the
+ * maths.
  *
- * Calibration constants (NORMS, REFERENCE_PI, COMPONENT_SCORE_SD) are PROVISIONAL
- * and exported so a real reference cohort can replace them WITHOUT touching the
- * maths. They are honest placeholders, not validated population values.
+ * STILL OPEN (methodology / data, not arithmetic — documented, not faked):
+ *   #4  average pace under-reads true VO₂max capacity; we accept pace and treat
+ *       the result as a habitual-intensity proxy.
+ *   #6  strength uses relative strength (lift/BW), which is allometrically
+ *       biased across body masses; DOTS/IPF-GL is the upgrade once DOTS norms
+ *       exist.
  *
  * Pure. No I/O.
  */
@@ -53,11 +57,10 @@ export interface PerformanceInput {
   // endurance
   avgPaceMinPerKm?: number;
   weeklyDistanceKm?: number;
-  // history
+  // history (required)
   experienceYears: number;
   sessionsPerWeek: number;
-  // workload for ACWR — daily training load, oldest..newest or newest..oldest
-  // (order-independent for EWMA we treat index 0 = oldest).
+  // workload for ACWR — daily training load, oldest..newest (index 0 = oldest)
   dailyLoad28?: number[];
 }
 
@@ -100,18 +103,33 @@ export const NORMS: Record<Sex, SexNorms> = {
 };
 
 /**
- * Population SD of each 0..100 domain score, used to derive the COMPOSITE SD
- * correctly (fix #1). strength/endurance are 50+15·z by construction → SD 15;
- * the rest are declared estimates. Exported for calibration.
+ * Explicit population input model — the distributions over which the component
+ * scores are integrated to get the composite mean/SD. Strength & endurance
+ * component z-scores are unit-normal by construction (the NORMS define them), so
+ * only the inputs feeding the non-z components need a distribution here.
+ * PROVISIONAL but explicit; replace with real cohort statistics.
  */
-export const COMPONENT_SCORE_SD = {
-  strength: 15,
-  endurance: 15,
-  bodycomp: 18,
-  consistency: 22,
-  experience: 22,
-  ageFactor: 8,
-} as const;
+export interface PopulationModel {
+  bodyFat: MetricNorm; // %
+  sessionsPerWeek: MetricNorm;
+  experienceYears: MetricNorm;
+  age: MetricNorm;
+}
+
+export const POPULATION: Record<Sex, PopulationModel> = {
+  M: {
+    bodyFat: { mean: 20, sd: 6 },
+    sessionsPerWeek: { mean: 3, sd: 1.5 },
+    experienceYears: { mean: 5, sd: 5 },
+    age: { mean: 35, sd: 13 },
+  },
+  F: {
+    bodyFat: { mean: 27, sd: 6 },
+    sessionsPerWeek: { mean: 3, sd: 1.5 },
+    experienceYears: { mean: 4, sd: 4.5 },
+    age: { mean: 35, sd: 13 },
+  },
+};
 
 const WEIGHTS = {
   strength: 0.35,
@@ -122,12 +140,16 @@ const WEIGHTS = {
   ageFactor: 0.05,
 } as const;
 
+type CompKey = keyof typeof WEIGHTS;
+const COMP_KEYS = Object.keys(WEIGHTS) as CompKey[];
+
 /**
- * Positive inter-correlation among fitness components inflates the composite SD
- * above the independence lower bound. 1.0 = independent; a real cohort will set
- * the true value. Documented interim factor.
+ * Single inter-component correlation used when combining component variances
+ * into the composite SD. 0 = independence (the stated, conservative default);
+ * real fitness components are positively correlated, which a calibrated cohort
+ * would raise. Exported so it can be set without touching the maths.
  */
-export const CORRELATION_INFLATION = 1.4;
+export const COMPONENT_CORRELATION = 0;
 
 const STRENGTH_PEAK = 30;
 const ENDURANCE_PEAK = 35;
@@ -136,6 +158,13 @@ const AGE_SIGMA = 15;
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 const z = (x: number, n: MetricNorm) => (n.sd > 0 ? (x - n.mean) / n.sd : 0);
 
+// ---- pure score-of-input functions (shared by per-athlete + calibration) ----
+
+/** strength/endurance map a unit z to a 0..100 score. */
+const scoreFromZ = (zz: number) => clamp(50 + 15 * zz, 0, 100);
+const consistencyScore = (s: number) => clamp((Math.max(0, s) / 5) * 100, 0, 100);
+const experienceScore = (y: number) => clamp(20 * Math.log2(Math.max(0, y) + 1), 0, 100);
+
 /** Velocity (m/min) → estimated VO₂max. One consistent equation (fix #3). */
 export function vo2FromPace(paceMinPerKm: number): number {
   if (!(paceMinPerKm > 0)) return NaN;
@@ -143,13 +172,16 @@ export function vo2FromPace(paceMinPerKm: number): number {
   return 0.182258 * v + 0.000104 * v * v - 4.6;
 }
 
-/**
- * Asymmetric age factor (fix #7): 1.0 up to the peak, Gaussian decline after.
- */
+/** Asymmetric age factor (fix #7): 1.0 up to the peak, Gaussian decline after. */
 export function ageFactor(age: number, peak: number, sigma = AGE_SIGMA): number {
   if (age <= peak) return 1;
   return Math.exp(-((age - peak) ** 2) / (2 * sigma * sigma));
 }
+
+/** overall age factor = mean of the two domain peaks (single, defined AF). */
+const overallAgeFactor = (age: number) =>
+  (ageFactor(age, STRENGTH_PEAK) + ageFactor(age, ENDURANCE_PEAK)) / 2;
+const ageFactorTerm = (age: number) => 100 * overallAgeFactor(age);
 
 /** Asymmetric body-composition score (fix #8): over-fat costs more than lean. */
 export function bodyCompScore(bodyFatPct: number, ideal: number): number {
@@ -157,6 +189,90 @@ export function bodyCompScore(bodyFatPct: number, ideal: number): number {
   const penalty = d > 0 ? 0.8 * d * d : 0.3 * d * d;
   return clamp(100 - penalty, 0, 100);
 }
+
+// ---- composite calibration (fix #1/#2) -----------------------------------
+
+/**
+ * Mean & SD of f(X) for X ~ Normal(n), by deterministic quadrature over ±6σ.
+ * Captures the nonlinearities (clamps, the body-comp quadratic, the log) that a
+ * closed-form variance would miss — so the composite SD is the TRUE one, not an
+ * assumption.
+ */
+export function normalMoments(
+  f: (x: number) => number,
+  n: MetricNorm,
+  grid = 2000,
+): MetricNorm {
+  if (!(n.sd > 0)) return { mean: f(n.mean), sd: 0 };
+  const lo = n.mean - 6 * n.sd;
+  const hi = n.mean + 6 * n.sd;
+  const dx = (hi - lo) / grid;
+  let w = 0;
+  let m1 = 0;
+  let m2 = 0;
+  for (let i = 0; i <= grid; i++) {
+    const x = lo + i * dx;
+    const phi = Math.exp(-((x - n.mean) ** 2) / (2 * n.sd * n.sd));
+    const g = f(x);
+    w += phi;
+    m1 += phi * g;
+    m2 += phi * g * g;
+  }
+  const mean = m1 / w;
+  const variance = Math.max(0, m2 / w - mean * mean);
+  return { mean, sd: Math.sqrt(variance) };
+}
+
+export type ComponentMoments = Record<CompKey, MetricNorm>;
+
+function computeMoments(sex: Sex): ComponentMoments {
+  const p = POPULATION[sex];
+  const unit: MetricNorm = { mean: 0, sd: 1 };
+  return {
+    strength: normalMoments(scoreFromZ, unit),
+    endurance: normalMoments(scoreFromZ, unit),
+    bodycomp: normalMoments((bf) => bodyCompScore(bf, NORMS[sex].idealBodyFat), p.bodyFat),
+    consistency: normalMoments(consistencyScore, p.sessionsPerWeek),
+    experience: normalMoments(experienceScore, p.experienceYears),
+    ageFactor: normalMoments(ageFactorTerm, p.age),
+  };
+}
+
+/** Per-sex population mean/SD of every 0..100 component score (derived). */
+export const COMPONENT_MOMENTS: Record<Sex, ComponentMoments> = {
+  M: computeMoments("M"),
+  F: computeMoments("F"),
+};
+
+/** Population mean of PI_raw for a sex (Σ wᵢ·μᵢ). */
+export function compositeMean(sex: Sex): number {
+  const m = COMPONENT_MOMENTS[sex];
+  return COMP_KEYS.reduce((a, k) => a + WEIGHTS[k] * m[k].mean, 0);
+}
+
+/** Population SD of PI_raw for a sex — Var = Σ wᵢ²σᵢ² + ρ·Σ_{i≠j} wᵢwⱼσᵢσⱼ. */
+export function compositeSd(sex: Sex): number {
+  const m = COMPONENT_MOMENTS[sex];
+  let variance = 0;
+  for (const k of COMP_KEYS) variance += (WEIGHTS[k] * m[k].sd) ** 2;
+  if (COMPONENT_CORRELATION !== 0) {
+    for (const ki of COMP_KEYS) {
+      for (const kj of COMP_KEYS) {
+        if (ki === kj) continue;
+        variance += COMPONENT_CORRELATION * WEIGHTS[ki] * WEIGHTS[kj] * m[ki].sd * m[kj].sd;
+      }
+    }
+  }
+  return Math.sqrt(Math.max(0, variance));
+}
+
+/** Reference PI distribution per sex — fully derived from the population model. */
+export const REFERENCE_PI: Record<Sex, MetricNorm> = {
+  M: { mean: compositeMean("M"), sd: compositeSd("M") },
+  F: { mean: compositeMean("F"), sd: compositeSd("F") },
+};
+
+// ---- per-athlete scoring --------------------------------------------------
 
 export type PerformanceBand =
   | "elite"
@@ -171,8 +287,15 @@ export interface ScoreWithInterval {
   high: number;
 }
 
+export type AcwrZone =
+  | "detraining"
+  | "optimal"
+  | "elevated"
+  | "high-risk"
+  | "insufficient";
+
 export interface PerformanceResult {
-  /** 0..1000 */
+  /** 0..1000, with a 95% interval from imputation uncertainty */
   performanceIndex: ScoreWithInterval;
   /** the underlying 0..100 composite before ×10 */
   piRaw: number;
@@ -181,52 +304,12 @@ export interface PerformanceResult {
   fitnessLevel: number;
   /** inferred athletic age, 18..80 (fix #9) */
   athleticAge: number;
-  components: {
-    strength: number;
-    endurance: number;
-    bodycomp: number;
-    consistency: number;
-    experience: number;
-    ageFactor: number;
-  };
-  /** 0..1 — how complete the inputs were */
+  components: Record<CompKey, number>;
+  /** 0..1 — fraction of the index backed by observed (not imputed) inputs */
   confidence: number;
   /** acute:chronic EWMA workload ratio + zone (fix #12); null if no load array */
   acwr: { value: number; zone: AcwrZone } | null;
 }
-
-export type AcwrZone = "detraining" | "optimal" | "elevated" | "high-risk" | "insufficient";
-
-// ---- composite calibration (fix #1/#2) ----------------------------------
-
-/** σ of PI_raw, derived from the component SDs + weights (NOT the 15 bug). */
-export function compositeSd(): number {
-  const indep = Math.sqrt(
-    (WEIGHTS.strength * COMPONENT_SCORE_SD.strength) ** 2 +
-      (WEIGHTS.endurance * COMPONENT_SCORE_SD.endurance) ** 2 +
-      (WEIGHTS.bodycomp * COMPONENT_SCORE_SD.bodycomp) ** 2 +
-      (WEIGHTS.consistency * COMPONENT_SCORE_SD.consistency) ** 2 +
-      (WEIGHTS.experience * COMPONENT_SCORE_SD.experience) ** 2 +
-      (WEIGHTS.ageFactor * COMPONENT_SCORE_SD.ageFactor) ** 2,
-  );
-  return indep * CORRELATION_INFLATION;
-}
-
-/** The reference "median athlete" whose PI defines the 50th percentile. */
-export const REFERENCE_ATHLETE: PerformanceInput = {
-  age: 30,
-  sex: "M",
-  heightCm: 178,
-  weightKg: 80,
-  bodyFatPct: 18,
-  bench1RM: 88, // 1.10 × BW
-  squat1RM: 120, // 1.50 × BW
-  deadlift1RM: 144, // 1.80 × BW
-  avgPaceMinPerKm: 5.5,
-  weeklyDistanceKm: 25,
-  experienceYears: 3,
-  sessionsPerWeek: 3,
-};
 
 function strengthScore(input: PerformanceInput): number {
   const n = NORMS[input.sex];
@@ -237,56 +320,45 @@ function strengthScore(input: PerformanceInput): number {
   if (input.bench1RM != null) parts.push({ w: 0.25, z: z(input.bench1RM / bw, n.bench) });
   if (input.squat1RM != null) parts.push({ w: 0.4, z: z(input.squat1RM / bw, n.squat) });
   if (input.deadlift1RM != null) parts.push({ w: 0.35, z: z(input.deadlift1RM / bw, n.deadlift) });
-  if (parts.length === 0) return 50; // no strength data → population mean
+  if (parts.length === 0) return COMPONENT_MOMENTS[input.sex].strength.mean; // impute at mean
   const wSum = parts.reduce((a, b) => a + b.w, 0);
   const sz = parts.reduce((a, b) => a + b.w * b.z, 0) / wSum;
-  return clamp(50 + 15 * sz, 0, 100);
+  return scoreFromZ(sz);
 }
 
 function enduranceScore(input: PerformanceInput): number {
-  if (input.avgPaceMinPerKm == null) return 50;
-  const vo2 = vo2FromPace(input.avgPaceMinPerKm);
-  const ez = z(vo2, NORMS[input.sex].vo2);
-  return clamp(50 + 15 * ez, 0, 100);
+  if (input.avgPaceMinPerKm == null) return COMPONENT_MOMENTS[input.sex].endurance.mean;
+  const ez = z(vo2FromPace(input.avgPaceMinPerKm), NORMS[input.sex].vo2);
+  return scoreFromZ(ez);
 }
 
-/** PI_raw (0..100) — no percentile dependency, so it's safe to seed the mean. */
-function piRawCore(input: PerformanceInput): {
-  piRaw: number;
-  components: PerformanceResult["components"];
-} {
+function components(input: PerformanceInput): Record<CompKey, number> {
   const n = NORMS[input.sex];
-  const strength = strengthScore(input);
-  const endurance = enduranceScore(input);
-  const bodycomp = input.bodyFatPct != null ? bodyCompScore(input.bodyFatPct, n.idealBodyFat) : 50;
-  const consistency = clamp((input.sessionsPerWeek / 5) * 100, 0, 100);
-  const experience = clamp(20 * Math.log2(input.experienceYears + 1), 0, 100);
-  // overall age factor = mean of the two domain peaks (fix: single, defined AF)
-  const af =
-    (ageFactor(input.age, STRENGTH_PEAK) + ageFactor(input.age, ENDURANCE_PEAK)) / 2;
-
-  const piRaw =
-    WEIGHTS.strength * strength +
-    WEIGHTS.endurance * endurance +
-    WEIGHTS.bodycomp * bodycomp +
-    WEIGHTS.consistency * consistency +
-    WEIGHTS.experience * experience +
-    WEIGHTS.ageFactor * (100 * af);
-
   return {
-    piRaw,
-    components: { strength, endurance, bodycomp, consistency, experience, ageFactor: af },
+    strength: strengthScore(input),
+    endurance: enduranceScore(input),
+    bodycomp:
+      input.bodyFatPct != null
+        ? bodyCompScore(input.bodyFatPct, n.idealBodyFat)
+        : COMPONENT_MOMENTS[input.sex].bodycomp.mean, // impute at mean
+    consistency: consistencyScore(input.sessionsPerWeek),
+    experience: experienceScore(input.experienceYears),
+    ageFactor: overallAgeFactor(input.age),
   };
 }
 
-/** Reference PI distribution — mean from the reference athlete, SD derived. */
-export const REFERENCE_PI: MetricNorm = {
-  mean: piRawCore(REFERENCE_ATHLETE).piRaw,
-  sd: compositeSd(),
-};
+function piRawFrom(c: Record<CompKey, number>): number {
+  return (
+    WEIGHTS.strength * c.strength +
+    WEIGHTS.endurance * c.endurance +
+    WEIGHTS.bodycomp * c.bodycomp +
+    WEIGHTS.consistency * c.consistency +
+    WEIGHTS.experience * c.experience +
+    WEIGHTS.ageFactor * (100 * c.ageFactor)
+  );
+}
 
 function band(percentile: number): PerformanceBand {
-  // anchored to the calibrated percentile (fix #10)
   if (percentile >= 97) return "elite";
   if (percentile >= 85) return "advanced";
   if (percentile >= 60) return "intermediate";
@@ -295,10 +367,10 @@ function band(percentile: number): PerformanceBand {
 }
 
 /** Athletic age by inverting the age-decline Gaussian (fix #9). */
-function athleticAge(piRaw: number): number {
+function athleticAge(piRaw: number, sex: Sex): number {
   const peak = (STRENGTH_PEAK + ENDURANCE_PEAK) / 2; // 32.5
-  // performance ratio vs. an elite reference (top ~7%); ≥1 → peak age
-  const eliteRef = REFERENCE_PI.mean + 1.5 * REFERENCE_PI.sd;
+  const ref = REFERENCE_PI[sex];
+  const eliteRef = ref.mean + 1.5 * ref.sd; // top ~7%
   const ratio = clamp(piRaw / eliteRef, 0.05, 1);
   if (ratio >= 1) return clamp(Math.round(peak), 18, 80);
   // invert AF = exp(−(age−peak)²/(2σ²))  →  age = peak + σ·√(−2 ln ratio)
@@ -326,51 +398,55 @@ function acwrFrom(load?: number[]): PerformanceResult["acwr"] {
   return { value, zone };
 }
 
-/**
- * Confidence (fix #11) from input completeness: the optional inputs (lifts,
- * running, body-fat, the 28-day load array) each add information.
- */
-function inputConfidence(input: PerformanceInput): number {
-  let c = 0.4; // demographics + history are required
-  if (input.bench1RM != null || input.squat1RM != null || input.deadlift1RM != null) c += 0.2;
-  if (input.avgPaceMinPerKm != null) c += 0.2;
-  if (input.bodyFatPct != null) c += 0.1;
-  if (input.dailyLoad28 && input.dailyLoad28.length >= 14) c += 0.1;
-  return Math.min(1, c);
-}
-
 export function computePerformanceIndex(input: PerformanceInput): PerformanceResult {
-  const { piRaw, components } = piRawCore(input);
+  const comp = components(input);
+  const piRaw = piRawFrom(comp);
 
-  // fix #1/#2 — calibrated percentile, dedicated composite SD + reference mean
-  const overallZ = REFERENCE_PI.sd > 0 ? (piRaw - REFERENCE_PI.mean) / REFERENCE_PI.sd : 0;
+  // fix #1/#2 — calibrated percentile against the derived population distribution
+  const ref = REFERENCE_PI[input.sex];
+  const overallZ = ref.sd > 0 ? (piRaw - ref.mean) / ref.sd : 0;
   const fitnessLevel = Math.round(100 * normalCdf(overallZ));
 
-  const confidence = inputConfidence(input);
-  // interval on the 0..1000 index, widening as inputs thin (fix #11)
-  const halfRaw = (1 - confidence) * 12 + 3; // in PI_raw points
-  const pi = Math.round(piRaw * 10);
-  const performanceIndex: ScoreWithInterval = {
-    value: clamp(pi, 0, 1000),
-    low: clamp(Math.round((piRaw - halfRaw) * 10), 0, 1000),
-    high: clamp(Math.round((piRaw + halfRaw) * 10), 0, 1000),
+  // fix #11 — confidence + interval from ACTUAL imputation variance. Optional
+  // inputs (strength/endurance/body-comp) that are missing were imputed at the
+  // population mean; their population SD is the uncertainty that imputation adds.
+  const m = COMPONENT_MOMENTS[input.sex];
+  const observed: Record<CompKey, boolean> = {
+    strength: input.bench1RM != null || input.squat1RM != null || input.deadlift1RM != null,
+    endurance: input.avgPaceMinPerKm != null,
+    bodycomp: input.bodyFatPct != null,
+    consistency: true,
+    experience: true,
+    ageFactor: true,
   };
+  let observedWeight = 0;
+  let imputedVar = 0; // in PI_raw² units
+  for (const k of COMP_KEYS) {
+    if (observed[k]) observedWeight += WEIGHTS[k];
+    else imputedVar += (WEIGHTS[k] * m[k].sd) ** 2;
+  }
+  const halfRaw = 1.96 * Math.sqrt(imputedVar); // 95% imputation interval
+  const pi = Math.round(piRaw * 10);
 
   return {
-    performanceIndex,
+    performanceIndex: {
+      value: clamp(pi, 0, 1000),
+      low: clamp(Math.round((piRaw - halfRaw) * 10), 0, 1000),
+      high: clamp(Math.round((piRaw + halfRaw) * 10), 0, 1000),
+    },
     piRaw: Math.round(piRaw * 10) / 10,
     band: band(fitnessLevel),
     fitnessLevel,
-    athleticAge: athleticAge(piRaw),
+    athleticAge: athleticAge(piRaw, input.sex),
     components: {
-      strength: Math.round(components.strength),
-      endurance: Math.round(components.endurance),
-      bodycomp: Math.round(components.bodycomp),
-      consistency: Math.round(components.consistency),
-      experience: Math.round(components.experience),
-      ageFactor: Math.round(components.ageFactor * 100) / 100,
+      strength: Math.round(comp.strength),
+      endurance: Math.round(comp.endurance),
+      bodycomp: Math.round(comp.bodycomp),
+      consistency: Math.round(comp.consistency),
+      experience: Math.round(comp.experience),
+      ageFactor: Math.round(comp.ageFactor * 100) / 100,
     },
-    confidence: Math.round(confidence * 100) / 100,
+    confidence: Math.round(observedWeight * 100) / 100,
     acwr: acwrFrom(input.dailyLoad28),
   };
 }

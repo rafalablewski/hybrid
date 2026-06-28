@@ -448,25 +448,29 @@ unit-tested in `performance-index.test.ts`:
 
 | # | Fix | State |
 |---|-----|-------|
-| 1 / 2 | Percentile uses a **derived composite SD** (`compositeSd()` ≈ 7.8 × a documented correlation-inflation factor) and the **reference-athlete mean**, never `(PI_raw−50)/15`. A test asserts the SD is < 15 and that an elite athlete clears the 90th percentile instead of being compressed to ~70. | ✅ fixed |
+| 1 / 2 | Percentile uses the **true population mean & SD of PI_raw**, obtained by **numerically integrating each component score over an explicit population input model** (`normalMoments` → `COMPONENT_MOMENTS` → `compositeMean`/`compositeSd`). No `(PI_raw−50)/15`, **no fudge factor** — the earlier correlation-inflation constant and assumed component SDs are gone. A test asserts the derived SD is < 15, the quadrature is correct, and an elite athlete clears p90. | ✅ fixed |
 | 3 | One consistent VO₂ equation (`vo2FromPace`, −4.60 intercept). | ✅ fixed |
 | 5 | **Sex-specific** strength + VO₂ norms (`NORMS.M` / `NORMS.F`). | ✅ fixed |
 | 7 | **Asymmetric** age factor — flat ≤ peak, Gaussian after. | ✅ fixed |
 | 8 | **Asymmetric** body-comp penalty (over-fat costs more than lean). | ✅ fixed |
 | 9 | Athletic age **inverts the age-decline curve**, consistent with the age model. | ✅ fixed |
 | 10 | Bands anchored to the calibrated percentile. | ✅ fixed |
-| 11 | Confidence + interval on the index from input completeness. | ✅ fixed |
+| 11 | Confidence = the observed-input weight fraction; the interval is the **actual 95% imputation variance** from missing optional inputs (not a heuristic) — zero-width when fully specified, widening by exactly the contribution of each imputed component. | ✅ fixed |
 | 12 | EWMA ACWR (already correct; reused). | ✅ (was already sound) |
 | 4 | *Average* pace under-reads capacity. Accepted + documented; a max/time-trial input is the real fix. | 🟡 open (methodology) |
 | 6 | Raw bodyweight strength ratio is allometrically biased. Documented; **DOTS/IPF-GL** is the upgrade once DOTS-specific norms exist. | 🟡 open (needs norms) |
 
-**Honest boundary.** The *maths/stats errors* are fixed in code. The
-*calibration constants* (`NORMS`, `REFERENCE_PI`, `COMPONENT_SCORE_SD`,
-`CORRELATION_INFLATION`) are **provisional placeholders**, exported so a real
-reference cohort can replace them without touching the formulas — the form is
-correct, the population numbers still need validation. #4 and #6 are
-methodology/data choices, not arithmetic, so they're documented rather than
-silently faked.
+**Honest boundary.** The *maths/stats* are now fully derived — there are **no
+magic constants left in the calculation**. The only modelling inputs are
+explicit and exported: the **norm tables** (`NORMS`), the **population input
+model** (`POPULATION`), and a single **inter-component correlation**
+(`COMPONENT_CORRELATION`, default 0 = independence, a stated conservative
+choice). Everything else — each component's mean/SD, μ_PI, σ_PI, the imputation
+interval — is computed from those by exact propagation / quadrature, so swapping
+in a real cohort changes only the inputs, never the formulas. Those input
+numbers are still **provisional placeholders pending a validated cohort**. #4
+and #6 are methodology/data choices, not arithmetic, so they're documented
+rather than silently faked.
 
 **Bottom line.** A.7 ships as-is (the engine already had it). A.1–A.6 are no
 longer a plausible-looking demo with a broken percentile — they're a
