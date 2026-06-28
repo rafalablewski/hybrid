@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fs, space,
-  prescribeSession, computePerformanceState, computeInjuryRisk, performanceTrajectory, weeklyRecap,
+  prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, toTrainingLog, velocityProfiles, LEVELS,
   ROLE_COLOR, hpiRole, riskRole, readinessRole,
-  type Biometrics, type LoggedSession, type Macrocycle,
+  type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand,
 } from "@hybrid/core";
 import { readSportSelection } from "@/lib/sport-store";
 import AuroraOnboarding from "./onboarding";
@@ -18,10 +18,14 @@ import { AuroraIcon } from "./icons";
 const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)];
 const riskVar = (b: string) => ROLE_COLOR[riskRole(b)];
 const readyVar = (v: number) => ROLE_COLOR[readinessRole(v)];
+const acwrVar = (b: AcwrBand): string =>
+  b === "sweet-spot" ? "lime" : b === "caution" ? "amber" : b === "danger" ? "red" : b === "detraining" ? "blue" : "ash";
 const C = (v: string) => `var(--color-${v})`;
+const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
-/** AURORA Cockpit (web) — same live snapshots + inline plan setup + freemium
- *  teaser as the classic, in the rounded Aurora style. */
+/** AURORA Cockpit (web) — a command center: a sticky season-context rail, then
+ *  Performance State → Injury risk → This week → Breakdown (tabbed) → Horizon →
+ *  Goal, all on the same live engines as the classic. */
 export default function AuroraCockpit({
   sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled,
 }: {
@@ -48,8 +52,10 @@ export default function AuroraCockpit({
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hpiSeries = useMemo(() => [...performanceTrajectory(log, 14)].sort((a, b) => b.daysAgo - a.daysAgo).map((p) => p.hpi), [log]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
+  const load = useMemo(() => computeLoad(sessions), [sessions]);
   const recap = useMemo(() => weeklyRecap(sessions), [sessions]);
   const totals = useMemo(() => runTotals(sessions), [sessions]);
+  const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
 
   if (persona === "casual") {
     return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("upgrade"))} />;
@@ -60,133 +66,280 @@ export default function AuroraCockpit({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 28, margin: 0 }}>{t("w.home.cockpit.commandCenter")}</h1>
-      <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 8 }}>{t("w.home.cockpit.commandSub")}</p>
-
-      <div style={{ display: "grid", gap: 14, marginTop: 16 }}>
-        <Section title={t("w.home.cockpit.goalSeason")} openLabel={macro ? t("w.home.cockpit.periodize") : t("w.home.cockpit.setUp")} onOpen={() => (macro ? setScreen("periodize") : setSetupOpen((v) => !v))}>
-          {macro ? (
-            <>
-              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading }}>{macro.goalOrSport}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}{macro.eventInWeeks != null ? ` · ${t("w.home.cockpit.eventIn")} ${macro.eventInWeeks} ${t("w.home.cockpit.wk")}` : ""}</div>
-            </>
-          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.setUpChange")}</span>
-              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer" }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.home.cockpit.fourQuestions")}</div>
-            {setupOpen && <div style={{ marginTop: 16 }}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
+      {/* 1 · STICKY CONTEXT RAIL — always answers "where am I in the plan?" */}
+      <div style={{ position: "sticky", top: 0, zIndex: 20, margin: "-8px -4px 0", padding: "10px 4px 12px",
+        background: `linear-gradient(180deg, color-mix(in srgb, ${C("ink")} 97%, transparent), color-mix(in srgb, ${C("ink")} 80%, transparent) 75%, transparent)`,
+        backdropFilter: "blur(14px)" }}>
+        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 24, margin: 0, letterSpacing: "-.02em" }}>{t("w.home.cockpit.commandCenter")}</h1>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>
+          {macro ? `${macro.goalOrSport} · ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : t("w.home.cockpit.commandSub")}
+        </p>
+        {macro && (
+          <div style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+            {phaseBlock && <Pill dot={C("lime")}><b>{phaseBlock.label}</b> {t("w.home.today.phase")}</Pill>}
+            {macro.eventInWeeks != null && <Pill>🏁 <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>}
+            <Pill>📈 {load.enoughHistory ? `ACWR ${load.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>
           </div>
-        </Section>
+        )}
+      </div>
 
-        <Section title={hasData ? `${t("w.home.cockpit.todayReadiness")} ${rx.readiness}/100` : t("w.home.cockpit.today")} openLabel={t("w.home.cockpit.logSession")} onOpen={() => setScreen("log")}>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title }}>{hasData ? `${rx.blocks[0]?.name}${rx.blocks[1] ? ` + ${rx.blocks[1]?.name}` : ""}` : t("w.home.cockpit.calibrate")}</div>
-          {hasData && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.6 }}>{rx.why}</div>}
-        </Section>
-
+      <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+        {/* 2 · PERFORMANCE STATE — the headline read, STR/END/REC in three columns */}
         <Section title={t("w.home.cockpit.perfTwin")} openLabel={t("w.home.cockpit.performance")} onOpen={() => setScreen("performance")}>
           {hasData ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 44, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
                 <div style={{ minWidth: 120, flex: 1 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>HPI · {state.hpi.band} · {t("w.home.cockpit.limiter")} {state.hpi.limiter}</div>
-                  <div style={{ marginTop: 6, maxWidth: 180 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
+                  <div style={{ marginTop: 6, maxWidth: 220 }}><Spark series={hpiSeries} color={C(hpiVar(state.hpi.band))} /></div>
                 </div>
-                <span style={{ display: "flex", gap: 12, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-                  <span><span style={{ color: C("ash") }}>STR</span> <b style={{ color: C("chalk"), fontWeight: 700 }}>{state.hpi.components.strength}</b></span>
-                  <span><span style={{ color: C("ash") }}>END</span> <b style={{ color: C("chalk"), fontWeight: 700 }}>{state.hpi.components.endurance}</b></span>
-                  <span><span style={{ color: C("ash") }}>REC</span> <b style={{ color: C("chalk"), fontWeight: 700 }}>{state.hpi.components.recovery >= 0 ? "+" : ""}{state.hpi.components.recovery}</b></span>
-                </span>
               </div>
-              {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 10 }}>{state.drivers[0].detail}</div>}
+              {/* three columns — strength · endurance · recovery */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: C("line"), border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden", marginTop: 14 }}>
+                <Comp label="STR" value={`${state.hpi.components.strength}`} color={C("lime")} />
+                <Comp label="END" value={`${state.hpi.components.endurance}`} color={C("blue")} />
+                <Comp label="REC" value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} color={C("violet")} />
+              </div>
+              {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 12 }}>{state.drivers[0].detail}</div>}
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "center", gap: space.md }}>
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
                 <div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
-                  <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "32ch" }}>{rx.why}</div>
+                  <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3, lineHeight: 1.5, maxWidth: "36ch" }}>{rx.why}</div>
                 </div>
               </div>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.twinEmpty")}</div>}
         </Section>
 
-        {/* READINESS & INJURY RISK — moved here from Today (the command-center home of the recovery state). */}
+        {/* 3 · INJURY RISK — maroon, exception-driven; tissues + load to watch */}
         {hasData && (
-          <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>{t("w.home.today.injuryRisk")}</span>
-            <div style={{ display: "flex", alignItems: "baseline", gap: space.sm, marginTop: 8 }}>
-              <span style={{ fontWeight: 800, fontSize: fs.heading, color: C(riskVar(risk.band)) }}>{risk.band}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{risk.overall}/100</span>
+          <div style={{ ...CARD, border: `1px solid color-mix(in srgb, ${C("red")} 45%, ${C("line")})`,
+            background: `linear-gradient(180deg, color-mix(in srgb, ${C("red")} 7%, ${C("ink2")}), ${C("ink2")})` }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+                <span style={{ width: 9, height: 9, borderRadius: 5, background: C("red") }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red") }}>{t("w.home.today.injuryRisk")}</span>
+              </span>
+              <span style={{ fontWeight: 800, fontSize: fs.subtitle, color: C(riskVar(risk.band)) }}>{risk.band} · {risk.overall}</span>
             </div>
-            <div style={{ height: 9, borderRadius: 5, background: C("ink"), overflow: "hidden", marginTop: 8 }}>
+            <div style={{ height: 9, borderRadius: 5, background: C("ink"), overflow: "hidden", marginTop: 10 }}>
               <div style={{ width: `${risk.overall}%`, height: "100%", background: C(riskVar(risk.band)) }} />
             </div>
             {risk.flagged.length === 0 ? (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 10 }}>{t("w.home.today.noTissues")}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 12 }}>{t("w.home.today.noTissues")}</div>
             ) : (
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: space.xs }}>
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
                 {risk.flagged.map((ti) => (
-                  <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C(riskVar(ti.band)), borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
+                  <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
                     <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0]?.label ?? ""}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0]?.label ?? `ACWR ${ti.acwr.toFixed(2)}`}</span>
                   </div>
                 ))}
               </div>
             )}
+            {/* THINGS TO WATCH — ACWR · well-being · s-RPE · monotony · strain */}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), margin: "16px 0 8px" }}>{t("w.home.cockpit.toWatch")}</div>
+            {load.enoughHistory ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 1, background: C("line"), border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden" }}>
+                <Watch label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={C(acwrVar(load.band))} />
+                <Watch label={t("w.home.cockpit.wellbeing")} value={`${rx.readiness}`} color={C(readyVar(rx.readiness))} />
+                <Watch label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
+                <Watch label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
+                <Watch label={t("w.home.cockpit.strain")} value={load.strain.toLocaleString()} />
+              </div>
+            ) : (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), lineHeight: 1.6 }}>{t("w.home.cockpit.watchBuilding")}</div>
+            )}
           </div>
         )}
 
-        {/* YOUR WEEK — weekly recap moved here from Today (tap → full Statistics). */}
+        {/* 4 · THIS WEEK — recap & PRs */}
         {hasData && (
-          <button onClick={() => setScreen("statistics")} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
+          <button onClick={() => setScreen("statistics")} style={{ ...CARD, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.today.yourWeek")}</span>
-              {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 10px" }}>{recap.prs.length} PR</span>}
+              <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+                <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.today.yourWeek")}</span>
+              </span>
+              {recap.prs.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: C("ink"), background: C("lime"), borderRadius: 999, padding: "3px 11px" }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</span>}
             </div>
-            <div style={{ display: "flex", gap: 22, marginTop: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginTop: 14 }}>
               <Stat label={t("w.home.today.sessions")} value={`${recap.sessions}`} />
-              <Stat label={t("w.home.today.volume")} value={`${recap.volume.toLocaleString()} kg`} />
+              <Stat label={`${t("w.home.today.volume")} kg`} value={recap.volume.toLocaleString()} />
               <Stat label={t("w.home.today.sets")} value={`${recap.sets}`} />
-              {recap.distanceKm > 0 && <Stat label={t("w.home.today.distance")} value={`${recap.distanceKm} km`} />}
-              <Stat label={t("w.home.today.activeDays")} value={`${recap.activeDays}`} />
             </div>
             {recap.prs.length > 0 && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), marginTop: 8 }}>
-                {recap.prs.slice(0, 4).map((p) => `${p.lift} ${p.e1rm}kg${p.previous == null ? "" : ` (+${p.e1rm - p.previous})`}`).join(" · ")}
+              <div style={{ marginTop: 14, paddingTop: 4 }}>
+                {recap.prs.slice(0, 4).map((p) => (
+                  <div key={p.lift} style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 0", borderTop: `1px solid ${C("line")}` }}>
+                    <span>{p.lift} e1RM</span>
+                    <span style={{ color: C("lime"), fontWeight: 700 }}>{p.e1rm}kg{p.previous == null ? "" : ` · +${p.e1rm - p.previous}`}</span>
+                  </div>
+                ))}
               </div>
             )}
           </button>
         )}
 
-        <Section title={t("w.home.cockpit.sportSC")} openLabel={t("w.home.cockpit.sport")} onOpen={() => setScreen("sport")}>
-          {sport ? <div style={{ fontWeight: 700, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div> : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>}
-        </Section>
+        {/* 5 · BREAKDOWN — disciplines, tabbed */}
+        {hasData && <Breakdown state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} setScreen={setScreen} />}
 
-        <Section title={t("w.home.cockpit.velocityTechnique")} openLabel={t("w.home.cockpit.velocity")} onOpen={() => setScreen("velocity")}>
-          <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.velocityBlurb")}</div>
-        </Section>
+        {/* 6 · HORIZON — Sport S&C · Velocity · Endurance, quick rails out */}
+        <div style={CARD}>
+          <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 6 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.horizon")}</span>
+          </span>
+          <Mod dot={C("amber")} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} · ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
+          <Mod dot={C("blue")} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
+          <Mod dot={C("lime")} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} · ${totals.distanceKm.toLocaleString()} km · ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.running")} mono onClick={() => setScreen("running")} last />
+        </div>
 
-        <Section title={t("w.home.cockpit.endurance")} openLabel={t("w.home.cockpit.running")} onOpen={() => setScreen("running")}>
-          {totals.efforts > 0 ? (
-            <div style={{ display: "flex", gap: 22 }}>
-              <Stat label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} /><Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} /><Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
+        {/* 7 · GOAL — goal/season (col 1) + plan controls (col 2) */}
+        <div style={CARD}>
+          <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 5, background: C("violet") }} />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.goalSeason")}</span>
+          </span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            {/* col 1 — goal */}
+            <div>
+              {macro ? (
+                <>
+                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{macro.goalOrSport}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("violet"), marginTop: 6 }}>{phaseBlock ? `${phaseBlock.label} · ` : ""}{t("w.home.cockpit.week")} {currentWeek}/{macro.totalWeeks}</div>
+                </>
+              ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.noSeason")}</div>}
             </div>
-          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>}
-        </Section>
+            {/* col 2 — plan controls / season progress */}
+            <div style={{ borderLeft: `1px solid ${C("line")}`, paddingLeft: 14 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{macro ? t("w.home.cockpit.seasonProgress") : t("w.home.cockpit.setUpChange")}</div>
+              {macro ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 8 }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.heading, color: C("chalk") }}>{Math.round((currentWeek / macro.totalWeeks) * 100)}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>%</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 99, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "8px 0" }}>
+                    <div style={{ width: `${Math.min(100, (currentWeek / macro.totalWeeks) * 100)}%`, height: "100%", background: C("violet") }} />
+                  </div>
+                </>
+              ) : <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>}
+              <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
+                {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.cockpit.periodize")} →</button>}
+                <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
+              </div>
+            </div>
+          </div>
+          {setupOpen && <div style={{ marginTop: 16 }}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
+        </div>
       </div>
     </div>
   );
 }
 
-// Disciplined section header: a single lime accent (dot + Open link) over a
-// neutral ash kicker — no per-section rainbow. Data colours live in the body.
+/* ---------- Breakdown (tabbed disciplines) ---------- */
+type BreakTab = "strength" | "endurance" | "sport" | "velocity";
+function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
+  state: ReturnType<typeof computePerformanceState>;
+  recap: ReturnType<typeof weeklyRecap>;
+  totals: ReturnType<typeof runTotals>;
+  sport: { sport: string; levelIdx: number } | null;
+  profiles: ReturnType<typeof velocityProfiles>;
+  setScreen: (id: string) => void;
+}) {
+  const { t } = useLang();
+  const TABS: { id: BreakTab; label: string }[] = [
+    { id: "strength", label: t("w.home.cockpit.tab.strength") },
+    { id: "endurance", label: t("w.home.cockpit.tab.endurance") },
+    { id: "sport", label: t("w.home.cockpit.tab.sport") },
+    { id: "velocity", label: t("w.home.cockpit.tab.velocity") },
+  ];
+  const [tab, setTab] = useState<BreakTab>("strength");
+  const idx = TABS.findIndex((x) => x.id === tab);
+  const bestProfile = useMemo(() => Object.entries(profiles).filter(([, p]) => p.estimated1rm > 0).sort((a, b) => b[1].estimated1rm - a[1].estimated1rm)[0], [profiles]);
+
+  return (
+    <div style={CARD}>
+      <span style={{ display: "flex", alignItems: "center", gap: space.sm, marginBottom: 12 }}>
+        <span style={{ width: 9, height: 9, borderRadius: 5, background: C("blue") }} />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.breakdown")}</span>
+      </span>
+      {/* top-notch segmented tabs with a sliding indicator */}
+      <div style={{ position: "relative", display: "grid", gridTemplateColumns: `repeat(${TABS.length},1fr)`, gap: 0, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
+        <div style={{ position: "absolute", top: 4, bottom: 4, left: `calc(${(idx / TABS.length) * 100}% + 4px)`, width: `calc(${100 / TABS.length}% - 8px)`, background: C("chalk"), borderRadius: 999, transition: "left .25s cubic-bezier(.4,0,.2,1)", boxShadow: "0 2px 8px -2px rgba(0,0,0,.5)" }} />
+        {TABS.map((x) => {
+          const on = x.id === tab;
+          return (
+            <button key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "9px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".02em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        {tab === "strength" && (
+          <>
+            <div style={{ display: "flex", gap: 22 }}>
+              <Stat label={t("w.home.cockpit.strIndex")} value={`${state.hpi.components.strength}`} />
+              <Stat label={t("w.home.cockpit.wkTonnage")} value={recap.volume.toLocaleString()} />
+              <Stat label={t("w.home.cockpit.sets")} value={`${recap.sets}`} />
+            </div>
+            {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 14 }}>{state.drivers[0].detail}</div>}
+          </>
+        )}
+        {tab === "endurance" && (
+          totals.efforts > 0 ? (
+            <>
+              <div style={{ display: "flex", gap: 22 }}>
+                <Stat label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} />
+                <Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
+                <Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
+              </div>
+              <button onClick={() => setScreen("running")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.running")} →</button>
+            </>
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>
+        )}
+        {tab === "sport" && (
+          sport ? (
+            <>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} · {LEVELS[sport.levelIdx]}</div>
+              <button onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}>{t("w.home.cockpit.sport")} →</button>
+            </>
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>
+        )}
+        {tab === "velocity" && (
+          bestProfile ? (
+            <>
+              <div style={{ display: "flex", gap: 22 }}>
+                <Stat label={bestProfile[0]} value={`${Math.round(bestProfile[1].estimated1rm)}kg`} />
+                <Stat label="R²" value={bestProfile[1].r2.toFixed(2)} />
+                <Stat label={t("w.home.cockpit.points")} value={`${bestProfile[1].n}`} />
+              </div>
+              <button onClick={() => setScreen("velocity")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.velocity")} →</button>
+            </>
+          ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.velocityBlurb")}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- small primitives ---------- */
+function Pill({ children, dot }: { children: React.ReactNode; dot?: string }) {
+  return (
+    <span style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: 6, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("chalk"), whiteSpace: "nowrap" }}>
+      {dot && <span style={{ width: 7, height: 7, borderRadius: 5, background: dot }} />}
+      {children}
+    </span>
+  );
+}
+
 function Section({ title, children, onOpen, openLabel }: { title: string; children: React.ReactNode; onOpen: () => void; openLabel: string }) {
   return (
-    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 }}>
+    <div style={CARD}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ display: "flex", alignItems: "center", gap: space.sm }}>
           <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
@@ -205,6 +358,34 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading }}>{value}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
     </div>
+  );
+}
+
+function Comp({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ background: C("ink2"), padding: "12px 8px", textAlign: "center" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, color }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function Watch({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{ background: C("ink2"), padding: "11px 6px", textAlign: "center" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: color ?? C("chalk") }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: ".06em", color: C("ash"), marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function Mod({ dot, label, value, onClick, mono, last }: { dot: string; label: string; value: string; onClick: () => void; mono?: boolean; last?: boolean }) {
+  return (
+    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
+      <span style={{ width: 7, height: 7, borderRadius: 5, background: dot, flex: "none" }} />
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</span>
+      <span style={{ marginLeft: "auto", fontWeight: mono ? 500 : 700, fontSize: mono ? fs.caption : fs.body, fontFamily: mono ? "var(--font-mono)" : "var(--font-display)", color: mono ? C("ash") : C("chalk") }}>{value} →</span>
+    </button>
   );
 }
 
@@ -247,7 +428,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: C("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
       <div style={{ display: "grid", gap: space.ms, marginTop: 14 }}>
         {TEASE.map((s) => (
-          <div key={s.key} style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
+          <div key={s.key} style={{ ...CARD, padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</div>
