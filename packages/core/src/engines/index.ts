@@ -9,6 +9,7 @@ export * from "./prescription";
 export * from "./reconcile";
 export * from "./signals";
 export * from "./hpi";
+export * from "./hpi-review";
 export * from "./performance-state";
 export * from "./injury";
 export * from "./rtp";

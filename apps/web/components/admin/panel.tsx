@@ -31,8 +31,9 @@ import AdminFinancials from "./financials";
 import AdminEmail from "./email";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
+import AdminPerformanceEngine from "./performance-engine";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "guidance";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "engine" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "anon" | "system" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
@@ -43,6 +44,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: Aurora
   { id: "email", label: "Email & marketing", icon: "✉", auroraIcon: "mail", group: "Business" },
   { id: "hq", label: "Agent HQ", icon: "◳", auroraIcon: "navigation", group: "AI" },
   { id: "agents", label: "AI agents", icon: "🤖", auroraIcon: "user-square", group: "AI" },
+  { id: "engine", label: "Performance engine", icon: "🧬", auroraIcon: "heart", group: "Science" },
   { id: "announcements", label: "Announcements", icon: "📣", auroraIcon: "bell", group: "Content" },
   { id: "onboarding", label: "Onboarding", icon: "🧭", auroraIcon: "navigation", group: "Content" },
   { id: "exercises", label: "Exercise library", icon: "🏋", auroraIcon: "list-check", group: "Content" },
@@ -318,6 +320,7 @@ export default function AdminPanel() {
         {section === "email" && <AdminEmail />}
         {section === "hq" && <AgentHQ />}
         {section === "agents" && <AdminAgents />}
+        {section === "engine" && <AdminPerformanceEngine />}
         {section === "announcements" && <AdminAnnouncements />}
         {section === "onboarding" && <AdminOnboarding />}
         {section === "exercises" && <AdminExercises />}
