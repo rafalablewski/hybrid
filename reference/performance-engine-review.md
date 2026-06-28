@@ -27,22 +27,28 @@ dashboard wearing the name of a performance index**. The gap between what it is
 and what an Olympic / NCAA / military / clinical platform needs is large but
 *bridgeable* without throwing away the core.
 
-Eight headline findings:
+Headline findings (✅ = now addressed in the engine, 🟡 = partially addressed):
 
 1. **State vs. trait confusion.** HPI fuses three *freshness* signals (strength,
    endurance, recovery). That is **readiness** (how ready am I *today*), not
    **capacity / fitness level** (how good am I). A fresh beginner can outscore a
    fatigued world champion. Correct for readiness; wrong for a "Performance
    Index". These must be **two separate models**.
-2. **No uncertainty.** Every output is a hard point estimate, whether it rests
-   on one noisy night of HRV or two years of history. Not decision-grade.
+2. 🟡 **Uncertainty — partially fixed.** `computeHpi` now returns a
+   data-sufficiency **confidence** (0–1) and a clamped **credible interval** that
+   widens when inputs are thin. *Remaining:* extend the same envelope (plus a
+   model version) to the load and recovery outputs.
 3. **No population normalisation.** A score of "70" has no reference
    distribution — it is not a percentile against age / sex / training-age / sport
    peers, so it can't answer "good compared to whom?" or scale across abilities.
-4. **ACWR is contested** and implemented in its **coupled** (autocorrelated)
-   form. The engine already hedges it in prose; the next step is to demote it.
-5. **Recovery is a single ±15 nudge** from one biometric snapshot — not a
-   multi-signal, trend-based, missing-data-aware model.
+4. ✅ **ACWR — de-risked.** `computeLoad` now reports **uncoupled** ACWR and
+   **EWMA** ACWR (`acwrEwma`/`bandEwma`, recommended) plus a **ramp rate**; the
+   autocorrelated coupled ratio is demoted to one labelled input. *Remaining:* a
+   Banister fitness–fatigue trajectory + a fully continuous risk surface.
+5. 🟡 **Recovery — partially fixed.** `biometricAdjustment` now folds in the
+   wearable **sleep score** it previously ignored. *Remaining:* it's still a
+   snapshot — rolling HRV deviation, sleep debt and RHR trend need a biometric
+   time-series the current input type doesn't carry.
 6. **No predictive layer at all** — no PR/race-time trajectory, plateau,
    overtraining, peaking, injury-risk or return-to-play forecasting. This is the
    single biggest gap versus elite platforms.
@@ -85,7 +91,9 @@ universal — so it should ship as an explicit, versioned model, not a black box
 - **HRV anchored to the athlete's own baseline is correct** — but a single
   snapshot is not. HRV is meaningful only as a **rolling deviation** (e.g. 7-day
   vs. 60-day), log-transformed, because night-to-night noise is large
-  (Plews et al.). *Established.*
+  (Plews et al.). *Established.* 🟡 *Partly addressed:* recovery is now
+  multi-signal (the wearable sleep score was folded in), but it remains a
+  single-day snapshot until a biometric time-series exists.
 - **Missing physiology:** estimated VO₂max, critical speed/power & W′/D′,
   force–velocity profile, female-physiology context (menstrual phase,
   pregnancy/postpartum), heat/altitude, illness/medication.
@@ -112,10 +120,12 @@ universal — so it should ship as an explicit, versioned model, not a black box
   the recovery term's effective influence is unstable. Fuse all terms in **one
   coherent space** (log-odds or weighted-geometric) so contributions are
   commensurable and individually attributable.
-- **Coupled ACWR is autocorrelated by construction** (the acute window is inside
-  the chronic window), which manufactures spurious ratio–injury associations.
-  Prefer **uncoupled ACWR** and/or **EWMA**, and report the **Banister
-  fitness–fatigue trajectory** and **ramp rate** alongside.
+- ✅ **Coupled ACWR autocorrelation — addressed.** It was autocorrelated by
+  construction (the acute window inside the chronic window), manufacturing
+  spurious ratio–injury associations. `computeLoad` now computes **uncoupled
+  ACWR** and **EWMA** ACWR and a **ramp rate** as the primary signals; the
+  coupled ratio is retained only as one labelled input. *Remaining:* report a
+  **Banister fitness–fatigue trajectory** alongside.
 - **Mean-over-muscle-groups averages away the limiter.** Compute the limiter at
   the **sub-system** level before aggregating.
 
@@ -129,14 +139,18 @@ universal — so it should ship as an explicit, versioned model, not a black box
   *Established.*
 - **Small-sample over-confidence.** With little athlete history, shrink toward
   the cohort prior via **Bayesian partial pooling / mixed-effects** — the score
-  starts near the population and personalises as evidence accrues. This *also*
-  yields the missing uncertainty intervals for free.
+  starts near the population and personalises as evidence accrues. 🟡 *Partly
+  addressed:* HPI now ships a **data-sufficiency confidence + interval** (a
+  pragmatic stand-in); the principled shrinkage version still needs a cohort
+  prior and a feature store.
 - **No data-quality propagation.** Implausible values, stale wearable data and
   device disagreement must widen the output interval (or flag low confidence),
   never silently corrupt the score.
 - **Hard bands imply false precision.** Replace discrete ACWR/HPI bands with a
   **continuous, uncertainty-aware** status; show the band only as a coarse label
-  over a continuous signal.
+  over a continuous signal. 🟡 *Partly addressed:* the load read now exposes
+  continuous `acwrEwma`/`acwrUncoupled`/`rampRate` values beneath the bands;
+  fully retiring the bands for a continuous risk surface is the remaining step.
 
 ---
 
@@ -198,18 +212,20 @@ confidence flags. (Each is graded in the structured data.)
 
 Ranked worst-first. Each traces to the layer it comes from (§2/§3) and the
 build-plan item that fixes it (§12). Mirrors `majorWeaknesses` in the structured
-data (`weaknessesByRank()`).
+data (`weaknessesByRank()`). Resolved items have been **removed** from the list;
+partially-resolved ones are marked 🟡. *Removed since last pass:* the contested
+coupled-ACWR weakness — now de-risked (uncoupled + EWMA + ramp rate; coupled
+demoted to one input), tracked only as a minor residual in the ACWR layer.
 
 | # | Weakness | Severity | Layer | Why it matters |
 |---|----------|----------|-------|----------------|
 | 1 | **State/trait conflation in a metric branded as an index** | critical | Conceptual model | Freshness (a daily STATE) is read as a fitness INDEX (a TRAIT). They move on different time-scales, so the number is systematically misread — a rested novice outscores a fatigued champion. Until Readiness and Capacity are separated, nothing downstream can be interpreted correctly. |
-| 2 | **No uncertainty on any output** | critical | Domain scores | A score from one noisy HRV night is presented as authoritatively as one from two years of data. A metric without a confidence interval over-claims precision and cannot safely gate training for elite/military/clinical users. |
+| 2 | 🟡 **Uncertainty only partially propagated** | major | Domain scores | **Fixed for HPI** — it now carries a confidence + credible interval that widens when inputs are thin. **Still open:** the load and recovery outputs carry no interval yet, and there's no model-version stamp, so not every number is reproducible/decision-grade. |
 | 3 | **No population normalisation** | critical | Validation & normalisation | Scores have no reference distribution, so "70" is uninterpretable and incomparable across athletes. The engine cannot answer "good versus whom?" or scale from a sedentary beginner to a world champion — the platform's core requirement. |
-| 4 | **Single-snapshot, single-signal recovery** | major | Recovery model | Recovery is one ±15 nudge from a single biometric. HRV is only meaningful as a rolling deviation; sleep debt, RHR trend and subjective wellness are ignored; a missing wearable silently zeroes the term instead of widening uncertainty. |
-| 5 | **Contested, coupled ACWR presented as a verdict** | major | ACWR / workload | The coupled ratio is autocorrelated by construction and its thresholds are disputed (Lolli 2019; Impellizzeri 2020). Discrete bands imply a risk cliff the evidence does not support. It should be one input, not the headline. |
-| 6 | **Hand-set composite weights with no empirical basis** | major | Composite index | Archetype weights are fixed constants, and an additive recovery term mixed into a multiplicative blend is dimensionally incoherent — recovery can dominate or vanish near the clamp. No personalisation, no learning from the athlete's own response. |
-| 7 | **No predictive layer** | major | ML vs. mathematics | The engine is entirely retrospective. No PR/race-time trajectory, plateau, overtraining, peaking, injury-risk or return-to-play forecasting — the single largest capability gap versus WHOOP/TrainingPeaks/AMS platforms. |
-| 8 | **No model versioning, feature store or audit trail** | major | Software architecture | Outputs carry no version stamp, inputs→features→scores aren't persisted, and there's no per-athlete state. A score shown last month can't be reproduced or explained — unacceptable under GDPR/HIPAA-adjacent expectations. |
+| 4 | 🟡 **Recovery multi-signal but still a snapshot** | major | Recovery model | **Fixed in part** — the wearable sleep score is now folded in alongside HRV/RHR/sleep-duration. **Still open:** it's a single-day snapshot; rolling HRV deviation, sleep debt and RHR trend need a biometric time-series the input type doesn't carry. |
+| 5 | **Hand-set composite weights with no empirical basis** | major | Composite index | Archetype weights are fixed constants, and an additive recovery term mixed into a multiplicative blend is dimensionally incoherent — recovery can dominate or vanish near the clamp. No personalisation, no learning from the athlete's own response. |
+| 6 | **No predictive layer** | major | ML vs. mathematics | The engine is entirely retrospective. No PR/race-time trajectory, plateau, overtraining, peaking, injury-risk or return-to-play forecasting — the single largest capability gap versus WHOOP/TrainingPeaks/AMS platforms. |
+| 7 | **No model versioning, feature store or audit trail** | major | Software architecture | Outputs carry no version stamp, inputs→features→scores aren't persisted, and there's no per-athlete state. A score shown last month can't be reproduced or explained — unacceptable under GDPR/HIPAA-adjacent expectations. |
 
 ---
 
@@ -242,26 +258,27 @@ averaging proxies into an opaque score.
 - Start with **confirmatory factor scoring**; evolve toward a **Bayesian
   network** encoding the *load → fatigue → recovery → adaptation* causal chain.
 
-### Pillar 3 — Load model v2
-Demote ACWR to one input inside a continuous, uncertainty-aware load-status
-signal.
-- Default to **uncoupled / EWMA** ACWR; add the **Banister fitness–fatigue
-  trajectory** and **ramp rate**; keep monotony and strain.
-- Replace hard bands with a **continuous risk surface** that always shows
-  absolute load alongside the ratio.
-- Carry uncertainty so a thin training history **widens the band** rather than
-  asserting a false verdict.
+### Pillar 3 — Load model v2 — *largely shipped*
+Demote ACWR to one input inside a richer, uncertainty-aware load-status read.
+- ✅ **Shipped:** **uncoupled** ACWR + **EWMA** ACWR (`acwrEwma`/`bandEwma`) +
+  **ramp rate**, alongside monotony and strain; coupled ratio demoted to one
+  labelled input.
+- *Remaining:* add the **Banister fitness–fatigue trajectory** and replace the
+  residual bands with a **continuous risk surface**.
+- *Remaining:* carry an explicit interval so a thin training history **widens
+  the read** rather than asserting a false verdict.
 
-### Pillar 4 — Cross-cutting substrate
+### Pillar 4 — Cross-cutting substrate — *partially in place*
 The properties every output must gain, whichever model produced it.
-- **Monotone saturating score links** (logistic/expit on the normalised
-  percentile) so elite gains require exponentially more.
-- A **credible interval** on every score, propagated from input noise + data
-  sufficiency.
-- A **versioned result envelope** `{ value, interval, confidence, engineVersion,
-  inputsHash, contributors }` — non-breaking; callers read `.value`.
-- An **explainability payload**: top contributors plus a counterfactual ("what
-  would move this").
+- ✅ **Shipped for HPI:** a **credible interval** + data-sufficiency
+  **confidence** on the headline score.
+- *Remaining:* **monotone saturating score links** (logistic/expit on the
+  normalised percentile) so elite gains require exponentially more.
+- *Remaining:* a **versioned result envelope** `{ value, interval, confidence,
+  engineVersion, inputsHash, contributors }` across **all** outputs —
+  non-breaking; callers read `.value`.
+- *Remaining:* an **explainability payload** — top contributors plus a
+  counterfactual ("what would move this").
 
 ---
 
