@@ -12,6 +12,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { SkeletonStats, SkeletonRows } from "./skeleton";
 import { AuroraIcon } from "./icons";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.trends.muscleQuads", glutes: "w.analyze.trends.muscleGlutes", posterior: "w.analyze.trends.musclePosterior", back: "w.analyze.trends.muscleBack", chest: "w.analyze.trends.muscleChest", shoulders: "w.analyze.trends.muscleShoulders", triceps: "w.analyze.trends.muscleTriceps" };
@@ -24,7 +25,7 @@ export default function AuroraTrends() {
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const router = useRouter();
-  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
+  const { data: sessions = [], isFetching: refreshing, isPending, refetch } = useSessionsQuery();
   const [period, setPeriod] = useState<ExercisePeriod>("all");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
   const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
@@ -62,7 +63,9 @@ export default function AuroraTrends() {
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
-      {!trained ? (
+      {isPending ? (
+        <View style={{ marginTop: 16 }}><SkeletonStats count={3} /><SkeletonRows count={3} /></View>
+      ) : !trained ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.trends.empty")}</Text>
         </ACard>

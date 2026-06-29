@@ -12,6 +12,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { SkeletonRows } from "./skeleton";
 import { AuroraIcon } from "./icons";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [
@@ -26,7 +27,7 @@ export default function AuroraExercises() {
   const { t } = useLang();
   const router = useRouter();
   const params = useLocalSearchParams<{ name?: string }>();
-  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
+  const { data: sessions = [], isFetching: refreshing, isPending, refetch } = useSessionsQuery();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("");
   const [period, setPeriod] = useState<ExercisePeriod>("all");
@@ -50,7 +51,9 @@ export default function AuroraExercises() {
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.ex.title")}</AHeading>
       </View>
 
-      {history.length === 0 ? (
+      {isPending ? (
+        <View style={{ marginTop: 16 }}><SkeletonRows count={4} /></View>
+      ) : history.length === 0 ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.ex.empty")}</Text>
         </ACard>

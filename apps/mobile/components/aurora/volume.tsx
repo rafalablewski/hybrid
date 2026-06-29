@@ -12,6 +12,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { SkeletonRows } from "./skeleton";
 import { AuroraIcon } from "./icons";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
@@ -23,7 +24,7 @@ export default function AuroraVolume() {
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const router = useRouter();
-  const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
+  const { data: sessions = [], isFetching: refreshing, isPending, refetch } = useSessionsQuery();
 
   const load = () => refetch();
   useRefreshOnFocus(refetch);
@@ -96,7 +97,9 @@ export default function AuroraVolume() {
         </ACard>
       )}
 
-      {!trained && (
+      {isPending && <View style={{ marginTop: 14 }}><SkeletonRows count={4} /></View>}
+
+      {!isPending && !trained && (
         <ACard style={{ marginTop: 14, alignItems: "center", paddingVertical: 30 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.vol.empty")}</Text>
         </ACard>
