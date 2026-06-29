@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import { sessionVolume, weeklyRecap } from "@hybrid/core";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import { sessionVolume, weeklyRecap, buildMacrocycle, buildTrainingWeek, trainingDaysPerWeek, toTrainingLog } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
   getCoachLinks,
@@ -9,9 +9,20 @@ import {
   getClientSessions,
   getNotes,
   addNote,
+  fetchClientTags,
+  setClientTags,
+  fetchClientAssignments,
+  assignToClient,
+  enrollClientMacro,
+  fetchClientCheckins,
+  replyToCheckin,
+  fetchRoutines,
   type CoachLink,
   type Person,
   type Note,
+  type ClientAssignment,
+  type ClientCheckin,
+  type Routine,
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -188,6 +199,8 @@ export default function AuroraCoach() {
   );
 }
 
+const GEN_GOALS = ["Hybrid", "Powerlifting", "Bodybuilding", "Running", "Cycling", "Hyrox", "Triathlon"];
+
 function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -197,9 +210,39 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // tags
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  // programming
+  const [templates, setTemplates] = useState<Routine[]>([]);
+  const [assignments, setAssignments] = useState<ClientAssignment[]>([]);
+  const [assignId, setAssignId] = useState("");
+  const [assignDate, setAssignDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
+  const [genWeek, setGenWeek] = useState(1);
+  const genMacro = useMemo(() => buildMacrocycle(genGoal), [genGoal]);
+  const [generating, setGenerating] = useState(false);
+  const [genMsg, setGenMsg] = useState<string | null>(null);
+  // check-ins
+  const [checkins, setCheckins] = useState<ClientCheckin[]>([]);
+  const [replyFor, setReplyFor] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+
   const load = useCallback(async () => {
-    setSessions(await getClientSessions(link.id));
-    setNotes(await getNotes(link.id));
+    const [s, n, tg, tpl, a, c] = await Promise.all([
+      getClientSessions(link.id),
+      getNotes(link.id),
+      fetchClientTags(link.id),
+      fetchRoutines(),
+      fetchClientAssignments(link.id),
+      fetchClientCheckins(link.id),
+    ]);
+    setSessions(s);
+    setNotes(n);
+    setTags(tg);
+    setTemplates(tpl);
+    setAssignments(a);
+    setCheckins(c);
     setLoading(false);
   }, [link.id]);
 
@@ -215,19 +258,200 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
     load();
   };
 
+  const saveTags = async (next: string[]) => {
+    setTags(next);
+    await setClientTags(link.id, next);
+  };
+  const addTag = () => {
+    const v = tagInput.trim();
+    if (!v || tags.includes(v)) { setTagInput(""); return; }
+    saveTags([...tags, v]);
+    setTagInput("");
+  };
+
+  const assign = async () => {
+    const tpl = templates.find((x) => x.id === assignId);
+    if (!tpl) return;
+    const parsed = assignDate ? new Date(assignDate) : null;
+    if (!parsed || Number.isNaN(parsed.getTime())) return;
+    await assignToClient(link.id, { templateId: tpl.id, name: tpl.name, blocks: tpl.blocks, date: parsed.toISOString() });
+    setAssignId("");
+    load();
+  };
+
+  // Generate a varied, periodized week and assign it — the same reconciler the
+  // athlete's own Today uses, run on the client's real sessions. The macrocycle
+  // is persisted to the client first so their Periodize/Today show the same season.
+  const generateWeek = async () => {
+    if (generating) return;
+    setGenerating(true);
+    setGenMsg(null);
+    try {
+      if (!(await enrollClientMacro(link.id, genGoal))) { setGenMsg(t("w.teams.coach.enrollFailed")); return; }
+      const days = trainingDaysPerWeek(sessions);
+      const wk = Math.max(1, Math.min(genMacro.totalWeeks, genWeek));
+      const week = buildTrainingWeek({ macro: genMacro, currentWeek: wk, log: toTrainingLog(sessions), daysPerWeek: days });
+      const results = await Promise.all(week.map((it) => assignToClient(link.id, { name: it.name, blocks: it.blocks, date: it.date })));
+      const ok = results.filter(Boolean).length;
+      setGenMsg(ok ? `${t("w.teams.coach.enrolled")} ${genGoal} + ${t("w.teams.coach.assignedSessions").replace("{n}", String(ok))} (${t("w.teams.coach.wkAbbr")} ${wk}, ${days}/${t("w.teams.coach.weekAbbr")}).` : t("w.teams.coach.generateFailed"));
+      load();
+    } catch {
+      setGenMsg(t("w.teams.coach.generateFailed"));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const sendReply = async (id: string) => {
+    if (!replyText.trim()) return;
+    await replyToCheckin(id, replyText);
+    setReplyFor(null);
+    setReplyText("");
+    load();
+  };
+
+  const Pill = ({ label, on, onPress, color = C.lime }: { label: string; on: boolean; onPress: () => void; color?: string }) => (
+    <Pressable onPress={onPress} style={{ borderWidth: 1, borderColor: on ? color : C.line, backgroundColor: on ? `${color}24` : "transparent", borderRadius: 999, paddingVertical: 6, paddingHorizontal: 13 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(C, color) : C.ash }}>{label}</Text>
+    </Pressable>
+  );
+  const SectionLabel = ({ children, color = C.ash }: { children: React.ReactNode; color?: string }) => (
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color, marginTop: 20, marginBottom: 10 }}>{children}</Text>
+  );
+
   return (
     <AuroraScreen>
       <Pressable onPress={back} style={{ marginBottom: 10 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("coach.roster")}</Text>
       </Pressable>
       <AHeading style={{ fontSize: fs.display }}>{personName(link.client)}</AHeading>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 14 }}>{link.client?.email}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 12 }}>{link.client?.email}</Text>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginBottom: 10 }}>{t("w.teams.coach.diet")}</Text>
+      {/* Client tags */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, alignItems: "center", marginBottom: 6 }}>
+        {tags.map((tg) => (
+          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.ash}1f`, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingLeft: 10, paddingRight: 7, paddingVertical: 3 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{tg}</Text>
+            <Pressable onPress={() => saveTags(tags.filter((x) => x !== tg))} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${t("w.teams.coach.removeTag")} ${tg}`}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>×</Text>
+            </Pressable>
+          </View>
+        ))}
+        <TextInput
+          value={tagInput}
+          onChangeText={setTagInput}
+          onSubmitEditing={addTag}
+          returnKeyType="done"
+          placeholder={t("w.teams.coach.tagPlaceholder")}
+          placeholderTextColor={C.ash}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minWidth: 110 }}
+        />
+      </View>
+
+      <SectionLabel color={txt(C, C.lime)}>{t("w.teams.coach.diet")}</SectionLabel>
       <CoachDiet linkId={link.id} />
 
-      <View style={{ marginTop: 14 }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>{t("coach.notes")}</Text>
+      {/* Programming — assign a template / generate a periodized week */}
+      <SectionLabel>{t("w.teams.coach.programming")}</SectionLabel>
+      <ACard>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.assignWorkout")}</Text>
+        {templates.length === 0 ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8 }}>{t("w.teams.coach.noTemplates")}</Text>
+        ) : (
+          <>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.xs, paddingRight: 8 }} style={{ marginTop: 10 }}>
+              {templates.map((tpl) => <Pill key={tpl.id} label={tpl.name} on={assignId === tpl.id} onPress={() => setAssignId(tpl.id)} />)}
+            </ScrollView>
+            <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10, alignItems: "center" }}>
+              <TextInput
+                value={assignDate}
+                onChangeText={setAssignDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={C.ash}
+                style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9 }}
+              />
+              <APill label={t("w.teams.coach.assign")} variant={assignId ? "primary" : "soft"} onPress={assign} style={{ paddingHorizontal: 18, paddingVertical: 11 }} />
+            </View>
+          </>
+        )}
+      </ACard>
+      <ACard style={{ marginTop: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.generatePeriodizedWeek")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 18 }}>
+          {sessions.length === 0 ? t("w.teams.coach.genEmptyHint") : `${t("w.teams.coach.genHintPre")} (~${trainingDaysPerWeek(sessions)}/${t("w.teams.coach.wkAbbr")}), ${t("w.teams.coach.genHintPost")}`}
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.xs, paddingRight: 8 }} style={{ marginTop: 10 }}>
+          {GEN_GOALS.map((g) => <Pill key={g} label={g} on={genGoal === g} onPress={() => { setGenGoal(g); setGenWeek(1); }} />)}
+        </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.xs, paddingRight: 8 }} style={{ marginTop: 8 }}>
+          {genMacro.blocks.flatMap((b) => b.micros.map((m) => (
+            <Pill key={m.week} label={`${t("w.teams.coach.wkAbbr")} ${m.week}${m.kind === "recovery" ? " ·" + t("w.teams.coach.deload") : ""}`} color={C.violet} on={Math.min(genWeek, genMacro.totalWeeks) === m.week} onPress={() => setGenWeek(m.week)} />
+          )))}
+        </ScrollView>
+        <View style={{ marginTop: 12 }}>
+          <APill label={generating ? t("w.teams.coach.generating") : t("w.teams.coach.generateAssign")} variant={sessions.length > 0 && !generating ? "primary" : "soft"} disabled={sessions.length === 0 || generating} onPress={generateWeek} style={{ paddingVertical: 12 }} />
+        </View>
+        {genMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>{genMsg}</Text> : null}
+      </ACard>
+      {assignments.map((a) => (
+        <ACard key={a.id} style={{ marginTop: 10 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{new Date(a.date).toLocaleDateString()}</Text>
+            </View>
+            <View style={{ backgroundColor: `${a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash}24`, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash) }}>{a.status}</Text>
+            </View>
+          </View>
+        </ACard>
+      ))}
+
+      {/* Weekly check-ins + coach reply */}
+      <SectionLabel>{t("w.teams.coach.weeklyCheckins")}</SectionLabel>
+      {checkins.length === 0 ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.teams.coach.noCheckins")}</Text>
+      ) : (
+        checkins.map((c) => (
+          <ACard key={c.id} style={{ marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
+              {c.adherencePct != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Text> : null}
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
+              {t("w.teams.coach.energy")} {c.energy ?? "—"} · {t("w.teams.coach.sleep")} {c.sleep ?? "—"} · {t("w.teams.coach.soreness")} {c.soreness ?? "—"} · {t("w.teams.coach.mood")} {c.mood ?? "—"}{c.bodyMassKg != null ? ` · ${c.bodyMassKg}kg` : ""}
+            </Text>
+            {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{c.note}</Text> : null}
+            {c.coachReply ? (
+              <View style={{ marginTop: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: C.line }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.yourReply")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: 20 }}>{c.coachReply}</Text>
+              </View>
+            ) : replyFor === c.id ? (
+              <View style={{ marginTop: 10 }}>
+                <TextInput
+                  value={replyText}
+                  onChangeText={setReplyText}
+                  placeholder={t("w.teams.coach.replyPlaceholder")}
+                  placeholderTextColor={C.ash}
+                  multiline
+                  style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 12, minHeight: 56 }}
+                />
+                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
+                  <APill label={t("w.teams.coach.sendReply")} variant="primary" onPress={() => sendReply(c.id)} style={{ paddingHorizontal: 18, paddingVertical: 10 }} />
+                  <APill label={t("w.teams.coach.cancel")} variant="soft" onPress={() => { setReplyFor(null); setReplyText(""); }} style={{ paddingHorizontal: 18, paddingVertical: 10 }} />
+                </View>
+              </View>
+            ) : (
+              <View style={{ marginTop: 10 }}>
+                <APill label={t("w.teams.coach.reply")} variant="soft" onPress={() => { setReplyFor(c.id); setReplyText(""); }} style={{ alignSelf: "flex-start", paddingHorizontal: 18, paddingVertical: 9 }} />
+              </View>
+            )}
+          </ACard>
+        ))
+      )}
+
+      <SectionLabel>{t("coach.notes")}</SectionLabel>
       <ACard>
         <TextInput
           value={body}

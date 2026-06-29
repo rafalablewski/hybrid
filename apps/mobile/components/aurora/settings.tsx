@@ -14,6 +14,7 @@ import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import MfaSettings from "./mfa";
 import type { AuroraIconName } from "@hybrid/core";
 
 // Enable smooth expand/collapse on Android (on by default on iOS).
@@ -143,6 +144,8 @@ export default function AuroraSettings() {
             {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
           </>
         )}
+        <Label color={C.ash} top>TWO-FACTOR AUTH</Label>
+        <MfaSettings />
         <Label color={C.ash} top>ACTIVE SESSIONS</Label>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
         <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />

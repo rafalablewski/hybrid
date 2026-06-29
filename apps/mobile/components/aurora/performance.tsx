@@ -12,6 +12,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import RtpPanel from "./rtp-panel";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
@@ -131,6 +132,8 @@ export default function AuroraPerformance() {
           ))}
         </View>
       </ACard>
+
+      <RtpPanel />
     </AuroraScreen>
   );
 }

@@ -6,6 +6,7 @@ import {
   adaptiveTargets,
   estimateMaintenance,
   dailyNutrition,
+  weightTrend,
   isFullAccess,
   type NutritionGoal,
 } from "@hybrid/core";
@@ -16,7 +17,7 @@ import { useLang } from "../../lib/i18n";
 import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, ASegment, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, ASegment, APill, AHeading, Spark, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
@@ -50,6 +51,7 @@ export default function AuroraNutrition() {
   const targets = useMemo(() => adaptiveTargets(sig, { goal }), [signals, goal]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recent = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
+  const weight = useMemo(() => weightTrend(sig), [signals]);
   const personalized = maint.kcal != null;
 
   const add = async () => {
@@ -129,6 +131,25 @@ export default function AuroraNutrition() {
             {[[t("w.recovery.nutrition.loggedToday"), `${Math.round(today.kcal)} kcal`], [t("w.recovery.nutrition.protein"), `${Math.round(today.protein)}g`], [t("w.recovery.nutrition.carbs"), `${Math.round(today.carbs)}g`], [t("w.recovery.nutrition.fat"), `${Math.round(today.fat)}g`]].map(([l, v]) => (
               <View key={l}><Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{v}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{l}</Text></View>
             ))}
+          </View>
+        </ACard>
+      )}
+
+      {/* Bodyweight trend — EWMA-smoothed line + weekly rate (parity with web) */}
+      {weight.points.length > 1 && (
+        <ACard style={{ marginTop: 16 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.bodyweightTrend")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, weight.ratePerWeek <= 0 ? C.lime : C.amber) }}>
+              {weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk
+            </Text>
+          </View>
+          <View style={{ marginTop: 12 }}>
+            <Spark series={weight.points.map((p) => p.smoothed)} color={C.lime} height={64} />
+          </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{weight.points[0]!.smoothed} kg</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.trend")} {weight.smoothedLatest ?? weight.points[weight.points.length - 1]!.smoothed} kg</Text>
           </View>
         </ACard>
       )}

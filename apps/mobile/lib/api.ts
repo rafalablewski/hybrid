@@ -1216,3 +1216,131 @@ export async function fetchOrgAthlete(orgId: string, userId: string): Promise<Om
     return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Return-to-play (RTP) — gated injury-recovery protocols. Same /api/rtp backend
+// the web rtp-panel uses; the core evaluateRtp engine enforces the gates.
+// ---------------------------------------------------------------------------
+
+export type RtpAuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
+export type RtpProtocol = { id: string; tissue: string; injuryDate: string; stage: string; completed: string[]; status: string; audit?: RtpAuditEntry[] };
+
+export async function fetchRtp(): Promise<RtpProtocol[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/rtp`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const d = (await res.json()) as { protocols?: RtpProtocol[] };
+    return (d.protocols ?? []).map((p) => ({ ...p, completed: p.completed ?? [], audit: p.audit ?? [] }));
+  } catch {
+    return [];
+  }
+}
+
+export async function createRtp(tissue: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/rtp`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ tissue }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function mutateRtp(id: string, body: object): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/rtp/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Coach client-detail extras — tags, template assignments, periodized-week
+// generation persistence, and weekly check-in replies. Same backend the web
+// coach client-detail uses (apps/web/components/aurora/coach.tsx ClientDetail).
+// ---------------------------------------------------------------------------
+
+export type ClientAssignment = { id: string; name: string; date: string; status: string };
+export type ClientCheckin = {
+  id: string; weekOf: string; bodyMassKg: number | null; energy: number | null; sleep: number | null;
+  soreness: number | null; mood: number | null; adherencePct: number | null; note: string | null;
+  coachReply: string | null; repliedAt: string | null;
+};
+
+export async function fetchClientTags(linkId: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { link?: { tags?: string[] } }).link?.tags ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function setClientTags(linkId: string, tags: string[]): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ action: "tags", tags }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchClientCheckins(linkId: string): Promise<ClientCheckin[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/checkins`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { checkins?: ClientCheckin[] }).checkins ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function replyToCheckin(checkinId: string, coachReply: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/checkins/${checkinId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ coachReply }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchClientAssignments(linkId: string): Promise<ClientAssignment[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/assignments`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { assignments?: ClientAssignment[] }).assignments ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function assignToClient(linkId: string, body: { templateId?: string; name: string; blocks: unknown[]; date: string }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/assignments`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function enrollClientMacro(linkId: string, goal: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/links/${linkId}/macrocycle`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ goal }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
