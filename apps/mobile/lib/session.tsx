@@ -49,7 +49,7 @@ async function claimStoredCoachInvite() {
 import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 
 // Shared with web via core so both clients normalize identical access-control input.
-type Role = AuthRole;
+export type Role = AuthRole;
 
 type Ctx = {
   session: SupaSession | null;

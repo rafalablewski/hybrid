@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, OrgRole, TeamNode } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
@@ -1015,5 +1015,204 @@ export async function addNote(linkId: string, body: string, isPrivate: boolean):
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Coach analytics / squad / compare + Organization — the team-facing screens.
+// All hit the SAME backend the web app uses (lib/coach, lib/org), Bearer-authed.
+// Mirrors apps/web/lib/use-roster.tsx + the /api/coach/* + /api/org/* routes so
+// mobile reaches parity with the web Analytics / Squad / Team-compare / Org
+// surfaces. Each soft-degrades (empty/null) when the caller isn't authorized or
+// the data isn't there yet, so the screens render their own empty states.
+// ---------------------------------------------------------------------------
+
+/** A coach's roster row with computed stats (parity with web RosterRow). */
+export type RosterRow = {
+  linkId: string;
+  name: string;
+  email: string;
+  sessions: number;
+  lastSession: string | null;
+  readiness: number | null;
+  adherence: number;
+  volume: number;
+};
+
+export async function fetchRoster(): Promise<RosterRow[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/roster`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { roster?: RosterRow[] }).roster ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Platform analytics for the operator/admin dashboard. */
+export type AdminStats = {
+  totalUsers: number; sessions: number; coaches: number; mau: number; newUsers30: number;
+  planPopularity: { goal: string; n: number }[]; langSplit: { lang: string; n: number }[];
+};
+
+export async function fetchAdminStats(): Promise<AdminStats | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/stats`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    return (await res.json()) as AdminStats;
+  } catch {
+    return null;
+  }
+}
+
+/** The morning squad monitor — one row per active client + a summary strip. */
+export type SquadRow = {
+  linkId: string;
+  name: string;
+  tags?: string[];
+  sessions: number;
+  lastSession: string | null;
+  readiness: number;
+  hpi: number;
+  hpiBand: string;
+  acwr: number;
+  acwrBand: string;
+  acute: number;
+  strain: number;
+  riskOverall: number;
+  riskBand: string;
+  flagged: string | null;
+};
+export type SquadSummary = { athletes: number; redReadiness: number; acwrFlags: number; injuryFlags: number };
+
+export async function fetchSquad(): Promise<{ squad: SquadRow[]; summary: SquadSummary | null }> {
+  try {
+    const res = await fetch(`${API_URL}/api/coach/squad`, { headers: await authHeaders() });
+    if (!res.ok) return { squad: [], summary: null };
+    const d = (await res.json()) as { squad?: SquadRow[]; summary?: SquadSummary };
+    return { squad: d.squad ?? [], summary: d.summary ?? null };
+  } catch {
+    return { squad: [], summary: null };
+  }
+}
+
+/** Side-by-side team comparison on a lift across e1RM / velocity / volume / reps. */
+export type CompareAthlete = {
+  linkId: string;
+  name: string;
+  e1rm: number;
+  bestVel: number;
+  volume: number;
+  reps: number;
+  sessions: number;
+  estVel1rm: number;
+};
+export type CompareResponse = { lift: string | null; lifts: string[]; athletes: CompareAthlete[] };
+
+export async function fetchCompare(lift?: string): Promise<CompareResponse> {
+  try {
+    const q = lift ? `?lift=${encodeURIComponent(lift)}` : "";
+    const res = await fetch(`${API_URL}/api/coach/compare${q}`, { headers: await authHeaders() });
+    if (!res.ok) return { lift: null, lifts: [], athletes: [] };
+    return (await res.json()) as CompareResponse;
+  } catch {
+    return { lift: null, lifts: [], athletes: [] };
+  }
+}
+
+// ---- organization (multi-team) ----
+export type Org = { id: string; name: string; role: OrgRole };
+export type OrgMember = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
+export type OrgInvite = { id: string; email: string; role: OrgRole; teamId: string | null };
+export type OrgDetail = { org: { id: string; name: string }; myRole: OrgRole; myTeamId: string | null; teams: TeamNode[]; members: OrgMember[]; invites: OrgInvite[] };
+export type OrgAthleteView = {
+  name: string;
+  hpi: { score: number; band: string; limiter: string };
+  readiness: { score: number };
+  summary: string;
+  sessionCount: number;
+  injury: { overall: number; band: string; flaggedCount: number; tissues?: { tissue: string; risk: number; band: string }[] };
+};
+
+export async function fetchOrgs(): Promise<Org[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/org`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    return ((await res.json()) as { orgs?: Org[] }).orgs ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchOrgDetail(id: string): Promise<OrgDetail | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/org/${id}`, { headers: await authHeaders() });
+    return res.ok ? ((await res.json()) as OrgDetail) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createOrg(name: string): Promise<Org | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/org`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ name }),
+    });
+    return res.ok ? ((await res.json()) as { org: Org }).org : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function addOrgTeam(orgId: string, name: string, parentId?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/org/${orgId}`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ name, parentId: parentId || undefined }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function inviteOrgMember(orgId: string, email: string, role: OrgRole): Promise<{ ok: boolean; pending?: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/org/${orgId}/members`, {
+      method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ email, role }),
+    });
+    const d = (await res.json().catch(() => ({}))) as { pending?: boolean; error?: string };
+    return { ok: res.ok, pending: d.pending, error: d.error };
+  } catch {
+    return { ok: false, error: "network error" };
+  }
+}
+
+export async function setOrgMember(orgId: string, mid: string, patch: { role?: OrgRole; teamId?: string | null }): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/org/${orgId}/members/${mid}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify(patch),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function revokeOrgInvite(orgId: string, iid: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/org/${orgId}/invites/${iid}`, { method: "DELETE", headers: await authHeaders() });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchOrgAthlete(orgId: string, userId: string): Promise<Omit<OrgAthleteView, "name"> | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/org/${orgId}/athlete/${userId}`, { headers: await authHeaders() });
+    return res.ok ? ((await res.json()) as Omit<OrgAthleteView, "name">) : null;
+  } catch {
+    return null;
   }
 }

@@ -43,7 +43,8 @@ const MOBILE_NAV_IDS = new Set([
   "today", "cockpit", "log", "runtrack", "history", "plans", "periodize", "competition", "sport", "calendar", "builder",
   "performance", "trends", "volume", "exercises", "velocity", "running", "video", "tactical", "forceplate", "progress", "nutrition", "checkin",
   "longevity", "connections", "talent", "coach", "settings", "onboarding",
-  "statistics", "timer", "notifications", "profile",
+  "statistics", "timer", "notifications", "profile", "analytics",
+  "squad", "teamcompare", "org",
   "feed", "discover", "leaderboard", "coaches",
 ]);
 
@@ -76,6 +77,7 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
     titleKey: "more.analyze",
     links: [
       { id: "performance", labelKey: "nav.performance", sub: "HPI · performance state · injury risk", href: "/performance", color: C.blue },
+      { id: "analytics", labelKey: "nav.analytics", sub: "dashboards · client/coach/admin", href: "/analytics", color: C.lime },
       { id: "trends", labelKey: "nav.trends", sub: "volume · muscle · exercises", href: "/trends", color: C.lime },
       { id: "volume", labelKey: "nav.volume", sub: "sets/muscle · MEV–MRV", href: "/volume", color: C.lime },
       { id: "exercises", labelKey: "nav.exercises", sub: "per-lift progress · trends", href: "/exercises", color: C.lime },
@@ -105,6 +107,9 @@ const SECTIONS: { titleKey: string; links: Link[] }[] = [
       { id: "connections", labelKey: "nav.connections", sub: "wearables · sensors", href: "/connections", color: C.blue },
       { id: "talent", labelKey: "nav.talent", sub: "benchmarks · discovery", href: "/talent", color: C.violet },
       { id: "coach", labelKey: "nav.coach", sub: "roster · notes · clients", href: "/(tabs)/coach", color: C.violet },
+      { id: "squad", labelKey: "nav.squad", sub: "RAG readiness · ACWR · risk", href: "/squad", color: C.amber },
+      { id: "teamcompare", labelKey: "nav.teamcompare", sub: "athletes side by side", href: "/teamcompare", color: C.blue },
+      { id: "org", labelKey: "nav.org", sub: "teams · staff · access", href: "/org", color: C.lime },
     ],
   },
 ];

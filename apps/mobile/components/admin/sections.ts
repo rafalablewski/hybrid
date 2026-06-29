@@ -10,9 +10,11 @@ export type AdminSectionId =
   | "directory"
   | "moderation"
   | "financials"
+  | "email"
   | "hq"
   | "agents"
   | "announcements"
+  | "onboarding"
   | "exercises"
   | "media"
   | "translations"
@@ -33,9 +35,11 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { id: "directory", label: "Orgs & coaching", icon: "globe", group: "Platform" },
   { id: "moderation", label: "Moderation", icon: "check-circle", group: "Platform" },
   { id: "financials", label: "Financials", icon: "offer", group: "Business" },
+  { id: "email", label: "Email & marketing", icon: "mail", group: "Business" },
   { id: "hq", label: "Agent HQ", icon: "navigation", group: "AI" },
   { id: "agents", label: "AI agents", icon: "user-square", group: "AI" },
   { id: "announcements", label: "Announcements", icon: "bell", group: "Content" },
+  { id: "onboarding", label: "Onboarding", icon: "navigation", group: "Content" },
   { id: "exercises", label: "Exercise library", icon: "list-check", group: "Content" },
   { id: "media", label: "Media library", icon: "copy", group: "Content" },
   { id: "translations", label: "Localization", icon: "share", group: "Content" },
