@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { useRouter } from "expo-router";
 import { useTheme } from "../lib/theme";
 import { F } from "../lib/ui";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
@@ -66,6 +67,7 @@ export function Empty({ title, sub }: { title: string; sub?: string }) {
 // A modal showing any user's public profile (reused by feed / discover / leaderboard).
 export function ProfileModal({ handle, onClose }: { handle: string; onClose: () => void }) {
   const C = useTheme().palette;
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [cmp, setCmp] = useState<any>(null);
   const load = () => getProfile(handle).then(setData);
@@ -106,6 +108,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                       ? <SButton label={rel === "friend" || rel === "close" ? "Friends ✓" : "Following"} ghost small onPress={async () => { await unfollow({ handle }); load(); }} />
                       : <SButton label={rel === "follower" ? "Follow back" : "Follow"} small onPress={async () => { await follow({ handle }); load(); }} />)}
                   {data?.canViewResults && rel !== "self" && <SButton label="Compare" ghost small onPress={async () => { const r: any = await getCompare(handle); setCmp(r.compare ?? null); }} />}
+                  {p.isCoach && <SButton label="View coaching →" ghost small onPress={() => { onClose(); router.push("/coaches"); }} />}
                 </View>
                 {data?.canViewResults ? (
                   data?.stats && (
@@ -121,6 +124,17 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 ) : (
                   <View style={{ marginTop: 14, backgroundColor: C.ink2, borderRadius: 12, padding: 14 }}>
                     <Text style={{ color: C.ash, fontSize: 13 }}>🔒 Their results are private. {rel === "requested" ? "Request pending." : "Follow to see their training."}</Text>
+                  </View>
+                )}
+                {data?.canViewResults && data?.stats?.topLifts?.length > 0 && (
+                  <View style={{ marginTop: 14 }}>
+                    <Text style={{ color: C.ash, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Top lifts</Text>
+                    {data.stats.topLifts.map((l: any) => (
+                      <View key={l.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                        <Text style={{ color: C.chalk, fontSize: 14 }}>{l.lift}</Text>
+                        <Text style={{ color: C.lime, fontFamily: F.mono, fontSize: 14 }}>{l.e1rm} kg</Text>
+                      </View>
+                    ))}
                   </View>
                 )}
                 {rel !== "self" && (

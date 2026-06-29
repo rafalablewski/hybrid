@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { currentPhase, type Macrocycle } from "@hybrid/core";
-import { fetchMacrocycle } from "../../lib/api";
+import { currentPhase, toBiometrics, type Macrocycle, type LoggedSession } from "@hybrid/core";
+import { fetchMacrocycle, fetchSessions, fetchSignals, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import ReconciledWeek from "./reconciled-week";
 
 /** AURORA Periodize — the enrolled macrocycle: phase timeline + load/recovery
  *  microcycles, reusing the exact currentPhase engine + macrocycle API. */
@@ -18,14 +19,17 @@ export default function AuroraPeriodize() {
   const [week, setWeek] = useState(1);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  const [signals, setSignals] = useState<CoreSignal[]>([]);
 
   const load = () => {
     setRefreshing(true);
-    fetchMacrocycle()
-      .then((m) => { setMacro(m?.macro ?? null); setWeek(m?.currentWeek ?? 1); })
+    Promise.all([fetchMacrocycle(), fetchSessions(), fetchSignals()])
+      .then(([m, s, sig]) => { setMacro(m?.macro ?? null); setWeek(m?.currentWeek ?? 1); setSessions(s); setSignals(sig); })
       .finally(() => { setLoaded(true); setRefreshing(false); });
   };
   useEffect(() => { load(); }, []);
+  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
 
   if (!macro) {
     return (
@@ -48,6 +52,8 @@ export default function AuroraPeriodize() {
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{macro.goalOrSport}{macro.model ? ` · ${macro.model}` : ` · ${t("w.train.periodize.enrolledLabel")}`}</Text>
       <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{macro.totalWeeks}{t("w.train.periodize.weekSeason")}</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 6 }}>{t("w.train.periodize.nowIn")} {current.label} · week {week}/{macro.totalWeeks}</Text>
+
+      <ReconciledWeek macro={macro} currentWeek={week} sessions={sessions} bio={bio} />
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>

@@ -116,13 +116,13 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
 function Storefront() {
   const C = useTheme().palette;
   const [data, setData] = useState<any>(null);
-  const [form, setForm] = useState<any>({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "" });
+  const [form, setForm] = useState<any>({ headline: "", bio: "", specialties: "", sports: "", acceptingClients: true, autoAccept: false, priceNote: "", visibility: "public" });
   const [programs, setPrograms] = useState<any[]>([]);
   const [enroll, setEnroll] = useState<any>({ incoming: [] });
   const [saved, setSaved] = useState(false);
   const load = async () => {
     const d: any = await getCoachProfile(); setData(d);
-    if (d.profile) setForm({ headline: d.profile.headline ?? "", bio: d.profile.bio ?? "", specialties: (d.profile.specialties ?? []).join(", "), sports: (d.profile.sports ?? []).join(", "), acceptingClients: d.profile.acceptingClients, autoAccept: d.profile.autoAccept, priceNote: d.profile.priceNote ?? "" });
+    if (d.profile) setForm({ headline: d.profile.headline ?? "", bio: d.profile.bio ?? "", specialties: (d.profile.specialties ?? []).join(", "), sports: (d.profile.sports ?? []).join(", "), acceptingClients: d.profile.acceptingClients, autoAccept: d.profile.autoAccept, priceNote: d.profile.priceNote ?? "", visibility: d.profile.visibility ?? "public" });
     const pr: any = await getCoachPrograms(); setPrograms(pr.programs ?? []);
     setEnroll(await getEnrollments());
   };

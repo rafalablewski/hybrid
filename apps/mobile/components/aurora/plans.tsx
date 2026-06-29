@@ -74,6 +74,15 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 6 }}>{p.weeks} {t("plans.weeks")} · {p.sessions}×/wk · {p.tag}</Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{p.desc}</Text>
+              {p.focus.length > 0 && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+                  {p.focus.map((f) => (
+                    <View key={f} style={{ backgroundColor: `${C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{f}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </ACard>
           </Pressable>
         ))}

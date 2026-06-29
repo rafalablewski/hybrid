@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, TextInput } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
@@ -10,6 +10,7 @@ import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 const STORE_KEY = "hybrid.sport";
+const MARKER_KEY = "hybrid.sportMarkers";
 
 /** AURORA Sport — sport + level picker driving the shared prescribeForSport
  *  engine, with working loads tuned to the athlete's logged lifts. */
@@ -21,6 +22,9 @@ export default function AuroraSport() {
   const [levelIdx, setLevelIdx] = useState(0);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Per-sport performance marker (e.g. "5k time") — a personal benchmark note,
+  // persisted across sessions. Parity with the web sport screen's marker field.
+  const [markers, setMarkers] = useState<Record<string, string>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -46,12 +50,23 @@ export default function AuroraSport() {
       })
       .catch(() => {})
       .finally(() => setHydrated(true));
+    AsyncStorage.getItem(MARKER_KEY)
+      .then((raw) => { if (raw) { const m = JSON.parse(raw); if (m && typeof m === "object") setMarkers(m); } })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
     AsyncStorage.setItem(STORE_KEY, JSON.stringify({ sport, levelIdx })).catch(() => {});
   }, [sport, levelIdx, hydrated]);
+
+  const setMarker = (text: string) => {
+    setMarkers((prev) => {
+      const next = { ...prev, [sport]: text };
+      AsyncStorage.setItem(MARKER_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  };
 
   const meta = SPORTS[sport]!;
   const rx = prescribeForSport(sport, levelIdx, { sessions });
@@ -117,6 +132,16 @@ export default function AuroraSport() {
             <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{sport}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{meta.family} · {LEVELS[levelIdx]}</Text>
           </View>
+        </View>
+        <View style={{ marginTop: 14 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{meta.marker.label}</Text>
+          <TextInput
+            value={markers[sport] ?? ""}
+            onChangeText={setMarker}
+            placeholder={meta.marker.ph}
+            placeholderTextColor={C.ash}
+            style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginTop: 6 }}
+          />
         </View>
       </ACard>
 
