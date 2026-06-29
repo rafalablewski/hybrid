@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID mobile — 5 design directions</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0d10;color:#ECEFE7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:40px 20px 80px}
+  header{max-width:1280px;margin:0 auto 8px}
+  h1{font-size:30px;font-weight:900;letter-spacing:-.02em}
+  .lede{color:#8B9087;font-size:15px;margin-top:8px;max-width:720px;line-height:1.6}
+  .lede b{color:#C8F560}
+  .row{max-width:1320px;margin:36px auto 0;display:flex;gap:26px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .item{width:300px}
+  .frame{width:300px;height:560px;border-radius:30px;overflow:hidden;border:1px solid rgba(255,255,255,.1);box-shadow:0 24px 60px -24px rgba(0,0,0,.7);background:#000}
+  .frame iframe{width:390px;height:844px;border:0;transform:scale(.769);transform-origin:top left}
+  .cap{margin-top:16px}
+  .cap .n{font-size:13px;font-weight:800;color:#fff}
+  .cap .n b{color:#C8F560}
+  .cap .d{font-size:12.5px;color:#8B9087;line-height:1.5;margin-top:5px}
+  .cap a{display:inline-block;margin-top:9px;font-size:12px;font-weight:700;color:#0c0d10;background:#C8F560;border-radius:999px;padding:7px 14px;text-decoration:none}
+  footer{max-width:1280px;margin:46px auto 0;color:#6b6f76;font-size:13px;line-height:1.7}
+  kbd{background:#15171c;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:1px 7px;font-size:12px;color:#ECEFE7}
+</style>
+</head>
+<body>
+  <header>
+    <h1>HYBRID mobile — pick a visual direction</h1>
+    <p class="lede">Five standalone mockups of the same <b>Today</b> screen — identical content (readiness 78, the Lower Power + Zone 2 session, the week stats, a feed item), so only the <b>design language</b> changes. Open any one full-screen, then tell me which path to build out across CORE + admin.</p>
+  </header>
+
+  <div class="row">
+    <div class="item">
+      <div class="frame"><iframe src="1-aurora-refined.html" scrolling="no"></iframe></div>
+      <div class="cap"><div class="n">1 · <b>Aurora Refined</b></div><div class="d">Today's dark, rounded look, tightened — one lime accent on ink, soft depth, ambient glow. Lowest-risk evolution.</div><a href="1-aurora-refined.html">Open →</a></div>
+    </div>
+    <div class="item">
+      <div class="frame"><iframe src="2-japandi-light.html" scrolling="no"></iframe></div>
+      <div class="cap"><div class="n">2 · <b>Japandi Light</b></div><div class="d">Warm paper, serif display headings, calm whitespace, terracotta/teal. Premium &amp; editorial — a real departure.</div><a href="2-japandi-light.html">Open →</a></div>
+    </div>
+    <div class="item">
+      <div class="frame"><iframe src="3-vivid-sport.html" scrolling="no"></iframe></div>
+      <div class="cap"><div class="n">3 · <b>Vivid Sport</b></div><div class="d">Saturated lime→cyan gradient hero, oversized numerals, high contrast. Energetic, Strava/Nike-Training feel.</div><a href="3-vivid-sport.html">Open →</a></div>
+    </div>
+    <div class="item">
+      <div class="frame"><iframe src="4-mono-swiss.html" scrolling="no"></iframe></div>
+      <div class="cap"><div class="n">4 · <b>Mono Swiss</b></div><div class="d">Near-monochrome grid, one red accent, tabular numerals, hairline rules. Technical, precise, data-forward.</div><a href="4-mono-swiss.html">Open →</a></div>
+    </div>
+    <div class="item">
+      <div class="frame"><iframe src="5-liquid-glass.html" scrolling="no"></iframe></div>
+      <div class="cap"><div class="n">5 · <b>Liquid Glass</b></div><div class="d">Frosted translucent cards over a colour mesh, real backdrop blur, vibrancy. Native iOS-18 premium depth.</div><a href="5-liquid-glass.html">Open →</a></div>
+    </div>
+  </div>
+
+  <footer>
+    Tip: open each full-screen for the true effect — the <b>Liquid Glass</b> blur and gradients render best at full size in Safari/Chrome. The app already ships a dark Aurora theme, a Japandi light mode and a native Liquid-Glass capability, so 1, 2 and 5 are the shortest paths to production; 3 and 4 are bigger rebrands.
+  </footer>
+</body>
+</html>

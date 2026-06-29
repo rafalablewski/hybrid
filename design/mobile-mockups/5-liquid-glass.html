@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID mobile — 5. Liquid Glass</title>
+<style>
+  /* ── Direction 5: LIQUID GLASS ────────────────────────────────────────────
+     iOS-18 premium: a colourful blurred mesh behind frosted, translucent cards
+     with real backdrop blur, hairline white borders and vibrancy. Depth-first. */
+  :root{
+    --chalk:#FFFFFF; --soft:rgba(255,255,255,.66); --faint:rgba(255,255,255,.4);
+    --glass:rgba(255,255,255,.1); --glass2:rgba(255,255,255,.16); --border:rgba(255,255,255,.22);
+    --lime:#D7FF5C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{background:#0a0a12;display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start;padding:48px 24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+  .phone{position:relative;width:390px;height:844px;border-radius:54px;overflow:hidden;box-shadow:0 40px 120px -30px rgba(0,0,0,.9),0 0 0 12px #1a1a24,0 0 0 13px #2a2a36}
+  /* colourful mesh the glass refracts */
+  .bg{position:absolute;inset:0;background:
+      radial-gradient(40% 35% at 18% 12%, #6C4DFF 0%, transparent 60%),
+      radial-gradient(45% 35% at 85% 20%, #14C8B0 0%, transparent 60%),
+      radial-gradient(50% 40% at 70% 88%, #FF5DA8 0%, transparent 60%),
+      radial-gradient(45% 40% at 12% 80%, #D7FF5C 0%, transparent 55%),
+      linear-gradient(160deg,#11121b,#0a0a12);}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:128px;height:30px;background:rgba(0,0,0,.5);border-radius:0 0 20px 20px;z-index:30}
+  .screen{position:absolute;inset:0;padding:52px 18px 110px;overflow-y:auto}
+  .status{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:#fff;padding:0 8px 12px}
+  .glass{background:var(--glass);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);border:1px solid var(--border);border-radius:28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 12px 40px -16px rgba(0,0,0,.6)}
+  .top{display:flex;align-items:center;gap:12px;margin-top:4px;padding:0 6px}
+  .avatar{width:44px;height:44px;border-radius:16px;background:var(--glass2);backdrop-filter:blur(20px);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px}
+  .kick{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .greet{font-size:23px;font-weight:800;color:#fff;letter-spacing:-.02em;margin-top:2px}
+  .bell{margin-left:auto;width:44px;height:44px;border-radius:16px;background:var(--glass2);backdrop-filter:blur(20px);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+  .ready{margin-top:18px;padding:22px;display:flex;align-items:center;gap:20px}
+  .ring{position:relative;width:96px;height:96px;flex:none}
+  .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .num{font-size:32px;font-weight:900;color:#fff;line-height:1}
+  .ring .unit{font-size:9px;letter-spacing:.14em;color:var(--soft);text-transform:uppercase;margin-top:2px}
+  .ready h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .ready p{color:#fff;font-size:14px;line-height:1.5;margin-top:8px}
+  .ready .tag{display:inline-block;margin-top:10px;font-size:11px;font-weight:800;color:#1c2207;background:var(--lime);border-radius:999px;padding:4px 12px}
+  .sec{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:700;margin:22px 10px 10px}
+  .session{padding:20px}
+  .session h2{font-size:21px;font-weight:900;color:#fff;letter-spacing:-.01em}
+  .session .meta{color:var(--soft);font-size:13px;margin-top:6px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:11px;font-weight:700;color:#fff;background:var(--glass2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;backdrop-filter:blur(10px)}
+  .start{margin-top:16px;width:100%;background:rgba(215,255,92,.92);color:#1c2207;font-weight:900;font-size:16px;border:none;border-radius:999px;padding:15px;box-shadow:0 8px 24px -8px rgba(215,255,92,.5)}
+  .week{display:flex;gap:10px;margin-top:12px}
+  .stat{flex:1;padding:15px}
+  .stat .n{font-size:22px;font-weight:900;color:#fff}
+  .stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);margin-top:3px}
+  .feed{padding:16px;margin-top:12px;display:flex;gap:12px;align-items:center}
+  .feed .a{width:38px;height:38px;border-radius:13px;background:var(--glass2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}
+  .feed .t{color:#fff;font-size:13px;font-weight:600}
+  .feed .s{color:var(--soft);font-size:11px;margin-top:2px}
+  .nav{position:absolute;left:18px;right:18px;bottom:18px;height:66px;border-radius:999px;background:var(--glass);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;z-index:20;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 16px 40px -14px rgba(0,0,0,.6)}
+  .nav .i{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);font-size:9px;font-weight:700}
+  .nav .i.on{color:#fff}
+  .nav .dot{width:22px;height:22px;border-radius:9px;border:2px solid currentColor}
+  .nav .i.on .dot{background:var(--lime);border-color:var(--lime)}
+  .tagline{width:100%;text-align:center;color:#7b7f93;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg"></div>
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status"><span>9:41</span><span>● ● ● &nbsp; 100%</span></div>
+      <div class="top">
+        <div class="avatar">RA</div>
+        <div>
+          <div class="kick">Train · Today</div>
+          <div class="greet">Good morning, Rafal</div>
+        </div>
+        <div class="bell">◔</div>
+      </div>
+
+      <div class="glass ready">
+        <div class="ring">
+          <svg width="96" height="96" style="transform:rotate(-90deg)"><circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,.18)" stroke-width="7" fill="none"/><circle cx="48" cy="48" r="42" stroke="#D7FF5C" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="58"/></svg>
+          <div class="val"><div class="num">78</div><div class="unit">Ready</div></div>
+        </div>
+        <div>
+          <h3>Readiness</h3>
+          <p>Primed to train. Recovery and load are in balance.</p>
+          <span class="tag">Go for it</span>
+        </div>
+      </div>
+
+      <div class="sec">Today's session</div>
+      <div class="glass session">
+        <h2>Lower Power + Zone 2</h2>
+        <div class="meta">Strength · ~62 min · HPI 71</div>
+        <div class="chips"><span class="chip">Squat 4×3 @82%</span><span class="chip">RDL 3×6</span><span class="chip">Zone 2 · 25 min</span></div>
+        <button class="start">Start session →</button>
+      </div>
+
+      <div class="sec">This week</div>
+      <div class="week">
+        <div class="glass stat"><div class="n">4</div><div class="k">Sessions</div></div>
+        <div class="glass stat"><div class="n">24.3t</div><div class="k">Volume</div></div>
+        <div class="glass stat"><div class="n">6</div><div class="k">PRs</div></div>
+      </div>
+
+      <div class="sec">From your circle</div>
+      <div class="glass feed">
+        <div class="a">MK</div>
+        <div><div class="t">Maya hit a 142.5 kg deadlift PR</div><div class="s">+5 kg · 2 hours ago</div></div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="i on"><span class="dot"></span>Today</div>
+      <div class="i"><span class="dot"></span>Train</div>
+      <div class="i"><span class="dot"></span>Cockpit</div>
+      <div class="i"><span class="dot"></span>Feed</div>
+      <div class="i"><span class="dot"></span>More</div>
+    </div>
+  </div>
+  <p class="tagline">5 · Liquid Glass — frosted translucent cards over a colour mesh. Native iOS-18 premium.</p>
+</body>
+</html>

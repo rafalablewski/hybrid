@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID mobile — 3. Vivid Sport</title>
+<style>
+  /* ── Direction 3: VIVID SPORT ─────────────────────────────────────────────
+     Energetic and bold: a saturated lime→cyan gradient hero, oversized numbers,
+     high contrast, dynamic angles. Strava/Nike-Training energy. */
+  :root{
+    --ink:#0A0B10; --ink2:#14161E; --line:rgba(255,255,255,.1);
+    --chalk:#FFFFFF; --ash:#8990A3; --lime:#C6FF35; --cyan:#27E6C8; --pink:#FF4D8D; --amber:#FFC23D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{background:#05060a;display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start;padding:48px 24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+  .phone{position:relative;width:390px;height:844px;border-radius:54px;background:var(--ink);overflow:hidden;box-shadow:0 40px 120px -30px rgba(0,0,0,.9),0 0 0 12px #1b1d26,0 0 0 13px #2a2d38}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:128px;height:30px;background:#000;border-radius:0 0 20px 20px;z-index:30}
+  .screen{position:absolute;inset:0;overflow-y:auto}
+  .status{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:#fff;padding:50px 24px 0}
+  /* HERO with gradient + readiness */
+  .hero{margin:14px 16px 0;border-radius:28px;padding:22px;background:linear-gradient(135deg,#C6FF35 0%,#27E6C8 100%);position:relative;overflow:hidden;color:#06210e}
+  .hero::after{content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,255,255,.4),transparent 60%)}
+  .hero .kick{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:900;opacity:.7}
+  .hero .big{font-size:84px;font-weight:900;letter-spacing:-.04em;line-height:.9;margin-top:6px}
+  .hero .lab{font-size:15px;font-weight:800;margin-top:4px}
+  .hero .sub{font-size:13px;font-weight:600;opacity:.75;margin-top:10px;max-width:240px}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 24px 0}
+  .avatar{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#FF4D8D,#FFC23D);display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:15px}
+  .greet{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.02em}
+  .greet small{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--lime);font-weight:800}
+  .bell{margin-left:auto;width:42px;height:42px;border-radius:14px;background:var(--ink2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+  .sec{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);font-weight:900;margin:26px 24px 12px}
+  .session{margin:0 16px;border-radius:28px;background:var(--ink2);border:1px solid var(--line);padding:22px;position:relative;overflow:hidden}
+  .session::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(var(--lime),var(--cyan))}
+  .session h2{font-size:24px;font-weight:900;color:#fff;letter-spacing:-.02em}
+  .session .meta{color:var(--ash);font-size:13px;font-weight:600;margin-top:6px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:12px;font-weight:800;color:#06210e;background:var(--lime);border-radius:999px;padding:6px 13px}
+  .chip.c{background:var(--cyan)}
+  .chip.o{background:transparent;color:#fff;border:1px solid var(--line)}
+  .start{margin-top:18px;width:100%;background:#fff;color:#0a0b10;font-weight:900;font-size:17px;border:none;border-radius:999px;padding:16px;letter-spacing:.01em}
+  .week{display:flex;gap:10px;margin:0 16px}
+  .stat{flex:1;border-radius:22px;padding:16px;background:var(--ink2);border:1px solid var(--line)}
+  .stat .n{font-size:28px;font-weight:900;color:#fff;letter-spacing:-.02em}
+  .stat:nth-child(1) .n{color:var(--lime)} .stat:nth-child(2) .n{color:var(--cyan)} .stat:nth-child(3) .n{color:var(--pink)}
+  .stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);font-weight:800;margin-top:4px}
+  .feed{margin:12px 16px 0;border-radius:22px;background:var(--ink2);border:1px solid var(--line);padding:16px;display:flex;gap:12px;align-items:center}
+  .feed .a{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#27E6C8,#C6FF35);display:flex;align-items:center;justify-content:center;color:#06210e;font-weight:900;font-size:13px}
+  .feed .t{color:#fff;font-size:13px;font-weight:700}
+  .feed .s{color:var(--ash);font-size:11px;font-weight:600;margin-top:2px}
+  .pad{height:24px}
+  .nav{position:absolute;left:16px;right:16px;bottom:18px;height:66px;border-radius:999px;background:linear-gradient(135deg,#C6FF35,#27E6C8);display:flex;align-items:center;justify-content:space-around;z-index:20;box-shadow:0 16px 40px -14px rgba(39,230,200,.5)}
+  .nav .i{display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(6,33,14,.5);font-size:9px;font-weight:900;text-transform:uppercase}
+  .nav .i.on{color:#06210e}
+  .nav .dot{width:20px;height:20px;border-radius:7px;border:2.5px solid currentColor}
+  .nav .i.on .dot{background:#06210e;border-color:#06210e}
+  .tagline{width:100%;text-align:center;color:#6b7088;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status"><span>9:41</span><span>● ● ● &nbsp; 100%</span></div>
+      <div class="top">
+        <div class="avatar">RA</div>
+        <div class="greet"><small>Train · Today</small>Good morning</div>
+        <div class="bell">◔</div>
+      </div>
+
+      <div class="hero">
+        <div class="kick">Readiness</div>
+        <div class="big">78</div>
+        <div class="lab">PRIMED — GO FOR IT</div>
+        <div class="sub">Recovery and load are balanced. Today's the day to push power.</div>
+      </div>
+
+      <div class="sec">Today's session</div>
+      <div class="session">
+        <h2>Lower Power + Zone 2</h2>
+        <div class="meta">STRENGTH · ~62 MIN · HPI 71</div>
+        <div class="chips"><span class="chip">Squat 4×3 @82%</span><span class="chip c">Zone 2 25′</span><span class="chip o">RDL 3×6</span></div>
+        <button class="start">START SESSION →</button>
+      </div>
+
+      <div class="sec">This week</div>
+      <div class="week">
+        <div class="stat"><div class="n">4</div><div class="k">Sessions</div></div>
+        <div class="stat"><div class="n">24.3t</div><div class="k">Volume</div></div>
+        <div class="stat"><div class="n">6</div><div class="k">PRs</div></div>
+      </div>
+
+      <div class="sec">From your circle</div>
+      <div class="feed">
+        <div class="a">MK</div>
+        <div><div class="t">Maya smashed a 142.5 kg deadlift PR</div><div class="s">+5 KG · 2 HOURS AGO</div></div>
+      </div>
+      <div class="pad"></div>
+    </div>
+    <div class="nav">
+      <div class="i on"><span class="dot"></span>Today</div>
+      <div class="i"><span class="dot"></span>Train</div>
+      <div class="i"><span class="dot"></span>Cockpit</div>
+      <div class="i"><span class="dot"></span>Feed</div>
+      <div class="i"><span class="dot"></span>More</div>
+    </div>
+  </div>
+  <p class="tagline">3 · Vivid Sport — bold gradients, huge numerals, high energy. Strava/Nike vibe.</p>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID mobile — 1. Aurora Refined</title>
+<style>
+  /* ── Direction 1: AURORA REFINED ──────────────────────────────────────────
+     The current dark, rounded HYBRID look, tightened: one lime accent on ink
+     surfaces, big corner radii, soft depth, a calm ambient gradient. */
+  :root{
+    --ink:#0B0C0E; --ink2:#15171C; --line:rgba(236,239,231,.09);
+    --chalk:#ECEFE7; --ash:#8B9087; --lime:#C8F560; --blue:#6EA8FF; --amber:#F2C14E; --red:#FF6B6B; --violet:#B69CFF;
+    --r:26px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{background:#1b1d22;display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start;padding:48px 24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+  .phone{position:relative;width:390px;height:844px;border-radius:54px;background:var(--ink);overflow:hidden;box-shadow:0 40px 120px -30px rgba(0,0,0,.8),0 0 0 12px #2a2d33,0 0 0 13px #3a3e45}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:128px;height:30px;background:#000;border-radius:0 0 20px 20px;z-index:30}
+  .field{position:absolute;inset:0;pointer-events:none}
+  .field::before{content:"";position:absolute;top:-120px;left:-90px;width:380px;height:380px;background:radial-gradient(circle,rgba(200,245,96,.16),transparent 65%);filter:blur(20px)}
+  .field::after{content:"";position:absolute;bottom:60px;right:-120px;width:360px;height:360px;background:radial-gradient(circle,rgba(182,156,255,.14),transparent 65%);filter:blur(20px)}
+  .screen{position:absolute;inset:0;padding:54px 20px 110px;overflow-y:auto}
+  .status{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:var(--chalk);padding:0 6px 10px}
+  .top{display:flex;align-items:center;gap:12px;margin-top:6px}
+  .avatar{width:42px;height:42px;border-radius:14px;background:rgba(200,245,96,.14);border:1px solid var(--lime);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--lime);font-size:15px}
+  .kick{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);font-weight:700}
+  .greet{font-size:24px;font-weight:900;color:var(--chalk);letter-spacing:-.02em;margin-top:2px}
+  .bell{margin-left:auto;width:42px;height:42px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ash);font-size:18px}
+  .card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 8px 26px -16px rgba(0,0,0,.7)}
+  .ready{margin-top:18px;padding:22px;display:flex;align-items:center;gap:20px}
+  .ring{position:relative;width:96px;height:96px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .num{font-size:30px;font-weight:900;color:var(--chalk);line-height:1}
+  .ring .unit{font-size:9px;letter-spacing:.14em;color:var(--ash);text-transform:uppercase;margin-top:2px}
+  .ready h3{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);font-weight:700}
+  .ready p{color:var(--chalk);font-size:15px;line-height:1.5;margin-top:8px}
+  .ready .tag{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--lime);background:rgba(200,245,96,.12);border-radius:999px;padding:4px 12px}
+  .sec{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);font-weight:700;margin:24px 6px 10px}
+  .session{padding:20px;position:relative;overflow:hidden}
+  .session .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--lime)}
+  .session h2{font-size:20px;font-weight:900;color:var(--chalk);letter-spacing:-.01em}
+  .session .meta{color:var(--ash);font-size:13px;margin-top:6px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:11px;font-weight:700;color:var(--chalk);background:rgba(236,239,231,.06);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  .chip.b{color:var(--blue);background:rgba(110,168,255,.1)}
+  .start{margin-top:16px;width:100%;background:var(--lime);color:#0a0c05;font-weight:900;font-size:16px;border:none;border-radius:999px;padding:15px;letter-spacing:.02em}
+  .week{display:flex;gap:10px;margin-top:12px}
+  .stat{flex:1;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:14px}
+  .stat .n{font-size:22px;font-weight:900;color:var(--chalk)}
+  .stat .n.l{color:var(--lime)}
+  .stat .k{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);margin-top:3px}
+  .feed{padding:16px;margin-top:12px;display:flex;gap:12px;align-items:center}
+  .feed .a{width:38px;height:38px;border-radius:12px;background:rgba(182,156,255,.16);display:flex;align-items:center;justify-content:center;color:var(--violet);font-weight:800;font-size:13px}
+  .feed .t{color:var(--chalk);font-size:13px;font-weight:600}
+  .feed .s{color:var(--ash);font-size:11px;margin-top:2px}
+  .nav{position:absolute;left:16px;right:16px;bottom:18px;height:64px;border-radius:999px;background:rgba(21,23,28,.86);backdrop-filter:blur(20px);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:20;box-shadow:0 16px 40px -16px rgba(0,0,0,.8)}
+  .nav .i{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ash);font-size:9px;font-weight:700}
+  .nav .i.on{color:var(--lime)}
+  .nav .dot{width:22px;height:22px;border-radius:8px;border:2px solid currentColor}
+  .nav .i.on .dot{background:var(--lime);border-color:var(--lime)}
+  .tagline{width:100%;text-align:center;color:#6b6f76;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="field"></div>
+    <div class="screen">
+      <div class="status"><span>9:41</span><span>● ● ● &nbsp; 100%</span></div>
+      <div class="top">
+        <div class="avatar">RA</div>
+        <div>
+          <div class="kick">Train · Today</div>
+          <div class="greet">Good morning, Rafal</div>
+        </div>
+        <div class="bell">◔</div>
+      </div>
+
+      <div class="card ready">
+        <div class="ring">
+          <svg width="96" height="96"><circle cx="48" cy="48" r="42" stroke="rgba(236,239,231,.1)" stroke-width="7" fill="none"/><circle cx="48" cy="48" r="42" stroke="#C8F560" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="58"/></svg>
+          <div class="val"><div class="num">78</div><div class="unit">Ready</div></div>
+        </div>
+        <div>
+          <h3>Readiness</h3>
+          <p>Primed to train. Recovery and load are in balance.</p>
+          <span class="tag">Go for it</span>
+        </div>
+      </div>
+
+      <div class="sec">Today's session</div>
+      <div class="card session">
+        <span class="bar"></span>
+        <h2>Lower Power + Zone 2</h2>
+        <div class="meta">Strength · ~62 min · HPI 71</div>
+        <div class="chips"><span class="chip">Squat 4×3 @82%</span><span class="chip">RDL 3×6</span><span class="chip b">Zone 2 · 25 min</span></div>
+        <button class="start">Start session →</button>
+      </div>
+
+      <div class="sec">This week</div>
+      <div class="week">
+        <div class="stat"><div class="n">4</div><div class="k">Sessions</div></div>
+        <div class="stat"><div class="n l">24.3t</div><div class="k">Volume</div></div>
+        <div class="stat"><div class="n">6</div><div class="k">PRs</div></div>
+      </div>
+
+      <div class="sec">From your circle</div>
+      <div class="card feed">
+        <div class="a">MK</div>
+        <div><div class="t">Maya hit a 142.5 kg deadlift PR</div><div class="s">+5 kg · 2 hours ago</div></div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="i on"><span class="dot"></span>Today</div>
+      <div class="i"><span class="dot"></span>Train</div>
+      <div class="i"><span class="dot"></span>Cockpit</div>
+      <div class="i"><span class="dot"></span>Feed</div>
+      <div class="i"><span class="dot"></span>More</div>
+    </div>
+  </div>
+  <p class="tagline">1 · Aurora Refined — dark, rounded, one lime accent. Polishes today's look.</p>
+</body>
+</html>

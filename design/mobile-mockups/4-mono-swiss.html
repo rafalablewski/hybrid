@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID mobile — 4. Mono Swiss</title>
+<style>
+  /* ── Direction 4: MONO SWISS ──────────────────────────────────────────────
+     Near-monochrome, grid-driven, typographic. One red accent, hairline rules,
+     tabular numerals, uppercase micro-labels. Restrained &amp; technical. */
+  :root{
+    --bg:#0E0E0E; --panel:#141414; --line:rgba(255,255,255,.14); --line2:rgba(255,255,255,.07);
+    --chalk:#F2F2F0; --ash:#7C7C78; --red:#FF3B30;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{background:#000;display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start;padding:48px 24px;font-family:"Helvetica Neue",-apple-system,Inter,Arial,sans-serif}
+  .mono{font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace}
+  .phone{position:relative;width:390px;height:844px;border-radius:54px;background:var(--bg);overflow:hidden;box-shadow:0 40px 120px -30px rgba(0,0,0,.9),0 0 0 12px #161616,0 0 0 13px #242424}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:128px;height:30px;background:#000;border-radius:0 0 20px 20px;z-index:30}
+  .screen{position:absolute;inset:0;padding:52px 0 110px;overflow-y:auto}
+  .status{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--chalk);padding:0 22px 14px}
+  .row-h{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 22px 18px;border-bottom:1px solid var(--line)}
+  .kick{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ash);font-weight:700}
+  .greet{font-size:26px;font-weight:700;color:var(--chalk);letter-spacing:-.02em;margin-top:6px}
+  .id{font-size:11px;color:var(--ash)}
+  .grid{border-bottom:1px solid var(--line)}
+  .gr{display:flex;border-top:1px solid var(--line2)}
+  .gr:first-child{border-top:none}
+  .cell{flex:1;padding:18px 22px;border-right:1px solid var(--line2)}
+  .cell:last-child{border-right:none}
+  .cell .lab{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);font-weight:700}
+  .cell .big{font-size:46px;font-weight:700;color:var(--chalk);letter-spacing:-.03em;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums}
+  .cell .big.red{color:var(--red)}
+  .cell .note{font-size:12px;color:var(--ash);margin-top:8px}
+  .barwrap{height:6px;background:var(--line2);margin-top:14px;position:relative}
+  .barwrap i{position:absolute;left:0;top:0;bottom:0;width:78%;background:var(--red)}
+  .sec{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 12px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);font-weight:700}
+  .sec span{color:var(--red)}
+  .sess{padding:0 22px}
+  .sess h2{font-size:22px;font-weight:700;color:var(--chalk);letter-spacing:-.02em}
+  .sess .meta{font-size:12px;color:var(--ash);margin-top:6px}
+  .tbl{margin-top:16px}
+  .tr{display:flex;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line2);font-size:14px;color:var(--chalk)}
+  .tr .v{color:var(--ash);font-variant-numeric:tabular-nums}
+  .start{margin:18px 22px 0;width:calc(100% - 44px);background:var(--chalk);color:#0e0e0e;font-weight:700;font-size:15px;border:none;padding:16px;letter-spacing:.08em;text-transform:uppercase}
+  .feed{margin:20px 0 0;border-top:1px solid var(--line);padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+  .feed .t{font-size:14px;color:var(--chalk)} .feed .s{font-size:11px;color:var(--ash);margin-top:3px}
+  .feed .k{font-size:12px;color:var(--red);font-weight:700}
+  .nav{position:absolute;left:0;right:0;bottom:0;height:78px;background:var(--bg);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:20}
+  .nav .i{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);font-weight:700;border-top:2px solid transparent;padding-top:6px}
+  .nav .i.on{color:var(--chalk);border-top-color:var(--red)}
+  .tagline{width:100%;text-align:center;color:#666;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status"><span>9:41</span><span class="mono">●●● 100%</span></div>
+      <div class="row-h">
+        <div><div class="kick">Today</div><div class="greet">Good morning</div></div>
+        <div class="id mono">RA · 09:41</div>
+      </div>
+
+      <div class="grid">
+        <div class="gr">
+          <div class="cell" style="flex:1.1">
+            <div class="lab">Readiness</div>
+            <div class="big red">78</div>
+            <div class="barwrap"><i></i></div>
+          </div>
+          <div class="cell">
+            <div class="lab">State</div>
+            <div class="note" style="margin-top:14px;color:var(--chalk);font-size:14px;line-height:1.5">Primed. Recovery &amp; load balanced — train hard today.</div>
+          </div>
+        </div>
+        <div class="gr">
+          <div class="cell"><div class="lab">Sessions / wk</div><div class="big">4</div></div>
+          <div class="cell"><div class="lab">Volume</div><div class="big">24.3<span style="font-size:18px">t</span></div></div>
+          <div class="cell"><div class="lab">PRs</div><div class="big">6</div></div>
+        </div>
+      </div>
+
+      <div class="sec">Today's session <span>01 / 04</span></div>
+      <div class="sess">
+        <h2>Lower Power + Zone 2</h2>
+        <div class="meta mono">STRENGTH · ~62 MIN · HPI 71</div>
+        <div class="tbl">
+          <div class="tr">Back squat <span class="v mono">4×3 · 82%</span></div>
+          <div class="tr">Romanian deadlift <span class="v mono">3×6</span></div>
+          <div class="tr">Zone 2 bike <span class="v mono">25 MIN</span></div>
+        </div>
+      </div>
+      <button class="start">Start session</button>
+
+      <div class="feed">
+        <div><div class="t">Maya — 142.5 kg deadlift PR</div><div class="s mono">2 HOURS AGO</div></div>
+        <div class="k mono">+5KG</div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="i on">Today</div>
+      <div class="i">Train</div>
+      <div class="i">Cockpit</div>
+      <div class="i">Feed</div>
+      <div class="i">More</div>
+    </div>
+  </div>
+  <p class="tagline">4 · Mono Swiss — monochrome grid, one red accent, tabular type. Technical &amp; precise.</p>
+</body>
+</html>
