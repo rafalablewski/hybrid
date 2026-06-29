@@ -6,6 +6,7 @@ import {
   QueryClientProvider,
   focusManager,
 } from "@tanstack/react-query";
+import { ConnectivityProvider } from "./net";
 
 // TanStack Query for the mobile app — parity with the web data-layer so both
 // clients dedupe fetches, cache across navigation, and revalidate by key on
@@ -29,10 +30,23 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 30_000,
             gcTime: 5 * 60_000,
-            retry: 1,
+            // Retry transient network blips with exponential backoff (≤4s) so a
+            // cold-start hiccup or a flaky gym signal self-heals instead of
+            // rendering an empty "feels-offline" screen.
+            retry: 2,
+            retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
             // RN has no window focus; we drive it via AppState (below).
             refetchOnWindowFocus: true,
+            // Refetch once the connectivity manager reports we're back online.
+            refetchOnReconnect: true,
+            // CRITICAL (RN): never let the (browser-oriented) online detection
+            // PAUSE a fetch. The connectivity manager (lib/net.tsx) owns the
+            // real online signal and uses it only to inform the user + refetch
+            // on reconnect — it must not gate requests, or a wrong reading would
+            // freeze every screen. So always attempt the fetch.
+            networkMode: "always",
           },
+          mutations: { networkMode: "always" },
         },
       }),
   );
@@ -42,7 +56,11 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, []);
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <ConnectivityProvider>{children}</ConnectivityProvider>
+    </QueryClientProvider>
+  );
 }
 
 /** Refetch a query when its screen regains focus (the RN analogue of the web's

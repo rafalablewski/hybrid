@@ -21,6 +21,7 @@ import { ThemeProvider, useTheme } from "../lib/theme";
 import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
 import AuroraGlobalNav from "../components/aurora/global-nav";
+import OfflineBanner from "../components/offline-banner";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
 // status-bar style + the navigator background so the whole app follows
@@ -41,6 +42,7 @@ function Shell() {
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
       </Stack>
       <AuroraGlobalNav />
+      <OfflineBanner />
     </>
   );
 }

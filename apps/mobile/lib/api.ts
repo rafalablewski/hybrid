@@ -1344,3 +1344,22 @@ export async function enrollClientMacro(linkId: string, goal: string): Promise<b
     return false;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Reachability probe — the connectivity manager (lib/net.tsx) pings this to tell
+// "the server is up" apart from "this call needs auth / returned empty". ANY HTTP
+// response (even 401/404) means reachable; only a network throw / timeout means
+// offline. No auth, short timeout, so it can run frequently and cheaply.
+// ---------------------------------------------------------------------------
+export async function pingHealth(timeoutMs = 6000): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    await fetch(`${API_URL}/api/health`, { method: "GET", signal: ctrl.signal, cache: "no-store" as RequestCache });
+    return true; // any response = the backend is reachable
+  } catch {
+    return false; // network error / timeout / DNS = unreachable
+  } finally {
+    clearTimeout(timer);
+  }
+}
