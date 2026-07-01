@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CORE Top Nav — 09 Nvidia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{--sans:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--head:var(--sans);
+  --bg:#0a0b0a;--chalk:#f2f3ef;--ash:#8b9088;--dim:#5f645d;--accent:#f5773d;--on-accent:#1a0d06;
+  --line:rgba(255,255,255,.08);--live:#5ecf8e;--warn:#f0b24a}
+*{box-sizing:border-box} html,body{margin:0}
+button{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:inherit;font-family:inherit;cursor:pointer;padding:0}
+body{background:var(--bg);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:40px 28px 90px}
+.wrap{max-width:1440px;margin:0 auto}
+.masthead{margin:0 0 34px;padding:0 4px}
+.masthead .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.masthead h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;font-family:var(--head)}
+.masthead p{color:var(--ash);font-size:14px;line-height:1.55;max-width:740px;margin:0}
+.masthead .tag{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.masthead .tag span{font-family:var(--mono);font-size:10.5px;color:var(--ash);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
+.surface{margin:0 0 20px}
+.surface-label{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 4px 9px}
+.surface-label b{color:var(--ash);font-weight:600}.surface-label .rule{flex:1;height:1px;background:var(--line)}
+.foot{margin-top:36px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:11px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.bar{height:60px;display:flex;align-items:center;gap:12px;padding:0 12px;background:linear-gradient(180deg,#15171a,#0f110f);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px -28px rgba(0,0,0,.9)}
+.idz{display:flex;align-items:center;gap:10px;padding-right:12px;border-right:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(150deg,var(--accent),#c74e22);display:grid;place-items:center;font-weight:800;font-size:15px;color:var(--on-accent)}
+.brand{display:flex;flex-direction:column;line-height:1.05}
+.brand b{font-size:13.5px;font-weight:700}.brand small{font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;color:var(--dim)}
+.ctxz{display:flex;flex-direction:column;line-height:1.15}
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ash)}
+.sub{font-size:12.5px;font-weight:600;color:var(--chalk)}
+.tabz{display:flex;align-items:center;gap:2px}
+.tab{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ash);padding:8px 13px;border-radius:9px;position:relative;transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--chalk)}
+.tab.on{color:var(--chalk)}
+.tab.on::after{content:"";position:absolute;left:13px;right:13px;bottom:3px;height:2px;border-radius:2px;background:var(--accent)}
+.spacer{flex:1}
+.toolz{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.ico{width:37px;height:37px;border-radius:9px;display:grid;place-items:center;color:var(--ash);position:relative;transition:.15s}
+.ico:hover{color:var(--chalk);background:rgba(255,255,255,.05)}
+.ico svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ico.bell i{position:absolute;top:5px;right:5px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--accent);color:var(--on-accent);font-size:9px;font-weight:800;display:grid;place-items:center;font-family:var(--mono);font-style:normal;border:2px solid var(--bg)}
+.primary{display:inline-flex;align-items:center;gap:8px;height:37px;padding:0 15px;border-radius:9px;background:linear-gradient(180deg,var(--accent),#e0632c);color:var(--on-accent);font-size:13px;font-weight:700;box-shadow:0 6px 16px -8px rgba(245,119,61,.7)}
+.primary svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+.live{display:inline-flex;align-items:center;gap:7px;height:35px;padding:0 12px;border-radius:9px;background:rgba(94,207,142,.12);border:1px solid rgba(94,207,142,.3);color:#8fe0b3;font-size:12px;font-weight:600;white-space:nowrap}
+.live .dot{width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 1.8s infinite}
+.statz{display:flex;align-items:center;gap:12px;padding-left:2px;flex:0 0 auto}
+.ops{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ops .dot{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.ops b{font-size:13px;font-weight:700}.ops small{font-family:var(--mono);font-size:10px;color:var(--ash)}
+.loc{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.loc .dot{width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 8px rgba(94,207,142,.7)}
+.loc b{font-size:12.5px;font-weight:600}
+.clock{font-family:var(--mono);font-size:14px;color:var(--chalk);font-variant-numeric:tabular-nums}
+
+:root{--accent:#76b900;--on-accent:#0d0d0d;--bg:#090a09;--live:#76b900;--warn:#f0b24a}
+body{background:#090a09;background-image:linear-gradient(rgba(118,185,0,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(118,185,0,.035) 1px,transparent 1px);background-size:44px 44px}
+.bar{background:#101210;border:0;border-radius:0;box-shadow:0 0 0 1px #1f2c14,0 18px 40px -28px #000;clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,15px 100%,0 calc(100% - 15px))}
+.idz{border-right:1px solid #1f2c14}
+.logo{border-radius:0;background:var(--accent);color:#0d0d0d;clip-path:polygon(0 0,100% 0,100% 68%,68% 100%,0 100%)}
+.brand small{color:var(--accent)}
+.kick{color:var(--accent);letter-spacing:.2em}
+.tab{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;border-radius:0;padding:8px 12px}
+.tab.on{color:var(--accent)}
+.tab.on::after{left:12px;right:12px;height:2px;background:var(--accent);box-shadow:0 0 9px var(--accent)}
+.ico{border-radius:0}.ico:hover{background:rgba(118,185,0,.1);color:var(--accent)}
+.ico.bell i{background:var(--accent);color:#0d0d0d;border-color:#101210;border-radius:0}
+.primary{border-radius:0;background:var(--accent);color:#0d0d0d;font-family:var(--mono);font-weight:700;text-transform:uppercase;font-size:11.5px;letter-spacing:.05em;box-shadow:0 0 18px -6px rgba(118,185,0,.8);clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.primary svg{stroke:#0d0d0d}
+.live{border-radius:0;background:rgba(118,185,0,.1);border-color:rgba(118,185,0,.4);color:var(--accent)}
+.live .dot{background:var(--accent)}
+.ops b{color:var(--accent)}.ops small{color:#7a8470}
+.clock{color:var(--accent)}
+.loc .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <p class="eyebrow">CORE OS · Top Nav Study · Set 2</p>
+    <h1>09 — Nvidia</h1>
+    <p>GPU-console energy: carbon-black on a faint technical grid, signal-green accent, angular cut-corner panels (clip-path notches), and monospaced uppercase labels. Reads like an instrument for something powerful. The active tab glows green; figures are rendered as data, not decoration.</p>
+    <div class="tag"><span>Signal-green #76b900</span><span>Cut-corner geometry</span><span>Technical grid field</span><span>Mono data labels</span></div>
+  </div>
+  <div id="bars"></div>
+  <div class="foot">09 / 15 — Nvidia</div>
+</div>
+<script>
+const IC = {
+  qr:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M17 20h0M20 14v3M20 20v0"/></svg>',
+  expand:'<svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>',
+  filter:'<svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4Z"/></svg>',
+  volume:'<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>',
+  sliders:'<svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  bell:'<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>',
+  sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>',
+  chev:'<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>'
+};
+const SURFACES = [
+  {id:'pos',   key:'POS',   name:'Point of Sale',    kick:'POINT OF SALE',    sub:'Till 1',         tabs:['Order','Tender'],                              tools:['qr','expand']},
+  {id:'kds',   key:'KDS',   name:'Kitchen Display',  kick:'KITCHEN DISPLAY',  sub:'Kraków',         tabs:['Fleet','Floor','Chef'],                        tools:[]},
+  {id:'orders',key:'ORDERS',name:'Orders',           kick:'ORDERS',           sub:'Live & History', tabs:['Live','History'],                              tools:['refresh']},
+  {id:'floor', key:'FLOOR', name:'Service',          kick:'SERVICE',          sub:'Floor & Slots',  tabs:['Floor','Slots','Dispatch'],                    tools:['refresh'], primary:'Add table'},
+  {id:'guest', key:'GUEST', name:'Guest Engagement', kick:'GUEST ENGAGEMENT', sub:null,             tabs:['Inbox','Guests','Loyalty','Concierge','Book'], tools:['filter','volume','sliders'], live:'WhatsApp live'}
+];
+const ico=(n,cls='ico')=>`<button class="${cls}" title="${n}">${IC[n]}</button>`;
+function bar(s){
+  const tabs = s.tabs.map((t,i)=>`<button class="tab${i===0?' on':''}">${t}</button>`).join('');
+  const tools = [
+    s.tools.map(n=>ico(n)).join(''),
+    s.live?`<div class="live"><span class="dot"></span>${s.live}</div>`:'',
+    s.primary?`<button class="primary">${IC.plus}<span>${s.primary}</span></button>`:'',
+  ].filter(Boolean).join('');
+  return `<div class="bar">
+    <div class="idz"><div class="logo">S</div><div class="brand"><b>Ottaviano</b><small>CORE OS</small></div></div>
+    <div class="ctxz"><span class="kick">${s.kick}</span>${s.sub?`<span class="sub">${s.sub}</span>`:''}</div>
+    <div class="tabz">${tabs}</div>
+    <div class="spacer"></div>
+    <div class="toolz">${tools}</div>
+    <div class="statz">
+      <div class="ops"><span class="dot"></span><b>3 at-risk</b><small>L3 · 24.9km</small></div>
+      <div class="loc"><span class="dot"></span><b>Kraków</b></div>
+      <div class="clock">16:16</div>
+      <button class="ico bell" title="alerts">${IC.bell}<i>2</i></button>
+      <button class="ico" title="theme">${IC.sun}</button>
+    </div>
+  </div>`;
+}
+document.getElementById('bars').innerHTML = SURFACES.map(s=>`
+  <section class="surface">
+    <div class="surface-label"><b>${s.key}</b> · ${s.name}<span class="rule"></span></div>
+    ${bar(s)}
+  </section>`).join('');
+</script>
+</body>
+</html>

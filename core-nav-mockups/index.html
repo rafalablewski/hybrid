@@ -25,13 +25,17 @@ a.card:hover{border-color:rgba(245,119,61,.4);background:#141613;transform:trans
 .go{color:var(--dim);font-size:22px}.card:hover .go{color:var(--accent)}
 .foot{margin-top:44px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:11.5px;line-height:1.8}
 .foot b{color:var(--ash)}
+.body h2 em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--accent);margin-left:6px;vertical-align:middle}
+.setlabel{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin:38px 0 14px;padding-top:26px;border-top:1px solid var(--line)}
+.setlabel b{color:var(--ash)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="eyebrow">Ottaviano · CORE OS</p>
   <h1>Top Nav Redesign</h1>
-  <p class="lede">Five standalone directions for the CORE top navigation, each a different <b style="color:var(--chalk)">architecture</b> — not a reskin. Every file renders all five surfaces (POS · KDS · Orders · Service · Guest) so you can compare like-for-like. Open each and see which structure feels right.</p>
+  <p class="lede">Fifteen standalone directions for the CORE top navigation, each a different <b style="color:var(--chalk)">architecture</b> — not a reskin. Every file renders all five surfaces (POS · KDS · Orders · Service · Guest) so you can compare like-for-like. Set 1 explores nav <i>structure</i>; Set 2 borrows a signature aesthetic from a brand or design tradition.</p>
+  <p class="setlabel">Set 1 · structural</p>
   <div class="grid">
     <a class="card" href="01-cockpit.html"><span class="num">01</span><div class="body"><h2>Cockpit</h2><p>One 60px row, three fixed zones. Identity + context · centered segmented section switch · divider-grouped utilities. The safe professional standard.</p></div><span class="go">→</span></a>
     <a class="card" href="02-twotier.html"><span class="num">02</span><div class="body"><h2>Two-Tier</h2><p>Thin global utility strip on top, bold contextual working row below. Cleanly separates “the venue” from “this screen.”</p></div><span class="go">→</span></a>
@@ -39,6 +43,21 @@ a.card:hover{border-color:rgba(245,119,61,.4);background:#141613;transform:trans
     <a class="card" href="04-switchboard.html"><span class="num">04</span><div class="body"><h2>Switchboard</h2><p>Makes the module switch the hero — labelled switcher + quick-jump icon rail — and collapses the four loose status pills into one cluster.</p></div><span class="go">→</span></a>
     <a class="card" href="05-editorial.html"><span class="num">05</span><div class="body"><h2>Editorial</h2><p>Big 900-weight section wordmark, mono underline tabs, metrics instead of pills. Accent reserved for state only. Legible across the room.</p></div><span class="go">→</span></a>
   </div>
+
+  <p class="setlabel">Set 2 · inspired by</p>
+  <div class="grid">
+    <a class="card" href="06-apple.html"><span class="num">06</span><div class="body"><h2>Apple</h2><p>macOS / visionOS vibrancy: translucent backdrop-blur bar, circular mark, sliding-pill segmented control, system-blue accent. Quiet and precise.</p></div><span class="go">→</span></a>
+    <a class="card" href="07-lucid.html"><span class="num">07</span><div class="body"><h2>Lucid</h2><p>Lucid Motors luxury: expansive whitespace, hairline-thin wide-tracked type, a cosmos gradient, aurora underline. The premium-EV-cockpit end.</p></div><span class="go">→</span></a>
+    <a class="card" href="08-tesla.html"><span class="num">08</span><div class="body"><h2>Tesla</h2><p>Model-S touchscreen: near-monochrome, big soft-cornered touch targets, white primary, colour used only for alerts. Glance-and-gloved-finger.</p></div><span class="go">→</span></a>
+    <a class="card" href="09-nvidia.html"><span class="num">09</span><div class="body"><h2>Nvidia</h2><p>GPU-console: carbon-black on a technical grid, signal-green accent, angular cut-corner panels, monospaced uppercase data labels.</p></div><span class="go">→</span></a>
+    <a class="card" href="10-japandi.html"><span class="num">10</span><div class="body"><h2>Japandi</h2><p>Your repo's warm light theme: oat-paper surfaces, clay accent, a Fraunces serif for the section name. Feels like paper, not a screen.</p></div><span class="go">→</span></a>
+    <a class="card" href="11-swiss.html"><span class="num">11</span><div class="body"><h2>Swiss</h2><p>International Typographic Style: a strict modular grid of ruled cells, black / white / signal-red, sharp corners, labelled data compartments.</p></div><span class="go">→</span></a>
+    <a class="card" href="12-minimal.html"><span class="num">12</span><div class="body"><h2>Minimal</h2><p>Everything removed but meaning: a single hairline baseline, text-only tabs, whisper-weight icons, status as plain figures. Content-first.</p></div><span class="go">→</span></a>
+    <a class="card" href="13-professional.html"><span class="num">13</span><div class="body"><h2>Professional</h2><p>Enterprise ops console (Bloomberg / Linear): a seamless bar of ruled compartments — identity, section, tabs, and every KPI labelled. Dense, not messy.</p></div><span class="go">→</span></a>
+    <a class="card" href="14-command.html"><span class="num">14</span><div class="body"><h2>Command <em>(mine)</em></h2><p>Keyboard-first terminal bar: traffic-light chrome, a live shell prompt (core ❯ pos:order), mono tab chips, ⌘K launcher, terse telemetry.</p></div><span class="go">→</span></a>
+    <a class="card" href="15-aurora.html"><span class="num">15</span><div class="body"><h2>Aurora <em>(mine)</em></h2><p>The flagship: CORE wearing HYBRID's real acid-lime Aurora identity — ambient edge-glow, glowing segmented tabs. The hero-screenshot option.</p></div><span class="go">→</span></a>
+  </div>
+
   <div class="foot">
     <b>Palette</b> ink #0b0c0b · chalk #f2f3ef · ash #8b9088 · accent #f5773d · live #5ecf8e · warn #f0b24a<br/>
     <b>Type</b> Archivo (display) · JetBrains Mono (labels/metrics) &nbsp;·&nbsp; <b>Shared</b> ops metric · Kraków venue · 16:16 clock · alerts(2) · ⌘K
