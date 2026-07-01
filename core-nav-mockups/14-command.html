@@ -17,11 +17,11 @@ body{background:var(--bg);color:var(--chalk);font-family:var(--sans);-webkit-fon
 .masthead{margin:0 0 30px;padding:0 4px}
 .masthead .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
 .masthead h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
-.masthead p{color:var(--ash);font-size:14px;line-height:1.55;max-width:760px;margin:0}
+.masthead p{color:var(--ash);font-size:14px;line-height:1.55;max-width:780px;margin:0}
 .masthead .tag{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .masthead .tag span{font-family:var(--mono);font-size:10.5px;color:var(--ash);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
 
-.sechead{display:flex;align-items:baseline;gap:12px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin:34px 4px 16px;padding-top:24px;border-top:1px solid var(--line)}
+.sechead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin:34px 4px 16px;padding-top:24px;border-top:1px solid var(--line)}
 .sechead b{color:var(--accent);font-weight:600}
 .sechead em{font-style:normal;text-transform:none;letter-spacing:0;color:var(--dim);font-size:11px}
 
@@ -64,45 +64,55 @@ body{background:var(--bg);color:var(--chalk);font-family:var(--sans);-webkit-fon
 .cm-tel{display:flex;align-items:center;gap:13px;font-size:11.5px;color:var(--ash);white-space:nowrap;flex:0 0 auto}
 .cm-tel .lbl{color:var(--dim)}.cm-tel .warn{color:var(--warn)}.cm-tel .ok{color:var(--accent)}
 
-/* ── laptop: shed the least-important bits so the row keeps breathing ── */
-@container (max-width:1180px){ .cm-tel .loc{display:none} }
-@container (max-width:1040px){ .cm-lights,.cm-div.d1{display:none} }
-
-/* ════════ mobile / narrow: stack into rows ════════ */
-@container (max-width:960px){
+/* ── laptop / iPad-landscape: shed low-priority bits so the row keeps breathing ── */
+@container (max-width:1180px){ .cm-tel .loc{display:none} }                     /* iPad Pro/mini landscape */
+/* ── condensed single row: iPad Pro 13" portrait (~1024) + iPad landscape ── */
+@container (max-width:1080px){
+  .cm-lights,.cm-div.d1{display:none}
+  .cm-k span{display:none}          /* search collapses to a ⌘K chip */
+  .bar{gap:11px}
+}
+/* ════════ stacked: iPad mini / iPad 11" portrait + all phones ════════ */
+@container (max-width:900px){
   .bar{flex-wrap:wrap;padding:11px 13px;gap:10px 12px;row-gap:10px}
   .cm-lights,.cm-div{display:none}
   .cm-sp{display:none}
+  .cm-k span{display:inline}         /* bring the "search" label back on the action row */
   .cm-prompt{order:1;font-size:12.5px}
   .cm-tel{order:2;margin-left:auto;gap:11px}
   .cm-tel .loc{display:none}
   .cm-right{order:3}
-  .cm-tabs{order:4;flex:1 0 100%;padding-bottom:2px}   /* full-width scrollable row */
+  .cm-tabs{order:4;flex:1 0 100%;padding-bottom:2px}   /* full-width swipe-scroll row */
   .cm-surf{order:5}
   .cm-live{order:6}
   .cm-primary{order:7}
-  .cm-k{order:8;margin-left:auto}                        /* search sits at the end of the action row */
+  .cm-k{order:8;margin-left:auto}
 }
-/* very small phones: let the action items breathe on their own line */
-@container (max-width:430px){
+/* ── iPhone 15 (393) / 17 Pro Max (440): give search its own line ── */
+@container (max-width:470px){
   .cm-k{flex-basis:100%;margin-left:0;justify-content:space-between}
   .cm-prompt{font-size:12px}
 }
 
-/* ════════ phone-frame preview (so the mobile layout is visible on desktop) ════════ */
-.previews{display:flex;flex-wrap:wrap;gap:44px;align-items:flex-start}
-.phone{width:392px;flex:0 0 auto;border:11px solid #14171b;border-radius:46px;background:#000;padding:16px 13px 22px;box-shadow:0 50px 90px -50px #000,inset 0 0 0 1px #23272d}
-.phone .notch{width:128px;height:27px;background:#14171b;border-radius:0 0 16px 16px;margin:-16px auto 14px}
-.phone-screen{display:flex;flex-direction:column;gap:14px}
-.phone .surface{margin:0}
-.phone .surface-label{font-size:9px;margin-bottom:7px}
-.pnote{color:var(--ash);font-size:13px;line-height:1.5;max-width:300px}
+/* ════════ device-frame gallery (see each target device on desktop) ════════ */
+.gallery{display:flex;flex-wrap:wrap;gap:44px;align-items:flex-start}
+.device figcaption{font-family:var(--mono);font-size:11px;color:var(--ash);margin:0 0 12px;display:flex;gap:9px;align-items:baseline}
+.device figcaption b{color:var(--accent);font-weight:600;letter-spacing:.02em}
+.device figcaption span{color:var(--dim);font-size:10px}
+.frame{position:relative;background:#000;box-shadow:0 50px 90px -50px #000,inset 0 0 0 1px #23272d;max-width:100%;overflow-x:auto}
+.device.phone .frame{border:11px solid #14171b;border-radius:46px;padding:42px 13px 22px}
+.device.pad .frame{border:14px solid #14171b;border-radius:28px;padding:26px 16px 20px}
+.screen{display:flex;flex-direction:column;gap:14px}
+.island{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:98px;height:27px;background:#000;border-radius:16px;z-index:3;box-shadow:inset 0 0 0 1px #1c1f24}
+.cam{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:#22262c;z-index:3}
+.frame .surface{margin:0}
+.frame .surface-label{font-size:9px;margin-bottom:7px}
+.pnote{color:var(--ash);font-size:13px;line-height:1.55;max-width:320px}
 .pnote b{color:var(--chalk)}
 
 @media (max-width:640px){
   body{padding:24px 14px 60px}
-  .phone{width:100%;max-width:392px;margin:0 auto}
-  .previews{gap:24px}
+  .gallery{gap:28px}
 }
 </style>
 </head>
@@ -111,23 +121,18 @@ body{background:var(--bg);color:var(--chalk);font-family:var(--sans);-webkit-fon
   <div class="masthead">
     <p class="eyebrow">CORE OS · Top Nav</p>
     <h1>Command — responsive</h1>
-    <p>A keyboard-first command bar for power users: traffic-light chrome, a live shell prompt that states exactly where you are (<span style="font-family:var(--mono);color:var(--accent)">core ❯ pos:order</span>), monospaced tab chips, a blinking caret and a ⌘K launcher. <b style="color:var(--chalk)">Now fully responsive</b> — each bar is a CSS container, so it reflows from a single desktop row into a stacked mobile layout (prompt + telemetry up top, horizontally-scrollable tabs below, actions wrapping). Resize the window to watch it adapt, or see the phone frame below.</p>
-    <div class="tag"><span>Container-query responsive</span><span>Desktop → mobile reflow</span><span>Scrollable tab chips</span><span>Touch-friendly targets</span></div>
+    <p>A keyboard-first command bar: traffic-light chrome, a live shell prompt that states exactly where you are (<span style="font-family:var(--mono);color:var(--accent)">core ❯ pos:order</span>), monospaced tab chips, a blinking caret and a ⌘K launcher. <b style="color:var(--chalk)">Tuned for real devices</b> — each bar is a CSS container, so the layout is driven by the bar's own width, not guessed from the viewport. Three tiers: full terminal row → condensed single row (iPad Pro portrait &amp; iPad landscape drop <span style="font-family:var(--mono)">loc</span> + lights and collapse search to a ⌘K chip) → stacked (iPad&nbsp;mini + phones: prompt&nbsp;+&nbsp;telemetry, swipe-scroll tabs, wrapping actions).</p>
+    <div class="tag"><span>iPhone 15</span><span>iPhone 17 Pro Max</span><span>iPad mini</span><span>iPad Pro 13″</span><span>Container-query tiers</span></div>
   </div>
 
-  <div class="sechead"><b>Desktop / tablet</b> · full width <em>— drag the browser narrower to see it reflow live</em></div>
+  <div class="sechead"><b>Desktop / tablet</b> · full width <em>— drag the browser narrower to watch the tiers switch live</em></div>
   <div id="bars"></div>
 
-  <div class="sechead"><b>Mobile</b> · 390&nbsp;px viewport</div>
-  <div class="previews">
-    <div class="phone">
-      <div class="notch"></div>
-      <div class="phone-screen" id="barsMobile"></div>
-    </div>
-    <p class="pnote">Same markup, no JS branching — the <b>container query</b> restacks it: row 1 keeps the shell prompt with terse <b>risk · time</b> telemetry and the alert/theme controls; the <b>tab chips</b> drop to a full-width swipe-scroll row; contextual actions (QR, add table, WhatsApp-live, ⌘K) wrap onto an action row with comfortable tap targets.</p>
-  </div>
+  <div class="sechead"><b>Target devices</b> · portrait <em>— same markup, layout driven by each frame's width</em></div>
+  <div class="gallery" id="gallery"></div>
+  <p class="pnote" style="margin-top:26px">No JS branching or user-agent sniffing — the <b>container query</b> restacks the identical markup at each frame's width. Rotate any iPad to landscape and its wider row simply restores <span style="font-family:var(--mono)">loc</span> and the full search box.</p>
 
-  <div class="foot">14 — Command · responsive · Archivo + JetBrains Mono</div>
+  <div class="foot">14 — Command · responsive · iPhone 15 · iPhone 17 Pro Max · iPad mini · iPad Pro 13″</div>
 </div>
 
 <script>
@@ -179,9 +184,26 @@ function block(s){
     <div class="cq">${bar(s)}</div>
   </section>`;
 }
+const byId=id=>SURFACES.find(s=>s.id===id);
 document.getElementById('bars').innerHTML = SURFACES.map(block).join('');
-document.getElementById('barsMobile').innerHTML =
-  SURFACES.filter(s=>['pos','floor','guest'].includes(s.id)).map(block).join('');
+
+/* device gallery — width in CSS px matches each device's portrait viewport */
+const DEVICES=[
+  {name:'iPhone 15',         res:'393 × 852',  w:393,  kind:'phone', notch:'island', surf:['pos','guest']},
+  {name:'iPhone 17 Pro Max', res:'440 × 956',  w:440,  kind:'phone', notch:'island', surf:['pos','guest']},
+  {name:'iPad mini',         res:'744 × 1133', w:744,  kind:'pad',   notch:'cam',    surf:['floor','guest']},
+  {name:'iPad Pro 13″',      res:'1024 × 1366',w:1024, kind:'pad',   notch:'cam',    surf:['floor','guest']},
+];
+document.getElementById('gallery').innerHTML = DEVICES.map(d=>`
+  <figure class="device ${d.kind}">
+    <figcaption><b>${d.name}</b><span>${d.res}</span></figcaption>
+    <div class="frame">
+      <div class="${d.notch}"></div>
+      <div class="screen" style="width:${d.w}px">
+        ${d.surf.map(id=>block(byId(id))).join('')}
+      </div>
+    </div>
+  </figure>`).join('');
 </script>
 </body>
 </html>
