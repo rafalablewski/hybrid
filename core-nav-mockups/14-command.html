@@ -189,10 +189,10 @@ document.getElementById('bars').innerHTML = SURFACES.map(block).join('');
 
 /* device gallery — width in CSS px matches each device's portrait viewport */
 const DEVICES=[
-  {name:'iPhone 15',         res:'393 × 852',  w:393,  kind:'phone', notch:'island', surf:['pos','guest']},
-  {name:'iPhone 17 Pro Max', res:'440 × 956',  w:440,  kind:'phone', notch:'island', surf:['pos','guest']},
-  {name:'iPad mini',         res:'744 × 1133', w:744,  kind:'pad',   notch:'cam',    surf:['floor','guest']},
-  {name:'iPad Pro 13″',      res:'1024 × 1366',w:1024, kind:'pad',   notch:'cam',    surf:['floor','guest']},
+  {name:'iPhone 15',         res:'393 × 852',  w:393,  kind:'phone', notch:'island'},
+  {name:'iPhone 17 Pro Max', res:'440 × 956',  w:440,  kind:'phone', notch:'island'},
+  {name:'iPad mini',         res:'744 × 1133', w:744,  kind:'pad',   notch:'cam'},
+  {name:'iPad Pro 13″',      res:'1024 × 1366',w:1024, kind:'pad',   notch:'cam'},
 ];
 document.getElementById('gallery').innerHTML = DEVICES.map(d=>`
   <figure class="device ${d.kind}">
@@ -200,7 +200,7 @@ document.getElementById('gallery').innerHTML = DEVICES.map(d=>`
     <div class="frame">
       <div class="${d.notch}"></div>
       <div class="screen" style="width:${d.w}px">
-        ${d.surf.map(id=>block(byId(id))).join('')}
+        ${SURFACES.map(block).join('')}
       </div>
     </div>
   </figure>`).join('');
