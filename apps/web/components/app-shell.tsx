@@ -514,7 +514,13 @@ export default function AppShell() {
       </aside>
 
       {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
-      <main id="main" tabIndex={-1} style={{ flex: 1, padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", width: "100%", position: "relative", zIndex: 1, outline: "none" }}>
+      {/* minWidth:0 lets this flex child shrink past its content's intrinsic
+          width instead of forcing the shell wider than the sidebar leaves room
+          for (which pushed the page into horizontal scroll in the 900–1180px
+          band). overflowX:clip is the belt-and-suspenders guard — the shell
+          never scrolls sideways; wide tables/carousels scroll in their own
+          containers, mirroring the native app. */}
+      <main id="main" tabIndex={-1} style={{ flex: 1, minWidth: 0, overflowX: "clip", padding: isMobile ? (aurora ? "16px 16px 120px" : "16px 16px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none" }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         {/* Desktop-only utility header (Classic shows the app kicker + screen
