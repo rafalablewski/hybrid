@@ -39,13 +39,12 @@ brackets. Left as-is in the catalog below until you confirm.
 - `Ab Roller Rollout` ⟷ `From Knees Ab Wheel Rollout` / `From Feet Ab Wheel Rollout` — generic vs. the two knee/feet specifics. **[drop generic "Ab Roller Rollout"]**
 - `Weighted Dip` ⟷ `Chest Dip` / `Triceps Dip` / `Weighted Triceps Dip` — ambiguous which it weights. **[drop "Weighted Dip"]**
 
-### Descriptive names that duplicate a generic built-in (naming policy)
+### Descriptive names that duplicate a generic built-in (RESOLVED)
 The fuller names below are the SAME movement as an existing built-in engine key.
-If seeded as new names they'd appear TWICE in the picker (e.g. "Bench Press" and
-"Barbell Bench Press"). Recommendation: keep the descriptive catalog name and add
-the built-in key as an **alias** so both resolve to one movement — decide before
-seeding.
-| Catalog name | Built-in engine key |
+**Decision: keep the descriptive catalog name as canonical; the built-in key
+becomes an alias** so both resolve to one movement (no second picker entry).
+Aliases are applied on the entries in the catalog below.
+| Catalog name (canonical) | Built-in key → alias |
 |---|---|
 | `Barbell Bench Press` | `Bench Press` |
 | `Barbell Back Squat` | `Back Squat` |
@@ -72,10 +71,10 @@ seeding.
 ## Catalog (deduplicated)
 
 ### Chest
-- Barbell Bench Press
+- Barbell Bench Press _(alias: Bench Press)_
 - Incline Barbell Bench Press
 - Decline Barbell Bench Press
-- Dumbbell Bench Press
+- Dumbbell Bench Press _(alias: DB Bench Press)_
 - Incline Dumbbell Bench Press
 - Decline Dumbbell Bench Press
 - Cable Crossover
@@ -101,7 +100,7 @@ seeding.
 - _dropped:_ ~~Push-up~~ (built-in `Push-Up`)
 
 ### Back
-- Barbell Deadlift
+- Barbell Deadlift _(alias: Deadlift)_
 - Sumo Deadlift
 - Romanian Deadlift
 - Barbell Row
@@ -133,9 +132,9 @@ seeding.
 - Kelso Row
 
 ### Shoulders (Delt Focus)
-- Standing Overhead Press
+- Standing Overhead Press _(alias: Overhead Press)_
 - Seated Barbell Shoulder Press
-- Seated Dumbbell Press
+- Seated Dumbbell Press _(alias: DB Overhead Press)_
 - Arnold Press
 - Machine Shoulder Press
 - Dumbbell Lateral Raise
@@ -177,8 +176,8 @@ seeding.
 - Wrist Roller Rollup
 
 ### Quads & Glutes
-- Barbell Back Squat
-- Barbell Front Squat
+- Barbell Back Squat _(alias: Back Squat)_
+- Barbell Front Squat _(alias: Front Squat)_
 - Hack Squat
 - Leg Press
 - Bulgarian Split Squat
@@ -212,8 +211,8 @@ seeding.
 - Nordic Hamstring Curl
 - Good Morning
 - Deficit Romanian Deadlift
-- Dumbbell Romanian Deadlift
-- Dumbbell Single-Leg Romanian Deadlift
+- Dumbbell Romanian Deadlift _(alias: DB Romanian Deadlift)_
+- Dumbbell Single-Leg Romanian Deadlift _(alias: Single-Leg RDL)_
 - Smith Machine Romanian Deadlift
 - Glute-Ham Raise
 - Machine Hip Thrust
