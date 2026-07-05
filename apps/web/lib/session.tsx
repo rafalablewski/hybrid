@@ -11,6 +11,7 @@ import type { User } from "@supabase/supabase-js";
 import { type Entitlement, type AuthRole, normalizeAuthRole, normalizeEntitlement } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { resetPersona } from "@/lib/persona";
+import { flushGuestSessions } from "@/lib/guest";
 
 // Role model mirrors the Prisma schema (CLIENT | COACH | ADMIN). Aliased to the
 // shared core AuthRole so web and mobile normalize identical access-control input.
@@ -139,6 +140,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           if (!cancelled) setSession(null);
           return Promise.resolve();
         }
+        // Signed in → push any pre-signup guest workouts (this device) into real
+        // Session history. Best-effort + self-guarded; no-ops when the queue is
+        // empty, so running it on every auth event is safe. Parity with mobile.
+        void flushGuestSessions().catch(() => {});
         return resolveSession(user)
           .then((s) => {
             if (!cancelled && mine === seq) setSession(s);

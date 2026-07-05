@@ -38,6 +38,7 @@ import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
+import { saveGuestSession } from "@/lib/guest";
 import { useLang } from "@/lib/i18n";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
@@ -75,12 +76,17 @@ export default function AuroraLogger({
   onSaved,
   onHome,
   initialBlocks,
+  guest = false,
 }: {
   sessions: LoggedSession[];
   onSaved: () => void;
   /** Go back to Today from the summary (the analysis link uses onSaved → history). */
   onHome?: () => void;
   initialBlocks?: SessionBlock[];
+  /** Guest (no account): persist the finished workout on-device + mirror it to
+   *  the backend as an AnonSession instead of POSTing a real Session. Parity with
+   *  the mobile guest logger. */
+  guest?: boolean;
 }) {
   const { t } = useLang();
   // The session auto-titles itself (nobody names a workout while logging) — a
@@ -258,11 +264,12 @@ export default function AuroraLogger({
   };
 
   useEffect(() => {
+    if (guest) return; // guests have no account → no saved routines to load
     fetch("/api/templates")
       .then((r) => (r.ok ? r.json() : { templates: [] }))
       .then((d) => setRoutines(d.templates ?? []))
       .catch(() => {});
-  }, []);
+  }, [guest]);
 
   const loadRoutine = (r: Routine) => {
     setBlocks(r.blocks.map((b) => ({ uid: uid(), ...b }) as EditableBlock));
@@ -321,24 +328,32 @@ export default function AuroraLogger({
       ),
     };
     try {
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (res.status === 401) {
-        setError(t("w.train.logger.signInSessions"));
-        setSaving(false);
-        return;
+      // Guest (no account): persist on-device + mirror to the backend as an
+      // AnonSession — never POST a real Session. There's no server row to rename,
+      // so the finish screen's optional rename is local-only.
+      let sessionId: string | null = null;
+      if (guest) {
+        await saveGuestSession(payload);
+      } else {
+        const res = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.status === 401) {
+          setError(t("w.train.logger.signInSessions"));
+          setSaving(false);
+          return;
+        }
+        if (!res.ok) {
+          setError(`${t("w.train.logger.saveErrorPrefix")}${res.status}${t("w.train.logger.saveErrorSuffix")}`);
+          setSaving(false);
+          return;
+        }
+        // Grab the saved row's id so the finish screen can rename it (optional).
+        const saved = (await res.json().catch(() => ({}))) as { session?: { id?: string } };
+        sessionId = saved.session?.id ?? null;
       }
-      if (!res.ok) {
-        setError(`${t("w.train.logger.saveErrorPrefix")}${res.status}${t("w.train.logger.saveErrorSuffix")}`);
-        setSaving(false);
-        return;
-      }
-      // Grab the saved row's id so the finish screen can rename it (optional).
-      const saved = (await res.json().catch(() => ({}))) as { session?: { id?: string } };
-      const sessionId = saved.session?.id ?? null;
       // Compute the win against everything done before this session, then land
       // on the celebration (the parent's onSaved fires when they tap Done).
       const cleanBlocks = payload.blocks as SessionBlock[];
@@ -384,7 +399,7 @@ export default function AuroraLogger({
     }
   };
 
-  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} />;
+  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} guest={guest} />;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -711,7 +726,7 @@ function StoryCard({ slide, st, w, t, units, active = false }: { slide: StorySli
  *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
  *  a short navigator.vibrate where the device supports it (the web analog of the
  *  native success haptic). */
-function Finish({ data, units, onDone, onHome }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void }) {
+function Finish({ data, units, onDone, onHome, guest = false }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void; guest?: boolean }) {
   const { t } = useLang();
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
@@ -884,10 +899,23 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
       </button>
       {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
 
-      {/* Save as routine. */}
-      <div style={{ marginTop: 14 }}>
-        <SaveRoutineCard blocks={blocks} defaultName={title} />
-      </div>
+      {/* Save as routine (account-only). For a guest there's no account to attach
+          a routine to — surface a "create a free account" CTA instead, matching
+          the mobile guest summary. The workout is already saved on-device and
+          mirrored for the admin; signing up flushes it into real history. */}
+      {guest ? (
+        <a
+          href="/login?mode=signup"
+          style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 14, background: `color-mix(in srgb, ${C("lime")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, borderRadius: 18, padding: "14px 18px" }}
+        >
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: C("lime") }}>{t("summary.guestSave")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{t("summary.guestSaveSub")}</div>
+        </a>
+      ) : (
+        <div style={{ marginTop: 14 }}>
+          <SaveRoutineCard blocks={blocks} defaultName={title} />
+        </div>
+      )}
 
       {/* See analysis — at the very bottom (onDone → history). */}
       <button onClick={onDone} style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "14px 28px", cursor: "pointer", marginTop: 24 }}>

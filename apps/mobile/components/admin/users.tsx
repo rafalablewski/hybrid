@@ -38,6 +38,15 @@ type Detail = {
   lastActiveAt: string | null;
 };
 
+type WorkoutRow = {
+  id: string;
+  title: string;
+  startedAt: string;
+  finished: boolean;
+  archived: boolean;
+  blocks: { name?: string }[];
+};
+
 type RoleVal = "CLIENT" | "COACH" | "ADMIN";
 type LangVal = "en" | "pl" | "de";
 
@@ -160,6 +169,13 @@ function UserDetail({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [workouts, setWorkouts] = useState<WorkoutRow[] | null>(null);
+
+  useEffect(() => {
+    adminGet<{ sessions?: WorkoutRow[] }>(`/api/admin/users/${id}/sessions`).then((res) =>
+      setWorkouts(res.ok && res.data ? res.data.sessions ?? [] : []),
+    );
+  }, [id]);
 
   useEffect(() => {
     adminGet<Detail>(`/api/admin/users/${id}`).then((res) => {
@@ -269,6 +285,41 @@ function UserDetail({
           ))}
         </View>
       )}
+
+      {/* logged workouts — the actual sessions, so an admin can see WHAT this
+          user trained (and whether sessions are logging), not just the count.
+          Mirrors apps/web/components/admin/users.tsx. */}
+      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 14 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.amber) }}>
+            Logged workouts
+          </Text>
+          <Mono color={palette.ash}>{workouts ? `${workouts.length}${workouts.length === 100 ? "+" : ""}` : "…"}</Mono>
+        </View>
+        {workouts === null ? (
+          <Mono color={palette.ash}>Loading…</Mono>
+        ) : workouts.length === 0 ? (
+          <Mono color={palette.ash}>No workouts logged yet.</Mono>
+        ) : (
+          workouts.slice(0, 25).map((w) => (
+            <View key={w.id} style={{ borderTopWidth: 1, borderTopColor: palette.line, paddingVertical: 8 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.xs }}>
+                <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: palette.chalk, flexShrink: 1 }} numberOfLines={1}>
+                  {w.title}
+                </Text>
+                <View style={{ flexDirection: "row", gap: space.xs }}>
+                  {!w.finished ? <Chip color={palette.amber}>unfinished</Chip> : null}
+                  {w.archived ? <Chip color={palette.ash}>archived</Chip> : null}
+                </View>
+              </View>
+              <Mono color={palette.ash} style={{ marginTop: 2 }}>
+                {fmt(w.startedAt)}
+                {w.blocks.length ? ` · ${w.blocks.length} block${w.blocks.length === 1 ? "" : "s"}` : ""}
+              </Mono>
+            </View>
+          ))
+        )}
+      </View>
 
       {/* role / language editor */}
       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 14 }}>

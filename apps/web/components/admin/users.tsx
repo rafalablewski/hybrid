@@ -27,6 +27,17 @@ type Row = {
 
 type ListResp = { total: number; page: number; pages: number; pageSize: number; users: Row[] };
 
+type WorkoutRow = {
+  id: string;
+  title: string;
+  startedAt: string;
+  completedAt: string | null;
+  readiness: number | null;
+  archived: boolean;
+  finished: boolean;
+  blocks: { name?: string }[];
+};
+
 type Detail = {
   id: string;
   email: string;
@@ -391,6 +402,15 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [workouts, setWorkouts] = useState<WorkoutRow[] | null>(null);
+
+  useEffect(() => {
+    setWorkouts(null);
+    fetch(`/api/admin/users/${id}/sessions`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((res: { sessions?: WorkoutRow[] }) => setWorkouts(res.sessions ?? []))
+      .catch(() => setWorkouts([]));
+  }, [id]);
 
   useEffect(() => {
     fetch(`/api/admin/users/${id}`)
@@ -532,6 +552,46 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 ))}
               </div>
             )}
+
+            {/* logged workouts — the actual Session rows, so an admin can see
+                WHAT this user has trained (and whether sessions are logging in),
+                not just the count. Includes archived + unfinished rows. */}
+            <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18, marginBottom: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+                  Logged workouts
+                </Mono>
+                <Mono s={{ fontSize: fs.caption }} c={ASH}>
+                  {workouts ? `${workouts.length}${workouts.length === 100 ? "+" : ""}` : "…"}
+                </Mono>
+              </div>
+              {workouts === null ? (
+                <Mono s={{ fontSize: fs.body }} c={ASH}>Loading…</Mono>
+              ) : workouts.length === 0 ? (
+                <Mono s={{ fontSize: fs.body }} c={ASH}>No workouts logged yet.</Mono>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: space.xs, maxHeight: 260, overflowY: "auto" }}>
+                  {workouts.map((w) => (
+                    <div key={w.id} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "9px 11px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.xs }}>
+                        <div style={{ ...disp, fontWeight: 600, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {w.title}
+                        </div>
+                        <span style={{ display: "inline-flex", gap: 4, flexShrink: 0 }}>
+                          {!w.finished && <Chip c={AMBER}>unfinished</Chip>}
+                          {w.archived && <Chip c={ASH}>archived</Chip>}
+                        </span>
+                      </div>
+                      <Mono s={{ fontSize: fs.caption }} c={ASH}>
+                        {fmt(w.startedAt)}
+                        {w.blocks.length ? ` · ${w.blocks.length} block${w.blocks.length === 1 ? "" : "s"}` : ""}
+                        {w.blocks.length ? ` · ${w.blocks.map((b) => b.name).filter(Boolean).slice(0, 3).join(", ")}` : ""}
+                      </Mono>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* role / language editor */}
             <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>

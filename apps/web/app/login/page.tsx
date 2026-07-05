@@ -398,7 +398,17 @@ function ClassicLoginPage() {
           </div>
         )}
 
-        <div style={{ textAlign: "center", marginTop: 22 }}>
+        {/* Guest entry — train before signing up (parity with mobile + Aurora
+            login). Saved on-device + mirrored for the admin; flushes to real
+            history on sign-up. */}
+        <button
+          onClick={() => router.push("/train")}
+          style={{ ...disp, fontWeight: 700, fontSize: fs.body, width: "100%", padding: 13, borderRadius: 13, marginTop: 16, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}
+        >
+          Continue as a guest →
+        </button>
+
+        <div style={{ textAlign: "center", marginTop: 16 }}>
           <button onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
             <Mono s={{ fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase" }} c={ASH}>
               ← back

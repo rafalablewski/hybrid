@@ -213,6 +213,13 @@ export default function AuroraLogin() {
               </button>
             )}
 
+            {/* Guest entry — train before signing up (parity with mobile's
+                welcome "continue as a guest"). The workout is saved on-device +
+                mirrored for the admin, and flushes into real history on sign-up. */}
+            <button onClick={() => router.push("/train")} style={{ ...softPill, width: "100%", marginTop: 20 }}>
+              {t("welcome.aurora.guest")} →
+            </button>
+
             <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
           </>
         )}
