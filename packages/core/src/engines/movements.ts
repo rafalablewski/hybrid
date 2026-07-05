@@ -56,29 +56,73 @@ const PATTERN_TO_CATEGORY = (pattern: string): ExerciseCategory =>
     ? pattern
     : "other";
 
+/** Display order for the admin library's muscle-group `category` sections (the
+ *  headings the seeded catalog uses). Unknown categories sort A–Z after these. */
+export const LIBRARY_CATEGORY_ORDER = [
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Traps & Forearms",
+  "Quads & Glutes",
+  "Hamstrings & Glutes",
+  "Calves",
+  "Biceps",
+  "Triceps",
+  "Abs & Core",
+];
+
+/** A picker section. Pattern buckets carry an i18n `labelKey`; admin-library
+ *  muscle-group sections carry a raw `label` (the category text). */
+export interface ExerciseSection {
+  category: string;
+  labelKey?: string;
+  label?: string;
+  names: string[];
+}
+
 /**
- * Group an exercise catalog into muscle/pattern buckets for the picker. Names
- * present in `movements` are bucketed by their movement pattern; everything else
- * (free-typed lifts, library entries without pattern data, plus any `extraNames`)
- * falls into "other". Names sorted A–Z within a bucket; empty buckets dropped;
- * buckets returned in a fixed display order. Pure — mirrors olympicSportsByCategory.
+ * Group an exercise catalog into sections for the picker. An exercise that has a
+ * library `category` (via `categoryByName`) is grouped under that muscle-group
+ * heading (Chest, Back, …); everything else is bucketed by movement pattern
+ * (Squat/Hinge/Push/Pull/Conditioning, free-typed → Other). Names sorted A–Z
+ * within a section; empty sections dropped. Pattern buckets come first in their
+ * fixed order, then library categories in LIBRARY_CATEGORY_ORDER (unknown A–Z).
+ * Pure — mirrors olympicSportsByCategory.
  */
 export function exercisesByCategory(
   movements: Record<string, Movement>,
   extraNames: string[] = [],
-): { category: ExerciseCategory; labelKey: string; names: string[] }[] {
-  const buckets = new Map<ExerciseCategory, Set<string>>();
-  const add = (name: string, cat: ExerciseCategory) => {
-    if (!buckets.has(cat)) buckets.set(cat, new Set());
-    buckets.get(cat)!.add(name);
+  categoryByName: Record<string, string> = {},
+): ExerciseSection[] {
+  const patternBuckets = new Map<ExerciseCategory, Set<string>>();
+  const libBuckets = new Map<string, Set<string>>();
+  const place = (name: string, pattern?: string) => {
+    const lib = categoryByName[name]?.trim();
+    if (lib) {
+      if (!libBuckets.has(lib)) libBuckets.set(lib, new Set());
+      libBuckets.get(lib)!.add(name);
+    } else {
+      const cat = pattern ? PATTERN_TO_CATEGORY(pattern) : "other";
+      if (!patternBuckets.has(cat)) patternBuckets.set(cat, new Set());
+      patternBuckets.get(cat)!.add(name);
+    }
   };
-  for (const [name, m] of Object.entries(movements)) add(name, PATTERN_TO_CATEGORY(m.pattern));
-  for (const name of extraNames) if (!(name in movements)) add(name, "other");
-  return EXERCISE_CATEGORY_ORDER.flatMap((category) => {
-    const set = buckets.get(category);
-    if (!set || set.size === 0) return [];
-    return [{ category, labelKey: EXERCISE_CATEGORY_LABEL[category], names: [...set].sort((a, b) => a.localeCompare(b)) }];
-  });
+  for (const [name, m] of Object.entries(movements)) place(name, m.pattern);
+  for (const name of extraNames) if (!(name in movements)) place(name);
+
+  const sortNames = (s: Set<string>) => [...s].sort((a, b) => a.localeCompare(b));
+  const out: ExerciseSection[] = [];
+  for (const category of EXERCISE_CATEGORY_ORDER) {
+    const set = patternBuckets.get(category);
+    if (set && set.size) out.push({ category, labelKey: EXERCISE_CATEGORY_LABEL[category], names: sortNames(set) });
+  }
+  const rank = (c: string) => {
+    const i = LIBRARY_CATEGORY_ORDER.indexOf(c);
+    return i === -1 ? LIBRARY_CATEGORY_ORDER.length : i;
+  };
+  const libKeys = [...libBuckets.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+  for (const key of libKeys) out.push({ category: key, label: key, names: sortNames(libBuckets.get(key)!) });
+  return out;
 }
 
 /** A movement that carries its own display name + alternate names — the shape
@@ -87,6 +131,8 @@ export function exercisesByCategory(
 export interface LibraryMovement extends Movement {
   name: string;
   aliases?: string[];
+  /** Admin library muscle-group heading (e.g. "Chest") — picker grouping only. */
+  category?: string | null;
 }
 
 /** The set of names that a custom entry claims as an alias — i.e. names that are
@@ -116,6 +162,14 @@ export function catalogNames(
   for (const n of Object.keys(builtins ?? {})) if (!aliased.has(n)) names.add(n);
   for (const ex of custom ?? []) if (ex && !aliased.has(ex.name)) names.add(ex.name);
   return [...names];
+}
+
+/** name → library `category` for the custom entries that declare one, for the
+ *  picker's muscle-group grouping (pass to `exercisesByCategory`). */
+export function categoriesByName(custom: LibraryMovement[] = []): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const ex of custom ?? []) if (ex && ex.category) out[ex.name] = ex.category;
+  return out;
 }
 
 /** Fold the admin-authored exercise library over the built-in MOVEMENTS into one

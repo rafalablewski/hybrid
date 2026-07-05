@@ -123,7 +123,7 @@ export default function WorkoutBlocks({
   onToggleDone?: (blockUid: string, setIndex: number, done: boolean) => void;
 }) {
   const { t } = useLang();
-  const { catalog: libraryCatalog = [], aliases = new Set<string>() } = useExercises();
+  const { catalog: libraryCatalog = [], aliases = new Set<string>(), categoryByName = {} } = useExercises();
   // Hide any name a custom entry aliases (incl. superseded built-ins / BASE_CATALOG
   // quick-picks) so the same lift never shows twice — it still resolves via merge.
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])]
@@ -612,6 +612,7 @@ export default function WorkoutBlocks({
         <ExercisePicker
           catalog={catalog}
           aliases={aliases}
+          categoryByName={categoryByName}
           onClose={() => setSportPicker(false)}
           onPick={(name, kind) => addNamed(name, kind)}
         />
@@ -644,7 +645,7 @@ export default function WorkoutBlocks({
  * headers), then sports, then a free-typed custom entry. Replaces the old wall
  * of chips so adding a movement reads the same as picking a sport.
  */
-function ExercisePicker({ catalog, aliases, onPick, onClose }: { catalog: string[]; aliases: Set<string>; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
+function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: { catalog: string[]; aliases: Set<string>; categoryByName: Record<string, string>; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
   const { t } = useLang();
   const dialogRef = useDialog<HTMLDivElement>(onClose);
   const [query, setQuery] = useState("");
@@ -652,10 +653,11 @@ function ExercisePicker({ catalog, aliases, onPick, onClose }: { catalog: string
   const match = (n: string) => !q || n.toLowerCase().includes(q);
   const kindColor = (k: SessionBlock["kind"]) => (k === "strength" ? LIME : k === "cardio" ? BLUE : VIOLET);
 
-  // Aliased names are dropped: a built-in the library supersedes (e.g. "Bench
-  // Press" behind a custom "Barbell Bench Press") must not appear in its pattern
-  // bucket, or the picker lists the same lift twice.
-  const exGroups = exercisesByCategory(MOVEMENTS, catalog)
+  // Library exercises group under their muscle-group heading (categoryByName);
+  // built-ins fall into their pattern bucket. Aliased names are dropped so a
+  // built-in the library supersedes (e.g. "Bench Press" behind "Barbell Bench
+  // Press") never shows twice.
+  const exGroups = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
     .map((g) => ({ ...g, names: g.names.filter((n) => match(n) && !aliases.has(n)) }))
     .filter((g) => g.names.length > 0);
   const sportGroups = olympicSportsByCategory()
@@ -699,7 +701,7 @@ function ExercisePicker({ catalog, aliases, onPick, onClose }: { catalog: string
         <div style={{ overflowY: "auto", flex: 1 }}>
           {exGroups.map((g) => (
             <div key={g.category}>
-              {head(t(g.labelKey))}
+              {head(g.labelKey ? t(g.labelKey) : g.label ?? g.category)}
               {g.names.map((n) => row(n, inferBlockKind(n), `e-${n}`))}
             </div>
           ))}

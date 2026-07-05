@@ -1,4 +1,4 @@
-import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess } from "@hybrid/core";
+import type { LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement } from "@hybrid/core";
 import { sanitizePersonaAccess } from "@hybrid/core";
 import { supabase } from "./supabase";
 
@@ -16,6 +16,31 @@ async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// The admin-managed custom exercise library (published rows). The client folds
+// these over the built-in MOVEMENTS (mergeMovements) into the catalog the picker
+// consumes — parity with web's useExercises. Empty when signed-out / none
+// authored, so the app always falls back to the built-ins.
+export async function fetchCustomExercises(): Promise<LibraryMovement[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/exercises`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      exercises?: Array<{ name: string; pattern: string; muscles: string[]; baseLoad: number | null; system: string | null; aliases: string[]; category: string | null }>;
+    };
+    return (data.exercises ?? []).map((e) => ({
+      name: e.name,
+      pattern: e.pattern,
+      muscles: e.muscles as MuscleGroup[],
+      baseLoad: e.baseLoad,
+      system: (e.system ?? null) as Movement["system"],
+      aliases: e.aliases,
+      category: e.category ?? null,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 // Admin localization overrides, layered over the shipped strings. Empty when

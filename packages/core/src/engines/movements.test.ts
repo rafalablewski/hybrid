@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MOVEMENTS, mergeMovements, exercisesByCategory, aliasNames, catalogNames, type LibraryMovement } from "./movements";
+import { MOVEMENTS, mergeMovements, exercisesByCategory, aliasNames, catalogNames, categoriesByName, type LibraryMovement } from "./movements";
 
 const custom: LibraryMovement[] = [
   { name: "Zercher Squat", pattern: "squat", muscles: ["quads", "glutes"], baseLoad: 80, system: null, aliases: ["Zerchers"] },
@@ -109,5 +109,35 @@ describe("exercisesByCategory", () => {
     const groups = exercisesByCategory(merged, ["Free Typed Move"]);
     const other = groups.find((g) => g.category === "other")!;
     expect(other.names).toEqual(["Free Typed Move", "Mystery Lift"]);
+  });
+
+  it("groups library exercises by their category, after the pattern buckets", () => {
+    const groups = exercisesByCategory(
+      MOVEMENTS,
+      ["Barbell Curl", "Cable Crossover"],
+      { "Barbell Curl": "Biceps", "Cable Crossover": "Chest" },
+    );
+    const cats = groups.map((g) => g.category);
+    // pattern buckets keep their i18n key; library sections carry a raw label
+    const squat = groups.find((g) => g.category === "squat")!;
+    expect(squat.labelKey).toBe("exercise.cat.squat");
+    const chest = groups.find((g) => g.category === "Chest")!;
+    expect(chest).toMatchObject({ label: "Chest", names: ["Cable Crossover"] });
+    expect(chest.labelKey).toBeUndefined();
+    // Chest is ordered before Biceps (LIBRARY_CATEGORY_ORDER) and both trail the patterns
+    expect(cats.indexOf("Chest")).toBeLessThan(cats.indexOf("Biceps"));
+    expect(cats.indexOf("squat")).toBeLessThan(cats.indexOf("Chest"));
+    // a library-categorised name does NOT also appear in a pattern bucket
+    expect(groups.find((g) => g.category === "other")).toBeUndefined();
+  });
+});
+
+describe("categoriesByName", () => {
+  it("maps only custom entries that declare a category", () => {
+    const map = categoriesByName([
+      { name: "Barbell Curl", pattern: "pull", muscles: [], baseLoad: null, system: null, category: "Biceps" },
+      { name: "No Cat", pattern: "pull", muscles: [], baseLoad: null, system: null },
+    ]);
+    expect(map).toEqual({ "Barbell Curl": "Biceps" });
   });
 });
