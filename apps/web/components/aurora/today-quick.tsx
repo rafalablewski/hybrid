@@ -53,7 +53,7 @@ export default function TodayWidgets({ onNavigate }: { onNavigate?: (screen: str
   // minWidth:0 lets each 1fr grid track shrink below the button's content size —
   // without it the tracks hold their intrinsic min-width and the two-up grid
   // blows past the viewport on narrow phones (≤360dp), causing horizontal scroll.
-  const widget = { minWidth: 0, aspectRatio: "1 / 1", borderRadius: 26, border: `1px solid ${C("line")}`, background: C("ink2"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, display: "flex", flexDirection: "column" as const, cursor: "pointer", textAlign: "left" as const, color: C("chalk"), overflow: "hidden" };
+  const widget = { minWidth: 0, aspectRatio: "1 / 1", borderRadius: 26, border: `1px solid ${C("line")}`, background: C("ink2"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, display: "flex", flexDirection: "column" as const, cursor: "pointer", textAlign: "left" as const, color: C("chalk"), overflow: "hidden" as const };
   const wname = { fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase" as const, color: "var(--blue-text)" };
 
   return (
