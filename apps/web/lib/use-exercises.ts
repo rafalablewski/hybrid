@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MOVEMENTS, mergeMovements, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
+import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
 
 type ApiExercise = {
   name: string;
@@ -31,9 +31,15 @@ async function fetchCustomMovements(): Promise<LibraryMovement[]> {
 }
 
 // Fetches the admin-managed exercise library and folds it over the built-in
-// MOVEMENTS into one catalog. Returns the merged movement map (engine-ready) and
-// the sorted, deduped list of pickable names (built-ins + custom). Degrades to
-// the built-ins alone when the API/table isn't available.
+// MOVEMENTS into one catalog. Returns the merged movement map (engine-ready), the
+// sorted list of PICKABLE names (built-ins + custom, aliases excluded) and the
+// set of aliased names to hide from the picker. Degrades to the built-ins alone
+// when the API/table isn't available.
+//
+// `movements` keeps every alias key so the engines still RESOLVE an old logged
+// session that used one; `catalog`/`aliases` exist so the picker shows each lift
+// ONCE under its primary name (a custom "Barbell Bench Press" that aliases the
+// built-in "Bench Press" hides "Bench Press" rather than listing both).
 //
 // Backed by the shared query cache: the catalog is effectively static, so it's
 // held with a long staleTime — the logger's exercise picker (re)mounts constantly
@@ -49,8 +55,9 @@ export function useExercises() {
     [custom],
   );
   const catalog = useMemo(
-    () => [...new Set(Object.keys(merged))].sort((a, b) => a.localeCompare(b)),
-    [merged],
+    () => [...new Set(catalogNames(MOVEMENTS, custom ?? []))].sort((a, b) => a.localeCompare(b)),
+    [custom],
   );
-  return { movements: merged, catalog };
+  const aliases = useMemo(() => aliasNames(custom ?? []), [custom]);
+  return { movements: merged, catalog, aliases };
 }
