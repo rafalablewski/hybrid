@@ -95,7 +95,10 @@ export function AuroraScreen({
   children,
   scroll = true,
   center = false,
-  padding = 24,
+  // 16dp side gutter — matches the web app-shell's mobile gutter (16px) so a
+  // card fills the same share of the screen on both clients. Wider cards, less
+  // dead space at the edges.
+  padding = 16,
   refreshing,
   onRefresh,
 }: {

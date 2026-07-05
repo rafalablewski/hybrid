@@ -204,7 +204,7 @@ export default function AuroraHome() {
   const markDone = async (id: string) => { await updateAssignment(id, "completed"); load(); };
 
   // Plan/AI-coach pager — track the active card so the dots signal the swipe.
-  const cardW = width - 48; // 24px screen padding each side
+  const cardW = width - 32; // 16px screen padding each side
   const [activeCard, setActiveCard] = useState(0);
   // THIS WEEK collapse — tap the Plan kicker to fold/unfold the reconciled plan.
   const [weekOpen, setWeekOpen] = useState(true);
@@ -254,7 +254,7 @@ export default function AuroraHome() {
           same field here so it isn't the one flat tab next to History/More/You. */}
       <AuroraField />
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}>
         <Animated.View style={enterStyle}>
         {/* TODAY HEADER (step-1 redesign) — profile · HYBRID wordmark · bell.
             Replaces the old greeting + search/bell row: the brand sits centre
