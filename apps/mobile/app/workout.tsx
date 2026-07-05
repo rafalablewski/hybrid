@@ -67,7 +67,7 @@ import {
   type ExerciseUse,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, fetchRoutines, createRoutine, fetchMacrocycle, type NewSession, type Routine } from "../lib/api";
-import { useRevalidate } from "../lib/queries";
+import { useRevalidate, useExercises } from "../lib/queries";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
@@ -186,6 +186,7 @@ export default function Workout() {
   const { t } = useLang();
   const { session } = useSession();
   const revalidate = useRevalidate();
+  const { catalog, aliases, categoryByName } = useExercises();
   const guest = !session;
   const prefs = useLoggerPrefs();
   const { source, templateId, sport } = useLocalSearchParams<{ source?: string; templateId?: string; sport?: string }>();
@@ -1167,13 +1168,15 @@ export default function Workout() {
                   const match = (n: string) => !q || n.toLowerCase().includes(q);
                   const recentNames = new Set(recent.map((r) => r.name));
                   const recentShown = recent.filter((r) => match(r.name)).slice(0, 12);
-                  const exGroups = exercisesByCategory(MOVEMENTS)
-                    .map((g) => ({ ...g, names: g.names.filter((n) => !recentNames.has(n) && match(n)) }))
+                  // Library exercises group under their muscle-group heading; built-ins by
+                  // pattern. Aliased/superseded + already-shown-recent names are dropped.
+                  const exGroups = exercisesByCategory(MOVEMENTS, catalog, categoryByName)
+                    .map((g) => ({ ...g, names: g.names.filter((n) => !recentNames.has(n) && match(n) && !aliases.has(n)) }))
                     .filter((g) => g.names.length > 0);
                   const sportGroups = olympicSportsByCategory()
                     .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
                     .filter((g) => g.sports.length > 0);
-                  const exact = [...recentNames, ...Object.keys(MOVEMENTS)].some((n) => n.toLowerCase() === q);
+                  const exact = [...recentNames, ...catalog].some((n) => n.toLowerCase() === q);
                   const kindColor = (k: WKind) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
                   const head = (label: string) => (
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{label}</Text>
@@ -1196,7 +1199,7 @@ export default function Workout() {
                       )}
                       {exGroups.map((g) => (
                         <View key={g.category}>
-                          {head(t(g.labelKey))}
+                          {head(g.labelKey ? t(g.labelKey) : g.label ?? g.category)}
                           {g.names.map((n) => row(n, inferBlockKind(n), `e-${n}`))}
                         </View>
                       ))}

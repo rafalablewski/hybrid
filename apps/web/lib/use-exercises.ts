@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
+import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
 
 type ApiExercise = {
   name: string;
@@ -11,6 +11,7 @@ type ApiExercise = {
   baseLoad: number | null;
   system: string | null;
   aliases: string[];
+  category: string | null;
 };
 
 /** Query key for the admin-managed exercise library. */
@@ -27,6 +28,7 @@ async function fetchCustomMovements(): Promise<LibraryMovement[]> {
     baseLoad: e.baseLoad,
     system: (e.system ?? null) as Movement["system"],
     aliases: e.aliases,
+    category: e.category ?? null,
   }));
 }
 
@@ -59,5 +61,6 @@ export function useExercises() {
     [custom],
   );
   const aliases = useMemo(() => aliasNames(custom ?? []), [custom]);
-  return { movements: merged, catalog, aliases };
+  const categoryByName = useMemo(() => categoriesByName(custom ?? []), [custom]);
+  return { movements: merged, catalog, aliases, categoryByName };
 }

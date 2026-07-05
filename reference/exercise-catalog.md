@@ -57,8 +57,15 @@ key so a prior logged session under a built-in name still attributes. Web's
 `useExercises()` returns the pickable catalog + the alias set; `workout-blocks.tsx`
 filters the picker buckets, datalist and BASE_CATALOG quick-picks through it. So
 each of these shows once, under the descriptive name, and old `Bench Press` /
-`Deadlift` logs still resolve. Mobile parity is tracked as `mobile-exercise-library`
-(the mobile picker doesn't consume the custom library yet).
+`Deadlift` logs still resolve.
+
+**Grouping + mobile parity (shipped):** `exercisesByCategory` takes a
+`categoryByName` map (`categoriesByName`) so library exercises group under their
+muscle-group heading (Chest, Back, …) instead of the catch-all "Other"; built-ins
+still bucket by pattern. The mobile pickers (live logger + AURORA builder) now
+consume the same library via a mobile `useExercises()` twin — see
+`mobile-exercise-library` — so these appear identically on web **and** the phone
+once the table is seeded.
 | Catalog name (canonical) | Built-in key → alias |
 |---|---|
 | `Barbell Bench Press` | `Bench Press` |

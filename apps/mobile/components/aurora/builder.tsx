@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
 import { MOVEMENTS, inferBlockKind, olympicSportsByCategory, exercisesByCategory, sportDistanceUnit } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../../lib/use-routine-builder";
+import { useExercises } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -18,6 +19,7 @@ export default function AuroraBuilder() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const b = useRoutineBuilder();
+  const { catalog, aliases, categoryByName } = useExercises();
   const [picker, setPicker] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -81,12 +83,12 @@ export default function AuroraBuilder() {
               />
             </View>
             <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
-              {exercisesByCategory(MOVEMENTS)
-                .map((g) => ({ ...g, names: g.names.filter((n) => !q || n.toLowerCase().includes(q)) }))
+              {exercisesByCategory(MOVEMENTS, catalog, categoryByName)
+                .map((g) => ({ ...g, names: g.names.filter((n) => (!q || n.toLowerCase().includes(q)) && !aliases.has(n)) }))
                 .filter((g) => g.names.length > 0)
                 .map((g) => (
                   <View key={g.category}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{t(g.labelKey)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 14, marginBottom: 4 }}>{g.labelKey ? t(g.labelKey) : g.label ?? g.category}</Text>
                     {g.names.map((n) => {
                       const c = kindColor(inferBlockKind(n) as BuilderKind, C);
                       return (
