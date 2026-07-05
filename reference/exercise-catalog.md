@@ -32,12 +32,12 @@ second spellings; all resolved below.
 | `Incline Cable Fly` | `Incline Cable Crossover` | Identical movement. |
 | `Leg Press Calf Raise` | `Leg Press Calf Press` | Identical movement. |
 
-### Flagged overlaps — recommend collapsing (need your call)
-These aren't hard duplicates but read as the same lift; my recommendation in
-brackets. Left as-is in the catalog below until you confirm.
-- `Cable Crunch` ⟷ `Weighted Cable Crunch` — a cable crunch is loaded by nature. **[drop "Weighted Cable Crunch"]**
-- `Ab Roller Rollout` ⟷ `From Knees Ab Wheel Rollout` / `From Feet Ab Wheel Rollout` — generic vs. the two knee/feet specifics. **[drop generic "Ab Roller Rollout"]**
-- `Weighted Dip` ⟷ `Chest Dip` / `Triceps Dip` / `Weighted Triceps Dip` — ambiguous which it weights. **[drop "Weighted Dip"]**
+### Flagged overlaps — RESOLVED
+Three soft overlaps were flagged; decision: **keep `Weighted Dip`, drop the
+other two.**
+- `Weighted Dip` — **KEPT** (its own entry; distinct enough to stay).
+- `Weighted Cable Crunch` — **DROPPED** (a cable crunch is loaded by nature → `Cable Crunch`).
+- `Ab Roller Rollout` — **DROPPED** (generic; the two `Ab Wheel Rollout` specifics stay).
 
 ### Descriptive names that duplicate a generic built-in (RESOLVED + implemented)
 The fuller names below are the SAME movement as an existing built-in engine key.
@@ -105,7 +105,7 @@ each of these shows once, under the descriptive name, and old `Bench Press` /
 - Deficit Push-up
 - Incline Push-up
 - Decline Push-up
-- Weighted Dip _(flagged: overlaps Chest/Triceps Dip)_
+- Weighted Dip
 - Svend Press
 - _dropped:_ ~~Push-up~~ (built-in `Push-Up`)
 
@@ -310,5 +310,3 @@ each of these shows once, under the descriptive name, and old `Bench Press` /
 - Hanging Knee Raise
 - Weighted Russian Twist
 - L-Sit
-- Weighted Cable Crunch _(flagged: overlaps Cable Crunch)_
-- Ab Roller Rollout _(flagged: generic vs. the two Ab Wheel Rollouts)_
