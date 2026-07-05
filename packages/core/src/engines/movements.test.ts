@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MOVEMENTS, mergeMovements, exercisesByCategory, type LibraryMovement } from "./movements";
+import { MOVEMENTS, mergeMovements, exercisesByCategory, aliasNames, catalogNames, type LibraryMovement } from "./movements";
 
 const custom: LibraryMovement[] = [
   { name: "Zercher Squat", pattern: "squat", muscles: ["quads", "glutes"], baseLoad: 80, system: null, aliases: ["Zerchers"] },
@@ -36,6 +36,45 @@ describe("mergeMovements", () => {
   it("does not mutate the built-in map", () => {
     mergeMovements(MOVEMENTS, custom);
     expect(MOVEMENTS["Zercher Squat"]).toBeUndefined();
+  });
+});
+
+describe("catalogNames", () => {
+  it("lists built-ins + custom primary names, excluding aliases", () => {
+    const names = catalogNames(MOVEMENTS, custom);
+    expect(names).toContain("Zercher Squat");
+    expect(names).not.toContain("Zerchers"); // alias resolves but isn't pickable
+    expect(names).toContain("Back Squat"); // untouched built-in still shown
+  });
+
+  it("hides a built-in that a custom descriptive name supersedes via alias", () => {
+    // the exact option-A case: keep the descriptive name, fold the built-in in
+    const lib: LibraryMovement[] = [
+      { name: "Barbell Bench Press", pattern: "push", muscles: ["chest"], baseLoad: 100, system: null, aliases: ["Bench Press"] },
+    ];
+    const names = catalogNames(MOVEMENTS, lib);
+    expect(names).toContain("Barbell Bench Press");
+    expect(names).not.toContain("Bench Press"); // superseded built-in hidden from the picker
+    // …but still resolvable for old logged sessions:
+    expect(mergeMovements(MOVEMENTS, lib)["Bench Press"]).toBeDefined();
+  });
+
+  it("is empty-safe and dedupes an override of a built-in", () => {
+    expect(catalogNames(MOVEMENTS, [])).toEqual(Object.keys(MOVEMENTS));
+    const names = catalogNames(MOVEMENTS, [
+      { name: "Back Squat", pattern: "squat", muscles: ["quads"], baseLoad: 200, system: null },
+    ]);
+    expect(names.filter((n) => n === "Back Squat")).toHaveLength(1);
+  });
+});
+
+describe("aliasNames", () => {
+  it("collects every aliased name across the library", () => {
+    const set = aliasNames([
+      { name: "Barbell Bench Press", pattern: "push", muscles: ["chest"], baseLoad: 100, system: null, aliases: ["Bench Press"] },
+      ...custom,
+    ]);
+    expect([...set].sort()).toEqual(["Bench Press", "Zerchers"]);
   });
 });
 

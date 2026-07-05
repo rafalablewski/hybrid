@@ -39,11 +39,21 @@ brackets. Left as-is in the catalog below until you confirm.
 - `Ab Roller Rollout` ⟷ `From Knees Ab Wheel Rollout` / `From Feet Ab Wheel Rollout` — generic vs. the two knee/feet specifics. **[drop generic "Ab Roller Rollout"]**
 - `Weighted Dip` ⟷ `Chest Dip` / `Triceps Dip` / `Weighted Triceps Dip` — ambiguous which it weights. **[drop "Weighted Dip"]**
 
-### Descriptive names that duplicate a generic built-in (RESOLVED)
+### Descriptive names that duplicate a generic built-in (RESOLVED + implemented)
 The fuller names below are the SAME movement as an existing built-in engine key.
 **Decision: keep the descriptive catalog name as canonical; the built-in key
 becomes an alias** so both resolve to one movement (no second picker entry).
 Aliases are applied on the entries in the catalog below.
+
+**Implemented (option A):** aliases now RESOLVE without being PICKABLE. Core adds
+`catalogNames(builtins, custom)` (pickable primary names, aliased/superseded names
+removed) + `aliasNames(custom)`, while `mergeMovements` still keeps every alias
+key so a prior logged session under a built-in name still attributes. Web's
+`useExercises()` returns the pickable catalog + the alias set; `workout-blocks.tsx`
+filters the picker buckets, datalist and BASE_CATALOG quick-picks through it. So
+each of these shows once, under the descriptive name, and old `Bench Press` /
+`Deadlift` logs still resolve. Mobile parity is tracked as `mobile-exercise-library`
+(the mobile picker doesn't consume the custom library yet).
 | Catalog name (canonical) | Built-in key → alias |
 |---|---|
 | `Barbell Bench Press` | `Bench Press` |

@@ -123,8 +123,12 @@ export default function WorkoutBlocks({
   onToggleDone?: (blockUid: string, setIndex: number, done: boolean) => void;
 }) {
   const { t } = useLang();
-  const { catalog: libraryCatalog = [] } = useExercises();
-  const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])].sort((a, b) => a.localeCompare(b));
+  const { catalog: libraryCatalog = [], aliases } = useExercises();
+  // Hide any name a custom entry aliases (incl. superseded built-ins / BASE_CATALOG
+  // quick-picks) so the same lift never shows twice — it still resolves via merge.
+  const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])]
+    .filter((n) => !aliases.has(n))
+    .sort((a, b) => a.localeCompare(b));
   const [rpeHelp, setRpeHelp] = useState(false);
   // Which strength block has its "Special ▾" add-set menu open (warm-up / ramp /
   // cool-down / drop). One primary "+ Add set" button keeps the common path a
@@ -607,6 +611,7 @@ export default function WorkoutBlocks({
       {sportPicker && (
         <ExercisePicker
           catalog={catalog}
+          aliases={aliases}
           onClose={() => setSportPicker(false)}
           onPick={(name, kind) => addNamed(name, kind)}
         />
@@ -639,7 +644,7 @@ export default function WorkoutBlocks({
  * headers), then sports, then a free-typed custom entry. Replaces the old wall
  * of chips so adding a movement reads the same as picking a sport.
  */
-function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
+function ExercisePicker({ catalog, aliases, onPick, onClose }: { catalog: string[]; aliases: Set<string>; onPick: (name: string, kind: SessionBlock["kind"]) => void; onClose: () => void }) {
   const { t } = useLang();
   const dialogRef = useDialog<HTMLDivElement>(onClose);
   const [query, setQuery] = useState("");
@@ -647,8 +652,11 @@ function ExercisePicker({ catalog, onPick, onClose }: { catalog: string[]; onPic
   const match = (n: string) => !q || n.toLowerCase().includes(q);
   const kindColor = (k: SessionBlock["kind"]) => (k === "strength" ? LIME : k === "cardio" ? BLUE : VIOLET);
 
+  // Aliased names are dropped: a built-in the library supersedes (e.g. "Bench
+  // Press" behind a custom "Barbell Bench Press") must not appear in its pattern
+  // bucket, or the picker lists the same lift twice.
   const exGroups = exercisesByCategory(MOVEMENTS, catalog)
-    .map((g) => ({ ...g, names: g.names.filter(match) }))
+    .map((g) => ({ ...g, names: g.names.filter((n) => match(n) && !aliases.has(n)) }))
     .filter((g) => g.names.length > 0);
   const sportGroups = olympicSportsByCategory()
     .map((g) => ({ category: g.category, sports: g.sports.filter((s) => match(s.name)) }))
