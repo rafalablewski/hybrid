@@ -16,6 +16,11 @@ Status: **215 names submitted across 2 batches → 0 exact/slug duplicates withi
 the batches.** Collisions were only against built-ins + a handful of same-lift
 second spellings; all resolved below.
 
+**To actually populate the app:** this doc is the list; the rows live in the
+Supabase `Exercise` table. Run **`reference/sql-exercise-seed.sql`** (209 rows,
+idempotent) in the Supabase SQL Editor — after `reference/sql-exercise.sql`
+creates the table. Until that runs, the picker shows only the built-ins.
+
 ---
 
 ## Dedup ledger — collisions found & resolved
