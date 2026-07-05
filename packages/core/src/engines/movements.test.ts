@@ -59,6 +59,12 @@ describe("catalogNames", () => {
     expect(mergeMovements(MOVEMENTS, lib)["Bench Press"]).toBeDefined();
   });
 
+  it("is null/undefined-safe on both params", () => {
+    expect(() => catalogNames(undefined, undefined)).not.toThrow();
+    expect(() => aliasNames(undefined)).not.toThrow();
+    expect(catalogNames()).toEqual([]);
+  });
+
   it("is empty-safe and dedupes an override of a built-in", () => {
     expect(catalogNames(MOVEMENTS, [])).toEqual(Object.keys(MOVEMENTS));
     const names = catalogNames(MOVEMENTS, [

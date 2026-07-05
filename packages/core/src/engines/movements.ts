@@ -95,9 +95,9 @@ export interface LibraryMovement extends Movement {
  *  the engine) but must NOT surface as their own pickable entry, or the picker
  *  shows the same lift twice (e.g. built-in "Bench Press" AND a custom
  *  "Barbell Bench Press" that aliases it). Callers hide these from the catalog. */
-export function aliasNames(custom: LibraryMovement[]): Set<string> {
+export function aliasNames(custom: LibraryMovement[] = []): Set<string> {
   const out = new Set<string>();
-  for (const ex of custom) for (const a of ex.aliases ?? []) out.add(a);
+  for (const ex of custom ?? []) for (const a of ex?.aliases ?? []) out.add(a);
   return out;
 }
 
@@ -108,13 +108,13 @@ export function aliasNames(custom: LibraryMovement[]): Set<string> {
  *  "Bench Press" from the picker while `mergeMovements` keeps it resolvable.
  *  Pure — mirrors `mergeMovements`, but for display rather than resolution. */
 export function catalogNames(
-  builtins: Record<string, Movement>,
-  custom: LibraryMovement[],
+  builtins: Record<string, Movement> = {},
+  custom: LibraryMovement[] = [],
 ): string[] {
   const aliased = aliasNames(custom);
   const names = new Set<string>();
-  for (const n of Object.keys(builtins)) if (!aliased.has(n)) names.add(n);
-  for (const ex of custom) if (!aliased.has(ex.name)) names.add(ex.name);
+  for (const n of Object.keys(builtins ?? {})) if (!aliased.has(n)) names.add(n);
+  for (const ex of custom ?? []) if (ex && !aliased.has(ex.name)) names.add(ex.name);
   return [...names];
 }
 

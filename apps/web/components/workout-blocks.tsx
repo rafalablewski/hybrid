@@ -123,7 +123,7 @@ export default function WorkoutBlocks({
   onToggleDone?: (blockUid: string, setIndex: number, done: boolean) => void;
 }) {
   const { t } = useLang();
-  const { catalog: libraryCatalog = [], aliases } = useExercises();
+  const { catalog: libraryCatalog = [], aliases = new Set<string>() } = useExercises();
   // Hide any name a custom entry aliases (incl. superseded built-ins / BASE_CATALOG
   // quick-picks) so the same lift never shows twice — it still resolves via merge.
   const catalog = [...new Set([...BASE_CATALOG, ...libraryCatalog])]
