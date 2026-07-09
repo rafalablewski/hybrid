@@ -51,25 +51,24 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
       .filter((g) => g.sports.length > 0);
   }, [query]);
 
-  const card = { flex: 0, minWidth: 112, gap: 6, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12 } as const;
+  const card = { flexGrow: 1, flexBasis: "45%", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 16 } as const;
 
   return (
     <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }} style={{ marginHorizontal: -2 }}>
+      {/* 2×2 grid of one-tap sport cards */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {suggested.map((name) => (
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
-            <Text style={{ fontSize: 18 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{shortSport(name)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.home.today.w.tapLog")}</Text>
+            <Text style={{ fontSize: 26 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
-        {/* Other — opens the searchable picker, then the log sheet */}
-        <Pressable onPress={() => setPickerOpen(true)} style={card}>
-          <Text style={{ fontSize: 18 }}>＋</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.home.quickSport.other")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.home.quickSport.search")}</Text>
-        </Pressable>
-      </ScrollView>
+      </View>
+      {/* Other — opens the searchable picker for any sport */}
+      <Pressable onPress={() => setPickerOpen(true)} style={{ marginTop: 12, alignSelf: "flex-start" }} hitSlop={6}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>＋ {t("w.home.quickSport.other")} →</Text>
+      </Pressable>
 
       {/* Searchable sport chooser → hands the pick to the log sheet */}
       <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => setPickerOpen(false)}>

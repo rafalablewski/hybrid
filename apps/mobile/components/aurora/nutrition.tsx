@@ -30,9 +30,11 @@ const GOALS: { id: NutritionGoal; labelKey: string }[] = [
 
 /** AURORA Nutrition — the macro tracker in the rounded Figma layout, reusing the
  *  exact adaptive-targets engine + manual-macro Signal logging as the classic.
- *  `embedded` drops the screen chrome (AuroraScreen + back header) so it can live
- *  inside a bottom sheet — the Today "Nutrition" quick action. */
-export default function AuroraNutrition({ embedded = false }: { embedded?: boolean } = {}) {
+ *  `compact` renders the focused "Add a meal" quick-add (the Today Nutrition
+ *  sheet): today-vs-target header, a manual name+kcal add, and the premade-meals
+ *  grid — the full tracker (goal, macro bars, weight trend, history) stays on the
+ *  screen. `onNavigateFull` deep-links from the sheet to that full tracker. */
+export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade }: { compact?: boolean; onNavigateFull?: () => void; onUpgrade?: () => void } = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -43,6 +45,7 @@ export default function AuroraNutrition({ embedded = false }: { embedded?: boole
   const revalidate = useRevalidate();
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
+  const [mealName, setMealName] = useState("");
   const [saving, setSaving] = useState(false);
   const [mealMsg, setMealMsg] = useState("");
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
@@ -88,18 +91,75 @@ export default function AuroraNutrition({ embedded = false }: { embedded?: boole
     revalidate.recovery();
   };
 
+  // Compact quick-add: log the entered kcal as an energyIntake signal (macros
+  // stay on the full screen). The optional name just labels the confirmation.
+  const addMeal = async () => {
+    const n = parseFloat(f.kcal);
+    if (!Number.isFinite(n) || n <= 0) return;
+    setSaving(true);
+    const ok = await createSignal("energyIntake", n, "kcal");
+    setSaving(false);
+    if (!ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    setF((s) => ({ ...s, kcal: "" }));
+    setMealMsg(mealName ? `${mealName} · +${Math.round(n)} kcal` : `+${Math.round(n)} kcal`);
+    setMealName("");
+    revalidate.recovery();
+  };
+
+  // The Today "Nutrition" sheet — a focused Add-a-meal, not the whole tracker.
+  if (compact) {
+    return (
+      <View>
+        <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{t("w.recovery.nutrition.addMealTitle")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</Text>
+
+        <CDivider label={t("w.recovery.nutrition.logManuallyFree")} />
+        <View style={{ flexDirection: "row", gap: space.sm }}>
+          <TextInput value={mealName} onChangeText={setMealName} placeholder={t("w.recovery.nutrition.mealNamePh")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13 }} />
+          <TextInput value={f.kcal} onChangeText={(v) => setF((s) => ({ ...s, kcal: v }))} keyboardType="numeric" placeholder="kcal" placeholderTextColor={C.ash} style={{ width: 96, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 13, textAlign: "center" }} />
+        </View>
+        <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")} onPress={addMeal} disabled={saving} style={{ marginTop: 12 }} />
+        {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {mealMsg}</Text> : null}
+
+        <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {MEAL_PRESETS.map((p) => (
+            <Pressable
+              key={p.id}
+              onPress={() => (!full && onUpgrade ? onUpgrade() : logPreset(p))}
+              accessibilityRole="button"
+              accessibilityLabel={t(p.labelKey)}
+              style={{ flexGrow: 1, flexBasis: "45%", backgroundColor: full ? C.ink2 : `${C.violet}12`, borderWidth: 1, borderColor: full ? C.line : `${C.violet}3d`, borderRadius: 16, padding: 14, opacity: full ? 1 : 0.9 }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 22 }}>{p.emoji}</Text>
+                {!full && <Text style={{ fontSize: 12 }}>🔒</Text>}
+              </View>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 8 }}>{t(p.labelKey).split(" · ")[0]}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginTop: 3 }}>~{p.kcal} kcal</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {onNavigateFull ? (
+          <Pressable onPress={onNavigateFull} style={{ marginTop: 16, alignSelf: "center" }} hitSlop={6}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.recovery.nutrition.fullTracker")} →</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  }
+
   const body = (
     <>
-      {!embedded && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="back" size={20} color={C.chalk} />
-          </Pressable>
-          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
-        </View>
-      )}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={() => router.back()} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name="back" size={20} color={C.chalk} />
+        </Pressable>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
+      </View>
 
-      <View style={{ marginTop: embedded ? 0 : 16 }}>
+      <View style={{ marginTop: 16 }}>
         <ASegment options={GOALS.map((g) => ({ id: g.id, label: t(g.labelKey) }))} value={goal} onPick={setGoal} />
       </View>
 
@@ -219,11 +279,23 @@ export default function AuroraNutrition({ embedded = false }: { embedded?: boole
     </>
   );
 
-  if (embedded) return body;
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       {body}
     </AuroraScreen>
+  );
+}
+
+// A labelled hairline divider ("──── LOG MANUALLY · FREE ────") for the compact
+// Add-a-meal sheet.
+function CDivider({ label }: { label: string }) {
+  const { palette: C } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 18, marginBottom: 12 }}>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash }}>{label}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+    </View>
   );
 }
 

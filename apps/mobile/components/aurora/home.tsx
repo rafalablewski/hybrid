@@ -42,7 +42,7 @@ import { AuroraIcon } from "./icons";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
-import AuroraCheckin from "./checkin";
+import ReadinessPicker from "./readiness-picker";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -348,9 +348,12 @@ export default function AuroraHome() {
         </View>
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: txt(C, C.violet), marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          ✦ {t("w.home.today.goFull")}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: txt(C, C.violet) }}>✦ {t("w.home.today.goFull")}</Text>
+          <Pressable onPress={() => router.push("/(tabs)/plans")} hitSlop={8}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.seePlans")} →</Text>
+          </Pressable>
+        </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/cockpit") : goUpgrade("today-cockpit"))} />
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/(tabs)/sport") : goUpgrade("today-sport"))} />
@@ -375,18 +378,18 @@ export default function AuroraHome() {
         </View>
       </Sheet>
 
-      {/* READINESS sheet — the daily check-in, hosted inline (embedded, no chrome). */}
-      <Sheet visible={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.checkins.title")}>
-        <View style={{ marginTop: 14 }}>
-          <AuroraCheckin embedded onDone={() => setReadyOpen(false)} />
-        </View>
+      {/* READINESS sheet — the compact "How ready do you feel?" quick picker. */}
+      <Sheet visible={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.readiness.title")} sub={t("w.recovery.readiness.sub")}>
+        <ReadinessPicker onDone={() => setReadyOpen(false)} />
       </Sheet>
 
-      {/* NUTRITION sheet — the macro tracker + premade meals, hosted inline. */}
-      <Sheet visible={nutritionOpen} onClose={() => setNutritionOpen(false)} title={t("w.recovery.nutrition.title")}>
-        <View style={{ marginTop: 14 }}>
-          <AuroraNutrition embedded />
-        </View>
+      {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
+      <Sheet visible={nutritionOpen} onClose={() => setNutritionOpen(false)}>
+        <AuroraNutrition
+          compact
+          onNavigateFull={() => { setNutritionOpen(false); router.push("/nutrition"); }}
+          onUpgrade={() => { setNutritionOpen(false); goUpgrade("today-nutrition-sheet"); }}
+        />
       </Sheet>
 
       {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
@@ -499,13 +502,14 @@ function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIc
 // Full accent + a lime rim; an unlocked one shows the → chevron.
 function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; sub: string; locked: boolean; onPress: () => void }) {
   const { scheme } = useTheme();
+  const { t } = useLang();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: locked ? `${C.lime}66` : C.line, borderRadius: 22, padding: 16 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: locked ? txt(C, C.lime) : C.ash }}>{locked ? "✦" : "→"}</Text>
-      </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.violet}3d`, borderRadius: 22, padding: 16, overflow: "hidden" }}>
+      {/* soft violet fill (premium accent) under the content */}
+      <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: `${C.violet}12` }} />
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{title}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{sub}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.violet), marginTop: 10 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
     </Pressable>
   );
 }

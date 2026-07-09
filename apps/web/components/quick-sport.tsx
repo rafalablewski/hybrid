@@ -54,13 +54,14 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
 
   return (
     <>
-      <div style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", margin: "0 -2px", padding: "2px 2px 6px" }}>
+      {/* 2×2 grid of one-tap sport cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {suggested.map((name) => (
           <SportCard key={name} icon={olympicSport(name)?.icon ?? "🏃"} label={shortSport(name)} hint={t("w.home.today.w.tapLog")} onClick={() => setSheetSport(name)} />
         ))}
-        {/* Other — opens the searchable picker, then the log sheet */}
-        <SportCard icon="＋" label={t("w.home.quickSport.other")} hint={t("w.home.quickSport.search")} onClick={() => setPickerOpen(true)} />
       </div>
+      {/* Other — opens the searchable picker for any sport */}
+      <button onClick={() => setPickerOpen(true)} style={{ ...mono, marginTop: 12, background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--lime-text)", fontSize: fs.caption }}>＋ {t("w.home.quickSport.other")} →</button>
 
       {pickerOpen && (
         <SportPicker
@@ -75,16 +76,16 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
   );
 }
 
-// One carousel card — emoji, sport name, a "tap to log" hint.
+// One grid card — emoji, sport name, an uppercase "tap to log" hint.
 function SportCard({ icon, label, hint, onClick }: { icon: string; label: string; hint: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      style={{ flex: "0 0 auto", minWidth: 108, display: "flex", flexDirection: "column", gap: 6, background: INK2, border: `1px solid ${LINE}`, borderRadius: 18, padding: "12px 14px", cursor: "pointer", textAlign: "left", color: CHALK }}
+      style={{ display: "flex", flexDirection: "column", gap: 4, background: INK2, border: `1px solid ${LINE}`, borderRadius: 18, padding: 16, cursor: "pointer", textAlign: "left", color: CHALK }}
     >
-      <span style={{ fontSize: 18 }}>{icon}</span>
-      <span style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{label}</span>
-      <span style={{ ...mono, fontSize: fs.nano, color: ASH }}>{hint}</span>
+      <span style={{ fontSize: 26 }}>{icon}</span>
+      <span style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 6 }}>{label}</span>
+      <span style={{ ...mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: ASH, marginTop: 2 }}>{hint}</span>
     </button>
   );
 }

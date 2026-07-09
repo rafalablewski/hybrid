@@ -8,7 +8,7 @@ import {
   isFullAccess, MEAL_PRESETS, mealPresetSignals,
   type NutritionGoal, type Signal, type MealPreset,
 } from "@hybrid/core";
-import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, txt } from "@/lib/ui";
+import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
@@ -20,7 +20,7 @@ type Row = { userId: string; kind: string; value: number; unit: string; source: 
 
 /** AURORA Nutrition (web) — rounded macro tracker, same adaptive-targets engine
  *  + /api/signals logging + bodyweight trend as the classic. */
-export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: string) => void }) {
+export default function AuroraNutrition({ onNavigate, compact = false }: { onNavigate?: (screen: string) => void; compact?: boolean }) {
   const revalidate = useRevalidate();
   const { t } = useLang();
   // Free (casual) users log macros manually; scanning a label and saving
@@ -29,6 +29,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
   const [signals, setSignals] = useState<Signal[]>([]);
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
+  const [mealName, setMealName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mealMsg, setMealMsg] = useState("");
@@ -88,8 +89,63 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
+  // Compact quick-add: log the entered kcal as an energyIntake signal (macros
+  // stay on the full screen). The optional name just labels the confirmation.
+  const addMeal = async () => {
+    const n = parseFloat(f.kcal);
+    if (!Number.isFinite(n) || n <= 0) return;
+    setSaving(true); setError("");
+    try {
+      const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "energyIntake", value: n, unit: "kcal", source: "manual" }) });
+      if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); setSaving(false); return; }
+      if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); setSaving(false); return; }
+      setF((s) => ({ ...s, kcal: "" }));
+      setMealMsg(mealName ? `${mealName} · +${Math.round(n)} kcal` : `+${Math.round(n)} kcal`);
+      setMealName("");
+      await load(); revalidate.recovery();
+    } catch { setError(t("w.recovery.nutrition.errNetwork")); }
+    setSaving(false);
+  };
+
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
+
+  // The Today "Nutrition" sheet — a focused Add-a-meal, not the whole tracker.
+  if (compact) {
+    return (
+      <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22 }}>{t("w.recovery.nutrition.addMealTitle")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</div>
+
+        <CDivider label={t("w.recovery.nutrition.logManuallyFree")} />
+        <div style={{ display: "flex", gap: space.sm }}>
+          <input value={mealName} onChange={(e) => setMealName(e.target.value)} placeholder={t("w.recovery.nutrition.mealNamePh")} style={{ flex: 1, minWidth: 0, boxSizing: "border-box", fontFamily: "var(--font-display)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none" }} />
+          <input value={f.kcal} onChange={(e) => setF((s) => ({ ...s, kcal: e.target.value }))} inputMode="numeric" placeholder="kcal" style={{ width: 104, boxSizing: "border-box", fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 12px", outline: "none", textAlign: "center" }} />
+        </div>
+        <button onClick={addMeal} disabled={saving} style={{ width: "100%", marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 16, padding: 15, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+        {mealMsg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}>✓ {mealMsg}</div>}
+        {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
+
+        <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {MEAL_PRESETS.map((p) => (
+            <button key={p.id} onClick={() => logPreset(p)} style={{ textAlign: "left", background: full ? C("ink2") : `color-mix(in srgb, ${C("violet")} 10%, ${C("ink2")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, transparent)`}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk"), opacity: full ? 1 : 0.92 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 22 }}>{p.emoji}</span>
+                {!full && <span style={{ fontSize: 12 }}>🔒</span>}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: fs.body, marginTop: 8 }}>{t(p.labelKey).split(" · ")[0]}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", color: C("ash"), marginTop: 3 }}>~{p.kcal} kcal</div>
+            </button>
+          ))}
+        </div>
+
+        {onNavigate && (
+          <button onClick={() => onNavigate("nutrition")} style={{ display: "block", margin: "16px auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.recovery.nutrition.fullTracker")} →</button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -230,6 +286,19 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// A labelled hairline divider ("──── LOG MANUALLY · FREE ────") for the compact
+// Add-a-meal sheet.
+function CDivider({ label }: { label: string }) {
+  const C = (v: string) => `var(--color-${v})`;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 12px" }}>
+      <span style={{ flex: 1, height: 1, background: C("line") }} />
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: C("line") }} />
     </div>
   );
 }

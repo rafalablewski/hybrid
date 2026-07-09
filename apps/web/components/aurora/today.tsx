@@ -34,7 +34,7 @@ import { usePlanMaxes } from "@/lib/plan-maxes";
 import { readIntake, type Intake } from "@/lib/intake";
 import QuickSportLog from "../quick-sport";
 import Sheet from "./sheet";
-import AuroraCheckins from "./checkins";
+import ReadinessPicker from "./readiness-picker";
 import AuroraNutrition from "./nutrition";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
@@ -286,7 +286,10 @@ export default function AuroraToday({
       </div>
 
       {/* ───── GO FULL — Cockpit + Sport premium baits (violet = premium) ───── */}
-      <div style={{ margin: "26px 2px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--violet-text)" }}>✦ {t("w.home.today.goFull")}</div>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--violet-text)" }}>✦ {t("w.home.today.goFull")}</span>
+        <button onClick={() => (onNavigate ? onNavigate("plans") : router.push("/plans"))} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{t("w.home.today.seePlans")} →</button>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <AccessCard
           title={t("w.home.today.cockpitTitle")}
@@ -314,14 +317,14 @@ export default function AuroraToday({
         <QuickSportLog sessions={sessions} onSaved={() => { onSaved?.(); setQuickOpen(false); }} solid />
       </Sheet>
 
-      {/* READINESS sheet — the daily check-in, hosted inline (its own header). */}
-      <Sheet open={readyOpen} onClose={() => setReadyOpen(false)} label={t("w.home.today.glanceReadiness")}>
-        <AuroraCheckins sessions={sessions} />
+      {/* READINESS sheet — the compact "How ready do you feel?" quick picker. */}
+      <Sheet open={readyOpen} onClose={() => setReadyOpen(false)} title={t("w.recovery.readiness.title")} sub={t("w.recovery.readiness.sub")}>
+        <ReadinessPicker onDone={() => setReadyOpen(false)} />
       </Sheet>
 
-      {/* NUTRITION sheet — the macro tracker + premade meals, hosted inline. */}
+      {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
       <Sheet open={nutritionOpen} onClose={() => setNutritionOpen(false)} label={t("w.home.today.w.nutrition")}>
-        <AuroraNutrition onNavigate={(s) => { setNutritionOpen(false); onNavigate?.(s); }} />
+        <AuroraNutrition compact onNavigate={(s) => { setNutritionOpen(false); onNavigate?.(s); }} />
       </Sheet>
 
       {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
@@ -446,17 +449,16 @@ function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: s
 }
 
 function AccessCard({ title, sub, locked, onClick }: { title: string; sub: string; locked: boolean; onClick: () => void }) {
+  const { t } = useLang();
   return (
     <button
       onClick={onClick}
       aria-label={title}
-      style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start", textAlign: "left", background: C("ink2"), border: `1px solid ${locked ? "color-mix(in srgb, var(--color-lime) 40%, transparent)" : C("line")}`, borderRadius: 22, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+      style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start", textAlign: "left", background: `linear-gradient(160deg, color-mix(in srgb, ${C("violet")} 14%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid color-mix(in srgb, ${C("violet")} 22%, ${C("line")})`, borderRadius: 22, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
-      <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{title}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: locked ? "var(--lime-text)" : C("ash") }}>{locked ? "✦" : "→"}</span>
-      </div>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20 }}>{title}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.4, color: C("ash") }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--violet-text)", marginTop: 2 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
     </button>
   );
 }
