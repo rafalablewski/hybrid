@@ -31,6 +31,10 @@ export interface SettingsCategory {
   title: string;
   /** One-line description shown under the title. */
   subtitle: string;
+  /** Extra search terms — the names of the controls inside this category — so a
+   *  settings search finds e.g. "password" → Security, "units" → Preferences.
+   *  (Kept alongside title + subtitle, which are also searched.) */
+  keywords?: string[];
   /** A destructive category gets the alert (red) treatment. */
   danger?: boolean;
 }
@@ -45,37 +49,37 @@ export interface SettingsGroup {
 export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     id: "usage",
-    label: "How you use HYBRID",
+    label: "General",
     categories: [
-      { id: "account", icon: "user", title: "Account & profile", subtitle: "Name, email, account type" },
-      { id: "preferences", icon: "settings", title: "Preferences", subtitle: "Appearance, language, units" },
-      { id: "logger", icon: "play", title: "Workout logger", subtitle: "Detail, volume counting" },
-      { id: "notifications", icon: "bell", title: "Notifications", subtitle: "Recaps, coach, reminders" },
+      { id: "account", icon: "user", title: "Account & profile", subtitle: "Name, email, account type", keywords: ["name", "email", "display name", "profile"] },
+      { id: "preferences", icon: "settings", title: "Preferences", subtitle: "Appearance, language, units", keywords: ["theme", "appearance", "dark", "light", "language", "english", "polish", "german", "units", "kg", "lb", "liquid glass"] },
+      { id: "logger", icon: "play", title: "Workout logger", subtitle: "Detail, volume, rest timer", keywords: ["warmups", "volume", "fractional", "plate", "rest timer", "rpe", "rir", "haptics", "increment"] },
+      { id: "notifications", icon: "bell", title: "Notifications", subtitle: "Recaps, coach, reminders", keywords: ["weekly recap", "coach messages", "check-in reminders", "product updates", "push"] },
     ],
   },
   {
     id: "reach",
-    label: "Who can see & reach you",
+    label: "Visibility & reach",
     categories: [
-      { id: "social", icon: "user-circle", title: "Public profile", subtitle: "Handle, bio, photo, who can see your results" },
-      { id: "privacy", icon: "eye", title: "Privacy", subtitle: "Sharing, discoverability, analytics" },
-      { id: "coaching", icon: "user-add", title: "Coaching & access", subtitle: "Become a coach, request access" },
+      { id: "social", icon: "user-circle", title: "Public profile", subtitle: "Handle, bio, photo, who can see your results", keywords: ["handle", "bio", "avatar", "photo", "public"] },
+      { id: "privacy", icon: "eye", title: "Privacy", subtitle: "Sharing, discoverability, analytics", keywords: ["coach", "discoverable", "talent", "analytics", "opt out"] },
+      { id: "coaching", icon: "user-add", title: "Coaching & access", subtitle: "Become a coach, request access", keywords: ["become a coach", "apply", "credentials", "roster"] },
     ],
   },
   {
     id: "login",
-    label: "Login & billing",
+    label: "Account & billing",
     categories: [
-      { id: "security", icon: "lock", title: "Security", subtitle: "Password, sessions" },
-      { id: "subscription", icon: "offer", title: "Subscription", subtitle: "Your plan & billing" },
+      { id: "security", icon: "lock", title: "Security", subtitle: "Password, 2FA, sessions", keywords: ["password", "mfa", "2fa", "two factor", "sign out everywhere", "sessions"] },
+      { id: "subscription", icon: "offer", title: "Subscription", subtitle: "Your plan & billing", keywords: ["upgrade", "full", "billing", "manage subscription", "stripe", "plan", "cancel"] },
     ],
   },
   {
     id: "data",
-    label: "Your data & support",
+    label: "Data & danger zone",
     categories: [
-      { id: "data", icon: "download", title: "Your data", subtitle: "Export everything" },
-      { id: "danger", icon: "logout", title: "Danger zone", subtitle: "Sign out, erase account", danger: true },
+      { id: "data", icon: "download", title: "Your data", subtitle: "Export everything", keywords: ["export", "download", "gdpr"] },
+      { id: "danger", icon: "logout", title: "Danger zone", subtitle: "Sign out, erase account", danger: true, keywords: ["sign out", "log out", "delete account", "erase", "reset"] },
     ],
   },
 ];
@@ -86,3 +90,21 @@ export const SETTINGS_CATEGORIES: Record<SettingsCategoryId, SettingsCategory> =
     for (const c of g.categories) acc[c.id] = c;
     return acc;
   }, {} as Record<SettingsCategoryId, SettingsCategory>);
+
+/** Flat, ordered list of every category (search results, "jump to" lists). */
+export const SETTINGS_ALL: SettingsCategory[] = SETTINGS_GROUPS.flatMap((g) => g.categories);
+
+/**
+ * Filter the settings categories by a free-text query, matching the title,
+ * subtitle AND keywords (case-insensitive, all query words must hit somewhere).
+ * Powers the settings search box on both clients. An empty query returns [].
+ */
+export function matchSettings(query: string): SettingsCategory[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const words = q.split(/\s+/);
+  return SETTINGS_ALL.filter((c) => {
+    const hay = `${c.title} ${c.subtitle} ${(c.keywords ?? []).join(" ")}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
+}

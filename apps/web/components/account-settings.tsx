@@ -6,7 +6,7 @@ import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
 import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
-import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
+import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
@@ -51,8 +51,9 @@ export default function AccountSettings() {
   const editBtn = (c: string) => ({ ...mono, fontSize: fs.body, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
   const { lang, setLang, t } = useLang();
   const prefs = useLoggerPrefs();
-  const [open, setOpen] = useState<SettingsCategoryId | null>("account");
-  const toggleOpen = (id: SettingsCategoryId) => setOpen((cur) => (cur === id ? null : id));
+  // Drill-in navigation: null = the category list; a category id = its sub-page.
+  const [cat, setCat] = useState<SettingsCategoryId | null>(null);
+  const [query, setQuery] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -475,85 +476,119 @@ export default function AccountSettings() {
     }
   };
 
+  // A short current-value summary shown on the right of each category row
+  // (Apple-style), so the value is visible without drilling in.
+  const summary = (id: SettingsCategoryId): string => {
+    switch (id) {
+      case "account": return session?.name ?? "";
+      case "preferences": return `${theme === "light" ? "Japandi" : "Aurora"} · ${lang.toUpperCase()} · ${prefs.units}`;
+      case "logger": return prefs.detailed ? t("w.account.settings.logger-detailed") : t("w.account.settings.logger-simple");
+      case "notifications": return `${Object.values(notif).filter(Boolean).length}/${Object.keys(notif).length}`;
+      case "privacy": return `${Object.values(priv).filter(Boolean).length}/${Object.keys(priv).length}`;
+      case "subscription": return paid ? t("w.account.settings.full-paid") : t("w.account.settings.free");
+      case "security": return session?.provider ?? "";
+      default: return "";
+    }
+  };
+  const results = matchSettings(query);
+  const active = cat ? SETTINGS_CATEGORIES[cat] : null;
+
   return (
     <div style={{ maxWidth: 640 }}>
-      <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 16 }}>{t("w.account.settings.title")}</h2>
-
-      {/* Profile header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 26 }}>
-        <div style={{ width: 60, height: 60, borderRadius: "50%", flex: "none", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 24, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>
-          {(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{session?.name || t("w.account.settings.your-account")}</div>
-          <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={CHALK}>{session?.email}</Mono>
-          <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: ASH, background: `${INK2}`, border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
-            <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
-            {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{t("w.account.settings.via")} {session.provider}</span>}
+      {active ? (
+        /* ── SUB-PAGE ── a focused category with a back button. */
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+            <button onClick={() => setCat(null)} aria-label={t("w.account.settings.back")} style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: INK2, border: `1px solid ${LINE}`, cursor: "pointer", color: CHALK }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+            <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.title, margin: 0, color: active.danger ? txt(RED) : CHALK }}>{active.title}</h2>
           </div>
-        </div>
-      </div>
+          <Card>{renderBody(cat!)}</Card>
+        </>
+      ) : (
+        /* ── LIST ── search + grouped category rows. */
+        <>
+          <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.display, marginBottom: 16 }}>{t("w.account.settings.title")}</h2>
 
-      {/* Grouped hub — shared IA from @hybrid/core. */}
-      {SETTINGS_GROUPS.map((group) => (
-        <div key={group.id} style={{ marginBottom: 22 }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8, marginLeft: 4 }} c={ASH}>{group.label}</Mono>
-          <Card style={{ padding: 0, overflow: "hidden" }}>
-            {group.categories.map((cat, i) => (
-              <HubRow
-                key={cat.id}
-                icon={cat.icon}
-                accent={TONE[cat.id]}
-                title={cat.title}
-                subtitle={cat.subtitle}
-                danger={cat.danger}
-                first={i === 0}
-                isOpen={open === cat.id}
-                onToggle={() => toggleOpen(cat.id)}
-              >
-                {open === cat.id ? renderBody(cat.id) : null}
-              </HubRow>
-            ))}
-          </Card>
-        </div>
-      ))}
+          {/* Profile header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", flex: "none", display: "flex", alignItems: "center", justifyContent: "center", ...disp, fontWeight: 800, fontSize: 24, color: ON_ACCENT, background: `linear-gradient(135deg, ${LIME}, #9bd400)` }}>
+              {(session?.name || session?.email || "?").slice(0, 1).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>{session?.name || t("w.account.settings.your-account")}</div>
+              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={CHALK}>{session?.email}</Mono>
+              <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: ASH, background: `${INK2}`, border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{session?.role ?? "client"}</span>
+                <span style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em", color: txt(paid ? LIME : ASH), background: paid ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${paid ? LIME : LINE}`, borderRadius: 6, padding: "2px 8px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
+                {session?.provider && <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), border: `1px solid ${LINE}`, borderRadius: 6, padding: "2px 8px" }}>{t("w.account.settings.via")} {session.provider}</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div style={{ position: "relative", marginBottom: 20 }}>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: ASH, display: "flex", pointerEvents: "none" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
+            </span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.account.settings.search")} aria-label={t("w.account.settings.search")} style={{ ...mono, width: "100%", boxSizing: "border-box", fontSize: fs.body, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 999, padding: "11px 16px 11px 38px", outline: "none" }} />
+          </div>
+
+          {query ? (
+            <Card style={{ padding: 0, overflow: "hidden" }}>
+              {results.length === 0 ? (
+                <Mono s={{ display: "block", padding: 16 }} c={ASH}>{t("w.account.settings.no-results")}</Mono>
+              ) : results.map((c, i) => (
+                <NavRow key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={c.subtitle} value={summary(c.id)} danger={c.danger} first={i === 0} onOpen={() => { setCat(c.id); setQuery(""); }} />
+              ))}
+            </Card>
+          ) : (
+            SETTINGS_GROUPS.map((group) => (
+              <div key={group.id} style={{ marginBottom: 22 }}>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8, marginLeft: 4 }} c={ASH}>{group.label}</Mono>
+                <Card style={{ padding: 0, overflow: "hidden" }}>
+                  {group.categories.map((c, i) => (
+                    <NavRow key={c.id} icon={c.icon} accent={TONE[c.id]} title={c.title} subtitle={c.subtitle} value={summary(c.id)} danger={c.danger} first={i === 0} onOpen={() => setCat(c.id)} />
+                  ))}
+                </Card>
+              </div>
+            ))
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-/** A collapsible hub row: icon-tile + title/subtitle summary + an expanding body. */
-function HubRow({ icon, accent, title, subtitle, danger, first, isOpen, onToggle, children }: {
+/** A drill-in category row: icon-tile + title/subtitle + current-value + chevron. */
+function NavRow({ icon, accent, title, subtitle, value, danger, first, onOpen }: {
   icon: AuroraIconName;
   accent: string;
   title: string;
   subtitle: string;
+  value?: string;
   danger?: boolean;
   first?: boolean;
-  isOpen: boolean;
-  onToggle: () => void;
-  children: ReactNode;
+  onOpen: () => void;
 }) {
   return (
-    <div style={{ borderTop: first ? "none" : `1px solid ${LINE}` }}>
-      <button
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", color: CHALK }}
-      >
-        <span style={{ width: 34, height: 34, borderRadius: 11, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `${accent}24`, color: txt(accent) }}>
-          <AuroraIcon name={icon} size={18} color="currentColor" strokeWidth={4} />
-        </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, color: danger ? txt(RED) : CHALK, display: "block" }}>{title}</span>
-          <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 1 }}>{subtitle}</span>
-        </span>
-        <span style={{ color: txt(ASH), flex: "none", display: "flex", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .2s" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-        </span>
-      </button>
-      {isOpen && <div style={{ padding: "6px 18px 20px" }}>{children}</div>}
-    </div>
+    <button
+      onClick={onOpen}
+      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", borderTop: first ? "none" : `1px solid ${LINE}`, background: "none", border: "none", cursor: "pointer", textAlign: "left", color: CHALK }}
+    >
+      <span style={{ width: 34, height: 34, borderRadius: 11, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `${accent}24`, color: txt(accent) }}>
+        <AuroraIcon name={icon} size={18} color="currentColor" strokeWidth={4} />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, color: danger ? txt(RED) : CHALK, display: "block" }}>{title}</span>
+        <span style={{ ...mono, fontSize: fs.micro, color: txt(ASH), display: "block", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</span>
+      </span>
+      {value ? <span style={{ ...mono, fontSize: fs.caption, color: txt(ASH), flex: "none", maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</span> : null}
+      <span style={{ color: txt(ASH), flex: "none", display: "flex" }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+      </span>
+    </button>
   );
 }
 

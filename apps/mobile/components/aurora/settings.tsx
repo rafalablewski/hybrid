@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, LayoutAnimation, Platform, UIManager, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo } from "react-native";
 import { useRouter } from "expo-router";
-import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, type SettingsCategoryId } from "@hybrid/core";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount } from "../../lib/api";
 import { clearGuestSessions } from "../../lib/guest";
 import { clearDraft } from "../../lib/draft";
@@ -14,12 +14,6 @@ import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
-import type { AuroraIconName } from "@hybrid/core";
-
-// Enable smooth expand/collapse on Android (on by default on iOS).
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: "system", label: "System" },
@@ -54,16 +48,13 @@ export default function AuroraSettings() {
   const { pref, setPref } = useTheme();
   const lg = useLiquidGlass();
   const acct = useAccountSettings();
-  const [open, setOpen] = useState<SettingsCategoryId | null>("account");
+  // Drill-in navigation: null = the category list; a category id = its sub-page.
+  const [cat, setCat] = useState<SettingsCategoryId | null>(null);
+  const [query, setQuery] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const armed = confirm.trim().toUpperCase() === "RESET";
-
-  const toggle = (id: SettingsCategoryId) => {
-    LayoutAnimation.configureNext(LayoutAnimation.create(180, "easeInEaseOut", "opacity"));
-    setOpen((cur) => (cur === id ? null : id));
-  };
 
   const reset = async () => {
     if (!armed) return;
@@ -182,7 +173,7 @@ export default function AuroraSettings() {
     }
   };
 
-  // Rows that navigate to a dedicated screen instead of expanding.
+  // Rows that navigate to a dedicated screen instead of a drill-in sub-view.
   const ROUTES: Partial<Record<SettingsCategoryId, string>> = {
     social: "/profile-edit",
     logger: "/logger-settings",
@@ -190,9 +181,67 @@ export default function AuroraSettings() {
     subscription: "/upgrade",
   };
 
+  // A short current-value summary shown on the right of each category row.
+  const summary = (id: SettingsCategoryId): string => {
+    switch (id) {
+      case "account": return name ?? "";
+      case "preferences": return `${pref === "system" ? "System" : pref === "light" ? "Japandi" : "Aurora"} · ${lang.toUpperCase()}`;
+      case "notifications": return `${Object.values(acct.notif).filter(Boolean).length}/${Object.keys(acct.notif).length}`;
+      case "privacy": return `${Object.values(acct.priv).filter(Boolean).length}/${Object.keys(acct.priv).length}`;
+      case "subscription": return entitlement === "paid" ? "Full" : "Free";
+      case "security": return acct.provider && acct.provider !== "email" ? acct.provider : "";
+      default: return "";
+    }
+  };
+
+  const openCat = (c: SettingsCategory) => {
+    const nav = ROUTES[c.id];
+    setQuery("");
+    if (nav) (router.push as (p: string) => void)(nav);
+    else setCat(c.id);
+  };
+
+  // A render HELPER (not a component) so it doesn't remount on each keystroke.
+  const renderRow = (c: SettingsCategory, first: boolean) => {
+    const accent = toneColor[TONE[c.id]];
+    const { tile, fg } = tone(accent);
+    const val = summary(c.id);
+    return (
+      <Pressable key={c.id} onPress={() => openCat(c)} accessibilityRole="button" accessibilityLabel={c.title} style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: 16, paddingVertical: 15, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
+        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: tile, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name={c.icon} size={19} color={fg} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: c.danger ? (txt(C, C.red) as string) : C.chalk }}>{c.title}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{c.subtitle}</Text>
+        </View>
+        {val ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, maxWidth: 104 }}>{val}</Text> : null}
+        <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
+      </Pressable>
+    );
+  };
+
+  const active = cat ? SETTINGS_CATEGORIES[cat] : null;
+  const results = matchSettings(query);
+
+  // ── SUB-PAGE ── a focused category with a back button.
+  if (active) {
+    return (
+      <AuroraScreen>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 4, marginBottom: 10 }}>
+          <Pressable onPress={() => setCat(null)} accessibilityRole="button" accessibilityLabel={t("common.back")} style={{ width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="back" size={20} color={C.chalk} />
+          </Pressable>
+          <AHeading style={{ fontSize: fs.display, color: active.danger ? (txt(C, C.red) as string) : C.chalk }}>{active.title}</AHeading>
+        </View>
+        <ACard>{renderBody(active.id)}</ACard>
+      </AuroraScreen>
+    );
+  }
+
+  // ── LIST ── profile header, search, grouped category rows.
   return (
     <AuroraScreen>
-      {/* Profile header */}
       <View style={{ alignItems: "center", marginTop: 4 }}>
         <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="user" size={38} color={txt(C, C.lime)} />
@@ -205,47 +254,28 @@ export default function AuroraSettings() {
         {!!acct.email && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.email}</Text>}
       </View>
 
-      {/* Grouped hub */}
-      {SETTINGS_GROUPS.map((group) => (
-        <View key={group.id} style={{ marginTop: 22 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10, marginLeft: 4 }}>{group.label}</Text>
-          <ACard style={{ padding: 0, overflow: "hidden" }}>
-            {group.categories.map((cat, i) => {
-              const accent = toneColor[TONE[cat.id]];
-              const { tile, fg } = tone(accent);
-              const isOpen = open === cat.id;
-              const navTo = ROUTES[cat.id];
-              return (
-                <View key={cat.id} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
-                  <Pressable
-                    onPress={() => (navTo ? (router.push as (p: string) => void)(navTo) : toggle(cat.id))}
-                    style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: 16, paddingVertical: 15 }}
-                  >
-                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: tile, alignItems: "center", justifyContent: "center" }}>
-                      <AuroraIcon name={cat.icon} size={19} color={fg} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: cat.danger ? (txt(C, C.red) as string) : C.chalk }}>{cat.title}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{cat.subtitle}</Text>
-                    </View>
-                    <AuroraIcon
-                      name="chevron-down"
-                      size={18}
-                      color={C.ash}
-                      style={{ transform: [{ rotate: navTo ? "-90deg" : isOpen ? "0deg" : "-90deg" }] }}
-                    />
-                  </Pressable>
-                  {isOpen && !navTo && (
-                    <View style={{ paddingHorizontal: 16, paddingBottom: 18, paddingTop: 2, borderTopWidth: 1, borderTopColor: `${C.line}99` }}>
-                      {renderBody(cat.id)}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-          </ACard>
-        </View>
-      ))}
+      {/* Search */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 14, marginTop: 20 }}>
+        <AuroraIcon name="search" size={18} color={C.ash} />
+        <TextInput value={query} onChangeText={setQuery} placeholder={t("w.account.settings.search")} placeholderTextColor={C.ash} autoCapitalize="none" autoCorrect={false} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, paddingVertical: 12 }} />
+      </View>
+
+      {query ? (
+        <ACard style={{ padding: 0, overflow: "hidden", marginTop: 16 }}>
+          {results.length === 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, padding: 16 }}>{t("w.account.settings.no-results")}</Text>
+          ) : results.map((c, i) => renderRow(c, i === 0))}
+        </ACard>
+      ) : (
+        SETTINGS_GROUPS.map((group) => (
+          <View key={group.id} style={{ marginTop: 22 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10, marginLeft: 4 }}>{group.label}</Text>
+            <ACard style={{ padding: 0, overflow: "hidden" }}>
+              {group.categories.map((c, i) => renderRow(c, i === 0))}
+            </ACard>
+          </View>
+        ))
+      )}
     </AuroraScreen>
   );
 }
