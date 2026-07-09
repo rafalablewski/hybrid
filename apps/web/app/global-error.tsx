@@ -49,7 +49,7 @@ export default function GlobalError({
             border: "none",
             cursor: "pointer",
             fontWeight: 700,
-            background: "#c7ef00",
+            background: "#c6f84f",
             color: "#0c0d0c",
           }}
         >

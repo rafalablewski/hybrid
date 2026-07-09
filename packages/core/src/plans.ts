@@ -7,7 +7,7 @@
 
 // Brand color constants used by the goal tree (hex literals).
 const VIOLET = "#c9a9f0";
-const LIME = "#c7ef00";
+const LIME = "#c6f84f";
 const BLUE = "#3c787e";
 const AMBER = "#d0cd94";
 

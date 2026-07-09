@@ -40,7 +40,9 @@ export type ThemeName = "dark" | "light";
  * - `dark`  = AURORA — a true neutral charcoal ramp; lime is the single accent,
  *             red is kept strictly for risk. (The old multi-accent rainbow is
  *             retired in the surfaces here and in the Today/Cockpit chrome.)
- * - `light` = JAPANDI — warm oat paper, clay/sage accents, calm contrast.
+ * - `light` = MIST — a cool green-grey minimal paper; chartreuse stays the accent
+ *             (dark-green as text), calm high contrast. (Replaces the old warm
+ *             Japandi oat/clay light theme.)
  * `accentText` stays per-theme so any accent rendered as TEXT clears AA on the
  * theme's card (guarded by palette.test.ts).
  */
@@ -54,20 +56,20 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     ash: "#8b8f86",
     // SPECTRUM accent-text: chartreuse + sand read on dark as-is; teal/terracotta
     // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; violet unchanged.
-    accentText: { lime: "#c7ef00", blue: "#6cb6bd", violet: "#c9a9f0", amber: "#d0cd94", red: "#e58a5c" },
+    accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#c9a9f0", amber: "#d0cd94", red: "#e58a5c" },
   },
-  // JAPANDI — warm minimal (see reference/today-cockpit-design-concepts/04-japandi).
-  // Oat-paper surfaces; the brand accent becomes a warm CLAY/terracotta (the
-  // `lime` slot drives every accent, so clay lives there in this theme) with a
-  // serif display. `lime` here = clay #a5573c (the concept's #b06a4f darkened to
-  // clear AA). sage/secondary stays in the other accent slots.
+  // MIST — a cool, minimal light theme (a faint green-grey paper, not the old warm
+  // Japandi oat). Surfaces run from a soft off-white page to pure-white cards; the
+  // brand chartreuse STAYS the accent (as a dark-green text variant #47630a on the
+  // light card). blue/amber/red accent-text keep the darkened Spectrum hues (teal/
+  // sand/terracotta) so accent TEXT matches the fixed brand FILLS.
   light: {
-    ink: "#efe9df",
-    ink2: "#f6f1e8",
-    card: "#fcfaf4",
-    line: "#e4dccd",
-    chalk: "#2f2a22",
-    ash: "#6b6456",
-    accentText: { lime: "#a5573c", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
+    ink: "#eef1ec",
+    ink2: "#f6f9f3",
+    card: "#ffffff",
+    line: "#d2d6d0",
+    chalk: "#12170f",
+    ash: "#576058",
+    accentText: { lime: "#47630a", blue: "#2c5d6c", violet: "#6a4885", amber: "#875427", red: "#973a30" },
   },
 };

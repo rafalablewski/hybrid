@@ -14,7 +14,7 @@ export const colors = {
   // Today section maps onto one accent (see semantic.ts SECTION_COLOR), so the
   // app reads as a guided gradient rather than one flat lime. Surfaces above are
   // untouched. (violet has no palette member; it stays for the premium/coach slot.)
-  lime: "#c7ef00", // chartreuse — the primary accent (action / "go" / Train)
+  lime: "#c6f84f", // chartreuse — the primary accent (action / "go" / Train)
   chalk: "#f3f4ef", // primary text
   ash: "#8b8f86", // muted text
   blue: "#3c787e", // teal — conditioning / info accent (Feel)
