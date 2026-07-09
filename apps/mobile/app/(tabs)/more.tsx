@@ -101,10 +101,14 @@ export default function More() {
 
   // Build the seven areas from the SHARED canonical nav, filtered to this
   // persona + the admin's access override — the exact set the web sidebar shows.
-  const areas: { group: NavGroup; items: HubItem[] }[] = groupedNav(navForPersona(persona, undefined, access)).map(({ group, items }) => ({
-    group: group as NavGroup,
-    items: items.map((i) => ({ id: i.id, label: navLabel(i.id, i.label), icon: AURORA_NAV_ICONS[i.id] ?? "info", href: HREF[i.id] ?? null })),
-  }));
+  // groupedNav already drops groups with no items for this persona, but keep an
+  // explicit guard so a card (and its items[0] preview) can never render empty.
+  const areas: { group: NavGroup; items: HubItem[] }[] = groupedNav(navForPersona(persona, undefined, access))
+    .map(({ group, items }) => ({
+      group: group as NavGroup,
+      items: items.map((i) => ({ id: i.id, label: navLabel(i.id, i.label), icon: AURORA_NAV_ICONS[i.id] ?? "info", href: HREF[i.id] ?? null })),
+    }))
+    .filter((a) => a.items.length > 0);
   // Onboarding is a re-runnable setup FLOW (not a nav item), so inject it into Train.
   const train = areas.find((a) => a.group === "train");
   if (train && !train.items.some((i) => i.id === "onboarding")) {

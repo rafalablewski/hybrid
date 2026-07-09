@@ -62,17 +62,29 @@ function hydrateFromServer() {
     .catch(() => {});
 }
 
+// Debounce the account sync — typing "200" is 3 keystrokes, but only the settled
+// value needs to reach the server. The local copy is written immediately; the PUT
+// coalesces to one call ~600ms after the last edit.
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
 function pushToServer() {
-  fetch("/api/plan-maxes", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ maxes }),
-  }).catch(() => {});
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    pushTimer = null;
+    fetch("/api/plan-maxes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ maxes }),
+    }).catch(() => {});
+  }, 600);
 }
 
 /** Reset the store on sign-out / user switch so the next account on this device
  *  doesn't inherit the previous athlete's maxes or the one-shot hydrate guard. */
 export function resetPlanMaxes(): void {
+  if (pushTimer) {
+    clearTimeout(pushTimer); // never let a queued push land after logout
+    pushTimer = null;
+  }
   maxes = {};
   hydrated = false;
   try {

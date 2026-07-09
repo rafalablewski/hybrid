@@ -53,9 +53,26 @@ function hydrateFromServer() {
     .catch(() => {});
 }
 
+// Debounce the account sync — typing "200" is 3 keystrokes, but only the settled
+// value needs to reach the server. The local AsyncStorage write + state emit stay
+// synchronous (responsive UI); the PUT coalesces to one call ~600ms after the last
+// edit, so we never flood the server or race in-flight writes.
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+function queueServerSync() {
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    pushTimer = null;
+    void savePlanMaxes(maxes);
+  }, 600);
+}
+
 /** Reset the store on sign-out / user switch so the next account on this device
  *  doesn't inherit the previous athlete's maxes or the one-shot hydrate guard. */
 export function resetPlanMaxes(): void {
+  if (pushTimer) {
+    clearTimeout(pushTimer); // never let a queued push land after logout
+    pushTimer = null;
+  }
   maxes = {};
   hydrated = false;
   AsyncStorage.removeItem(KEY).catch(() => {});
@@ -63,14 +80,14 @@ export function resetPlanMaxes(): void {
 }
 
 /** Set (or clear, with a null/≤0 value) one max — persisted on-device and pushed
- *  to the account (best-effort). */
+ *  to the account (best-effort, debounced). */
 export function setPlanMax(key: string, value: number | null): void {
   const next = { ...maxes };
   if (value == null || !Number.isFinite(value) || value <= 0) delete next[key];
   else next[key] = value;
   maxes = next;
   AsyncStorage.setItem(KEY, JSON.stringify(maxes)).catch(() => {});
-  void savePlanMaxes(maxes);
+  queueServerSync();
   emit();
 }
 
