@@ -4,7 +4,7 @@ import { useRouter, type Href } from "expo-router";
 import { groupedNav, navForPersona, FUNNEL, AURORA_NAV_ICONS, type AuroraIconName, type NavGroup } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { useSession } from "../../lib/session";
-import { usePersona, useClientPersonaChoice, setClientPersona } from "../../lib/persona";
+import { usePersona } from "../../lib/persona";
 import { useNavAccess } from "../../lib/access";
 import { WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
@@ -92,7 +92,6 @@ export default function More() {
   const { signOut, role, entitlement, name } = useSession();
   const initials = ((name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
   const persona = usePersona();
-  const choice = useClientPersonaChoice();
   const access = useNavAccess();
   const [open, setOpen] = useState<NavGroup | null>(null);
 
@@ -182,32 +181,13 @@ export default function More() {
         </Pressable>
       </View>
 
-      {/* Mode toggle — Simple (free) vs Full (paid). */}
+      {/* The Simple/Full mode tabs are retired — paid clients are Full by default
+          (see resolvePersona), and free users have the Unlock-Full card below, so
+          the two-tab selector was redundant. The Coach on-ramp stays. */}
       {role === "client" && (
-        <View style={{ marginTop: 14 }}>
-          <View style={{ flexDirection: "row", gap: space.sm }}>
-            {([
-              { id: "casual" as const, label: "Simple", sub: "track · share", paid: false },
-              { id: "athlete" as const, label: "Full", sub: "plans · stats", paid: true },
-            ]).map((m) => {
-              const active = (choice ?? "casual") === m.id;
-              const locked = m.paid && entitlement !== "paid";
-              return (
-                <Pressable
-                  key={m.id}
-                  onPress={() => (locked ? router.push("/upgrade") : setClientPersona(m.id))}
-                  style={{ flex: 1, backgroundColor: active ? `${C.lime}1a` : C.card, borderWidth: 1, borderColor: active ? C.lime : C.line, borderRadius: 12, padding: 12 }}
-                >
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: active ? txt(C, C.lime) : C.chalk }}>{m.label}{locked ? " 🔒" : ""}</Text>
-                  <Mono style={{ marginTop: 2, fontSize: fs.nano }}>{locked ? "paid upgrade" : m.sub}</Mono>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Pressable onPress={() => router.push("/coach-apply")} style={{ marginTop: 10 }}>
-            <Mono color={C.violet} style={{ fontSize: fs.micro }}>Coach others? Apply to become a verified coach →</Mono>
-          </Pressable>
-        </View>
+        <Pressable onPress={() => router.push("/coach-apply")} style={{ marginTop: 14 }}>
+          <Mono color={C.violet} style={{ fontSize: fs.micro }}>Coach others? Apply to become a verified coach →</Mono>
+        </Pressable>
       )}
 
       {/* Unlock Full — the single upgrade on-ramp for casual users. */}

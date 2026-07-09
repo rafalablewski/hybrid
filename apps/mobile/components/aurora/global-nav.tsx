@@ -14,20 +14,19 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { F, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
-// The bottom nav: Today · Plans · [Train FAB] · History · More. Train is the
+// The bottom nav: Today · Explore · [Train FAB] · More · Profile. Train is the
 // elevated centre action (a raised lime FAB that punches up through the bar).
-// Profile (You) is no longer on the bar — it now lives in the Today header and
-// the More hub — so PLANS (the core "follow a program" loop, previously buried
-// in More) sits beside Today, with History · More on the right and Cockpit still
+// Explore opens the social/discovery surface (the Feed); Profile returns to the
+// bar (it also lives in the Today header). Plans · History · Cockpit stay
 // reachable from the More hub. Side glyphs are design-kit line icons only.
 type Side = { id: string; glyph: AuroraIconName; labelKey?: string; label?: string; href: Href; seg: string };
 const LEFT: Side[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", href: "/(tabs)", seg: "index" },
-  { id: "plans", glyph: "bookmark", labelKey: "nav.plans", href: "/(tabs)/plans", seg: "plans" },
+  { id: "explore", glyph: "globe", labelKey: "nav.explore", href: "/feed", seg: "feed" },
 ];
 const RIGHT: Side[] = [
-  { id: "history", glyph: "copy", labelKey: "nav.history", href: "/(tabs)/history", seg: "history" },
   { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
+  { id: "profile", glyph: "user-circle", labelKey: "nav.profile", href: "/(tabs)/you", seg: "you" },
 ];
 // The centre Train action starts logging RIGHT NOW: it drops straight into the
 // live workout with an empty session and the get-ready count-in (so the timer
@@ -85,7 +84,9 @@ export default function AuroraGlobalNav() {
   // makes React remount the whole subtree each render. A plain function that
   // returns JSX renders inline with no remount penalty.
   const renderSideItem = (tab: Side) => {
-    const focused = activeSeg === tab.seg;
+    // Tab routes match on the second segment; a pushed route (e.g. Explore →
+    // /feed) matches on the first segment so it still highlights.
+    const focused = activeSeg === tab.seg || (!inTabs && top === tab.seg);
     const label = tab.labelKey ? t(tab.labelKey) : (tab.label ?? "");
     return (
       <Pressable

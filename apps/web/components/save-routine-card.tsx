@@ -1,36 +1,72 @@
 "use client";
 
 import { useState } from "react";
-import type { SessionBlock } from "@hybrid/core";
+import { canSaveRoutine, FUNNEL, type SessionBlock } from "@hybrid/core";
 import { fs, space } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import { usePersona } from "@/lib/persona";
+import { track } from "@/lib/track";
 
 const C = (v: string) => `var(--color-${v})`;
 
 /**
  * "Save as routine" — the post-finish card shared by both web loggers (classic +
  * Aurora). Saving a reusable routine belongs AFTER you finish, not on the live
- * logging surface, and it's the one place a workout name actually matters. Three
- * states: a collapsed pill → an inline name field → a saved confirmation.
- * Posts to /api/templates (the same route the old bottom button used).
+ * logging surface, and it's the one place a workout name actually matters.
+ *
+ * Saving a reusable routine is a FULL feature (canSaveRoutine) — logging and
+ * building one-off workouts stays free. Free (casual) users see a proper UPSELL
+ * here instead of the confusing "couldn't save" error the API's 403 used to
+ * produce. Paid users get the three-state flow: collapsed pill → name field →
+ * saved. Posts to /api/templates.
  */
 export default function SaveRoutineCard({
   blocks,
   defaultName,
+  onUpgrade,
 }: {
   blocks: SessionBlock[];
   defaultName: string;
+  /** In-shell navigation to the upgrade screen (falls back to /upgrade). */
+  onUpgrade?: () => void;
 }) {
   const { t } = useLang();
+  const persona = usePersona();
+  const allowed = canSaveRoutine(persona);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(defaultName);
-  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "upsell">("idle");
   const [err, setErr] = useState("");
+
+  const goUpgrade = () => {
+    track(FUNNEL.upgradeEntryClick, { client: "web", source: "save-routine" });
+    onUpgrade?.();
+  };
 
   if (state === "saved")
     return (
       <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime") }}>
         {t("w.train.logger.savedRoutine")}
+      </div>
+    );
+
+  // Free user → the upsell card (either they tapped the CTA, or a stale persona
+  // let a 403 through on save). Reusable routines are Full; logging is free.
+  if (!allowed || state === "upsell")
+    return (
+      <div style={{ marginTop: 18, border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 8%, transparent)`, borderRadius: 16, padding: 16 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}>
+          ✦ {t("w.train.logger.routineFullTitle")}
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6, lineHeight: 1.55 }}>
+          {t("w.train.logger.routineFullBlurb")}
+        </div>
+        <button
+          onClick={goUpgrade}
+          style={{ marginTop: 12, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: C("ink"), background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: "pointer" }}
+        >
+          {t("w.train.logger.routineUnlock")}
+        </button>
       </div>
     );
 
@@ -54,6 +90,8 @@ export default function SaveRoutineCard({
         body: JSON.stringify({ name: name.trim() || t("w.train.logger.defaultRoutine"), blocks }),
       });
       if (!res.ok) {
+        // 403 = the Full gate (persona was stale) → show the upsell, not an error.
+        if (res.status === 403) { setState("upsell"); return; }
         setErr(res.status === 401 ? t("w.train.logger.signInRoutines") : t("w.train.logger.saveRoutineErr"));
         setState("idle");
         return;

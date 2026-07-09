@@ -10,13 +10,16 @@ export { fs, space };
 
 // Tokens come from @hybrid/core (the shared identity). Surface + primary-text
 // tokens resolve through CSS variables (globals.css @theme + [data-theme])
-// so the app re-themes (dark ⇄ light) without touching inline styles. LINE,
-// ASH and the accents stay raw hex because they're also fed to recharts as SVG
-// presentation attributes, where CSS var() does not resolve.
+// so the app re-themes (dark ⇄ light) without touching inline styles. LINE is
+// the THEMED CSS var so hairline borders soften with the theme (the raw dark hex
+// used to paint near-black borders on the light Japandi paper — a hard contrast
+// break). LINE_HEX keeps the raw hex for recharts SVG presentation attrs, where
+// CSS var() does not resolve. ASH + accents stay raw hex for the same reason.
 export const INK = "var(--color-ink)",
   INK2 = "var(--color-ink2)",
   CARD = "var(--color-card)",
-  LINE = colors.line;
+  LINE = "var(--color-line)",
+  LINE_HEX = colors.line;
 // LIME is the brand accent as a THEMED CSS var (bright lime in Aurora, clay in
 // Japandi) so every fill/border/text follows the theme. Use LIME_HEX (raw) only
 // where a CSS var can't resolve — recharts/SVG stroke/fill presentation attrs.

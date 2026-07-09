@@ -8,7 +8,7 @@ import {
   isFullAccess,
   type NutritionGoal, type Signal,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, LIME_HEX, ASH, tip, txt } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, txt } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
@@ -144,9 +144,9 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
           <div style={{ marginTop: 12 }}>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={weight.points} margin={{ left: -10, right: 8 }}>
-                <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} tickFormatter={(d: string) => d.slice(5)} />
-                <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE} domain={["dataMin - 1", "dataMax + 1"]} />
+                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} tickFormatter={(d: string) => d.slice(5)} />
+                <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} domain={["dataMin - 1", "dataMax + 1"]} />
                 <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? t("w.recovery.nutrition.trend") : t("w.recovery.nutrition.raw")]} />
                 <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="smoothed" stroke={LIME_HEX} strokeWidth={2.5} dot={false} isAnimationActive={false} />

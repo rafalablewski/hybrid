@@ -757,7 +757,7 @@ export default function AppShell() {
 
         {screen === "calendar" && <AuroraCalendar sessions={sessions} />}
 
-        {screen === "builder" && <AuroraBuilder />}
+        {screen === "builder" && <AuroraBuilder onUpgrade={() => setScreen("upgrade")} />}
 
         {screen === "squad" && <AuroraTeamMonitor />}
 
@@ -806,6 +806,7 @@ export default function AppShell() {
               refresh();
               setScreen("today");
             }}
+            onUpgrade={() => { setPendingBlocks(undefined); setScreen("upgrade"); }}
           />
         )}
 

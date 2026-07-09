@@ -78,12 +78,15 @@ export default function AuroraLogger({
   sessions,
   onSaved,
   onHome,
+  onUpgrade,
   initialBlocks,
 }: {
   sessions: LoggedSession[];
   onSaved: () => void;
   /** Go back to Today from the summary (the analysis link uses onSaved → history). */
   onHome?: () => void;
+  /** In-shell navigation to the upgrade screen (Save-as-routine is Full). */
+  onUpgrade?: () => void;
   initialBlocks?: SessionBlock[];
 }) {
   const { t } = useLang();
@@ -397,7 +400,7 @@ export default function AuroraLogger({
     }
   };
 
-  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} />;
+  if (done) return <Finish data={done} units={prefs.units} onDone={onSaved} onHome={onHome} onUpgrade={onUpgrade} />;
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -728,8 +731,9 @@ function StoryCard({ slide, st, w, t, units, active = false }: { slide: StorySli
  *  should LAND: the hero + PR cards pop in (.win-pop), and on a PR/first we fire
  *  a short navigator.vibrate where the device supports it (the web analog of the
  *  native success haptic). */
-function Finish({ data, units, onDone, onHome }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void }) {
+function Finish({ data, units, onDone, onHome, onUpgrade }: { data: FinishData; units: WeightUnit; onDone: () => void; onHome?: () => void; onUpgrade?: () => void }) {
   const { t } = useLang();
+  const router = useRouter();
   const { sessionId, blocks, sets, volume, minutes, bests, prs, cardioPrs, firstEver } = data;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(data.title);
@@ -903,7 +907,7 @@ function Finish({ data, units, onDone, onHome }: { data: FinishData; units: Weig
 
       {/* Save as routine. */}
       <div style={{ marginTop: 14 }}>
-        <SaveRoutineCard blocks={blocks} defaultName={title} />
+        <SaveRoutineCard blocks={blocks} defaultName={title} onUpgrade={onUpgrade ?? (() => router.push("/upgrade"))} />
       </div>
 
       {/* See analysis — at the very bottom (onDone → history). */}

@@ -34,7 +34,7 @@ import {
   type EntitlementCell,
 } from "@hybrid/core";
 import { fs, space,
-  LINE,
+  LINE, LINE_HEX,
   LIME, LIME_HEX,
   CHALK,
   ASH,
@@ -384,7 +384,7 @@ export default function AdminFinancials() {
             <ChartFrame title="Revenue by stream" kicker="Modeled MRR" c={LIME}>
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={revChart}>
-                  <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+                  <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
                   <XAxis dataKey="name" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} />
                   <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={44} />
                   <Tooltip contentStyle={tip} formatter={(v) => usdFull(Number(v))} cursor={{ fill: `color-mix(in srgb, var(--color-lime) 6%, transparent)` }} />
@@ -536,7 +536,7 @@ export default function AdminFinancials() {
                   <stop offset="100%" stopColor={LIME} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke={LINE} strokeDasharray="3 3" />
+              <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
               <XAxis dataKey="month" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={(m) => `M${m}`} />
               <YAxis yAxisId="mrr" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={48} />
               <YAxis yAxisId="cash" orientation="right" stroke={ASH} style={{ ...mono, fontSize: fs.caption }} tickFormatter={usd} width={48} />

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
-import { MOVEMENTS, inferBlockKind, olympicSportsByCategory, exercisesByCategory, sportDistanceUnit } from "@hybrid/core";
+import { useRouter } from "expo-router";
+import { MOVEMENTS, inferBlockKind, olympicSportsByCategory, exercisesByCategory, sportDistanceUnit, canSaveRoutine, FUNNEL } from "@hybrid/core";
 import { useRoutineBuilder, type BuilderKind, type BuilderItem } from "../../lib/use-routine-builder";
 import { useExercises } from "../../lib/queries";
+import { usePersona } from "../../lib/persona";
+import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -18,6 +21,9 @@ const kindColor = (k: BuilderKind, C: ReturnType<typeof useTheme>["palette"]) =>
 export default function AuroraBuilder() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const router = useRouter();
+  // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
+  const allowedSave = canSaveRoutine(usePersona());
   const b = useRoutineBuilder();
   const { catalog, aliases, categoryByName } = useExercises();
   const [picker, setPicker] = useState(false);
@@ -126,12 +132,26 @@ export default function AuroraBuilder() {
 
       {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 14 }}>{b.msg.text}</Text>}
 
-      <APill
-        label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
-        onPress={b.save}
-        disabled={b.saving || b.items.length === 0}
-        style={{ marginTop: 16 }}
-      />
+      {allowedSave ? (
+        <APill
+          label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
+          onPress={b.save}
+          disabled={b.saving || b.items.length === 0}
+          style={{ marginTop: 16 }}
+        />
+      ) : (
+        // Free user — saving a routine is Full. Building/previewing stays free.
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 14 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, color: txt(C, C.lime) }}>✦ {t("summary.routineFullTitle").toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("summary.routineFullBlurb")}</Text>
+          <Pressable
+            onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
+            style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
+          >
+            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ink }}>{t("summary.routineUnlock")}</Text>
+          </Pressable>
+        </View>
+      )}
 
       {b.routines.length > 0 && (
         <ACard style={{ marginTop: 20 }}>

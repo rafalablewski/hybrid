@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space } from "@hybrid/core";
+import { fs, space, canSaveRoutine, FUNNEL } from "@hybrid/core";
 
 import type { SessionBlock } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
+import { usePersona } from "@/lib/persona";
+import { track } from "@/lib/track";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
@@ -16,8 +18,11 @@ type Template = { id: string; name: string; description: string | null; blocks: 
 
 /** AURORA Builder (web) — workout template editor + library, reusing the exact
  *  WorkoutBlocks editor and /api/templates persistence. */
-export default function AuroraBuilder() {
+export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void }) {
   const { t: tr } = useLang();
+  // Building is free; SAVING a reusable routine is Full (canSaveRoutine).
+  const allowedSave = canSaveRoutine(usePersona());
+  const goUpgrade = () => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "builder-save" }); onUpgrade?.(); };
   const [name, setName] = useState(() => tr("w.train.builder.newWorkout"));
   const [description, setDescription] = useState("");
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
@@ -49,6 +54,7 @@ export default function AuroraBuilder() {
         body: JSON.stringify({ name: name.trim() || tr("w.train.builder.defaultWorkout"), description, blocks: blocks.map(({ uid: _u, ...b }) => b) }),
       });
       if (res.status === 401) { setMsg({ text: tr("w.train.builder.signInSave"), ok: false }); setSaving(false); return; }
+      if (res.status === 403) { setSaving(false); goUpgrade(); return; }
       if (!res.ok) { setMsg({ text: `${tr("w.train.builder.saveErrorPrefix")}${res.status}${tr("w.train.builder.saveErrorSuffix")}`, ok: false }); setSaving(false); return; }
       setMsg({ text: tr("w.train.builder.templateSaved"), ok: true });
       await load();
@@ -74,10 +80,19 @@ export default function AuroraBuilder() {
         />
 
         {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
-        <button onClick={save} disabled={saving || blocks.length === 0}
-          style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
-          {saving ? tr("w.train.builder.saving") : tr("w.train.builder.saveAsTemplate")}
-        </button>
+        {allowedSave ? (
+          <button onClick={save} disabled={saving || blocks.length === 0}
+            style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
+            {saving ? tr("w.train.builder.saving") : tr("w.train.builder.saveAsTemplate")}
+          </button>
+        ) : (
+          // Free user — saving a routine is Full. Building/previewing stays free.
+          <div style={{ border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 8%, transparent)`, borderRadius: 16, padding: 14 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}>✦ {tr("w.train.logger.routineFullTitle")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{tr("w.train.logger.routineFullBlurb")}</div>
+            <button onClick={goUpgrade} style={{ marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer" }}>{tr("w.train.logger.routineUnlock")}</button>
+          </div>
+        )}
       </div>
 
       <div style={card}>
