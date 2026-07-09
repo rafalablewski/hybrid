@@ -20,10 +20,9 @@ import { fs, space,
   type LoggedSession,
   type Biometrics,
   type Macrocycle,
-  type AuroraIconName,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
-import { useHasActiveCoach, usePersona } from "@/lib/persona";
+import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
@@ -56,28 +55,10 @@ export default function AuroraProfile({
   const { t } = useLang();
   const { session, entitlement } = useSession();
   const prefs = useLoggerPrefs();
-  const coached = useHasActiveCoach();
   const units = prefs.units;
   // HPI is a Full feature — free (casual) users see a locked teaser, not the score.
   const showHpi = canSeeHPI(usePersona());
 
-  // Body: the latest logged bodyweight (most recent check-in with a weigh-in),
-  // mirroring the mobile profile — the shell's `bio` is recovery-only.
-  const [bodyKg, setBodyKg] = useState<number | null>(null);
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/checkins")
-      .then((r) => (r.ok ? r.json() : { checkins: [] }))
-      .then((d: { checkins?: { weekOf: string; bodyMassKg: number | null }[] }) => {
-        if (!alive) return;
-        const latest = (d.checkins ?? [])
-          .filter((c) => typeof c.bodyMassKg === "number")
-          .sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0];
-        setBodyKg(latest?.bodyMassKg ?? null);
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
 
   const name = session?.name ?? t("w.account.profile.athlete-fallback");
   const email = session?.email ?? "";
@@ -413,14 +394,6 @@ export default function AuroraProfile({
         </div>
       )}
 
-      {/* MODULE TILES — your athlete */}
-      {sectionHead(t("w.account.profile.your-athlete"), t("w.account.profile.customize"))}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.ms }}>
-        <Tile icon="heart" k={t("w.account.profile.tile-readiness")} big={hasData ? `${state.readiness.score}` : undefined} suffix={hasData ? "%" : undefined} sm={hasData ? undefined : t("w.account.profile.no-data")} />
-        <Tile icon="user-square" k={t("w.account.profile.tile-body")} sm={bodyKg != null ? fmtWeight(bodyKg, units) : t("w.account.profile.log-weigh-in")} onClick={go("checkin", "/checkin")} />
-        <Tile icon="swap" k={t("w.account.profile.tile-devices")} sm={bio ? t("w.account.profile.recovery-synced") : t("w.account.profile.connect-device")} onClick={go("connections", "/connections")} />
-        <Tile icon="user" k={t("w.account.profile.tile-coach")} sm={coached ? t("w.account.profile.coach-active") : t("w.account.profile.find-coach")} onClick={go("coach", "/coach")} />
-      </div>
     </div>
   );
 }
@@ -477,36 +450,6 @@ function Trace({ series }: { series: number[] }) {
   );
 }
 
-function Tile({ icon, k, big, suffix, sm, onClick }: { icon: AuroraIconName; k: string; big?: string; suffix?: string; sm?: string; onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!onClick}
-      style={{
-        border: `1px solid ${C("line")}`, borderRadius: 20, padding: 15, background: C("ink2"), minHeight: 104,
-        display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left",
-        cursor: onClick ? "pointer" : "default", color: C("chalk"), fontFamily: "var(--font-display)",
-      }}
-    >
-      {/* glyph from the Aurora kit (icons1/2/3) — never an emoji */}
-      <span style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(243,244,239,.06)", border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", color: C("chalk") }}>
-        <AuroraIcon name={icon} size={17} strokeWidth={4} />
-      </span>
-      {/* fixed-height value row keeps the label + value on the SAME baseline in
-          every tile, so the big number and the text tiles line up exactly. */}
-      <span style={{ display: "block" }}>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{k}</span>
-        <span style={{ display: "flex", alignItems: "flex-end", minHeight: 26, marginTop: 3 }}>
-          {big ? (
-            <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1 }}>{big}{suffix && <span style={{ fontSize: fs.caption, color: C("ash") }}>{suffix}</span>}</span>
-          ) : (
-            <span style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.15 }}>{sm}</span>
-          )}
-        </span>
-      </span>
-    </button>
-  );
-}
 
 /** Share card — copies a one-line membership summary to the clipboard. */
 function ShareCard({ name, hpi, band, streak: wk, prs, memberSince, tier }: { name: string; hpi: number | null; band: string; streak: number; prs: number; memberSince: number; tier: string }) {

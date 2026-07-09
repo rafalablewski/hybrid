@@ -78,6 +78,9 @@ export default function AuroraHome() {
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
+  // Plan hero: lead with the first lift; the rest collapse behind a toggle so
+  // the card reads at a glance instead of a wall of percentage schemes.
+  const [liftsOpen, setLiftsOpen] = useState(false);
 
   const load = useCallback(() => {
     setRefreshing(true);
@@ -262,12 +265,18 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 8 }}>
                   {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
                 </Text>
-                {plan.rows.map((r, i) => (
+                {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
                   <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm, paddingTop: 6, marginTop: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{r.name}{r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}> · {r.note}</Text> : null}</Text>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right", flexShrink: 0 }}>{r.detail}</Text>
                   </View>
                 ))}
+                {plan.rows.length > 1 && (
+                  <Pressable onPress={() => setLiftsOpen((o) => !o)} hitSlop={6} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: txt(C, C.lime) }}>{liftsOpen ? "▴" : "▾"}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11.5, color: txt(C, C.lime) }}>{liftsOpen ? t("w.home.today.hideLifts") : `${t("w.home.today.showAllLifts")} ${plan.rows.length} ${t("w.home.today.liftsWord")}`}</Text>
+                  </Pressable>
+                )}
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}

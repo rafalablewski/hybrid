@@ -8,6 +8,15 @@ import { AuroraIcon } from "./icons";
 
 const C = (v: string) => `var(--color-${v})`;
 
+// The shipped plan library, previewed on Explore (all free to follow; tapping a
+// card opens the full Plans screen). Names are proper nouns (not translated).
+const PLANS_PREVIEW: { emoji: string; name: string; meta: string; tint: string }[] = [
+  { emoji: "🏋️", name: "Soviet 8-Week Peaking", meta: "Olympic weightlifting · 8 wk", tint: "lime" },
+  { emoji: "🏃", name: "Hansons 5K", meta: "Running · 9 wk", tint: "blue" },
+  { emoji: "💪", name: "6-Day PPL", meta: "Bodybuilding · hypertrophy", tint: "violet" },
+  { emoji: "🔔", name: "12-Week Kettlebell", meta: "Kettlebell · strength", tint: "amber" },
+];
+
 /**
  * AURORA Explore (web) — the discovery surface for the Explore tab: search, a
  * coach rail, the plan library, and a community-feed preview. Composed from the
@@ -32,22 +41,29 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
         {t("w.explore.search")}
       </button>
 
-      {/* COACHES */}
-      <SectionHead title={t("w.explore.coaches")} action={t("w.explore.browseAll")} onAction={() => go("coaches")} />
-      <CoachRail onOpen={() => go("coaches")} />
+      {/* COACHES — CoachRail renders its OWN "Follow a coach" header + Browse all */}
+      <div style={{ marginTop: 20 }}>
+        <CoachRail onOpen={() => go("coaches")} />
+      </div>
 
-      {/* PLANS */}
+      {/* PLANS — the shipped library, tap through to the full Plans screen */}
       <SectionHead title={t("w.explore.plans")} action={t("w.explore.all")} onAction={() => go("plans")} />
-      <button
-        onClick={() => go("plans")}
-        style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: C("ink2"), border: `1px solid color-mix(in srgb, ${C("lime")} 34%, transparent)`, borderRadius: 24, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
-      >
-        <span>
-          <span style={{ display: "block", fontWeight: 800, fontSize: fs.note }}>{t("w.explore.plansCardTitle")}</span>
-          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{t("w.explore.plansCardSub")}</span>
-        </span>
-        <span style={{ fontWeight: 800, fontSize: fs.heading, color: "var(--lime-text)" }}>→</span>
-      </button>
+      <div style={{ display: "grid", gap: 10 }}>
+        {PLANS_PREVIEW.map((p) => (
+          <button
+            key={p.name}
+            onClick={() => go("plans")}
+            style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}
+          >
+            <span style={{ width: 44, height: 44, borderRadius: 13, display: "grid", placeItems: "center", background: `color-mix(in srgb, ${C(p.tint)} 16%, transparent)`, fontSize: 20 }}>{p.emoji}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontWeight: 700, fontSize: fs.note }}>{p.name}</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, textTransform: "uppercase", letterSpacing: ".04em" }}>{p.meta}</span>
+            </span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>›</span>
+          </button>
+        ))}
+      </div>
 
       {/* COMMUNITY */}
       <SectionHead title={t("w.explore.community")} action={t("w.explore.feed")} onAction={() => go("feed")} />

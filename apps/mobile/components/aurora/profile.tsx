@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, type ViewStyle } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
   computePerformanceState,
@@ -18,18 +18,11 @@ import {
   type LoggedSession,
   type Achievement,
   type HeatCell,
-  type AuroraIconName,
 } from "@hybrid/core";
 import {
   fetchSessions,
   fetchSignals,
-  fetchConnections,
-  fetchCheckins,
-  getCoachLinks,
   type CoreSignal,
-  type Conn,
-  type Checkin,
-  type CoachLink,
 } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
@@ -65,22 +58,16 @@ export default function AuroraProfile() {
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [signals, setSignals] = useState<CoreSignal[]>([]);
-  const [connections, setConnections] = useState<Conn[]>([]);
-  const [checkins, setCheckins] = useState<Checkin[]>([]);
-  const [coach, setCoach] = useState<CoachLink | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(() => {
     setRefreshing(true);
     // allSettled, not all: these endpoints are independent, so a single failing
-    // one (e.g. connections/coach offline) shouldn't blank the whole profile.
-    Promise.allSettled([fetchSessions(), fetchSignals(), fetchConnections(), fetchCheckins(), getCoachLinks()])
-      .then(([s, sig, conn, cks, links]) => {
+    // one shouldn't blank the whole profile.
+    Promise.allSettled([fetchSessions(), fetchSignals()])
+      .then(([s, sig]) => {
         if (s.status === "fulfilled") setSessions(s.value);
         if (sig.status === "fulfilled") setSignals(sig.value);
-        if (conn.status === "fulfilled") setConnections(conn.value.connections);
-        if (cks.status === "fulfilled") setCheckins(cks.value);
-        if (links.status === "fulfilled") setCoach((links.value.asClient ?? []).find((l) => l.status === "ACTIVE") ?? null);
       })
       .finally(() => setRefreshing(false));
   }, []);
@@ -110,23 +97,6 @@ export default function AuroraProfile() {
   const weekStreakBest = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
   const hasData = sessions.length > 0;
-
-  // Body: latest logged bodyweight (check-in bodyMassKg), most recent first.
-  const bodyKg = useMemo(() => {
-    const withWeight = checkins
-      .filter((c) => typeof c.bodyMassKg === "number")
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-    return withWeight[0]?.bodyMassKg ?? null;
-  }, [checkins]);
-
-  // Devices: a synced connection if any, else the count of linked providers.
-  const device = useMemo(() => {
-    if (connections.length === 0) return null;
-    const synced = connections.find((c) => c.status?.toLowerCase() === "active" || c.lastSyncAt);
-    const label = (synced ?? connections[0]!).provider;
-    return { label, status: synced ? "synced" : (connections[0]!.status ?? "linked").toLowerCase() };
-  }, [connections]);
-  const coachName = coach?.coach?.name ?? (coach?.coach?.email ? coach.coach.email.split("@")[0]! : null);
 
   const initials = useMemo(() => {
     const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -395,17 +365,6 @@ export default function AuroraProfile() {
         </View>
       )}
 
-      {/* MODULE TILES — Readiness · Body · Devices · Coach */}
-      <SectionHeader C={C} title={t("w.account.profile.your-athlete")} action="" />
-      {/* All four tiles always render (empty states for the unset ones) so the
-          grid stays even — equal cards, text in the same place — matching web. */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms }}>
-        <Tile C={C} icon="heart" k={t("w.account.profile.tile-readiness")} big={hasData ? `${state.readiness.score}` : undefined} unit={hasData ? "%" : undefined} sm={hasData ? undefined : t("w.account.profile.no-data")} />
-        <Tile C={C} icon="user-square" k={t("w.account.profile.tile-body")} sm={bodyKg != null ? fmtWeight(bodyKg, prefs.units) : t("w.account.profile.log-weigh-in")} onPress={() => router.push("/checkin")} />
-        <Tile C={C} icon="swap" k={t("w.account.profile.tile-devices")} sm={device ? `${device.label} · ${device.status}` : t("w.account.profile.connect-device")} onPress={() => router.push("/connections")} />
-        <Tile C={C} icon="user" k={t("w.account.profile.tile-coach")} sm={coachName ? `${coachName} · ${t("w.account.profile.coach-active-suffix")}` : t("w.account.profile.find-coach")} onPress={() => router.push("/coach")} />
-      </View>
-
       <View style={{ height: 8 }} />
     </AuroraScreen>
   );
@@ -470,31 +429,5 @@ function SectionHeader({ C, title, action }: { C: P; title: string; action: stri
       <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
       {!!action && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{action}</Text>}
     </View>
-  );
-}
-
-function Tile({ C, icon, k, big, unit, sm, onPress }: { C: P; icon: AuroraIconName; k: string; big?: string; unit?: string; sm?: string; onPress?: () => void }) {
-  const tileStyle: ViewStyle = { width: "47.6%", flexGrow: 1, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 15, backgroundColor: C.ink2, minHeight: 104, justifyContent: "space-between" };
-  return (
-    <Pressable style={tileStyle} onPress={onPress} disabled={!onPress}>
-      {/* glyph from the Aurora kit (icons1/2/3) — never an emoji */}
-      <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${C.chalk}0f`, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <AuroraIcon name={icon} size={17} color={C.chalk} />
-      </View>
-      {/* fixed-height value row keeps the label + value on the SAME baseline in
-          every tile, so the big number and the text tiles line up exactly. */}
-      <View>
-        <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{k}</Text>
-        <View style={{ minHeight: 26, marginTop: 3, justifyContent: "flex-end" }}>
-          {big != null ? (
-            <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, letterSpacing: -0.4 }}>
-              {big}{unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}>{unit}</Text> : null}
-            </Text>
-          ) : (
-            <Text style={{ fontFamily: F.bold, fontSize: 13.5, color: C.chalk }}>{sm}</Text>
-          )}
-        </View>
-      </View>
-    </Pressable>
   );
 }

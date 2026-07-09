@@ -88,6 +88,8 @@ export default function AuroraToday({
   // (everything logged today, with a link through to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
+  // Plan hero: lead with the first lift; the rest collapse behind a toggle.
+  const [liftsOpen, setLiftsOpen] = useState(false);
 
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(
@@ -198,13 +200,18 @@ export default function AuroraToday({
                 {plan.day} · {t("w.home.today.day")} {plan.dayIndex + 1}/{plan.totalDays}{plan.kindLabel ? ` · ${plan.kindLabel}` : ""}{phase ? ` · ${phase.block.label} ${t("w.home.today.wk")} ${currentWeek}/${macro!.totalWeeks}` : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: space.xs }}>
-                {plan.rows.map((r, i) => (
+                {(liftsOpen ? plan.rows : plan.rows.slice(0, 1)).map((r, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: space.md, paddingTop: 6, borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                     <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> · {r.note}</span> : null}</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
                   </div>
                 ))}
               </div>
+              {plan.rows.length > 1 && (
+                <button onClick={() => setLiftsOpen((o) => !o)} style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--lime-text)" }}>
+                  <span>{liftsOpen ? "▴" : "▾"}</span>{liftsOpen ? t("w.home.today.hideLifts") : `${t("w.home.today.showAllLifts")} ${plan.rows.length} ${t("w.home.today.liftsWord")}`}
+                </button>
+              )}
               {!isAthlete && (
                 <button
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
