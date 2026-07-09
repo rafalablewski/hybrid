@@ -47,11 +47,6 @@ import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring } from "./kit";
 import { auroraScrollClearance } from "../../lib/layout";
 import { AuroraIcon } from "./icons";
-import AuroraAiCoach from "./ai-coach";
-import CoachRail from "./coach-rail";
-import FeedPreview from "./feed-preview";
-import Stories from "./stories";
-import TodayWidgets from "./today-quick";
 import Tour, { FIRST_RUN_TOUR } from "../tour";
 import QuickSportLog from "../quick-sport";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
@@ -484,16 +479,6 @@ export default function AuroraHome() {
   );
 }
 
-function Metric({ label, value, color, C }: { label: string; value: string; color: string; C: P }) {
-  const { scheme } = useTheme();
-  return (
-    <View>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
-    </View>
-  );
-}
-
 // A section kicker — guides the daily flow (Train → Feel → Plan → Connect). An
 // optional trailing action puts a link on the right (e.g. Plan → full Calendar).
 function Kicker({ C, k, h, color, action }: { C: P; k: string; h: string; color: string; action?: { label: string; onPress: () => void } }) {
@@ -513,36 +498,6 @@ function Kicker({ C, k, h, color, action }: { C: P; k: string; h: string; color:
   );
 }
 
-// WEEK ADHERENCE strip — a collapsible card with the Mon→Sun day cells (done /
-// today / missed / future), summarising the week at a glance. The chevron folds
-// just this card; the detailed reconciled plan below stays visible.
-function WeekStrip({ C, title, doneLabel, days, open, onToggle }: { C: P; title: string; doneLabel: string; days: { label: string; state: "done" | "today" | "future" | "missed" }[]; open: boolean; onToggle: () => void }) {
-  const mark = (s: string) => (s === "done" ? "✓" : s === "today" ? "•" : "—");
-  return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18, marginTop: 12 }}>
-      <Pressable onPress={onToggle} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <View>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.amber) }}>{title}</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 16, color: C.chalk, marginTop: 4 }}>{doneLabel}</Text>
-        </View>
-        <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>⌄</Text>
-      </Pressable>
-      {open && (
-        <View style={{ flexDirection: "row", gap: 6, marginTop: 14 }}>
-          {days.map((d, i) => {
-            const done = d.state === "done", today = d.state === "today";
-            return (
-              <View key={i} style={{ flex: 1, aspectRatio: 1 / 1.4, borderRadius: 12, borderWidth: 1, borderColor: done ? `${C.lime}66` : today ? C.lime : C.line, backgroundColor: done ? `${C.lime}1f` : "transparent", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{d.label}</Text>
-                <Text style={{ fontFamily: F.bold, fontSize: 11, color: done || today ? txt(C, C.lime) : C.ash }}>{mark(d.state)}</Text>
-              </View>
-            );
-          })}
-        </View>
-      )}
-    </View>
-  );
-}
 
 // One row of the first-session chooser (#3): a tappable option with a title, a
 // one-line sub, and a Free/Full badge.
@@ -610,54 +565,4 @@ function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; s
   );
 }
 
-// The calendar quick-access widget — the current week's dates (today ringed,
-// logged days lime-filled) + a button through to the full Calendar screen.
-function CalendarCard({ C, sessions, onOpen, openLabel, title, sub }: { C: P; sessions: LoggedSession[]; onOpen: () => void; openLabel: string; title: string; sub: string }) {
-  const now = new Date();
-  const month = now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const start = new Date(now);
-  start.setDate(now.getDate() - now.getDay());
-  const dow = ["S", "M", "T", "W", "T", "F", "S"];
-  const todayStr = now.toDateString();
-  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return d; });
-  return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.amber) }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{month}</Text>
-      </View>
-      <View style={{ flexDirection: "row", gap: 6, marginTop: 12 }}>
-        {days.map((d, i) => {
-          const logged = sessionsOnDay(sessions, d.getTime()).length > 0;
-          const isToday = d.toDateString() === todayStr;
-          return (
-            <View key={i} style={{ flex: 1, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{dow[d.getDay()]}</Text>
-              <View style={{ marginTop: 5, width: "100%", height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: isToday ? C.lime : logged ? `${C.lime}66` : C.line, backgroundColor: logged ? `${C.lime}1f` : "transparent" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: 13, color: logged || isToday ? txt(C, C.lime) : C.chalk }}>{d.getDate()}</Text>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-      <Pressable onPress={onOpen} style={{ marginTop: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 11, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{openLabel}</Text>
-      </Pressable>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, textAlign: "center" }}>{sub}</Text>
-    </View>
-  );
-}
 
-// A CONNECT sub-rail label — the small "Feed" / "Coaches" heading above each
-// horizontal slider, with an Explore action link on the right.
-function SubRail({ C, label, actionLabel, onAction }: { C: P; label: string; actionLabel: string; onAction: () => void }) {
-  const { scheme } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 14, marginBottom: 10, marginHorizontal: 2 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 17, color: C.chalk }}>{label}</Text>
-      <Pressable onPress={onAction} hitSlop={8}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{actionLabel}</Text>
-      </Pressable>
-    </View>
-  );
-}
