@@ -32,6 +32,7 @@ import { fetchAssignments, fetchMacrocycle, createSelfAssignments, updateAssignm
 import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { useSession } from "../../lib/session";
 import { usePersona, useHasActiveCoach } from "../../lib/persona";
+import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
@@ -138,7 +139,8 @@ export default function AuroraHome() {
   // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
   const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 })), [sessions, prefDays]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
-  const plan = useMemo(() => planProgramToday(planId, sessions.length), [planId, sessions.length]);
+  const planMaxes = usePlanMaxes();
+  const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   const hasData = sessions.length > 0;
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications

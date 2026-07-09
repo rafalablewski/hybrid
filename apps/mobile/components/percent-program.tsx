@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { planProgramView, rpeColor, workoutColor, isProseLift, liftKind, dayContentSummary, type GoalNode, type GoalPlan, type PlanProgram, type ProgramDayView, type ProgramLiftView, type ProgramSessionView, type ProgramStepView, type LoadColor, type LiftKind } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
+import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
 
@@ -56,12 +57,21 @@ export default function PercentProgram({
 }) {
   const C = useTheme().palette;
   const [week, setWeek] = useState(1);
+  // Maxes persist on-device (shared with Today) — seed each input from the store;
+  // `vals` holds only the transient text being typed.
+  const storedMaxes = usePlanMaxes();
   const [vals, setVals] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const inputValue = (key: string) => vals[key] ?? (storedMaxes[key] != null ? String(storedMaxes[key]) : "");
+  const onMaxChange = (key: string, text: string) => {
+    setVals((m) => ({ ...m, [key]: text }));
+    const n = parseFloat(text);
+    setPlanMax(key, Number.isFinite(n) && n > 0 ? n : null);
+  };
   const maxes: Record<string, number> = {};
   for (const i of program.inputs) {
     if (i.kind !== "number") continue;
-    const n = parseFloat(vals[i.key] ?? "");
+    const n = parseFloat(inputValue(i.key));
     if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
   }
   const view = planProgramView(program, { week, maxes });
@@ -94,8 +104,8 @@ export default function PercentProgram({
                 keyboardType={inp.kind === "number" ? "numeric" : "default"}
                 placeholder={inp.placeholder ?? ""}
                 placeholderTextColor={C.ash}
-                value={vals[inp.key] ?? ""}
-                onChangeText={(v) => setVals((m) => ({ ...m, [inp.key]: v }))}
+                value={inputValue(inp.key)}
+                onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
                 style={{ fontFamily: F.mono, width: inp.kind === "number" ? 72 : 104, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 7 }}
               />
             </View>

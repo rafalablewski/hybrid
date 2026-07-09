@@ -24,6 +24,7 @@ import { fs, space,
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { usePersona, useHasActiveCoach } from "@/lib/persona";
+import { usePlanMaxes } from "@/lib/plan-maxes";
 import { readIntake, type Intake } from "@/lib/intake";
 import ReconciledWeek from "../reconciled-week";
 import QuickSportLog from "../quick-sport";
@@ -96,7 +97,8 @@ export default function AuroraToday({
   // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
   const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: 3 })), [sessions]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
-  const plan = useMemo(() => planProgramToday(planId, sessions.length), [planId, sessions.length]);
+  const planMaxes = usePlanMaxes();
+  const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
   const hasData = sessions.length > 0;
 
   const initials = useMemo(

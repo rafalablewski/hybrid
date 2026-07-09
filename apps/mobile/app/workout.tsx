@@ -73,6 +73,7 @@ import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
 import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
 import { useSession } from "../lib/session";
 import { usePersona } from "../lib/persona";
+import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
@@ -400,7 +401,7 @@ export default function Workout() {
         // The enrolled discipline-shaped program's exact day prefills the session.
         await clearDraft();
         const m = await fetchMacrocycle();
-        const today = planProgramToday(m?.planId, sessions.length);
+        const today = planProgramToday(m?.planId, sessions.length, readPlanMaxes());
         if (today) {
           setTitle(`${today.planName} · ${today.day}`);
           setExercises(blocksToExercises(today.blocks));
