@@ -187,6 +187,49 @@ export function navForPersona(persona: Persona, items: NavItem[] = NAV_ITEMS, ac
   return items.filter((i) => PERSONA_RANK[effectiveMinPersona(i, access)] <= rank);
 }
 
+/** A nav item paired with whether the current persona has it LOCKED (visible as a
+ *  Full upsell) vs unlocked (accessible). */
+export interface NavItemLocked {
+  item: NavItem;
+  locked: boolean;
+}
+
+/**
+ * The nav items a persona should SEE, but with premium (Full/athlete-tier) items
+ * the persona hasn't unlocked marked `locked` instead of hidden — so a FREE user
+ * sees the whole toolkit with a 🔒 and can tap through to upgrade (rather than the
+ * old "clean nav" that hid them entirely). Coach/admin-only tools stay HIDDEN for
+ * lower personas — they're role-gated, not purchasable with a Full upgrade.
+ */
+export function navForPersonaWithLocks(
+  persona: Persona,
+  items: NavItem[] = NAV_ITEMS,
+  access?: PersonaAccess,
+): NavItemLocked[] {
+  const rank = PERSONA_RANK[persona];
+  const athleteRank = PERSONA_RANK.athlete;
+  return items.flatMap((it): NavItemLocked[] => {
+    const minRank = PERSONA_RANK[effectiveMinPersona(it, access)];
+    if (minRank <= rank) return [{ item: it, locked: false }]; // accessible
+    // Above the persona's rank: show it LOCKED only if it's a Full (athlete-tier)
+    // item AND the user is a casual who could buy Full to unlock it. Coach/admin
+    // items (higher rank) stay hidden.
+    if (persona === "casual" && minRank <= athleteRank) return [{ item: it, locked: true }];
+    return [];
+  });
+}
+
+/** Grouped variant of {@link navForPersonaWithLocks}, in canonical group order. */
+export function groupedNavWithLocks(
+  persona: Persona,
+  access?: PersonaAccess,
+): { group: NavGroup; items: NavItemLocked[] }[] {
+  const withLocks = navForPersonaWithLocks(persona, NAV_ITEMS, access);
+  return NAV_GROUP_ORDER.map((group) => ({ group, items: withLocks.filter((x) => x.item.group === group) })).filter(
+    (g) => g.items.length > 0,
+  );
+}
+
 /** Whether a single nav id is visible to a persona (admin override aware). */
 export function navVisibleTo(persona: Persona, id: string, access?: PersonaAccess): boolean {
   const item = NAV_ITEMS.find((i) => i.id === id);

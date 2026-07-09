@@ -2,10 +2,36 @@ import { describe, it, expect } from "vitest";
 import {
   NAV_ITEMS,
   navForPersona,
+  navForPersonaWithLocks,
   navVisibleTo,
   resolvePersona,
   sanitizePersonaAccess,
 } from "./nav";
+
+describe("navForPersonaWithLocks", () => {
+  const find = (rows: ReturnType<typeof navForPersonaWithLocks>, id: string) => rows.find((r) => r.item.id === id);
+
+  it("shows a casual user Full (athlete-tier) items LOCKED, not hidden", () => {
+    const rows = navForPersonaWithLocks("casual");
+    // cockpit is minPersona 'athlete' → visible but locked for a free user.
+    expect(find(rows, "cockpit")).toMatchObject({ locked: true });
+    // today is casual-tier → visible + unlocked.
+    expect(find(rows, "today")).toMatchObject({ locked: false });
+  });
+
+  it("hides coach/admin-only tools from a casual user (not purchasable via Full)", () => {
+    const rows = navForPersonaWithLocks("casual");
+    expect(find(rows, "coach")).toBeUndefined();
+    expect(find(rows, "squad")).toBeUndefined();
+  });
+
+  it("gives a paid athlete the Full items UNLOCKED", () => {
+    const rows = navForPersonaWithLocks("athlete");
+    expect(find(rows, "cockpit")).toMatchObject({ locked: false });
+    // still no coach tools for an athlete
+    expect(find(rows, "coach")).toBeUndefined();
+  });
+});
 
 describe("persona resolution", () => {
   it("derives coach/admin personas from the role, ignoring the client choice", () => {

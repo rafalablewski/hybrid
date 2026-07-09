@@ -357,8 +357,8 @@ export default function AuroraToday({
       {/* CHECK-IN + NUTRITION — square iPhone-style widgets (tap → full screen) */}
       <TodayWidgets onNavigate={onNavigate} />
 
-      {/* ───── PLAN ───── */}
-      <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C(SECTION_COLOR.plan)} />
+      {/* ───── PLAN ───── (with a direct link to the full month Calendar) */}
+      <Kicker k={t("w.home.today.kPlan")} h={t("w.home.today.kWeekH")} color={C(SECTION_COLOR.plan)} action={{ label: t("w.home.today.calOpen"), onClick: () => (onNavigate ? onNavigate("calendar") : router.push("/calendar")) }} />
 
       {/* WEEK ADHERENCE + CALENDAR — a swipeable pair: the glanceable Mon→Sun
           done-strip, then a calendar widget for easy day-by-day access (P2). */}
@@ -406,13 +406,19 @@ export default function AuroraToday({
   );
 }
 
-// A section kicker — guides the daily flow (Train → Feel → Plan → Connect).
-function Kicker({ k, h, color }: { k: string; h: string; color: string }) {
+// A section kicker — guides the daily flow (Train → Feel → Plan → Connect). An
+// optional trailing action puts a link on the right (e.g. Plan → full Calendar).
+function Kicker({ k, h, color, action }: { k: string; h: string; color: string; action?: { label: string; onClick: () => void } }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "26px 2px 12px" }}>
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
-      {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k} · {h}</span>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "26px 2px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: color, flexShrink: 0 }} />
+        {/* label + heading on ONE line, left-aligned, same font: "TRAIN · …" */}
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{k} · {h}</span>
+      </div>
+      {action && (
+        <button onClick={action.onClick} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{action.label}</button>
+      )}
     </div>
   );
 }
