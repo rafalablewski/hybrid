@@ -157,3 +157,40 @@ export function adaptiveTargets(
     basis: est.kcal != null ? est.basis : "default (log intake + weight to personalize)",
   };
 }
+
+/**
+ * A premade meal preset — a saved, reusable meal a Full user can log with ONE
+ * tap. The manual macro path (kcal/protein/carbs/fat inputs) stays free for
+ * everyone; logging reusable premade meals is a Full feature, gated on
+ * access.canSaveMealsAndProducts so web + mobile match (parity rule). Macros are
+ * approximate and single-number (per the app's no-range convention). Names are
+ * i18n keys so both clients resolve them through t().
+ */
+export interface MealPreset {
+  id: string;
+  labelKey: string;
+  emoji: string;
+  kcal: number;
+  protein: number; // g
+  carbs: number; // g
+  fat: number; // g
+}
+
+export const MEAL_PRESETS: MealPreset[] = [
+  { id: "breakfast-oats-eggs", labelKey: "w.recovery.nutrition.preset.breakfast", emoji: "🍳", kcal: 520, protein: 32, carbs: 55, fat: 18 },
+  { id: "lunch-chicken-rice", labelKey: "w.recovery.nutrition.preset.lunch", emoji: "🥗", kcal: 680, protein: 52, carbs: 78, fat: 16 },
+  { id: "dinner-salmon-potato", labelKey: "w.recovery.nutrition.preset.dinner", emoji: "🍽️", kcal: 740, protein: 46, carbs: 60, fat: 30 },
+  { id: "snack-yogurt-berries", labelKey: "w.recovery.nutrition.preset.snack", emoji: "🥤", kcal: 210, protein: 20, carbs: 22, fat: 4 },
+];
+
+/** The four macro signals a premade meal writes when logged — the SAME Signal
+ *  kinds the manual quick-add uses, so a preset log and a manual log are
+ *  indistinguishable downstream. */
+export function mealPresetSignals(p: MealPreset): { kind: Signal["kind"]; value: number; unit: string }[] {
+  return [
+    { kind: "energyIntake", value: p.kcal, unit: "kcal" },
+    { kind: "protein", value: p.protein, unit: "g" },
+    { kind: "carbs", value: p.carbs, unit: "g" },
+    { kind: "fat", value: p.fat, unit: "g" },
+  ];
+}

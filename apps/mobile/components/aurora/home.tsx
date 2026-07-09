@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, Modal, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -92,6 +92,10 @@ export default function AuroraHome() {
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  // TIER-2 glance strip modals: Quick Log (sport carousel) + Done today (a
+  // pop-up list of everything logged today, with a link to the full calendar).
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(false);
 
   const load = useCallback(() => {
     setRefreshing(true);
@@ -286,33 +290,34 @@ export default function AuroraHome() {
             </Text>
             <View style={{ width: 26, height: 3, borderRadius: 2, backgroundColor: C.lime }} />
           </View>
-          {/* notifications — count badge from the real activity feed */}
-          <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="bell" size={20} color={C.ash} />
-            {notifCount > 0 && (
-              <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
-              </View>
+          {/* right group — the day-streak pill (moved up here so the greeting
+              line breathes) + the notifications bell */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {acc.streak.current > 0 && (
+              // SPECTRUM: the streak wears the warm terracotta accent (Connect),
+              // pairing with the 🔥 and keeping chartreuse for the primary action.
+              <Pressable onPress={() => setDoneOpen(true)} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, height: 42, justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+              </Pressable>
             )}
-          </Pressable>
+            <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="bell" size={20} color={C.ash} />
+              {notifCount > 0 && (
+                <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
         </View>
 
         {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
         <Stories name={name} youLabel={t("w.home.today.storyYou")} onOpen={() => router.push("/feed")} />
 
-        {/* GREETING + streak — streak sits on the greeting's line, top-right */}
-        <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginTop: 16, gap: space.sm }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
-          </View>
-          {acc.streak.current > 0 && (
-            // SPECTRUM: the streak wears the warm terracotta accent (Connect) — it
-            // pairs with the 🔥 and keeps chartreuse reserved for the primary action.
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
-            </View>
-          )}
+        {/* GREETING — the streak moved up to the header row, so this line breathes */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{greeting ? `${greeting}, ${firstName}` : " "}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{dateStr || " "}</Text>
         </View>
 
         {/* ───── TRAIN ───── */}
@@ -433,32 +438,24 @@ export default function AuroraHome() {
           ))}
         </View>
 
-        {/* DONE TODAY — the confirmation loop. Every session logged today (a
-            finished prescribed session OR a quick sport log) lands here with a ✓,
-            so Today acknowledges "you did this" instead of only prompting Start. */}
-        {doneToday.length > 0 && (
-          <>
-            <Kicker C={C} k={t("w.home.today.kDone")} h={t("w.home.today.kDoneH")} color={C[SECTION_COLOR.train]} />
-            <View style={{ gap: 10 }}>
-              {doneToday.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => router.push(`/session/${s.id}`)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}4d`, borderRadius: 18, padding: 13 }}
-                >
-                  <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 14, color: txt(C, C.lime) }}>✓</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units)}</Text>
-                  </View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        )}
+        {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
+            Quick Log takes the day-streak's old slot (the streak lives in the header
+            now); it opens the sport-log carousel, Readiness opens the daily check-in,
+            and Done today opens a pop-up of everything logged today + the calendar. */}
+        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
+          <Pressable onPress={() => setQuickOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceQuickLog")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.lime) }}>＋ {t("w.home.today.glanceLog")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push("/checkin")} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceReadiness")} style={{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: C.line }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.blue) }}>{t("w.home.today.glanceReadinessCta")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</Text>
+          </Pressable>
+          <Pressable onPress={() => setDoneOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.home.today.glanceDone")} style={{ flex: 1, paddingVertical: 13, alignItems: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(C, C.amber) }}>✓ {doneToday.length}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginTop: 4 }}>{t("w.home.today.glanceDone")}</Text>
+          </Pressable>
+        </View>
 
         {/* QUICK ACCESS — Cockpit (the command center, straight from Today) +
             Sport. Free users get an upgrade nudge in the SAME place (P1/P3): the
@@ -506,10 +503,8 @@ export default function AuroraHome() {
           </Pressable>
         )}
 
-        {/* QUICK LOG — back from a run/match? one-tap carousel, log it right here. */}
-        <Kicker C={C} k={t("w.home.today.kQuick")} h={t("w.home.today.kQuickH")} color={C[SECTION_COLOR.train]} />
-        <QuickSportLog sessions={sessions} onSaved={load} solid />
-
+        {/* (Quick Log now lives in the Tier-2 glance strip above — it opens the
+            sport-log carousel in a modal, so it isn't duplicated as a section here.) */}
 
         {/* ───── RECOVER · FEEL ───── */}
         <Kicker C={C} k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C[SECTION_COLOR.feel]} />
@@ -600,6 +595,54 @@ export default function AuroraHome() {
         <CoachRail onOpen={() => router.push("/coaches")} />
         </Animated.View>
       </ScrollView>
+
+      {/* QUICK LOG modal — the sport-log carousel, opened from the glance strip. */}
+      <Modal visible={quickOpen} transparent animationType="slide" onRequestClose={() => setQuickOpen(false)}>
+        <Pressable onPress={() => setQuickOpen(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "82%" }}>
+            <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk }}>{t("w.home.quickSport.title")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4, marginBottom: 14 }}>{t("w.home.quickSport.sub")}</Text>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* DONE TODAY modal — a pop-up of everything logged today + the full calendar. */}
+      <Modal visible={doneOpen} transparent animationType="slide" onRequestClose={() => setDoneOpen(false)}>
+        <Pressable onPress={() => setDoneOpen(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "80%" }}>
+            <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk }}>{t("w.home.today.doneModalTitle")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4, marginBottom: 12 }}>{dateStr}{acc.streak.current > 0 ? ` · 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}</Text>
+            <ScrollView style={{ maxHeight: 340 }}>
+              {doneToday.length === 0 ? (
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 20, paddingVertical: 8 }}>{t("w.home.today.doneModalEmpty")}</Text>
+              ) : doneToday.map((s) => (
+                <Pressable
+                  key={s.id}
+                  onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
+                >
+                  <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontFamily: F.black, fontSize: 14, color: txt(C, C.lime) }}>✓</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                    <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units)}</Text>
+                  </View>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>📅 {t("w.home.today.doneCalendar")}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

@@ -5,8 +5,8 @@ import { useRevalidate } from "@/lib/use-invalidate";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
-  isFullAccess,
-  type NutritionGoal, type Signal,
+  isFullAccess, MEAL_PRESETS, mealPresetSignals,
+  type NutritionGoal, type Signal, type MealPreset,
 } from "@hybrid/core";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, txt } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -31,6 +31,7 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [mealMsg, setMealMsg] = useState("");
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { fetch("/api/nutrition/assigned").then((r) => r.json()).then(setCoachDiet).catch(() => {}); }, []);
   const C = (v: string) => `var(--color-${v})`;
@@ -68,6 +69,23 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
       if (any) { setF({ kcal: "", protein: "", carbs: "", fat: "" }); await load(); revalidate.recovery(); }
     } catch { setError(t("w.recovery.nutrition.errNetwork")); }
     setSaving(false);
+  };
+
+  // Premade meal → one POST per macro (the SAME signal kinds as the manual add).
+  // Free users can't log presets (canSaveMealsAndProducts === Full) — tapping a
+  // locked tile routes to the upgrade screen instead.
+  const logPreset = async (p: MealPreset) => {
+    if (!full) { onNavigate?.("upgrade"); return; }
+    setError(""); setMealMsg("");
+    try {
+      for (const s of mealPresetSignals(p)) {
+        const res = await fetch("/api/signals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: "preset" }) });
+        if (res.status === 401) { setError(t("w.recovery.nutrition.errSignIn")); return; }
+        if (!res.ok) { setError(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
+      }
+      setMealMsg(`${t(p.labelKey)} · +${p.kcal} kcal`);
+      await load(); revalidate.recovery();
+    } catch { setError(t("w.recovery.nutrition.errNetwork")); }
   };
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 22 } as const;
@@ -171,23 +189,32 @@ export default function AuroraNutrition({ onNavigate }: { onNavigate?: (screen: 
         <button onClick={add} disabled={saving} style={{ width: "100%", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: C("ink"), border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")}
         </button>
-        {full ? (
-          <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.recovery.nutrition.proTitle")}</div>
-            <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
-              {[t("w.recovery.nutrition.proScan"), t("w.recovery.nutrition.proSaveMeals"), t("w.recovery.nutrition.proSaveProducts")].map((l) => (
-                <span key={l} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 12px" }}>{l}</span>
-              ))}
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 10, lineHeight: 1.5 }}>{t("w.recovery.nutrition.proSoon")}</div>
+        {/* QUICK MEALS — one-tap premade meals. Full users log a meal on tap;
+            free users see the tiles LOCKED and tapping routes to upgrade (manual
+            macro entry above stays free for everyone). */}
+        <div style={{ marginTop: 14, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>{t("w.recovery.nutrition.quickMeals")}</div>
+            {!full && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--violet-text)", background: `color-mix(in srgb, ${C("violet")} 16%, transparent)`, borderRadius: 999, padding: "3px 9px" }}>✦ Full</span>}
           </div>
-        ) : (
-          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", textAlign: "left", marginTop: 12, cursor: "pointer", border: `1px solid ${C("lime")}`, background: `linear-gradient(135deg, color-mix(in srgb, ${C("lime")} 12%, transparent), color-mix(in srgb, ${C("blue")} 5%, transparent))`, borderRadius: 16, padding: 14, color: C("chalk") }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: fs.body }}><span>🔒</span>{t("w.recovery.nutrition.proTitle")}</div>
-            <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.recovery.nutrition.proBody")}</div>
-            <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: C("lime-t") }}>✦ {t("w.recovery.nutrition.proCta")} →</div>
-          </button>
-        )}
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{full ? t("w.recovery.nutrition.quickMealsSub") : t("w.recovery.nutrition.quickMealsLocked")}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+            {MEAL_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => logPreset(p)}
+                aria-label={t(p.labelKey)}
+                style={{ position: "relative", display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start", textAlign: "left", padding: 14, borderRadius: 15, cursor: "pointer", color: C("chalk"), background: full ? C("ink") : `linear-gradient(135deg, color-mix(in srgb, ${C("violet")} 12%, ${C("ink")}), ${C("ink")})`, border: `1px solid ${full ? C("line") : `color-mix(in srgb, ${C("violet")} 30%, ${C("line")})`}`, opacity: full ? 1 : 0.82 }}
+              >
+                {!full && <span style={{ position: "absolute", top: 10, right: 11, fontSize: 12, color: "var(--violet-text)" }}>🔒</span>}
+                <span style={{ fontSize: 22 }}>{p.emoji}</span>
+                <span style={{ fontWeight: 700, fontSize: fs.body, lineHeight: 1.2 }}>{t(p.labelKey)}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{p.kcal} kcal · {p.protein}p {p.carbs}c {p.fat}f</span>
+              </button>
+            ))}
+          </div>
+          {mealMsg && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}>✓ {t("w.recovery.nutrition.mealLogged")} — {mealMsg}</div>}
+        </div>
       </div>
 
       <div style={{ ...card, marginTop: 16, padding: 18 }}>

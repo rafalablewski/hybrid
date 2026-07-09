@@ -95,6 +95,10 @@ export default function AuroraToday({
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
+  // TIER-2 glance-strip pop-ups: Quick Log (the sport carousel) + Done today
+  // (everything logged today, with a link through to the full calendar).
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(false);
 
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const rx = useMemo(
@@ -164,32 +168,36 @@ export default function AuroraToday({
           </div>
           <div style={{ width: 26, height: 3, borderRadius: 2, background: C("lime") }} />
         </div>
-        <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
-          <AuroraIcon name="bell" size={20} color={C("ash")} />
-          {notifCount > 0 && (
-            <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
-              {notifCount > 9 ? "9+" : notifCount}
-            </span>
+        {/* right group — the day-streak pill (moved up here so the greeting line
+            breathes) + the notifications bell */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {acc.streak.current > 0 && (
+            // SPECTRUM: the streak wears the warm terracotta accent (Connect),
+            // pairing with the 🔥 and keeping chartreuse for the primary action.
+            <button onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 44, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "0 13px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
+              🔥 {acc.streak.current}{t("w.home.today.dayStreak")}
+            </button>
           )}
-        </button>
+          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
+            <AuroraIcon name="bell" size={20} color={C("ash")} />
+            {notifCount > 0 && (
+              <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
+                {notifCount > 9 ? "9+" : notifCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* STORIES — circle avatars (IG-style); leads with "Your story" */}
       <Stories you={initials} youLabel={t("w.home.today.storyYou")} onOpen={() => (onNavigate ? onNavigate("feed") : router.push("/feed"))} />
 
-      {/* GREETING + streak — streak sits on the greeting's line, top-right */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", margin: "16px 2px 2px", gap: space.sm }}>
+      {/* GREETING — the streak moved up to the header row, so this line breathes */}
+      <div style={{ margin: "16px 2px 2px" }}>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: C("chalk") }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}` : ` `}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{dateStr || " "}</div>
         </div>
-        {acc.streak.current > 0 && (
-          // SPECTRUM: the streak wears the warm terracotta accent (Connect) — it
-          // pairs with the 🔥 and keeps chartreuse reserved for the primary action.
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "4px 11px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
-            🔥 {acc.streak.current}{t("w.home.today.dayStreak")}
-          </span>
-        )}
       </div>
 
       {/* ───── TRAIN ───── */}
@@ -303,30 +311,24 @@ export default function AuroraToday({
         ))}
       </div>
 
-      {/* DONE TODAY — the confirmation loop. Every session logged today (a finished
-          prescribed session OR a quick sport log) lands here with a ✓, so Today
-          acknowledges "you did this" instead of only ever prompting "Start". */}
-      {doneToday.length > 0 && (
-        <>
-          <Kicker k={t("w.home.today.kDone")} h={t("w.home.today.kDoneH")} color={C(SECTION_COLOR.train)} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {doneToday.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => (onNavigate ? onNavigate("history") : router.push("/history"))}
-                style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: C("ink2"), border: `1px solid color-mix(in srgb, ${C("lime")} 30%, transparent)`, borderRadius: 18, padding: "13px 15px", cursor: "pointer", color: C("chalk") }}
-              >
-                <span style={{ width: 30, height: 30, borderRadius: 999, flexShrink: 0, background: `color-mix(in srgb, ${C("lime")} 18%, transparent)`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", color: "var(--lime-text)", fontWeight: 800 }}>✓</span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sessionMeta(s, units)}</span>
-                </span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}>{t("w.home.today.doneView")} ›</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      {/* TIER 2 — glanceable status strip: Quick Log · Readiness · Done today.
+          Quick Log takes the day-streak's old slot (the streak lives in the header
+          now); it opens the sport-log carousel, Readiness opens the daily check-in,
+          and Done today opens a pop-up of everything logged today + the calendar. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden", marginTop: 16 }}>
+        <button onClick={() => setQuickOpen(true)} aria-label={t("w.home.today.glanceQuickLog")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--lime-text)" }}>＋ {t("w.home.today.glanceLog")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceQuickLog")}</div>
+        </button>
+        <button onClick={() => (onNavigate ? onNavigate("checkin") : router.push("/checkin"))} aria-label={t("w.home.today.glanceReadiness")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", borderRight: `1px solid ${C("line")}`, cursor: "pointer", color: C("chalk") }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--blue-text)" }}>{t("w.home.today.glanceReadinessCta")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceReadiness")}</div>
+        </button>
+        <button onClick={() => setDoneOpen(true)} aria-label={t("w.home.today.glanceDone")} style={{ padding: "13px 6px", textAlign: "center", background: "none", border: "none", cursor: "pointer", color: C("chalk") }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--amber-text)" }}>✓ {doneToday.length}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginTop: 4 }}>{t("w.home.today.glanceDone")}</div>
+        </button>
+      </div>
 
       {/* QUICK ACCESS — Cockpit (the command center, reachable straight from Today)
           + Sport. Free users get an upgrade nudge in the SAME place (P1/P3): the
@@ -347,9 +349,8 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* QUICK LOG — back from a run/match? one-tap carousel, log it right here. */}
-      <Kicker k={t("w.home.today.kQuick")} h={t("w.home.today.kQuickH")} color={C(SECTION_COLOR.train)} />
-      <QuickSportLog sessions={sessions} onSaved={onSaved} solid />
+      {/* (Quick Log now lives in the Tier-2 glance strip above — it opens the
+          sport-log carousel in a modal, so it isn't duplicated as a section here.) */}
 
       {/* ───── RECOVER · FEEL ───── */}
       <Kicker k={t("w.home.today.kFeel")} h={t("w.home.today.kFeelH")} color={C(SECTION_COLOR.feel)} />
@@ -402,6 +403,46 @@ export default function AuroraToday({
 
       <SubRail label={t("w.home.today.connectCoaches")} actionLabel={t("w.home.today.connectExplore")} onAction={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
       <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} />
+
+      {/* QUICK LOG modal — the sport-log carousel, opened from the glance strip. */}
+      {quickOpen && (
+        <div onClick={() => setQuickOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, background: C("ink2"), borderTopLeftRadius: 26, borderTopRightRadius: 26, border: `1px solid ${C("line")}`, padding: "20px 20px 26px", maxHeight: "86%", overflowY: "auto" }}>
+            <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22 }}>{t("w.home.quickSport.title")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), margin: "4px 0 14px" }}>{t("w.home.quickSport.sub")}</div>
+            <QuickSportLog sessions={sessions} onSaved={() => { onSaved?.(); setQuickOpen(false); }} solid />
+          </div>
+        </div>
+      )}
+
+      {/* DONE TODAY modal — a pop-up of everything logged today + the full calendar. */}
+      {doneOpen && (
+        <div onClick={() => setDoneOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, background: C("ink2"), borderTopLeftRadius: 26, borderTopRightRadius: 26, border: `1px solid ${C("line")}`, padding: "20px 20px 26px", maxHeight: "84%", overflowY: "auto" }}>
+            <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22 }}>{t("w.home.today.doneModalTitle")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), margin: "4px 0 12px" }}>{dateStr}{acc.streak.current > 0 ? ` · 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}</div>
+            {doneToday.length === 0 ? (
+              <div style={{ fontSize: fs.body, color: C("ash"), lineHeight: 1.5, padding: "8px 0" }}>{t("w.home.today.doneModalEmpty")}</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {doneToday.map((s) => (
+                  <button key={s.id} onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("history"); else router.push("/history"); }} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
+                    <span style={{ width: 30, height: 30, borderRadius: 999, flexShrink: 0, background: `color-mix(in srgb, ${C("lime")} 18%, transparent)`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", color: "var(--lime-text)", fontWeight: 800 }}>✓</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+                      <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sessionMeta(s, units)}</span>
+                    </span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}>›</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: 14, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>📅 {t("w.home.today.doneCalendar")}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

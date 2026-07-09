@@ -7,7 +7,10 @@ import {
   estimateMaintenance,
   dailyNutrition,
   isFullAccess,
+  MEAL_PRESETS,
+  mealPresetSignals,
   type NutritionGoal,
+  type MealPreset,
 } from "@hybrid/core";
 import { createSignal, getAssignedDiet, type CoreSignal } from "../../lib/api";
 import { useSignalsQuery, useRevalidate } from "../../lib/queries";
@@ -39,6 +42,7 @@ export default function AuroraNutrition() {
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
   const [saving, setSaving] = useState(false);
+  const [mealMsg, setMealMsg] = useState("");
   const [coachDiet, setCoachDiet] = useState<{ diet: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; note: string | null } | null; coachName?: string } | null>(null);
   useEffect(() => { getAssignedDiet().then(setCoachDiet).catch(() => {}); }, []);
 
@@ -67,6 +71,18 @@ export default function AuroraNutrition() {
     if (results.includes(false)) Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody"));
     else setF({ kcal: "", protein: "", carbs: "", fat: "" });
     setSaving(false);
+    revalidate.recovery();
+  };
+
+  // Premade meal → one signal per macro (SAME kinds as the manual add). Free
+  // users can't log presets (Full-only, per access.canSaveMealsAndProducts) —
+  // a tap routes to the upgrade screen instead. Manual entry above stays free.
+  const logPreset = async (p: MealPreset) => {
+    if (!full) { router.push("/upgrade"); return; }
+    setMealMsg("");
+    const ok = await Promise.all(mealPresetSignals(p).map((s) => createSignal(s.kind, s.value, s.unit)));
+    if (ok.includes(false)) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    setMealMsg(`${t(p.labelKey)} · +${p.kcal} kcal`);
     revalidate.recovery();
   };
 
@@ -146,28 +162,39 @@ export default function AuroraNutrition() {
           <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
         </View>
         <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")} onPress={add} disabled={saving} style={{ marginTop: 14 }} />
-        {full ? (
-          <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.proTitle")}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-              {[t("w.recovery.nutrition.proScan"), t("w.recovery.nutrition.proSaveMeals"), t("w.recovery.nutrition.proSaveProducts")].map((l) => (
-                <View key={l} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.recovery.nutrition.proSoon")}</Text>
+        {/* QUICK MEALS — one-tap premade meals. Full users log on tap; free
+            users see them LOCKED and a tap routes to upgrade (manual entry
+            above stays free for everyone). */}
+        <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.quickMeals")}</Text>
+            {!full && (
+              <View style={{ backgroundColor: `${C.violet}28`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.violet) }}>✦ FULL</Text>
+              </View>
+            )}
           </View>
-        ) : (
-          <Pressable onPress={() => router.push("/upgrade")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.proTitle")} style={{ marginTop: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 14 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ fontSize: 13 }}>🔒</Text>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.proTitle")}</Text>
-            </View>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 18 }}>{t("w.recovery.nutrition.proBody")}</Text>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✦ {t("w.recovery.nutrition.proCta")} →</Text>
-          </Pressable>
-        )}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 16 }}>{full ? t("w.recovery.nutrition.quickMealsSub") : t("w.recovery.nutrition.quickMealsLocked")}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+            {MEAL_PRESETS.map((p) => (
+              <Pressable
+                key={p.id}
+                onPress={() => logPreset(p)}
+                accessibilityRole="button"
+                accessibilityLabel={t(p.labelKey)}
+                style={{ width: "47%", flexGrow: 1, backgroundColor: full ? C.ink : `${C.violet}14`, borderWidth: 1, borderColor: full ? C.line : `${C.violet}4d`, borderRadius: 15, padding: 13, opacity: full ? 1 : 0.85 }}
+              >
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
+                  {!full && <Text style={{ fontSize: 12 }}>🔒</Text>}
+                </View>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 6 }}>{t(p.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{p.kcal} kcal · {p.protein}p {p.carbs}c {p.fat}f</Text>
+              </Pressable>
+            ))}
+          </View>
+          {mealMsg ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginTop: 10 }}>✓ {t("w.recovery.nutrition.mealLogged")} — {mealMsg}</Text> : null}
+        </View>
       </ACard>
 
       {/* Recent */}
