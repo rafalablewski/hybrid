@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planToday, planDayToBlocks, findGoalPlan, srSingleReps } from "./plan-day";
+import { planToday, planProgramToday, planDayToBlocks, findGoalPlan, srSingleReps } from "./plan-day";
 
 describe("planToday", () => {
   it("returns null for no plan / an unknown plan id", () => {
@@ -18,6 +18,51 @@ describe("planToday", () => {
   it("finds no plan across the empty goal library", () => {
     expect(findGoalPlan("bb-fb4")).toBeNull();
     expect(findGoalPlan("nope")).toBeNull();
+  });
+});
+
+describe("planProgramToday", () => {
+  it("returns null for no plan / an unknown plan id / a legacy (non-program) id", () => {
+    expect(planProgramToday(null, 0)).toBeNull();
+    expect(planProgramToday(undefined, 3)).toBeNull();
+    expect(planProgramToday("does-not-exist", 0)).toBeNull();
+    // a real goal id that has no discipline-shaped program yet
+    expect(planProgramToday("bb-fb4", 0)).toBeNull();
+  });
+
+  it("resolves an enrolled program's day, with display rows + prefill blocks", () => {
+    // The 6-day PPL program (a real shipped PlanProgram).
+    const today = planProgramToday("bb-ppl-6day", 0);
+    expect(today).not.toBeNull();
+    expect(today!.planId).toBe("bb-ppl-6day");
+    expect(today!.planName).toBeTruthy();
+    expect(today!.discipline).toBe("hypertrophy");
+    expect(today!.totalDays).toBeGreaterThan(0);
+    expect(today!.dayIndex).toBe(0);
+    expect(today!.rows.length).toBeGreaterThan(0);
+    expect(today!.blocks.length).toBeGreaterThan(0);
+    // every row carries a name + a formatted prescription
+    expect(today!.rows.every((r) => r.name.length > 0 && r.detail.length >= 0)).toBe(true);
+  });
+
+  it("advances the day by how many sessions the athlete has logged (cycling)", () => {
+    const d0 = planProgramToday("bb-ppl-6day", 0)!;
+    const d1 = planProgramToday("bb-ppl-6day", 1)!;
+    expect(d1.dayIndex).toBe(1 % d0.totalDays);
+    // logging a full cycle returns to day 0
+    const wrap = planProgramToday("bb-ppl-6day", d0.totalDays)!;
+    expect(wrap.dayIndex).toBe(0);
+  });
+
+  it("derives working kg from the athlete's maxes when supplied (percent program)", () => {
+    // The Soviet OWL block is %-based off named 1RMs.
+    const noMax = planProgramToday("oly-soviet-8wk", 0)!;
+    const withMax = planProgramToday("oly-soviet-8wk", 0, { snatch: 100, cleanjerk: 120, backSquat: 200, frontSquat: 160, press: 80 })!;
+    // a strength block should exist; with maxes at least one set carries a load
+    const loadedNo = noMax.blocks.some((b) => b.kind === "strength" && b.sets.some((s) => s.load !== ""));
+    const loadedYes = withMax.blocks.some((b) => b.kind === "strength" && b.sets.some((s) => s.load !== ""));
+    expect(loadedNo).toBe(false);
+    expect(loadedYes).toBe(true);
   });
 });
 

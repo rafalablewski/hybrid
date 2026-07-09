@@ -11,8 +11,7 @@ import {
   prescribeSession,
   toTrainingLog,
   velocityProfiles,
-  planToday,
-  planDayToBlocks,
+  planProgramToday,
   sessionVolume,
   blockBestE1rm,
   newPrsInSession,
@@ -398,13 +397,13 @@ export default function Workout() {
           setExercises(blocksToExercises(routine.blocks));
         }
       } else if (source === "plan") {
-        // The enrolled named plan's exact day prefills the session.
+        // The enrolled discipline-shaped program's exact day prefills the session.
         await clearDraft();
         const m = await fetchMacrocycle();
-        const today = planToday(m?.planId, sessions.length);
+        const today = planProgramToday(m?.planId, sessions.length);
         if (today) {
           setTitle(`${today.planName} · ${today.day}`);
-          setExercises(blocksToExercises(planDayToBlocks(today.items)));
+          setExercises(blocksToExercises(today.blocks));
         }
       } else if (source === "sport" && sport) {
         // Manual sport session from the Sport tab — seed a cardio activity
