@@ -77,6 +77,7 @@ const SocialFeed = dynamic(() => import("./social-feed"), { ssr: false });
 const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
+const AuroraExplore = dynamic(() => import("./aurora/explore"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import CoachInviteBanner from "./coach-invite-banner";
 import { useTheme } from "@/lib/use-theme";
@@ -836,6 +837,8 @@ export default function AppShell() {
 
         {/* Social + coach marketplace — template-aware single components (radii
             soften under Aurora), like the tools below. Everyone (casual+). */}
+        {screen === "explore" && <AuroraExplore onNavigate={(s) => { setPendingBlocks(undefined); setScreen(s); }} />}
+
         {screen === "feed" && <SocialFeed />}
         {screen === "discover" && <SocialDiscover />}
         {screen === "leaderboard" && <SocialLeaderboard />}

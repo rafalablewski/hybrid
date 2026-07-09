@@ -22,17 +22,16 @@ import { AuroraIcon } from "./icons";
 type Side = { id: string; glyph: AuroraIconName; labelKey?: string; label?: string; href: Href; seg: string };
 const LEFT: Side[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", href: "/(tabs)", seg: "index" },
-  { id: "explore", glyph: "globe", labelKey: "nav.explore", href: "/feed", seg: "feed" },
+  { id: "explore", glyph: "globe", labelKey: "nav.explore", href: "/explore", seg: "explore" },
 ];
 const RIGHT: Side[] = [
   { id: "more", glyph: "settings", labelKey: "nav.more", href: "/(tabs)/more", seg: "more" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", href: "/(tabs)/you", seg: "you" },
 ];
-// The centre Train action starts logging RIGHT NOW: it drops straight into the
-// live workout with an empty session and the get-ready count-in (so the timer
-// goes off), rather than the launcher hub. `source=empty` resumes an
-// in-progress draft if one exists, so a tap never silently loses a workout.
-const TRAIN: { href: Href; seg: string } = { href: "/workout?source=empty", seg: "workout" };
+// The centre Train action opens the Train launcher hub (start today's session,
+// AI/repeat-last, routines, resume a draft) — matching web, where the Train FAB
+// also opens the launcher. From there one tap drops into the live logger.
+const TRAIN: { href: Href; seg: string } = { href: "/(tabs)/log", seg: "log" };
 
 // Routes that should NOT show the bar: auth/funnel + the focused live workout
 // (accidental nav mid-set loses context). Everything else gets it.

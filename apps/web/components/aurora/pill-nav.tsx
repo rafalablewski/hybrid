@@ -24,7 +24,7 @@ import { AuroraIcon } from "./icons";
 // stay reachable from the More sheet.
 const PRIMARY: { id: string; icon: AuroraIconName; label: string }[] = [
   { id: "today", icon: "village", label: "Today" },
-  { id: "feed", icon: "globe", label: "Explore" },
+  { id: "explore", icon: "globe", label: "Explore" },
 ];
 
 const C = (v: string) => `var(--color-${v})`;
@@ -114,7 +114,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
         <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 460, background: "color-mix(in srgb, var(--color-ink2) 62%, transparent)", backdropFilter: "blur(18px) saturate(1.2)", WebkitBackdropFilter: "blur(18px) saturate(1.2)", border: `1px solid color-mix(in srgb, var(--color-chalk) 12%, transparent)`, borderRadius: 999, padding: "9px 10px", boxShadow: "0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14)" }}>
           {/* Today · Explore | [Train] | More · Profile */}
           {tabs.map((tab) => (
-            <PillButton key={tab.id} icon={tab.icon} label={tab.id === "feed" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
+            <PillButton key={tab.id} icon={tab.icon} label={tab.id === "explore" ? t("nav.explore") : label(tab.id, tab.label)} active={tab.id === activeId} onClick={() => go(tab.id)} />
           ))}
           <TrainFab label={label("log", "Train")} active={activeId === "log"} onClick={() => go("log")} />
           <PillButton icon="settings" label={t("nav.more")} active={moreActive} onClick={() => setMoreOpen((v) => !v)} />
