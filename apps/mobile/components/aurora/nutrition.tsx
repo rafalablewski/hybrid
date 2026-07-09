@@ -12,7 +12,7 @@ import {
   type NutritionGoal,
   type MealPreset,
 } from "@hybrid/core";
-import { createSignal, getAssignedDiet, type CoreSignal } from "../../lib/api";
+import { createSignal, getAssignedDiet } from "../../lib/api";
 import { useSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";

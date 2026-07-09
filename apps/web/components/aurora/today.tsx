@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { fs, space,
   prescribeSession,
   computeAccountability,
-  weekAdherence,
-  trainingDaysPerWeek,
   buildActivityFeed,
   currentPhase,
   planProgramToday,
@@ -394,37 +392,6 @@ function Ring({ value, color, size = 44, ticks = 32 }: { value: number; color: s
   );
 }
 
-/** WEEK ADHERENCE strip — a collapsible card with the Mon→Sun day cells (done /
- *  today / missed / future), summarising the week at a glance. The chevron folds
- *  just this card; the detailed reconciled plan below stays visible. */
-function WeekStrip({ title, doneLabel, days, open, onToggle }: { title: string; doneLabel: string; days: { label: string; state: "done" | "today" | "future" | "missed" }[]; open: boolean; onToggle: () => void }) {
-  const cell = (s: string) => {
-    const done = s === "done", today = s === "today";
-    return { aspectRatio: "1 / 1.4", borderRadius: 12, border: `1px solid ${done ? "color-mix(in srgb, " + C("lime") + " 40%, transparent)" : today ? C("lime") : C("line")}`, background: done ? `color-mix(in srgb, ${C("lime")} 12%, transparent)` : "transparent", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 4, color: C("ash") } as const;
-  };
-  const mark = (s: string) => (s === "done" ? "✓" : s === "today" ? "•" : s === "missed" ? "—" : "—");
-  return (
-    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, marginBottom: 16 }}>
-      <button onClick={onToggle} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "flex-start", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
-        <span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--amber-text)" }}>{title}</span>
-          <span style={{ display: "block", fontWeight: 800, fontSize: 16, marginTop: 4, color: C("chalk") }}>{doneLabel}</span>
-        </span>
-        <span style={{ color: C("ash"), fontSize: 14, transition: "transform .2s", transform: open ? "rotate(180deg)" : "none" }}>⌄</span>
-      </button>
-      {open && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginTop: 14 }}>
-          {days.map((d, i) => (
-            <div key={i} style={cell(d.state)}>
-              <span style={{ fontSize: 10 }}>{d.label}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: d.state === "done" || d.state === "today" ? C("lime") : C("ash") }}>{mark(d.state)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // One-line meta for a session logged today — sport-adaptive so a run/match reads
 // as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
@@ -477,47 +444,4 @@ function AccessCard({ title, sub, locked, onClick }: { title: string; sub: strin
   );
 }
 
-// The calendar quick-access widget — the current week's dates (today ringed,
-// logged days lime-filled) + a button through to the full Calendar screen.
-function CalendarCard({ sessions, onOpen, openLabel, title, sub }: { sessions: LoggedSession[]; onOpen: () => void; openLabel: string; title: string; sub: string }) {
-  const now = new Date();
-  const month = now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const start = new Date(now);
-  start.setDate(now.getDate() - now.getDay());
-  const dow = ["S", "M", "T", "W", "T", "F", "S"];
-  const todayStr = now.toDateString();
-  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return d; });
-  return (
-    <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 18, marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: "var(--amber-text)" }}>{title}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{month}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginTop: 12 }}>
-        {days.map((d, i) => {
-          const logged = sessionsOnDay(sessions, d.getTime()).length > 0;
-          const isToday = d.toDateString() === todayStr;
-          return (
-            <div key={i} style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash") }}>{dow[d.getDay()]}</div>
-              <div style={{ marginTop: 5, height: 30, borderRadius: 10, display: "grid", placeItems: "center", border: `1px solid ${isToday ? C("lime") : logged ? "color-mix(in srgb, var(--color-lime) 40%, transparent)" : C("line")}`, background: logged ? "color-mix(in srgb, var(--color-lime) 12%, transparent)" : "transparent", fontWeight: 700, fontSize: 13, color: logged || isToday ? "var(--lime-text)" : C("chalk") }}>{d.getDate()}</div>
-            </div>
-          );
-        })}
-      </div>
-      <button onClick={onOpen} style={{ marginTop: 14, width: "100%", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "11px", cursor: "pointer" }}>{openLabel}</button>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, textAlign: "center" }}>{sub}</div>
-    </div>
-  );
-}
 
-// A CONNECT sub-rail label — the small "Feed" / "Coaches" heading above each
-// horizontal slider, with an Explore action link on the right.
-function SubRail({ label, actionLabel, onAction }: { label: string; actionLabel: string; onAction: () => void }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "14px 2px 10px" }}>
-      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17, color: C("chalk") }}>{label}</span>
-      <button onClick={onAction} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>{actionLabel}</button>
-    </div>
-  );
-}

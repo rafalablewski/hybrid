@@ -13,7 +13,6 @@ import {
   toTrainingLog,
   toBiometrics,
   fmtWeight,
-  hpiRole,
   athleteId,
   canSeeHPI,
   type LoggedSession,
@@ -37,7 +36,7 @@ import { usePersona } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { useTheme, txt, roleColor } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { getMyProfile, getConnections } from "../../lib/social-api";
@@ -92,7 +91,6 @@ export default function AuroraProfile() {
   const log = useMemo(() => toTrainingLog(sessions), [sessions]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hpi = state.hpi;
-  const hpiColor = roleColor(C, hpiRole(hpi.band));
 
   // 12-point HPI trace (oldest→today) — the same trajectory engine as the Performance State.
   const hpiTrace = useMemo(() => {

@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, Modal, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl, Animated, Easing, Modal } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   prescribeSession,
-  prescribeForSport,
-  reconcilePlan,
-  buildTrainingWeek,
-  trainingDaysPerWeek,
-  weekNeedsResync,
   currentPhase,
   computeAccountability,
-  weekAdherence,
   buildActivityFeed,
   planProgramToday,
   FUNNEL,
@@ -26,18 +20,16 @@ import {
   sessionVolume,
   fmtTonnage,
   SECTION_COLOR,
-  SPORTS,
-  LEVELS,
   type LoggedSession,
   type Macrocycle,
   type Experience,
   type Equipment,
   type AuroraIconName,
 } from "@hybrid/core";
-import { fetchAssignments, fetchMacrocycle, createSelfAssignments, updateAssignment, type Assignment, type CoreSignal } from "../../lib/api";
+import { fetchAssignments, fetchMacrocycle, type Assignment } from "../../lib/api";
 import { useSessionsQuery, useSignalsQuery } from "../../lib/queries";
 import { useSession } from "../../lib/session";
-import { usePersona, useHasActiveCoach } from "../../lib/persona";
+import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
@@ -70,10 +62,6 @@ export default function AuroraHome() {
   const router = useRouter();
   const { name } = useSession();
   const isAthlete = usePersona() !== "casual";
-  // Coached (free) client: read-only view of the coach-assigned plan.
-  const coached = useHasActiveCoach();
-  const readOnlyPlan = coached && !isAthlete;
-  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
   // Sessions + signals from the shared cache; the rest stay home-local.
@@ -83,8 +71,6 @@ export default function AuroraHome() {
   const [macro, setMacro] = useState<Macrocycle | null>(null);
   const [currentWeek, setCurrentWeek] = useState(1);
   const [planId, setPlanId] = useState<string | null>(null);
-  const [sportSel, setSportSel] = useState<{ sport: string; levelIdx: number } | null>(null);
-  const [prefDays, setPrefDays] = useState<number | undefined>(undefined);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
@@ -120,17 +106,6 @@ export default function AuroraHome() {
 
   // Onboarding prefs that tailor the prescription (client-only).
   useEffect(() => {
-    AsyncStorage.getItem("hybrid.sport").then((raw) => {
-      if (!raw) return;
-      try {
-        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
-        if (s?.sport && SPORTS[s.sport]) {
-          const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
-          setSportSel({ sport: s.sport, levelIdx: lvl });
-        }
-      } catch { /* ignore */ }
-    }).catch(() => {});
-    AsyncStorage.getItem("hybrid.daysPerWeek").then((raw) => { const n = Number(raw); if (Number.isFinite(n) && n > 0) setPrefDays(n); }).catch(() => {});
     AsyncStorage.getItem("hybrid.experience").then((v) => { if (v === "beginner" || v === "intermediate" || v === "advanced") setPrefExp(v); }).catch(() => {});
     AsyncStorage.getItem("hybrid.equipment").then((v) => { if (v === "full" || v === "home" || v === "minimal") setPrefEquip(v); }).catch(() => {});
   }, []);
@@ -142,8 +117,6 @@ export default function AuroraHome() {
     [log, sessions, bio, prefExp, prefEquip],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
-  // Target = the athlete's real weekly cadence (not a flat 3), floored at done.
-  const adherence = useMemo(() => weekAdherence(sessions, trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 })), [sessions, prefDays]);
   const phase = useMemo(() => (macro ? currentPhase(macro, currentWeek) : null), [macro, currentWeek]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
@@ -172,57 +145,6 @@ export default function AuroraHome() {
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, [t]);
   const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
-
-  // Reconciled "This week" — macrocycle phase arbitrates daily + sport transfer.
-  const sportRx = useMemo(() => (sportSel ? prescribeForSport(sportSel.sport, sportSel.levelIdx, { sessions }) : undefined), [sportSel, sessions]);
-  const reconciled = useMemo(() => (macro ? reconcilePlan({ macro, daily: rx, sport: sportRx, currentWeek }) : null), [macro, rx, sportRx, currentWeek]);
-  // Coached read-only: the coach's plan AS WRITTEN (no readiness modulation).
-  const rxAsWritten = useMemo(
-    () => prescribeSession(log, undefined, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip }),
-    [log, sessions, prefExp, prefEquip],
-  );
-  const reconciledView = useMemo(
-    () => (macro ? (readOnlyPlan ? reconcilePlan({ macro, daily: rxAsWritten, sport: sportRx, currentWeek }) : reconciled) : null),
-    [macro, readOnlyPlan, rxAsWritten, reconciled, sportRx, currentWeek],
-  );
-  const daysPerWeek = useMemo(() => trainingDaysPerWeek(sessions, { fallback: prefDays ?? 3 }), [sessions, prefDays]);
-
-  const [scheduling, setScheduling] = useState(false);
-  const [scheduled, setScheduled] = useState<string | null>(null);
-  const autoSynced = useRef(0);
-  const doSchedule = useCallback(async (auto: boolean) => {
-    if (!reconciled || !macro || scheduling) return;
-    setScheduling(true); setScheduled(null);
-    const items = buildTrainingWeek({ macro, currentWeek, log, bio, profiles: velocityProfiles(sessions), sport: sportRx, daysPerWeek, experience: prefExp, equipment: prefEquip });
-    const ok = await createSelfAssignments(items, true);
-    setScheduled(ok ? `${auto ? t("w.home.recweek.autoResynced") : t("w.home.recweek.scheduled")} ${items.length} ${t("w.home.recweek.sessionsOffLogs")}` : t("w.home.recweek.couldntSchedule"));
-    setScheduling(false);
-    if (ok) load();
-  }, [reconciled, macro, scheduling, currentWeek, log, bio, sessions, sportRx, daysPerWeek, prefExp, prefEquip, load]);
-
-  // Auto re-sync once per newly-logged session (mirrors classic home).
-  useEffect(() => {
-    if (!reconciled || readOnlyPlan) return;
-    const latest = sessions.reduce((m, s) => Math.max(m, Date.parse(s.startedAt) || 0), 0);
-    if (!latest || latest <= autoSynced.current) return;
-    autoSynced.current = latest;
-    if (weekNeedsResync(assignments, sessions)) void doSchedule(true);
-  }, [reconciled, assignments, sessions, doSchedule]);
-
-  const upcoming = useMemo(
-    () => assignments.filter((a) => a.status === "assigned").sort((x, y) => Date.parse(x.date) - Date.parse(y.date)).slice(0, 3),
-    [assignments],
-  );
-  const markDone = async (id: string) => { await updateAssignment(id, "completed"); load(); };
-
-  // Plan/AI-coach pager — track the active card so the dots signal the swipe.
-  const cardW = width - 32; // 16px screen padding each side
-  const [activeCard, setActiveCard] = useState(0);
-  // THIS WEEK collapse — tap the Plan kicker to fold/unfold the reconciled plan.
-  const [weekOpen, setWeekOpen] = useState(true);
-  const onPagerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setActiveCard(Math.round(e.nativeEvent.contentOffset.x / Math.max(1, cardW + 12)));
-  };
 
   const planReadiness = hasData || plan || phase;
   // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
