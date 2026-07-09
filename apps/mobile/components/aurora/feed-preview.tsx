@@ -62,41 +62,44 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // Loaded + genuinely empty → render nothing so Home stays uncluttered.
   if (feed.length === 0) return null;
 
+  // X / Twitter-style post — avatar left, name ✓ @handle · time inline, prose,
+  // an optional attached-content card, and a reply/repost/like/share row.
+  const postStyle = horizontal
+    ? ({ flexDirection: "row", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 14, width: cardW } as const)
+    : ({ flexDirection: "row", gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line } as const);
   return (
     <Wrap>
       {feed.map((it: any) => {
         const v = feedCardView(it);
+        const handle = it.author?.handle;
         return (
-          <Pressable key={it.id} onPress={onOpen} style={cardStyle}>
-            {/* header — avatar · name · when·context · ··· */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Avatar url={it.author?.avatarUrl} name={it.author?.displayName} handle={it.author?.handle} size={34} />
-              <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={{ color: C.chalk, fontSize: 14, fontFamily: F.bold }}>{it.kind === "pr" ? "🏆 " : ""}{v.name}</Text>
-                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11 }}>{v.meta}</Text>
+          <Pressable key={it.id} onPress={onOpen} style={postStyle}>
+            <Avatar url={it.author?.avatarUrl} name={it.author?.displayName} handle={handle} size={42} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              {/* header line — name · verified · @handle · time */}
+              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5 }}>
+                <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
+                {it.author?.coachVerified ? <Text style={{ color: C.lime, fontSize: 12 }}>✓</Text> : null}
+                <Text numberOfLines={1} style={{ color: C.ash, fontFamily: F.mono, fontSize: 12, flexShrink: 1 }}>{handle ? `@${handle} · ` : ""}{v.meta}</Text>
               </View>
-              <Text style={{ color: C.ash, fontSize: 18 }}>···</Text>
-            </View>
 
-            {/* body — the post's prose (when there is one) */}
-            {!!v.body && <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 20, marginTop: 12 }}>{v.body}</Text>}
+              {/* body prose */}
+              {!!v.body && <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 20, marginTop: 2 }}>{it.kind === "pr" ? "🏆 " : ""}{v.body}</Text>}
 
-            {/* stat pills */}
-            {v.chips.length > 0 && (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {v.chips.map((c, i) => (
-                  <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}>
-                    <Text style={{ color: C.chalk, fontSize: 12, fontFamily: F.semi }}>{c}</Text>
-                  </View>
-                ))}
+              {/* attached content — the session/PR stats as one quiet card */}
+              {v.chips.length > 0 && (
+                <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 13, paddingVertical: 11, marginTop: 10 }}>
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11.5 }}>{v.chips.join("  ·  ")}</Text>
+                </View>
+              )}
+
+              {/* action row */}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 288, marginTop: 11 }}>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>💬 {it.comments ?? 0}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>🔁 {it.reposts ?? 0}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>♡ {it.kudos ?? 0}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>↗</Text>
               </View>
-            )}
-
-            {/* actions */}
-            <View style={{ flexDirection: "row", gap: 20, marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-              <Text style={{ color: C.ash, fontSize: 13 }}>♡ {it.kudos ?? 0}</Text>
-              <Text style={{ color: C.ash, fontSize: 13 }}>💬 {it.comments ?? 0}</Text>
-              <Text style={{ color: C.ash, fontSize: 13 }}>↗ Share</Text>
             </View>
           </Pressable>
         );

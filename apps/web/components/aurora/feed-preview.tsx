@@ -56,45 +56,48 @@ export default function FeedPreview({ onOpen, horizontal = false }: { onOpen: ()
   // Loaded + genuinely empty → render nothing so Today stays uncluttered.
   if (feed.length === 0) return null;
 
+  // X / Twitter-style post — avatar left; name ✓ @handle · time inline; prose;
+  // an optional attached-content card; a reply/repost/like/share row.
+  const postStyle = horizontal
+    ? { ...cardWidth, display: "flex", gap: 12, textAlign: "left" as const, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 14, cursor: "pointer", color: C("chalk") }
+    : { width: "100%", display: "flex", gap: 12, textAlign: "left" as const, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "14px 2px", cursor: "pointer", color: C("chalk") };
   return (
     <div style={wrap}>
       {feed.map((it) => {
         const v = feedCardView(it);
+        const a = it.author as { displayName: string | null; handle: string; avatarUrl: string | null; coachVerified?: boolean };
         return (
-          <button key={it.id} onClick={onOpen} style={{ ...cardWidth, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 16, cursor: "pointer", color: C("chalk") }}>
-            {/* header — avatar · name · when·context · ··· */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 999, flexShrink: 0, background: "#2c302c", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: C("chalk"), overflow: "hidden" }}>
-                {it.author.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={it.author.avatarUrl} alt="" width={34} height={34} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : initials(it.author.displayName, it.author.handle)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.kind === "pr" ? "🏆 " : ""}{v.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{v.meta}</div>
-              </div>
-              <span style={{ color: C("ash"), fontSize: 18, lineHeight: 1 }}>···</span>
-            </div>
+          <button key={it.id} onClick={onOpen} style={postStyle}>
+            <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, background: "#2c302c", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: C("chalk"), overflow: "hidden" }}>
+              {a.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={a.avatarUrl} alt="" width={42} height={42} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : initials(a.displayName, a.handle)}
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {/* header line — name · verified · @handle · time */}
+              <span style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", fontSize: 14 }}>
+                <span style={{ fontWeight: 800 }}>{v.name}</span>
+                {a.coachVerified && <span style={{ color: "var(--lime-text)", fontSize: 12 }}>✓</span>}
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.handle ? `@${a.handle} · ` : ""}{v.meta}</span>
+              </span>
 
-            {/* body — the post's prose (when there is one) */}
-            {v.body && <div style={{ fontSize: 14, lineHeight: 1.5, marginTop: 12 }}>{v.body}</div>}
+              {/* body prose */}
+              {v.body && <span style={{ display: "block", fontSize: 14, lineHeight: 1.45, marginTop: 2 }}>{it.kind === "pr" ? "🏆 " : ""}{v.body}</span>}
 
-            {/* stat pills */}
-            {v.chips.length > 0 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-                {v.chips.map((c, i) => (
-                  <span key={i} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 12px", fontSize: 12, fontWeight: 600 }}>{c}</span>
-                ))}
-              </div>
-            )}
+              {/* attached content — session/PR stats as one quiet card */}
+              {v.chips.length > 0 && (
+                <span style={{ display: "block", border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px", marginTop: 10, fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash") }}>{v.chips.join("  ·  ")}</span>
+              )}
 
-            {/* actions */}
-            <div style={{ display: "flex", gap: 20, marginTop: 14, borderTop: `1px solid ${C("line")}`, paddingTop: 12, color: C("ash"), fontSize: 13 }}>
-              <span>♡ {it.kudos}</span>
-              <span>💬 {it.comments}</span>
-              <span>↗ Share</span>
-            </div>
+              {/* action row */}
+              <span style={{ display: "flex", justifyContent: "space-between", maxWidth: 288, marginTop: 11, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 12 }}>
+                <span>💬 {it.comments}</span>
+                <span>🔁 {(it as { reposts?: number }).reposts ?? 0}</span>
+                <span>♡ {it.kudos}</span>
+                <span>↗</span>
+              </span>
+            </span>
           </button>
         );
       })}

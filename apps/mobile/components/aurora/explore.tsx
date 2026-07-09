@@ -75,7 +75,7 @@ export default function AuroraExplore() {
 
       {/* COMMUNITY */}
       <SectionHead C={C} scheme={scheme} title={t("w.explore.community")} action={t("w.explore.feed")} onAction={() => router.push("/feed")} />
-      <FeedPreview horizontal onOpen={() => router.push("/feed")} />
+      <FeedPreview onOpen={() => router.push("/feed")} />
     </AuroraScreen>
   );
 }

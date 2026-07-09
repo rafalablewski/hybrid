@@ -67,7 +67,7 @@ export default function AuroraExplore({ onNavigate }: { onNavigate?: (s: string)
 
       {/* COMMUNITY */}
       <SectionHead title={t("w.explore.community")} action={t("w.explore.feed")} onAction={() => go("feed")} />
-      <FeedPreview horizontal onOpen={() => go("feed")} />
+      <FeedPreview onOpen={() => go("feed")} />
     </div>
   );
 }
