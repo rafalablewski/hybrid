@@ -10,6 +10,7 @@ export async function GET(request: Request) {
   if (gate.error) return gate.error;
 
   let sessions: unknown[] = [];
+  let unavailable = false;
   try {
     const rows = await prisma.anonSession.findMany({
       orderBy: { createdAt: "desc" },
@@ -17,12 +18,15 @@ export async function GET(request: Request) {
     });
     sessions = rows.map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }));
   } catch (err) {
-    // Table not migrated yet — return an empty list rather than 500.
-    console.error("[admin/anon-sessions] table missing:", err);
+    // The AnonSession table isn't migrated yet (or the DB read failed). Flag it
+    // so the admin screen can say "not enabled — run the SQL" instead of showing
+    // a misleading empty list that reads as "guest workouts are broken".
+    unavailable = true;
+    console.error("[admin/anon-sessions] table missing / read failed:", err);
   }
 
   await audit({ actor: gate.admin, action: "anonSessions.view", targetType: "anonSession", req: request });
-  return NextResponse.json({ sessions });
+  return NextResponse.json({ sessions, unavailable });
 }
 
 // Permanently delete an anonymous workout (cleanup of spam/test rows).

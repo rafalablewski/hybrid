@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, INK2, LINE, LIME, ASH, BLUE, VIOLET, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, INK2, LINE, LIME, ASH, BLUE, VIOLET, AMBER, RED, CHALK, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 // Anonymous (guest, pre-account) workouts — sessions logged on a device before
 // the user ever signed in. Admin-only housekeeping: review and prune them.
@@ -22,13 +22,17 @@ const trunc = (s: string) => (s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}
 
 export default function AdminAnonSessions() {
   const [sessions, setSessions] = useState<AnonSession[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/admin/anon-sessions")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { sessions?: AnonSession[] }) => setSessions(d.sessions ?? []))
+      .then((d: { sessions?: AnonSession[]; unavailable?: boolean }) => {
+        setSessions(d.sessions ?? []);
+        setUnavailable(Boolean(d.unavailable));
+      })
       .catch(() => setSessions([]));
   }, []);
 
@@ -65,6 +69,18 @@ export default function AdminAnonSessions() {
             {err}
           </Mono>
         </div>
+      )}
+
+      {unavailable && (
+        <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16 }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginBottom: 6 }}>Guest workouts aren&apos;t enabled yet</div>
+          <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            The <b>AnonSession</b> table doesn&apos;t exist in the database yet — run{" "}
+            <span style={{ color: txt(AMBER) }}>reference/sql-history-checkin-anon.sql</span> in the Supabase SQL Editor.
+            Until then, guest (pre-account) workouts are kept on the device and mirrored here only after the table exists,
+            so this list stays empty.
+          </Mono>
+        </Card>
       )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>

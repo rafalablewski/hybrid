@@ -3,7 +3,7 @@ import { View, Text, Alert } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, ErrorNote, PillBtn } from "./_kit";
+import { Intro, Banner, ErrorNote, PillBtn } from "./_kit";
 
 // Anonymous (guest, pre-account) workouts — sessions logged on a device before
 // the user ever signed in. Admin-only housekeeping: review and prune them.
@@ -28,12 +28,14 @@ export default function AdminAnon() {
     p === "ios" ? palette.blue : p === "web" ? palette.lime : p === "android" ? palette.violet : palette.ash;
 
   const [sessions, setSessions] = useState<AnonSession[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    adminGet<{ sessions?: AnonSession[] }>("/api/admin/anon-sessions").then((res) => {
+    adminGet<{ sessions?: AnonSession[]; unavailable?: boolean }>("/api/admin/anon-sessions").then((res) => {
       setSessions(res.ok ? res.data?.sessions ?? [] : []);
+      setUnavailable(Boolean(res.ok && res.data?.unavailable));
     });
   }, []);
 
@@ -74,8 +76,16 @@ export default function AdminAnon() {
 
       <ErrorNote error={err} onDismiss={() => setErr(null)} />
 
+      {unavailable && (
+        <Banner title="Guest workouts aren't enabled yet">
+          The AnonSession table doesn&apos;t exist in the database yet — run
+          reference/sql-history-checkin-anon.sql in the Supabase SQL Editor. Until then guest workouts are kept
+          on-device and mirrored here only once the table exists, so this list stays empty.
+        </Banner>
+      )}
+
       {sessions.length === 0 ? (
-        <Mono color={palette.ash}>No anonymous workouts.</Mono>
+        <Mono color={palette.ash}>{unavailable ? "" : "No anonymous workouts."}</Mono>
       ) : (
         sessions.map((s) => (
           <Card key={s.id}>
